@@ -120,6 +120,16 @@ void StepperNewmarkExplicitAForm<Scalar>::setSolver(
   return;
 }
 
+template<class Scalar>
+void StepperNewmarkExplicitAForm<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperNewmarkExplicitAForm::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
+}
 
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::takeStep(

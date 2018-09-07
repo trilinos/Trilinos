@@ -124,17 +124,13 @@ void StepperOperatorSplit<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (stepperOSObserver_ == Teuchos::null) {
       stepperOSObserver_ =
         Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());
-      stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperOSObserver_);
      }
   } else {
-    stepperObserver_ = obs;
     stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> >
-        (stepperObserver_);
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
   }
 }
 
@@ -202,6 +198,7 @@ void StepperOperatorSplit<Scalar>::initialize()
     tempState_ = rcp(new SolutionState<Scalar>(
       model, this->getDefaultStepperState()));
   }
+  this->setParameterList(this->stepperPL_);
   this->setObserver();
 
   if (!isOneStepMethod() ) {
@@ -241,6 +238,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
     // Create OperatorSplit SolutionHistory to pass to subSteppers.
     tempState_->copy(solutionHistory->getCurrentState());
+    OpSpSolnHistory_->clear();
     OpSpSolnHistory_->addState(tempState_);
     OpSpSolnHistory_->addWorkingState(workingState, false);
 
@@ -272,7 +270,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
       // "promote" workingSubState
       currentSubState = OpSpSolnHistory_->getCurrentState();
-      currentSubState->copySolutionStepperState(workingSubState);
+      currentSubState->copySolutionData(workingSubState);
     }
 
     if (pass == true) workingState->setStepperStatus(Status::PASSED);

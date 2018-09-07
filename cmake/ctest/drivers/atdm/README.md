@@ -280,7 +280,9 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 
 * `shiller/`: Contains the files to drive builds on the SRN test bed machine
   `shiller` which also can be run on the SON machine `hansen`.
-  
+
+* `waterman/`: Contains files to drive builds on the SRN Test Bed machine
+  `waterman`.
 
 
 ## How add a new system

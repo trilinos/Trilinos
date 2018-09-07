@@ -36,7 +36,7 @@
 
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 //----------------------------------------------------------------------
 

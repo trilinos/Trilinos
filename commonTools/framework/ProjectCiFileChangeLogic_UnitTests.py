@@ -80,11 +80,17 @@ class test_TribitsExampleProject_ProjectCiFileChangeLogic(unittest.TestCase):
   def test_cmake_std(self):
     self.check('cmake/std/anything', True)
 
-  def test_cmake_std_atdm(self):
+  def test_cmake_std_atdm_anything(self):
     self.check('cmake/std/atdm/anything', False)
 
-  def test_cmake_std_sems(self):
-    self.check('cmake/std/atdm/anything', False)
+  def test_cmake_std_atdm_cmake(self):
+    self.check('cmake/std/atdm/ATDMDevEnvSettings.cmake', False)
+
+  def test_cmake_std_atdm_system_tweaks_cmake(self):
+    self.check('cmake/std/atdm/shiller/tweaks/INTEL-RELEASE-OPENMP-HSW.cmake', False)
+
+  def test_cmake_std_sems_anything(self):
+    self.check('cmake/std/sems/anything', False)
 
   def test_cmake_ctest(self):
     self.check('cmake/ctest/anything', True)

@@ -374,7 +374,7 @@ class HDF5
     }
 
     //! Return \c true if \c Name is contained in the database.
-    bool IsContained(const std::string Name);
+    bool IsContained(std::string Name, std::string GroupName = "");
 
     // @}
     // @{ \name basic non-distributed data types
@@ -404,7 +404,7 @@ class HDF5
     //! Write the serial array \c data, of type \c type, to group \c GroupName, using the dataset name \c DataSetName
     void Write(const std::string& GroupName, const std::string& DataSetName,
                          const hid_t type, const int Length, 
-                         void* data);
+                         const void* data);
 
     //! Associate string \c Comment with group \c GroupName.
     void WriteComment(const std::string& GroupName, std::string Comment)

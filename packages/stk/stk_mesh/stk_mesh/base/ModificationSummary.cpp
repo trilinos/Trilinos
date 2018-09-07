@@ -293,7 +293,7 @@ void ModificationSummary::addEntityKeyAndStringToTracker(stk::mesh::EntityKey ke
     const int numDigitFill = 8;
     std::ostringstream os;
     os << "[" << std::setw(numDigitFill) << std::setfill('0') << m_modCounter << "] " << string;
-    m_stringTracker.push_back(std::make_pair(key, os.str()));
+    m_stringTracker.emplace_back(key, os.str());
     m_modCounter++;
 }
 

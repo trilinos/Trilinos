@@ -56,6 +56,7 @@
 #include <memory>
 
 namespace Tpetra {
+namespace Classes {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
@@ -431,7 +432,7 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransfer (const SrcDistObject& src,
-              const Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+              const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
               const char modeString[],
               const ReverseOption revOp,
               const CombineMode CM)
@@ -597,7 +598,7 @@ namespace Tpetra {
          << imports_.extent (0) << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
-    using Details::reallocDualViewIfNeeded;
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
     const bool reallocated =
       reallocDualViewIfNeeded (this->imports_, newSize, "imports");
     if (verbose) {
@@ -616,8 +617,8 @@ namespace Tpetra {
   reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
                                     const size_t numImportLIDs)
   {
-    using Details::reallocDualViewIfNeeded;
-    using Details::dualViewStatusToString;
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
+    using ::Tpetra::Details::dualViewStatusToString;
     using std::endl;
     // If an array is already allocated, and if is at least
     // tooBigFactor times bigger than it needs to be, free it and
@@ -1070,8 +1071,8 @@ namespace Tpetra {
                  const ReverseOption revOp,
                  const bool commOnHost)
   {
-    using Details::dualViewStatusToString;
-    using Tpetra::Details::getArrayViewFromDualView;
+    using ::Tpetra::Details::dualViewStatusToString;
+    using ::Tpetra::Details::getArrayViewFromDualView;
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -1635,6 +1636,8 @@ namespace Tpetra {
   releaseViews () const
   {}
 
+} // namespace Classes
+
   template<class DistObjectType>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
@@ -1664,12 +1667,12 @@ namespace Tpetra {
 
 // Explicit instantiation macro for general DistObject.
 #define TPETRA_DISTOBJECT_INSTANT(SCALAR, LO, GO, NODE) \
-  template class DistObject< SCALAR , LO , GO , NODE >;
+  namespace Classes { template class DistObject< SCALAR , LO , GO , NODE >; }
 
 // Explicit instantiation macro for DistObject<char, ...>.
 // The "SLGN" stuff above doesn't work for Packet=char.
 #define TPETRA_DISTOBJECT_INSTANT_CHAR(LO, GO, NODE) \
-  template class DistObject< char , LO , GO , NODE >;
+  namespace Classes { template class DistObject< char , LO , GO , NODE >; }
 
 } // namespace Tpetra
 

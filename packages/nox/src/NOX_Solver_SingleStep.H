@@ -144,6 +144,15 @@ protected:
   //! If set to true, the Jacobian is computed at the beginning of each nonlinear iteration
   bool updateJacobian;
 
+  //! Print the norms of residual (F) and update (dx).
+  bool printNorms;
+
+  //! If print norms is enabled, this will also compute the relative norm, \f$||F||/||F_0||\f$.
+  bool computeRelativeNorm;
+
+  //! Initial residual norm used for computing the relative norm.
+  double normF_0;
+
   //! Group that contains the "frozen Jacobian" if updateJacobian is false.
   Teuchos::RCP<NOX::Abstract::Group> frozenJacobianPtr;
 };

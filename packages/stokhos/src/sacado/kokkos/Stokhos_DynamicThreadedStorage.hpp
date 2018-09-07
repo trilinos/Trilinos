@@ -75,7 +75,7 @@ namespace Sacado {
 // No Host specialization
 
 // Cuda specialization
-#include "Kokkos_Core.hpp"
+#include "Kokkos_Core_fwd.hpp"
 #include "Stokhos_DynamicThreadedStorage_cuda.hpp"
 
 #endif // STOKHOS_DYNAMIC_STORAGE_HPP

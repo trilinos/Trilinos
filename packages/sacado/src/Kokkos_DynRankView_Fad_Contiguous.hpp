@@ -305,7 +305,7 @@ private:
   enum { rank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
               + unsigned(R4) + unsigned(R5) + unsigned(R6) };
 
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::stride> array_layout ;
+  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::scalar_stride> array_layout ;
 
   typedef typename SrcTraits::value_type  value_type ;
 
@@ -497,7 +497,7 @@ private:
   enum { rank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
               + unsigned(R4) + unsigned(R5) + unsigned(R6) };
 
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::stride> array_layout ;
+  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::scalar_stride> array_layout ;
 
   typedef typename SrcTraits::value_type  value_type ;
 

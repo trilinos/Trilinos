@@ -169,7 +169,7 @@ public:
       Real alpha(1), tmp(0);
       int cnt = 0;
       if ( print_ ) {
-        std::cout << "\n     Default Constraint_SimOpt::solve\n";
+        std::cout << "\n     Default DynamicConstraint::solve\n";
         std::cout << "       ";
         std::cout << std::setw(6)  << std::left << "iter";
         std::cout << std::setw(15) << std::left << "rnorm";

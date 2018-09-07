@@ -27,11 +27,43 @@ public:
     {
     }
 
+    void delete_sides()
+    {
+        const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
+        stk::mesh::EntityVector elems;
+        stk::mesh::get_selected_entities(meta.locally_owned_part(),
+                                         bulkData.buckets(stk::topology::ELEM_RANK), elems);
+        bulkData.modification_begin();
+
+        for(stk::mesh::Entity elem : elems)
+        {
+           unsigned numSides = bulkData.num_sides(elem);
+           const stk::mesh::Entity* sides = bulkData.begin(elem, meta.side_rank());
+           const stk::mesh::ConnectivityOrdinal* side_ords = bulkData.begin_ordinals(elem, meta.side_rank());
+           for(unsigned i=0; i<numSides; ++i)
+           {
+               bulkData.destroy_relation(elem, sides[i], side_ords[i]);
+           }
+        }
+
+        stk::mesh::EntityVector sides;
+        stk::mesh::get_selected_entities(meta.locally_owned_part(),
+                                         bulkData.buckets(meta.side_rank()), sides);
+        for(stk::mesh::Entity side : sides)
+        {
+            bulkData.destroy_entity(side);
+        }
+
+        bulkData.modification_end();
+    }
+
+
 protected:
     virtual void run_algorithm_to_time()
     {
         stk::mesh::skin_mesh(bulkData, thingToSkin, {&skinPart});
     }
+
     virtual size_t get_value_to_output_as_iteration_count()
     {
         return get_num_global_faces(bulkData);
@@ -48,7 +80,11 @@ protected:
     void run_skin_mesh_perf_test()
     {
         SkinMeshPerformance perfTester(get_bulk());
-        perfTester.run_performance_test();
+        const int numTimes = 20;
+        for (int i = 0; i < numTimes; ++i) {
+            perfTester.delete_sides();
+            perfTester.run_performance_test();
+        }
     }
     std::string get_mesh_spec()
     {

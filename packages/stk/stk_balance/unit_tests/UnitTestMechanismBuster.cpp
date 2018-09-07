@@ -94,7 +94,7 @@ TEST_F(MechanismMesh2x2, move_components)
         stk::balance::GraphCreationSettings graphSettings;
         stk::mesh::impl::LocalIdMapper localIds(get_bulk(), stk::topology::ELEM_RANK);
 
-        stk::balance::internal::create_custom_ghosting(get_bulk());
+        stk::balance::internal::create_custom_ghosting(get_bulk(), graphSettings);
 
         Zoltan2ParallelGraph zoltan2Graph;
         stk::balance::internal::fill_zoltan2_parallel_graph(get_bulk(), graphSettings, localIds, zoltan2Graph);

@@ -36,6 +36,7 @@ FilteredAFactory
 FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
+GeometricInterpolationPFactory
 GMRESSolver
 Hierarchy
 HierarchyManager

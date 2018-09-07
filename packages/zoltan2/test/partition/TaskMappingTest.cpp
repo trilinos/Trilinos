@@ -343,7 +343,7 @@ int main(int narg, char *arg[]){
      */
 
     if (tcomm->getRank() == 0){
-      cout << "PASS" << endl;
+      std::cout << "PASS" << std::endl;
     }
 
 
@@ -352,11 +352,11 @@ int main(int narg, char *arg[]){
 
   }
   catch(std::string &s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 
   catch(char * s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 }
 

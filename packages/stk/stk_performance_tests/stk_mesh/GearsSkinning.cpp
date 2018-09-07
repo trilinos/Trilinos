@@ -32,10 +32,11 @@
 // 
 
 #include <gtest/gtest.h>
+#include <random> // for random_device, mt19937, etc. 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/perf_util.hpp>
 
 #include <stk_unit_tests/stk_mesh_fixtures/GearsFixture.hpp>
@@ -211,7 +212,13 @@ void find_and_shuffle_wedges_to_separate(
       wedges
       );
 
+#if __cplusplus >= 201402L
+  std::random_device random_number_generator;
+  std::mt19937 uniform_random_number_generator(random_number_generator());
+  std::shuffle(wedges.begin(), wedges.end(), uniform_random_number_generator);
+#else
   std::random_shuffle(wedges.begin(),wedges.end());
+#endif
 }
 
 //
@@ -306,15 +313,17 @@ TEST( gears_skinning, gears_skinning )
   CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>(face_rank, "face_displacement",ONE_STATE);
   IntField & processor_field = fixture.meta_data.declare_field<IntField>(stk::topology::ELEMENT_RANK, "processor_id",ONE_STATE);
 
-  stk::mesh::put_field(
+  stk::mesh::put_field_on_mesh(
       velocity_field,
       fixture.meta_data.universal_part(),
-      fixture.meta_data.spatial_dimension()
+      fixture.meta_data.spatial_dimension(),
+      nullptr
       );
 
-  stk::mesh::put_field(
+  stk::mesh::put_field_on_mesh(
       processor_field,
-      fixture.meta_data.universal_part()
+      fixture.meta_data.universal_part(),
+      nullptr
       );
 
   // add io parts
@@ -353,13 +362,13 @@ TEST( gears_skinning, gears_skinning )
   }
   stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
   {
-    stk::mesh::put_field( displacement, skin_part);
+    stk::mesh::put_field_on_mesh( displacement, skin_part, nullptr);
     const stk::mesh::PartVector &surf_parts = skin_part.subsets();
     for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
       stk::mesh::Part & surf_part = **ip;
       if (surf_part.primary_entity_rank() == stk::topology::ELEMENT_RANK-1) {
         surface_select |= surf_part;
-        stk::mesh::put_field( displacement, surf_part);
+        stk::mesh::put_field_on_mesh( displacement, surf_part, nullptr);
       }
     }
   }

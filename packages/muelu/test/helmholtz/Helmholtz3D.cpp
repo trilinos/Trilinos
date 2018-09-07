@@ -68,6 +68,8 @@ int main(int argc, char *argv[]) {
   typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>     XTCRS;
   typedef Xpetra::Matrix<SC,LO,GO,NO>              XMAT;
   typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO>       XWRAP;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

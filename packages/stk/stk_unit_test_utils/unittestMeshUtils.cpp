@@ -1,26 +1,20 @@
 
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "unittestMeshUtils.hpp"
-
-#include <ext/alloc_traits.h>
-#include <stddef.h>                     // for size_t
-#include <unistd.h>                     // for unlink
-#include <sstream>                      // for basic_ostream::operator<<, etc
-#include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_topology/topology.hpp>    // for topology, operator++, etc
-#include <vector>                       // for vector
-#include "ioUtils.hpp"                  // for fill_mesh_using_stk_io, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian2d
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data
-#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityVector, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include <stddef.h>                    // for size_t
+#include <sstream>                     // for basic_ostream::operator<<, etc
+#include <stk_mesh/base/BulkData.hpp>  // for BulkData
+#include <stk_mesh/base/Entity.hpp>    // for Entity
+#include <stk_mesh/base/MetaData.hpp>  // for MetaData
+#include <stk_topology/topology.hpp>   // for operator++, topology, etc
+#include <string>                      // for allocator, operator<<, string, etc
+#include <vector>                      // for vector
+#include "stk_mesh/base/Types.hpp"     // for PartVector, EntityVector, etc
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {

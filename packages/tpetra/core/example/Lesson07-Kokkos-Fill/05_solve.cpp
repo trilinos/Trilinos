@@ -236,7 +236,7 @@ int main (int argc, char* argv[]) {
     // then construct a View of it.  (Note that a row offset needs to
     // have a type that can contain the sum of the row counts.)
     using row_offset_type =
-      Tpetra::CrsMatrix<>::local_matrix_type::row_map_type::non_const_value_type;
+      Tpetra::CrsMatrix<double>::local_matrix_type::row_map_type::non_const_value_type;
 
     // Use a parallel scan (prefix sum) over the array of row counts, to
     // compute the array of row offsets for the sparse graph.
@@ -375,8 +375,8 @@ int main (int argc, char* argv[]) {
     RCP<const Tpetra::Map<> > colMap =
       rcp (new Tpetra::Map<> (INV, colInds.data (), colInds.extent (0), indexBase, comm));
 
-    Tpetra::CrsMatrix<> A (rowMap, colMap, rowOffsets,
-			   colIndices, matrixValues);
+    Tpetra::CrsMatrix<double> A (rowMap, colMap, rowOffsets,
+			         colIndices, matrixValues);
     A.fillComplete ();
 
     // Hack to deal with the fact that Tpetra::Vector needs a

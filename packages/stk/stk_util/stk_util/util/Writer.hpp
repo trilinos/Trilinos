@@ -111,7 +111,7 @@ private:
      *
      */
     LineMaskStack() {
-      push_back(std::pair<int, PrintMask>(0, LOG_ALWAYS));
+      emplace_back(0, LOG_ALWAYS);
     }
 
     /**
@@ -121,7 +121,7 @@ private:
      * @return      a <b>LineMaskStack</b> reference to the depth stack.
      */
     LineMaskStack &pushDepth() {
-      push_back(std::make_pair(back().first + 1, back().second));
+      emplace_back(back().first + 1, back().second);
       return *this;
     }
 
@@ -134,7 +134,7 @@ private:
      * @return      a <b>LineMaskStack</b> reference to the depth stack.
      */
     LineMaskStack &push(PrintMask line_mask) {
-      push_back(std::make_pair(back().first, line_mask));
+      emplace_back(back().first, line_mask);
       return *this;
     }
 
@@ -247,15 +247,6 @@ public:
   Writer &setFlags(int flags) {
     m_flags = static_cast<Flags>(flags);
     return *this;
-  }
-
-  /**
-   * @brief Member function <b>getFlags</b> returns the flags bitmask.
-   *
-   * @return      an <b>int</b> of the flags bitmask.
-   */
-  int getFlags() {
-    return m_flags;
   }
 
   int getDepth() const {
@@ -823,6 +814,14 @@ using stk::diag::c_ptr;
 using stk::diag::c_ptr_func;
 using stk::diag::c_ptr_func_;
 
+}
+
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& vec) {
+  for (const auto& v : vec) {
+    out << v << " ";
+  }
+  return out;
 }
 
 } // namespace sierra

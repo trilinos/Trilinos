@@ -82,6 +82,11 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include "UnitTestCEO2Elem.hpp"
+#include "UnitTestCEO3Elem.hpp"
+#include "UnitTestCEO4ElemEdge.hpp"
+#include "UnitTestCEO4ElemRotate.hpp"
+#include "UnitTestCEO8Elem.hpp"
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
@@ -270,7 +275,7 @@ TEST(BulkData, testChangeOwner_nodes)
     MetaData meta(spatial_dimension);
     BulkData bulk(meta, pm, stk::mesh::BulkData::AUTO_AURA);
 
-    const PartVector no_parts;
+    const stk::mesh::ConstPartVector no_parts;
 
     meta.commit();
     bulk.modification_begin();
@@ -395,7 +400,7 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
   const int spatial_dimension = 3;
   MetaData meta( spatial_dimension );
 
-  const PartVector no_parts ;
+  const stk::mesh::ConstPartVector no_parts ;
   Part* edge_part = &meta.declare_part_with_topology("edge_part", stk::topology::LINE_2);
   Part* tri_part  = &meta.declare_part_with_topology("tri_part", stk::topology::TRIANGLE_3);
   Part* shell_part  = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
@@ -465,11 +470,11 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.add_node_sharing(n9, 1);
       bulk.add_node_sharing(n20, 1);
 
-      Entity e_9_20 = bulk.declare_edge(1, {edge_part});
+      Entity e_9_20 = bulk.declare_edge(1, stk::mesh::ConstPartVector{edge_part});
       bulk.declare_relation( e_9_20 , n9 , 0 );
       bulk.declare_relation( e_9_20 , n20 , 1 );
 
-      Entity tri_shell = bulk.declare_element(1, {shell_part});
+      Entity tri_shell = bulk.declare_element(1, stk::mesh::ConstPartVector{shell_part});
       bulk.declare_relation( tri_shell , n8 , 0 );
       bulk.declare_relation( tri_shell , n9 , 1 );
       bulk.declare_relation( tri_shell , n20 , 2 );
@@ -484,11 +489,11 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.add_node_sharing(n9, 0);
       bulk.add_node_sharing(n20, 0);
 
-      Entity e_9_20 = bulk.declare_edge(1, {edge_part});
+      Entity e_9_20 = bulk.declare_edge(1, stk::mesh::ConstPartVector{edge_part});
       bulk.declare_relation( e_9_20 , n9 , 0 );
       bulk.declare_relation( e_9_20 , n20 , 1 );
 
-      Entity tri_shell = bulk.declare_element(11, {shell_part});
+      Entity tri_shell = bulk.declare_element(11, stk::mesh::ConstPartVector{shell_part});
       bulk.declare_relation( tri_shell , n18 , 0 );
       bulk.declare_relation( tri_shell , n9 , 1 );
       bulk.declare_relation( tri_shell , n20 , 2 );
@@ -522,7 +527,7 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.add_node_sharing(n6, 1);
       bulk.add_node_sharing(n17, 1);
 
-      Entity e_6_17 = bulk.declare_edge(2, {edge_part});
+      Entity e_6_17 = bulk.declare_edge(2, stk::mesh::ConstPartVector{edge_part});
       bulk.declare_relation( e_6_17 , n6 , 0 );
       bulk.declare_relation( e_6_17 , n17 , 1 );
     }
@@ -533,7 +538,7 @@ TEST(BulkData, testCreateMoreExistingOwnershipIsKept)
       bulk.add_node_sharing(n6, 0);
       bulk.add_node_sharing(n17, 0);
 
-      Entity e_6_17 = bulk.declare_edge(2, {edge_part});
+      Entity e_6_17 = bulk.declare_edge(2, stk::mesh::ConstPartVector{edge_part});
       bulk.declare_relation( e_6_17 , n6 , 0 );
       bulk.declare_relation( e_6_17 , n17 , 1 );
     }
@@ -572,7 +577,7 @@ TEST(BulkData, inducedPartsOnFacesWorks)
             stk::mesh::Entity node3 = bulkData.declare_node(3);
             stk::mesh::Entity node4 = bulkData.declare_node(4);
 
-            stk::mesh::Entity shell = bulkData.declare_element(1, {&shell_part});
+            stk::mesh::Entity shell = bulkData.declare_element(1, stk::mesh::ConstPartVector{&shell_part});
             bulkData.declare_relation(shell, node1, 0);
             bulkData.declare_relation(shell, node2, 1);
             bulkData.declare_relation(shell, node3, 2);
@@ -590,9 +595,9 @@ TEST(BulkData, inducedPartsOnFacesWorks)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::PartVector addParts;
+            stk::mesh::ConstPartVector addParts;
             addParts.push_back(&messyPart);
-            bulkData.change_entity_parts(face, addParts, stk::mesh::PartVector());
+            bulkData.change_entity_parts(face, addParts, stk::mesh::ConstPartVector());
         }
 
         bulkData.modification_end();
@@ -603,9 +608,9 @@ TEST(BulkData, inducedPartsOnFacesWorks)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::PartVector rmParts;
+            stk::mesh::ConstPartVector rmParts;
             rmParts.push_back(&messyPart);
-            bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
+            bulkData.change_entity_parts(face, stk::mesh::ConstPartVector(), rmParts);
         }
 
         bulkData.modification_end();
@@ -644,7 +649,7 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
             stk::mesh::Entity node3 = bulkData.declare_node(3);
             stk::mesh::Entity node4 = bulkData.declare_node(4);
 
-            stk::mesh::Entity shell = bulkData.declare_element(1, {&shell_part});
+            stk::mesh::Entity shell = bulkData.declare_element(1, stk::mesh::ConstPartVector{&shell_part});
             bulkData.declare_relation(shell, node1, 0);
             bulkData.declare_relation(shell, node2, 1);
             bulkData.declare_relation(shell, node3, 2);
@@ -662,16 +667,16 @@ TEST(BulkData, inducedPartsOnFacesThrowsTicket12896)
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::PartVector addParts;
+            stk::mesh::ConstPartVector addParts;
             addParts.push_back(&messyPart);
-            bulkData.change_entity_parts(face, addParts, stk::mesh::PartVector());
+            bulkData.change_entity_parts(face, addParts, stk::mesh::ConstPartVector());
         }
 
         if ( bulkData.parallel_rank() == 1 )
         {
-            stk::mesh::PartVector rmParts;
+            stk::mesh::ConstPartVector rmParts;
             rmParts.push_back(&messyPart);
-            bulkData.change_entity_parts(face, stk::mesh::PartVector(), rmParts);
+            bulkData.change_entity_parts(face, stk::mesh::ConstPartVector(), rmParts);
         }
 
         EXPECT_NO_THROW(bulkData.modification_end());
@@ -1120,7 +1125,7 @@ TEST(BulkData, testModifyPropagation)
 
     // make a modification to the node by changing its parts
     ring_mesh.m_bulk_data.modification_begin();
-    stk::mesh::PartVector parts;
+    stk::mesh::ConstPartVector parts;
     parts.push_back(&special_part);
     bulk.change_entity_parts(node, parts);
 
@@ -1169,7 +1174,7 @@ TEST(BulkData, testChangeEntityOwnerFromSelfToSelf)
     if(p_rank < 2)
     {
         // We're just going to add everything to the universal part
-        stk::mesh::PartVector node_parts, elem_parts;
+        stk::mesh::ConstPartVector node_parts, elem_parts;
         stk::mesh::Part &node_part = meta_data.get_topology_root_part(stk::topology::NODE);
         node_parts.push_back(&node_part);
         stk::mesh::Part &quad4_part = meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
@@ -1317,7 +1322,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_not_owner)
     Entity node1, node2, node3, node4, node5, node6;
     if (myRank == 0)
     {
-        Entity element = mesh.declare_element(1, {&block_1});
+        Entity element = mesh.declare_element(1, stk::mesh::ConstPartVector{&block_1});
         node1 = mesh.declare_node(1);
         node2 = mesh.declare_node(2); // shared
         node3 = mesh.declare_node(3); // shared
@@ -1331,7 +1336,7 @@ TEST(BulkData, test_internal_clean_and_verify_parallel_change_not_owner)
     }
     if (myRank == 1)
     {
-        Entity element = mesh.declare_element(2, {&block_1});
+        Entity element = mesh.declare_element(2, stk::mesh::ConstPartVector{&block_1});
         node2 = mesh.declare_node(2); // shared
         node5 = mesh.declare_node(5);
         node6 = mesh.declare_node(6);
@@ -1620,8 +1625,8 @@ TEST(BulkData, testFamilyTreeGhosting)
     const EntityId my_family_tree_id = p_rank + 1;
 
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
-    stk::mesh::PartVector elem_parts;
+    stk::mesh::ConstPartVector empty_parts;
+    stk::mesh::ConstPartVector elem_parts;
     elem_parts.push_back(&elem_part);
 
     // Create element
@@ -1738,7 +1743,7 @@ TEST(BulkData, testChangeEntityPartsOfShared)
         EntityKey node_key_to_move(node_rank, 3 /*id*/);
 
         // We're just going to add everything to the universal part
-        stk::mesh::PartVector empty_parts, elem_parts;
+        stk::mesh::ConstPartVector empty_parts, elem_parts;
         stk::mesh::Part &quad4_part = meta_data.get_topology_root_part(stk::topology::QUAD_4_2D);
         elem_parts.push_back(&quad4_part);
 
@@ -1875,7 +1880,7 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
         EntityKey node_key_to_move(node_rank, 3 /*id*/);
 
         // We're just going to add everything to the universal part
-        stk::mesh::PartVector empty_parts;
+        stk::mesh::ConstPartVector empty_parts;
 
         // Create nodes
         EntityVector nodes;
@@ -1897,7 +1902,7 @@ void testParallelSideCreation(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
 
         // Create element
         const EntityId elem_id = p_rank + 1;
-        Entity elem = mesh.declare_element(elem_id, {&elem_part});
+        Entity elem = mesh.declare_element(elem_id, stk::mesh::ConstPartVector{&elem_part});
 
         // Add element relations to nodes
         unsigned elem_rel_id = 0;
@@ -2192,7 +2197,8 @@ TEST(BulkData, testFieldComm)
 
         BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, 100);
         PressureFieldType& p_field = fixture.fem_meta().declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
-        stk::mesh::put_field(p_field, fixture.fem_meta().universal_part());
+        stk::mesh::put_field_on_mesh(p_field, fixture.fem_meta().universal_part(),
+                                     (stk::mesh::FieldTraits<PressureFieldType>::data_type*) nullptr);
         fixture.fem_meta().commit();
         BulkData & bulk = fixture.bulk_data();
         int local_box[3][2] = { {0, 0}, {0, 0}, {0, 0}};
@@ -2220,7 +2226,8 @@ TEST(BulkData, testFieldComm)
     {
         stk::mesh::fixtures::QuadFixture fixture(pm, 2 /*nx*/, 2 /*ny*/);
         PressureFieldType& p_field = fixture.m_meta.declare_field<PressureFieldType>(stk::topology::NODE_RANK, "p");
-        stk::mesh::put_field(p_field, fixture.m_meta.universal_part());
+        stk::mesh::put_field_on_mesh(p_field, fixture.m_meta.universal_part(),
+                                     (stk::mesh::FieldTraits<PressureFieldType>::data_type*) nullptr);
         fixture.m_meta.commit();
         fixture.generate_mesh();
         stk::mesh::BulkData & bulk = fixture.m_bulk_data;
@@ -2640,7 +2647,7 @@ TEST(BulkData, onlyKeepTheOwnersParts)
     if(myRank == 0)
     {
         stk::mesh::Entity element0 = stkMeshBulkData.declare_element(element_id_0, elem_parts);
-        stk::mesh::Entity node0 = stkMeshBulkData.declare_node(node_id, {&partA});
+        stk::mesh::Entity node0 = stkMeshBulkData.declare_node(node_id, stk::mesh::ConstPartVector{&partA});
         int sharingProc = 1;
         stkMeshBulkData.add_node_sharing(node0, sharingProc);
         node0Key = stkMeshBulkData.entity_key(node0);
@@ -2652,7 +2659,7 @@ TEST(BulkData, onlyKeepTheOwnersParts)
     else  // myRank == 1
     {
         stk::mesh::Entity element1 = stkMeshBulkData.declare_element(element_id_1, elem_parts);
-        stk::mesh::Entity node0 = stkMeshBulkData.declare_node(node_id, {&partB});
+        stk::mesh::Entity node0 = stkMeshBulkData.declare_node(node_id, stk::mesh::ConstPartVector{&partB});
         int sharingProc = 0;
         stkMeshBulkData.add_node_sharing(node0, sharingProc);
         node0Key = stkMeshBulkData.entity_key(node0);
@@ -2715,7 +2722,7 @@ TEST(BulkData, newSharedNodeGetMergedPartsFromElements)
     if(myRank == 0)
     {
         const stk::mesh::EntityId element_id = 1000;
-        stk::mesh::Entity element0 = stkMeshBulkData.declare_element(element_id, {&partA});
+        stk::mesh::Entity element0 = stkMeshBulkData.declare_element(element_id, stk::mesh::ConstPartVector{&partA});
         stk::mesh::Entity node0 = stkMeshBulkData.declare_node(node_id);
         int sharingProc = 1;
         stkMeshBulkData.add_node_sharing(node0, sharingProc);
@@ -2729,7 +2736,7 @@ TEST(BulkData, newSharedNodeGetMergedPartsFromElements)
     else  // myRank == 1
     {
         const stk::mesh::EntityId element_id = 1001;
-        stk::mesh::Entity element1 = stkMeshBulkData.declare_element(element_id, {&partB});
+        stk::mesh::Entity element1 = stkMeshBulkData.declare_element(element_id, stk::mesh::ConstPartVector{&partB});
         stk::mesh::Entity node0 = stkMeshBulkData.declare_node(node_id);
         int sharingProc = 0;
         stkMeshBulkData.add_node_sharing(node0, sharingProc);
@@ -2796,7 +2803,7 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
     {
         int sharingProc = 1;
         stkMeshBulkData.add_node_sharing(filler_node, sharingProc);
-        stk::mesh::Entity element0 = stkMeshBulkData.declare_element(element_id_0, {&partA});
+        stk::mesh::Entity element0 = stkMeshBulkData.declare_element(element_id_0, stk::mesh::ConstPartVector{&partA});
         stkMeshBulkData.change_entity_parts(element0, elem_parts, empty_parts);
         stk::mesh::RelationIdentifier node_rel_id = 0;
         stkMeshBulkData.declare_relation(element0, sharedNode0, node_rel_id);
@@ -2809,7 +2816,7 @@ TEST(BulkData, mayCreateRelationsToNodesDifferently)
     {
         int sharingProc = 0;
         stkMeshBulkData.add_node_sharing(filler_node, sharingProc);
-        stk::mesh::Entity element1 = stkMeshBulkData.declare_element(element_id_1, {&partB});
+        stk::mesh::Entity element1 = stkMeshBulkData.declare_element(element_id_1, stk::mesh::ConstPartVector{&partB});
         stkMeshBulkData.change_entity_parts(element1, elem_parts, empty_parts);
         const stk::mesh::RelationIdentifier node_rel_id = 0;
         stkMeshBulkData.declare_relation(element1, sharedNode0, node_rel_id);
@@ -2936,7 +2943,7 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     if(myRank == 0)
     {
         const stk::mesh::RelationIdentifier node_rel_id = 0;
-        stk::mesh::Entity element = bulk.declare_element(element_id_0, {&partA});
+        stk::mesh::Entity element = bulk.declare_element(element_id_0, stk::mesh::ConstPartVector{&partA});
         bulk.change_entity_parts(element, elem_parts, empty_parts);
         bulk.declare_relation(element, sharedNodeA, node_rel_id);
         for(stk::mesh::RelationIdentifier filler_rel_id = node_rel_id + 1; filler_rel_id < elem_topo.num_nodes(); ++filler_rel_id)
@@ -2947,7 +2954,7 @@ TEST(DocTestBulkData, inducedPartMembershipIgnoredForNonOwnedHigherRankedEntitie
     else  // myRank == 1
     {
         const stk::mesh::RelationIdentifier node_rel_id = 0;
-        stk::mesh::Entity element = bulk.declare_element(element_id_1, {&partB});
+        stk::mesh::Entity element = bulk.declare_element(element_id_1, stk::mesh::ConstPartVector{&partB});
         bulk.change_entity_parts(element, elem_parts, empty_parts);
         bulk.declare_relation(element, sharedNodeA, node_rel_id);
         for(stk::mesh::RelationIdentifier filler_rel_id = node_rel_id + 1; filler_rel_id < elem_topo.num_nodes(); ++filler_rel_id)
@@ -3427,7 +3434,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
   bulk.modification_begin();
   if (myRank == 1)
   {
-    stk::mesh::Entity element = bulk.declare_element(1, {&element_part});
+    stk::mesh::Entity element = bulk.declare_element(1, stk::mesh::ConstPartVector{&element_part});
     bulk.declare_relation(element,node1,0);
     EXPECT_EQ(1u,bulk.closure_count(node1));
     bulk.declare_relation(element,node2,1);
@@ -3636,7 +3643,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_owner_adds_element)
   bulk.modification_begin();
   if (myRank == 0)
   {
-    stk::mesh::Entity element = bulk.declare_element(1, {&element_part});
+    stk::mesh::Entity element = bulk.declare_element(1, stk::mesh::ConstPartVector{&element_part});
     bulk.declare_relation(element,node1,0);
     EXPECT_EQ(2u,bulk.closure_count(node1));
     bulk.declare_relation(element,node2,1);
@@ -4194,7 +4201,7 @@ TEST(BulkData, test_find_ghosted_nodes_that_need_to_be_shared)
         if ( bulk.parallel_rank() == 1 )
         {
             stk::mesh::EntityId elementId = 1;
-            stk::mesh::Entity element1 = bulk.declare_element(elementId, {&elem_part});
+            stk::mesh::Entity element1 = bulk.declare_element(elementId, stk::mesh::ConstPartVector{&elem_part});
             stk::mesh::Entity ghostedNode1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
             stk::mesh::Entity ghostedNode2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
 
@@ -4297,7 +4304,7 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
         if ( bulk.parallel_rank() == 0 )
         {
             stk::mesh::EntityId elementId = 1;
-            stk::mesh::Entity element = bulk.declare_element(elementId, {&elem_part});
+            stk::mesh::Entity element = bulk.declare_element(elementId, stk::mesh::ConstPartVector{&elem_part});
 
             stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
             stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
@@ -4320,7 +4327,7 @@ TEST(BulkData, show_how_one_could_add_a_shared_node)
         else
         {
             stk::mesh::EntityId elementId = 2;
-            stk::mesh::Entity element = bulk.declare_element(elementId, {&elem_part});
+            stk::mesh::Entity element = bulk.declare_element(elementId, stk::mesh::ConstPartVector{&elem_part});
 
             stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
             stk::mesh::Entity node2 = bulk.get_entity(stk::topology::NODE_RANK, 2);
@@ -4439,7 +4446,8 @@ TEST(BulkData, can_we_create_shared_nodes)
             stk::mesh::Selector all_nodes = meta.universal_part();
             typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
             CoordFieldType& coordField = meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "model_coordinates");
-            stk::mesh::put_field(coordField, all_nodes);
+            stk::mesh::put_field_on_mesh(coordField, all_nodes,
+                                         (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
             stk::mesh::Part& elem_part = meta.declare_part_with_topology("block_1", stk::topology::BEAM_2);
             stk::io::put_io_part_attribute(elem_part);
@@ -4498,7 +4506,7 @@ TEST(BulkData, can_we_create_shared_nodes)
             if ( bulk.parallel_rank() == 0 )
             {
                 stk::mesh::EntityId elementId = 1 + bulk.parallel_rank();
-                stk::mesh::Entity element = bulk.declare_element(elementId, {&elem_part});
+                stk::mesh::Entity element = bulk.declare_element(elementId, stk::mesh::ConstPartVector{&elem_part});
                 bulk.declare_relation(element, node1, 0);
                 bulk.declare_relation(element, thirdNode, 1);
             }
@@ -4600,7 +4608,7 @@ TEST(BulkData, can_we_create_shared_nodes)
                 EXPECT_NEAR(owned_value, *tempField, 1e-6);
             }
 
-            std::vector<stk::mesh::FieldBase*> fields1(1, &temperatureField);
+            std::vector<const stk::mesh::FieldBase*> fields1(1, &temperatureField);
             stk::mesh::parallel_sum(bulk, fields1); /* IMPORTANT PART TO TEST */
 
             double summed_value = 2*owned_value;
@@ -5333,9 +5341,11 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   //declare a field for coordinates
   typedef stk::mesh::Field<double, stk::mesh::Cartesian2d> CoordFieldType;
   CoordFieldType& coordField = meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "model_coordinates");
-  stk::mesh::put_field(coordField, all_nodes);
+  stk::mesh::put_field_on_mesh(coordField, all_nodes,
+                               (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
   stk::mesh::Field<double>& oneField = meta.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field_of_one");
-  stk::mesh::put_field(oneField, block_1);
+  stk::mesh::put_field_on_mesh(oneField, block_1,
+                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
   meta.commit();
   mesh.modification_begin();
@@ -5863,7 +5873,7 @@ TEST(BulkData, test_destroy_ghosted_entity_then_create_locally_owned_entity_with
         stkMeshBulkData.modification_begin();
         if ( stkMeshBulkData.parallel_rank() == 1 )
         {
-            stk::mesh::Entity element = stkMeshBulkData.declare_element(3, {part});
+            stk::mesh::Entity element = stkMeshBulkData.declare_element(3, stk::mesh::ConstPartVector{part});
             stk::mesh::EntityId nodes[] = { 100, 101, 102, 103, 104, 105, 106, 107 };
             const int num_nodes = 8;
             for (int i=0;i<num_nodes;++i)
@@ -6126,7 +6136,7 @@ TEST(AmbiguousTopology, hexRedefinedAsShell)
         stk::mesh::Part& shellPart = meta.get_topology_root_part(stk::topology::SHELL_QUAD_4);
         stk::mesh::EntityId elemId = 1;
         mesh.modification_begin();
-        ASSERT_THROW(mesh.declare_element(elemId, {&shellPart}), std::runtime_error);
+        ASSERT_THROW(mesh.declare_element(elemId, stk::mesh::ConstPartVector{&shellPart}), std::runtime_error);
     }
 }
 

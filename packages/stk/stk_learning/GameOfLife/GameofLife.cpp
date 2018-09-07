@@ -19,7 +19,7 @@
 #include "stk_mesh/base/GetEntities.hpp"  // for get_selected_entities
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 #include "stk_unit_test_utils/ioUtils.hpp"
 /*
  * GameofLife

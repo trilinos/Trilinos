@@ -327,7 +327,7 @@ Content-Type: text/html
   <body>
 
 Go to the <a
-href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=$cdashMachine&date=$cdashDate">full report</a>
+href="http://testing-vm.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=$cdashMachine&date=$cdashDate">full report</a>
 <br>
 
 

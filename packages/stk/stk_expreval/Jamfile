@@ -108,9 +108,6 @@ exe stk_expreval_utest
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_expreval
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
-    /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
 

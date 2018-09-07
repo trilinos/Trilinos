@@ -321,7 +321,7 @@ void test_serial_input_adapter(Teuchos::RCP<const Teuchos::Comm<int> > global_tc
 
   if (global_tcomm->getRank() == 0){
     std::cout << "METRICS FOR THE SERIAL CASE - ONE PHASE MAPPING - EACH ELEMENT IS ASSUMED TO BE IN UNIQUE PART AT  THE BEGINNING" << std::endl;
-    metricObject_3->printMetrics(cout);
+    metricObject_3->printMetrics(std::cout);
   }
   if (machine_optimization_level > 0){
 
@@ -335,7 +335,7 @@ void test_serial_input_adapter(Teuchos::RCP<const Teuchos::Comm<int> > global_tc
 
     if (global_tcomm->getRank() == 0){
       std::cout << "METRICS FOR THE SERIAL CASE - ONE PHASE MAPPING - EACH ELEMENT IS ASSUMED TO BE IN UNIQUE PART AT  THE BEGINNING" << std::endl;
-      metricObject_4->printMetrics(cout);
+      metricObject_4->printMetrics(std::cout);
     }
   }
 
@@ -447,15 +447,15 @@ int main(int narg, char *arg[]){
 #endif
 
     if (global_tcomm->getRank() == 0){
-      cout << "PASS" << endl;
+      std::cout << "PASS" << std::endl;
     }
   }
   catch(std::string &s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 
   catch(char * s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 }
 

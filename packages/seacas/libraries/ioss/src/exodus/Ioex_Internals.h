@@ -412,6 +412,9 @@ namespace Ioex {
     Internals(const Internals &from) = delete;
     Internals &operator=(const Internals &from) = delete;
 
+    int initialize_state_file(Ioss::Region &region, const ex_var_params &var_params,
+                              const std::string &base_file_name);
+
     int write_meta_data(Mesh &mesh);
 
     /*!  A restart file may contain an attribute which contains

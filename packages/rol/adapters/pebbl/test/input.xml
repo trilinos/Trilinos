@@ -1,4 +1,7 @@
 <ParameterList name="Inputs">
+  <Parameter name="Budget"         type="int"    value="3"    />
+  <Parameter name="Use Inequality" type="bool"   value="true" />
+
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />

@@ -64,7 +64,7 @@ TEST(StkMeshHowTo, useCopyTransfer)
     meshReaderA.create_input_mesh();
     stk::mesh::MetaData & metaA = meshReaderA.meta_data();
     ScalarField & scalarFieldNodeA = metaA.declare_field<ScalarField>(stk::topology::NODE_RANK, "Node Scalar Field");
-    stk::mesh::put_field(scalarFieldNodeA, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(scalarFieldNodeA, metaA.universal_part(), &init_vals);
     meshReaderA.populate_bulk_data();
     stk::mesh::BulkData & meshA = meshReaderA.bulk_data();
 
@@ -74,7 +74,7 @@ TEST(StkMeshHowTo, useCopyTransfer)
     meshReaderB.create_input_mesh();
     stk::mesh::MetaData & metaB = meshReaderB.meta_data();
     ScalarField & scalarFieldNodeB = metaB.declare_field<ScalarField>(stk::topology::NODE_RANK, "Node Scalar Field");
-    stk::mesh::put_field(scalarFieldNodeB, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(scalarFieldNodeB, metaB.universal_part(), &init_vals);
     meshReaderB.populate_bulk_data();
     stk::mesh::BulkData & meshB = meshReaderB.bulk_data();
 

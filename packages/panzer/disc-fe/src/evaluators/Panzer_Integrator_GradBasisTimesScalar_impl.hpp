@@ -120,19 +120,8 @@ void
 Integrator_GradBasisTimesScalar<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-
-  for (auto & residual : _residuals){
-    this->utils.setFieldData(residual,fm);
-  }
-
-  this->utils.setFieldData(_scalar,fm);
-
-  for (auto & field : _field_multipliers){
-    this->utils.setFieldData(field,fm);
-  }
-
   _num_basis_nodes = _residuals[0].extent(1);
   _num_quadrature_points = _scalar.extent(1);
 

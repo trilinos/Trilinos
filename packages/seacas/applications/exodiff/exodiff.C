@@ -386,14 +386,14 @@ int main(int argc, char *argv[])
   bool diff_flag = true;
   if (int_size == 4) {
     // Open input files.
-    ExoII_Read<int> file1(file1_name.c_str());
-    ExoII_Read<int> file2(file2_name.c_str());
+    ExoII_Read<int> file1(file1_name);
+    ExoII_Read<int> file2(file2_name);
     diff_flag = exodiff(file1, file2);
   }
   else {
     // Open input files.
-    ExoII_Read<int64_t> file1(file1_name.c_str());
-    ExoII_Read<int64_t> file2(file2_name.c_str());
+    ExoII_Read<int64_t> file1(file1_name);
+    ExoII_Read<int64_t> file2(file2_name);
     diff_flag = exodiff(file1, file2);
   }
 #if 0

@@ -217,6 +217,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       writeSolution(fname, solutionHistory);
+      //solutionHistory->printHistory("medium");
     }
   }
 

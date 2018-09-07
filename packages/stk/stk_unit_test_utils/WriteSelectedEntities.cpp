@@ -1,25 +1,13 @@
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include <stk_unit_test_utils/WriteSelectedEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>                     // for BulkData
-#include <stddef.h>                                  // for size_t
-#include <fstream>                                   // for operator<<, etc
-#include <stk_mesh/base/DataTraits.hpp>              // for DataTraits
-#include <stk_mesh/base/FieldTraits.hpp>
-#include <stk_mesh/base/FieldBase.hpp>               // for FieldBase, etc
-#include <stk_mesh/base/Types.hpp>                   // for EntityVector, etc
-#include <stk_util/environment/Env.hpp>              // for parallel_rank, etc
-#include <vector>                                    // for vector
-#include "stk_mesh/base/Bucket.hpp"                  // for Bucket
-#include "stk_mesh/base/BulkData.hpp"                // for BulkData
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"                  // for Entity
-#include "stk_mesh/base/EntityKey.hpp"               // for operator<<
-#include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/Part.hpp"                    // for Part
-#include "stk_mesh/base/Selector.hpp"                // for Selector
-#include "stk_topology/topology.hpp"                 // for operator<<, etc
-#include "stk_util/diag/String.hpp"                  // for operator<<
-#include <stk_mesh/baseImpl/DebugWriter.hpp>
+#include <stk_mesh/base/BulkData.hpp>         // for BulkData
+#include <stk_mesh/base/Types.hpp>            // for FieldVector
+#include <stk_mesh/baseImpl/DebugWriter.hpp>  // for DebugWriter, etc
+#include <string>                             // for string, basic_string
+#include "stk_mesh/base/Selector.hpp"         // for Selector
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace debug {

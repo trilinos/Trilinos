@@ -286,6 +286,44 @@ IF (KokkosKernels_INST_OFFSET_SIZE_T)
   LIST(APPEND OFFSET_LIST "size_t")
 ENDIF()
 
+# ==================================================================
+# Enable Third Party Libraries
+# ==================================================================
+
+IF (TPL_ENABLE_BLAS)
+  SET(KOKKOSKERNELS_ENABLE_TPL_BLAS ${TPL_ENABLE_BLAS})
+ENDIF()
+IF (TPL_ENABLE_MKL)
+  SET(KOKKOSKERNELS_ENABLE_TPL_MKL ${TPL_ENABLE_MKL})
+ENDIF()
+
+IF(${Kokkos_ENABLE_Cuda})
+  # CUBLAS is ON by default when CUDA is enabled
+  SET(KOKKOSKERNELS_ENABLE_TPL_CUBLAS ON)
+  # Tribit provides TPL mechanism for CUSPARSE; thus, use it
+  IF (TPL_ENABLE_CUSPARSE)
+    SET(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE ${TPL_ENABLE_CUSPARSE})
+  ENDIF()
+ENDIF()
+
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS)
+  LIST(APPEND TPL_LIST "BLAS")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_MKL)
+  LIST(APPEND TPL_LIST "MKL")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  LIST(APPEND TPL_LIST "CUSPARSE")
+ENDIF()
+IF (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
+  LIST(APPEND TPL_LIST "CUBLAS")
+ENDIF()
+
+# ==================================================================
+# CMake Summary
+# ==================================================================
+
+
 MESSAGE("")
 MESSAGE("=======================")
 MESSAGE("KokkosKernels ETI Types")
@@ -293,6 +331,9 @@ MESSAGE("   Devices:  ${DEVICE_LIST}")
 MESSAGE("   Scalars:  ${SCALAR_LIST}")
 MESSAGE("   Ordinals: ${ORDINAL_LIST}")
 MESSAGE("   Offsets:  ${OFFSET_LIST}")
+MESSAGE("")
+MESSAGE("KokkosKernels TPLs")
+MESSAGE("   ${TPL_LIST}")
 MESSAGE("=======================")
 MESSAGE("")
 

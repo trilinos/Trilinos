@@ -121,14 +121,10 @@ initialize(const std::string & scatterName,
 template <typename EvalT,typename TraitsT>
 void ScatterFields<EvalT,TraitsT>::
 postRegistrationSetup(typename TraitsT::SetupData /* d */, 
-                      PHX::FieldManager<TraitsT>& fm)
+                      PHX::FieldManager<TraitsT>& /* fm */)
 {
-  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
+  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd)
     std::string fieldName = scatterFields_[fd].fieldTag().name();
-
-    // setup the field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-  }
 }
 
 template <typename EvalT,typename TraitsT>

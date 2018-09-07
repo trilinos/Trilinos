@@ -45,15 +45,9 @@
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include <type_traits>
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace Tpetra {
-  // forward declaration of CrsMatrix
-  template<class S, class LO, class GO, class N> class CrsMatrix;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Ifpack2 {
 

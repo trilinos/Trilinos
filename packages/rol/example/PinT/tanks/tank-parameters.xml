@@ -22,7 +22,7 @@
   <!--=========================================================================================================--> 
   <!-- Time Discretization                                                                                     --> 
   <Parameter name="Total Time"               type="double"   value="20.0"   unit="s"          symbol="T"        />
-  <Parameter name="Number of Time Steps"     type="int"      value="100"                      symbol="Nt"       />
+  <Parameter name="Number of Time Steps"     type="int"      value="128"                      symbol="Nt"       />
   <Parameter name="Theta"                    type="double"   value="0.5"                      symbol="theta"    />
   <!--================================================================================-->
   <!-- Penalty parameters                                                             --> 

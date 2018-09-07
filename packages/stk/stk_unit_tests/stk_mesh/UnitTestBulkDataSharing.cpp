@@ -31,22 +31,27 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <iostream>                     // for basic_ostream::operator<<, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <string>                       // for string, operator<<, etc
-#include <vector>                       // for vector, allocator
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <gtest/gtest.h>                             // for AssertHelper, etc
+#include <stddef.h>                                  // for size_t
+#include <iostream>                                  // for operator<<, etc
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
+#include <string>                                    // for string, etc
+#include <vector>                                    // for vector
+#include "mpi.h"                                     // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
-#include "stk_mesh/base/EntityKey.hpp"  // for operator<<, etc
-#include "stk_mesh/base/GetEntities.hpp"  // for count_entities
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
-#include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityId, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_mesh/base/Entity.hpp"                  // for Entity, etc
+#include "stk_mesh/base/EntityKey.hpp"               // for operator<<, etc
+#include "stk_mesh/base/GetEntities.hpp"             // for count_entities
+#include "stk_mesh/base/MetaData.hpp"                // for MetaData, etc
+#include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
+#include "stk_topology/topology.hpp"                 // for topology, etc
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
@@ -127,14 +132,14 @@ TEST(UnitTestingOfBulkData, node_sharing)
   // Create the single element and four nodes for this processor.  Nodes
   // on the boundary with other processors will be shared.
   //
-  Entity createdElem = mesh.declare_element(connInfo[p_rank][0], {&elem_part});
+  Entity createdElem = mesh.declare_element(connInfo[p_rank][0], stk::mesh::ConstPartVector{&elem_part});
 
   // Create all 4 nodes for this element
   EntityVector createdNodes;
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][1], {&node_part}) );
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][2], {&node_part}) );
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][3], {&node_part}) );
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][4], {&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][1], stk::mesh::ConstPartVector{&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][2], stk::mesh::ConstPartVector{&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][3], stk::mesh::ConstPartVector{&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][4], stk::mesh::ConstPartVector{&node_part}) );
 
   // Add relations to nodes
   mesh.declare_relation( createdElem, createdNodes[0], 0 );
@@ -338,20 +343,20 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
   // Create the single element and four nodes for this processor.  Nodes
   // on the boundary with other processors will be shared.
   //
-  Entity createdElem = mesh.declare_element(connInfo[p_rank][0], {&elem_part});
+  Entity createdElem = mesh.declare_element(connInfo[p_rank][0], stk::mesh::ConstPartVector{&elem_part});
 
   // Create all 4 nodes for this element
   EntityVector createdNodes;
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][1], {&node_part}) );
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][2], {&node_part}) );
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][3], {&node_part}) );
-  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][4], {&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][1], stk::mesh::ConstPartVector{&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][2], stk::mesh::ConstPartVector{&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][3], stk::mesh::ConstPartVector{&node_part}) );
+  createdNodes.push_back( mesh.declare_node(connInfo[p_rank][4], stk::mesh::ConstPartVector{&node_part}) );
 
 
   bool doNew = true;
   if (doNew)
     {
-      mesh.declare_node(sharingInfo1[p_rank][0], {&node_part}) ;
+      mesh.declare_node(sharingInfo1[p_rank][0], stk::mesh::ConstPartVector{&node_part}) ;
       std::cout << "P[" << p_rank << "] declared node= " << sharingInfo1[p_rank][0] << std::endl;
     }
 

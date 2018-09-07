@@ -86,13 +86,20 @@ fi
 
 echo "TRILINOS_DIR=$TRILINOS_DIR"
 
+# Allow a different source tree for the Trilinos scripts
+if [ "$TRILINOS_SCRIPTS_DIR" == "" ] ; then
+  TRILINOS_SCRIPTS_DIR=${TRILINOS_DIR}
+fi
+
+echo "TRILINOS_SCRIPTS_DIR=$TRILINOS_SCRIPTS_DIR"
+
 ORIG_CWD=$PWD
 
 # Allow override of TriBITS for testing purposes
 if [ "${GCTP_TRIBITS_DIR_OVERRIDE}" != "" ] ; then
   TRIBITS_DIR=$GCTP_TRIBITS_DIR_OVERRIDE
 else
-  TRIBITS_DIR=$TRILINOS_DIR/cmake/tribits
+  TRIBITS_DIR=$TRILINOS_SCRIPTS_DIR/cmake/tribits
 fi
 echo "TRIBITS_DIR=$TRIBITS_DIR"
 
@@ -123,11 +130,11 @@ CHANGED_FILES_FILE=$ORIG_CWD/changed-files.txt
 cd $TRILINOS_DIR/
 echo "Current directory: $PWD"
 echo
-echo "$GIT_EXEC diff --name-only $GIT_COMMIT_FROM..$GIT_COMMIT_TO > $CHANGED_FILES_FILE"
-$GIT_EXEC diff --name-only $GIT_COMMIT_FROM..$GIT_COMMIT_TO > $CHANGED_FILES_FILE
+echo "$GIT_EXEC diff --name-only ${GIT_COMMIT_FROM}..${GIT_COMMIT_TO} > ${CHANGED_FILES_FILE}"
+$GIT_EXEC diff --name-only ${GIT_COMMIT_FROM}..${GIT_COMMIT_TO} > ${CHANGED_FILES_FILE}
 cd $ORIG_CWD/
 echo
-echo "Wrote file 'checked-files.txt'"
+echo "Wrote file 'changed-files.txt'"
 echo
 echo "Current directory: $PWD"
 

@@ -93,6 +93,7 @@
 #include "MueLu_FineLevelInputDataFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
+#include "MueLu_GeometricInterpolationPFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -233,6 +234,7 @@ namespace MueLu {
       if (factoryName == "FineLevelInputDataFactory")          return Build2<FineLevelInputDataFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeneralGeometricPFactory")           return Build2<GeneralGeometricPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                    return Build2<GenericRFactory>                    (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "GeometricInterpolationPFactory")     return Build2<GeometricInterpolationPFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")               return Build2<LineDetectionFactory>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")                 return Build2<MapTransferFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixAnalysisFactory")              return Build2<MatrixAnalysisFactory>              (paramList, factoryMapIn, factoryManagersIn);

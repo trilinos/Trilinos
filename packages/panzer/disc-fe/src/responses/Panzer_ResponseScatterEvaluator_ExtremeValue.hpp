@@ -100,9 +100,6 @@ public:
                                         bool useMax,
                                         const Teuchos::RCP<ExtremeValueScatterBase> & functionalScatter);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
   void evaluateFields(typename Traits::EvalData d);
 
   void preEvaluate(typename Traits::PreEvalData d);

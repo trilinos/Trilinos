@@ -37,7 +37,7 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include <utility>                      // for pair
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
@@ -81,10 +81,11 @@ HexFixture::HexFixture(   MetaData& meta
   owns_mesh(false)
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 }
 
   HexFixture::HexFixture(   stk::ParallelMachine pm
@@ -114,10 +115,11 @@ HexFixture::HexFixture(   MetaData& meta
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 
@@ -148,10 +150,11 @@ HexFixture::HexFixture(   MetaData& meta
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordinate_name) )
   {
     //put coord-field on all nodes:
-    put_field(
+    put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension);
+      m_spatial_dimension,
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
   }
 
   HexFixture::HexFixture(   stk::ParallelMachine pm
@@ -182,10 +185,11 @@ HexFixture::HexFixture(   MetaData& meta
 {
 
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 
