@@ -657,6 +657,25 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
   )
 
+# FIXME (mfh 06 Sep 2018) The default GlobalOrdinal type is currently
+# encoded redundantly in two places:
+# core/src/Tpetra_Details_DefaultTypes.hpp, and here.  This is bad,
+# because if we change one, we must remember to change the other one.
+
+IF (Tpetra_INST_INT_INT)
+  GLOBAL_SET(Tpetra_DEFAULT_GLOBAL_ORDINAL "int")
+ELSEIF (Tpetra_INST_INT_LONG_LONG)
+  GLOBAL_SET(Tpetra_DEFAULT_GLOBAL_ORDINAL "long long")
+ELSEIF (Tpetra_INST_INT_LONG)
+  GLOBAL_SET(Tpetra_DEFAULT_GLOBAL_ORDINAL "long")
+ELSEIF (Tpetra_INST_INT_UNSIGNED_LONG)
+  GLOBAL_SET(Tpetra_DEFAULT_GLOBAL_ORDINAL "unsigned long")
+ELSEIF (Tpetra_INST_INT_UNSIGNED)
+  GLOBAL_SET(Tpetra_DEFAULT_GLOBAL_ORDINAL "unsigned")
+ELSE ()
+  MESSAGE (FATAL_ERROR "Unable to define Tpetra_DEFAULT_GLOBAL_ORDINAL type; this indicates either a bug in Tpetra's CMake logic, or some unusual user settings.")
+ENDIF ()
+
 IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
   IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
     MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")

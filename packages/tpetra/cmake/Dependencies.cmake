@@ -3,4 +3,5 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     Classic classic  PT  REQUIRED
     TSQR    tsqr     PT  OPTIONAL
     Core    core     PT  REQUIRED
+    New     new      PT  OPTIONAL
   )

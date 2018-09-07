@@ -8,15 +8,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ImportExport_new_UnitTests
-  SOURCES
-    ImportExport_new_UnitTests
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
 # This test only makes sense in an MPI build with > 1 processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport_ImportConstructExpert
@@ -32,16 +23,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Import_Union
   SOURCES
     Import_Union
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Import2_Union
-  SOURCES
-    Import2_Union
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"

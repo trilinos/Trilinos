@@ -108,7 +108,7 @@ ENDFUNCTION(TPETRA_NODE_MACRO_NAME)
 # SC [in] Original name of the Scalar type.
 #
 # GO [in] Original name of the GlobalOrdinal type.
-
+#
 # SC_MACRO_NAME [in] Macro-name version of SC.  The
 #   TPETRA_SLG_MACRO_NAME function (see above) implements the
 #   conversion process from the original name to the macro name.
@@ -253,7 +253,6 @@ FUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE CLASS_NAME
   # that the caller can see the result.
   SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ALL_SLGN_TEMPLATES)
-
 
 #
 # A) Package-specific configuration options
