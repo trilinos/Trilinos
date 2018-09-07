@@ -71,10 +71,10 @@ int main(int narg, char** arg)
 
   // Useful typedefs:  Tpetra types
   // In this example, we'll use Tpetra defaults for local/global ID type
-  typedef double scalar_t;
   typedef Tpetra::Map<> Map_t;
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_t;
   typedef Tpetra::CrsMatrix<scalar_t, localId_t, globalId_t> Matrix_t;
   typedef Tpetra::MultiVector<scalar_t, localId_t, globalId_t> MultiVector_t;
   typedef Tpetra::Vector<scalar_t, localId_t, globalId_t> Vector_t;
@@ -216,7 +216,7 @@ int main(int narg, char** arg)
     std::cout << "Norm of Redistributed matvec prod:  " << redistribNorm << std::endl;
 
   if (me == 0) {
-    const double epsilon = 0.00000001;
+    const scalar_t epsilon = 0.001;
     if (redistribNorm > origNorm+epsilon || redistribNorm < origNorm-epsilon)
       std::cout << "Mat-Vec product changed; FAIL" << std::endl;
     else

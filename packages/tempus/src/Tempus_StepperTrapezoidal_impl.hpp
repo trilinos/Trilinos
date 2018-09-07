@@ -65,6 +65,7 @@ void StepperTrapezoidal<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperTrapezoidal::initialize()\n");
 
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setObserver();
 }

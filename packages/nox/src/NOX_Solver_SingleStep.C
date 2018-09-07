@@ -62,11 +62,16 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
   paramsPtr(p),
   ignoreLinearSolverFailures(false),
-  updateJacobian(true)
+  updateJacobian(true),
+  printNorms(false),
+  computeRelativeNorm(false),
+  normF_0(0.0)
 {
   Teuchos::ParameterList validParams;
-  validParams.set("Ignore Linear Solver Failures",false);
-  validParams.set("Update Jacobian",true);
+  validParams.set("Ignore Linear Solver Failures",false,"Return the step as converged, ignoring the returned linear solver status.");
+  validParams.set("Update Jacobian",true,"Recompute the Jacobian at each Newton iteration.");
+  validParams.set("Print Norms",false,"Print the norms at each iteration.");
+  validParams.set("Compute Relative Norm",false, "Computes relative norm, print only if \"Print Norms\" is enabled.");
   p->sublist("Single Step Solver").validateParametersAndSetDefaults(validParams,0);
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
@@ -76,6 +81,8 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   updateJacobian = p->sublist("Single Step Solver").get<bool>("Update Jacobian");
   if (not updateJacobian)
     frozenJacobianPtr = solnPtr->clone(DeepCopy); // take ownership of Jacobian
+  printNorms =  p->sublist("Single Step Solver").get<bool>("Print Norms");
+  computeRelativeNorm =  p->sublist("Single Step Solver").get<bool>("Compute Relative Norm");
   init();
 }
 
@@ -137,6 +144,10 @@ bool NOX::Solver::SingleStep::try_step()
   if (!check(solnPtr->computeF(), "compute F"))
     return false;
 
+  if (computeRelativeNorm) {
+    normF_0 = solnPtr->getF().norm();
+  }
+
   if (updateJacobian) {
     if (!check(solnPtr->computeJacobian(), "compute Jacobian"))
       return false;
@@ -147,12 +158,12 @@ bool NOX::Solver::SingleStep::try_step()
 
   // Reuse memory in group instead of new allocation for dir
   NOX::Abstract::Vector& dir = const_cast<NOX::Abstract::Vector&>(solnPtr->getNewton());
-  const auto status = jacobian->applyJacobianInverse(paramsPtr->sublist("Linear Solver"),
-                                                     solnPtr->getF(),
-                                                     dir);
+  const auto ls_status = jacobian->applyJacobianInverse(paramsPtr->sublist("Linear Solver"),
+                                                        solnPtr->getF(),
+                                                        dir);
 
   if (!ignoreLinearSolverFailures) {
-    if (!check(status,"solve Newton system"))
+    if (!check(ls_status,"solve Newton system"))
       return false;
   }
 
@@ -242,6 +253,16 @@ void NOX::Solver::SingleStep::printUpdate()
   {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- The \"Nonlinear\" Solver Step -- \n";
+    if (printNorms) {
+      if (not solnPtr->isF())
+        solnPtr->computeF();
+      double normF = solnPtr->getF().norm();
+      double normDx = solnPtr->getNewtonPtr()->norm();
+      utilsPtr->out() << "||F||=" << normF << ", ||dx||=" << normDx;
+      if (computeRelativeNorm) {
+        utilsPtr->out() << ", ||F|| / ||F_0||=" << normF/normF_0;
+      }
+    }
     if (status == NOX::StatusTest::Converged)
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)

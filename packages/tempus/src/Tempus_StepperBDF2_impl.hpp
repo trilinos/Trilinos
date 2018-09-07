@@ -142,10 +142,12 @@ void StepperBDF2<Scalar>::setObserver(
 template<class Scalar>
 void StepperBDF2<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
+    std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperBDF2::initialize()\n");
 
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setStartUpStepper();
   this->setObserver();

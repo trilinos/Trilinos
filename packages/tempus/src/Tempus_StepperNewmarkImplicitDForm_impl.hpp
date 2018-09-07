@@ -136,6 +136,7 @@ StepperNewmarkImplicitDForm<Scalar>::initialize()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
 }
 

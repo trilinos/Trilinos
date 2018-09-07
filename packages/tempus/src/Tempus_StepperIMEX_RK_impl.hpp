@@ -32,8 +32,6 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setTableaus(Teuchos::null, stepperType);
   this->setParameterList(Teuchos::null);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -46,8 +44,6 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setTableaus(pList, "IMEX RK SSP2");
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -61,8 +57,6 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -374,6 +368,11 @@ void StepperIMEX_RK<Scalar>::initialize()
     std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperIMEX_RK::initialize()\n");
+
+  this->setTableaus(this->stepperPL_);
+  this->setParameterList(this->stepperPL_);
+  this->setSolver();
+  this->setObserver();
 
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();

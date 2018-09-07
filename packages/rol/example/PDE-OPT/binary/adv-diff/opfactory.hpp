@@ -61,7 +61,7 @@
 template<class Real>
 class BinaryAdvDiffFactory : public ROL::OptimizationProblemFactory<Real> {
 private:
-  const int dim_;
+  int dim_;
 
   ROL::ParameterList pl_;
   ROL::Ptr<const Teuchos::Comm<int>> comm_;
@@ -77,7 +77,11 @@ public:
   BinaryAdvDiffFactory(ROL::ParameterList                 &pl,
                  const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                  const ROL::Ptr<std::ostream>             &os)
-    : dim_(9), pl_(pl), comm_(comm), os_(os) {}
+    : pl_(pl), comm_(comm), os_(os) {
+    int nx = pl.sublist("Problem").get("Number Controls - X", 3);
+    int ny = pl.sublist("Problem").get("Number Controls - Y", 3);
+    dim_ = nx*ny;
+  }
 
   void update(void) {
     mesh_      = ROL::makePtr<MeshManager_adv_diff<Real>>(pl_);

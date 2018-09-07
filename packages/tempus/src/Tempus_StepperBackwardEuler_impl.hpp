@@ -128,6 +128,7 @@ void StepperBackwardEuler<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperBackwardEuler::initialize()\n");
 
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setPredictor();
   this->setObserver();

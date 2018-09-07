@@ -79,6 +79,9 @@ private:
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellDofValues_;
 
+  std::vector<Real> mx_, my_;
+  Real sx_, sy_;
+
 public:
   PDE_adv_diff(Teuchos::ParameterList &parlist) {
     // Finite element fields.
@@ -95,6 +98,19 @@ public:
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
     int cubDegree = parlist.sublist("PDE Poisson").get("Cubature Degree",2); // set cubature degree, e.g., 2
     cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
+
+    int nx = parlist.sublist("Problem").get("Number Controls - X", 3);
+    int ny = parlist.sublist("Problem").get("Number Controls - Y", 3);
+    mx_.resize(nx*ny); my_.resize(ny*ny);
+    for (int i = 0; i < nx; ++i) {
+      for (int j = 0; j < ny; ++j) {
+        int index = i + j*nx;
+        mx_[index] = static_cast<Real>(i+1)/static_cast<Real>(nx+1);
+        my_[index] = static_cast<Real>(j+1)/static_cast<Real>(ny+1);
+      }
+    }
+    sx_ = static_cast<Real>(1)/static_cast<Real>(6*(nx+1));
+    sy_ = static_cast<Real>(1)/static_cast<Real>(6*(ny+1));
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -485,11 +501,9 @@ private:
   }
 
   Real evaluateControlOperator(const std::vector<Real> &x, const int i) const {
-    const Real sx(0.05), sy(0.05), half(0.5);
-    const std::vector<Real> xl = {0.25, 0.50, 0.75, 0.25, 0.50, 0.75, 0.25, 0.50, 0.75};
-    const std::vector<Real> yl = {0.25, 0.25, 0.25, 0.50, 0.50, 0.50, 0.75, 0.75, 0.75};
-    return -std::exp(- half*(x[0]-xl[i])*(x[0]-xl[i]) / (sx*sx)
-                     - half*(x[1]-yl[i])*(x[1]-yl[i]) / (sy*sy));
+    const Real half(0.5);
+    return -std::exp(- half*(x[0]-mx_[i])*(x[0]-mx_[i]) / (sx_*sx_)
+                     - half*(x[1]-my_[i])*(x[1]-my_[i]) / (sy_*sy_));
   }
   
   void computeControlOperator(ROL::Ptr<Intrepid::FieldContainer<Real>> &ctrl,
