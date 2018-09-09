@@ -39,18 +39,19 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRANEW_MAP_FWD_HPP
-#define TPETRANEW_MAP_FWD_HPP
+#ifndef TPETRA_MULTIVECTOR_FWD_HPP
+#define TPETRA_MULTIVECTOR_FWD_HPP
 
-#include "TpetraCore_config.h"
+#include "Tpetra_Details_DefaultTypes.hpp"
 
-/// \file TpetraNew_Map_fwd.hpp
-/// \brief Forward declaration of TpetraNew::Map
+/// \file TpetraNew_MultiVector_fwd.hpp
+/// \brief Forward declaration of TpetraNew::MultiVector
 
 namespace TpetraNew {
 
-class Map;
+template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type>
+class MultiVector;
 
-} // namespace TpetraNew
+} // namespace Tpetra
 
-#endif // TPETRANEW_MAP_FWD_HPP
+#endif // TPETRA_MULTIVECTOR_FWD_HPP

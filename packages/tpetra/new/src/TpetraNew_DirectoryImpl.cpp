@@ -42,6 +42,10 @@
 #include "TpetraNew_DirectoryImpl.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
+// FIXME mfh 09 Sep 2018 I would really rather not have to include
+// this file.  It suggests that I haven't quite hooked up TpetraNew
+// correctly to TpetraCore yet.
+#include "Tpetra_Details_FixedHashTable_def.hpp"
 #include "Teuchos_Comm.hpp"
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
@@ -183,7 +187,7 @@ getEntriesImpl (const map_type& map,
   // local index on that process is g_R mod N_L.
 
   const size_type N_G =
-    static_cast<size_type> (map.getGlobalNumElements ());
+    static_cast<size_type> (map.getGlobalNumIndices ());
   const size_type P = static_cast<size_type> (comm->getSize ());
   const size_type N_L  = N_G / P;
   const size_type R = N_G - N_L * P; // N_G mod P
@@ -387,7 +391,7 @@ getEntriesImpl (const map_type& map,
   ArrayView<LO>::iterator lidIter = localIndices.begin();
   ArrayView<const GO>::iterator gidIter;
   for (gidIter = globalIndices.begin(); gidIter != globalIndices.end(); ++gidIter) {
-    if (map.isNodeGlobalElement (*gidIter)) {
+    if (map.isMyGlobalIndex (*gidIter)) {
       *procIter++ = myRank;
       if (computeLocalIndices) {
 	*lidIter++ = map.getLocalIndex (*gidIter);
@@ -424,7 +428,7 @@ getEntriesImpl (const map_type& map,
 
   RCP<const Teuchos::Comm<int> > comm = map.getComm ();
   const int numProcs = comm->getSize ();
-  const GO nOverP = map.getGlobalNumElements () / numProcs;
+  const GO nOverP = map.getGlobalNumIndices () / numProcs;
   const LO LINVALID = Teuchos::OrdinalTraits<LO>::invalid();
   ::Tpetra::LookupStatus res = ::Tpetra::AllIDsPresent;
 
@@ -553,7 +557,7 @@ initialize (const map_type& map,
   				     ::Tpetra::GloballyDistributed));
   
   // The number of Directory elements that my process owns.
-  const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
+  const size_t dir_numMyEntries = directoryMap_->getMyNumIndices ();
 
   // Fix for Bug 5822: If the input Map is "sparse," that is if
   // the difference between the global min and global max GID is
@@ -579,13 +583,13 @@ initialize (const map_type& map,
   // switch to a hash table - based implementation.
   const size_t inverseSparsityThreshold = 10;
   useHashTables_ =
-    (dir_numMyEntries >= inverseSparsityThreshold * map.getNodeNumElements());
+    (dir_numMyEntries >= inverseSparsityThreshold * map.getMyNumIndices());
 
   // Get list of process IDs that own the directory entries for the
   // Map GIDs.  These will be the targets of the sends that the
   // Distributor will do.
   const int myRank = comm->getRank ();
-  const size_t numMyEntries = map.getNodeNumElements ();
+  const size_t numMyEntries = map.getMyNumIndices ();
   Array<int> sendImageIDs (numMyEntries);
   ArrayView<const GO> myGlobalEntries = map.getNodeElementList ();
   // An ID not present in this lookup indicates that it lies outside
@@ -602,10 +606,10 @@ initialize (const map_type& map,
      "the following entries on the calling process " <<
      map.getComm ()->getRank () << ": " <<
      Teuchos::toString (map.getNodeElementList ()) << ", and has "
-     << map.getGlobalNumElements () << " total global indices in ["
+     << map.getGlobalNumIndices () << " total global indices in ["
      << map.getMinAllGlobalIndex () << "," << map.getMaxAllGlobalIndex ()
      << "].  The Directory Map has "
-     << directoryMap_->getGlobalNumElements () << " total global indices in "
+     << directoryMap_->getGlobalNumIndices () << " total global indices in "
      "[" << directoryMap_->getMinAllGlobalIndex () << "," <<
      directoryMap_->getMaxAllGlobalIndex () << "], and the calling process "
      "has GIDs [" << directoryMap_->getMinGlobalIndex () << "," <<
@@ -771,7 +775,7 @@ initialize (const map_type& map,
 	  ownedPidLidPairs[dirMapLid];
 	const size_t listLen = pidLidList.size();
 	if (listLen == 0) continue;  // KDD This will never happen
-	const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+	const GO dirMapGid = directoryMap_->getGlobalIndex (dirMapLid);
 	if (listLen > 1) {
 	  locallyOneToOne_ = false;
 	}
@@ -873,7 +877,7 @@ initialize (const map_type& map,
 	if (listLen == 0) continue;  // KDD will happen for GIDs not in
 	// KDD the user's source map
 	const LO dirMapLid = static_cast<LO> (i);
-	const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
+	const GO dirMapGid = directoryMap_->getGlobalIndex (dirMapLid);
 	if (listLen > 1) {
 	  locallyOneToOne_ = false;
 	}

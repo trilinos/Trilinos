@@ -42,6 +42,10 @@
 #include "TpetraNew_Map.hpp"
 #include "TpetraNew_Directory.hpp"
 #include "Tpetra_Details_FixedHashTable.hpp"
+// FIXME mfh 09 Sep 2018 I would really rather not have to include
+// this file.  It suggests that I haven't quite hooked up TpetraNew
+// correctly to TpetraCore yet.
+#include "Tpetra_Details_FixedHashTable_def.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_printOnce.hpp"
 #include "Tpetra_Core.hpp"

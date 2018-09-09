@@ -53,6 +53,9 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "TpetraNew_Details_Transfer.hpp"
+#include "TpetraNew_Import.hpp"
+#include "TpetraNew_Export.hpp"
 #include <memory>
 
 namespace TpetraNew {

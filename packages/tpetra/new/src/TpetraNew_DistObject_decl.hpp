@@ -52,10 +52,16 @@
 /// (TpetraNew_DistObject_decl.hpp).
 
 #include "TpetraNew_DistObject_fwd.hpp"
-#include "TpetraNew_Map.hpp"
-#include "TpetraNew_Import.hpp"
-#include "TpetraNew_Export.hpp"
+#include "TpetraNew_Map_fwd.hpp"
+#include "TpetraNew_Import_fwd.hpp"
+#include "TpetraNew_Export_fwd.hpp"
+#include "TpetraNew_Details_Transfer_fwd.hpp"
+
+#include "Tpetra_Details_DefaultTypes.hpp"
+#include "Tpetra_CombineMode.hpp"
 #include "Tpetra_SrcDistObject.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Describable.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_DualView.hpp"
 #include <type_traits>
@@ -67,6 +73,10 @@
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
 #  undef HAVE_TPETRA_TRANSFER_TIMERS
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+namespace Tpetra {
+  class Distributor; // forward declaration
+} // namespace Tpetra
 
 namespace KokkosClassic {
   /// \brief Read/write options for non-const views.
@@ -343,15 +353,20 @@ namespace TpetraNew {
     /// <tt>Scalar</tt> template parameter of subclasses.
     using packet_type = typename ::Kokkos::Details::ArithTraits<Packet>::val_type;
     //! The type of local indices.
-    using local_ordinal_type = Map::local_ordinal_type;
+    using local_ordinal_type =
+      ::Tpetra::Details::DefaultTypes::local_ordinal_type;
     //! The type of global indices.
-    using global_ordinal_type = Map::global_ordinal_type;
+    using global_ordinal_type =
+      ::Tpetra::Details::DefaultTypes::global_ordinal_type;
     //! The Kokkos execution space.
-    using execution_space = Map::execution_space;
+    using execution_space =
+      ::Tpetra::Details::DefaultTypes::execution_space;
     //! The Kokkos memory space.
-    using memory_space = Map::memory_space;
-    //! The Kokkos::Device specialization.
-    using device_type = Kokkos::Device<execution_space, memory_space>;
+    using memory_space =
+      ::Tpetra::Details::DefaultTypes::memory_space;
+    //! The Kokkos::Device type.
+    using device_type =
+      ::Tpetra::Details::DefaultTypes::device_type;
 
   private:
     typedef typename Kokkos::View<packet_type*, device_type>::size_type view_size_type;

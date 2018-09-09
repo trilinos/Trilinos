@@ -192,12 +192,12 @@ IF (TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
 
   # Generate ETI .cpp files for TpetraNew::MultiVector.
-  #
-  # mfh 07 Sep 2018: TpetraNew doesn't have MultiVector yet.
-  # Once it does, uncomment the two commands below.
-  #
-  # TPETRANEW_PROCESS_ALL_S_TEMPLATES(NEW_MULTIVECTOR_OUTPUT_FILES "TpetraNew_ETI_SC.tmpl" "MultiVector" "MULTIVECTOR" "${MultiVector_ETI_SCALARS}" "${Tpetra_DEFAULT_GLOBAL_ORDINAL}" TRUE)
-  # LIST(APPEND SOURCES ${NEW_MULTIVECTOR_OUTPUT_FILES})
+  TPETRANEW_PROCESS_ALL_S_TEMPLATES(NEW_MULTIVECTOR_OUTPUT_FILES "TpetraNew_ETI_SC.tmpl" "MultiVector" "MULTIVECTOR" "${MultiVector_ETI_SCALARS}" "${Tpetra_DEFAULT_GLOBAL_ORDINAL}" TRUE)
+  LIST(APPEND SOURCES ${NEW_MULTIVECTOR_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for TpetraNew::Vector.
+  TPETRANEW_PROCESS_ALL_S_TEMPLATES(NEW_VECTOR_OUTPUT_FILES "TpetraNew_ETI_SC.tmpl" "Vector" "VECTOR" "${MultiVector_ETI_SCALARS}" "${Tpetra_DEFAULT_GLOBAL_ORDINAL}" TRUE)
+  LIST(APPEND SOURCES ${NEW_VECTOR_OUTPUT_FILES})
 
   # DistObject requires the same Scalar type instantiations as
   # MultiVector, plus Scalar = char (for CrsMatrix).
@@ -232,4 +232,5 @@ SET_PROPERTY(
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory.  That ensures that running "make"
 # will also rerun CMake in order to regenerate Makefiles.
+# Here is another change.
 #

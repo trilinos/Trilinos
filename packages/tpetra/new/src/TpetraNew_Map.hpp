@@ -207,7 +207,7 @@ namespace TpetraNew {
     //! The Kokkos execution space.
     using execution_space = ::Tpetra::Details::DefaultTypes::execution_space;
     //! The Kokkos memory space.
-    using memory_space = execution_space::memory_space;
+    using memory_space = ::Tpetra::Details::DefaultTypes::memory_space;
 
     /// \brief The Kokkos device type over which to allocate Views and
     ///   perform work.
@@ -215,7 +215,7 @@ namespace TpetraNew {
     /// A Kokkos::Device is an (execution_space, memory_space) pair.
     /// It defines where the Map's data live, and where Map might
     /// choose to execute parallel kernels.
-    using device_type = Kokkos::Device<execution_space, memory_space>;
+    using device_type = ::Tpetra::Details::DefaultTypes::execution_space;
 
     //! DEPRECATED; DO NOT USE.
     using node_type =

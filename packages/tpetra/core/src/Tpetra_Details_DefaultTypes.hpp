@@ -101,6 +101,14 @@ namespace DefaultTypes {
 #    error "No default Tpetra Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
+  /// \typedef memory_space
+  /// \brief Default Tpetra memory space.
+  using memory_space = execution_space::memory_space;
+
+  /// \typedef device_type
+  /// \brief Default Kokkos::Device that Tpetra uses.
+  using device_type = Kokkos::Device<execution_space, memory_space>;
+
   //! Default value of Node template parameter.
   using node_type = ::Kokkos::Compat::KokkosDeviceWrapperNode<execution_space>;
 } // namespace DefaultTypes
