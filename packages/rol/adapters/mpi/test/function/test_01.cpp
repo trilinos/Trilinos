@@ -54,7 +54,8 @@
 typedef double Real;
 
 void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
-void run_VectorExport_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
+void run_VectorExportToCoarse_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
+void run_VectorExportToFine_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
 
 int main(int argc, char* argv[]) 
 {
@@ -83,8 +84,11 @@ int main(int argc, char* argv[])
     (*outStream) << "Running TimeStamp test" << std::endl;
     run_TimeStamp_test(MPI_COMM_WORLD, outStream,numSteps);
 
-    (*outStream) << "Running VectorExport test" << std::endl;
-    run_VectorExport_test(MPI_COMM_WORLD, outStream,numSteps);
+    (*outStream) << "Running VectorExportToCoarse test" << std::endl;
+    run_VectorExportToCoarse_test(MPI_COMM_WORLD, outStream,numSteps);
+
+    (*outStream) << "Running VectorExportToFine test" << std::endl;
+    run_VectorExportToFine_test(MPI_COMM_WORLD, outStream,numSteps);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
@@ -198,7 +202,7 @@ void run_TimeStamp_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,
   }
 }
 
-void run_VectorExport_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int local_Nt)
+void run_VectorExportToCoarse_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int local_Nt)
 {
   typedef ROL::Ptr<ROL::Vector<Real>> PtrVector;
   typedef ROL::Ptr<ROL::PinTVector<Real>> PtrPinTVector;
@@ -326,6 +330,105 @@ void run_VectorExport_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStre
 
         throw std::logic_error(ss.str());
       }
+    }
+  }
+}
+
+void run_VectorExportToFine_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int local_Nt)
+{
+  typedef ROL::Ptr<ROL::Vector<Real>> PtrVector;
+  typedef ROL::Ptr<ROL::PinTVector<Real>> PtrPinTVector;
+  
+  int numRanks = -1;
+  int myRank = -1;
+
+  std::stringstream ss;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
+  auto  Nt  = numRanks*local_Nt; // use a power of two
+  double dt = totaltime/Nt;
+
+  int spatialProcs = 1;
+  ROL::Ptr<ROL::PinTCommunicators> fineComm = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spatialProcs);
+  ROL::Ptr<ROL::PinTCommunicators> crseComm = fineComm->buildCoarseCommunicators();
+  ROL::Ptr<const ROL::PinTVectorCommunication<Real>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<Real>>();
+
+  // allocate fine vector
+  PtrPinTVector fine_vec;
+  int spaceSize = 20;
+  {
+    std::vector<Real> data(spaceSize,0.0);
+    PtrVector vec = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtrFromRef(data));
+
+    std::vector<int> stencil = {-1,0};
+    fine_vec = ROL::makePtr<ROL::PinTVector<Real>>(fineComm,vectorComm,vec,local_Nt*numRanks,stencil);
+  }
+
+  // allocate coarse vector
+  PtrPinTVector crse_vec;
+  if(not ROL::is_nullPtr(crseComm)) {
+    std::vector<Real> data(spaceSize,0.0);
+    PtrVector vec = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtrFromRef(data));
+
+    std::vector<int> stencil = {-1,0};
+    crse_vec = ROL::makePtr<ROL::PinTVector<Real>>(crseComm,vectorComm,vec,2*local_Nt*numRanks/2,stencil);
+
+    // allocate and fill a fine vector
+    for(int i=-1;i<crse_vec->numOwnedSteps();i++) {
+      auto v = crse_vec->getVectorPtr(i);
+      v->setScalar(Real(myRank)+(i+1.0)/(crse_vec->numOwnedSteps()+1.0)); // EXPECTED VALUE
+    }
+  }
+
+  MPI_Barrier(fineComm->getTimeCommunicator());
+
+  // recv data
+  if(not ROL::is_nullPtr(crseComm)) {
+
+    // build a STL vector with the fine vectors
+    std::vector<ROL::Ptr<ROL::Vector<Real>>> crseVectors_a(local_Nt+1,ROL::nullPtr);
+    std::vector<ROL::Ptr<ROL::Vector<Real>>> crseVectors_b(local_Nt+1,ROL::nullPtr);
+    for(int i=-1;i<local_Nt;i++)
+      crseVectors_a[i+1] = crse_vec->getVectorPtr(i); 
+
+    for(int i=local_Nt-1;i<crse_vec->numOwnedSteps();i++)
+      crseVectors_b[i-local_Nt+1] = crse_vec->getVectorPtr(i); 
+
+    // send data
+    ROL::PinT::sendToFineDistribution_Vector(crseVectors_a,crseVectors_b,*vectorComm,*fineComm);
+  }
+
+  // build a STL vector with the fine vectors
+  std::vector<ROL::Ptr<ROL::Vector<Real>>> fineVectors(fine_vec->numOwnedVectors());
+  for(int i=-1;i<fine_vec->numOwnedSteps();i++)
+    fineVectors[i+1] = fine_vec->getVectorPtr(i); 
+
+  ROL::PinT::recvFromCoarseDistribution_Vector(fineVectors,*vectorComm,*fineComm);
+
+  for(int i=-1;i<fine_vec->numOwnedSteps();i++) {
+    Real norm = fine_vec->getVectorPtr(i)->norm();
+
+    int coarseRank = (myRank % 2 ==0) ? myRank/2 : (myRank-1)/2;
+    int ts_i = (myRank % 2 ==0) ? i : i+local_Nt;
+
+    // the expected value is a function of the rank that sent it
+    // and the spatial index of the vector, see line labeled "EXPECTED VALUE"
+    Real expectedValue = 0.0;
+
+    expectedValue = Real(coarseRank)+(ts_i+1.0)/(8+1.0); // EXPECTED VALUE
+
+    Real expectedNorm  = std::sqrt(spaceSize*expectedValue*expectedValue);
+
+    if(std::fabs(norm-expectedNorm)/expectedNorm > 1e-15) {
+      ss << "Expected norm (" << expectedNorm << ") does not match computed norm (" << norm 
+         << ") on processor " << myRank << " vector " << i;
+
+      throw std::logic_error(ss.str());
     }
   }
 }

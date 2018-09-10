@@ -164,6 +164,8 @@ bool exportToCoarseDistribution_TimeStamps(const std::vector<ROL::TimeStamp<Real
   return false;
 }
 
+// next two functions communicate from the fine processor mesh to the coarse processor mesh
+
 /**
  * \brief Send a block of vectors to the corresponding processor in the coarse processor grid.
  *
@@ -239,8 +241,72 @@ void recvFromFineDistribution_Vector(std::vector<ROL::Ptr<ROL::Vector<RealT>>> &
   }
 }
 
-} // namespace ROL 
+// next two functions communicate from the coarse processor mesh to the fine processor mesh
+
+/**
+ * \brief Send a block of vectors to the corresponding processor in the coarse processor grid.
+ *
+ * Currently the implmentation will send two processors of vectors in the fine grid to one processor
+ * of vectors in the coarse grid
+ *
+ * \param[in] coarseVectors_a Coarse vectors to send to the fine grid processors a.
+ * \param[in] coarseVectors_a Coarse vectors to send to the fine grid processors b.
+ * \param[in] vectorComm Object that encapsulates vector communication
+ * \param[in] communicators Object that seperates spatial parallelism from temporal parallelism
+ *
+ * \note This asserts the coarseVectors size is "size_a + size_b"
+ */
+template <typename RealT>
+void sendToFineDistribution_Vector(const std::vector<ROL::Ptr<ROL::Vector<RealT>>> & coarseVectors_a,
+                                   const std::vector<ROL::Ptr<ROL::Vector<RealT>>> & coarseVectors_b,
+                                   const ROL::PinTVectorCommunication<RealT> & vectorComm,
+                                   const ROL::PinTCommunicators & communicators)
+{
+  MPI_Comm comm = communicators.getTimeCommunicator();
+  int myRank    = communicators.getTimeRank();
+
+  // send to your lower processor
+  for(size_t i=0;i<coarseVectors_a.size();i++) {
+    vectorComm.send(comm,2*myRank,*coarseVectors_a[i],i);
+  }
+
+  for(size_t i=0;i<coarseVectors_b.size();i++) {
+    vectorComm.send(comm,2*myRank+1,*coarseVectors_b[i],i);
+  }
+}
+
+/**
+ * \brief Recieve a block of vectors from the corresponding processor in the fine processor grid.
+ *
+ * Currently the implmentation will recieve from two processors vectors in the fine grid to one processor
+ * of vectors in the coarse grid
+ *
+ * \param[in] fineVectors Destination for any fine vectors
+ * \param[in] vectorComm Object that encapsulates vector communication
+ * \param[in] communicators Object that seperates spatial parallelism from temporal parallelism
+ */
+template <typename RealT>
+void recvFromCoarseDistribution_Vector(std::vector<ROL::Ptr<ROL::Vector<RealT>>> & fineVectors,
+                                     const ROL::PinTVectorCommunication<RealT> & vectorComm,
+                                     const ROL::PinTCommunicators & communicators)
+{
+  MPI_Comm comm = communicators.getTimeCommunicator();
+  int myRank    = communicators.getTimeRank();
+
+  int targetRank = -1;
+  if(myRank % 2 == 0) {
+    targetRank = myRank/2;
+  } else {
+    targetRank = (myRank-1)/2;
+  }
+
+  // send to your lower processor
+  for(int i=0;i<int(fineVectors.size());i++) {
+    vectorComm.recv(comm,targetRank,*fineVectors[i],i);
+  }
+}
+
+} // namespace PinT
 } // namespace ROL 
 
 #endif 
-
