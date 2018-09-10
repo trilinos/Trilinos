@@ -158,7 +158,6 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
@@ -208,7 +207,6 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
@@ -264,7 +262,6 @@ struct GEMM< \
     const int M = C.extent(0); \
     const int N = C.extent(1); \
     const int K = A.extent(A_t?0:1); \
-    int strides[2]; \
     \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     bool B_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTB>::value; \
