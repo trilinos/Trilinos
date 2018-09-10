@@ -72,6 +72,7 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   validParams.set("Update Jacobian",true,"Recompute the Jacobian at each Newton iteration.");
   validParams.set("Print Norms",false,"Print the norms at each iteration.");
   validParams.set("Compute Relative Norm",false, "Computes relative norm, print only if \"Print Norms\" is enabled.");
+  validParams.sublist("Linear Solver"); // Allows for arbitrary/user defined linear solve parameters to be set
   p->sublist("Single Step Solver").validateParametersAndSetDefaults(validParams,0);
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
@@ -158,7 +159,7 @@ bool NOX::Solver::SingleStep::try_step()
 
   // Reuse memory in group instead of new allocation for dir
   NOX::Abstract::Vector& dir = const_cast<NOX::Abstract::Vector&>(solnPtr->getNewton());
-  const auto ls_status = jacobian->applyJacobianInverse(paramsPtr->sublist("Linear Solver"),
+  const auto ls_status = jacobian->applyJacobianInverse(paramsPtr->sublist("Single Step Solver").sublist("Linear Solver"),
                                                         solnPtr->getF(),
                                                         dir);
 

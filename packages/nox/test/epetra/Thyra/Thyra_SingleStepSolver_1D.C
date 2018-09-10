@@ -139,6 +139,8 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, WithResetModel)
   TEST_EQUALITY(solve_status.extraParameters->get<int>("Number of Iterations"), 1);
   TEST_EQUALITY(solve_status.solveStatus, ::Thyra::SOLVE_STATUS_CONVERGED);
 
+  nl_params->print(std::cout);
+
   Teuchos::TimeMonitor::summarize();
 }
 
@@ -266,6 +268,7 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
   nl_params->sublist("Single Step Solver").set("Update Jacobian", false);
   nl_params->sublist("Single Step Solver").set("Print Norms", true);
   nl_params->sublist("Single Step Solver").set("Compute Relative Norm", true);
+  nl_params->sublist("Single Step Solver").sublist("Linear Solver").set("Tolerance", 1.0e-7);
 
   // Create a Thyra nonlinear solver
   Teuchos::RCP< ::Thyra::NOXNonlinearSolver> solver =
