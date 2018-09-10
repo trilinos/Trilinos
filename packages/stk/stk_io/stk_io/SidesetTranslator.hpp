@@ -52,7 +52,7 @@ inline size_t get_number_sides_in_sideset(OutputParams &params,
 {
     const mesh::BulkData &bulk = params.bulk_data();
     const stk::mesh::Selector *subset_selector = params.get_subset_selector();
-    const stk::mesh::Selector *output_selector = params.get_output_selector();
+    const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
 
     const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(ssPart);
 
@@ -111,7 +111,7 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
 {
     const mesh::BulkData &bulk_data = params.bulk_data();
     const stk::mesh::Selector *subset_selector = params.get_subset_selector();
-    const stk::mesh::Selector *output_selector = params.get_output_selector();
+    const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
 
     const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(*part);
 
