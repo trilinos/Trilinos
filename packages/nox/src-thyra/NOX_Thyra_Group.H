@@ -307,6 +307,11 @@ namespace NOX {
 
       //@}
 
+      virtual int getNumIterationLastLinearSolve() const;
+
+      virtual NOX::Abstract::Group::ReturnType
+      getNormLastLinearSolveResidual(double& residual) const;
+
       virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -423,6 +428,15 @@ namespace NOX {
 
       //! If set to true, the preconditioner matrix values will be automatically updated via precFactory or ModelEvalautor. If set to false, the user must manually handle updating the preconditioner.
       bool updatePreconditioner_;
+
+      //! Number of iterations for last linear solve performed
+      mutable int num_iters_last_linear_solve_;
+
+      //! The norm of the linear system residual for the last linear solve performed
+      mutable double norm_last_linear_solve_residual_;
+
+      //! The status of the last linear solve performed
+      mutable NOX::Abstract::Group::ReturnType last_linear_solve_status_;
     };
 
   } // namespace LAPACK
