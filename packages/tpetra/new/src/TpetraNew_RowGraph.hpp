@@ -128,22 +128,37 @@ namespace TpetraNew {
     //! This graph's Export object.
     virtual Teuchos::RCP<const Export> getExporter () const = 0;
 
-    //! The number of global rows in the graph.
+    /// \brief The global number of rows in the graph.
+    ///
+    /// \note This used to return Tpetra::global_size_t, generally an
+    ///   unsigned type.  Now it returns global_ordinal_type, which
+    ///   may be signed.
     virtual global_ordinal_type getGlobalNumRows () const = 0;
 
-    //! The number of global columns in the graph.
+    /// \brief The global number of columns in the graph.
+    ///
+    /// \note This used to return Tpetra::global_size_t, generally an
+    ///   unsigned type.  Now it returns global_ordinal_type, which
+    ///   may be signed.
     virtual global_ordinal_type getGlobalNumCols () const = 0;
 
-    //! The number of rows that live on the calling process.
+    /// \brief The number of rows that live on the calling process.
+    ///
+    /// \note This used to return size_t, generally an unsigned type.
+    ///   Now it returns local_ordinal_type, which may be signed.
     virtual local_ordinal_type getMyNumRows () const = 0;
 
     /// \brief The number of rows that live on the calling process.    
     ///
-    /// \warning Don't call this; call getMyNumCols() instead.
+    /// \warning Don't call this; call getMyNumRows() instead.
     virtual local_ordinal_type TPETRA_DEPRECATED
     getNodeNumRows () const = 0;
 
-    //! The number of columns connected to the locally owned rows of this graph.
+    /// \brief The number of columns connected to the locally owned
+    ///   rows of this graph.
+    ///
+    /// \note This used to return size_t, generally an unsigned type.
+    ///   Now it returns local_ordinal_type, which may be signed.
     virtual local_ordinal_type getMyNumCols () const = 0;    
 
     /// \brief The number of columns connected to the locally owned rows of this graph.
@@ -156,15 +171,15 @@ namespace TpetraNew {
     virtual global_ordinal_type getIndexBase() const = 0;
 
     //! The global number of entries in the graph.
-    virtual size_t getGlobalNumEntries () const = 0;
+    virtual global_size_t getGlobalNumEntries () const = 0;
 
     //! The number of entries in the graph on the calling process.
-    virtual global_size_t getMyNumEntries () const = 0;
+    virtual size_t getMyNumEntries () const = 0;
 
     /// \brief The local number of entries in the graph.
     ///
     /// \warning Don't call this; call getMyNumEntries() instead.
-    virtual size_t TPETRA_DEPRECATED getNodeNumEntries() const = 0;
+    virtual size_t TPETRA_DEPRECATED getNodeNumEntries () const = 0;
 
     /// \brief Current number of entries on this process in the row,
     ///   specified by global index.
@@ -190,7 +205,7 @@ namespace TpetraNew {
     /// This returns local_ordinal_type because no row of the graph
     ///   may have more than local_ordinal_type entries.  (This
     ///   follows from the definition of column Map.)
-    virtual local_ordinal_type getGlobalMaxNumRowEntries () const = 0;
+    virtual global_ordinal_type getGlobalMaxNumRowEntries () const = 0;
 
     /// \brief The maximum number of entries in any row of the graph,
     ///   on this process.
@@ -209,7 +224,7 @@ namespace TpetraNew {
     //! Whether the graph stores its column indices as local indices.
     virtual bool isLocallyIndexed () const = 0;
 
-    //! Whether the graph stores its column indices as global indices.    
+    //! Whether the graph stores its column indices as global indices.
     virtual bool isGloballyIndexed () const = 0;
 
     /// \brief Whether fillComplete() has been called (without an
