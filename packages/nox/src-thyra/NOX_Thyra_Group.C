@@ -77,7 +77,10 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const bool rightScalingFirst):
   model_(model),
   rightScalingFirst_(rightScalingFirst),
-  updatePreconditioner_(true)
+  updatePreconditioner_(true),
+  num_iters_last_linear_solve_(0),
+  norm_last_linear_solve_residual_(0.0),
+  last_linear_solve_status_(NOX::Abstract::Group::Ok)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -150,7 +153,10 @@ Group(const NOX::Thyra::Vector& initial_guess,
   prec_(prec_op),
   prec_factory_(prec_factory),
   rightScalingFirst_(rightScalingFirst),
-  updatePreconditioner_(updatePreconditioner)
+  updatePreconditioner_(updatePreconditioner),
+  num_iters_last_linear_solve_(0),
+  norm_last_linear_solve_residual_(0.0),
+  last_linear_solve_status_(NOX::Abstract::Group::Ok)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(jacobianIsEvaluated && Teuchos::is_null(linear_op),std::runtime_error,
                              "ERROR - NOX::Thyra::Group(...) - linear_op is null but JacobianIsEvaluated is true. Impossible combination!");
@@ -211,7 +217,10 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   prec_factory_(source.prec_factory_),
   right_weight_vec_(source.right_weight_vec_),
   inv_right_weight_vec_(source.inv_right_weight_vec_),
-  rightScalingFirst_(source.rightScalingFirst_)
+  rightScalingFirst_(source.rightScalingFirst_),
+  num_iters_last_linear_solve_(source.num_iters_last_linear_solve_),
+  norm_last_linear_solve_residual_(source.norm_last_linear_solve_residual_),
+  last_linear_solve_status_(source.last_linear_solve_status_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -317,6 +326,10 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   if (nonnull(shared_jacobian_))
     if (this->isJacobian())
       shared_jacobian_->getObject(this);
+
+  num_iters_last_linear_solve_ = source.num_iters_last_linear_solve_;
+  norm_last_linear_solve_residual_ = source.norm_last_linear_solve_residual_;
+  last_linear_solve_status_ = source.last_linear_solve_status_;
 
   return *this;
 }
@@ -737,6 +750,18 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
   return gradient_vec_;
 }
 
+int NOX::Thyra::Group::getNumIterationLastLinearSolve() const
+{
+  return num_iters_last_linear_solve_;
+}
+
+NOX::Abstract::Group::ReturnType
+NOX::Thyra::Group::getNormLastLinearSolveResidual(double& residual) const
+{
+  residual = norm_last_linear_solve_residual_;
+  return last_linear_solve_status_;
+}
+
 
 void NOX::Thyra::Group::print() const
 {
@@ -797,15 +822,15 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
   }
 
-  // ToDo: Get the output statistics and achieved tolerance to pass
-  // back ...
+  norm_last_linear_solve_residual_ = solve_status.achievedTol;
+  last_linear_solve_status_ = NOX::Abstract::Group::Failed;
 
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
-    return NOX::Abstract::Group::Ok;
+    last_linear_solve_status_ = NOX::Abstract::Group::Ok;
   else if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED)
-    return NOX::Abstract::Group::NotConverged;
+    last_linear_solve_status_ = NOX::Abstract::Group::NotConverged;
 
-  return NOX::Abstract::Group::Failed;
+  return last_linear_solve_status_;
 }
 
 NOX::Abstract::Group::ReturnType

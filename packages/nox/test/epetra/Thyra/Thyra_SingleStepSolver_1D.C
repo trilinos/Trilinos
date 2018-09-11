@@ -246,10 +246,9 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "Belos");
   p->set("Preconditioner Type", "None");
-  // Pick params to make sure linear solver fails (we are testing to ignore this failure at the nonlinear solver level)
   p->sublist("Linear Solver Types").sublist("Belos").set("Solver Type","Block GMRES");
   p->sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Block GMRES").set("Convergence Tolerance",1.0e-8);
-  p->sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Block GMRES").set("Maximum Iterations",2);
+  p->sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Block GMRES").set("Maximum Iterations",100);
   p->sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Block GMRES").set("Verbosity",33);
   p->sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Block GMRES").set("Output Frequency",1);
   p->sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level","medium");
@@ -264,7 +263,7 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
   Teuchos::RCP<Teuchos::ParameterList> nl_params =
     Teuchos::rcp(new Teuchos::ParameterList);
   nl_params->set("Nonlinear Solver", "Single Step");
-  nl_params->sublist("Single Step Solver").set("Ignore Linear Solver Failures", true);
+  nl_params->sublist("Single Step Solver").set("Ignore Linear Solver Failures", false);
   nl_params->sublist("Single Step Solver").set("Update Jacobian", false);
   nl_params->sublist("Single Step Solver").set("Print Norms", true);
   nl_params->sublist("Single Step Solver").set("Compute Relative Norm", true);
@@ -314,6 +313,12 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
   TEST_ASSERT(solve_status.extraParameters->isType<int>("Number of Iterations"));
   TEST_EQUALITY(solve_status.extraParameters->get<int>("Number of Iterations"), 1);
   TEST_EQUALITY(solve_status.solveStatus, ::Thyra::SOLVE_STATUS_CONVERGED);
+  // Value is 50 for 4 mpi processes. Pad for different process counts
+  TEST_ASSERT(group->getNumIterationsLastLinearSolve() < 52);
+  double normLastLinearSolveResidual = 0.0;
+  auto lastLinearSolveStatus = group->getNormLastLinearSolveResidual(normLastLinearSolveResidual);
+  TEST_EQUALITY(lastLinearSolveStatus, NOX::Abstract::Group::Ok);
+  TEST_ASSERT(normLastLinearSolveResidual < 1.0e-7);
 
   if (Comm.MyPID() == 0)
     std::cout << "Final Parameters\n****************\n" << *nl_params << std::endl; 

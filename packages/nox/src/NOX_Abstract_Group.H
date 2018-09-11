@@ -512,6 +512,17 @@ namespace Abstract {
 
   //@}
 
+  /** @name "Linear Solve Statistics" functions. */
+  //@{
+
+  /*!  \brief Returns the number of iterations from the last linear
+       solve that was executed by a call to computeNewton() or
+       applyJacobianInverse().
+
+    \return number of iterations in last linear solve
+  */
+   virtual int getNumIterationsLastLinearSolve() const;
+
   /*!
     \brief
     Return the norm of the last linear solve residual as the result of
