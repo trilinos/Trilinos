@@ -85,6 +85,7 @@ int main( int argc, char* argv[] )
 
   try {
 
+/*
     (*outStream) << "getTimeStampsByLevel" << std::endl;
     (*outStream) << "**************************************************" << std::endl;
     run_test_getTimeStampsByLevel(MPI_COMM_WORLD, outStream);
@@ -100,22 +101,28 @@ int main( int argc, char* argv[] )
     (*outStream) << "prolongVectors" << std::endl;
     (*outStream) << "**************************************************" << std::endl;
     run_test_prolongVectors(MPI_COMM_WORLD, outStream);
+*/
 
-    (*outStream) << "buildCommunicators" << std::endl;
+    (*outStream) << "buildCommunicators " << myRank << std::endl;
     (*outStream) << "**************************************************" << std::endl;
     run_test_buildCommunicators(MPI_COMM_WORLD, outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
+  }
+  catch (...) {
+    *outStream << "ERROR: Unknown exception on " << myRank << "\n";
+    errorFlag = -1000;
   }; // end try
 
-  if(myRank==0) {
-    if (errorFlag != 0)
-      std::cout << "End Result: TEST FAILED\n";
-    else
-      std::cout << "End Result: TEST PASSED\n";
-  }
+  int errors = std::abs(errorFlag);
+  MPI_Allreduce(&errors,&errorFlag,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+
+  if (errorFlag != 0 && myRank==0)
+    std::cout << "End Result: TEST FAILED\n";
+  else if(myRank==0)
+    std::cout << "End Result: TEST PASSED\n";
 
   return 0;
 }
@@ -125,6 +132,8 @@ struct ConstraintData {
   ROL::Ptr<ROL::Vector<RealT>> state;
   ROL::Ptr<ROL::Vector<RealT>> control;
   ROL::Ptr<const ROL::PinTCommunicators> communicators;
+  ROL::Ptr<std::vector<ROL::TimeStamp<RealT>>> timeStamp;
+  RealT totalTime;
 };
 
 ConstraintData
@@ -232,6 +241,8 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   cd.state = state;
   cd.control = control;
   cd.communicators = communicators;
+  cd.timeStamp = timeStamp;
+  cd.totalTime = T;
 
   return cd;
 }
@@ -676,17 +687,28 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   ConstraintData cd = buildPinTConstraint(local_Nt,comm,outStream);
   Ptr<ROL::PinTConstraint<RealT>> pint_constraint = cd.constraint;
   pint_constraint->applyMultigrid(3);
-  pint_constraint->buildLevelCommunicators(*cd.state);
+  pint_constraint->buildLevels(*cd.state);
 
   auto comm_0 = pint_constraint->getLevelCommunicators(0);
   auto comm_1 = pint_constraint->getLevelCommunicators(1);
   auto comm_2 = pint_constraint->getLevelCommunicators(2);
+
+  auto ts_0 = pint_constraint->getTimeStampsByLevel_repart(0);
+  auto ts_1 = pint_constraint->getTimeStampsByLevel_repart(1);
+  auto ts_2 = pint_constraint->getTimeStampsByLevel_repart(2);
 
   if(myRank==0) {
     if(ROL::is_nullPtr(comm_0) || 
        ROL::is_nullPtr(comm_1) || 
        ROL::is_nullPtr(comm_2)) {
       ss << "Rank " << myRank << " has wrong communicators." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    if(ROL::is_nullPtr(ts_0) || 
+       ROL::is_nullPtr(ts_1) || 
+       ROL::is_nullPtr(ts_2)) {
+      ss << "Rank " << myRank << " has wrong time stamps." << std::endl;
       throw std::logic_error(ss.str());
     }
   }
@@ -697,6 +719,13 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
       ss << "Rank " << myRank << " has wrong communicators." << std::endl;
       throw std::logic_error(ss.str());
     }
+
+    if( ROL::is_nullPtr(ts_0) || 
+        ROL::is_nullPtr(ts_1) || 
+       !ROL::is_nullPtr(ts_2)) {
+      ss << "Rank " << myRank << " has wrong time stamps." << std::endl;
+      throw std::logic_error(ss.str());
+    }
   }
   else if(myRank==2) {
     if( ROL::is_nullPtr(comm_0) || 
@@ -705,12 +734,26 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
       ss << "Rank " << myRank << " has wrong communicators." << std::endl;
       throw std::logic_error(ss.str());
     }
+
+    if( ROL::is_nullPtr(ts_0) || 
+       !ROL::is_nullPtr(ts_1) || 
+       !ROL::is_nullPtr(ts_2)) {
+      ss << "Rank " << myRank << " has wrong time stamps." << std::endl;
+      throw std::logic_error(ss.str());
+    }
   }
   else if(myRank==3) {
     if( ROL::is_nullPtr(comm_0) || 
        !ROL::is_nullPtr(comm_1) || 
        !ROL::is_nullPtr(comm_2)) {
       ss << "Rank " << myRank << " has wrong communicators." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    if( ROL::is_nullPtr(ts_0) || 
+       !ROL::is_nullPtr(ts_1) || 
+       !ROL::is_nullPtr(ts_2)) {
+      ss << "Rank " << myRank << " has wrong time stamps." << std::endl;
       throw std::logic_error(ss.str());
     }
   }
@@ -734,6 +777,67 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
     if(comm_2->getTimeSize()!=1 || comm_2->getTimeRank()!=myRank) {
       ss << "Rank " << myRank << " has wrong level 2 communicator." << std::endl;
       throw std::logic_error(ss.str());
+    }
+  }
+
+  // check the time stamps are built correctly
+  if(not ROL::is_nullPtr(ts_0)) {
+    // account for extra time stamp
+    if(ts_0->size()!=cd.timeStamp->size()+1) { 
+      ss << "Rank " << myRank << " has incorrect level 0 computed time stamps." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+
+    for(size_t i = 1; i<ts_0->size();i++) {
+      bool value = ts_0->at(i).t == cd.timeStamp->at(i-1).t;
+      // *outStream << "checking time stamp " << i << " on rank " << myRank << ": " << value << std::endl;
+
+      if(not value) {
+        ss << "Rank " << myRank << " has incorrect level 0 computed time stamps." << std::endl;
+        throw std::logic_error(ss.str());
+      }
+    }
+  }
+
+  if(not ROL::is_nullPtr(ts_1)) {
+    // account for extra time stamp
+    if(ts_1->size()!=cd.timeStamp->size()+1) { 
+      ss << "Rank " << myRank << " has incorrect level 1 computed time stamps. " << ts_1->size() << " " << cd.timeStamp->size() << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  if(not ROL::is_nullPtr(ts_2)) {
+    if(myRank!=0)
+      throw std::logic_error("Only expecting rank 0, found something else...something is seriously wrong!");
+
+    // account for extra time stamp
+    if(ts_2->size()!=cd.timeStamp->size()+1) { 
+      ss << "Rank " << myRank << " has incorrect level 2 computed time stamps." << std::endl;
+      throw std::logic_error(ss.str());
+    }
+ 
+    bool result = true;
+    // note that each level contributes to this one, and this is the last one!    
+    auto stamp_m1 = ts_2->at(0);
+    result &= (stamp_m1.t.size() == 2);
+
+    RealT dt = stamp_m1.t[1] - stamp_m1.t[0];
+    result &= (std::fabs(dt - cd.totalTime/(ts_2->size()-1.0)) <= 1e-14); // make sure step size is correct
+    *outStream << std::endl << dt << " or " << cd.totalTime/(ts_2->size()-1.0) << std::endl;
+
+    for(int i=1;i<ts_2->size();i++) {
+      auto stamp = ts_2->at(i);
+
+      result &= (stamp.t.size() == 2);
+      result &= (stamp.t[0] == (i-1) * dt);
+      result &= (stamp.t[1] == (i+0) * dt);
+
+      *outStream << "Stamp " << i << " " << stamp.t[0] << " " << stamp.t[1] << std::endl;
+    }
+
+    if(not result) {
+      throw std::logic_error("BUZZZZ!");
     }
   }
 }

@@ -49,6 +49,8 @@
 #include "ROL_PinTVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_SerialConstraint.hpp"
+#include "ROL_SerialConstraint.hpp"
+#include "ROL_PinTCommunicationUtilities.hpp"
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -115,6 +117,7 @@ private:
 
   Ptr<const std::vector<TimeStamp<Real>>>         userTimeStamps_;    // these are the untouched ones the user passes in
   Ptr<std::vector<TimeStamp<Real>>>               timeStamps_;        // these are used internally
+  std::vector<Ptr<std::vector<TimeStamp<Real>>>>  stamps_;            // these are used internally on each level
 
   // preconditioner settings
   bool applyMultigrid_;         // default to block jacobi
@@ -1013,49 +1016,6 @@ public:
                                     Real &tol) 
    {
      assert(false);
-/*
-     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-     auto u = xs.get_1(); // sim
-     auto z = xs.get_2(); // opt
- 
-     // update the solution vectors
-     this->update(x);
- 
-     // apply inverse of state jacobian on a single time step
-     
-     PinTVector<Real>       & pint_pv = dynamic_cast<PinTVector<Real>&>(pv);
-     const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
-     const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(*u);
-     const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(*z);
-       // its possible we won't always want to cast to a PinT vector here
-  
-     assert(pint_pv.numOwnedSteps()==pint_u.numOwnedSteps());
-     assert(pint_pv.numOwnedSteps()==pint_v.numOwnedSteps());
- 
-     // these don't change, do boundary exchange
-     pint_u.boundaryExchange();
-     pint_z.boundaryExchange();
- 
-     // now we are going to do a relaxation sweep: x = xhat+omega * Minv * (b-A*xhat)
-     /////////////////////////////////////////////////////////////////////////////////////////
-     
-     int numSweeps = numSweeps_;
-     Real omega = omega_;
-     
-     int level = 0;
-     if(not multigridEnabled()) {
-       pint_pv.zero();
-       weightedJacobiRelax(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
-     }
-     else if(multigridEnabled()) {
-       pint_pv.zero();
-       multigridInTime(pint_pv,pint_v,pint_u,pint_z,omega,numSweeps,tol,level);
-     }
-     else {
-       // unreachable :(
-       pv.set(v.dual());
-     } 
-*/
    }
 
    // restriction and prolongation functions
@@ -1063,20 +1023,41 @@ public:
    
    ROL::Ptr<const PinTCommunicators> getLevelCommunicators(int level) const
    { return communicators_[level]; }
+
+   Ptr<std::vector<TimeStamp<Real>>> getTimeStampsByLevel_repart(int level) const
+   {
+     return stamps_[level];
+   }
    
-   void buildLevelCommunicators(const Vector<Real> & level_0_ref)
+   /** 
+    * \brief Builds up communicators and time stamps for each level
+    *
+    * This currently doubles the size of the time step as it coarsens. This calls
+    * the recursive helper function buildLevelDataStructures to do most of the work
+    *
+    * \param[in] level_0_ref Reference vector that is used to pull out all the communication
+    *                        devices.
+    */
+   void buildLevels(const Vector<Real> & level_0_ref)
    {
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
 
+     // set the vector communicator
+     vectorComm_ = pint_ref.vectorCommunicationPtr();
+
      // we allocate the communicators with null
      communicators_.resize(maxLevels_);
-     vectorComm_ = pint_ref.vectorCommunicationPtr();
      communicators_[0] = pint_ref.communicatorsPtr();
 
-     buildLevelCommunicators(1);
+     // we allocate the time stamps vectors with null
+     stamps_.resize(maxLevels_);
+     stamps_[0] = timeStamps_;
+
+     buildLevelDataStructures(1);
    }
 
-   void buildLevelCommunicators(int level)
+   //! Recursive function that builds up the communicators and time stamps on coarse grids
+   void buildLevelDataStructures(int level)
    {
      // protect sanity
      assert(level>0);
@@ -1092,7 +1073,41 @@ public:
      // this will subdivide the communicators by two
      communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
 
-     buildLevelCommunicators(level+1);
+     // we now build the satmps to be distributed to other processors, we are halfing the size
+     auto & fineStamps = *stamps_[level-1];
+     std::vector<ROL::TimeStamp<Real>> sourceStamps((fineStamps.size()-1)/2); 
+     for(int i=1;i<fineStamps.size();i+=2) {
+       auto & stamp = sourceStamps[(i-1)/2];
+
+       // buld a stamp skipping one step
+       stamp.t.resize(2);
+       stamp.t[0] = fineStamps[i].t[0];
+       stamp.t[1] = fineStamps[i+1].t[1];
+     }
+
+     // export to coarse distribution always requires a reference to the stamps, however that is only filled
+     // if its on the right processor. The builtStamps states if that vector was filled.
+     ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>();
+     bool builtStamps = PinT::exportToCoarseDistribution_TimeStamps(sourceStamps,*stamps,*communicators_[level-1],0);
+
+     // setup false step (this is to ensure the control is properly handled
+     if(builtStamps) {
+       stamps_[level] = stamps;
+
+       Real ta = stamps_[level]->at(0).t.at(0);
+       Real tb = stamps_[level]->at(0).t.at(1);
+       Real dt =  tb-ta;
+ 
+       // the serial constraint should never see this!
+       ROL::TimeStamp<Real> stamp; 
+       stamp.t.resize(2);
+       stamp.t.at(0) = ta-dt;
+       stamp.t.at(1) = ta;
+
+       stamps_[level]->insert(stamps_[level]->begin(),stamp);
+     }
+
+     buildLevelDataStructures(level+1);
    }
 
    /**
