@@ -11,6 +11,9 @@
 
 #include "vtxlabel.hpp"
 #include "graph.h"
+#include "edgeDS.hpp"
+#include "lcaHeuristic.hpp"
+
 void read_edge_mesh(char* filename, int &n, unsigned &m, int*& srcs, int *&dsts, int*& grounded_flags, int ground_sensitivity){
   std::ifstream infile;
   std::string line;
@@ -144,6 +147,42 @@ void read_grounded_file(char* filename, int& n, int*& grounded_flags){
   }
 }
 
+void read_edge(char* filename, int& n, unsigned& m, int*& srcs, int*& dsts, edge_map<int>& visited_edges){
+  std::ifstream infile;
+  std::string line;
+  infile.open(filename);
+  
+  std::getline(infile, line, ' ');
+  n = atoi(line.c_str());
+  std::getline(infile, line);
+  m = strtoul(line.c_str(), NULL, 10) *2;
+  
+  int src, dst;
+  unsigned counter = 0;
+  
+  srcs = new int[m];
+  dsts = new int[m];
+  for(unsigned i = 0; i < (m/2); i++){
+    std::getline(infile, line, ' ');
+    src = atoi(line.c_str());
+    std::getline(infile, line);
+    dst = atoi(line.c_str());
+    
+    srcs[counter] = src;
+    dsts[counter] = dst;
+    ++counter;
+    srcs[counter] = dst;
+    dsts[counter] = src;
+    ++counter;
+   
+    edge e(src, dst);
+    e.validate();
+    visited_edges[e] = 0;
+  }
+  assert(counter == m);
+  infile.close();
+}
+
 void create_csr(int n, unsigned m, int* srcs, int* dsts, int*& out_array, unsigned*& out_degree_list, int& max_degree_vert, double& avg_out_degree){
   out_array = new int[m];
   out_degree_list = new unsigned[n+1];
@@ -181,6 +220,10 @@ void create_csr(int n, unsigned m, int* srcs, int* dsts, int*& out_array, unsign
   assert(avg_out_degree >= 0.0);
 }
 
+typedef Tpetra::Map<> map_t;
+typedef map_t::local_ordinal_type lno_t;
+typedef map_t::global_ordinal_type gno_t;
+typedef iceProp::vtxLabel scalar_t;
 
 void iceSheetDriver(int narg, char** arg){
   Tpetra::ScopeGuard scope(&narg, &arg);
@@ -276,7 +319,7 @@ void iceSheetDriver(int narg, char** arg){
   unsigned int localEdgeCounter = 0;
   int numcopies = 0;
    
-  for(int i = 0; i < m; i++){
+  for(unsigned i = 0; i < m; i++){
     if(localOwned[srcs[i]]){
       localSrcs[localEdgeCounter] = newId[srcs[i]];
       if(!localOwned[dsts[i]]){
@@ -316,15 +359,9 @@ void iceSheetDriver(int narg, char** arg){
   
   //create the gids array for the maps
   Teuchos::Array<gno_t> gids(nLocalOwned + numcopies);
-  int gidsCounter = 0;
   for(int i = 0; i < n; i++){
-    if(localOwned[i]) {
-      gids[gidsCounter++] = i;
-    }
-  }
-  for(int i = 0; i < n; i++) {
-    if(copies[i]) {
-      gids[gidsCounter++] = i;
+    if(newId[i]>-1) {
+      gids[newId[i]] = i;
     }
   }
   Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -391,7 +428,7 @@ void iceSheetDriver(int narg, char** arg){
   // Every processor checks its locally owned vertices' answers with the
   int local_mismatches = 0;
   for(int i = 0; i < nLocalOwned; i++){
-    if(remove[i]>-2 && !ans_removed[mapOwned->getGlobalElement(i)]){
+    if(remove[i]>-2 && !ans_removed[mapOwned->getGlobalElement(i)] || remove[i] == -2 && ans_removed[mapOwned->getGlobalElement(i)]){
       local_mismatches++;
       std::cout<<me<<": Found a mismatch, vertex "<<mapOwned->getGlobalElement(i)<<"\n";
     }
@@ -424,17 +461,162 @@ void bccDriver(int narg, char** arg) {
          timeDistribute(Teuchos::TimeMonitor::getNewTimer("01 DISTRIBUTE")),
          timeConstruct(Teuchos::TimeMonitor::getNewTimer("02 CONSTRUCT")),
          timeSolve(Teuchos::TimeMonitor::getNewTimer("03 SOLVE"));
+   
+  // read in the global graph on proc 0
+  int n;
+  int *srcs, *dsts;
+  int* potential_art_pts;
+  unsigned m;
+  timeFileRead->start();
+  if(me == 0){
+    edge_map<int> visited_edges;
+    int* out_array;
+    unsigned* out_degree_list;
+    int max_degree_vert;
+    double avg_out_degree;
+    read_edge(arg[1],n,m,srcs,dsts,visited_edges);
+    create_csr(n,m,srcs,dsts,out_array,out_degree_list,max_degree_vert, avg_out_degree);
+    graph* global = new graph({n,m,out_array,out_degree_list,max_degree_vert,avg_out_degree});
+    // run lca on the global graph on proc 0
+    findPotentialArtPts(global, potential_art_pts, visited_edges);
+  }
+  timeFileRead->stop();
+  //  distribute the src/dst arrays to other procs
+  timeDistribute->start();
+  Teuchos::broadcast<int,int>(*comm,0,1,&n); 
+  Teuchos::broadcast<int,unsigned>(*comm,0,1,&m);
+ 
+  if(me != 0){
+    srcs = new int[m];
+    dsts = new int[m];
+    potential_art_pts = new int[n];
+  }
   
-  //need to:
-  //  1) read in the global graph on proc 0
-  //  2) run lca on the global graph on proc 0
-  //  3) distribute the src/dst arrays to other procs
   //  4) distribute potential art-pts to other procs
+  Teuchos::broadcast<int,int>(*comm,0,m,srcs);
+  Teuchos::broadcast<int,int>(*comm,0,m,dsts);
+  Teuchos::broadcast<int,int>(*comm,0,n,potential_art_pts);
   //  5) build local graph instances
-  //  6) initialize propagation classes for local problem instances
-  //  7) call bccProp(); or whatever it'll be called
-  //  8) report the labeling.
+  int np = comm->getSize();
+  int nLocalOwned = n/np + (me < (n%np));
+  int vtxOffset = std::min(me, n%np)*(n/np + 1) + std::max(0, me - (n%np))*(n/np);
+  //std::cout<<me<<" : vertices go from "<<vtxOffset<<" to "<<vtxOffset + nLocalOwned-1<<"\n";
+   
+  //cut the global arrays down to local instances, keeping neighbors of owned vertices in the csr,
+  //note them as copies.
+
+  int *copies = new int[n];
+  int *localOwned = new int[n];
+  int *newId = new int[n];
+  int newIdCounter = 0;
   
+  for(int i = 0; i < n; i++){
+    copies[i] = 0;
+    if(i >= vtxOffset && i < vtxOffset+nLocalOwned){
+      localOwned[i] = 1;
+      newId[i] = newIdCounter++;
+    } else {
+      localOwned[i] = 0;
+      newId[i] = -1;
+    }
+  }
+
+  int *localSrcs = new int[m];
+  int *localDsts = new int[m];
+  unsigned int localEdgeCounter = 0;
+  int nLocalCopy = 0;
+
+  for(unsigned i = 0; i < m; i++){
+    if(localOwned[srcs[i]]){
+      localSrcs[localEdgeCounter] = newId[srcs[i]];
+      if(!localOwned[dsts[i]]){
+        if(copies[dsts[i]] == 0){
+          copies[dsts[i]] = 1;
+          nLocalCopy++;
+        }
+        if(newId[dsts[i]] < 0) newId[dsts[i]] = newIdCounter++;
+      }
+      localDsts[localEdgeCounter++] = newId[dsts[i]];
+    } else if(localOwned[dsts[i]]){
+      localDsts[localEdgeCounter] = newId[dsts[i]];
+      if(!localOwned[srcs[i]]){
+        if(copies[srcs[i]] == 0){
+          copies[srcs[i]] = 1;
+          nLocalCopy++;
+        }
+        if(newId[srcs[i]] < 0) newId[srcs[i]] = newIdCounter++;
+      }
+      localSrcs[localEdgeCounter++] = newId[srcs[i]];
+    }
+  }
+ 
+  /*std::cout<<"New VtxId Mapping:\n";
+  for(int i = 0; i < n; i++){
+    if(newId[i] > -1){
+      std::cout<<"\t"<<i<<" --> "<<newId[i]<<"\n";
+    }
+  }*/
+ 
+  //make new potential articulation point array for just the local graph instance
+  int* localPotentialArtPts = new int[nLocalOwned+nLocalCopy];
+  int* localGrounding = new int [nLocalOwned + nLocalCopy];
+  for(int i = 0; i < nLocalOwned+nLocalCopy; i++){
+    localPotentialArtPts[i] = 0;
+    localGrounding[i] = 0;
+  }
+  for(int i = 0; i < n; i++){
+    if(newId[i] > -1){
+      localPotentialArtPts[newId[i]] = potential_art_pts[i]*3;
+      //if(localPotentialArtPts[newId[i]] > 2) std::cout<<newId[i]<<" is a potential Art Pt\n";
+    }
+  }
+
+  //create the gids array for the maps
+  Teuchos::Array<gno_t> gids(nLocalOwned + nLocalCopy);
+  for(int i = 0; i < n; i++){
+    if(newId[i]>-1) {
+      gids[newId[i]] = i;
+    }
+  }
+  
+  Tpetra::global_size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  Teuchos::RCP<const map_t> mapWithCopies = rcp(new map_t(dummy,gids(),0,comm));
+  Teuchos::RCP<const map_t> mapOwned = rcp(new map_t(dummy, gids(0,nLocalOwned), 0, comm));
+
+  //create local csr graph instances from the local src/dst arrays
+  int* out_array;
+  unsigned* out_degree_list;
+  int max_degree_vert;
+  double avg_out_degree;
+  create_csr(newIdCounter, localEdgeCounter, localSrcs,localDsts,out_array, out_degree_list, max_degree_vert, avg_out_degree);
+  
+  graph* g = new graph({newIdCounter, localEdgeCounter, out_array, out_degree_list, max_degree_vert, avg_out_degree});
+  timeDistribute->stop();
+  //std::cout<<"Proc "<<me<<"'s graph\n";
+  //debug output to verify graph edges were correctly preserved
+  /*for(int i = 0; i < g->n; i++){
+    int out_degree = out_degree(g, i);
+    int* outs = out_vertices(g, i);
+    for(int j = 0;j < out_degree; j++){
+      std::cout<<i<<"("<<mapWithCopies->getGlobalElement(i)<<")--"<<outs[j]<<"("<<mapWithCopies->getGlobalElement(outs[j])<<")\n";
+    }
+  }*/
+  timeConstruct->start();
+  //  6) initialize propagation classes for local problem instances
+  iceProp::iceSheetPropagation prop(comm, mapOwned, mapWithCopies, g, localPotentialArtPts, localGrounding, nLocalOwned, nLocalCopy);
+  timeConstruct->stop();
+  timeSolve->start();
+  //  7) call bccProp(); or whatever it'll be called
+  Teuchos::ArrayRCP<const scalar_t> labels = prop.bccPropagate();
+  timeSolve->stop();
+  //  8) report/validate the labeling.
+  for(int i = 0; i < nLocalOwned; i++){
+    std::cout<<me<<": vtx "<<mapWithCopies->getGlobalElement(i)<<" belongs to bcc "<<labels[i].bcc_name;
+    if(labels[i].is_art) std::cout<<" -- Articulation Point";
+    std::cout<<"\n";
+  }
+  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::zeroOutTimers();
 }
 
 int main(int narg, char **arg)

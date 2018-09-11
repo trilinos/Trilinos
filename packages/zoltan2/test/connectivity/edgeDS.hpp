@@ -3,6 +3,7 @@
 #include<unordered_map>
 #include<assert.h>
 #include<unordered_set>
+#include<iostream>
 #include<stdlib.h>
 
 class edge {
@@ -22,7 +23,10 @@ public:
   int getU() const {return u;}
   int getV() const {return v;}
   void validate(void){
-    assert(u<v);
+    if(u > v){
+      std::cout<<u<<" is not less than or equal to "<<v<<"\n";
+    }
+    assert(u<=v);
   }
   
   bool operator==(const edge& rhs) const{
