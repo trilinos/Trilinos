@@ -63,11 +63,6 @@ namespace NOX {
 
 namespace NOX {
 
-namespace LineSearch {
-
-//! %Common line search utilites
-namespace Utils {
-
 //! Common counters that all line search algorithms should report.
 /*!
 
@@ -97,15 +92,15 @@ list are:
 
 */
 
-class Counters {
+class LineSearchCounters {
 
 public:
 
   //! Default constructor.
-  Counters();
+  LineSearchCounters();
 
   //! Destructor.
-  virtual ~Counters();
+  virtual ~LineSearchCounters();
 
   //! Reset the counters .
   virtual void reset();
@@ -186,8 +181,7 @@ private:
   //@}
 
 };
-} // namespace Utils
-} // namespace LineSearch
+
 } // namespace NOX
 
 #endif
