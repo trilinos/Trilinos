@@ -332,80 +332,80 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_2km_sensitivity4
-    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s4-answers.txt 4 i" 
-    NUM_MPI_PROCS 32 
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_2km_sensitivity3
-    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s3-answers.txt 3 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_2km_sensitivity2
-    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s2-answers.txt 2 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_2km_sensitivity1
-    ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s1-answers.txt 1 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_2km_sensitivity4
+    #ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s4-answers.txt 4 i" 
+    #NUM_MPI_PROCS 32 
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_2km_sensitivity3
+    #ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s3-answers.txt 3 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_2km_sensitivity2
+    #ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s2-answers.txt 2 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_2km_sensitivity1
+    #ARGS " ant2km.quad.msh ant2km-borders.quad.msh ant2km-basal-friction.ascii ant2km-s1-answers.txt 1 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
 
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_1km_sensitivity4
-    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s4-answers.txt 4 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_1km_sensitivity3
-    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s3-answers.txt 3 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_1km_sensitivity2
-    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s2-answers.txt 2 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-TRIBITS_ADD_TEST(
-    iceSheet
-    NAME iceSheet_Antarctica_1km_sensitivity1
-    ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s1-answers.txt 1 i" 
-    NUM_MPI_PROCS 32
-    COMM mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_1km_sensitivity4
+    #ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s4-answers.txt 4 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_1km_sensitivity3
+    #ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s3-answers.txt 3 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_1km_sensitivity2
+    #ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s2-answers.txt 2 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#TRIBITS_ADD_TEST(
+    #iceSheet
+    #NAME iceSheet_Antarctica_1km_sensitivity1
+    #ARGS " ant1km.quad.msh ant1km-borders.quad.msh ant1km-basal-friction.ascii ant1km-s1-answers.txt 1 i" 
+    #NUM_MPI_PROCS 32
+    #COMM mpi
+    #PASS_REGULAR_EXPRESSION "PASS"
+    #FAIL_REGULAR_EXPRESSION "FAIL"
+#)
+#
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
   SOURCE_FILES
     test1.quad.msh
@@ -436,14 +436,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_connectivity_tests
     ant4km-s3-answers.txt
     ant4km-s2-answers.txt
     ant4km-s1-answers.txt
-    ant2km.quad.msh
+    #ant2km.quad.msh
     ant2km-borders.quad.msh
     ant2km-basal-friction.ascii
     ant2km-s4-answers.txt
     ant2km-s3-answers.txt
     ant2km-s2-answers.txt
     ant2km-s1-answers.txt
-    ant1km.quad.msh
+    #ant1km.quad.msh
     ant1km-borders.quad.msh
     ant1km-basal-friction.ascii
     ant1km-s4-answers.txt
