@@ -217,6 +217,8 @@ namespace MueLuTests {
 
     for (int i=0;i<3;i++) {
 
+	out << "Aggregating Matrix " << i << "..." << std::endl;
+
 	Level level;
 	TestHelpers::TestFactory<Scalar, LO, GO, NO>::createSingleLevelHierarchy(level);
 
@@ -224,35 +226,52 @@ namespace MueLuTests {
 
 	level.Set("A",A_agg);
 
-	CoalesceDropFactory dropFact;
-	dropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.1));
+	//	RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+	RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory);
+	//dropFact.SetFactory("UnAmalgmationInfo", amalgFact);
+	dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.1));
 
-	level.Request("Graph", &dropFact);
-	level.Request("DofsPerNode", &dropFact);
-	level.Request("Filtering", &dropFact);
-	level.Request(dropFact);
+	// level.Request("Graph", &*dropFact);
+	// level.Request("DofsPerNode", &*dropFact);
+	// level.Request("Filtering", &*dropFact);
+	//	level.Request(*dropFact);
 
-	dropFact.Build(level);
+	// dropFact->Build(level);
 
-	RCP<GraphBase> graph = level.Get< RCP<GraphBase> >("Graph", &dropFact);
-	graph->print(out, Teuchos::VERB_EXTREME);
+	RCP<UncoupledAggregationFactory> aggFactory = rcp(new UncoupledAggregationFactory);
+	aggFactory->SetFactory("Graph", dropFact);
 
-	UncoupledAggregationFactory aggFactory;
+	// RCP<GraphBase> graph = level.Get< RCP<GraphBase> >("Graph", &*dropFact);
+	// graph->print(out, Teuchos::VERB_EXTREME);
 
-	level.Request("Aggregates", &aggFactory);
-	level.Request(aggFactory);
+	out << "Coalesce Drop: " << dropFact.get() << std::endl;
+	out << "Aggregation: " << aggFactory.get() << std::endl;
 
-	aggFactory.Build(level);
+	level.Request("Aggregates", aggFactory.get());
+	// level.Request(*aggFactory);
 
-	RCP<Aggregates> aggs = level.Get< RCP<Aggregates> >("Aggregates", &aggFactory);
+	out << "Building aggregates..." << std::endl;
+	
+	aggFactory->Build(level);
+
+	out << "Built aggregates! Getting them...\n" << std::endl;
+
+	RCP<Aggregates> aggs = level.Get< RCP<Aggregates> >("Aggregates", aggFactory.get());
+
+	out << "Got aggregates! Computing quality estimate...\n" << std::endl;
+
+	level.print(out, Teuchos::VERB_EXTREME);
 
 	AggregateQualityEstimateFactory aggQualityEstimateFactory;
+	aggQualityEstimateFactory.SetFactory("Aggregates", aggFactory);
 
 	level.Request("AggregateQualities", &aggQualityEstimateFactory);
-	level.Request(aggQualityEstimateFactory);
+	// level.Request(aggQualityEstimateFactory);
 
 	level.Set("A",A);
-	
+
+	aggQualityEstimateFactory.Build(level);	
+
 	RCP<MultiVector> aggQualities = level.Get< RCP<MultiVector> >("AggregateQualities", &aggQualityEstimateFactory);
     
 	ArrayRCP<const SC> aggQualitiesLocalData = aggQualities->getData(0);
@@ -269,9 +288,18 @@ namespace MueLuTests {
 
 	    std::sort(nodes.begin(), nodes.end());
 
-	    if (nodes[0]%nx == 0 || nodes[0]%nx == nx-1 || nodes[0]/nx == 0 || nodes[0]/nx == nx-1) {
-		continue;
+	    bool onBoundary = false;
+
+	    for (size_t k=0;k<nodes.size();++k) {
+
+		if (nodes[k]%nx == 0 || nodes[k]%nx == nx-1 || nodes[k]/nx == 0 || nodes[k]/nx == nx-1) {
+		    onBoundary = true;
+		    break;
+		}
+			
 	    }
+
+	    if (onBoundary) continue;
 
 	    bool assert_performed = false;
 
