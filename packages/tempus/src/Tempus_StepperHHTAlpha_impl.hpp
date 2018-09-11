@@ -250,9 +250,9 @@ void StepperHHTAlpha<Scalar>::takeStep(
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+        workingState->setSolutionStatus(Status::PASSED);
       else
-        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+        workingState->setSolutionStatus(Status::FAILED);
       Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
@@ -287,9 +287,9 @@ void StepperHHTAlpha<Scalar>::takeStep(
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
   }
   return;

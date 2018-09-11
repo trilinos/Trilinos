@@ -232,9 +232,9 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       status = this->solveNonLinear(this->wrapperModel_, *this->solver_, d_init, inArgs_);
 
       if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED ) {
-        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+        workingState->setSolutionStatus(Status::PASSED);
       } else {
-        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+        workingState->setSolutionStatus(Status::FAILED);
       }
 
       correctAcceleration(*a_old, *d_old, *d_init, dt);
@@ -316,9 +316,9 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       this->solveImplicitODE(initial_guess);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
