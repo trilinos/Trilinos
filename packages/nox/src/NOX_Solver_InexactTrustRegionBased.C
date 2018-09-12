@@ -494,11 +494,12 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     // Local reference to use in the remaining computation
     const NOX::Abstract::Vector& dir = *dirPtr;
 
+    // Compute new X
+    prePostOperator.runPreSolutionUpdate(dir,*this);
+    soln.computeX(*oldSolnPtr, dir, step);
+
     // Calculate true step length
     dx = step * (computeNorm(dir));
-
-    // Compute new X
-    soln.computeX(*oldSolnPtr, dir, step);
 
     // Compute F for new current solution.
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
@@ -830,6 +831,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
     NOX::Abstract::Vector& dir = *dirPtr;
 
     // Update X and compute new F
+    prePostOperator.runPreSolutionUpdate(dir,*this);
     soln.computeX(oldSoln, dir, step);
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
     if (rtype != NOX::Abstract::Group::Ok)

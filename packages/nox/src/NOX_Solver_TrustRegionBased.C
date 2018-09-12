@@ -356,11 +356,12 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
     // Local reference to use in the remaining computation
     const Abstract::Vector& dir = *dirPtr;
 
+    // Compute new X
+    prePostOperator.runPreSolutionUpdate(dir,*this);
+    soln.computeX(*oldSolnPtr, dir, step);
+
     // Calculate true step length
     dx = step * dir.norm();
-
-    // Compute new X
-    soln.computeX(*oldSolnPtr, dir, step);
 
     // Compute F for new current solution.
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();

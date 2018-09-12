@@ -72,6 +72,13 @@ void NOX::PrePostOperatorVector::runPostSolve(const NOX::Solver::Generic& solver
     (*i)->runPostSolve(solver);
 }
 
+void NOX::PrePostOperatorVector::runPreSolutionUpdate(const NOX::Abstract::Vector& update,
+                                                      const NOX::Solver::Generic& solver)
+{
+  for (it i=ppop_vec_.begin(); i != ppop_vec_.end(); ++i)
+    (*i)->runPreSolutionUpdate(update,solver);
+}
+
 void NOX::PrePostOperatorVector::runPreLineSearch(const NOX::Solver::Generic& solver)
 {
   for (it i=ppop_vec_.begin(); i != ppop_vec_.end(); ++i)

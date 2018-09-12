@@ -367,6 +367,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   workVec->update(mixParam,*precF);
   for (int ii=0; ii<nStore; ii++)
     workVec->update(-gamma(ii,0), *(xMat[ii]), -Rgamma(ii,0),*(qMat[ii]),1.0);
+  prePostOperator.runPreSolutionUpdate(*workVec,*this);
   bool ok = lineSearchPtr->compute(*solnPtr, stepSize, *workVec, *this);
   if (!ok)
   {
