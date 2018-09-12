@@ -47,11 +47,16 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_FancyOStream.hpp"
+
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"
 
 #include <iostream>
 #include <algorithm>
+
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "ROL_Bounds.hpp"
 #include "ROL_Stream.hpp"
@@ -79,6 +84,8 @@ public:
   ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con;
   ROL::Ptr<ROL::Vector<RealT>> state;
   ROL::Ptr<ROL::Vector<RealT>> control;
+  int myRank;
+  ROL::Ptr<std::ostream> outStream;
 
   void apply( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
   {
@@ -91,6 +98,8 @@ public:
   ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con;
   ROL::Ptr<ROL::Vector<RealT>> state;
   ROL::Ptr<ROL::Vector<RealT>> control;
+  int myRank;
+  ROL::Ptr<std::ostream> outStream;
 
   void apply( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
   {
@@ -103,10 +112,31 @@ public:
   }
 };
 
+inline void pauseToAttach(MPI_Comm mpicomm)
+{
+  Teuchos::RCP<Teuchos::Comm<int> > comm = 
+    Teuchos::createMpiComm<int>(Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setShowProcRank(true);
+  out.setOutputToRootOnly(-1);
+  
+  comm->barrier();
+
+  // try to get them to print out all at once
+  out << "PID = " << getpid() << std::endl;
+
+  if (comm->getRank() == 0)
+    getchar();
+  comm->barrier();
+}
+
 int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  // pauseToAttach(MPI_COMM_WORLD);
+
   ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
@@ -200,6 +230,7 @@ int main(int argc, char *argv[]) {
     pint_con->applyMultigrid(numLevels);
     pint_con->setSweeps(sweeps);
     pint_con->setRelaxation(omega);
+    pint_con->buildLevels(*state);
 
     /*************************************************************************/
     /***************** Run KKT Solver ***************************************/
@@ -212,10 +243,17 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*kkt_x_in);
     kkt_b->zero();
  
+   
+    if(myRank==0) {
+      (*outStream) << "Applying augmented KKT system" << std::endl;
+    }
+
     pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol); // b = A * x
 
-    if(myRank==0)
+    if(myRank==0) {
+      (*outStream) << "Applying augmented KKT system - complete" << std::endl;
       (*outStream) << std::endl;
+    }
 
     auto timer = Teuchos::TimeMonitor::getStackedTimer();
   
@@ -233,11 +271,15 @@ int main(int argc, char *argv[]) {
       kktOperator.pint_con = pint_con;
       kktOperator.state = state;
       kktOperator.control = control;
+      kktOperator.outStream = outStream;
+      kktOperator.myRank = myRank;
   
       MGRITKKTOperator mgOperator;
       mgOperator.pint_con = pint_con;
       mgOperator.state = state;
       mgOperator.control = control;
+      mgOperator.outStream = outStream;
+      mgOperator.myRank = myRank;
   
       Teuchos::ParameterList parlist;
       parlist.set("Absolute Tolerance",1.e-1);
@@ -250,11 +292,15 @@ int main(int argc, char *argv[]) {
       MPI_Barrier(MPI_COMM_WORLD);
       double t0 = MPI_Wtime();
   
-      pint_con->clearTimePerLevel();
-  
+      if(myRank==0)
+        (*outStream) << "Solving KKT system" << std::endl;
+
       timer->start("krylov");
       RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,mgOperator,iter,flag);
       timer->stop("krylov");
+
+      if(myRank==0)
+        (*outStream) << "Solving KKT system - complete" << std::endl;
   
       MPI_Barrier(MPI_COMM_WORLD);
       double tf = MPI_Wtime();
@@ -264,12 +310,6 @@ int main(int argc, char *argv[]) {
   
       if(myRank==0) {
         (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
-  
-        const std::vector<RealT> & timePerLevel = pint_con->getTimePerLevel();
-        (*outStream) << "Time per level = ";
-        for(RealT time : timePerLevel)
-          (*outStream) << time << " ";
-        (*outStream) << std::endl;
   
         (*outStream) << std::endl;
         (*outStream) << ss.str();
@@ -282,9 +322,9 @@ int main(int argc, char *argv[]) {
   }; // end try
 
   if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    std::cout << "End Result: TEST FAILED " << myRank << "\n";
   else
-    std::cout << "End Result: TEST PASSED\n";
+    std::cout << "End Result: TEST PASSED " << myRank << "\n";
 
   return 0;
 }

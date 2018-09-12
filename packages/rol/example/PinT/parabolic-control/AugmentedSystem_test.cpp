@@ -304,8 +304,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     MPI_Barrier(MPI_COMM_WORLD);
     double t0 = MPI_Wtime();
 
-    pint_con->clearTimePerLevel();
-
     timer->start("krylov");
     RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,mgOperator,iter,flag);
     timer->stop("krylov");
@@ -318,12 +316,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     if(myRank==0) {
       (*outStream) << "Krylov Iteration = " << iter << " " << (finalTol / res0) << " " << tf-t0 << std::endl;
-
-      const std::vector<RealT> & timePerLevel = pint_con->getTimePerLevel();
-      (*outStream) << "Time per level = ";
-      for(RealT time : timePerLevel) 
-        (*outStream) << time << " ";
-      (*outStream) << std::endl;
 
       (*outStream) << std::endl;
       (*outStream) << ss.str();

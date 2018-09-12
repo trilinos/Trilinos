@@ -193,7 +193,9 @@ void sendToCoarseDistribution_Vector(const std::vector<ROL::Ptr<ROL::Vector<Real
 
   // send to your lower processor
   for(size_t i=0;i<fineVectors.size();i++) {
-    vectorComm.send(comm,targetRank,*fineVectors[i],i);
+    auto & vec = *fineVectors[i];
+    // std::cout << "    sending " << myRank << "/" << communicators.getTimeSize() << " " << fineVectors[i] << std::endl;
+    vectorComm.send(comm,targetRank,vec,i);
   }
 }
 

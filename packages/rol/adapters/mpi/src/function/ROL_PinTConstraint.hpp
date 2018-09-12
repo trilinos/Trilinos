@@ -125,10 +125,11 @@ private:
   int numSweeps_;
   Real omega_;
   Real globalScale_;
-  std::vector<double> timePerLevel_; // given a MGRIT solve, what is the runtime for each level
 
   std::vector<Ptr<const PinTCommunicators>> communicators_;
   Ptr<const PinTVectorCommunication<Real>> vectorComm_; // object for sending whole vectors between processors
+
+  bool useRepart_;
 
   // Get the state vector required by the serial constraint object
   Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src)
@@ -198,6 +199,7 @@ public:
     , numSweeps_(1)
     , omega_(2.0/3.0)
     , globalScale_(0.99e0)
+    , useRepart_(false)
   { 
     initialize(stepConstraint,initialCond,timeStamps);
   }
@@ -219,18 +221,6 @@ public:
    */
   void setGlobalScale(Real o)
   { globalScale_ = o; }
-
-  /**
-   * Get the aggregate time per multigrid level. 
-   */
-  const std::vector<Real> & getTimePerLevel() const
-  { return timePerLevel_; }
-
-  /**
-   * Clear out the aggregate MGRIT timers
-   */
-  void clearTimePerLevel()
-  { return timePerLevel_.clear(); }
 
   /**
    * Turn on multigrid preconditioning in time with a specified number of levels.
@@ -312,7 +302,12 @@ public:
   Ptr<SerialConstraint<Real>> 
   getSerialConstraint(const Ptr<ROL::Vector<Real>> & ui,int level)
   {
-    auto timeStamps = getTimeStampsByLevel(level);
+    // should you access this by repartioned scheme?
+    Ptr<std::vector<TimeStamp<Real>>> timeStamps;
+    if(useRepart_)
+      timeStamps = getTimeStampsByLevel_repart(level);
+    else
+      timeStamps = getTimeStampsByLevel(level);
 
     if(ROL::is_nullPtr(timeDomainConstraint_)) {
       timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,*ui,timeStamps);
@@ -1054,6 +1049,8 @@ public:
      stamps_[0] = timeStamps_;
 
      buildLevelDataStructures(1);
+
+     useRepart_ = true;
    }
 
    //! Recursive function that builds up the communicators and time stamps on coarse grids
@@ -1124,8 +1121,36 @@ public:
        // no vector exists on this processor at this level
        return ROL::nullPtr;
      } else {
-       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
        return buildStatePinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     }
+   }
+
+   Ptr<Vector<Real>> allocateSimVector_local(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = communicators_[level-1];
+
+     if(ROL::is_nullPtr(comm)) {
+       // no vector exists on this processor at this level
+       return ROL::nullPtr;
+     } else {
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level-1);
+       return buildStatePinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1)/2,pint_ref.getVectorPtr(0)->clone());
+     }
+   }
+
+   Ptr<Vector<Real>> allocateSimVector_local_fine(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = communicators_[level];
+
+     if(ROL::is_nullPtr(comm)) {
+       // no vector exists on this processor at this level
+       return ROL::nullPtr;
+     } else {
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
+       return buildStatePinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1)*2,pint_ref.getVectorPtr(0)->clone());
      }
    }
 
@@ -1144,8 +1169,48 @@ public:
        return ROL::nullPtr;
      } else {
        // no vector exists on this processor at this level
-       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
        return buildControlPinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     }
+   }
+
+   /**
+    * \brief Allocate a simulation space vector at a particular multigrid level using repartitioning.
+    *         
+    * Here repartioning means that the coarse levels are on fewer processors.
+    */
+   Ptr<Vector<Real>> allocateOptVector_local(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = communicators_[level-1];
+     
+     if(ROL::is_nullPtr(comm)) {
+       // no vector exists on this processor at this level
+       return ROL::nullPtr;
+     } else {
+       // no vector exists on this processor at this level
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level-1);
+       return buildControlPinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1)/2,pint_ref.getVectorPtr(0)->clone());
+     }
+   }
+
+   /**
+    * \brief Allocate a simulation space vector at a particular multigrid level using repartitioning.
+    *         
+    * Here repartioning means that the coarse levels are on fewer processors.
+    */
+   Ptr<Vector<Real>> allocateOptVector_fine(const Vector<Real> & level_0_ref,int level) const
+   {
+     const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
+     auto comm = communicators_[level];
+     
+     if(ROL::is_nullPtr(comm)) {
+       // no vector exists on this processor at this level
+       return ROL::nullPtr;
+     } else {
+       // no vector exists on this processor at this level
+       Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel_repart(level);
+       return buildControlPinTVector(comm,vectorComm_,comm->getTimeSize()*(stamps->size()-1)*2,pint_ref.getVectorPtr(0)->clone());
      }
    }
    
@@ -1154,6 +1219,10 @@ public:
     */
    Ptr<Vector<Real>> allocateSimVector(const Vector<Real> & level_0_ref,int level) const
    {
+     // this is to unify the code
+     if(useRepart_) 
+       return allocateSimVector_repart(level_0_ref,level);
+
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      auto comm = pint_ref.communicatorsPtr();
      auto vectorComm = pint_ref.vectorCommunicationPtr();
@@ -1167,6 +1236,9 @@ public:
     */
    Ptr<Vector<Real>> allocateOptVector(const Vector<Real> & level_0_ref,int level) const
    {
+     if(useRepart_) 
+       return allocateOptVector_repart(level_0_ref,level);
+
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
      auto comm = pint_ref.communicatorsPtr();
      auto vectorComm = pint_ref.vectorCommunicationPtr();
@@ -1252,6 +1324,56 @@ public:
      }
    }
 
+   void restrictSimVector(const Vector<Real> & input,ROL::Ptr<Vector<Real>> & output,int level)
+   {
+     // if you don't want to repartition then just restrict the vector
+     if(not useRepart_) {
+       restrictSimVector(input,*output);
+
+       return;
+     }
+
+     // get the level communicators
+     auto comm    = getLevelCommunicators(level);
+     auto crsComm = getLevelCommunicators(level+1); // this will be null for processors that don't need it
+
+     // now we need to repartion, allocate a local output vector
+     auto output_local = allocateSimVector_local(input,level+1);
+
+     // compute restricted vector
+     restrictSimVector(input,*output_local);
+
+     const PinTVector<Real> & pint_local  = dynamic_cast<const PinTVector<Real>&>(*output_local);
+
+     // build a STL vector with the fine vectors
+     int startIndex = (comm->getTimeRank() % 2==0) ? -1 : 0;
+     std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors(pint_local.numOwnedSteps()-startIndex);
+     bool is_null = false;
+     for(int i=startIndex;i<pint_local.numOwnedSteps();i++) {
+       localVectors[i-startIndex] = pint_local.getVectorPtr(i); 
+       if(ROL::is_nullPtr(localVectors[i-startIndex]))
+         is_null = true; 
+     }
+
+     // now send the coarse vectors this to the coarse data structure
+     ROL::PinT::sendToCoarseDistribution_Vector(localVectors,*vectorComm_,*comm);
+
+     // recv data
+     if(not ROL::is_nullPtr(crsComm)) {
+       PinTVector<Real>       & pint_remote = dynamic_cast<PinTVector<Real>&>(*output);
+
+       // build a STL vector with the fine vectors
+       int localSize = pint_local.numOwnedSteps();
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> remoteVectors(2*localSize+1);
+       assert(pint_remote.numOwnedSteps()==2*localSize);
+
+       for(int i=-1;i<pint_remote.numOwnedSteps();i++)
+         remoteVectors[i+1] = pint_remote.getVectorPtr(i); 
+   
+       ROL::PinT::recvFromFineDistribution_Vector(remoteVectors,*vectorComm_,*comm,localSize+1,localSize);
+     }
+   }
+
    /**
     * \brief Restrict a control space vector
     *
@@ -1272,6 +1394,49 @@ public:
 
        out.axpy(1.0/2.0,*pint_input.getVectorPtr(2*k+0)); 
        out.axpy(1.0/2.0,*pint_input.getVectorPtr(2*k+1)); 
+     }
+   }
+
+   void restrictOptVector(const Vector<Real> & input,ROL::Ptr<Vector<Real>> & output,int level)
+   {
+     // if you don't want to repartition then just restrict the vector
+     if(not useRepart_) {
+       restrictOptVector(input,*output);
+
+       return;
+     }
+
+     // get the level communicators
+     auto comm    = getLevelCommunicators(level);
+     auto crsComm = getLevelCommunicators(level+1); // this will be null for processors that don't need it
+
+     // now we need to repartion, allocate a local output vector
+     auto output_local = allocateOptVector_local(input,level+1);
+
+     // compute restricted vector
+     restrictOptVector(input,*output_local);
+
+     const PinTVector<Real> & pint_local  = dynamic_cast<const PinTVector<Real>&>(*output_local);
+
+     // build a STL vector with the fine vectors
+     std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors(pint_local.numOwnedSteps());
+     for(int i=0;i<pint_local.numOwnedSteps();i++)
+       localVectors[i] = pint_local.getVectorPtr(i); 
+
+     // now send the coarse vectors this to the coarse data structure
+     ROL::PinT::sendToCoarseDistribution_Vector(localVectors,*vectorComm_,*comm);
+
+     // recv data
+     if(not ROL::is_nullPtr(crsComm)) {
+       PinTVector<Real>       & pint_remote = dynamic_cast<PinTVector<Real>&>(*output);
+
+       // build a STL vector with the fine vectors
+       int localSize = pint_local.numOwnedSteps();
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> remoteVectors(2*localSize);
+       for(int i=0;i<pint_remote.numOwnedSteps();i++)
+         remoteVectors[i] = pint_remote.getVectorPtr(i); 
+   
+       ROL::PinT::recvFromFineDistribution_Vector(remoteVectors,*vectorComm_,*comm,localSize,localSize);
      }
    }
 
@@ -1338,6 +1503,52 @@ public:
      }
    }
 
+   void prolongSimVector(const ROL::Ptr<const Vector<Real>> & input,Vector<Real> & output,int level)
+   {
+     // if you don't want to repartition then just restrict the vector
+     if(not useRepart_) {
+       prolongSimVector(*input,output);
+
+       return;
+     }
+
+     // get the level communicators
+     auto comm    = getLevelCommunicators(level);
+
+     // do this only on the coarse grid
+     if(not ROL::is_nullPtr(input)) {
+       // now we need to repartion, allocate a local output vector
+       auto output_local = allocateSimVector_local_fine(*input,level);
+
+       prolongSimVector(*input,*output_local);
+
+       const PinTVector<Real> & pint_local  = dynamic_cast<const PinTVector<Real>&>(*output_local);
+
+       int localSize = pint_local.numOwnedSteps()/2;
+
+       // build a STL vector with the fine vectors
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors_a(localSize+1,ROL::nullPtr);
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors_b(localSize+1,ROL::nullPtr);
+       for(int i=-1;i<localSize;i++)
+         localVectors_a[i+1] = pint_local.getVectorPtr(i); 
+
+       for(int i=localSize-1;i<pint_local.numOwnedSteps();i++)
+         localVectors_b[i-localSize+1] = pint_local.getVectorPtr(i); 
+
+       // send data
+       ROL::PinT::sendToFineDistribution_Vector(localVectors_a,localVectors_b,*vectorComm_,*comm);
+     }
+
+     PinTVector<Real> & pint_remote = dynamic_cast<PinTVector<Real>&>(output);
+
+     // build a STL vector with the fine vectors
+     std::vector<ROL::Ptr<ROL::Vector<Real>>> remoteVectors(pint_remote.numOwnedSteps()+1);
+     for(int i=-1;i<pint_remote.numOwnedSteps();i++)
+       remoteVectors[i+1] = pint_remote.getVectorPtr(i); 
+
+     ROL::PinT::recvFromCoarseDistribution_Vector(remoteVectors,*vectorComm_,*comm);
+   }
+
    /**
     * \brief Prolong a control space vector
     *
@@ -1358,6 +1569,64 @@ public:
        pint_output.getVectorPtr(2*k+0)->set(*pint_input.getVectorPtr(k)); 
        pint_output.getVectorPtr(2*k+1)->set(*pint_input.getVectorPtr(k)); 
      }
+   }
+
+   void prolongOptVector(const ROL::Ptr<const Vector<Real>> & input,Vector<Real> & output,int level)
+   {
+     // if you don't want to repartition then just restrict the vector
+     if(not useRepart_) {
+       prolongOptVector(*input,output);
+
+       return;
+     }
+
+     // get the level communicators
+     auto comm    = getLevelCommunicators(level);
+
+     std::string levelRankStr;
+     {
+       std::stringstream ss;
+       ss << "-" << level << "-";
+       if(ROL::is_nullPtr(comm))
+         ss << "null";
+       else
+         ss << comm->getTimeRank();
+       levelRankStr = ss.str();
+     }
+
+
+     // do this only on the coarse grid
+     if(not ROL::is_nullPtr(input)) {
+       // now we need to repartion, allocate a local output vector
+       auto output_local = allocateOptVector_fine(*input,level);
+
+       prolongOptVector(*input,*output_local);
+
+       const PinTVector<Real> & pint_local  = dynamic_cast<const PinTVector<Real>&>(*output_local);
+
+       int localSize = pint_local.numOwnedSteps()/2;
+
+       // build a STL vector with the fine vectors
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors_a(localSize,ROL::nullPtr);
+       std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors_b(localSize,ROL::nullPtr);
+       for(int i=0;i<localSize;i++)
+         localVectors_a[i] = pint_local.getVectorPtr(i); 
+
+       for(int i=localSize;i<pint_local.numOwnedSteps();i++)
+         localVectors_b[i-localSize] = pint_local.getVectorPtr(i); 
+
+       // send data
+       ROL::PinT::sendToFineDistribution_Vector(localVectors_a,localVectors_b,*vectorComm_,*comm);
+     }
+
+     PinTVector<Real> & pint_remote = dynamic_cast<PinTVector<Real>&>(output);
+
+     // build a STL vector with the fine vectors
+     std::vector<ROL::Ptr<ROL::Vector<Real>>> remoteVectors(pint_remote.numOwnedSteps());
+     for(int i=0;i<pint_remote.numOwnedSteps();i++)
+       remoteVectors[i] = pint_remote.getVectorPtr(i); 
+
+     ROL::PinT::recvFromCoarseDistribution_Vector(remoteVectors,*vectorComm_,*comm);
    }
 
    // KKT multigrid preconditioner
@@ -1546,11 +1815,25 @@ public:
 
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
 
+     // get the level communicators
+     auto comm = getLevelCommunicators(level);
+
      std::string levelStr = "";
+     std::string levelRankStr = "";
      {
        std::stringstream ss;
        ss << "-" << level;
        levelStr = ss.str();
+     }
+
+     {
+       std::stringstream ss;
+       ss << levelStr << "-";
+       if(ROL::is_nullPtr(comm))
+         ss << "null";
+       else
+         ss << comm->getTimeRank();
+       levelRankStr = ss.str();
      }
 
      timer->start("applyMGAugmentedKKT"+levelStr);
@@ -1575,11 +1858,13 @@ public:
 
      // apply one smoother sweep
      for(int i=0;i<numSweeps_;i++) {
+
        applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
        x.axpy(omega_,*dx);
 
        // compute the residual
        applyAugmentedKKT(*residual,x,u,z,tol,level);
+
        residual->scale(-1.0);
        residual->axpy(1.0,b);
      }
@@ -1610,21 +1895,23 @@ public:
        auto crs_correction_z = allocateOptVector(pint_z,level+1);
        auto crs_correction_v = allocateSimVector(pint_u,level+1);
 
-       restrictSimVector(*residual_u,*crs_residual_u);
-       restrictOptVector(*residual_z,*crs_residual_z);
-       restrictSimVector(*residual_v,*crs_residual_v);
+       restrictSimVector(*residual_u,crs_residual_u,level);
+       restrictOptVector(*residual_z,crs_residual_z,level);
+       restrictSimVector(*residual_v,crs_residual_v,level);
 
-       restrictSimVector(u,*crs_u);               // restrict the state to the coarse level
-       restrictOptVector(z,*crs_z);               // restrict the control to the coarse level
+       restrictSimVector(u,crs_u,level);               // restrict the state to the coarse level
+       restrictOptVector(z,crs_z,level);               // restrict the control to the coarse level
 
-       auto crs_correction = makePtr<PartitionedVector>({crs_correction_u,crs_correction_z,crs_correction_v});
-       auto crs_residual   = makePtr<PartitionedVector>({  crs_residual_u,  crs_residual_z,  crs_residual_v});
+       if(not ROL::is_nullPtr(getLevelCommunicators(level+1))) {
+         auto crs_correction = makePtr<PartitionedVector>({crs_correction_u,crs_correction_z,crs_correction_v});
+         auto crs_residual   = makePtr<PartitionedVector>({  crs_residual_u,  crs_residual_z,  crs_residual_v});
 
-       applyMultigridAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
+         applyMultigridAugmentedKKT(*crs_correction,*crs_residual,*crs_u,*crs_z,tol,level+1);
+       }
 
-       prolongSimVector(*crs_correction_u,*dx_u);
-       prolongOptVector(*crs_correction_z,*dx_z);
-       prolongSimVector(*crs_correction_v,*dx_v);
+       prolongSimVector(crs_correction_u,*dx_u,level);
+       prolongOptVector(crs_correction_z,*dx_z,level);
+       prolongSimVector(crs_correction_v,*dx_v,level);
 
        x.axpy(1.0,*dx);
      }
