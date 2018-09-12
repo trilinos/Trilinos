@@ -60,7 +60,7 @@
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
-
+#include "NOX_SolverStats.hpp"
 
 #define CHECK_RESIDUALS
 #define DEBUG_LEVEL 0
@@ -94,7 +94,7 @@ void NOX::Solver::TensorBased::init()
   status = NOX::StatusTest::Unconverged;
 
   // Reset counters
-  counter.reset();
+  counter->reset();
   numJvMults = 0;
   numJ2vMults = 0;
 
@@ -123,6 +123,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
   print = Teuchos::rcp(new NOX::LineSearch::Utils::Printing(utilsPtr));
+  counter = &globalDataPtr->getNonConstSolverStatistics()->line_search;
   slopeObj.reset(globalDataPtr);
   prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
 
@@ -820,11 +821,11 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
                       const NOX::Solver::Generic& s)
 {
   bool ok;
-  counter.incrementNumLineSearches();
+  counter->incrementNumLineSearches();
   isNewtonDirection = false;
   NOX::Abstract::Vector& searchDirection = *tensorVecPtr;
 
-  if ((counter.getNumLineSearches() == 1)  ||  (lsType == Newton))
+  if ((counter->getNumLineSearches() == 1)  ||  (lsType == Newton))
   {
     isNewtonDirection = true;
     searchDirection = *newtonVecPtr;
@@ -931,7 +932,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   // Update counter and temporarily hold direction if a linesearch is needed
   if (!isAcceptable)
   {
-    counter.incrementNumNonTrivialLineSearches();
+    counter->incrementNumNonTrivialLineSearches();
     *tmpVecPtr = lsDir;
   }
 
@@ -978,7 +979,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
     }
 
     // Update the number of linesearch iterations
-    counter.incrementNumIterations();
+    counter->incrementNumIterations();
     lsIterations ++;
 
     // Compute new trial point and its function value
@@ -1003,7 +1004,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 
   if (isFailed)
   {
-    counter.incrementNumFailedLineSearches();
+    counter->incrementNumFailedLineSearches();
 
     if (recoveryStepType == Constant)
     {
@@ -1038,7 +1039,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   }
 
   print->printStep(lsIterations, in_stepSize, fOld, fNew, message);
-  counter.setValues(paramsPtr->sublist("Line Search"));
+  counter->setValues(paramsPtr->sublist("Line Search"));
 
   return (!isFailed);
 }

@@ -126,6 +126,7 @@ APPEND_SET(HEADERS
   NOX_Solver_AndersonAcceleration.H
   NOX_Solver_PrePostOperator.H
   NOX_Solver_SingleStep.H
+  NOX_SolverStats.hpp
   )
 APPEND_SET(SOURCES
   NOX_Solver_Factory.C
