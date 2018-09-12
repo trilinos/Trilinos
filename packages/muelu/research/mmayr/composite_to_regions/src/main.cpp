@@ -734,6 +734,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "User input:" << std::endl
         << "  xml-file with MueLu configuration: " << xmlFileName << std::endl
+        << "  problem type: " << problemType << std::endl
         << "  Path to directory with region data: " << regionDataDirectory << std::endl;
   }
   Comm.Barrier();
