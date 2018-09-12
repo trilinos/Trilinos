@@ -168,6 +168,7 @@ bool NOX::Solver::SingleStep::try_step()
       return false;
   }
 
+  prePostOperator.runPreSolutionUpdate(dir,*this);
   solnPtr->computeX(*oldSolnPtr, dir, -1.0);
 
   return true;

@@ -58,25 +58,25 @@ namespace NOX {
   namespace Solver {
     class Generic;
   }
+  namespace Abstract {
+    class Vector;
+  }
 }
 
 namespace NOX {
 namespace Abstract {
 
-/*!
-
-  \brief %NOX's pure virtual class to allow users to insert pre and
-  post operations into nox's solvers (before and after the
+/** \brief %NOX's pure virtual class to allow users to insert user
+  defined operations into nox's solvers (before and after the
   NOX::Solver::Generic::iterate() and NOX::Solver::Generic::solve()
-  methods).
+  methods). This is an Observer from GoF design pattern book.
 
   The user should implement their own concrete implementation of this
   class and register it as a
   Teuchos::RCP<NOX::Abstract::PrePostoperator> in the "Solver
   Options" sublist.
 
-
-  To create and use a user defined pre/post operators:
+  To create and register a user defined pre/post operator:
 
   <ol>
 
@@ -98,73 +98,55 @@ namespace Abstract {
   \endcode
 
   </ol>
-
-  \author Roger Pawlowski (SNL 9233)
 */
 
 class PrePostOperator {
 
 public:
 
-  //! %Abstract %Vector constructor (does nothing)
-  PrePostOperator() {};
+  //! Constructor
+  PrePostOperator() {}
 
-  //! Copy constructor (doesnothing)
-  PrePostOperator(const NOX::Abstract::PrePostOperator& /*source*/) {};
+  //! Copy constructor
+  PrePostOperator(const NOX::Abstract::PrePostOperator& /*source*/) {}
 
-  //! %Abstract %Vector destructor (does nothing)
-  virtual ~PrePostOperator() {};
+  //! Destructor
+  virtual ~PrePostOperator() {}
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
-  virtual void runPreIterate(const NOX::Solver::Generic& solver);
+  virtual void runPreIterate(const NOX::Solver::Generic& solver) {}
 
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::iterate().
-  virtual void runPostIterate(const NOX::Solver::Generic& solver);
+  virtual void runPostIterate(const NOX::Solver::Generic& solver) {}
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::solve().
-  virtual void runPreSolve(const NOX::Solver::Generic& solver);
+  virtual void runPreSolve(const NOX::Solver::Generic& solver) {}
 
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::solve().
-  virtual void runPostSolve(const NOX::Solver::Generic& solver);
+  virtual void runPostSolve(const NOX::Solver::Generic& solver) {}
+
+  /** \brief User defined method that will be executed prior to the
+      update of the solution vector during a call to
+      NOX::Solver::Generic::step(). This is intended to allow users to
+      adjust the direction before the solution update, typically based
+      on knowledge of the problem formulation. The direction is const
+      as we can't guarantee that changes to the direction won't
+      violate assumptions of the solution algorithm. Users can change
+      the update/direciton after a const cast, but NOX may not
+      function as expected. Use at your own risk!
+
+      \param [in] update - the direction vector that will be used to update the solution. This will not 
+      \param [in] solver - the nox solver
+   */
+  virtual void runPreSolutionUpdate(const NOX::Abstract::Vector& update, const NOX::Solver::Generic& solver) {}
 
   //! User defined method that will be executed before a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
-  virtual void runPreLineSearch(const NOX::Solver::Generic& solver);
+  virtual void runPreLineSearch(const NOX::Solver::Generic& solver) {}
 
   //! User defined method that will be executed after a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
-  virtual void runPostLineSearch(const NOX::Solver::Generic& solver);
-
+  virtual void runPostLineSearch(const NOX::Solver::Generic& solver) {}
 }; // class PrePostOperator
 } // namespace Abstract
 } // namespace NOX
-
-inline void NOX::Abstract::PrePostOperator::
-runPreIterate(const NOX::Solver::Generic& /*solver*/) {
-  return;
-}
-
-inline void NOX::Abstract::PrePostOperator::
-runPostIterate(const NOX::Solver::Generic& /*solver*/) {
-  return;
-}
-
-inline void NOX::Abstract::PrePostOperator::
-runPreSolve(const NOX::Solver::Generic& /*solver*/) {
-  return;
-}
-
-inline void NOX::Abstract::PrePostOperator::
-runPostSolve(const NOX::Solver::Generic& /*solver*/) {
-  return;
-}
-
-inline void NOX::Abstract::PrePostOperator::
-runPreLineSearch(const NOX::Solver::Generic& /*solver*/) {
-  return;
-}
-
-inline void NOX::Abstract::PrePostOperator::
-runPostLineSearch(const NOX::Solver::Generic& /*solver*/) {
-  return;
-}
 
 #endif

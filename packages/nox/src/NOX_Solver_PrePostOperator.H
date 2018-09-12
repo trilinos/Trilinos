@@ -73,8 +73,8 @@ namespace NOX {
 
 namespace Solver {
 
-/*!
-  @brief Functor to process the pre/post operator object in the parameter list.
+/**  @brief Wrapper class to hide boilerplate from solvers that
+     process the pre/post operator object from the parameter list.
 
   This is a wrapper class for a user derived
   NOX::Abstract::PrePostOperator (ppo) object.  All solvers use this
@@ -85,7 +85,6 @@ namespace Solver {
 
   For instructions on how to implement a PrePostOperator, see
   NOX::Abstract::PrePostOperator.
-
 */
 class PrePostOperator {
 
@@ -125,6 +124,9 @@ public:
 
   //! User defined method that will be executed at the end of a call to NOX::Solver::Generic::solve().
   virtual void runPostSolve(const NOX::Solver::Generic& solver);
+
+  //! User defined method that will be executed during a call to NOX::Solver::GEneric::step().
+  virtual void runPreSolutionUpdate(const NOX::Abstract::Vector& update, const NOX::Solver::Generic& solver);
 
   //! User defined method that will be executed before a call to NOX::LineSearch::Generic::compute(). Only to be used in NOX::Solver::LineSearchBased!
   virtual void runPreLineSearch(const NOX::Solver::Generic& solver);
@@ -170,6 +172,14 @@ runPostSolve(const NOX::Solver::Generic& solver)
 {
   if (havePrePostOperator)
     prePostOperatorPtr->runPostSolve(solver);
+}
+
+inline void NOX::Solver::PrePostOperator::
+runPreSolutionUpdate(const NOX::Abstract::Vector& update,
+                     const NOX::Solver::Generic& solver)
+{
+  if (havePrePostOperator)
+    prePostOperatorPtr->runPreSolutionUpdate(update,solver);
 }
 
 inline void NOX::Solver::PrePostOperator::

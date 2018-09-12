@@ -79,6 +79,8 @@ public:
 
   void runPostSolve(const NOX::Solver::Generic& solver);
 
+  void runPreSolutionUpdate(const NOX::Abstract::Vector& update, const NOX::Solver::Generic& solver);
+
   void runPreLineSearch(const NOX::Solver::Generic& solver);
 
   void runPostLineSearch(const NOX::Solver::Generic& solver);
