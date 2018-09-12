@@ -1018,7 +1018,7 @@ namespace stk {
                                        FieldAndName &namedField,
                                        const Ioss::Field::RoleType filter_role)
     {
-        bool isFieldOnPart = false;
+        bool isValid = false;
 
         const stk::mesh::FieldBase *f = namedField.field();
         const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
@@ -1037,13 +1037,17 @@ namespace stk {
 
               if(sideblockPart->primary_entity_rank() == meta.side_rank()) {
                   const stk::mesh::EntityRank nodeRank = stk::topology::NODE_RANK;
-                  isFieldOnPart =
-                          are_field_and_part_on_common_entity_bucket(meta, *f, part, nodeRank);
+
+                  const std::vector<stk::mesh::FieldBase::Restriction> & restrictions = f->restrictions();
+                  if (restrictions.size() > 0 && f->entity_rank() == nodeRank)
+                  {
+                      isValid = true;
+                  }
               }
             }
         }
 
-        return isFieldOnPart;
+        return isValid;
     }
 
     void ioss_add_fields_to_hidden_nodeset(const stk::mesh::Part &part,
@@ -1052,13 +1056,17 @@ namespace stk {
                                            FieldAndName &namedField,
                                            const Ioss::Field::RoleType filter_role)
     {
-        const bool isFieldOnPart = is_valid_hidden_nodeset_field(part, part_type, entity, namedField, filter_role);
+        const bool isValid = is_valid_hidden_nodeset_field(part, part_type, entity, namedField, filter_role);
 
-        if(isFieldOnPart) {
+        if(isValid) {
             const stk::mesh::FieldBase *f = namedField.field();
-            const stk::mesh::EntityRank nodeRank = stk::topology::NODE_RANK;
-            const stk::mesh::MetaData &meta = mesh::MetaData::get(part);
-            const stk::mesh::FieldBase::Restriction *res = find_restriction_by_bucket(meta, *f, part, nodeRank);
+            const stk::mesh::FieldBase::Restriction *res = nullptr; //find_restriction_by_bucket(meta, *f, part, nodeRank);
+
+            const std::vector<stk::mesh::FieldBase::Restriction> & restrictions = f->restrictions();
+            if (restrictions.size() > 0 && f->entity_rank() == stk::topology::NODE_RANK)
+            {
+                res = &restrictions[0];
+            }
 
             if(res != nullptr) {
                 ioss_add_field_to_entity(f, *res, entity, namedField, filter_role);
