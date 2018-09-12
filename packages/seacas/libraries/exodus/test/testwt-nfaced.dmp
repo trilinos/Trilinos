@@ -1,8 +1,5 @@
 netcdf test-nfaced {
 dimensions:
-	len_string = 33 ;
-	len_line = 81 ;
-	four = 4 ;
 	len_name = 256 ;
 	time_step = UNLIMITED ; // (0 currently)
 	num_dim = 3 ;
@@ -16,7 +13,10 @@ dimensions:
 	num_el_in_blk1 = 3 ;
 	num_fac_per_el1 = 17 ;
 	num_qa_rec = 2 ;
+	four = 4 ;
+	len_string = 33 ;
 	num_info = 3 ;
+	len_line = 81 ;
 variables:
 	float time_whole(time_step) ;
 	int eb_status(num_el_blk) ;

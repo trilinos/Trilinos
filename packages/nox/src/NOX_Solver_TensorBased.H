@@ -59,7 +59,6 @@
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
-#include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 
@@ -68,6 +67,8 @@ namespace NOX {
   namespace Direction {
     class Generic;
   }
+
+  class LineSearchCounters;
 
 namespace Solver {
 
@@ -538,7 +539,7 @@ protected:
   Teuchos::RCP<NOX::LineSearch::Utils::Printing> print;
 
   //! Common common counters for line searches.
-  NOX::LineSearch::Utils::Counters counter;
+  NOX::LineSearchCounters* counter;
 
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;

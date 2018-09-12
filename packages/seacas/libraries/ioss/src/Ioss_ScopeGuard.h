@@ -44,11 +44,8 @@ template <class T> class RefHolder
 
 public:
   explicit RefHolder(T &ref) : ref_(ref) {}
-  operator T &() const { return ref_; }
-
-private:
-  // Disable assignment - not implemented
-  RefHolder &operator=(const RefHolder &);
+             operator T &() const { return ref_; }
+  RefHolder &operator=(const RefHolder &) = delete;
 };
 
 template <class T> inline RefHolder<T> ByRef(T &t) { return RefHolder<T>(t); }

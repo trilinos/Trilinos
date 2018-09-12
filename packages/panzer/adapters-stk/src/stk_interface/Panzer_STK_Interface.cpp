@@ -553,7 +553,7 @@ setupExodusFile(
   meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
   const FieldVector& fields = metaData_->get_fields();
   for (size_t i(0); i < fields.size(); ++i) {
-    // Do add MESH type stk fields to exodus io, but do add everythign
+    // Do NOT add MESH type stk fields to exodus io, but do add everything
     // else. This allows us to avoid having to catch a throw for
     // re-registering coordinates, sidesets, etc... Note that some
     // fields like LOAD_BAL don't always have a role assigned, so for

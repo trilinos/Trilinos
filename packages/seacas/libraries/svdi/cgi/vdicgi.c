@@ -65,20 +65,20 @@ static float get_devid_num(char *string)
   return (0.);
 }
 
-  /* ifdefv.h - ifdef file for svdi routines
-   * This file is used to define the system dependent ways C is
-   * called from FORTRAN.  Underscores are used by default.
-   *
-   * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
-   * SGI CONVEX             : C routines must have underscores
-   *
-   * VAX HP IBM/aix         : C routines do not have underscores
-   *
-   * CRAY/UNICOS            : C routines must be capitalized,
-   *                            and no underscores
-   *
-   * This include file is used by VDICGI.C
-   */
+/* ifdefv.h - ifdef file for svdi routines
+ * This file is used to define the system dependent ways C is
+ * called from FORTRAN.  Underscores are used by default.
+ *
+ * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
+ * SGI CONVEX             : C routines must have underscores
+ *
+ * VAX HP IBM/aix         : C routines do not have underscores
+ *
+ * CRAY/UNICOS            : C routines must be capitalized,
+ *                            and no underscores
+ *
+ * This include file is used by VDICGI.C
+ */
 
 #if defined(ADDC_)
 #endif
@@ -236,23 +236,23 @@ static float get_devid_num(char *string)
 #endif
 #endif
 
-  /* end ifdefv.h */
-  /* ifdefc.h - ifdef file for cgi routines
-   * This file is used to define the system dependent ways C is
-   * called from FORTRAN.  Underscores are used by default.
-   *
-   * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
-   * SGI CONVEX             : C routines must have underscores
-   *
-   * VAX HP IBM/aix         : C routines do not have underscores
-   *
-   * CRAY/UNICOS            : C routines must be capitalized,
-   *                            and no underscores
-   *
-   * This file also defines the system dependent macro "f2cchar".
-   *
-   * This include file is used by SDCGI.C and VDICGI.C
-   */
+/* end ifdefv.h */
+/* ifdefc.h - ifdef file for cgi routines
+ * This file is used to define the system dependent ways C is
+ * called from FORTRAN.  Underscores are used by default.
+ *
+ * SUN DEC/ULTRIX ALLIANT : C routines must have underscores
+ * SGI CONVEX             : C routines must have underscores
+ *
+ * VAX HP IBM/aix         : C routines do not have underscores
+ *
+ * CRAY/UNICOS            : C routines must be capitalized,
+ *                            and no underscores
+ *
+ * This file also defines the system dependent macro "f2cchar".
+ *
+ * This include file is used by SDCGI.C and VDICGI.C
+ */
 
 #if defined(ADDC_)
 #endif

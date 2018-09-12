@@ -76,6 +76,8 @@ namespace Solver {
   Valid parameters in the ParameterList are:
   \param [in] "Ignore Linear Solver Failure" (bool) - If set to true, ignore the linear solver status. This is used for iterative methods where the requested tolerance was not explicitly met, but the solve might still be good enough to use. Defaults to false.
   \param [in] "Update Jacobian" - If set to true, the Jacobian is computed at the beginning of each nonlinear iteration. In some use cases, we may want to reuse the Jacobian matrix (i.e. only the RHS is changing). Defaults to true.
+  \param [in] "Print Norms" - If set to true, the step output will print the residual norm and update norm.
+  \param [in] "Print Relative Norm" - If set to true, this will cache the initial residual norm and if "Print Norms" is enabled, will also print the ratio of initial to final norm for the step.
  */
 class SingleStep : public Generic {
 
@@ -143,6 +145,15 @@ protected:
 
   //! If set to true, the Jacobian is computed at the beginning of each nonlinear iteration
   bool updateJacobian;
+
+  //! Print the norms of residual (F) and update (dx).
+  bool printNorms;
+
+  //! If print norms is enabled, this will also compute the relative norm, \f$||F||/||F_0||\f$.
+  bool computeRelativeNorm;
+
+  //! Initial residual norm used for computing the relative norm.
+  double normF_0;
 
   //! Group that contains the "frozen Jacobian" if updateJacobian is false.
   Teuchos::RCP<NOX::Abstract::Group> frozenJacobianPtr;

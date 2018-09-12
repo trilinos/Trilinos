@@ -103,6 +103,8 @@ namespace IOShell {
     bool delete_timesteps{false};
     bool minimize_open_files{false};
     bool disable_field_recognition{false};
+    bool file_per_state{
+        false}; // Put transient data for each timestep in separate file (EXPERMENTAL)
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

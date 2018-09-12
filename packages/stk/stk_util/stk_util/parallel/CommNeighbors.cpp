@@ -50,6 +50,14 @@ namespace stk {
 
 #if defined( STK_HAS_MPI )
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
+#if MPI_VERSION >= 3
+#define STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
 void CommNeighbors::rank_error( const char * method , int p ) const
 {
   std::ostringstream os ;
@@ -75,17 +83,19 @@ stk::ParallelMachine CommNeighbors::setup_neighbor_comm(stk::ParallelMachine ful
                                                         const std::vector<int>& sendProcs,
                                                         const std::vector<int>& recvProcs)
 {
+  stk::ParallelMachine neighborComm = fullComm;
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
   MPI_Info info;
   MPI_Info_create(&info);
   int reorder = 0;
   const int* weights = (int*)MPI_UNWEIGHTED;
-  stk::ParallelMachine neighborComm;
   MPI_Dist_graph_create_adjacent(fullComm,
               recvProcs.size(), recvProcs.data(), weights,
               sendProcs.size(), sendProcs.data(), weights,
               info, reorder, &neighborComm);
   m_created_dist_graph = true;
   MPI_Info_free(&info);
+#endif
   return neighborComm;
 }
 
@@ -101,6 +111,9 @@ CommNeighbors::CommNeighbors( stk::ParallelMachine comm, const std::vector<int>&
     m_send_procs(neighbor_procs),
     m_recv_procs(neighbor_procs)
 {
+#ifndef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+  ThrowRequireMsg(false, "stk CommNeighbors class only supports MPI_Version >= 3.");
+#endif
   m_send.resize(m_size);
   m_recv.resize(m_size);
 #ifdef OMPI_MAJOR_VERSION
@@ -214,11 +227,13 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
   ThrowAssertMsg(recvCounts.size()==m_recv_procs.size(), "Error, recvCounts should be same size as m_recv_procs.");
   ThrowAssertMsg(recvDispls.size()==m_recv_procs.size(), "Error, recvDispls should be same size as m_recv_procs.");
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
   const int* sendCountsPtr = sendCounts.size() > 0 ? sendCounts.data() : nullptr;
   const int* recvCountsPtr = recvCounts.size() > 0 ? recvCounts.data() : nullptr;
 
   MPI_Neighbor_alltoall((void*)sendCountsPtr, 1, MPI_INT,
                         (void*)recvCountsPtr, 1, MPI_INT, neighborComm);
+#endif
 
   int totalRecv = 0;
   for(size_t i=0; i<recvCounts.size(); ++i) {
@@ -227,6 +242,7 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
   }
   recvBuf.resize(totalRecv);
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM 
   const unsigned char* sendBufPtr = sendBuf.size() > 0 ? sendBuf.data() : nullptr;
   const unsigned char* recvBufPtr = recvBuf.size() > 0 ? recvBuf.data() : nullptr;
   const int* sendDisplsPtr = sendDispls.size() > 0 ? sendDispls.data() : nullptr;
@@ -234,6 +250,7 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
   MPI_Neighbor_alltoallv(
       (void*)sendBufPtr, sendCountsPtr, sendDisplsPtr, MPI_BYTE,
       (void*)recvBufPtr, recvCountsPtr, recvDisplsPtr, MPI_BYTE, neighborComm);
+#endif
 }
 
 void CommNeighbors::communicate()

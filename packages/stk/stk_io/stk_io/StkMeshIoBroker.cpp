@@ -33,6 +33,7 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
+#include <stk_util/environment/Env.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <Ionit_Initializer.h>                       // for Initializer
 #include <assert.h>                                  // for assert
@@ -2304,12 +2305,18 @@ void put_field_data(OutputParams &params,
 
             params.set_subset_selector(m_subset_selector.get());
             params.set_shared_selector(m_shared_selector.get());
-            params.set_output_selector(m_output_selector.get());
+            params.set_output_selector(stk::topology::NODE_RANK, m_output_selector[stk::topology::NODE_RANK].get());
+            params.set_output_selector(stk::topology::EDGE_RANK, m_output_selector[stk::topology::EDGE_RANK].get());
+            params.set_output_selector(stk::topology::FACE_RANK, m_output_selector[stk::topology::FACE_RANK].get());
+            params.set_output_selector(stk::topology::ELEM_RANK, m_output_selector[stk::topology::ELEM_RANK].get());
             params.set_sort_stk_parts_by_name(sort_stk_parts_by_name);
             params.set_use_nodeset_for_block_node_fields(m_use_nodeset_for_block_nodes_fields);
             params.set_use_nodeset_for_sideset_node_fields(m_use_nodeset_for_sideset_nodes_fields);
             params.check_field_existence_when_creating_nodesets(m_check_field_existence_when_creating_nodesets);
             params.set_use_part_id_for_output(m_use_part_id_for_output);
+            params.set_has_ghosting(m_has_ghosting);
+            params.set_has_adaptivity(m_has_adaptivity);
+            params.set_is_skin_mesh(m_is_skin_mesh);
         }
 
         void impl::OutputFile::set_input_region(const Ioss::Region *input_region)
@@ -2749,12 +2756,24 @@ void put_field_data(OutputParams &params,
           m_shared_selector = my_selector;
         }
 
-        void impl::OutputFile::set_output_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+        //void impl::OutputFile::set_output_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)
+        //{
+        //  ThrowErrorMsgIf(m_mesh_defined,
+        //                  "ERROR: On region named " << m_region->name() <<
+        //                  " the output_selector cannot be changed after the mesh has already been written.");
+        //  m_output_selector = my_selector;
+        //}
+        void impl::OutputFile::set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector)
         {
           ThrowErrorMsgIf(m_mesh_defined,
                           "ERROR: On region named " << m_region->name() <<
                           " the output_selector cannot be changed after the mesh has already been written.");
-          m_output_selector = my_selector;
+
+          ThrowErrorMsgIf(!(rank >= stk::topology::NODE_RANK && rank <= stk::topology::ELEM_RANK),
+                          "ERROR: On region named " << m_region->name() <<
+                          " the output_selector must be NODE, EDGE, FACE or ELEM.");
+
+          m_output_selector[rank] = my_selector;
         }
 
         bool impl::OutputFile::use_nodeset_for_block_nodes_fields() const
@@ -2807,6 +2826,36 @@ void put_field_data(OutputParams &params,
                           "ERROR: The use_part_id_for_output setting cannot be changed after "
                           "the mesh has already been written.");
           m_use_part_id_for_output = true_false;
+        }
+
+        bool impl::OutputFile::has_ghosting() const
+        {
+          return m_has_ghosting;
+        }
+
+        void impl::OutputFile::has_ghosting(bool hasGhosting)
+        {
+          m_has_ghosting = hasGhosting;
+        }
+
+        bool impl::OutputFile::has_adaptivity() const
+        {
+          return m_has_adaptivity;
+        }
+
+        void impl::OutputFile::has_adaptivity(bool hasAdaptivity)
+        {
+          m_has_adaptivity = hasAdaptivity;
+        }
+
+        bool impl::OutputFile::is_skin_mesh() const
+        {
+          return m_is_skin_mesh;
+        }
+
+        void impl::OutputFile::is_skin_mesh(bool skinMesh)
+        {
+          m_is_skin_mesh = skinMesh;
         }
     } // namespace io
   } // namespace stk

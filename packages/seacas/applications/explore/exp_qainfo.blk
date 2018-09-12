@@ -35,8 +35,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
       
-      QAINFO(2)(:8) = '20180621'
-      QAINFO(3)(:8) = '    3.00'
+      QAINFO(2)(:8) = '20180828'
+      QAINFO(3)(:8) = '    3.02'
 C
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -98,3 +98,5 @@ c..Add better local/global id specification in list element
 c..Can still output maps even with -map or -nomap options.
 c..Fix invcon output with mapped element ids
 c..Change name to `explore`
+c..Fix minmax to work more than once
+c..Work with experimental exodus (transient data only)

@@ -260,7 +260,7 @@ namespace {
     // that will be the number of output element and nodes in the
     // sphere mesh.
     size_t                                      sph_node_count = 0;
-    Ioss::ElementBlockContainer                 ebs            = region.get_element_blocks();
+    const Ioss::ElementBlockContainer &         ebs            = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator I              = ebs.begin();
     while (I != ebs.end()) {
       Ioss::ElementBlock *eb = *I;
@@ -314,8 +314,6 @@ namespace {
     onb->put_field_data("ids", node_ids);
 
     std::vector<double> centroids(spatial_dimension * sph_node_count);
-
-    Ioss::ElementBlockContainer eb_out = output_region.get_element_blocks();
 
     I             = ebs.begin();
     size_t offset = 0;
