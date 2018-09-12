@@ -62,6 +62,7 @@
 #include "NOX_Solver_SolverUtils.H"
 #include "NOX_LineSearch_Generic.H"
 #include "NOX_LineSearch_Factory.H"
+#include "NOX_SolverStats.hpp"
 #include <cmath>
 
 NOX::Solver::AndersonAcceleration::
@@ -162,6 +163,7 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnPtr->setX(initialGuess);
   testPtr = t;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
   init();
 }
 
@@ -169,6 +171,7 @@ void NOX::Solver::AndersonAcceleration::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
+  globalDataPtr->getNonConstSolverStatistics()->reset();
   init();
 }
 
@@ -190,6 +193,8 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
   // On the first step, do some initializations
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
+
     // Compute F of initital guess
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
@@ -263,6 +268,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
     //Update iteration count
     nIter++;
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
     prePostOperator.runPostIterate(*this);
     printUpdate();
@@ -383,7 +389,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
   }
 
-  // Compute F for new current solution in case the line search didn't .
+  // Compute F for new current solution in case the line search didn't.
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
@@ -396,6 +402,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
   // Update iteration count
   nIter++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Evaluate the current status.
   status = testPtr->checkStatus(*this, checkType);
@@ -520,6 +527,12 @@ const Teuchos::ParameterList&
 NOX::Solver::AndersonAcceleration::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::AndersonAcceleration::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

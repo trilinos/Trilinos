@@ -161,6 +161,9 @@ namespace NOX_UNIT_TEST {
     Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const
     {return Teuchos::null;}
 
+    Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const
+    { return Teuchos::null; }
+
   };
 
   class MockVector : public NOX::Abstract::Vector {

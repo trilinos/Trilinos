@@ -157,6 +157,7 @@ public:
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
   virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
 protected:
 

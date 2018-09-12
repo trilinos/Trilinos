@@ -123,7 +123,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
   print = Teuchos::rcp(new NOX::LineSearch::Utils::Printing(utilsPtr));
-  counter = &globalDataPtr->getNonConstSolverStatistics()->line_search;
+  counter = &globalDataPtr->getNonConstSolverStatistics()->lineSearch;
   slopeObj.reset(globalDataPtr);
   prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
 
@@ -428,6 +428,12 @@ const Teuchos::ParameterList&
 NOX::Solver::TensorBased::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::TensorBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

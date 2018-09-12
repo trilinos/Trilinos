@@ -57,6 +57,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Direction_Utils_InexactNewton.H"
 #include "NOX_Solver_PrePostOperator.H"
+#include "NOX_SolverStats.hpp"
 #include "Teuchos_RCP.hpp"
 
 // Forward declarations
@@ -315,6 +316,7 @@ public:
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const {return oldSolnPtr;};
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
 protected:
 
@@ -334,9 +336,6 @@ protected:
 
   //! Print an error message and throw an error
   virtual void throwError(const std::string& method, const std::string& mesage) const;
-
-  //! Resets the counters in the solver.
-  virtual void resetCounters();
 
   //! Check to see if the current step is acceptable.  If not, it reduces the trust region radius accordingly.
   NOX::StatusTest::StatusType checkStep(const NOX::Abstract::Vector& step,
@@ -494,23 +493,8 @@ protected:
   //! If set to true, counters will be stored by the solver.
   bool useCounters;
 
-  //! Counter for the number of cauchy steps taken.
-  int numCauchySteps;
-
-  //! Counter for the number of Newton steps taken.
-  int numNewtonSteps;
-
-  //! Counter for the number of Dogleg steps taken.
-  int numDoglegSteps;
-
-  //! Number of inner iterations required to adjust the trust region radius.
-  int numTrustRegionInnerIterations;
-
-  //! Hold the sum of the value of the fraction a dogleg step took between the Cauchy and Newton directions.  This is the \f$ \gamma \f$ variable in the standard dogleg algorithm and the \f$ \tau \f$ parameter in the inexact dogleg algorithm.  A value of 0.0 is a full step in the Cauchy direction and a value of 1.0 is a full step in the Newton direction.
-  double sumDoglegFracCauchyToNewton;
-
-  //! Holds the sum of the values of the fraction a dogleg step took compared to the full Newton step.  The fractional value is computed as \f$ \mbox{frac} = \frac{\| d \|}{\| n\|} \f$.
-  double sumDoglegFracNewtonLength;
+  //! Counters for the algorithm
+  NOX::SolverStats::TrustRegionStats* counters;
 
   //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach.
   bool useAredPredRatio;

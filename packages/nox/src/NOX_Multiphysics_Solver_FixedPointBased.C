@@ -327,6 +327,12 @@ NOX::Multiphysics::Solver::FixedPointBased::getList() const
   return *paramsPtr;
 }
 
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Multiphysics::Solver::FixedPointBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
+}
+
 // protected
 void NOX::Multiphysics::Solver::FixedPointBased::printUpdate()
 {

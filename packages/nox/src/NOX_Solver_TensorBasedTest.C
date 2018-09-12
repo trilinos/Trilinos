@@ -313,6 +313,12 @@ NOX::Solver::TensorBasedTest::getListPtr() const
   return paramsPtr;
 }
 
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::TensorBasedTest::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
+}
+
 const NOX::Direction::Tensor&
 NOX::Solver::TensorBasedTest::getDirection() const
 {

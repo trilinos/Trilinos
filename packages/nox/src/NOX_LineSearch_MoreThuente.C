@@ -65,7 +65,7 @@ MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd,
         Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   print(gd->getUtils()),
-  counter(&gd->getNonConstSolverStatistics()->line_search),
+  counter(&gd->getNonConstSolverStatistics()->lineSearch),
   slope(gd),
   paramsPtr(0)
 {
@@ -82,7 +82,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 {
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
-  counter = &gd->getNonConstSolverStatistics()->line_search;
+  counter = &gd->getNonConstSolverStatistics()->lineSearch;
   print.reset(gd->getUtils());
   slope.reset(gd);
 

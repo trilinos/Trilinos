@@ -96,7 +96,7 @@ Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr(gd),
   paramsPtr(NULL),
   print(gd->getUtils()),
-  counter(&gd->getNonConstSolverStatistics()->line_search),
+  counter(&gd->getNonConstSolverStatistics()->lineSearch),
   slopeObj(gd)
 {
   //  reset(paramsPtr->sublist("Line Search"));
@@ -115,7 +115,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr = gd;
   utils = *(gd->getUtils());
   print.reset(gd->getUtils());
-  counter = &gd->getNonConstSolverStatistics()->line_search;
+  counter = &gd->getNonConstSolverStatistics()->lineSearch;
   paramsPtr = &lsParams;
   slopeObj.reset(gd);
 

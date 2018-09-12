@@ -69,7 +69,7 @@ SafeguardedStep(const Teuchos::RCP<NOX::GlobalData>& gd,
   paramsPtr_(NULL),
   globalDataPtr_(gd),
   print_(gd->getUtils()),
-  counter_(&gd->getNonConstSolverStatistics()->line_search)
+  counter_(&gd->getNonConstSolverStatistics()->lineSearch)
 {
   reset(gd, params);
 }
@@ -81,7 +81,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr_ = gd;
   print_.reset(gd->getUtils());
   paramsPtr_ = &params;
-  counter_ = &gd->getNonConstSolverStatistics()->line_search;
+  counter_ = &gd->getNonConstSolverStatistics()->lineSearch;
 
   Teuchos::ParameterList& p = params.sublist("Safeguarded Step");
   p.validateParametersAndSetDefaults(*getValidParameters());

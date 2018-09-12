@@ -68,6 +68,7 @@
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Thyra_MultiVector.H"
 #include "NOX_Assert.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::Thyra::Group::
 Group(const NOX::Thyra::Vector& initial_guess,
@@ -78,9 +79,9 @@ Group(const NOX::Thyra::Vector& initial_guess,
   model_(model),
   rightScalingFirst_(rightScalingFirst),
   updatePreconditioner_(true),
-  num_iters_last_linear_solve_(0),
-  norm_last_linear_solve_residual_(0.0),
-  last_linear_solve_status_(NOX::Abstract::Group::Ok)
+  last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
+  last_linear_solve_num_iters_(0),
+  last_linear_solve_achieved_tol_(0.0)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -154,9 +155,9 @@ Group(const NOX::Thyra::Vector& initial_guess,
   prec_factory_(prec_factory),
   rightScalingFirst_(rightScalingFirst),
   updatePreconditioner_(updatePreconditioner),
-  num_iters_last_linear_solve_(0),
-  norm_last_linear_solve_residual_(0.0),
-  last_linear_solve_status_(NOX::Abstract::Group::Ok)
+  last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
+  last_linear_solve_num_iters_(0),
+  last_linear_solve_achieved_tol_(0.0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(jacobianIsEvaluated && Teuchos::is_null(linear_op),std::runtime_error,
                              "ERROR - NOX::Thyra::Group(...) - linear_op is null but JacobianIsEvaluated is true. Impossible combination!");
@@ -218,9 +219,9 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   right_weight_vec_(source.right_weight_vec_),
   inv_right_weight_vec_(source.inv_right_weight_vec_),
   rightScalingFirst_(source.rightScalingFirst_),
-  num_iters_last_linear_solve_(source.num_iters_last_linear_solve_),
-  norm_last_linear_solve_residual_(source.norm_last_linear_solve_residual_),
-  last_linear_solve_status_(source.last_linear_solve_status_)
+  last_linear_solve_status_(source.last_linear_solve_status_),
+  last_linear_solve_num_iters_(source.last_linear_solve_num_iters_),
+  last_linear_solve_achieved_tol_(source.last_linear_solve_achieved_tol_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -327,9 +328,9 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
     if (this->isJacobian())
       shared_jacobian_->getObject(this);
 
-  num_iters_last_linear_solve_ = source.num_iters_last_linear_solve_;
-  norm_last_linear_solve_residual_ = source.norm_last_linear_solve_residual_;
   last_linear_solve_status_ = source.last_linear_solve_status_;
+  last_linear_solve_num_iters_ = source.last_linear_solve_num_iters_;
+  last_linear_solve_achieved_tol_ = source.last_linear_solve_achieved_tol_;
 
   return *this;
 }
@@ -750,18 +751,14 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
   return gradient_vec_;
 }
 
-int NOX::Thyra::Group::getNumIterationLastLinearSolve() const
+void NOX::Thyra::Group::logLastLinearSolveStats(NOX::SolverStats& stats) const
 {
-  return num_iters_last_linear_solve_;
+  stats.linearSolve.logLinearSolve(last_linear_solve_status_ == NOX::Abstract::Group::Ok,
+                                   last_linear_solve_num_iters_,
+                                   last_linear_solve_achieved_tol_,
+                                   0.0,
+                                   0.0);
 }
-
-NOX::Abstract::Group::ReturnType
-NOX::Thyra::Group::getNormLastLinearSolveResidual(double& residual) const
-{
-  residual = norm_last_linear_solve_residual_;
-  return last_linear_solve_status_;
-}
-
 
 void NOX::Thyra::Group::print() const
 {
@@ -810,6 +807,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
     p.sublist("Output").set("Last Iteration Count",current_iters);
     p.sublist("Output").set("Cumulative Iteration Count",cumulative_iters + current_iters);
+    last_linear_solve_num_iters_ = current_iters;
   }
 
   this->unscaleResidualAndJacobian();
@@ -822,9 +820,9 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
   }
 
-  norm_last_linear_solve_residual_ = solve_status.achievedTol;
-  last_linear_solve_status_ = NOX::Abstract::Group::Failed;
+  last_linear_solve_achieved_tol_ = solve_status.achievedTol;
 
+  last_linear_solve_status_ = NOX::Abstract::Group::Failed;
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
     last_linear_solve_status_ = NOX::Abstract::Group::Ok;
   else if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED)
