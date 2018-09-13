@@ -84,6 +84,8 @@ namespace MueLu {
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+    validParamList->set< bool >("rap: shift diagonal M",false,"If true, M is diagonal and is stored as a Vector, not a Matrix");
+
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -115,10 +117,15 @@ namespace MueLu {
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       const Teuchos::ParameterList& pL = GetParameterList();
+      bool M_is_diagonal = pL.get<bool>("shift: diagonal M");
 
       // Inputs: K, M, P
       RCP<Matrix> K = Get< RCP<Matrix> >(fineLevel, "K");
-      RCP<Matrix> M = Get< RCP<Matrix> >(fineLevel, "M");
+      RCP<Matrix> M;
+      RCP<Vector> Mdiag;
+      if(!M_is_diagonal) M = Get< RCP<Matrix> >(fineLevel, "M");
+      else Mdiag = Get< RCP<Vector> >(fineLevel, "M");
+
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
       // Build Kc = RKP, Mc = RMP
@@ -134,7 +141,14 @@ namespace MueLu {
       {
         SubFactoryMonitor subM(*this, "MxM: K x P", coarseLevel);
         KP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*K, false, *P, false, KP, GetOStream(Statistics2));
-        MP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2));
+        if(!M_is_diagonal) {
+          MP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*M, false, *P, false, MP, GetOStream(Statistics2));
+        }
+        else {
+          MP = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(P);
+          MP->leftScale(*Mdiag);
+        }
+
         Set(coarseLevel, "AP Pattern", KP);
       }
 
@@ -186,7 +200,18 @@ namespace MueLu {
 
       Set(coarseLevel, "A", Ac);
       Set(coarseLevel, "K", Kc);
-      Set(coarseLevel, "M", Mc);
+
+      if(!M_is_diagonal) {
+        Set(coarseLevel, "M", Mc);
+      }
+      else {
+        // If M is diagonal, then we only pass that part down the hierarchy
+        // NOTE: Should we be doing some kind of rowsum instead?
+        RCP<Vector> Mcv = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Mc->getRowMap(),false);
+        Mc->getLocalDiagCopy(*Mcv);
+        Set(coarseLevel, "M", Mcv);
+      }
+
       //      Set(coarseLevel, "RAP Pattern", Ac);
     }
 
