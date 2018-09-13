@@ -74,19 +74,10 @@
 #include "EpetraExt_Transpose_RowMatrix.h"
 
 #include <MueLu.hpp>
-#include <MueLu_AmalgamationFactory.hpp>
-#include <MueLu_CoalesceDropFactory.hpp>
-#include <MueLu_UncoupledAggregationFactory.hpp>
-#include <MueLu_CoarseMapFactory.hpp>
+#include <MueLu_CreateEpetraPreconditioner.hpp>
+#include <MueLu_EpetraOperator.hpp>
 #include <MueLu_Hierarchy.hpp>
-#include <MueLu_NullspaceFactory.hpp>
-#include <MueLu_RAPFactory.hpp>
-#include <MueLu_SmootherFactory.hpp>
-#include <MueLu_SmootherPrototype.hpp>
-#include <MueLu_TentativePFactory.hpp>
-#include <MueLu_TransPFactory.hpp>
 #include <MueLu_Utilities.hpp>
-#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 #include <Xpetra_EpetraMultiVector.hpp>
 #include <Xpetra_IO.hpp>
@@ -94,6 +85,7 @@
 
 #include "Teuchos_Assert.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 int LIDregion(void *ptr, int LIDcomp, int whichGrp);
 int LID2Dregion(void *ptr, int LIDcomp, int whichGrp);
@@ -1462,11 +1454,7 @@ sleep(myRank*3);
   {
     std::cout << myRank << " | Setting up MueLu hierarchies ..." << std::endl;
 
-    typedef MueLu::HierarchyManager<double,int,int,Xpetra::EpetraNode> HierarchyManager;
     typedef MueLu::Hierarchy<double,int,int,Xpetra::EpetraNode> Hierarchy;
-    typedef MueLu::ParameterListInterpreter<double,int,int,Xpetra::EpetraNode> ParameterListInterpreter;
-    typedef MueLu::Aggregates<int,int,Xpetra::EpetraNode> Aggregates;
-    typedef MueLu::FactoryManagerBase FactoryManagerBase;
     typedef MueLu::Utilities<double,int,int,Xpetra::EpetraNode> Utilities;
     typedef Xpetra::Map<int,int,Xpetra::EpetraNode> Map;
     typedef Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> MultiVector;
@@ -1475,54 +1463,35 @@ sleep(myRank*3);
 
     using Teuchos::RCP; using Teuchos::rcp; using Teuchos::ParameterList;
 
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
-
-    // convert Epetra region matrices to Xpetra
-    std::vector<RCP<Matrix> > regionGrpXMats(maxRegPerProc);
-    for (int j = 0; j < maxRegPerProc; j++) {
-      regionGrpXMats[j] = MueLu::EpetraCrs_To_XpetraMatrix<double,int,int,Xpetra::EpetraNode>(regionGrpMats[j]);
-    }
-
+    // A hierarchy for each group
     std::vector<RCP<Hierarchy> > regGrpHierarchy(maxRegPerProc);
-    std::vector<RCP<HierarchyManager> > regMueLuFactory(maxRegPerProc);
-    for (int j = 0; j < maxRegPerProc; j++) {
 
+    for (int j = 0; j < maxRegPerProc; j++) {
 
       // Set number of nodes per processor per dimension
       Array<int> lNodesPerDim = setLocalNodesPerDim(problemType, doing1D,
           *revisedRowMapPerGrp[j]);
 
+      // Set aggregation type for each region
+      std::string regionType = "structured";
+
+      // Read MueLu parameter list form xml file
+      RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+      // Insert region-specific data into parameter list
+      const std::string userName = "user data";
+      Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
+      userParamList.set<Array<int> >("Array<LO> lNodesPerDim", lNodesPerDim);
+      userParamList.set<std::string>("string aggregationRegionType", regionType);
+
       // create nullspace vector
-      RCP<const Map> map = regionGrpXMats[j]->getRowMap();
-      RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
-      nullspace->putScalar(1.0);
+      RCP<Epetra_Vector> nullspace = rcp(new Epetra_Vector(*revisedRowMapPerGrp[j]));
+      nullspace->PutScalar(1.0);
 
-      // create dummy coordinates vector
-      RCP<MultiVector> coordinates = MultiVectorFactory::Build(map, 3);
-      coordinates->putScalar(1.0);
-
-      RCP<const Teuchos::Comm<int> > teuchosComm = Teuchos::DefaultComm<int>::getComm();
-      Teuchos::ParameterList paramList;
-      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *teuchosComm);
-
-      regMueLuFactory[j] = rcp(new ParameterListInterpreter(paramList));
-      regGrpHierarchy[j] = regMueLuFactory[j]->CreateHierarchy();
-      regGrpHierarchy[j]->GetLevel(0)->Set("A", regionGrpXMats[j]);
-      regGrpHierarchy[j]->GetLevel(0)->Set("Nullspace", nullspace);
-      regGrpHierarchy[j]->GetLevel(0)->Set("Coordinates", coordinates);
-
-      // For structured aggregation
-      {
-        Array<int> gNodesPerDim(3);
-        for (int i = 0; i < gNodesPerDim.size(); ++i)
-          gNodesPerDim[i] = -1;
-
-        regGrpHierarchy[j]->GetLevel(0)->Set("gNodesPerDim", gNodesPerDim);
-        regGrpHierarchy[j]->GetLevel(0)->Set("lNodesPerDim", lNodesPerDim);
-      }
-
-      regMueLuFactory[j]->SetupHierarchy(*regGrpHierarchy[j]);
-
+      // Setup hierarchy
+      RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(regionGrpMats[j], *mueluParams,
+          Teuchos::null, nullspace);
+      regGrpHierarchy[j] = eH->GetHierarchy();
     }
 
     // resize Arrays and vectors
