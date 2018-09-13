@@ -117,7 +117,9 @@ namespace MueLu {
     {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       const Teuchos::ParameterList& pL = GetParameterList();
-      bool M_is_diagonal = pL.get<bool>("shift: diagonal M");
+      bool M_is_diagonal = false; 
+      if(pL.isParameter("rap: shift diagonal M"))
+         M_is_diagonal = pL.get<bool>("rap: shift diagonal M");
 
       // Inputs: K, M, P
       RCP<Matrix> K = Get< RCP<Matrix> >(fineLevel, "K");
