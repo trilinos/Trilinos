@@ -71,7 +71,17 @@
 #include "dynpde_navier-stokes.hpp"
 #include "steadypde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
+#include "initial_condition.hpp"
 
+template<class Real>
+void computeInitialCondition(const ROL::Ptr<ROL::Vector<Real>>       &u0,
+                             const ROL::Ptr<ROL::Vector<Real>>       &ck,
+                             const ROL::Ptr<ROL::Vector<Real>>       &uo,
+                             const ROL::Ptr<ROL::Vector<Real>>       &un,
+                             const ROL::Ptr<ROL::Vector<Real>>       &zk,
+                             const ROL::Ptr<DynConstraint<Real>>     &con,
+                             const Real                               dt,
+                             std::ostream                            &outStream);
 
 int main(int argc, char *argv[]) {
 //  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
@@ -106,6 +116,7 @@ int main(int argc, char *argv[]) {
     solveOutput      = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History", false);
     solveOutput      = (myRank==0 ? solveOutput : false);
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History", solveOutput);
+    RealT Re         = parlist->sublist("Problem").get("Reynolds Number",200.0);
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
@@ -157,28 +168,45 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
-    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(1,ROL::nullPtr);
+    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(3,ROL::nullPtr), qoi_T(1,ROL::nullPtr);
     RealT w1 = parlist->sublist("Problem").get("State Cost",1.0);
-    RealT w2 = parlist->sublist("Problem").get("Control Cost",1e-2);
-    std::vector<RealT> wts = {w1, w2};
-    qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(*parlist,
-                                                              pde->getVelocityFE(),
-                                                              pde->getPressureFE(),
-                                                              pde->getFieldHelper());
+    RealT w2 = parlist->sublist("Problem").get("State Boundary Cost",1.0);
+    RealT w3 = parlist->sublist("Problem").get("Control Cost",0.0);
+    RealT wT = parlist->sublist("Problem").get("Final Time State Cost",1.0);
+    std::vector<RealT> wts = {w1, w2, w3}, wts_T = {wT};
+    std::string intObj = parlist->sublist("Problem").get("Integrated Objective Type", "Dissipation");
+    std::string ftObj  = parlist->sublist("Problem").get("Final Time Objective Type", "Tracking");
+    qoi_vec[0] = ROL::makePtr<QoI_State_NavierStokes<RealT>>(intObj,
+                                                             *parlist,
+                                                             pde->getVelocityFE(),
+                                                             pde->getPressureFE(),
+                                                             pde->getFieldHelper());
+    qoi_vec[1] = ROL::makePtr<QoI_DownStreamPower_NavierStokes<RealT>>(pde->getVelocityFE(),
+                                                                       pde->getPressureFE(),
+                                                                       pde->getVelocityBdryFE(1),
+                                                                       pde->getBdryCellLocIds(1),
+                                                                       pde->getFieldHelper());
+    qoi_T[0]   = ROL::makePtr<QoI_State_NavierStokes<RealT>>(ftObj,
+                                                             *parlist,
+                                                             pde->getVelocityFE(),
+                                                             pde->getPressureFE(),
+                                                             pde->getFieldHelper());
     if (useParametricControl) {
-      qoi_vec.push_back(ROL::makePtr<QoI_RotationControl_NavierStokes<RealT>>());
+      qoi_vec[2] = ROL::makePtr<QoI_RotationControl_NavierStokes<RealT>>();
     }
     else {
-      qoi_vec.push_back(ROL::makePtr<QoI_L2Penalty_NavierStokes<RealT>>(pde->getVelocityFE(),
-                                                                        pde->getPressureFE(),
-                                                                        pde->getVelocityBdryFE(),
-                                                                        pde->getBdryCellLocIds(),
-                                                                        pde->getFieldHelper()));
+      qoi_vec[2] = ROL::makePtr<QoI_L2Penalty_NavierStokes<RealT>>(pde->getVelocityFE(),
+                                                                   pde->getPressureFE(),
+                                                                   pde->getVelocityBdryFE(4),
+                                                                   pde->getBdryCellLocIds(4),
+                                                                   pde->getFieldHelper());
     }
     ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,assembler);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_T
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_T,wts_T,assembler);
     ROL::Ptr<LTI_Objective<RealT>> dyn_obj
-      = ROL::makePtr<LTI_Objective<RealT>>(obj_k,*zk,*parlist);
+      = ROL::makePtr<LTI_Objective<RealT>>(*parlist,obj_k,obj_T);
 
     /*************************************************************************/
     /***************** BUILD REDUCED COST FUNCTIONAL *************************/
@@ -190,25 +218,25 @@ int main(int argc, char *argv[]) {
       timeStamp.at(k).t.at(1) = (k+1)*dt;
     }
     std::clock_t timer_init = std::clock();
-    std::ifstream infile("initial_condition.txt");
+    std::stringstream file;
+    file << "initial_condition_Re" << static_cast<int>(Re) << ".txt";
+    std::ifstream infile(file.str());
     if (infile.good()) {
-      dyn_con->inputTpetraVector(u0_ptr, "initial_condition.txt");
+      dyn_con->inputTpetraVector(u0_ptr, file.str());
     }
     else {
-      // Solve/output steady equation to determine initial condition
-      //RealT tol(1e-8);
-      //u0->zero(); ck->zero(); zk->zero();
-      //steady_con->solve(*ck, *u0, *zk, tol);
-      zk->zero(); uo->set(*u0); un->zero();
-      for (int k = 1; k < nt/2; ++k) {
-        // Advance time stepper
-        dyn_con->solve(*ck, *uo, *un, *zk, timeStamp[k]);
-        uo->set(*un);
-      }
-      u0->set(*uo);
-      steady_con->outputTpetraVector(u0_ptr, "initial_condition.txt");
+      PotentialFlow<RealT> pf(pde->getVelocityFE(),
+                              pde->getPressureFE(),
+                              pde->getCellNodes(),
+                              assembler->getDofManager()->getCellDofs(),
+                              assembler->getCellIds(),
+                              pde->getFieldHelper(),
+                              *parlist);
+      pf.build(u0_ptr);
+      computeInitialCondition<RealT>(u0,ck,uo,un,zk,dyn_con,dt,*outStream);
+      dyn_con->outputTpetraVector(u0_ptr, file.str());
     }
-    *outStream << "Compute initial condition time: "
+    *outStream << "Initial condition time: "
                << static_cast<RealT>(std::clock()-timer_init)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
     // Construct reduce dynamic objective function
@@ -364,3 +392,59 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+template<class Real>
+void computeInitialCondition(const ROL::Ptr<ROL::Vector<Real>>       &u0,
+                             const ROL::Ptr<ROL::Vector<Real>>       &ck,
+                             const ROL::Ptr<ROL::Vector<Real>>       &uo,
+                             const ROL::Ptr<ROL::Vector<Real>>       &un,
+                             const ROL::Ptr<ROL::Vector<Real>>       &zk,
+                             const ROL::Ptr<DynConstraint<Real>>     &con,
+                             const Real                               dt,
+                             std::ostream                            &outStream) {
+  Real T  = 80.0;
+  int  nt = static_cast<int>(T/dt);
+  std::vector<ROL::TimeStamp<Real>> ts(nt);
+  for( int k=0; k<nt; ++k ) {
+    ts.at(k).t.resize(2);
+    ts.at(k).t.at(0) = k*dt;
+    ts.at(k).t.at(1) = (k+1)*dt;
+  }
+  // Solve Navier-Stokes equation to determine initial condition
+  zk->zero(); uo->set(*u0); un->zero();
+  Real unorm = uo->norm();
+  outStream << std::scientific << std::setprecision(6);
+  outStream << std::right << std::setw(8)  << "ts"
+            << std::right << std::setw(16) << "||u(ts)||"
+            << std::right << std::setw(16) << "avg time (sec)"
+            << std::endl;
+  outStream << std::right << std::setw(8)  << 0
+            << std::right << std::setw(16) << unorm
+            << std::right << std::setw(16) << "---"
+            << std::endl;
+  std::vector<Real> time(10);
+  std::clock_t timer_step;
+  Real time_avg(0);
+  for (int k = 1; k < nt; ++k) {
+    // Advance time stepper
+    timer_step = std::clock();
+    con->solve(*ck, *uo, *un, *zk, ts[k]);
+    time[k%10] = static_cast<Real>(std::clock()-timer_step)/static_cast<Real>(CLOCKS_PER_SEC);
+    uo->set(*un);
+    if ( k%10==0 ) {
+      unorm = uo->norm();
+      time_avg = 0.0;
+      for (int i = 0; i < 10; ++i) {
+        time_avg += time[i];
+      }
+      time_avg *= 0.1;
+      outStream << std::right << std::setw(8)  << k
+                << std::right << std::setw(16) << unorm
+                << std::right << std::setw(16) << time_avg
+                << std::endl;
+    }
+  }
+  u0->set(*uo);
+}
+
+

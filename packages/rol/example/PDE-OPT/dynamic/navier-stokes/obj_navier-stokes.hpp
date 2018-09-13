@@ -1053,12 +1053,11 @@ class QoI_State_NavierStokes : public QoI<Real> {
 private:
   ROL::Ptr<QoI<Real>> qoi_;
 
-public:
-  QoI_State_NavierStokes(Teuchos::ParameterList &parlist,
-                         const ROL::Ptr<FE<Real>> &feVel,
-                         const ROL::Ptr<FE<Real>> &fePrs,
-                         const ROL::Ptr<FieldHelper<Real>> &fieldHelper) {
-    std::string stateObj = parlist.sublist("Problem").get("Objective type","Vorticity");
+  void initialize(const std::string &stateObj,
+                  Teuchos::ParameterList &parlist,
+                  const ROL::Ptr<FE<Real>> &feVel,
+                  const ROL::Ptr<FE<Real>> &fePrs,
+                  const ROL::Ptr<FieldHelper<Real>> &fieldHelper) {
     if ( stateObj == "Circulation" ) {
       qoi_ = ROL::makePtr<QoI_Circulation_NavierStokes<Real>>(feVel,fePrs,fieldHelper);
     }
@@ -1077,6 +1076,23 @@ public:
     else {
       throw Exception::NotImplemented(">>> (QoI_State_NavierStokes): Unknown objective type."); 
     }
+  }
+
+public:
+  QoI_State_NavierStokes(Teuchos::ParameterList &parlist,
+                         const ROL::Ptr<FE<Real>> &feVel,
+                         const ROL::Ptr<FE<Real>> &fePrs,
+                         const ROL::Ptr<FieldHelper<Real>> &fieldHelper) {
+    std::string stateObj = parlist.sublist("Problem").get("Objective type","Vorticity");
+    initialize(stateObj,parlist,feVel,fePrs,fieldHelper);
+  }
+
+  QoI_State_NavierStokes(const std::string &stateObj,
+                         Teuchos::ParameterList &parlist,
+                         const ROL::Ptr<FE<Real>> &feVel,
+                         const ROL::Ptr<FE<Real>> &fePrs,
+                         const ROL::Ptr<FieldHelper<Real>> &fieldHelper) {
+    initialize(stateObj,parlist,feVel,fePrs,fieldHelper);
   }
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
@@ -1135,6 +1151,250 @@ public:
 };
 
 template <class Real>
+class QoI_DownStreamPower_NavierStokes : public QoI<Real> {
+private:
+  const ROL::Ptr<FE<Real>> feVel_;
+  const ROL::Ptr<FE<Real>> fePrs_;
+  const std::vector<ROL::Ptr<FE<Real>>> feVelBdry_;
+  const std::vector<std::vector<int>> bdryCellLocIds_;
+  const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
+  const std::vector<Real> target_;
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> getBoundaryCoeff(
+      const Intrepid::FieldContainer<Real> &cell_coeff,
+      const int locSideId) const {
+    std::vector<int> bdryCellLocId = bdryCellLocIds_[locSideId];
+    const int numCellsSide = bdryCellLocId.size();
+    const int f = feVel_->N()->dimension(1);
+    
+    ROL::Ptr<Intrepid::FieldContainer<Real >> bdry_coeff = 
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, f);
+    for (int i = 0; i < numCellsSide; ++i) {
+      for (int j = 0; j < f; ++j) {
+        (*bdry_coeff)(i, j) = cell_coeff(bdryCellLocId[i], j);
+      }
+    }
+    return bdry_coeff;
+  }
+
+public:
+  QoI_DownStreamPower_NavierStokes(const ROL::Ptr<FE<Real>>              &feVel,
+                                   const ROL::Ptr<FE<Real>>              &fePrs,
+                                   const std::vector<ROL::Ptr<FE<Real>>> &feVelBdry,
+                                   const std::vector<std::vector<int>>   &bdryCellLocIds,
+                                   const ROL::Ptr<FieldHelper<Real>>     &fieldHelper)
+    : feVel_(feVel), fePrs_(fePrs), feVelBdry_(feVelBdry),
+      bdryCellLocIds_(bdryCellLocIds), fieldHelper_(fieldHelper),
+      target_({1, 0, 0}) {}
+
+  Real value(ROL::Ptr<Intrepid::FieldContainer<Real>>             &val,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+             const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    const Real half(0.5);
+    const int c = feVel_->gradN()->dimension(0);
+    const int d = feVel_->gradN()->dimension(3);
+    const int numLocSides = bdryCellLocIds_.size();
+    // Initialize storage
+    int numCellsSide(0), numCubPerSide(0), cidx(0);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, u(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> tmp, u_diff, intVal;
+    val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    // Compute cost integral
+    for (int l = 0; l < numLocSides; ++l) {
+      numCellsSide  = bdryCellLocIds_[l].size();
+      if ( numCellsSide ) {
+        numCubPerSide = feVelBdry_[l]->cubPts()->dimension(1);
+        u_diff = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+        intVal = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide);
+        // Evaluate objective function value
+        for (int i = 0; i < d; ++i) {
+          u[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+          tmp  = getBoundaryCoeff(*U[i], l);
+          feVelBdry_[l]->evaluateValue(u[i], tmp);
+          for (int j = 0; j < numCellsSide; ++j) {
+            for (int k = 0; k < numCubPerSide; ++k) {
+              (*u_diff)(j,k) += std::pow((*u[i])(j,k)-target_[i],2);
+            }
+          }
+        }
+        // Integrate objective function
+        feVelBdry_[l]->computeIntegral(intVal,u_diff,u[0],false);
+        // Add to volume integral value
+        for (int i = 0; i < numCellsSide; ++i) {
+          cidx = bdryCellLocIds_[l][i];
+          (*val)(cidx) += half*(*intVal)(i);
+        }
+      }
+    }
+    return static_cast<Real>(0);
+  }
+
+  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real>>             &grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    const Real half(0.5);
+    const int c  = feVel_->gradN()->dimension(0);
+    const int fv = feVel_->gradN()->dimension(1);
+    const int fp = fePrs_->gradN()->dimension(1);
+    const int d  = feVel_->gradN()->dimension(3);
+    const int numLocSides = bdryCellLocIds_.size();
+    // Initialize output grad
+    int numCellsSide(0), numCubPerSide(0), cidx(0);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> G(d+1), u(d), U;
+    ROL::Ptr<Intrepid::FieldContainer<Real>> tmp, du, intGrad;
+    for (int i = 0; i < d; ++i) {
+      G[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv);
+    }
+    G[d] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    // Compute cost integral
+    for (int l = 0; l < numLocSides; ++l) {
+      numCellsSide  = bdryCellLocIds_[l].size();
+      if ( numCellsSide ) {
+        numCubPerSide = feVelBdry_[l]->cubPts()->dimension(1);
+        // Evaluate objective function gradient
+        du      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+        intGrad = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, fv);
+        for (int i = 0; i < d; ++i) {
+          tmp  = getBoundaryCoeff(*U[i], l);
+          u[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+          feVelBdry_[l]->evaluateValue(u[i], tmp);
+        }
+        for (int i = 0; i < d; ++i) {
+          for (int j = 0; j < numCellsSide; ++j) {
+            for (int k = 0; k < numCubPerSide; ++k) {
+              (*du)(j,k) = ((*u[i])(j,k)-target_[i])*(*u[0])(j,k);
+              if (i==0) {
+                for (int m = 0; m < d; ++m) {
+                  (*du)(j,k) += half*std::pow((*u[m])(j,k)-target_[m],2);
+                }
+              }
+            }
+          }
+          // Integrate gradient
+          Intrepid::FunctionSpaceTools::integrate<Real>(*intGrad,
+                                                        *du,
+                                                        *(feVelBdry_[l]->NdetJ()),
+                                                        Intrepid::COMP_CPP,
+                                                        false);
+          for (int j = 0; j < numCellsSide; ++j) {
+            cidx = bdryCellLocIds_[l][j];
+            for (int k = 0; k < fv; ++k) {
+              (*G[i])(cidx,k) += (*intGrad)(j,k);
+            }
+          }
+        }
+      }
+    }
+    fieldHelper_->combineFieldCoeff(grad, G);
+  }
+
+  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real>>             &grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_DownStreamPower_NavierStokes::gradient_2 is zero.");
+  }
+
+  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    const int c  = feVel_->gradN()->dimension(0);
+    const int fv = feVel_->gradN()->dimension(1);
+    const int fp = fePrs_->gradN()->dimension(1);
+    const int d  = feVel_->gradN()->dimension(3);
+    const int numLocSides = bdryCellLocIds_.size();
+    // Initialize output hess
+    int numCellsSide(0), numCubPerSide(0), cidx(0);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(d+1), U, V, u(d), v(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> tmp, du, intHess;
+    for (int i = 0; i < d; ++i) {
+      H[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv);
+    }
+    H[d] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    fieldHelper_->splitFieldCoeff(V, v_coeff);
+    // Compute cost integral
+    for (int l = 0; l < numLocSides; ++l) {
+      numCellsSide  = bdryCellLocIds_[l].size();
+      if ( numCellsSide ) {
+        numCubPerSide = feVelBdry_[l]->cubPts()->dimension(1);
+        // Evaluate state and direction on FE basis
+        du      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+        intHess = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, fv);
+        for (int i = 0; i < d; ++i) {
+          tmp  = getBoundaryCoeff(*U[i], l);
+          u[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+          feVelBdry_[l]->evaluateValue(u[i], tmp);
+          tmp  = getBoundaryCoeff(*V[i], l);
+          v[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+          feVelBdry_[l]->evaluateValue(v[i], tmp);
+        }
+        // Compute hessian times a vector
+        for (int i = 0; i < d; ++i) {
+          for (int j = 0; j < numCellsSide; ++j) {
+            for (int k = 0; k < numCubPerSide; ++k) {
+              if (i==0) {
+                (*du)(j,k) = (((*u[0])(j,k)-target_[i])+(*u[0])(j,k))*(*v[0])(j,k);
+                for (int m = 0; m < d; ++m) {
+                  (*du)(j,k) += ((*u[m])(j,k)-target_[m])*(*v[m])(j,k);
+                }
+              }
+              else {
+                (*du)(j,k) = (*u[i])(j,k)*(*v[0])(j,k) + (*u[0])(j,k)*(*v[i])(j,k);
+              }
+            }
+          }
+          // Integrate hessian
+          Intrepid::FunctionSpaceTools::integrate<Real>(*intHess,
+                                                        *du,
+                                                        *(feVelBdry_[l]->NdetJ()),
+                                                        Intrepid::COMP_CPP,
+                                                        false);
+          for (int j = 0; j < numCellsSide; ++j) {
+            cidx = bdryCellLocIds_[l][j];
+            for (int k = 0; k < fv; ++k) {
+              (*H[i])(cidx,k) += (*intHess)(j,k);
+            }
+          }
+        }
+      }
+    }
+    fieldHelper_->combineFieldCoeff(hess, H);
+  }
+
+  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_DownStreamPower_NavierStokes::HessVec_12 is zero.");
+  }
+
+  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_DownStreamPower_NavierStokes::HessVec_21 is zero.");
+  }
+
+  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> QoI_DownStreamPower_NavierStokes::HessVec_22 is zero.");
+  }
+
+}; // QoI_DownStreamPower_NavierStokes
+
+template <class Real>
 class QoI_L2Penalty_NavierStokes : public QoI<Real> {
 private:
   const ROL::Ptr<FE<Real>> feVel_;
@@ -1161,11 +1421,11 @@ private:
   }
 
 public:
-  QoI_L2Penalty_NavierStokes(const ROL::Ptr<FE<Real>> &feVel,
-                             const ROL::Ptr<FE<Real>> &fePrs,
-                             const std::vector<ROL::Ptr<FE<Real>>> & feVelBdry,
-                             const std::vector<std::vector<int>> bdryCellLocIds,
-                             const ROL::Ptr<FieldHelper<Real>> &fieldHelper)
+  QoI_L2Penalty_NavierStokes(const ROL::Ptr<FE<Real>>              &feVel,
+                             const ROL::Ptr<FE<Real>>              &fePrs,
+                             const std::vector<ROL::Ptr<FE<Real>>> &feVelBdry,
+                             const std::vector<std::vector<int>>   &bdryCellLocIds,
+                             const ROL::Ptr<FieldHelper<Real>>     &fieldHelper)
     : feVel_(feVel), fePrs_(fePrs), feVelBdry_(feVelBdry),
       bdryCellLocIds_(bdryCellLocIds), fieldHelper_(fieldHelper) {}
 

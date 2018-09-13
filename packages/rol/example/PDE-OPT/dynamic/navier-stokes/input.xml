@@ -2,15 +2,24 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <!-- OUTPUT -->
-    <Parameter name="Check Derivatives"             type="bool"    value="false"     />
+    <Parameter name="Check Derivatives"           type="bool"    value="false"       />
+    <Parameter name="Print Uncontrolled State"    type="bool"    value="false"       />
     <!-- PROBLEM INFORMATION -->
-    <Parameter name="Objective type"              type="string"  value="Directional" />
+    <Parameter name="Integrated Objective type"   type="string"  value="Dissipation" />
+    <Parameter name="Final Time Objective type"   type="string"  value="Tracking"    />
     <Parameter name="State Cost"                  type="double"  value="1e0"         />
+    <Parameter name="Final Time State Cost"       type="double"  value="1e0"         />
     <Parameter name="Control Cost"                type="double"  value="1e-2"        />
     <Parameter name="Reynolds Number"             type="double"  value="500.0"       />
     <Parameter name="Use Parametric Control"      type="bool"    value="true"        />
     <Parameter name="Use Parabolic Inflow"        type="bool"    value="false"       />
     <Parameter name="Use Non-Penetrating Walls"   type="bool"    value="true"        />
+    <!-- SINUSOIDAL INITIAL GUESS PARAMETERS FOR ROTATION CONTROL -->
+    <ParameterList name="Initial Guess">
+      <Parameter name="Amplitude"       type="double" value="0.0" />
+      <Parameter name="Strouhal Number" type="double" value="0.0" />
+      <Parameter name="Phase Shift"     type="double" value="0.0" />
+    </ParameterList>
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Cubature Degree"             type="int"     value="4"           />
   </ParameterList>

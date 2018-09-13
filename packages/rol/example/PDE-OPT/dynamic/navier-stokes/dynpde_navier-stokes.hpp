@@ -74,6 +74,7 @@ private:
   ROL::Ptr<PDE_NavierStokes<Real>> pde_;
   Real theta_;   // Time integration factor
   Real cx_, cy_; // Cylinder center
+  Real r_;       // Cylinder radius
   bool useParametricControl_;
   bool useParabolicInflow_;
   bool useNonPenetratingWalls_;
@@ -88,8 +89,9 @@ public:
     useParametricControl_   = parlist.sublist("Problem").get("Use Parametric Control", false);
     useParabolicInflow_     = parlist.sublist("Problem").get("Use Parabolic Inflow", true);
     useNonPenetratingWalls_ = parlist.sublist("Problem").get("Use Non-Penetrating Walls", false);
-    cx_                     = parlist.sublist("Problem").get("Cylinder Center X", -2.0);
-    cy_                     = parlist.sublist("Problem").get("Cylinder Center Y",  0.0);
+    cx_                     = parlist.sublist("Problem").get("Cylinder Center X", -15.0);
+    cy_                     = parlist.sublist("Problem").get("Cylinder Center Y",   0.0);
+    r_                      = parlist.sublist("Problem").get("Cylinder Radius",     0.5);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -854,15 +856,16 @@ public:
     return fePrs_;
   }
 
-  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(void) const {
-    return pde_->getVelocityBdryFE();
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
+    return pde_->getCellNodes();
+  }
+
+  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(const int sideset = -1) const {
+    return pde_->getVelocityBdryFE(sideset);
   }
 
   const std::vector<std::vector<int>> getBdryCellLocIds(const int sideset = -1) const {
-    int side = sideset;
-    if ( sideset < 0 ) {
-      side = 4;
-    }
+    int side = (sideset < 0 ? 4 : sideset);
     return bdryCellLocIds_[side];
   }
 
@@ -880,7 +883,7 @@ private:
     }
     if (sideset==4) {
       Real tx = y-cy_, ty = cx_-x;
-      val = (dir==0 ? tx : ty);
+      val = (dir==0 ? tx : ty)/r_;
     }
     return val;
   }

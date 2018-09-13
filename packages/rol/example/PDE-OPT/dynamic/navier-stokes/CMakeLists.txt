@@ -17,13 +17,24 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    example_02
+    SOURCES example_02.cpp
+    ADD_DIR_TO_NAME
+  )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     DynamicNavierStokesDataCopy
     SOURCE_FILES
       input.xml
-      plotresults.m
-      plotFlow.m
       plotControl.m
+      plotFlow.m
+      plotInitialFlow.m
+      flowMovie.m
+      vorticity.m
+      trisurfMovie.m
+      plotmesh.m
+      parseData.m
       channel.txt
       channel.jou
       process.sh
