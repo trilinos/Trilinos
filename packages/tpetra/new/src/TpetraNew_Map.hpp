@@ -215,7 +215,7 @@ namespace TpetraNew {
     /// A Kokkos::Device is an (execution_space, memory_space) pair.
     /// It defines where the Map's data live, and where Map might
     /// choose to execute parallel kernels.
-    using device_type = ::Tpetra::Details::DefaultTypes::execution_space;
+    using device_type = ::Tpetra::Details::DefaultTypes::device_type;
 
     //! DEPRECATED; DO NOT USE.
     using node_type =

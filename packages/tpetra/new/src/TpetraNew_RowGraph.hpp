@@ -205,7 +205,7 @@ namespace TpetraNew {
     /// This returns local_ordinal_type because no row of the graph
     ///   may have more than local_ordinal_type entries.  (This
     ///   follows from the definition of column Map.)
-    virtual global_ordinal_type getGlobalMaxNumRowEntries () const = 0;
+    virtual local_ordinal_type getGlobalMaxNumRowEntries () const = 0;
 
     /// \brief The maximum number of entries in any row of the graph,
     ///   on this process.
@@ -277,7 +277,7 @@ namespace TpetraNew {
     ///   on the calling process).
     virtual local_ordinal_type
     getLocalRowCopy (const local_ordinal_type lclRow,
-                     const Teuchos::ArrayView<local_ordinal_type>& lclColInds) = 0;
+                     const Teuchos::ArrayView<local_ordinal_type>& lclColInds) const = 0;
 
     /// \brief Whether this class implements getLocalRowView() and
     ///   getGlobalRowView().

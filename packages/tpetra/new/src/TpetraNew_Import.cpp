@@ -528,7 +528,7 @@ namespace TpetraNew {
 
         for (LO k = 0; k < numTargetMapRemoteOrPermuteGlobalIndices; ++k) {
           const GO tgtGID = targetMapRemoteOrPermuteGlobalIndices[k];
-          if (sourceMap.isNodeGlobalElement (tgtGID)) {
+          if (sourceMap.isMyGlobalIndex (tgtGID)) {
             badGIDs.push_back (tgtGID);
           }
           const int tgtPID = targetMapRemoteOrPermuteProcessRanks[k];
@@ -580,7 +580,7 @@ namespace TpetraNew {
       // Create list of GIDs to go into target Map.  We need to copy
       // the GIDs into this list anyway, so once we have them, we can
       // sort the "remotes" in place.
-      const LO numLclSrcIDs = sourceMap.getNodeNumElements ();
+      const LO numLclSrcIDs = sourceMap.getMyNumIndices ();
       const LO numLclTgtIDs = numLclSrcIDs + numTargetMapRemoteOrPermuteGlobalIndices;
       if (verbose) {
         std::ostringstream os;
@@ -638,7 +638,7 @@ namespace TpetraNew {
       }
       // The _actual_ number of remotes.
       const LO numRemotes = numTargetMapRemoteOrPermuteGlobalIndices - result.numPermutes;
-      result.numSameIDs = static_cast<LO> (sourceMap.getNodeNumElements ());
+      result.numSameIDs = static_cast<LO> (sourceMap.getMyNumIndices ());
 
       if (verbose) {
         std::ostringstream os;
@@ -1011,9 +1011,9 @@ namespace TpetraNew {
     for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
       const GO curTargetGid = rawTgtGids[tgtLid];
       // getLocalIndex() returns LINVALID if the GID isn't in the source Map.
-      // This saves us a lookup (which isNodeGlobalElement() would do).
+      // This saves us a lookup (which isMyGlobalIndex() would do).
       const LO srcLid = source.getLocalIndex (curTargetGid);
-      if (srcLid != LINVALID) { // if source.isNodeGlobalElement (curTargetGid)
+      if (srcLid != LINVALID) { // if source.isMyGlobalIndex (curTargetGid)
         permuteToLIDs.push_back (tgtLid);
         permuteFromLIDs.push_back (srcLid);
       } else {
@@ -1408,23 +1408,23 @@ namespace TpetraNew {
     ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs();
     Array<GO> permuteGIDs1(permuteToLIDs1.size());
     for (size_type k=0; k<permuteGIDs1.size(); k++)
-      permuteGIDs1[k] = tgtMap1->getGlobalElement(permuteToLIDs1[k]);
+      permuteGIDs1[k] = tgtMap1->getGlobalIndex(permuteToLIDs1[k]);
 
     ArrayView<const LO> permuteToLIDs2 = rhs.getPermuteToLIDs();
     Array<GO> permuteGIDs2(permuteToLIDs2.size());
     for (size_type k=0; k<permuteGIDs2.size(); k++)
-      permuteGIDs2[k] = tgtMap2->getGlobalElement(permuteToLIDs2[k]);
+      permuteGIDs2[k] = tgtMap2->getGlobalIndex(permuteToLIDs2[k]);
 
     // Get remote GIDs
     ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
     Array<GO> remoteGIDs1(remoteLIDs1.size());
     for (size_type k=0; k<remoteLIDs1.size(); k++)
-      remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
+      remoteGIDs1[k] = this->getTargetMap()->getGlobalIndex(remoteLIDs1[k]);
 
     ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
     Array<GO> remoteGIDs2(remoteLIDs2.size());
     for (size_type k=0; k<remoteLIDs2.size(); k++)
-      remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
+      remoteGIDs2[k] = rhs.getTargetMap()->getGlobalIndex(remoteLIDs2[k]);
 
     // Get remote PIDs
     Array<int> remotePIDs1;
@@ -1616,7 +1616,7 @@ namespace TpetraNew {
     ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
 
     // All elements in srcMap will be in the "new" target map, so...
-    size_t numSameIDsNew    = srcMap->getNodeNumElements();
+    size_t numSameIDsNew    = srcMap->getMyNumIndices();
     size_t numRemoteIDsNew  = getNumRemoteIDs();
     Array<LO> permuteToLIDsNew, permuteFromLIDsNew; // empty on purpose
 
@@ -1667,7 +1667,7 @@ namespace TpetraNew {
 
     const size_t NumRemotes = getNumRemoteIDs ();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      NumRemotes != remoteTarget->getNodeNumElements (),
+      NumRemotes != remoteTarget->getMyNumIndices (),
       std::runtime_error, "Tpetra::createRemoteOnlyImport: "
       "remoteTarget map ID count doesn't match.");
 
@@ -1675,7 +1675,7 @@ namespace TpetraNew {
     Teuchos::ArrayView<const local_ordinal_type> oldRemoteLIDs = getRemoteLIDs ();
     Teuchos::Array<local_ordinal_type> newRemoteLIDs (NumRemotes);
     for (size_t i = 0; i < NumRemotes; ++i) {
-      newRemoteLIDs[i] = remoteTarget->getLocalIndex (getTargetMap ()->getGlobalElement (oldRemoteLIDs[i]));
+      newRemoteLIDs[i] = remoteTarget->getLocalIndex (getTargetMap ()->getGlobalIndex (oldRemoteLIDs[i]));
       // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
       TEUCHOS_TEST_FOR_EXCEPTION(
         i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1],
