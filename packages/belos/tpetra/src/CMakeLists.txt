@@ -38,12 +38,6 @@ APPEND_SET(SOURCES
   Belos_Details_Tpetra_registerSolverFactory.cpp
   )
 
-APPEND_SET(SOURCES
-  BelosTpetraAdapter.cpp
-  Belos_Details_Tpetra_registerLinearSolverFactory.cpp
-  Belos_Details_Tpetra_registerSolverFactory.cpp
-  )
-
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Cg.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.hpp
