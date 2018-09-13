@@ -251,6 +251,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
@@ -645,6 +646,8 @@ namespace MueLu {
          ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("rap: shift","rap: shift")
+      
+         ("rap: shift diagonal M","rap: shift diagonal M")
       
          ("rap: algorithm","rap: algorithm")
       
