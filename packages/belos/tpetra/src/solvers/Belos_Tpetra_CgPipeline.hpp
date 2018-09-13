@@ -1,5 +1,5 @@
-#ifndef BELOS_TPETRA_CG_HPP
-#define BELOS_TPETRA_CG_HPP
+#ifndef BELOS_TPETRA_CGPIPELINE_HPP
+#define BELOS_TPETRA_CGPIPELINE_HPP
 
 #include "Belos_Tpetra_Krylov.hpp"
 #include "Tpetra_idot.hpp"
@@ -232,4 +232,4 @@ void register_CgPipeline (const bool verbose);
 } // namespace Impl
 } // namespace BelosTpetra
 
-#endif // BELOS_TPETRA_CG_HPP
+#endif // BELOS_TPETRA_CGPIPELINE_HPP
