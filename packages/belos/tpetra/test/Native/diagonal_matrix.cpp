@@ -11,6 +11,30 @@
 
 namespace { // (anonymous)
 
+struct CommandLineOptions {
+  std::string solverName {"TPETRA CG"};
+  // mfh 14 Aug 2018: Most of these CG solvers take 29 or 30 iterations
+  // on this problem.  We add five iterations to allow for rounding
+  // error.
+  int maxAllowedNumIters {35};
+  bool verbose {true};
+};
+CommandLineOptions commandLineOptions;
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
+  clp.addOutputSetupOptions (true);
+  clp.setOption ("solver", &commandLineOptions.solverName, 
+		 "Name of the solver to test.  Belos::SolverFactory::create "
+		 "must accept this string.  Protect with double quotes if it "
+		 "has spaces: e.g., \"TPETRA CG PIPELINE\".");
+  clp.setOption ("maxNumIters", &commandLineOptions.maxAllowedNumIters, 
+		 "Maximum number of iterations");
+  clp.setOption ("verbose", "quiet", &commandLineOptions.verbose, 
+		 "Whether to print verbose output");
+}
+
 template<class TpetraOperatorType = Tpetra::Operator<>>
 class TestDiagonalOperator : public TpetraOperatorType {
 public:
@@ -101,10 +125,11 @@ private:
 };
 
 void
-testCgVariant (Teuchos::FancyOStream& out,
-	       bool& success,
-	       const std::string& solverName,
-	       const int maxAllowedNumIters)
+testSolver (Teuchos::FancyOStream& out,
+	    bool& success,
+	    const std::string& solverName,
+	    const int maxAllowedNumIters,
+	    const bool verbose)
 {
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;
@@ -178,7 +203,7 @@ testCgVariant (Teuchos::FancyOStream& out,
 
   myOut << "Set parameters" << endl;
   RCP<ParameterList> params = parameterList ("Belos");
-  //params->set ("Verbosity", 1);
+  params->set ("Verbosity", verbose ? 1 : 0);
   try {
     solver->setParameters (params);
   }
@@ -251,42 +276,11 @@ testCgVariant (Teuchos::FancyOStream& out,
   myOut << endl;
 }
 
-// mfh 14 Aug 2018: Most of these CG solvers take 29 or 30 iterations
-// on this problem.  We add five iterations to allow for rounding
-// error.
-constexpr int maxAllowedNumIters = 35;
-
-TEUCHOS_UNIT_TEST( CgVariants, Cg )
+TEUCHOS_UNIT_TEST( TpetraNativeSolvers, Diagonal )
 {
-  testCgVariant (out, success, "TPETRA CG", maxAllowedNumIters);
-}
-
-TEUCHOS_UNIT_TEST( CgVariants, CgPipeline )
-{
-  testCgVariant (out, success, "TPETRA CG PIPELINE", maxAllowedNumIters);  
-}
-
-TEUCHOS_UNIT_TEST( CgVariants, CgSingleReduce )
-{
-  testCgVariant (out, success, "TPETRA CG SINGLE REDUCE", maxAllowedNumIters);    
-}
-
-TEUCHOS_UNIT_TEST( CgVariants, Gmres )
-{
-  // GMRES minimizes the residual norm, so it should converge at least
-  // as fast as CG.
-  testCgVariant (out, success, "TPETRA GMRES", maxAllowedNumIters);
-}
-
-TEUCHOS_UNIT_TEST( GmresVariants, GmresSingleReduce )
-{
-  testCgVariant (out, success, "TPETRA GMRES SINGLE REDUCE", maxAllowedNumIters);    
-}
-
-// Compare against Belos' "generic" CG implementation.
-TEUCHOS_UNIT_TEST( CgVariants, BelosGenericCg )
-{
-  testCgVariant (out, success, "CG", maxAllowedNumIters);
+  testSolver (out, success, commandLineOptions.solverName,
+	      commandLineOptions.maxAllowedNumIters,
+	      commandLineOptions.verbose);
 }
 
 } // namespace (anonymous)
@@ -297,7 +291,8 @@ namespace Impl {
   extern void register_CgPipeline (const bool verbose);
   extern void register_CgSingleReduce (const bool verbose);
   extern void register_Gmres (const bool verbose);
-  extern void register_GmresSingleReduce (const bool verbose);    
+  extern void register_GmresSingleReduce (const bool verbose);
+  extern void register_GmresSstep (const bool verbose);    
 } // namespace Impl
 } // namespace BelosTpetra
 
@@ -305,11 +300,12 @@ int main (int argc, char* argv[])
 {
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
-  const bool verbose = true;
+  constexpr bool verbose = false;
   BelosTpetra::Impl::register_Cg (verbose);
   BelosTpetra::Impl::register_CgPipeline (verbose);
   BelosTpetra::Impl::register_CgSingleReduce (verbose);
   BelosTpetra::Impl::register_Gmres (verbose);
-  BelosTpetra::Impl::register_GmresSingleReduce (verbose);      
+  BelosTpetra::Impl::register_GmresSingleReduce (verbose);
+  BelosTpetra::Impl::register_GmresSstep (verbose);      
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }
