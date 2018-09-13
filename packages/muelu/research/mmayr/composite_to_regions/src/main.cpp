@@ -588,7 +588,7 @@ void vCycle(const int l, ///< ID of current level
 }
 
 Teuchos::Array<int> setLocalNodesPerDim(const std::string& problemType,
-    const bool doing1D, const Epetra_Map& rowMap)
+    const bool doing1D, const Epetra_Map& rowMap, const int ownedX, const int ownedY)
 {
   // Number of nodes per x/y/z-direction per processor
   Teuchos::Array<int> lNodesPerDim(3);
@@ -639,10 +639,45 @@ Teuchos::Array<int> setLocalNodesPerDim(const std::string& problemType,
   }
   else {
 
+    if (rowMap.Comm().MyPID() == 4)
+    {
+      // This is the unstructured region, so we set dummy values
+      lNodesPerDim [0] = -1;
+      lNodesPerDim [1] = -1;
+      lNodesPerDim [2] = -1;
+    }
+    else
+    {
+      lNodesPerDim[0] = ownedX;
+      lNodesPerDim[1] = ownedY;
+      lNodesPerDim[2] = 1;
+    }
   }
 
-
   return lNodesPerDim;
+}
+
+// Select the type of aggregation in each region
+std::string setAggregationTypePerRegion (const std::string& problemType, const int myRank)
+{
+  std::string aggregationType;
+
+  if (problemType == "structured")
+  {
+    aggregationType = "structured";
+  }
+  else
+  {
+    // Circle-in-a-disk example on 5 processors
+    {
+      if (myRank == 4)
+        aggregationType = "uncoupled";
+      else
+        aggregationType = "structured";
+    }
+  }
+
+  return aggregationType;
 }
 
 /* To run the region MG sovler, first run the Matlab program 'createInput.m'
@@ -979,6 +1014,13 @@ int main(int argc, char *argv[]) {
     TEUCHOS_ASSERT(fp!=NULL);
 
     if (problemType == "structured") {
+
+      // Fill this with dummy entries. Will not be used in fully structured problems.
+      genericVector.resize(3);
+      genericVector[ISSTRUCTURED] = 0;
+      genericVector[OWNEDX] = -1;
+      genericVector[OWNEDY] = -1;
+
       if (doing1D) {
         int minGID, maxGID;
         for (int i = 0; i < (int) myRegions.size(); i++) {
@@ -1470,10 +1512,18 @@ sleep(myRank*3);
 
       // Set number of nodes per processor per dimension
       Array<int> lNodesPerDim = setLocalNodesPerDim(problemType, doing1D,
-          *revisedRowMapPerGrp[j]);
+          *revisedRowMapPerGrp[j], genericVector[OWNEDX], genericVector[OWNEDY]);
 
       // Set aggregation type for each region
-      std::string regionType = "structured";
+      std::string aggregationRegionType = setAggregationTypePerRegion(problemType, myRank);
+
+      // create nullspace vector
+      RCP<Epetra_Vector> nullspace = rcp(new Epetra_Vector(*revisedRowMapPerGrp[j]));
+      nullspace->PutScalar(1.0);
+
+      // create dummy coordinates vector
+      RCP<Epetra_MultiVector> coordinates = rcp(new Epetra_MultiVector(*revisedRowMapPerGrp[j], 3));
+      coordinates->PutScalar(1.0);
 
       // Read MueLu parameter list form xml file
       RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -1482,15 +1532,11 @@ sleep(myRank*3);
       const std::string userName = "user data";
       Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
       userParamList.set<Array<int> >("Array<LO> lNodesPerDim", lNodesPerDim);
-      userParamList.set<std::string>("string aggregationRegionType", regionType);
-
-      // create nullspace vector
-      RCP<Epetra_Vector> nullspace = rcp(new Epetra_Vector(*revisedRowMapPerGrp[j]));
-      nullspace->PutScalar(1.0);
+      userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType);
 
       // Setup hierarchy
       RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(regionGrpMats[j], *mueluParams,
-          Teuchos::null, nullspace);
+          coordinates, nullspace);
       regGrpHierarchy[j] = eH->GetHierarchy();
     }
 
