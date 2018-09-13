@@ -21,33 +21,33 @@ namespace { // (anonymous)
 // cases.
 template<class LO, class SC, bool isComplex = Teuchos::ScalarTraits<SC>::isComplex>
 struct ComputeRitzValues {
+  using STS = Teuchos::ScalarTraits<SC>;
+  using mag_type = typename STS::magnitudeType;
+  using complex_type = std::complex<mag_type>;
+  
   static void
   run (const int iter,
        Teuchos::SerialDenseMatrix<LO, SC>& G,
-       std::vector<SC>& ritzValues);
+       std::vector<complex_type>& ritzValues);
 };
 
 // Real Scalar (SC) case.
 template<class LO, class SC>
 struct ComputeRitzValues<LO, SC, false> {
+  using STS = Teuchos::ScalarTraits<SC>;
+  using mag_type = typename STS::magnitudeType;
+  using complex_type = std::complex<mag_type>;
+  
   static void
   run (const int iter,
        Teuchos::SerialDenseMatrix<LO, SC>& G,
-       std::vector<SC>& ritzValues)
+       std::vector<complex_type>& ritzValues)
   {
-    using STS = Teuchos::ScalarTraits<SC>;
-    using mag_type = typename STS::magnitudeType;
-    
-    if (ritzValues.size () < static_cast<std::size_t> (iter)) {
+    if (ritzValues.size () < std::size_t (iter)) {
       ritzValues.resize (iter);
     }
-
-    // FIXME (mfh 14 Aug 2018) The code as I found it ignored the
-    // imaginary Ritz values.  I'm just going to leave that in place
-    // for now.
     
-    //std::vector<mag_type> WR (iter);
-    std::vector<mag_type>& WR = ritzValues;
+    std::vector<mag_type> WR (iter);
     std::vector<mag_type> WI (iter);
     Teuchos::LAPACK<LO, SC> lapack;
     SC TEMP = STS::zero ();    
@@ -70,23 +70,25 @@ struct ComputeRitzValues<LO, SC, false> {
     TEUCHOS_TEST_FOR_EXCEPTION
       (info != 0, std::runtime_error, "LAPACK {D,S}SEQR failed "
        "with INFO = " << info << " != 0.");
-    // FIXME (mfh 14 Aug 2018) The code as I found it ignored the
-    // imaginary Ritz values.  I'm just going to leave that in place
-    // for now.
+    for (int i = 0; i < iter; ++i) {
+      ritzValues[i] = complex_type { WR[i], WI[i] };
+    }
   }
 };
 
 // Complex Scalar (SC) case.  
 template<class LO, class SC>
 struct ComputeRitzValues<LO, SC, true> {
+  using STS = Teuchos::ScalarTraits<SC>;
+  using mag_type = typename STS::magnitudeType;
+  using complex_type = std::complex<mag_type>;
+  
   static void
   run (const int iter,
        Teuchos::SerialDenseMatrix<LO, SC>& G,
-       std::vector<SC>& ritzValues)
+       std::vector<complex_type>& ritzValues)
   {
-    using STS = Teuchos::ScalarTraits<SC>;
-
-    if (ritzValues.size () < static_cast<std::size_t> (iter)) {
+    if (ritzValues.size () < std::size_t (iter)) {
       ritzValues.resize (iter);
     }
 
@@ -113,13 +115,123 @@ struct ComputeRitzValues<LO, SC, true> {
   }
 };
 
+/// \brief Compute eigenvalues of the upper Hessenberg matrix from GMRES.
+///
+/// \param iter [in] The current GMRES iteration number
+/// \param G [in] Upper Hessenberg matrix from GMRES.
+/// \param ritzValues [out] The eigenvalues of G.
 template<class LO, class SC>
 void
 computeRitzValues (const int iter,
 		   Teuchos::SerialDenseMatrix<LO, SC>& G,
-		   std::vector<SC>& ritzValues)
+		   std::vector<std::complex<typename Teuchos::ScalarTraits<SC>::magnitudeType>>& ritzValues)
 {
   ComputeRitzValues<LO, SC>::run (iter, G, ritzValues);
+}
+
+/// \brief Sort Ritz values computed by computeRitzValues, using the
+///   Leja ordering.
+template<class LO, class SC>
+void
+sortRitzValues (const LO m,
+		std::vector<SC>& RR)
+{
+  using STS = Teuchos::ScalarTraits<SC>;
+  using real_type = typename STS::magnitudeType;
+  using complex_type = std::complex<real_type>;
+  
+  std::vector<complex_type> ritzValues (m);
+
+  // the first Ritz is the largest
+  LO i = 0;
+  LO next_index = 0;
+  real_type next_value = std::abs( RR[0] );
+  for (int i = 1; i < m; i++) {
+    if( next_value < std::abs( RR[i] ) ) {
+      next_index = i;
+      next_value = std::abs( RR[i] );
+    }
+  }
+  ritzValues[0] = RR[next_index];
+  RR[next_index] = RR[0];
+
+  if (! STS::isComplex) {
+    if (RR[i].imag() != 0.0) {
+
+      if (next_index == 0) {
+	ritzValues[1] = ritzValues[0];
+	RR[next_index+1] = RR[1];
+      } else if (next_index == m-1) {
+	ritzValues[1] = ritzValues[0];
+	RR[next_index-1] = RR[1];
+      } else {
+	real_type val1 = std::abs(std::conj(RR[next_index-1]) - RR[next_index]);
+	real_type val2 = std::abs(std::conj(RR[next_index+1]) - RR[next_index]);
+	if (val1 < val2) {
+	  ritzValues[1] = ritzValues[0];
+	  RR[next_index-1] = RR[1];
+	} else {
+	  ritzValues[1] = ritzValues[0];
+	  RR[next_index+1] = RR[1];
+	}
+      }
+
+      ritzValues[0].imag( 0.0 );
+      i++;
+    }
+  }
+  i++;
+
+  // sort the rest of Ritz values
+  for (; i < m; i++) {
+    next_index = i;
+    next_value = std::abs( RR[i] - ritzValues[0] );
+    for (int j = 1;  j < i; j++ ) {
+      next_value *= std::abs( RR[i] - ritzValues[j] );
+    }
+
+    for (int k = i+1;  k < m; k++ ) {
+      real_type value = std::abs( RR[k] - ritzValues[0] );
+      for (int j = 1;  j < i; j++ ) {
+	value *= std::abs( RR[k] - ritzValues[j] );
+      }
+      if (next_value < value) {
+	next_value = value;
+	next_index = k;
+      }
+    }
+    ritzValues[i] = RR[next_index];
+    RR[next_index] = RR[i];
+
+    if (! STS::isComplex) {
+      if (RR[i].imag() != 0.0) {
+	if (next_index == 0) {
+	  ritzValues[i+1] = ritzValues[i];
+	  RR[next_index+1] = RR[i+1];
+	} else if (next_index == m-1) {
+	  ritzValues[i+1] = ritzValues[i];
+	  RR[next_index-1] = RR[i+1];
+	} else {
+	  real_type val1 = std::abs(std::conj(RR[next_index-1]) - ritzValues[i]);
+	  real_type val2 = std::abs(std::conj(RR[next_index+1]) - ritzValues[i]);
+	  if (val1 < val2) {
+	    ritzValues[i+1] = ritzValues[i];
+	    RR[next_index-1] = RR[i+1];
+	  } else {
+	    ritzValues[i+1] = ritzValues[i];
+	    RR[next_index+1] = RR[i+1];
+	  }
+	}
+	ritzValues[i].imag( 0.0 );
+	i++;
+      }
+    }
+  }
+
+  // copy back in the Leja order
+  for (i = 0; i < m; i++) {
+    RR[i] = ritzValues[i];
+  }
 }
   
 } // namespace (anonymous)
@@ -166,6 +278,10 @@ public:
 
     const int resCycle = defaultValues ? 30 : this->input_.resCycle;
     params.set ("Num Blocks", resCycle);
+    // FIXME (mfh 16 Sep 2018) This isn't quite right -- "Maximum
+    // Restarts" in Belos refers to the number of restart cycles.
+    // These Krylov solvers appear to use maxNumIters as the maximum
+    // total number of iterations over all restart cycles.
     params.set ("Maximum Restarts", this->input_.maxNumIters);
   }
 
@@ -204,6 +320,9 @@ private:
   setOrthogonalizer (const std::string& ortho)
   {
     if (ortho_.get () == nullptr || this->input_.orthoType != ortho) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(this->input_.orthoType == "", std::runtime_error,
+	 "Gmres: Failed to specify \"Orthogonalization\" parameter.");
       // Since setOrthogonalizer only gets called on demand, we know
       // the preconditioner (if any) at this point.  Thus, we can use
       // Belos::OrthoManagerFactory here.
@@ -261,6 +380,48 @@ private:
   }
 
 protected:
+  //! Apply the orthogonalization using Belos' OrthoManager
+  void
+  projectBelosOrthoManager (const int n,
+			    const int s,
+			    MV& Q,
+			    dense_matrix_type& R)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    
+    if (n > 0) {
+      // vector to be orthogonalized
+      Teuchos::Range1D index(n, n+s);
+      RCP<MV> Qnew = Q.subViewNonConst (index);
+
+      // vectors to be orthogonalized against
+      Teuchos::Range1D index_prev (0, n-1);
+      RCP<const MV> Q_prev = MVT::CloneView (Q, index_prev);
+      Teuchos::Array<RCP<const MV> > Qprev (1, Q_prev);
+
+      // orthogonalize scalars
+      RCP<dense_matrix_type> r_new =
+        rcp (new dense_matrix_type (Teuchos::View, R, n, s+1, 0, 0));
+      Teuchos::Array<RCP<dense_matrix_type>> r_array (1, r_new);
+
+      if (this->ortho_ == Teuchos::null) {
+        this->setOrthogonalizer (this->input_.orthoType);
+      }
+      this->ortho_->project (*Qnew, r_array, Qprev);
+    }
+  }
+  
+  int
+  normalizeBelosOrthoManager (MV& Q, dense_matrix_type& R)
+  {
+    if (ortho_.get () == nullptr) {
+      setOrthogonalizer (this->input_.orthoType);
+    }
+    Teuchos::RCP<dense_matrix_type> R_ptr = Teuchos::rcpFromRef (R);
+    return ortho_->normalize (Q, R_ptr);
+  }
+
   //! Reduce a column of Henssenburg matrix to triangular form
   void
   reduceHessenburgToTriangular(const int j,
@@ -291,30 +452,6 @@ protected:
     this->reduceHessenburgToTriangular (j, H, cs, sn, y.values ());
   }
 
-private:
-  //! Sort Ritz values, using the Leja ordering.
-  void
-  sortRitzValues (const LO m, std::vector<SC>& RR)
-  {
-    LO index = -1;
-    SC value = STS::zero();
-    for (int i = 0; i < m; i++) {
-      LO next_index = index;
-      SC next_value = value;
-      for (int k = i;  k < m; k++ ) {
-        if( std::abs( next_value - value ) <= std::abs( RR[k] - value ) ) {
-          next_index = k;
-          next_value = RR[k];
-        }
-      }
-      RR[next_index] = RR[i];
-      RR[i] = next_value;
-      index = next_index;
-      value = next_value;
-    }
-  }
-
-protected:  
   SolverOutput<SC>
   solveOneVec (Teuchos::FancyOStream* outPtr,
                vec_type& X, // in X/out X
@@ -439,7 +576,7 @@ protected:
         // Compute Ritz values, if requested
         if (input.computeRitzValues && output.numRests == 0) {
 	  computeRitzValues (iter, G, output.ritzValues);
-          this->sortRitzValues (iter, output.ritzValues);
+          sortRitzValues (iter, output.ritzValues);
         }
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,

@@ -1,6 +1,7 @@
 #ifndef BELOS_TPETRA_KRYLOV_PARAMETERS_HPP
 #define BELOS_TPETRA_KRYLOV_PARAMETERS_HPP
 
+#include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include <algorithm>
 #include <iostream>
@@ -9,6 +10,22 @@
 
 namespace BelosTpetra {
 namespace Impl {
+
+class Indent {
+public:
+  Indent (Teuchos::FancyOStream* out) : out_ (out) {
+    if (out_ != nullptr) {
+      out_->pushTab ();
+    }
+  }
+  ~Indent () {
+    if (out_ != nullptr) {
+      out_->popTab ();
+    }
+  }
+private:
+  Teuchos::FancyOStream* out_;
+};
 
 template<class ScalarType>
 struct SolverInput {
@@ -41,6 +58,7 @@ template<class SC>
 struct SolverOutput {
   using val_type = SC;
   using mag_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  using complex_type = std::complex<mag_type>;
 
   SolverOutput () = default;
 
@@ -55,8 +73,7 @@ struct SolverOutput {
   //! Whether the solve converged.
   bool converged = true;
   //! Ritz values if requested
-
-  std::vector<val_type> ritzValues;
+  std::vector<complex_type> ritzValues;
 };
 
 /// \brief Combine two solver outputs.
@@ -92,13 +109,23 @@ operator<< (std::ostream& out,
   using std::endl;
 
   out << "Solver output:" << endl
-      << "  Absolute residual norm: " << so.absResid << endl
-      << "  Relative residual norm: " << so.relResid << endl
-      << "  Number of iterations: " << so.numIters << endl;
+      << " Absolute residual norm: " << so.absResid << endl
+      << " Relative residual norm: " << so.relResid << endl
+      << " Number of iterations: " << so.numIters << endl;
   if (so.numRests >= 0) {
-    out << "  Number of restarts: " << so.numRests << endl;
+    out << " Number of restarts: " << so.numRests << endl;
   }
-  out << "  Converged: " << (so.converged ? "true" : "false");
+  out << " Converged: " << (so.converged ? "true" : "false") << endl;
+  if (so.ritzValues.size () != 0) {
+    out << " Ritz values: [";
+    for (std::size_t k = 0; k < so.ritzValues.size (); ++k) {
+      out << so.ritzValues[k];
+      if (k + std::size_t (1) < so.ritzValues.size ()) {
+	out << ", ";
+      }
+    }
+    out << "]" << endl;
+  }
   return out;
 }
 
@@ -109,15 +136,17 @@ operator<< (std::ostream& out,
 {
   using std::endl;
 
-  out << "Solver input:" << endl
-      << "  Original residual norm: " << si.r_norm_orig << endl
-      << "  Residual norm tolerance: " << si.tol << endl
-      << "  Max. number of iterations: " << si.maxNumIters << endl;
+  out << "Solver input:" << endl;
+  out << " Original residual norm: " << si.r_norm_orig << endl
+      << " Residual norm tolerance: " << si.tol << endl
+      << " Max. number of iterations: " << si.maxNumIters << endl;
   if (si.resCycle > 0) {
-    out << "  Restart cycle: " << si.resCycle << endl;
-    out << "  Orthogonalization: " << si.orthoType << endl;
+    out << " Restart cycle: " << si.resCycle << endl;
+    out << " Orthogonalization: " << si.orthoType << endl;
   }
-  out << "  Preconditioner: " << si.precoType << " (" << si.precoSide << ")" << endl;
+  out << " Step size: " << si.stepSize << endl
+      << " Preconditioner: " << si.precoType << " (" << si.precoSide << ")"
+      << endl;
   return out;
 }
 

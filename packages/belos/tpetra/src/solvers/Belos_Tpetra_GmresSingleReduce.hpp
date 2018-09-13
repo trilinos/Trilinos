@@ -2,6 +2,7 @@
 #define BELOS_TPETRA_GMRES_SINGLE_REDUCE_HPP
 
 #include "Belos_Tpetra_Gmres.hpp"
+#include "Belos_Tpetra_UpdateNewton.hpp"
 
 namespace BelosTpetra {
 namespace Impl {
@@ -20,19 +21,43 @@ private:
   using mag_type = typename STS::magnitudeType;
   using STM = Teuchos::ScalarTraits<mag_type>;
   using device_type = typename MV::device_type;
+  using complex_type = std::complex<mag_type>;
 
 public:
   GmresSingleReduce () :
-    base_type::Gmres ()
+    base_type::Gmres (),
+    stepSize_ (1)
   {}
 
   GmresSingleReduce (const Teuchos::RCP<const OP>& A) :
-    base_type::Gmres (A)
+    base_type::Gmres (A),
+    stepSize_ (1)
   {}
 
   virtual ~GmresSingleReduce ()
   {}
 
+  virtual void
+  setParameters (Teuchos::ParameterList& params) {
+    Gmres<SC, MV, OP>::setParameters (params);
+
+    int stepSize = stepSize_;
+    if (params.isParameter ("Step Size")) {
+      stepSize = params.get<int> ("Step Size");
+    }
+    stepSize_ = stepSize;
+  }
+
+  void
+  setStepSize(int stepSize) {
+    stepSize_ = stepSize;
+  }
+
+  int
+  getStepSize() {
+    return stepSize_;
+  }
+  
 protected:
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
@@ -121,6 +146,7 @@ private:
     int restart = input.resCycle;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
+    const bool computeRitzValues = true;
 
     SolverOutput<SC> output {};
 
@@ -148,7 +174,6 @@ private:
     output.converged = false;
     output.absResid = b0_norm;
     output.relResid = STM::one ();
-    // quick-return
     mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
     if (metric <= input.tol) {
       if (outPtr != NULL) {
@@ -170,14 +195,13 @@ private:
     r_norm = b_norm;
 
     // compute Ritz values as Newton shifts
-    if (input.computeRitzValues) {
+    if (computeRitzValues) {
       // Invoke ordinary GMRES for the first restart
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
-
-      const int numRests = output.numRests;
-      output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M, input_gmres);
-      output.numRests = numRests;
+      input_gmres.computeRitzValues = true;
+      output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
+					       input_gmres);
       if (output.converged) {
         return output; // ordinary GMRES converged
       }
@@ -202,43 +226,45 @@ private:
     // initialize starting vector
     P.scale (one / r_norm);
     y[0] = SC {r_norm};
+    const int s = getStepSize ();
     // main loop
-    while (output.numIters < input.maxNumIters && output.converged == false) {
+    while (output.numIters < input.maxNumIters && ! output.converged) {
       int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
-      // restart-cycle
+      // restart cycle
       for (iter = 0; iter < restart && metric > input.tol; ++iter) {
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
-        if (input.precoSide == "none") {
-          // no-preconditioner
+        if (input.precoSide == "none") { // no preconditioner
           A.apply (P, AP);
         }
 	else if (input.precoSide == "right") {
-          // right-preconditioner
           M.apply (P, MP);
           A.apply (MP, AP);
         }
 	else {
-          // left-preconditioner
           A.apply (P, MP);
           M.apply (MP, AP);
         }
         // Shift for Newton basis
-        if (input.computeRitzValues) {
-          AP.update (-output.ritzValues[iter], P, one);
+        if (computeRitzValues) {
+          //AP.update (-output.ritzValues[iter],  P, one);
+	  const complex_type theta = output.ritzValues[iter % s];
+          UpdateNewton<SC, MV>::updateNewtonV (iter, Q, theta);
         }
         output.numIters++; 
 
         // Orthogonalization
         projectAndNormalizeSingleReduce (iter, input, Q, H, h);
         // Shift back for Newton basis
-        if (input.computeRitzValues) {
-          H(iter, iter) += output.ritzValues[iter];
-        }
+        if (computeRitzValues) {
+          // H(iter, iter) += output.ritzValues[iter];
+	  const complex_type theta = output.ritzValues[iter % s];
+          UpdateNewton<SC, MV>::updateNewtonH (iter, H, theta);
+	}
 
         // Convergence check
         if (H(iter+1, iter) != zero) {
@@ -252,7 +278,7 @@ private:
           H(iter+1, iter) = zero;
           metric = STM::zero ();
         }
-      } // end of restart-cycle 
+      } // end of restart cycle 
       if (iter > 0) {
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
@@ -291,7 +317,7 @@ private:
           Tpetra::deep_copy (R, P);
           M.apply (R, P);
 	  // FIXME (mfh 14 Aug 2018) Didn't we already compute this above?
-          r_norm = P.norm2 (); // residual norm
+          r_norm = P.norm2 ();
         }
         P.scale (one / r_norm);
         y[0] = SC {r_norm};
@@ -304,6 +330,9 @@ private:
 
     return output;
   }
+  
+protected:
+  int stepSize_; // "step size" for Newton basis
 };
 
 template<class SC, class MV, class OP,
