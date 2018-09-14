@@ -15,6 +15,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include "MiniEM_GaussianPulse.hpp"
+#include "MiniEM_RandomForcing.hpp"
 #include "MiniEM_InversePermeability.hpp"
 #include "MiniEM_Permittivity.hpp"
 #include "MiniEM_Conductivity.hpp"
@@ -95,6 +96,14 @@ buildClosureModels(const std::string& model_id,
         double dt = plist.get<double>("dt");
 	RCP< Evaluator<panzer::Traits> > e = 
 	  rcp(new mini_em::GaussianPulse<EvalT,panzer::Traits>(key,*ir,fl,dt));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="RANDOM") {
+        unsigned int seed = plist.get<unsigned int>("seed");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::RandomForcing<EvalT,panzer::Traits>(key,*ir,fl,seed));
 	evaluators->push_back(e);
 
         found = true;
