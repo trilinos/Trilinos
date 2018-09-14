@@ -27,9 +27,9 @@ public:
   int stepSize = 1;
   bool needToScale = true;
   bool needToReortho = false;
-  std::string orthoType = "ICGS";
-  std::string precoType = "none";
-  std::string precoSide = "none";
+  std::string orthoType {"ICGS"};
+  std::string precoType {"none"};
+  std::string precoSide {"none"};
   bool computeRitzValues = false;
 };
 
