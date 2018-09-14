@@ -69,7 +69,7 @@ namespace NOX {
 
 public:
 
-  typedef std::vector<Teuchos::RCP<NOX::Abstract::PrePostOperator> >::iterator it;
+  using it = std::vector<Teuchos::RCP<NOX::Abstract::PrePostOperator> >::iterator;
 
   void runPreIterate(const NOX::Solver::Generic& solver);
 
@@ -80,6 +80,8 @@ public:
   void runPostSolve(const NOX::Solver::Generic& solver);
 
   void runPreSolutionUpdate(const NOX::Abstract::Vector& update, const NOX::Solver::Generic& solver);
+
+  void runPostSolutionUpdate(const NOX::Solver::Generic& solver);
 
   void runPreLineSearch(const NOX::Solver::Generic& solver);
 

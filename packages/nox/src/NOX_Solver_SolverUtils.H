@@ -57,6 +57,8 @@ namespace Teuchos {
 
 namespace NOX {
 
+  class Observer;
+
   namespace Solver{
 
     /*! \brief Nonmember method that returns the status test check type.
@@ -74,6 +76,9 @@ namespace NOX {
     */
     NOX::StatusTest::CheckType
     parseStatusTestCheckType(Teuchos::ParameterList& solver_options_list);
+
+    /** \brief Parses the "Solver Options" sublist for a user defined observer. */
+    Teuchos::RCP<NOX::Observer> parseObserver(Teuchos::ParameterList& solver_options_list);
 
     /*! \brief Nonmember method that validates and sets the defaults for the "Solver Options" sublist. */
     void

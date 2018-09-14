@@ -54,6 +54,7 @@
 #include "NOX_Abstract_Group.H"    // class definition
 #include "NOX_Solver_SolverUtils.H"
 #include "Teuchos_ParameterList.hpp"  // class data element
+#include "NOX_Observer.hpp"
 #include "NOX_SolverStats.hpp"
 
 NOX::Solver::SingleStep::
@@ -78,7 +79,7 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
-  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   ignoreLinearSolverFailures = p->sublist("Single Step Solver").get<bool>("Ignore Linear Solver Failures");
   updateJacobian = p->sublist("Single Step Solver").get<bool>("Update Jacobian");
   if (not updateJacobian)
@@ -176,8 +177,9 @@ bool NOX::Solver::SingleStep::try_step()
       return false;
   }
 
-  prePostOperator.runPreSolutionUpdate(dir,*this);
+  observer->runPreSolutionUpdate(dir,*this);
   solnPtr->computeX(*oldSolnPtr, dir, -1.0);
+  observer->runPostSolutionUpdate(*this);
 
   return true;
 }
@@ -187,7 +189,7 @@ NOX::StatusTest::StatusType NOX::Solver::SingleStep::step()
   // SingleStep solver means step() is always a new solve
   globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
 
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // Update iteration count.
   nIter ++;
@@ -201,7 +203,7 @@ NOX::StatusTest::StatusType NOX::Solver::SingleStep::step()
   else
     status = NOX::StatusTest::Failed;
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
 
@@ -210,11 +212,11 @@ NOX::StatusTest::StatusType NOX::Solver::SingleStep::step()
 
 NOX::StatusTest::StatusType NOX::Solver::SingleStep::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
 
   step();
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }

@@ -50,7 +50,6 @@
 
 #include "NOX_Multiphysics_Solver_Generic.H"  // base class
 #include "NOX_Multiphysics_Group.H"  // base class
-#include "NOX_Solver_PrePostOperator.H"       // class data element
 #include "NOX_Utils.H"                      // class data element
 #include "Teuchos_RCP.hpp"            // class data element
 #include <vector>
@@ -202,9 +201,8 @@ protected:
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
-
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 };
 } // namespace Solver
 } // namespace Multiphysics

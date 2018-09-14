@@ -56,7 +56,7 @@
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Solver_SolverUtils.H"
-
+#include "NOX_Observer.hpp"
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
@@ -125,7 +125,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   print = Teuchos::rcp(new NOX::LineSearch::Utils::Printing(utilsPtr));
   counter = &globalDataPtr->getNonConstSolverStatistics()->lineSearch;
   slopeObj.reset(globalDataPtr);
-  prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
 
   // *** Reset direction parameters ***
   Teuchos::ParameterList& dirParams = paramsPtr->sublist("Direction");
@@ -288,7 +288,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::getStatus()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // On the first step, perform some initl checks
   if (nIter ==0) {
@@ -318,7 +318,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
   // First check status
   if (status != NOX::StatusTest::Unconverged)
   {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -335,7 +335,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
       utilsPtr->out() << "NOX::Solver::TensorBased::iterate - "
        << "unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -356,7 +356,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
     utilsPtr->out() << "NOX::Solver::TensorBased::iterate - line search failed"
          << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -373,14 +373,14 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
       utilsPtr->out() << "NOX::Solver::TensorBased::iterate - "
        << "unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
 
   status = test.checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
 
@@ -390,7 +390,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
@@ -402,7 +402,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
   outputParams.set("Nonlinear Iterations", nIter);
   outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }

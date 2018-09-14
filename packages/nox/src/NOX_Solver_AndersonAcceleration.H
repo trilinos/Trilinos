@@ -52,7 +52,6 @@
 #define NOX_SOLVER_ANDERSON_ACCELERATION_H
 
 #include "NOX_Solver_Generic.H"             // base class
-#include "NOX_Solver_PrePostOperator.H"  // class data element
 #include "Teuchos_ParameterList.hpp"             // class data element
 #include "NOX_Utils.H"                 // class data element
 #include "Teuchos_RCP.hpp"       // class data element
@@ -62,6 +61,7 @@
 // Forward declarations
 namespace NOX {
   class GlobalData;
+  class Observer;
   namespace LineSearch {
     class Generic;
   }
@@ -247,8 +247,8 @@ protected:
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
   //! Scratch space for condition number estimation using LAPACK.
   std::vector<double> WORK;

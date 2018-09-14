@@ -52,11 +52,11 @@
 #include "NOX_Solver_InexactTrustRegionBased.H"    // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Observer.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_MeritFunction_Generic.H"
-#include "NOX_Solver_PrePostOperator.H"
 #include "NOX_Solver_SolverUtils.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
@@ -95,7 +95,7 @@ InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   utils = globalDataPtr->getUtils();
   inNewtonUtils.reset(globalDataPtr, paramsPtr->sublist("Direction"));
   meritFuncPtr = globalDataPtr->getMeritFunction();
-  prePostOperator.reset(utils,p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   init();
 }
 
@@ -312,7 +312,7 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::getStatus()
 //*************************************************************************
 NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   if (nIter == 0) {
     // Compute F of initital guess
@@ -341,7 +341,7 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::step()
     break;
   }
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
 
@@ -479,8 +479,9 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     const NOX::Abstract::Vector& dir = *dirPtr;
 
     // Compute new X
-    prePostOperator.runPreSolutionUpdate(dir,*this);
+    observer->runPreSolutionUpdate(dir,*this);
     soln.computeX(*oldSolnPtr, dir, step);
+    observer->runPostSolutionUpdate(*this);    
 
     // Calculate true step length
     dx = step * (computeNorm(dir));
@@ -820,8 +821,9 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
     NOX::Abstract::Vector& dir = *dirPtr;
 
     // Update X and compute new F
-    prePostOperator.runPreSolutionUpdate(dir,*this);
+    observer->runPreSolutionUpdate(dir,*this);
     soln.computeX(oldSoln, dir, step);
+    observer->runPostSolutionUpdate(*this);
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
     if (rtype != NOX::Abstract::Group::Ok)
       throwError("iterateInexact", "unable to compute F!");
@@ -1006,7 +1008,7 @@ checkStep(const NOX::Abstract::Vector& /* step */,
 //*************************************************************************
 NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
 
   // Iterate until converged or failed
   while (status == StatusTest::Unconverged) {
@@ -1033,7 +1035,7 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
     }
   }
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }

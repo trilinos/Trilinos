@@ -46,6 +46,7 @@
 //@HEADER
 
 #include "NOX_Common.H"
+#include "NOX_Solver_SolverUtils.H"
 #include "NOX_Epetra_BroydenOperator.H"
 
 // EpetraExt includes for dumping Epetra objects
@@ -72,7 +73,6 @@ BroydenOperator::BroydenOperator(
   crsMatrix      ( Teuchos::rcp( new Epetra_CrsMatrix(*mat)) ) ,
   nlParams       ( nlParams_                                 ) ,
   utils          ( utils_                                    ) ,
-  prePostOperator( utils, nlParams.sublist("Solver Options") ) ,
   label          ( "NOX::Epetra::BroydenOperator"            ) ,
   isValidStep    ( false                                     ) ,
   isValidYield   ( false                                     ) ,
@@ -80,6 +80,8 @@ BroydenOperator::BroydenOperator(
   entriesRemoved ( mat->NumMyRows(), false                   )
 {
   initialize( nlParams, solnVec );
+  NOX::Solver::validateSolverOptionsSublist(nlParams.sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(nlParams.sublist("Solver Options"));
 }
 
 //-----------------------------------------------------------------------------
@@ -98,13 +100,13 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   precMatrixPtr  ( bOp.precMatrixPtr  ) ,
   nlParams       ( bOp.nlParams       ) ,
   utils          ( bOp.utils          ) ,
-  prePostOperator( utils, nlParams.sublist("Solver Options") ),
   label          ( "NOX::Epetra::BroydenOperator" ),
   isValidStep    ( bOp.isValidStep    ) ,
   isValidYield   ( bOp.isValidYield   ) ,
   isValidBroyden ( bOp.isValidBroyden ) ,
   entriesRemoved ( bOp.entriesRemoved )
 {
+  observer = NOX::Solver::parseObserver(nlParams.sublist("Solver Options"));
 }
 
 //-----------------------------------------------------------------------------
@@ -124,9 +126,9 @@ BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vec
 
   // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
   // user's expectations.  For now we will have to create rcp without
-  // ownership.  What happens if a user write their own PPO?
+  // ownership.  What happens if a user write their own observer?
   Teuchos::RCP<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
+  nlParams.sublist("Solver Options").set("Observer", me);
 
   return true;
 }
@@ -395,7 +397,7 @@ BroydenOperator::runPreSolve( const NOX::Solver::Generic & solver)
   isValidStep  = false;
   isValidYield = false;
 
-  prePostOperator.runPreSolve( solver );
+  observer->runPreSolve( solver );
 
   return;
 }
@@ -405,7 +407,7 @@ BroydenOperator::runPreSolve( const NOX::Solver::Generic & solver)
 void
 BroydenOperator::runPreIterate( const NOX::Solver::Generic & solver)
 {
-  prePostOperator.runPreIterate( solver );
+  observer->runPreIterate( solver );
 
   return;
 }
@@ -442,7 +444,7 @@ BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
     // gets called
   }
 
-  prePostOperator.runPostIterate( solver );
+  observer->runPostIterate( solver );
 
   return;
 }
@@ -452,7 +454,7 @@ BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
 void
 BroydenOperator::runPostSolve( const NOX::Solver::Generic & solver)
 {
-  prePostOperator.runPostSolve( solver );
+  observer->runPostSolve( solver );
 
   return;
 }
