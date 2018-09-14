@@ -60,6 +60,7 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_SolverStats.hpp"
 #include <limits>
 
 // This relies explicitly on thyra
@@ -98,6 +99,7 @@ void NOX::Solver::PseudoTransient::init()
   stepSize = 0.0;
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
 
   Teuchos::RCP<Teuchos::ParameterList> paramsPtr = this->getMyNonconstParamList();
   paramsPtr->validateParametersAndSetDefaults(*this->getValidParameters());
@@ -193,6 +195,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 
   // On the first step, do some initializations
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
 
     // Stupid row sum scaling.  Computes a Jacobian before x_dot or
     // alpha/beta is known so first Jacobian is for steady-state.  Need
@@ -322,27 +325,15 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
     inArgs.set_t(0.0);
   }
 
-
-
-  // Debug output
-  if (false){
-    std::cout << "Direction:" << std::endl;
-    dirPtr->print(std::cout);
-
-    std::cout << "Solution:" << std::endl;
-    thyraSolnGroup->getXPtr()->print(std::cout);
-  }
-
-
-
-
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
 
   // Do line search and compute new soln.
+  prePostOperator.runPreSolutionUpdate(*dirPtr,*this);
   ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
   if (!ok)
   {
@@ -487,3 +478,7 @@ NOX::Solver::PseudoTransient::getPreviousSolutionGroupPtr() const
 Teuchos::RCP< const Teuchos::ParameterList >
 NOX::Solver::PseudoTransient::getListPtr() const
 {return this->getMyParamList();}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::PseudoTransient::getSolverStatistics() const
+{ return globalDataPtr->getSolverStatistics(); }

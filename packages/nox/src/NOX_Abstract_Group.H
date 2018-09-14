@@ -60,6 +60,7 @@ namespace Teuchos {
   class ParameterList;
 }
 namespace NOX {
+  class SolverStats;
   namespace Abstract {
     class MultiVector;
   }
@@ -515,13 +516,10 @@ namespace Abstract {
   /** @name "Linear Solve Statistics" functions. */
   //@{
 
-  /*!  \brief Returns the number of iterations from the last linear
-       solve that was executed by a call to computeNewton() or
-       applyJacobianInverse().
-
-    \return number of iterations in last linear solve
+  /*!  \brief Adds statistics from last linear solve to the
+       SovlerStats object.
   */
-   virtual int getNumIterationsLastLinearSolve() const;
+   virtual void logLastLinearSolveStats(NOX::SolverStats& stats) const;
 
   /*!
     \brief

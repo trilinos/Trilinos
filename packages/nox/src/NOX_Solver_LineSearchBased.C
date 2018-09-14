@@ -60,6 +60,7 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::Solver::LineSearchBased::
 LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
@@ -109,14 +110,20 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnPtr->setX(initialGuess);
   testPtr = t;
-  init();
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 void NOX::Solver::LineSearchBased::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
-  init();
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 NOX::Solver::LineSearchBased::~LineSearchBased()
@@ -136,6 +143,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 
   // On the first step, do some initializations
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
+
     // Compute F of initital guess
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
@@ -184,6 +193,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
@@ -266,6 +276,12 @@ const Teuchos::ParameterList&
 NOX::Solver::LineSearchBased::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::LineSearchBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

@@ -210,10 +210,7 @@ bool NOX::Abstract::Group::isNewton() const
   return false;
 }
 
-int NOX::Abstract::Group::getNumIterationsLastLinearSolve() const
-{
-  return -1;
-}
+void NOX::Abstract::Group::logLastLinearSolveStats(NOX::SolverStats& ) const {}
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::getNormLastLinearSolveResidual(double& /* residual */) const

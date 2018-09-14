@@ -160,6 +160,7 @@ public:
   virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
   virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
   //!  Return the direction object
   virtual const NOX::Direction::Tensor& getDirection() const;

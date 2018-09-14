@@ -59,6 +59,7 @@
 #include "NOX_Solver_SolverUtils.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_SolverStats.hpp"
 #include <cmath>
 
 using namespace NOX;
@@ -227,6 +228,8 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   prePostOperator.runPreIterate(*this);
 
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
+
     // Compute F of initital guess
     solnPtr->computeF();
     newF = meritFuncPtr->computef(*solnPtr);
@@ -278,6 +281,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
@@ -538,6 +542,12 @@ int TrustRegionBased::getNumIterations() const
 const Teuchos::ParameterList& TrustRegionBased::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::TrustRegionBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

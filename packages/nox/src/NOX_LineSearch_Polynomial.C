@@ -68,7 +68,7 @@ Polynomial(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr(gd),
   paramsPtr(NULL),
   print(gd->getUtils()),
-  counter(&gd->getNonConstSolverStatistics()->line_search),
+  counter(&gd->getNonConstSolverStatistics()->lineSearch),
   slopeUtil(gd)
 {
   reset(gd, params);
@@ -86,7 +86,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
   print.reset(gd->getUtils());
-  counter = &gd->getNonConstSolverStatistics()->line_search;
+  counter = &gd->getNonConstSolverStatistics()->lineSearch;
   paramsPtr = &params;
   slopeUtil.reset(gd);
 

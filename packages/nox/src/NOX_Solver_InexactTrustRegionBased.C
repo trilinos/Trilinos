@@ -85,17 +85,13 @@ InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
   useCauchyInNewtonDirection(false),
   writeOutputParamsToList(true),
   useCounters(true),
-  numCauchySteps(0),
-  numNewtonSteps(0),
-  numDoglegSteps(0),
-  numTrustRegionInnerIterations(0),
-  sumDoglegFracCauchyToNewton(0.0),
-  sumDoglegFracNewtonLength(0.0),
+  counters(nullptr),
   useAredPredRatio(false),
   useDoglegMinimization(false)
 {
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
+  counters = &globalDataPtr->getNonConstSolverStatistics()->trustRegion;
   utils = globalDataPtr->getUtils();
   inNewtonUtils.reset(globalDataPtr, paramsPtr->sublist("Direction"));
   meritFuncPtr = globalDataPtr->getMeritFunction();
@@ -119,7 +115,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
   dx = 0.0;
   status = StatusTest::Unconverged;
   if (useCounters)
-    resetCounters();
+    counters->reset();
 
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
@@ -235,10 +231,10 @@ void NOX::Solver::InexactTrustRegionBased::invalid(const std::string& name,
 //*************************************************************************
 //**** throwError
 //*************************************************************************
-void NOX::Solver::InexactTrustRegionBased::throwError(const std::string& method,
+void NOX::Solver::InexactTrustRegionBased::throwError(const std::string& methodName,
                               const std::string& message) const
 {
-  utils->out() << "NOX::Solver::InexactTrustRegionBased::" << method << " - "
+  utils->out() << "NOX::Solver::InexactTrustRegionBased::" << methodName << " - "
        << message << std::endl;
   throw "NOX Error";
 }
@@ -258,14 +254,7 @@ reset(const NOX::Abstract::Vector& initialGuess,
   dx = 0.0;
   status = StatusTest::Unconverged;
   if (useCounters)
-    resetCounters();
-
-  // Print out initialization information
-  if (utils->isPrintType(NOX::Utils::Parameters)) {
-    utils->out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utils->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(utils->out(),5);
-  }
+    counters->reset();
 
   // Compute F of initital guess
   solnPtr->computeF();
@@ -294,14 +283,7 @@ reset(const NOX::Abstract::Vector& initialGuess)
   dx = 0.0;
   status = StatusTest::Unconverged;
   if (useCounters)
-    resetCounters();
-
-  // Print out initialization information
-  if (utils->isPrintType(NOX::Utils::Parameters)) {
-    utils->out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utils->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(utils->out(),5);
-  }
+    counters->reset();
 
   // Compute F of initital guess
   solnPtr->computeF();
@@ -343,7 +325,7 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::step()
     printUpdate();
   }
 
-  NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
+  status = NOX::StatusTest::Unconverged;
 
   switch(method) {
   case Standard:
@@ -402,6 +384,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
 
   if (nIter == 0)
   {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
     radius = computeNorm(*newtonVecPtr);
 
     if (radius < minRadius)
@@ -410,6 +393,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
 
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
@@ -434,7 +418,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   while ((ratio < minRatio) && (radius > minRadius))
   {
     if (useCounters)
-      numTrustRegionInnerIterations += 1;
+      counters->numTrustRegionInnerIterations += 1;
 
     Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
     double step;
@@ -628,14 +612,14 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
   // Update Counters
   if (useCounters) {
     if (stepType == InexactTrustRegionBased::Newton)
-      numNewtonSteps += 1;
+      counters->numNewtonSteps += 1;
     else if (stepType == InexactTrustRegionBased::Cauchy)
-      numCauchySteps += 1;
+      counters->numCauchySteps += 1;
     else if (stepType == InexactTrustRegionBased::Dogleg) {
-      numDoglegSteps += 1;
-      sumDoglegFracCauchyToNewton += gamma;
+      counters->numDoglegSteps += 1;
+      counters->sumDoglegFractionCauchyToNewton += gamma;
       double tmp = radius/computeNorm(*newtonVecPtr);
-      sumDoglegFracNewtonLength += tmp;
+      counters->sumDoglegFractionNewtonLength += tmp;
 
       if (utils->isPrintType(Utils::Details)) {
     utils->out() << "    Fraction of Newton Step Length = " << tmp << std::endl;
@@ -687,6 +671,9 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   NOX::Abstract::Vector& aVec = *aVecPtr;
   NOX::Abstract::Vector& bVec = *bVecPtr;
   NOX::StatusTest::Generic& test = *testPtr;
+
+  if (nIter == 0)
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
 
   // Newton direction eta (do before setting oldSoln = soln).
   eta_last = eta;
@@ -741,12 +728,13 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // While "s" is not acceptable:
   while (innerIterationStatus == Unconverged) {
 
     if (useCounters)
-      numTrustRegionInnerIterations += 1;
+      counters->numTrustRegionInnerIterations += 1;
 
     // Compute a direction and step length
     if (computeNorm(cauchyVec) >= radius) {
@@ -775,6 +763,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
       if (!(oldSoln.isJacobian()))
         oldSoln.computeJacobian();
       oldSoln.applyJacobianInverse(lsParams, oldSoln.getF(), newtonVec);
+      oldSoln.logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
       newtonVec.scale(-1.0);
       computedNewtonDir = true;
     }
@@ -948,19 +937,19 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
   // Update Counters
   if (useCounters) {
     if (stepType == InexactTrustRegionBased::Newton)
-      numNewtonSteps += 1;
+      counters->numNewtonSteps += 1;
     else if (stepType == InexactTrustRegionBased::Cauchy)
-      numCauchySteps += 1;
+      counters->numCauchySteps += 1;
     else if (stepType == InexactTrustRegionBased::Dogleg) {
-      numDoglegSteps += 1;
-      sumDoglegFracCauchyToNewton += tau;
+      counters->numDoglegSteps += 1;
+      counters->sumDoglegFractionCauchyToNewton += tau;
       double tmp = radius/computeNorm(newtonVec);
-      sumDoglegFracNewtonLength += tmp;
+      counters->sumDoglegFractionNewtonLength += tmp;
 
       if (utils->isPrintType(Utils::Details)) {
-    utils->out() << "    Fraction of Newton Step Length = " << tmp << std::endl;
-    utils->out() << "    Fraction Between Cauchy and Newton Direction = "
-         << tau << std::endl;
+        utils->out() << "    Fraction of Newton Step Length = " << tmp << std::endl;
+        utils->out() << "    Fraction Between Cauchy and Newton Direction = "
+                     << tau << std::endl;
       }
 
     }
@@ -1030,15 +1019,15 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
     outputParams.set("2-Norm of Residual", solnPtr->getNormF());
     if (useCounters) {
       Teuchos::ParameterList& trOutputParams = paramsPtr->
-    sublist("Trust Region").sublist("Output");
-      trOutputParams.set("Number of Cauchy Steps", numCauchySteps);
-      trOutputParams.set("Number of Newton Steps", numNewtonSteps);
-      trOutputParams.set("Number of Dogleg Steps", numDoglegSteps);
+        sublist("Trust Region").sublist("Output");
+      trOutputParams.set("Number of Cauchy Steps", counters->numCauchySteps);
+      trOutputParams.set("Number of Newton Steps", counters->numNewtonSteps);
+      trOutputParams.set("Number of Dogleg Steps", counters->numDoglegSteps);
       trOutputParams.set("Number of Trust Region Inner Iterations",
-                  numTrustRegionInnerIterations);
-      if (numDoglegSteps != 0) {
-    trOutputParams.set("Dogleg Steps: Average Fraction of Newton Step Length", (sumDoglegFracNewtonLength/((double)numDoglegSteps)));
-    trOutputParams.set("Dogleg Steps: Average Fraction Between Cauchy and Newton Direction", (sumDoglegFracCauchyToNewton/((double)numDoglegSteps)));
+                         counters->numTrustRegionInnerIterations);
+      if (counters->numDoglegSteps != 0) {
+        trOutputParams.set("Dogleg Steps: Average Fraction of Newton Step Length", (counters->sumDoglegFractionNewtonLength / ((double)counters->numDoglegSteps)));
+        trOutputParams.set("Dogleg Steps: Average Fraction Between Cauchy and Newton Direction", (counters->sumDoglegFractionCauchyToNewton/((double)counters->numDoglegSteps)));
       }
 
     }
@@ -1085,6 +1074,15 @@ NOX::Solver::InexactTrustRegionBased::getList() const
 }
 
 //*************************************************************************
+//**** getList
+//*************************************************************************
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::InexactTrustRegionBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
+}
+
+//*************************************************************************
 //**** printUpdate
 //*************************************************************************
 // protected
@@ -1121,20 +1119,6 @@ void NOX::Solver::InexactTrustRegionBased::printUpdate()
     testPtr->print(utils->out());
     utils->out() << NOX::Utils::fill(72) << "\n";
   }
-}
-
-//*************************************************************************
-//**** resetCounters
-//*************************************************************************
-void NOX::Solver::InexactTrustRegionBased::resetCounters()
-{
-  numCauchySteps = 0;
-  numNewtonSteps = 0;
-  numDoglegSteps = 0;
-  numTrustRegionInnerIterations = 0;
-  sumDoglegFracCauchyToNewton = 0.0;
-  sumDoglegFracNewtonLength = 0.0;
-  return;
 }
 
 //*************************************************************************

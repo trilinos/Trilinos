@@ -99,6 +99,7 @@ public:
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
 protected:
 

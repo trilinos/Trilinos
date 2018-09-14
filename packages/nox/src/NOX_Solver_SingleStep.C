@@ -54,6 +54,7 @@
 #include "NOX_Abstract_Group.H"    // class definition
 #include "NOX_Solver_SolverUtils.H"
 #include "Teuchos_ParameterList.hpp"  // class data element
+#include "NOX_SolverStats.hpp"
 
 NOX::Solver::SingleStep::
 SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
@@ -93,6 +94,7 @@ void NOX::Solver::SingleStep::init()
   // Initialize
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters))
@@ -108,7 +110,9 @@ void NOX::Solver::SingleStep::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
-  init();
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
 }
 
 void NOX::Solver::SingleStep::
@@ -116,7 +120,9 @@ reset(const NOX::Abstract::Vector& initialGuess,
       const Teuchos::RCP<NOX::StatusTest::Generic>&)
 {
   solnPtr->setX(initialGuess);
-  init();
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
 }
 
 NOX::Solver::SingleStep::~SingleStep()
@@ -163,6 +169,8 @@ bool NOX::Solver::SingleStep::try_step()
                                                         solnPtr->getF(),
                                                         dir);
 
+  jacobian->logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
+
   if (!ignoreLinearSolverFailures) {
     if (!check(ls_status,"solve Newton system"))
       return false;
@@ -176,10 +184,14 @@ bool NOX::Solver::SingleStep::try_step()
 
 NOX::StatusTest::StatusType NOX::Solver::SingleStep::step()
 {
+  // SingleStep solver means step() is always a new solve
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
+
   prePostOperator.runPreIterate(*this);
 
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
@@ -246,6 +258,12 @@ Teuchos::RCP< const Teuchos::ParameterList >
 NOX::Solver::SingleStep::getListPtr() const
 {
    return paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::SingleStep::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected
