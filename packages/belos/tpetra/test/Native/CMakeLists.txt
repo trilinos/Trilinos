@@ -42,6 +42,14 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_diagonal_matrix
+  NAME Tpetra_Native_GMRES_PIPELINE_diagonal_matrix
+  ARGS "--solver=\"TPETRA GMRES PIPELINE\""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_diagonal_matrix
   NAME Tpetra_Native_GMRES_SINGLE_REDUCE_diagonal_matrix
   ARGS "--solver=\"TPETRA GMRES SINGLE REDUCE\""
   COMM serial mpi
@@ -69,6 +77,14 @@ TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_nonsymm_matrix
   NAME Tpetra_Native_GMRES_nonsymm_matrix
   ARGS "--solver=\"TPETRA GMRES\""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_nonsymm_matrix
+  NAME Tpetra_Native_GMRES_PIPELINE_nonsymm_matrix
+  ARGS "--solver=\"TPETRA GMRES PIPELINE\""
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
