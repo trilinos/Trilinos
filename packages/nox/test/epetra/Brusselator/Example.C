@@ -412,10 +412,12 @@ int main(int argc, char *argv[])
       if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 9) {
         testStatus = 3;
       }
-      if (solver->getSolverStatistics()->linearSolve.lastNonlinearSolve_NumLinearIterations != 9) {
+      if (solver->getSolverStatistics()->linearSolve.allNonlinearSolves_NumLinearIterations != 9) {
         testStatus = 3;
       }
     }
+
+    utils.out() << "testStatus = " << testStatus << std::endl;
 
     success = (testStatus == 0);
     // Summarize test results
