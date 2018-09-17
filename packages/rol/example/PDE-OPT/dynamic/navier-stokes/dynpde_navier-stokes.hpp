@@ -89,9 +89,9 @@ public:
     useParametricControl_   = parlist.sublist("Problem").get("Use Parametric Control", false);
     useParabolicInflow_     = parlist.sublist("Problem").get("Use Parabolic Inflow", true);
     useNonPenetratingWalls_ = parlist.sublist("Problem").get("Use Non-Penetrating Walls", false);
-    cx_                     = parlist.sublist("Problem").get("Cylinder Center X", -15.0);
-    cy_                     = parlist.sublist("Problem").get("Cylinder Center Y",   0.0);
-    r_                      = parlist.sublist("Problem").get("Cylinder Radius",     0.5);
+    cx_                     = parlist.sublist("Problem").get("Cylinder Center X", 0.0);
+    cy_                     = parlist.sublist("Problem").get("Cylinder Center Y", 0.0);
+    r_                      = parlist.sublist("Problem").get("Cylinder Radius",   0.5);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,

@@ -696,9 +696,9 @@ public:
              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
              const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c  = feVel_->cubPts()->dimension(0);
-    int p  = feVel_->cubPts()->dimension(1);
-    int nf = fieldHelper_->numFields();
+    int c  = feVel_->gradN()->dimension(0);
+    int p  = feVel_->gradN()->dimension(2);
+    int d  = feVel_->gradN()->dimension(3);
     // Initialize output val
     val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
     // Get components of the control
@@ -707,7 +707,7 @@ public:
     // Compute tracking term and integrate
     ROL::Ptr<Intrepid::FieldContainer<Real>> U_eval
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    for (int i = 0; i < nf-1; ++i) {
+    for (int i = 0; i < d; ++i) {
       // Evaluate u value on FE basis
       U_eval->initialize();
       feVel_->evaluateValue(U_eval, U[i]);
@@ -730,19 +730,19 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c  = feVel_->cubPts()->dimension(0);
-    int fv = feVel_->N()->dimension(1);
-    int fp = fePrs_->N()->dimension(1);
-    int p  = feVel_->cubPts()->dimension(1);
-    int nf = fieldHelper_->numFields();
+    int c  = feVel_->gradN()->dimension(0);
+    int fv = feVel_->gradN()->dimension(1);
+    int fp = fePrs_->gradN()->dimension(1);
+    int p  = feVel_->gradN()->dimension(2);
+    int d  = feVel_->gradN()->dimension(3);
     // Get components of the control
     std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     // Compute weighted u value and integrate
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> G(nf, ROL::nullPtr);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> G(d+1, ROL::nullPtr);
     ROL::Ptr<Intrepid::FieldContainer<Real>> U_eval
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    for (int i = 0; i < nf; ++i) {
+    for (int i = 0; i < d; ++i) {
       // Evaluate on FE basis
       U_eval->initialize();
       feVel_->evaluateValue(U_eval, U[i]);
@@ -761,7 +761,7 @@ public:
                                                     Intrepid::COMP_CPP,
                                                     false);
     }
-    G[nf-1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    G[d] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
     fieldHelper_->combineFieldCoeff(grad, G);
   }
 
@@ -778,19 +778,19 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c  = feVel_->cubPts()->dimension(0);
-    int p  = feVel_->cubPts()->dimension(1);
-    int fv = feVel_->N()->dimension(1);
-    int fp = fePrs_->N()->dimension(1);
-    int nf = fieldHelper_->numFields();
+    int c  = feVel_->gradN()->dimension(0);
+    int fv = feVel_->gradN()->dimension(1);
+    int fp = fePrs_->gradN()->dimension(1);
+    int p  = feVel_->gradN()->dimension(2);
+    int d  = feVel_->gradN()->dimension(3);
     // Get components of the control
     std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V;
     fieldHelper_->splitFieldCoeff(V, v_coeff);
     // Compute weighted v value and integrate
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(nf, ROL::nullPtr);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(d+1, ROL::nullPtr);
     ROL::Ptr<Intrepid::FieldContainer<Real>> V_eval
       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    for (int i = 0; i < nf-1; ++i) {
+    for (int i = 0; i < d; ++i) {
       // Evaluate v value on FE basis
       V_eval->initialize();
       feVel_->evaluateValue(V_eval, V[i]);
@@ -808,7 +808,7 @@ public:
                                                     Intrepid::COMP_CPP,
                                                     false);
     }
-    H[nf-1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
+    H[d] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp);
     fieldHelper_->combineFieldCoeff(hess, H);
   }
 
