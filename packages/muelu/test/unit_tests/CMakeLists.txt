@@ -85,6 +85,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/TestMatrices
+  SOURCE_FILES cd2dx.mat
+  SOURCE_FILES cd2dy.mat
   SOURCE_FILES aniso2dx.mat
   SOURCE_FILES aniso2dy.mat
   SOURCE_FILES iso2d.mat
