@@ -52,6 +52,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include <MueLu_CoalesceDropFactory.hpp>
 
@@ -104,6 +106,8 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef Xpetra::MultiVector<double,LO,GO,Node> MultiVectorDouble;
+
     out << "version: " << MueLu::Version() << std::endl;
 
     typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
@@ -125,6 +129,8 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
+    typedef Xpetra::MultiVector<double,LO,GO,NO> MultiVectorDouble;
+
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
     Level level;
@@ -137,14 +143,19 @@ namespace MueLuTests {
 
     AggregateQualityEstimateFactory aggQualityEstimateFactory;
 
+    aggQualityEstimateFactory.SetParameter("aggregate qualities: check symmetry", Teuchos::ParameterEntry(false));
+    aggQualityEstimateFactory.SetParameter("aggregate qualities: good aggregate threshold", Teuchos::ParameterEntry(100.0));
+    aggQualityEstimateFactory.SetParameter("aggregate qualities: file output", Teuchos::ParameterEntry(false));
+
     level.Request("AggregateQualities", &aggQualityEstimateFactory);
     level.Request(aggQualityEstimateFactory);
 
     out << "Getting aggregate qualities...\n\n";
 
-    RCP<MultiVector> aggQualities = level.Get< RCP<MultiVector> >("AggregateQualities", &aggQualityEstimateFactory);
+    RCP<MultiVectorDouble> aggQualities = level.Get< RCP<MultiVectorDouble> >("AggregateQualities", &aggQualityEstimateFactory);
     
     out << "Testing aggregate qualities to make sure all aggregates are of good quality...\n\n";
+
 
     ArrayRCP<const SC> aggQualitiesLocalData = aggQualities->getData(0);
 
@@ -163,9 +174,10 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    out << "version: " << MueLu::Version() << std::endl;
-
+    typedef Xpetra::MultiVector<double,LO,GO,Node> MultiVectorDouble;
     typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
+
+    out << "version: " << MueLu::Version() << std::endl;
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
@@ -207,13 +219,13 @@ namespace MueLuTests {
 						    AGG15_NODES, AGG16_NODES, AGG17_NODES,
 						    AGG18_NODES};
 
-    const std::vector<SC> AGG_QUALITIES = {2.002, 2002., 2670.000811,
-					   2001.9998, 4.004, 4003.999998,
-					   4003.999198, 3003.666728, 4003.998397,
-					   2001.999599, 4003.999198, 4003.999198,
-					   2403.067729, 4004.666568, 4005.666904,
-					   4004.665757, 4886.458381, 4003.998397,
-					   4004.665841};
+    const std::vector<double> AGG_QUALITIES = {2002., 2.002, 2670.000811,
+					       2001.9998, 4003.999998, 4.004, 
+					       3003.666728, 4003.999198, 4003.998397,
+					       4003.999198, 2001.999599, 4003.999198,
+					       4004.666568, 2403.067729, 4886.458381, 
+					       4003.998397, 4005.666904, 4004.665757,
+					       4004.665841};
 
     for (int i=0;i<3;i++) {
 
@@ -226,29 +238,18 @@ namespace MueLuTests {
 
 	level.Set("A",A_agg);
 
-	//	RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+	RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
 	RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory);
-	//dropFact.SetFactory("UnAmalgmationInfo", amalgFact);
 	dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.1));
-
-	// level.Request("Graph", &*dropFact);
-	// level.Request("DofsPerNode", &*dropFact);
-	// level.Request("Filtering", &*dropFact);
-	//	level.Request(*dropFact);
-
-	// dropFact->Build(level);
+	dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
 	RCP<UncoupledAggregationFactory> aggFactory = rcp(new UncoupledAggregationFactory);
 	aggFactory->SetFactory("Graph", dropFact);
-
-	// RCP<GraphBase> graph = level.Get< RCP<GraphBase> >("Graph", &*dropFact);
-	// graph->print(out, Teuchos::VERB_EXTREME);
 
 	out << "Coalesce Drop: " << dropFact.get() << std::endl;
 	out << "Aggregation: " << aggFactory.get() << std::endl;
 
 	level.Request("Aggregates", aggFactory.get());
-	// level.Request(*aggFactory);
 
 	out << "Building aggregates..." << std::endl;
 	
@@ -262,19 +263,27 @@ namespace MueLuTests {
 
 	level.print(out, Teuchos::VERB_EXTREME);
 
+	level.Set("A",A);
+
+	RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory);
+	coarseMapFact->SetFactory("Aggregates", aggFactory);
+
 	AggregateQualityEstimateFactory aggQualityEstimateFactory;
 	aggQualityEstimateFactory.SetFactory("Aggregates", aggFactory);
+	aggQualityEstimateFactory.SetFactory("CoarseMap", coarseMapFact);
+
+	aggQualityEstimateFactory.SetParameter("aggregate qualities: check symmetry", Teuchos::ParameterEntry(false));
+	aggQualityEstimateFactory.SetParameter("aggregate qualities: good aggregate threshold", Teuchos::ParameterEntry(100.0));
+	aggQualityEstimateFactory.SetParameter("aggregate qualities: file output", Teuchos::ParameterEntry(false));
 
 	level.Request("AggregateQualities", &aggQualityEstimateFactory);
 	// level.Request(aggQualityEstimateFactory);
 
-	level.Set("A",A);
-
 	aggQualityEstimateFactory.Build(level);	
 
-	RCP<MultiVector> aggQualities = level.Get< RCP<MultiVector> >("AggregateQualities", &aggQualityEstimateFactory);
+	RCP<MultiVectorDouble> aggQualities = level.Get< RCP<MultiVectorDouble> >("AggregateQualities", &aggQualityEstimateFactory);
     
-	ArrayRCP<const SC> aggQualitiesLocalData = aggQualities->getData(0);
+	ArrayRCP<const double> aggQualitiesLocalData = aggQualities->getData(0);
 
 	Teuchos::ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
 	AggregateQualityEstimateFactory::ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
@@ -364,11 +373,216 @@ namespace MueLuTests {
 
   } // Anisotropic Diffusion 2D test
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AggregateQualityEstimateFactory, ConvectionDiffusion2D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef Xpetra::MultiVector<double,LO,GO,Node> MultiVectorDouble;
+    typedef MueLu::AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> AggregateQualityEstimateFactory;
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    LO nx = (LO) 20;
+
+    LO num_nodes = (LO) nx*nx;
+    RCP<Map> map_for_read = MapFactory::Build(TestHelpers::Parameters::getLib(),num_nodes,0,comm);
+    RCP<Matrix> A =  Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/cd2dx.mat", map_for_read);
+
+    std::vector<std::string> test_matrices = { "TestMatrices/cd2dx.mat", "TestMatrices/cd2dy.mat", "TestMatrices/aniso2dx.mat", "TestMatrices/aniso2dy.mat", "TestMatrices/iso2d.mat" };
+
+    const std::vector<LO> AGG0_NODES = {0,1};
+    const std::vector<LO> AGG1_NODES = {0,nx};
+    const std::vector<LO> AGG2_NODES = {0,nx,nx+1};
+    const std::vector<LO> AGG3_NODES = {0,1,nx,nx+1};
+    const std::vector<LO> AGG4_NODES = {0,1,2};
+    const std::vector<LO> AGG5_NODES = {0,nx,2*nx};
+    const std::vector<LO> AGG6_NODES = {0,nx,nx+1,2*nx};
+    const std::vector<LO> AGG7_NODES = {1,nx,nx+1,nx+2};
+    const std::vector<LO> AGG8_NODES = {1,nx,nx+1,nx+2,2*nx+1};
+    const std::vector<LO> AGG9_NODES = {0,1,2,nx,nx+1,nx+2};
+    const std::vector<LO> AGG10_NODES = {0,1,nx,nx+1,2*nx,2*nx+1};
+    const std::vector<LO> AGG11_NODES = {0,1,2,nx,nx+1,nx+2,2*nx,2*nx+1,2*nx+2};
+    const std::vector<LO> AGG12_NODES = {0,1,nx,nx+1,nx+2};
+    const std::vector<LO> AGG13_NODES = {0,1,nx,nx+1,2*nx};
+    const std::vector<LO> AGG14_NODES = {0,1,2,nx,nx+1,nx+2,2*nx};
+    const std::vector<LO> AGG15_NODES = {0,1,2,nx,nx+1,nx+2,2*nx+1};
+    const std::vector<LO> AGG16_NODES = {0,1,2,nx,nx+1,2*nx,2*nx+1};
+    const std::vector<LO> AGG17_NODES = {0,1,nx,nx+1,nx+2,2*nx,2*nx+1};
+    const std::vector<LO> AGG18_NODES = {1,nx,nx+1,nx+2,2*nx+1,2*nx+2};
+
+    const std::vector<std::vector<LO>> AGG_TYPES = {AGG0_NODES, AGG1_NODES, AGG2_NODES,
+						    AGG3_NODES, AGG4_NODES, AGG5_NODES,
+						    AGG6_NODES, AGG7_NODES, AGG8_NODES,
+						    AGG9_NODES, AGG10_NODES, AGG11_NODES,
+						    AGG12_NODES, AGG13_NODES, AGG14_NODES,
+						    AGG15_NODES, AGG16_NODES, AGG17_NODES,
+						    AGG18_NODES};
+
+    const std::vector<double> AGG_QUALITIES = {2.008365, 480.190476, 640.925507,
+					       480.190465, 4.016730, 960.380952,
+					       960.380906, 720.956363, 960.380860,
+					       480.190453, 960.380906, 960.380860,
+					       576.902089, 961.050518, 962.055240,
+					       961.050432, 1172.649129, 960.380860,
+					       961.050785};
+
+    for (size_t i=0;i<test_matrices.size();i++) {
+
+	out << "Aggregating Matrix " << i << "..." << std::endl;
+
+	Level level;
+	TestHelpers::TestFactory<Scalar, LO, GO, NO>::createSingleLevelHierarchy(level);
+
+	RCP<Matrix> A_agg =  Xpetra::IO<SC, LO, GO, NO>::Read(test_matrices.at(i), map_for_read);
+
+	level.Set("A",A_agg);
+
+	RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory);
+	RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory);
+	dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.1));
+	dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+	RCP<UncoupledAggregationFactory> aggFactory = rcp(new UncoupledAggregationFactory);
+	aggFactory->SetFactory("Graph", dropFact);
+
+	out << "Coalesce Drop: " << dropFact.get() << std::endl;
+	out << "Aggregation: " << aggFactory.get() << std::endl;
+
+	level.Request("Aggregates", aggFactory.get());
+
+	out << "Building aggregates..." << std::endl;
+	
+	aggFactory->Build(level);
+
+	out << "Built aggregates! Getting them...\n" << std::endl;
+
+	RCP<Aggregates> aggs = level.Get< RCP<Aggregates> >("Aggregates", aggFactory.get());
+
+	out << "Got aggregates! Computing quality estimate...\n" << std::endl;
+
+	level.print(out, Teuchos::VERB_EXTREME);
+
+	level.Set("A",A);
+
+	RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory);
+	coarseMapFact->SetFactory("Aggregates", aggFactory);
+
+	AggregateQualityEstimateFactory aggQualityEstimateFactory;
+	aggQualityEstimateFactory.SetFactory("Aggregates", aggFactory);
+	aggQualityEstimateFactory.SetFactory("CoarseMap", coarseMapFact);
+
+	aggQualityEstimateFactory.SetParameter("aggregate qualities: check symmetry", Teuchos::ParameterEntry(true));
+	aggQualityEstimateFactory.SetParameter("aggregate qualities: good aggregate threshold", Teuchos::ParameterEntry(100.0));
+	aggQualityEstimateFactory.SetParameter("aggregate qualities: file output", Teuchos::ParameterEntry(false));
+
+	level.Request("AggregateQualities", &aggQualityEstimateFactory);
+	// level.Request(aggQualityEstimateFactory);
+
+	aggQualityEstimateFactory.Build(level);	
+
+	RCP<MultiVectorDouble> aggQualities = level.Get< RCP<MultiVectorDouble> >("AggregateQualities", &aggQualityEstimateFactory);
+    
+	ArrayRCP<const double> aggQualitiesLocalData = aggQualities->getData(0);
+
+	Teuchos::ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
+	AggregateQualityEstimateFactory::ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
+
+	for (size_t j=0;j<aggQualities->getLocalLength();++j) {
+
+	    std::vector<LO> nodes;
+	    for (LO k=0;k<aggSizes[j];++k) {
+		nodes.push_back(aggSortedVertices[aggsToIndices[j]+k]);
+	    }
+
+	    std::sort(nodes.begin(), nodes.end());
+
+	    bool onBoundary = false;
+
+	    for (size_t k=0;k<nodes.size();++k) {
+
+		if (nodes[k]%nx == 0 || nodes[k]%nx == nx-1 || nodes[k]/nx == 0 || nodes[k]/nx == nx-1) {
+		    onBoundary = true;
+		    break;
+		}
+			
+	    }
+
+	    if (onBoundary) continue;
+
+	    bool assert_performed = false;
+
+	    for (size_t agg_id=0;agg_id<AGG_TYPES.size();++agg_id) {
+
+		if (AGG_TYPES[agg_id].size() != nodes.size()) continue;
+
+		const std::vector<LO>& unflipped_agg = AGG_TYPES[agg_id];
+
+		for (int flip_id=0;flip_id<4;++flip_id) {
+
+		    std::vector<LO> flipped_agg;
+
+		    switch(flip_id) {
+		    case 0:
+			flipped_agg = unflipped_agg;
+			break;
+		    case 1:
+			flipped_agg = flip_agg_horizontal(unflipped_agg, nx);
+			break;
+		    case 2:
+			flipped_agg = flip_agg_vertical(unflipped_agg, nx);
+			break;
+		    case 3:
+			flipped_agg = flip_agg_horizontal(flip_agg_vertical(unflipped_agg,nx),nx);
+			break;
+		    }
+
+		    LO difference = nodes[0] - flipped_agg[0];
+
+		    bool aggFound = true;
+
+		    for (size_t k=1;k<nodes.size();++k) {
+			if (difference != nodes[k] - flipped_agg[k]) {
+			    aggFound = false;
+			    break;
+			}
+
+			if (nodes[k]%nx == 0 || nodes[k]%nx == nx-1 || nodes[k]/nx == 0 || nodes[k]/nx == nx-1) {
+			    aggFound = false;
+			    break;
+			}
+			
+		    }
+
+		    if (!aggFound) continue;
+
+		    TEST_FLOATING_EQUALITY(aggQualitiesLocalData[j], AGG_QUALITIES[agg_id], 1e-3);
+
+		    assert_performed = true;
+		    break;
+
+		}
+
+		if (assert_performed) break;
+
+	    }
+
+	}
+
+    }    
+
+  } // Convection Diffusion 2D test
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Constructor,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,Poisson2D,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,AnisotropicDiffusion2D,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AggregateQualityEstimateFactory,ConvectionDiffusion2D,Scalar,LO,GO,Node) 
 
 #include <MueLu_ETI_4arg.hpp>
 

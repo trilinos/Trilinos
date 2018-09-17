@@ -178,6 +178,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"aggregation: compute aggregate qualities\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: brick x size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: brick y size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: brick z size\" type=\"int\" value=\"2\"/>"
@@ -203,6 +204,10 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"strength-of-connection: params\"/>"
+  "<Parameter name=\"aggregate qualities: check symmetry\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregate qualities: good aggregate threshold\" type=\"double\" value=\"100.0\"/>"
+  "<Parameter name=\"aggregate qualities: file output\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregate qualities: file base\" type=\"string\" value=\"agg_qualities\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -498,6 +503,8 @@ namespace MueLu {
       
          ("aggregation: max agg size","aggregation: max agg size")
       
+         ("aggregation: compute aggregate qualities","aggregation: compute aggregate qualities")
+      
          ("aggregation: brick x size","aggregation: brick x size")
       
          ("aggregation: brick y size","aggregation: brick y size")
@@ -547,6 +554,14 @@ namespace MueLu {
          ("aggregation: params","aggregation: params")
       
          ("strength-of-connection: params","strength-of-connection: params")
+      
+         ("aggregate qualities: check symmetry","aggregate qualities: check symmetry")
+      
+         ("aggregate qualities: good aggregate threshold","aggregate qualities: good aggregate threshold")
+      
+         ("aggregate qualities: file output","aggregate qualities: file output")
+      
+         ("aggregate qualities: file base","aggregate qualities: file base")
       
          ("export data","export data")
       

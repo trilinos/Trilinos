@@ -76,6 +76,10 @@ namespace MueLu {
 	   it does for plain aggregation), we find empirically that
 	   it is a good way of discovering poorly constructed aggregates
 	   even in the smoothed aggregation context.
+
+	   Napov, A., & Notay, Y. (2012). An algebraic multigrid method
+	   with guaranteed convergence rate. SIAM journal on scientific
+	   computing, 34(2), A1079-A1109.
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
@@ -94,6 +98,8 @@ namespace MueLu {
       virtual ~AggregateQualityEstimateFactory();
 
       //@}
+
+      RCP<const ParameterList> GetValidParameterList() const;
 
       //! @name Input
       //@{
@@ -126,12 +132,20 @@ namespace MueLu {
 
   private:
 
-      //! @name Internal methods for computing aggregate quality.
+      //! @name Internal method for computing aggregate quality.
       //@{
 
-      void ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<MultiVector> agg_qualities) const;
+      void ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const;
 
       //@}
+
+      //! @name Internal method for outputting aggregate quality
+      //@{
+
+      void OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const;
+
+      //@}
+
 
   }; // class AggregateQualityEsimateFactory();
 

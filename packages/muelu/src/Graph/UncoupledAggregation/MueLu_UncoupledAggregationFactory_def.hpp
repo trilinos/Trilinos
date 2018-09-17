@@ -50,6 +50,7 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -70,6 +71,7 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_FactoryManager.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -103,11 +105,13 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: use interface aggregation");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+    SET_VALID_ENTRY("aggregation: compute aggregate qualities");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+    validParamList->set< RCP<const FactoryBase> >("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
     // special variables necessary for OnePtAggregationAlgorithm
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
@@ -155,6 +159,10 @@ namespace MueLu {
       } else {
         Input(currentLevel, "nodeOnInterface");
       }
+    }
+
+    if (pL.get<bool>("aggregation: compute aggregate qualities")) {
+	Input(currentLevel, "AggregateQualities");
     }
   }
 
@@ -288,6 +296,10 @@ namespace MueLu {
     aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
     Set(currentLevel, "Aggregates", aggregates);
+
+    if (pL.get<bool>("aggregation: compute aggregate qualities")) {
+	RCP<Xpetra::MultiVector<double,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<double,LO,GO,Node>>>(currentLevel, "AggregateQualities");
+    }
 
     GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
