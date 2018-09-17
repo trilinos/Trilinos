@@ -13,15 +13,15 @@ template<class SC = Tpetra::Operator<>::scalar_type,
 class GmresSingleReduce : public Gmres<SC, MV, OP> {
 private:
   using base_type = Gmres<SC, MV, OP>;
-
-private:
   using MVT = Belos::MultiVecTraits<SC, MV>;
   using LO = typename MV::local_ordinal_type;
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
   using STM = Teuchos::ScalarTraits<mag_type>;
-  using device_type = typename MV::device_type;
   using complex_type = std::complex<mag_type>;
+  using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
+  using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
+  using vec_type = typename Krylov<SC, MV, OP>::vec_type;
 
 public:
   GmresSingleReduce () :
@@ -58,11 +58,7 @@ public:
     return stepSize_;
   }
   
-protected:
-  using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
-  using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
-  using vec_type = typename Krylov<SC, MV, OP>::vec_type;
-  
+private:
   //! Apply the orthogonalization using a single all-reduce
   int
   projectAndNormalizeSingleReduce (int n,
@@ -133,7 +129,6 @@ protected:
     return rank;
   }
 
-private:
   SolverOutput<SC>
   solveOneVec (Teuchos::FancyOStream* outPtr,
                vec_type& X, // in X/out X
@@ -203,7 +198,7 @@ private:
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
 					       input_gmres);
       if (output.converged) {
-        return output; // ordinary GMRES converged
+        return output; // standard GMRES converged
       }
       if (input.precoSide == "left") {
         M.apply (R, P);
@@ -331,7 +326,6 @@ private:
     return output;
   }
   
-protected:
   int stepSize_; // "step size" for Newton basis
 };
 
