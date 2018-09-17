@@ -108,6 +108,14 @@ void NOX::Solver::SingleStep::init()
 }
 
 void NOX::Solver::SingleStep::
+reset()
+{
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+}
+
+void NOX::Solver::SingleStep::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
@@ -131,7 +139,7 @@ NOX::Solver::SingleStep::~SingleStep()
 
 }
 
-NOX::StatusTest::StatusType NOX::Solver::SingleStep::getStatus()
+NOX::StatusTest::StatusType NOX::Solver::SingleStep::getStatus() const
 {
   return status;
 }
@@ -186,10 +194,10 @@ bool NOX::Solver::SingleStep::try_step()
 
 NOX::StatusTest::StatusType NOX::Solver::SingleStep::step()
 {
+  observer->runPreIterate(*this);
+
   // SingleStep solver means step() is always a new solve
   globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
-
-  observer->runPreIterate(*this);
 
   // Update iteration count.
   nIter ++;
@@ -213,6 +221,8 @@ NOX::StatusTest::StatusType NOX::Solver::SingleStep::step()
 NOX::StatusTest::StatusType NOX::Solver::SingleStep::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   step();
 

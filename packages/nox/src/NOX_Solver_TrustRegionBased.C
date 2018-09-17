@@ -185,13 +185,6 @@ reset(const NOX::Abstract::Vector& initialGuess,
   nIter = 0;
   dx = 0;
   status = StatusTest::Unconverged;
-
-  // Print out initialization information
-  if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
-    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(utilsPtr->out(),5);
-  }
 }
 
 void TrustRegionBased::
@@ -204,13 +197,15 @@ reset(const NOX::Abstract::Vector& initialGuess)
   nIter = 0;
   dx = 0;
   status = StatusTest::Unconverged;
+}
 
-  // Print out initialization information
-  if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
-    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    paramsPtr->print(utilsPtr->out(),5);
-  }
+void TrustRegionBased::
+reset()
+{
+  // Initialize
+  nIter = 0;
+  dx = 0;
+  status = StatusTest::Unconverged;
 }
 
 TrustRegionBased::~TrustRegionBased()
@@ -219,7 +214,7 @@ TrustRegionBased::~TrustRegionBased()
 }
 
 
-NOX::StatusTest::StatusType TrustRegionBased::getStatus()
+NOX::StatusTest::StatusType TrustRegionBased::getStatus() const
 {
   return status;
 }
@@ -511,6 +506,8 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
 NOX::StatusTest::StatusType TrustRegionBased::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == StatusTest::Unconverged) {

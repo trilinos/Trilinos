@@ -162,6 +162,13 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
 }
 
+void
+NOX::Multiphysics::Solver::FixedPointBased::reset()
+{
+  std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+}
+
 NOX::Multiphysics::Solver::FixedPointBased::~FixedPointBased()
 {
 
@@ -169,7 +176,7 @@ NOX::Multiphysics::Solver::FixedPointBased::~FixedPointBased()
 
 
 NOX::StatusTest::StatusType
-NOX::Multiphysics::Solver::FixedPointBased::getStatus()
+NOX::Multiphysics::Solver::FixedPointBased::getStatus() const
 {
   return status;
 }
