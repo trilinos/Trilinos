@@ -52,7 +52,6 @@
 #define NOX_SOLVER_TENSORBASED_H
 
 #include "NOX_Solver_Generic.H"        // base class
-#include "NOX_Solver_PrePostOperator.H"  // class data member
 #include "Teuchos_ParameterList.hpp"        // class data element
 #include "NOX_Utils.H"                // class data element
 #include "Teuchos_RCP.hpp"  // class data element
@@ -69,6 +68,7 @@ namespace NOX {
   }
 
   class LineSearchCounters;
+  class Observer;
 
 namespace Solver {
 
@@ -551,8 +551,8 @@ protected:
   //! Counter for number of "double" Jacobian-vector products
   mutable int numJ2vMults;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
 };
 } // namespace Solver

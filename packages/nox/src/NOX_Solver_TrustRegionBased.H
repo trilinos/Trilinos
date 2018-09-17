@@ -54,11 +54,11 @@
 #include "NOX_Solver_Generic.H"	        // base class
 #include "Teuchos_ParameterList.hpp"	// class data element
 #include "NOX_Utils.H"	                // class data element
-#include "NOX_Solver_PrePostOperator.H" // class data element
 
 // Forward declaration
 namespace NOX {
   class GlobalData;
+  class Observer;
   namespace MeritFunction {
     class Generic;
   }
@@ -404,8 +404,8 @@ protected:
   //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach.
   bool useAredPredRatio;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
 };
 } // namespace Solver

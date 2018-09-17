@@ -52,13 +52,13 @@
 #define NOX_SOLVER_SINGLESTEP_H
 
 #include "NOX_Solver_Generic.H"  // for NOX::StatusTest::StatusType
-#include "NOX_Solver_PrePostOperator.H"  // class data element
 #include "NOX_Utils.H"                 // class data element
 #include "NOX_Abstract_Group.H"        // argument type
 
 // Forward declarations
 namespace NOX {
   class GlobalData;
+  class Observer;
 }
 
 namespace NOX {
@@ -138,8 +138,8 @@ protected:
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
   //! If set to true, the return status of the linear solver is ignored, step is declared a success
   bool ignoreLinearSolverFailures;

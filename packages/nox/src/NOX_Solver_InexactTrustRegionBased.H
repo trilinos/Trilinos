@@ -56,7 +56,6 @@
 // Class data elements
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Direction_Utils_InexactNewton.H"
-#include "NOX_Solver_PrePostOperator.H"
 #include "NOX_SolverStats.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -64,6 +63,7 @@
 namespace NOX {
   class Utils;
   class GlobalData;
+  class Observer;
   namespace MeritFunction {
     class Generic;
   }
@@ -502,8 +502,8 @@ protected:
   //! If set to true, the \f$ \tau \f$ parameter is minimized over the dogleg line segments instead of being computed at the trust regioin radius.
   bool useDoglegMinimization;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
 };
 } // namespace Solver

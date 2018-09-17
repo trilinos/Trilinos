@@ -63,6 +63,7 @@ namespace NOX_UNIT_TEST {
     int pre_solve_count_;
     int post_solve_count_;
     int pre_solution_update_count_;
+    int post_solution_update_count_;
     int pre_linesearch_count_;
     int post_linesearch_count_;
 
@@ -74,6 +75,7 @@ namespace NOX_UNIT_TEST {
       pre_solve_count_(0),
       post_solve_count_(0),
       pre_solution_update_count_(0),
+      post_solution_update_count_(0),
       pre_linesearch_count_(0),
       post_linesearch_count_(0)
     {}
@@ -93,6 +95,9 @@ namespace NOX_UNIT_TEST {
     void runPreSolutionUpdate(const NOX::Abstract::Vector& update,
                               const NOX::Solver::Generic& solver)
     {pre_solution_update_count_ += 1;}
+
+    void runPostSolutionUpdate(const NOX::Solver::Generic& solver)
+    {post_solution_update_count_ += 1;}
 
     void runPreLineSearch(const NOX::Solver::Generic& solver)
     {pre_linesearch_count_ += 1;}
@@ -114,6 +119,9 @@ namespace NOX_UNIT_TEST {
 
     int preSolutionUpdateCount() const
     {return pre_solution_update_count_;}
+
+    int postSolutionUpdateCount() const
+    {return post_solution_update_count_;}
 
     int preLineSearchCount() const
     {return pre_linesearch_count_;}
@@ -226,6 +234,14 @@ namespace NOX_UNIT_TEST {
     ppop_vec.runPreSolutionUpdate(vec,solver);
     ppop_vec.runPreSolutionUpdate(vec,solver);
 
+    ppop_vec.runPostSolutionUpdate(solver);
+    ppop_vec.runPostSolutionUpdate(solver);
+    ppop_vec.runPostSolutionUpdate(solver);
+    ppop_vec.runPostSolutionUpdate(solver);
+    ppop_vec.runPostSolutionUpdate(solver);
+    ppop_vec.runPostSolutionUpdate(solver);
+
+    ppop_vec.runPreLineSearch(solver);
     ppop_vec.runPreLineSearch(solver);
     ppop_vec.runPreLineSearch(solver);
     ppop_vec.runPreLineSearch(solver);
@@ -233,6 +249,7 @@ namespace NOX_UNIT_TEST {
     ppop_vec.runPreLineSearch(solver);
     ppop_vec.runPreLineSearch(solver);
 
+    ppop_vec.runPostLineSearch(solver);
     ppop_vec.runPostLineSearch(solver);
     ppop_vec.runPostLineSearch(solver);
     ppop_vec.runPostLineSearch(solver);
@@ -246,22 +263,25 @@ namespace NOX_UNIT_TEST {
     TEST_EQUALITY(mock_ppop_1->preSolveCount(), 3);
     TEST_EQUALITY(mock_ppop_1->postSolveCount(), 4);
     TEST_EQUALITY(mock_ppop_1->preSolutionUpdateCount(), 5);
-    TEST_EQUALITY(mock_ppop_1->preLineSearchCount(), 6);
-    TEST_EQUALITY(mock_ppop_1->postLineSearchCount(), 7);
+    TEST_EQUALITY(mock_ppop_1->postSolutionUpdateCount(), 6);
+    TEST_EQUALITY(mock_ppop_1->preLineSearchCount(), 7);
+    TEST_EQUALITY(mock_ppop_1->postLineSearchCount(), 8);
 
     TEST_EQUALITY(mock_ppop_2->preIterateCount(), 1);
     TEST_EQUALITY(mock_ppop_2->postIterateCount(), 2);
     TEST_EQUALITY(mock_ppop_2->preSolveCount(), 3);
     TEST_EQUALITY(mock_ppop_2->postSolveCount(), 4);
     TEST_EQUALITY(mock_ppop_2->preSolutionUpdateCount(), 5);
-    TEST_EQUALITY(mock_ppop_2->preLineSearchCount(), 6);
-    TEST_EQUALITY(mock_ppop_2->postLineSearchCount(), 7);
+    TEST_EQUALITY(mock_ppop_1->postSolutionUpdateCount(), 6);
+    TEST_EQUALITY(mock_ppop_2->preLineSearchCount(), 7);
+    TEST_EQUALITY(mock_ppop_2->postLineSearchCount(), 8);
 
     TEST_EQUALITY(mock_ppop_3->preIterateCount(), 0);
     TEST_EQUALITY(mock_ppop_3->postIterateCount(), 0);
     TEST_EQUALITY(mock_ppop_3->preSolveCount(), 0);
     TEST_EQUALITY(mock_ppop_3->postSolveCount(), 0);
     TEST_EQUALITY(mock_ppop_3->preSolutionUpdateCount(), 0);
+    TEST_EQUALITY(mock_ppop_3->postSolutionUpdateCount(), 0);
     TEST_EQUALITY(mock_ppop_3->preLineSearchCount(), 0);
     TEST_EQUALITY(mock_ppop_3->postLineSearchCount(), 0);
 

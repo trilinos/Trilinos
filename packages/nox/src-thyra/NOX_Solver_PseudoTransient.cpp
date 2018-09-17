@@ -60,6 +60,7 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_Observer.hpp"
 #include "NOX_SolverStats.hpp"
 #include <limits>
 
@@ -82,7 +83,7 @@ PseudoTransient(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
-  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
 
   this->setMyParamList(p);
   thyraSolnGroup = Teuchos::rcp_dynamic_cast<NOX::Thyra::Group>(solnPtr,true);
@@ -191,7 +192,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::getStatus()
 
 NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // On the first step, do some initializations
   if (nIter == 0) {
@@ -227,7 +228,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 
   // First check status
   if (status != NOX::StatusTest::Unconverged) {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -311,7 +312,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   {
     utilsPtr->out() << "NOX::Solver::PseudoTransient::iterate - unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -333,15 +334,16 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   *oldSolnPtr = *solnPtr;
 
   // Do line search and compute new soln.
-  prePostOperator.runPreSolutionUpdate(*dirPtr,*this);
+  observer->runPreSolutionUpdate(*dirPtr,*this);
   ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
+  observer->runPostSolutionUpdate(*this);  
   if (!ok)
   {
     if (stepSize == 0.0)
     {
       utilsPtr->out() << "NOX::Solver::PseudoTransient::iterate - line search failed" << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -356,7 +358,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   {
     utilsPtr->out() << "NOX::Solver::PseudoTransient::iterate - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -364,7 +366,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
   // Evaluate the current status.
   status = test.checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
 
@@ -373,7 +375,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 
 NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
@@ -383,7 +385,7 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::solve()
   outputParams.set("Nonlinear Iterations", nIter);
   outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }
