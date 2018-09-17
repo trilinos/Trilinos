@@ -105,11 +105,12 @@ public:
   void reset(const NOX::Abstract::Vector& initialGuess,
          const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   void reset(const NOX::Abstract::Vector& initialGuess);
-  NOX::StatusTest::StatusType getStatus();
+  void reset();
   NOX::StatusTest::StatusType step();
   NOX::StatusTest::StatusType solve();
   const NOX::Abstract::Group& getSolutionGroup() const;
   const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  NOX::StatusTest::StatusType getStatus() const;
   int getNumIterations() const;
   const Teuchos::ParameterList& getList() const;
   double getStepSize() const;

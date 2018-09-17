@@ -165,7 +165,11 @@ reset(const NOX::Abstract::Vector& initialGuess,
   solnPtr->setX(initialGuess);
   testPtr = t;
   globalDataPtr->getNonConstSolverStatistics()->reset();
-  init();
+  stepSize = 0.0;
+  nIter = 0;
+  nStore = 0;
+  workVec->init(0.0);
+  status = NOX::StatusTest::Unconverged;
 }
 
 void NOX::Solver::AndersonAcceleration::
@@ -173,7 +177,20 @@ reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
   globalDataPtr->getNonConstSolverStatistics()->reset();
-  init();
+  nIter = 0;
+  nStore = 0;
+  workVec->init(0.0);
+  status = NOX::StatusTest::Unconverged;
+}
+
+void NOX::Solver::AndersonAcceleration::
+reset()
+{
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  nIter = 0;
+  nStore = 0;
+  workVec->init(0.0);
+  status = NOX::StatusTest::Unconverged;
 }
 
 NOX::Solver::AndersonAcceleration::~AndersonAcceleration()
@@ -182,7 +199,7 @@ NOX::Solver::AndersonAcceleration::~AndersonAcceleration()
 }
 
 
-NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::getStatus()
+NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::getStatus() const
 {
   return status;
 }
@@ -418,6 +435,8 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)

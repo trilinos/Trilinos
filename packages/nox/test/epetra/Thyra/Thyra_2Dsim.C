@@ -49,6 +49,8 @@
 #include "NOX.H"
 #include "NOX_Thyra.H"
 #include "NOX_SolverStats.hpp"
+#include "NOX_Observer_Print.hpp"
+#include "NOX_Utils.H"
 #include "Teuchos_TestingHelpers.hpp"
 
 // Trilinos Objects
@@ -183,6 +185,12 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> nl_params =
       Teuchos::rcp(new Teuchos::ParameterList);
     nl_params->set("Nonlinear Solver", "Line Search Based");
+
+    // Register Print Observer (and disable normal printing)
+    nl_params->sublist("Printing").set("Output Information",NOX::Utils::Error);
+    Teuchos::RCP<NOX::Utils> os = Teuchos::rcp(new NOX::Utils(nl_params->sublist("Printing")));
+    Teuchos::RCP<NOX::Observer> printObserver = Teuchos::rcp(new NOX::ObserverPrint(os));
+    nl_params->sublist("Solver Options").set("Observer",printObserver);
 
     // Create the solver
     Teuchos::RCP<NOX::Solver::Generic> solver =

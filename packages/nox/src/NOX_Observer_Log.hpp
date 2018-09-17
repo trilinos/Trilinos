@@ -36,37 +36,56 @@
 //
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_MeritFunction_Generic.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Factory.H"
-#include "Teuchos_ParameterList.hpp"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Factory.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_Divergence.H"
-#include "NOX_StatusTest_RelativeNormF.H"
-#include "NOX_StatusTest_NStep.H"
-#include "NOX_Utils.H"
-#include "NOX_LineSearch_UserDefinedFactory.H"
-#include "NOX_LineSearch_UserDefinedFactoryT.H"
-#include "NOX_Direction_UserDefinedFactory.H"
-#include "NOX_Direction_UserDefinedFactoryT.H"
+#ifndef NOX_OBSERVER_LOG_HPP
+#define NOX_OBSERVER_LOG_HPP
+
+#include "NOX_Common.H"
+#include "NOX_Observer.hpp"
+#include <vector>
+#include <string>
+
+namespace NOX {
+  
+  //! Logs observer calls. Useful for unit testing and debugging.
+  class ObserverLog : public NOX::Observer {
+
+  private:
+    int pre_it_count_;
+    int post_it_count_;
+    int pre_solve_count_;
+    int post_solve_count_;
+    int pre_solution_update_count_;
+    int post_solution_update_count_;
+    int pre_linesearch_count_;
+    int post_linesearch_count_;
+    bool log_call_order_;
+    std::vector<std::string> call_order_;
+
+  public:
+    ObserverLog(const bool log_call_order = true);
+    ~ObserverLog();
+    void runPreIterate(const NOX::Solver::Generic& solver);
+    void runPostIterate(const NOX::Solver::Generic& solver);
+    void runPreSolve(const NOX::Solver::Generic& solver);
+    void runPostSolve(const NOX::Solver::Generic& solver);
+    void runPreSolutionUpdate(const NOX::Abstract::Vector& update,
+                              const NOX::Solver::Generic& solver);
+    void runPostSolutionUpdate(const NOX::Solver::Generic& solver);
+    void runPreLineSearch(const NOX::Solver::Generic& solver);
+    void runPostLineSearch(const NOX::Solver::Generic& solver);
+    int preIterateCount() const;
+    int postIterateCount() const;
+    int preSolveCount() const;
+    int postSolveCount() const;
+    int preSolutionUpdateCount() const;
+    int postSolutionUpdateCount() const;
+    int preLineSearchCount() const;
+    int postLineSearchCount() const;
+    const std::vector<std::string>& getCallOrder() const;
+  };
+
+}
+
+#endif

@@ -128,10 +128,6 @@ int main(int argc, char *argv[])
       throw "NOX Error";
     }
 
-    if (verbose)
-      if (MyPID == 0)
-        std::cout << "\n" << NOX::version() << std::endl;
-
     // Create the interface between NOX and the application
     // This object is derived from NOX::Epetra::Interface
     Teuchos::RCP<Interface> interface =
