@@ -2,10 +2,7 @@
 #define THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
 
 #include "Thyra_FROSchXpetraFactory_decl.hpp"
-
-//#include <Frosch_EpetraOp_def.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
-
 
 #include <FROSch_Tools_def.hpp>
 
@@ -18,32 +15,33 @@ namespace Thyra {
     //Constructor
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::FROSch_XpetraFactory()
-    
-    
-    
-    
-    
-    
     {
         paramList_ = rcp(new Teuchos::ParameterList());
     }
     //-----------------------------------------------------------
+    //Check Type -> so far redundant
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     bool FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isCompatible(const LinearOpSourceBase<Scalar>& fwdOpSrc) const
     {
         const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc.getOp();
-        //so far only Epetra is allowed
-        if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp)) return true;
-        
-        return false;
+        if (Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isEpetra(fwdOp))
+        {
+            return true;
+        }else if(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isTpetra(fwdOp)){
+            return true;
+        }else{
+            return false;
+        }
     }
     //--------------------------------------------------------------
+    //Create Default Prec -> Not used here (maybe somewhere else?)
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal , class Node>
     RCP<PreconditionerBase<Scalar> >FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createPrec() const{
         return Teuchos::rcp(new DefaultPreconditioner<Scalar>);
         
     }
     //-------------------------------------------------------------
+    //Main Function to use FROSch as Prec
     template<class Scalar, class LocalOrdinal , class GlobalOrdinal, class Node>
     void FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializePrec(const Teuchos::RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc,
      
@@ -53,7 +51,6 @@ namespace Thyra {
      ) const{
         
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-        
         
         using Teuchos::rcp_dynamic_cast;
         //Some Typedefs
@@ -68,8 +65,6 @@ namespace Thyra {
         //TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
         TEUCHOS_ASSERT(prec);
         
-        RCP<ParameterList> paramList(new ParameterList(*paramList_)); // AH: Muessen wir diese Kopie machen? Irgendwie wäre es doch besser, wenn man die nicht kopieren müsste, oder?
-
         // Retrieve wrapped concrete Xpetra matrix from FwdOp
         const RCP<const ThyLinOpBase> fwdOp = fwdOpSrc->getOp();
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
@@ -82,6 +77,7 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == bIsTpetra) && bIsBlocked == false);
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
         
+        // Retrieve Matrix
         RCP<XpMat> A = Teuchos::null;
         RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
@@ -95,7 +91,7 @@ namespace Thyra {
         
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
         
-        // Retrieve concrete preconditioner object--->Here Mem Leak?
+        // Retrieve concrete preconditioner object
         const Teuchos::Ptr<DefaultPreconditioner<Scalar> > defaultPrec = Teuchos::ptr(dynamic_cast<DefaultPreconditioner<Scalar> *>(prec));
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
         
@@ -104,11 +100,10 @@ namespace Thyra {
         thyra_precOp = rcp_dynamic_cast<Thyra::LinearOpBase<Scalar> >(defaultPrec->getNonconstUnspecifiedPrecOp(), true);
         
         //-------Build New Two Level Prec--------------
-        RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,paramList));
+        RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,paramList_));
         
-        RCP< const Teuchos::Comm< int > > Comm = A->getRowMap()->getComm();
-        Comm->barrier();
         
+        //Initialize (Coordinates and Repeates Map to build TwoLevelPrec)
         Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Coord = Teuchos::null;
         Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
         
@@ -133,17 +128,6 @@ namespace Thyra {
         
         TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),dofOrdering,Coord);
         
-//        if(Coord.get()!=NULL && RepeatedMap.get()!=NULL){
-//            TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise,Coord);
-//            std::cout << "111111111111111111111111\n";
-//        } else if (RepeatedMap.get()!=NULL) {
-//            TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),FROSch::NodeWise);
-//            std::cout << "222222222222222222222222\n";
-//        } else {
-//            TwoLevelPrec->initialize();
-//            std::cout << "333333333333333333333333\n";
-//        }
-        
         TwoLevelPrec->compute();
         //-----------------------------------------------
         
@@ -153,41 +137,18 @@ namespace Thyra {
         RCP<const VectorSpaceBase<Scalar> > thyraDomainSpace = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(TwoLevelPrec->getDomainMap());
         
         RCP <Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpOp = Teuchos::rcp_dynamic_cast<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(TwoLevelPrec);
-        thyraPrecOp = Thyra::fROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyraRangeSpace, thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
+        
+        thyraPrecOp = Thyra::fROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
         
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
         
-        /*##############################Epetra-Version###############################
-         //Prepare for FROSch Epetra Op-------------------
-         RCP<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> > epetraTwoLevel = rcp_dynamic_cast<FROSch::TwoLevelPreconditioner<double,int,int,Xpetra::EpetraNode> >(TwoLevelPrec);
-         
-         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(epetraTwoLevel));
-         
-         
-         RCP<FROSch::FROSch_EpetraOperator> frosch_epetraop = rcp(new FROSch::FROSch_EpetraOperator(epetraTwoLevel,paramList));
-         
-         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(frosch_epetraop));
-         
-         //attach to fwdOp
-         set_extra_data(fwdOp,"IFPF::fwdOp", Teuchos::inOutArg(frosch_epetraop), Teuchos::POST_DESTROY,false);
-         
-         //Thyra Epetra Linear Operator
-         RCP<ThyEpLinOp> thyra_epetraOp = Thyra::nonconstEpetraLinearOp(frosch_epetraop, NOTRANS, EPETRA_OP_APPLY_APPLY_INVERSE, EPETRA_OP_ADJOINT_UNSUPPORTED);
-         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyra_epetraOp));
-         
-         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::nonnull(thyraPrecOp));
-         
-         thyraPrecOp = rcp_dynamic_cast<ThyLinOpBase>(thyra_epetraOp);
-         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraPrecOp));
-
-         ############################################################################*/
-        
-        
+        //Set TwoLevelPrec
         
         defaultPrec->initializeUnspecified(thyraPrecOp);
         
     }
     //-------------------------------------------------------------
+    //uninitialize
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     uninitializePrec(PreconditionerBase<Scalar>* prec, RCP<const LinearOpSourceBase<Scalar> >* fwdOp, ESupportSolveUse* supportSolveUse) const {
@@ -210,6 +171,7 @@ namespace Thyra {
         defaultPrec->uninitialize();
     }
     //-----------------------------------------------------------------
+    //Following Functione maybe needed later
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void FROSch_XpetraFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameterList(RCP<ParameterList> const & paramList){
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(paramList));

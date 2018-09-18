@@ -48,8 +48,6 @@ namespace Thyra {
     
     
     // Constructors/initializers
-    
-    
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::FROSchLinearOp()
     {}
@@ -153,6 +151,7 @@ namespace Thyra {
 
         TEUCHOS_TEST_FOR_EXCEPTION(getConstXpetraOperator() == Teuchos::null, MueLu::Exceptions::RuntimeError, "XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
         RCP< const Teuchos::Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
+        //Transform to Xpetra MultiVector
         RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xY;
         
         Teuchos::ETransp transp;
@@ -162,7 +161,7 @@ namespace Thyra {
             case CONJTRANS: transp = Teuchos::CONJ_TRANS; break;
             default: TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::NotImplemented, "Thyra::XpetraLinearOp::apply. Unknown value for M_trans. Only NOTRANS, TRANS and CONJTRANS are supported.");
         }
-        
+        //Epetra NodeType
         if(this->bIsEpetra_){
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
             
@@ -193,7 +192,7 @@ namespace Thyra {
             xY = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*Y,comm);
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
 
-        }
+        } //Tpetra NodeType
         else if(bIsTpetra_){
             const RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xX =
             Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromRef(X_in), comm);
@@ -210,11 +209,7 @@ namespace Thyra {
         RCP<Thyra::MultiVectorBase<Scalar> >thyraX =
         Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(xY));
         
-        // copy back Xpetra results from tY to Thyra vector Y
-        /*Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateThyra(
-                                                                                xY_in,
-                                                                                rgMapExtractor,
-                                                                                Teuchos::rcpFromPtr(Y_inout));*/
+        
         typedef Thyra::SpmdVectorSpaceBase<Scalar> ThySpmdVecSpaceBase;
         RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(Teuchos::rcpFromPtr(Y_inout)->range());
         
