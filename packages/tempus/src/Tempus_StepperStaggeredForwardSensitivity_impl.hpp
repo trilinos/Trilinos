@@ -231,9 +231,8 @@ takeStep(
   prod_state->setOrder(state->getOrder());
 
   // If step passed promote the state, otherwise fail and stop
-  if (state->getStepperStatus() == Status::FAILED ||
-      state->getSolutionStatus() == Status::FAILED) {
-    prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
+  if (state->getSolutionStatus() == Status::FAILED) {
+    prod_state->setSolutionStatus(Status::FAILED);
     return;
   }
   stateSolutionHistory_->promoteWorkingState();
@@ -267,13 +266,12 @@ takeStep(
   prod_state->setOrder(std::min(state->getOrder(), sens_state->getOrder()));
 
   // If step passed promote the state, otherwise fail and stop
-  if (sens_state->getStepperStatus() == Status::FAILED ||
-      sens_state->getSolutionStatus() == Status::FAILED) {
-    prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
+  if (sens_state->getSolutionStatus() == Status::FAILED) {
+    prod_state->setSolutionStatus(Status::FAILED);
   }
   else {
     sensSolutionHistory_->promoteWorkingState();
-    prod_state->getStepperState()->stepperStatus_ = Status::PASSED;
+    prod_state->setSolutionStatus(Status::PASSED);
   }
 }
 

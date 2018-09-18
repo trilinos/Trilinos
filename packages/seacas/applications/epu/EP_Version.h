@@ -37,8 +37,8 @@
 
 static char const *qainfo[] = {
     "epu --  E Pluribus Unum",
-    "2018/04/17",
-    "4.27",
+    "2018/07/26",
+    "4.28",
 };
 
 #endif // SEACAS_Version_h

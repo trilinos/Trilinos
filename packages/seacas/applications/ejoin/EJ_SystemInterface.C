@@ -577,7 +577,7 @@ namespace {
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
-            int id = strtoul(name_id[i].c_str(), nullptr, 0);
+            int id = std::stoi(name_id[i]);
             (*variable_list).emplace_back(std::make_pair(var_name, id));
           }
         }
@@ -606,9 +606,9 @@ namespace {
       std::string offx = var_list[0];
       std::string offy = var_list[1];
       std::string offz = var_list[2];
-      double      x    = strtod(offx.c_str(), nullptr);
-      double      y    = strtod(offy.c_str(), nullptr);
-      double      z    = strtod(offz.c_str(), nullptr);
+      double      x    = std::stod(offx);
+      double      y    = std::stod(offy);
+      double      z    = std::stod(offz);
 
       offset->x = x;
       offset->y = y;
@@ -655,7 +655,7 @@ namespace {
         std::string part = *I;
         if (part[0] == 'p' || part[0] == 'P') {
           std::string part_id(part, 1);
-          int         part_num = strtoul(part_id.c_str(), nullptr, 0);
+          int         part_num = std::stoi(part_id);
           list->push_back(part_num);
         }
         else {
@@ -715,7 +715,7 @@ namespace {
 
       // Extract the part number...
       std::string part(part_block[0], 1);
-      int         part_num = strtoul(part.c_str(), nullptr, 0) - 1;
+      int         part_num = std::stoi(part) - 1;
 
       // If no blocks specified for a part, then omit all entities for
       // this part.  Since don't know how many entities there are,

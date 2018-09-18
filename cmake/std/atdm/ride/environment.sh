@@ -96,6 +96,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
     module load devpack/20180521/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88   
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
+    module swap netcdf-exo/4.6.1/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88 netcdf/4.6.1/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88
   else
     echo
     echo "***"

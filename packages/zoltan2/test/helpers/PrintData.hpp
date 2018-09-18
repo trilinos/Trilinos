@@ -54,7 +54,6 @@
 #include <string>
 
 using std::string;
-using std::endl;
 using Teuchos::ArrayView;
 
 template <typename lno_t, typename gno_t>
@@ -71,7 +70,7 @@ template <typename lno_t, typename gno_t>
     graph.getColMap();
 
   if (info.size() > 0)
-    os << info << endl;
+    os << info << std::endl;
 
   if (graph.isGloballyIndexed()){
     ArrayView<const gno_t> indices;
@@ -82,7 +81,7 @@ template <typename lno_t, typename gno_t>
       for (typename ArrayView<const gno_t>::size_type j=0; j < indices.size(); j++){
         os << indices[j] << " ";
       }
-      os << endl;
+      os << std::endl;
     }
   }
   else{
@@ -94,7 +93,7 @@ template <typename lno_t, typename gno_t>
       for (typename ArrayView<const lno_t>::size_type j=0; j < indices.size(); j++){
         os << colMap->getGlobalElement(indices[j]) << " ";
       }
-      os << endl;
+      os << std::endl;
     }
   }
 }
@@ -110,7 +109,7 @@ template <typename lno_t, typename gno_t>
 
   comm->barrier();
   if (rank==0)
-    os << info << endl;
+    os << info << std::endl;
   comm->barrier();
 
   for (int p=0; p < comm->getSize(); p++){

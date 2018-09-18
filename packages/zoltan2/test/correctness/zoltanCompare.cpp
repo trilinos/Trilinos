@@ -431,7 +431,7 @@ for(int i = 0; i < nump; i++) {
  RCP<quality_t>metricObject = rcp(new quality_t(ia,&params,problem->getComm(),
 						&problem->getSolution()));
   if (me == 0){
-    metricObject->printMetrics(cout);
+    metricObject->printMetrics(std::cout);
   }
   problem->printTimers();
 

@@ -8,3 +8,10 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS -v
   COMM serial mpi
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  inout_hdf5_test
+  SOURCES
+    EpetraExt_HDF5_UnitTest.cpp
+  COMM serial mpi
+  )

@@ -51,6 +51,7 @@
 #include "NOX_GlobalData.H"
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_MeritFunction_SumOfSquares.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::GlobalData::
 GlobalData(const Teuchos::RCP<Teuchos::ParameterList>& noxParams)
@@ -61,7 +62,9 @@ GlobalData(const Teuchos::RCP<NOX::Utils>& utils,
            const Teuchos::RCP<NOX::MeritFunction::Generic>& mf) :
   utilsPtr(utils),
   meritFunctionPtr(mf)
-{}
+{
+  solverStatsPtr = Teuchos::rcp(new NOX::SolverStats);
+}
 
 NOX::GlobalData::~GlobalData() {}
 
@@ -70,6 +73,8 @@ initialize(const Teuchos::RCP<Teuchos::ParameterList>& noxParams)
 {
   paramListPtr = noxParams;
   utilsPtr = Teuchos::rcp(new NOX::Utils(noxParams->sublist("Printing")));
+  if (is_null(solverStatsPtr))
+    solverStatsPtr = Teuchos::rcp(new NOX::SolverStats);
 
   Teuchos::ParameterList& so = noxParams->sublist("Solver Options");
 
@@ -93,3 +98,11 @@ NOX::GlobalData::getMeritFunction() const
 Teuchos::RCP<Teuchos::ParameterList>
 NOX::GlobalData::getNoxParameterList() const
 { return paramListPtr; }
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::GlobalData::getSolverStatistics() const
+{ return solverStatsPtr; }
+
+Teuchos::RCP<NOX::SolverStats>
+NOX::GlobalData::getNonConstSolverStatistics()
+{ return solverStatsPtr; }

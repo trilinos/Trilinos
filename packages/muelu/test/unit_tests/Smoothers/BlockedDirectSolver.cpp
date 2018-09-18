@@ -596,7 +596,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedII20I1I_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -765,7 +765,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedII20I1I_Thyra_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);

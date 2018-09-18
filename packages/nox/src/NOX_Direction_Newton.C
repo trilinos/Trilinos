@@ -135,6 +135,8 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
   // Compute the Newton direction
   status = soln.computeNewton(paramsPtr->sublist("Newton").sublist("Linear Solver"));
 
+  soln.logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
+
   // It didn't converge, but maybe we can recover.
   if ((status != NOX::Abstract::Group::Ok) &&
       (doRescue == false)) {
