@@ -926,10 +926,12 @@ public:
   }
 
   const std::vector<ROL::Ptr<FE<Real>>> getPressureBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
     return fePrsBdry_[side];
   }
 
   const std::vector<ROL::Ptr<FE<Real>>> getThermalBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
     return feThrBdry_[side];
   }
 
