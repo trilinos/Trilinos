@@ -30,29 +30,29 @@ TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
   clp.addOutputSetupOptions (true);
-  clp.setOption ("solver", &commandLineOptions.solverName, 
-		 "Name of the solver to test.  Belos::SolverFactory::create "
-		 "must accept this string.  Protect with double quotes if it "
-		 "has spaces: e.g., \"TPETRA CG PIPELINE\".");
+  clp.setOption ("solver", &commandLineOptions.solverName,
+                 "Name of the solver to test.  Belos::SolverFactory::create "
+                 "must accept this string.  Protect with double quotes if it "
+                 "has spaces: e.g., \"TPETRA CG PIPELINE\".");
   clp.setOption ("offDiagDiff", &commandLineOptions.offDiagDiff,
-		 "Value of the term that makes the matrix nonsymmetric");
+                 "Value of the term that makes the matrix nonsymmetric");
   clp.setOption ("maxNumAllowedIters",
-		 &commandLineOptions.maxAllowedNumIters, 
-		 "Maximum number of iterations that the solver is "
-		 "allowed to take before converging, in order for "
-		 "the test to pass.");
-  clp.setOption ("maxNumIters", &commandLineOptions.maxNumIters, 
-		 "Maximum number of iterations that the solver is "
-		 "allowed to take, over all restart cycles.  This has "
-		 "nothing to do with the test passing.");
-  clp.setOption ("restartLength", &commandLineOptions.restartLength, 
-		 "Maximum number of iterations per restart cycle.  "
-		 "This corresponds to the standard Belos parameter "
-		 "\"Num Blocks\".");
-  clp.setOption ("stepSize", &commandLineOptions.stepSize, 
-		 "Step size; only applies to algorithms that take it.");
-  clp.setOption ("verbose", "quiet", &commandLineOptions.verbose, 
-		 "Whether to print verbose output");
+                 &commandLineOptions.maxAllowedNumIters,
+                 "Maximum number of iterations that the solver is "
+                 "allowed to take before converging, in order for "
+                 "the test to pass.");
+  clp.setOption ("maxNumIters", &commandLineOptions.maxNumIters,
+                 "Maximum number of iterations that the solver is "
+                 "allowed to take, over all restart cycles.  This has "
+                 "nothing to do with the test passing.");
+  clp.setOption ("restartLength", &commandLineOptions.restartLength,
+                 "Maximum number of iterations per restart cycle.  "
+                 "This corresponds to the standard Belos parameter "
+                 "\"Num Blocks\".");
+  clp.setOption ("stepSize", &commandLineOptions.stepSize,
+                 "Step size; only applies to algorithms that take it.");
+  clp.setOption ("verbose", "quiet", &commandLineOptions.verbose,
+                 "Whether to print verbose output");
 }
 
 // Create a nonsymmetric tridiagonal matrix representing a
@@ -66,31 +66,30 @@ TEUCHOS_STATIC_SETUP()
 template<class SC>
 Teuchos::RCP<Tpetra::CrsMatrix<SC> >
 createNonsymmTridiagMatrix (const Teuchos::RCP<const Tpetra::Map<> >& rowMap,
-			    const SC offDiagDiff)
+                            const SC offDiagDiff)
 {
   using Teuchos::rcp;
-  using crs_matrix_type = Tpetra::CrsMatrix<SC>;  
+  using crs_matrix_type = Tpetra::CrsMatrix<SC>;
   using map_type = Tpetra::Map<>;
   using LO = typename map_type::local_ordinal_type;
   using GO = typename map_type::global_ordinal_type;
   using crs_matrix_type = Tpetra::CrsMatrix<SC>;
   using STS = Teuchos::ScalarTraits<SC>;
-  using mag_type = typename Tpetra::CrsMatrix<SC>::mag_type;
+  //using mag_type = typename Tpetra::CrsMatrix<SC>::mag_type;
 
   const LO lclNumRows = rowMap.is_null () ? LO (0) :
     LO (rowMap->getNodeNumElements ());
   const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
-  const GO gblMaxGblInd = rowMap->getMaxAllGlobalIndex ();  
+  const GO gblMaxGblInd = rowMap->getMaxAllGlobalIndex ();
   auto A = rcp (new crs_matrix_type (rowMap, 3, Tpetra::StaticProfile));
 
   const SC ONE = STS::one ();
   const SC TWO = ONE + ONE;
   const SC FOUR = TWO + TWO;
-  //const SC baseOffDiagEnt = ONE / FOUR;
-  const SC baseOffDiagEnt = ONE / TWO;
-  const SC subdiagEnt = baseOffDiagEnt - offDiagDiff;
+  const SC baseOffDiagEnt = ONE / FOUR;
+  const SC subDiagEnt = baseOffDiagEnt - offDiagDiff;
   const SC diagEnt = ONE;
-  const SC superdiagEnt = baseOffDiagEnt + offDiagDiff;
+  const SC superDiagEnt = baseOffDiagEnt + offDiagDiff;
 
   Teuchos::Array<GO> gblColIndsBuf (3);
   Teuchos::Array<SC> valsBuf (3);
@@ -100,28 +99,28 @@ createNonsymmTridiagMatrix (const Teuchos::RCP<const Tpetra::Map<> >& rowMap,
     LO numEnt = 0; // to be set below
     if (gblRow == gblMinGblInd && gblRow == gblMaxGblInd) {
       numEnt = 1;
-      valsBuf[0] = ONE;
+      valsBuf[0] = diagEnt;
       gblColIndsBuf[0] = gblCol;
     }
     else if (gblRow == gblMinGblInd) {
       numEnt = 2;
-      valsBuf[0] = ONE;
-      valsBuf[1] = (ONE/FOUR) + offDiagDiff;
+      valsBuf[0] = diagEnt;
+      valsBuf[1] = superDiagEnt;
       gblColIndsBuf[0] = gblCol;
       gblColIndsBuf[1] = gblCol + GO (1);
     }
     else if (gblRow == gblMaxGblInd) {
       numEnt = 2;
-      valsBuf[0] = (ONE/FOUR) - offDiagDiff;
-      valsBuf[1] = ONE;
+      valsBuf[0] = subDiagEnt;
+      valsBuf[1] = diagEnt;
       gblColIndsBuf[0] = gblCol - GO (1);
       gblColIndsBuf[1] = gblCol;
     }
     else {
       numEnt = 3;
-      valsBuf[0] = (ONE/FOUR) - offDiagDiff;
-      valsBuf[1] = ONE;
-      valsBuf[2] = (ONE/FOUR) + offDiagDiff;
+      valsBuf[0] = subDiagEnt;
+      valsBuf[1] = diagEnt;
+      valsBuf[2] = superDiagEnt;
       gblColIndsBuf[0] = gblCol - GO (1);
       gblColIndsBuf[1] = gblCol;
       gblColIndsBuf[2] = gblCol + GO (1);
@@ -136,10 +135,10 @@ createNonsymmTridiagMatrix (const Teuchos::RCP<const Tpetra::Map<> >& rowMap,
 
 void
 testSolver (Teuchos::FancyOStream& out,
-	    bool& success,
-	    const std::string& solverName,
-	    const int maxAllowedNumIters,
-	    const bool verbose)
+            bool& success,
+            const std::string& solverName,
+            const int maxAllowedNumIters,
+            const bool verbose)
 {
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;
@@ -163,19 +162,16 @@ testSolver (Teuchos::FancyOStream& out,
   // setting this to 'true'.  That will change 'myOut' from an alias
   // to 'out', into a wrapper for std::cerr.
   constexpr bool debug = true;
-  
+
   const SC ZERO = STS::zero ();
   const SC ONE = STS::one ();
-  const SC TWO = ONE + ONE;
-  const SC FOUR = TWO + TWO;
-  const SC EIGHT = FOUR + FOUR;
 
   RCP<FancyOStream> myOutPtr =
     debug ? getFancyOStream (rcpFromRef (std::cerr)) : rcpFromRef (out);
   Teuchos::FancyOStream& myOut = *myOutPtr;
 
   myOut << "Test \"native\" Tpetra version of solver \"" << solverName << "\""
-	<< endl;
+        << endl;
   Teuchos::OSTab tab1 (out);
 
   myOut << "Create the linear system to solve" << endl;
@@ -231,7 +227,7 @@ testSolver (Teuchos::FancyOStream& out,
     myOut << "*** FAILED: setParameters threw an exception "
       "not a subclass of std::exception." << endl;
     success = false;
-    return;    
+    return;
   }
 
   myOut << "Set up the linear system to solve" << endl;
@@ -239,15 +235,15 @@ testSolver (Teuchos::FancyOStream& out,
                                                        rcpFromRef (B)));
   lp->setProblem ();
 
-  myOut << "Solve the linear system" << endl;  
+  myOut << "Solve the linear system" << endl;
   solver->setProblem (lp);
   const Belos::ReturnType belosResult = solver->solve ();
 
   myOut << "Belos solver wrapper result: "
-	<< (belosResult == Belos::Converged ? "Converged" : "Unconverged")
-	<< endl
-	<< "Number of iterations: " << solver->getNumIters ()
-	<< endl;
+        << (belosResult == Belos::Converged ? "Converged" : "Unconverged")
+        << endl
+        << "Number of iterations: " << solver->getNumIters ()
+        << endl;
 
   TEST_ASSERT( solver->getNumIters () <= maxAllowedNumIters );
   TEST_ASSERT( belosResult == Belos::Converged );
@@ -259,12 +255,12 @@ testSolver (Teuchos::FancyOStream& out,
       const char tolParamName[] = "Convergence Tolerance";
       auto pl = solver->getCurrentParameters ();
       if (! pl->isType<mag_type> (tolParamName)) {
-	pl = solver->getValidParameters ();
+        pl = solver->getValidParameters ();
       }
       TEUCHOS_TEST_FOR_EXCEPTION
         (! pl->isType<mag_type> (tolParamName), std::logic_error,
        "Solver lacks \"" << tolParamName << "\" parameter, in either "
-	 "getCurrentParameters() or getValidParameters().");
+         "getCurrentParameters() or getValidParameters().");
       return pl->get<mag_type> (tolParamName);
     } ();
 
@@ -282,9 +278,9 @@ testSolver (Teuchos::FancyOStream& out,
       R_norms[j] :
       R_norms[j] / B_norms[j];
     myOut << "Column " << (j+1) << " of " << R.getNumVectors ()
-	  << ": Absolute residual norm: " << R_norms[j]
-	  << ", Relative residual norm: " << relResNorm
-	  << endl;
+          << ": Absolute residual norm: " << R_norms[j]
+          << ", Relative residual norm: " << relResNorm
+          << endl;
     TEST_ASSERT( relResNorm <= tol );
   }
   myOut << endl;
@@ -293,8 +289,8 @@ testSolver (Teuchos::FancyOStream& out,
 TEUCHOS_UNIT_TEST( TpetraNativeSolvers, Diagonal )
 {
   testSolver (out, success, commandLineOptions.solverName,
-	      commandLineOptions.maxAllowedNumIters,
-	      commandLineOptions.verbose);
+              commandLineOptions.maxAllowedNumIters,
+              commandLineOptions.verbose);
 }
 
 } // namespace (anonymous)
@@ -305,9 +301,9 @@ namespace Impl {
   // extern void register_CgPipeline (const bool verbose);
   // extern void register_CgSingleReduce (const bool verbose);
   extern void register_Gmres (const bool verbose);
-  extern void register_GmresPipeline (const bool verbose);  
+  extern void register_GmresPipeline (const bool verbose);
   extern void register_GmresSingleReduce (const bool verbose);
-  extern void register_GmresSstep (const bool verbose);    
+  extern void register_GmresSstep (const bool verbose);
 } // namespace Impl
 } // namespace BelosTpetra
 
@@ -320,8 +316,8 @@ int main (int argc, char* argv[])
   // BelosTpetra::Impl::register_CgPipeline (verbose);
   // BelosTpetra::Impl::register_CgSingleReduce (verbose);
   BelosTpetra::Impl::register_Gmres (verbose);
-  BelosTpetra::Impl::register_GmresPipeline (verbose);  
+  BelosTpetra::Impl::register_GmresPipeline (verbose);
   BelosTpetra::Impl::register_GmresSingleReduce (verbose);
-  BelosTpetra::Impl::register_GmresSstep (verbose);      
+  BelosTpetra::Impl::register_GmresSstep (verbose);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }

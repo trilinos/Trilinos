@@ -9,8 +9,8 @@ namespace BelosTpetra {
 namespace Impl {
 
 template<class SC = Tpetra::Operator<>::scalar_type,
-	 class MV = Tpetra::MultiVector<SC>,
-	 class OP = Tpetra::Operator<SC>>
+         class MV = Tpetra::MultiVector<SC>,
+         class OP = Tpetra::Operator<SC>>
 class GmresPipeline : public Gmres<SC, MV, OP> {
 private:
   using base_type = Gmres<SC, MV, OP>;
@@ -25,7 +25,7 @@ private:
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
   using device_type = typename MV::device_type;
   using dot_type = typename MV::dot_type;
-  
+
 public:
   GmresPipeline () :
     base_type::Gmres ()
@@ -84,8 +84,7 @@ private:
     R.update (one, B, -one);
     // TODO: this should be idot?
     b0_norm = STM::squareroot (STS::real (R.dot (R))); // residual norm
-    r_norm = b_norm;
-    
+
     if (input.precoSide == "left") {
       M.apply (R, Z);
       // TODO: this should be idot?
@@ -95,6 +94,7 @@ private:
       Tpetra::deep_copy (Z, R);
       b_norm = b0_norm;
     }
+    r_norm = b_norm;
 
     // Invoke standard Gmres for the first restart cycle, to compute
     // Ritz values as Newton shifts
@@ -103,16 +103,16 @@ private:
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = true;
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
-					       input_gmres);
+                                               input_gmres);
       if (output.converged) {
-	return output; // standard GMRES converged
+        return output; // standard GMRES converged
       }
       if (input.precoSide == "left") {
         M.apply (R, Z);
         r_norm = Z.norm2 (); // residual norm
       }
       else {
-	Tpetra::deep_copy (Z, R);
+        Tpetra::deep_copy (Z, R);
         r_norm = output.absResid;
       }
       output.numRests++;
@@ -121,7 +121,7 @@ private:
     // for idot
     std::shared_ptr<Tpetra::Details::CommRequest> req;
     Kokkos::View<dot_type*, device_type> vals ("results[numVecs]",
-					       restart+1);
+                                               restart+1);
     auto vals_h = Kokkos::create_mirror_view (vals);
 
     // initialize starting vector
@@ -152,11 +152,11 @@ private:
           if (input.precoSide == "none") {
             A.apply (Z, W);
           }
-	  else if (input.precoSide == "right") {
+          else if (input.precoSide == "right") {
             M.apply (Z, MZ);
             A.apply (MZ, W);
           }
-	  else {
+          else {
             A.apply (Z, MZ);
             M.apply (MZ, W);
           }
@@ -167,7 +167,7 @@ private:
             const complex_type theta = output.ritzValues[iter%ell];
             UpdateNewton<SC, MV>::updateNewtonV (iter, V, theta);
           }
-          output.numIters ++; 
+          output.numIters ++;
         }
         int k = iter+1 - ell; // we synch idot from k-th iteration
 
@@ -175,8 +175,8 @@ private:
         if (k >= 0) {
           if (k > 0) {
             req->wait (); // wait for idot
-	    Kokkos::deep_copy (vals_h, vals);
-	    
+            Kokkos::deep_copy (vals_h, vals);
+
             for (int i = 0; i <= iter; i++) {
               G(i, k) = vals_h[i];
             }
@@ -197,8 +197,8 @@ private:
             }
             TEUCHOS_TEST_FOR_EXCEPTION
               (STS::real (H(k, k-1)) < STM::zero (), std::runtime_error,
-	       "At iteration " << iter << ", H(" << k << ", "
-	       << k-1 << ") = " << H(k, k-1) << " < 0.");
+               "At iteration " << iter << ", H(" << k << ", "
+               << k-1 << ") = " << H(k, k-1) << " < 0.");
             H(k, k-1) = std::sqrt( H(k, k-1) );
           }
 
@@ -231,19 +231,19 @@ private:
         if (k > 0) {
           TEUCHOS_TEST_FOR_EXCEPTION
             (STS::real (H(k, k-1)) < STM::zero (), std::runtime_error,
-	     "At iteration " << k << ", H(" << k << ", " << k-1 << ") = "
-	     << H(k, k-1) << " < 0.");
-	  // NOTE (mfh 16 Sep 2018) It's not entirely clear to me
-	  // whether the code as given to me was correct for complex
-	  // arithmetic.  I'll do my best to make it compile.
+             "At iteration " << k << ", H(" << k << ", " << k-1 << ") = "
+             << H(k, k-1) << " < 0.");
+          // NOTE (mfh 16 Sep 2018) It's not entirely clear to me
+          // whether the code as given to me was correct for complex
+          // arithmetic.  I'll do my best to make it compile.
           if (STS::real (H(k, k-1)) > STS::real (tolOrtho*G(k, k))) {
             // Apply Givens rotations to new column of H and y
             this->reduceHessenburgToTriangular (k-1, H, cs, sn, y.values());
             // Convergence check
             metric = this->getConvergenceMetric (STS::magnitude (y(k)),
-						 b_norm, input);
+                                                 b_norm, input);
           }
-	  else { // breakdown
+          else { // breakdown
             H(k, k-1) = zero;
             metric = STM::zero ();
           }
@@ -252,7 +252,7 @@ private:
         if (iter < restart && metric > input.tol) {
           // copy the new vector
           vec_type AP = * (Q.getVectorNonConst (iter+1));
-	  Tpetra::deep_copy (AP, * (V.getVectorNonConst (iter+1)));
+          Tpetra::deep_copy (AP, * (V.getVectorNonConst (iter+1)));
 
           // start all-reduce to compute G(:, iter+1)
           // [Q(:,1:k-1), V(:,k:iter+1)]'*W
@@ -262,26 +262,26 @@ private:
           vec_type W = * (V.getVectorNonConst (iter+1));
           req = Tpetra::idot (vals, Qprev, W);
         }
-      } // end of restart cycle 
+      } // end of restart cycle
       if (iter > 0) {
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
-		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-		   iter-ell, 1, one,
+                   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+                   iter-ell, 1, one,
                    H.values(), H.stride(), y.values(), y.stride());
         Teuchos::Range1D cols(0, (iter-ell)-1);
         Teuchos::RCP<const MV> Qj = Q.subView(cols);
         y.resize (iter);
         if (input.precoSide == "right") {
-	  dense_vector_type y_iter (Teuchos::View, y.values (), iter-ell);
-	  
+          dense_vector_type y_iter (Teuchos::View, y.values (), iter-ell);
+
           //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
-          MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);	  
+          MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
           M.apply (R, MZ);
           X.update (one, MZ, one);
         }
-	else {
-	  dense_vector_type y_iter (Teuchos::View, y.values (), iter-ell);	  
+        else {
+          dense_vector_type y_iter (Teuchos::View, y.values (), iter-ell);
           MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);
         }
         y.resize (restart+1);
@@ -301,7 +301,7 @@ private:
       else if (output.numIters < input.maxNumIters) {
         // Initialize starting vector for restart
         if (input.precoSide == "left") {
-	  Tpetra::deep_copy (R, Z);
+          Tpetra::deep_copy (R, Z);
           M.apply (R, Z);
         }
         // TODO: recomputing all-reduce, should be idot?
@@ -311,8 +311,8 @@ private:
         //Z.scale (one / r_norm);
         y[0] = r_norm;
         for (int i=1; i < restart+1; ++i) {
-	  y[i] = zero;
-	}
+          y[i] = zero;
+        }
         // Restart
         output.numRests ++;
       }
@@ -323,7 +323,7 @@ private:
 };
 
 template<class SC, class MV, class OP,
-	 template<class, class, class> class KrylovSubclassType>
+         template<class, class, class> class KrylovSubclassType>
 class SolverManager;
 
 // This is the Belos::SolverManager subclass that gets registered with
@@ -337,5 +337,5 @@ void register_GmresPipeline (const bool verbose);
 
 } // namespace Impl
 } // namespace BelosTpetra
-  
+
 #endif // BELOS_TPETRA_GMRES_PIPELINE_HPP
