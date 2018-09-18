@@ -1,43 +1,52 @@
 #ifndef THYRA_FROSCH_LINEAR_OP_HPP
 #define THYRA_FROSCH_LINEAR_OP_HPP
+
+//Thyra
+
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_SpmdMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_getConst.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#
 #include "Thyra_FROSchLinearOp_decl.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include <Teuchos_PtrDecl.hpp>
-#include "Teuchos_TypeNameTraits.hpp"
-#include <FROSch_Tools_def.hpp>
-#include "FROSch_XpetraOperator_decl.hpp"
-#include "Xpetra_MapExtractor.hpp"
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_Parameters.hpp>
-#include <Epetra_MpiComm.h>
-
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h"
-
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraLinearOpBase.hpp"
 #include "Thyra_ScaledLinearOpBase.hpp"
 #include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
+
+
+
+//Teuchos
+#include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_getConst.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include <Teuchos_PtrDecl.hpp>
+#include "Teuchos_TypeNameTraits.hpp"
+
+//FROSch
+#include <FROSch_Tools_def.hpp>
+#include "FROSch_XpetraOperator_decl.hpp"
+
+//Xpetra
+#include "Xpetra_MapExtractor.hpp"
+#include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#include <Xpetra_Parameters.hpp>
+
+//Epetra
+#include <Epetra_MpiComm.h>
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_RowMatrix.h"
 
 
-#include "Thyra_EpetraThyraWrappers.hpp"
 
 using namespace std;
 using namespace Teuchos;
