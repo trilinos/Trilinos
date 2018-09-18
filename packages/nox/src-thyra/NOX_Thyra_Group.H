@@ -60,7 +60,7 @@
 
 // Forward declares
 namespace NOX {
-  class SolverStats;
+  struct SolverStats;
   namespace Parameter {
     class List;
   }
