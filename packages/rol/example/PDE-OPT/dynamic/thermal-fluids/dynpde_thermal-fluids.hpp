@@ -188,25 +188,7 @@ public:
       // APPLY BOUNDARY CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // VELOCITY BOUNDARY CONDITIONS
-        // Apply free stream conditions on top and bottom walls
-        if (i==0 || i==2 ) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fvidx_[j].size();
-            for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
-              for (int l = 0; l < numBdryDofs; ++l) {
-                for (int m=0; m < d; ++m) {
-                  bv = (*bdryCellVDofValues_[i][j])(k,fvidx_[j][l],m);
-                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - bv;
-                }
-              }
-            }
-          }
-        }
-        // Apply in-flow condition on left wall
-        if (i==3) {
+        if (i==0 || i==2 || i==3 ) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -503,11 +485,11 @@ public:
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     const Real one(1);
     // GET DIMENSIONS
-    int fv = feVel_->gradN()->dimension(1);
-    int fp = fePrs_->gradN()->dimension(1);
+    int  c = feVel_->gradN()->dimension(0);
+    int fv = feVel_->gradN()->dimension(0);
+    int fp = fePrs_->gradN()->dimension(0);
+    int fh = feThr_->gradN()->dimension(0);
     int  d = feVel_->gradN()->dimension(3);
-    // GET TIME STEP INFORMATION
-    Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
     // INITILAIZE JACOBIAN
     pde_->Jacobian_3(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac
     std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J;
@@ -515,10 +497,10 @@ public:
     // APPLY DIRICHLET CONDITIONS
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
+      Real bv(0);
       for (int i = 0; i < numSideSets; ++i) {
         // Apply Dirichlet controls
         if (i==4) {
-          Real bv(0);
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -527,7 +509,7 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < d; ++m) {
-                  bv = (*bdryCellTDofValues_[i][j])(k,fvidx_[j][l],m);
+                  bv = (*bdryCellVDofValues_[i][j])(k,fvidx_[j][l],m);
                   (*J[m])(cidx,fvidx_[j][l]) = -bv;
                 }
               }

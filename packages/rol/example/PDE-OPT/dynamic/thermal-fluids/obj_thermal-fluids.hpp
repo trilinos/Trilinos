@@ -1454,7 +1454,7 @@ public:
                                     const std::vector<ROL::Ptr<FE<Real>>> &feVelBdry,
                                     const std::vector<std::vector<int>>   &bdryCellLocIds,
                                     const ROL::Ptr<FieldHelper<Real>>     &fieldHelper)
-    : feVel_(feVel), fePrs_(fePrs), feVelBdry_(feVelBdry),
+    : feVel_(feVel), fePrs_(fePrs), feThr_(feThr), feVelBdry_(feVelBdry),
       bdryCellLocIds_(bdryCellLocIds), fieldHelper_(fieldHelper),
       target_({1, 0, 0}) {}
 

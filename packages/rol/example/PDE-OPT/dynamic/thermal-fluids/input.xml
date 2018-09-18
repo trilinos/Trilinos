@@ -13,6 +13,7 @@
     <Parameter name="Cylinder Center X"           type="double"  value="0.0"         />
     <Parameter name="Cylinder Center Y"           type="double"  value="0.0"         />
     <Parameter name="Cylinder Radius"             type="double"  value="0.5"         />
+    <Parameter name="Cylinder Temperature"        type="double"  value="1.0"         />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Cubature Degree"             type="int"     value="4"           />
   </ParameterList>

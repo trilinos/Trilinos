@@ -594,31 +594,19 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    if (z_coeff != ROL::nullPtr) {
-      // Retrieve dimensions.
-      int c  = u_coeff->dimension(0);
-      jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_, numDofs_);
-    }
-    else {
-      throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_2): Jacobian is zero.");
-    }
+    throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_2): Jacobian is zero.");
   }
 
   void Jacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    if (z_param != ROL::nullPtr) {
-      // Retrieve dimensions.
-      int size = z_param->size();
-      int c    = u_coeff->dimension(0);
-      jac.resize(size,ROL::nullPtr);
-      for (int i = 0; i < size; ++i) {
-        jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
-      }
-    }
-    else {
-      throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_3): Jacobian is zero.");
+    // Retrieve dimensions.
+    int size = z_param->size();
+    int c    = u_coeff->dimension(0);
+    jac.resize(size,ROL::nullPtr);
+    for (int i = 0; i < size; ++i) {
+      jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
     }
   }
 

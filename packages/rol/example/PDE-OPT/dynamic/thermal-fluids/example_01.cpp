@@ -110,6 +110,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").set("Print Verbosity", verbosity);
     parlist->sublist("Dynamic Constraint").sublist("Solve").set("Output Iteration History", solveOutput);
     RealT Re         = parlist->sublist("Problem").get("Reynolds Number",200.0);
+    RealT Gr         = parlist->sublist("Problem").get("Grashof Number", 40000.0);
+    RealT Pr         = parlist->sublist("Problem").get("Prandtl Number", 0.72);
+    RealT Tc         = parlist->sublist("Problem").get("Cylinder Temperature", 1.0);
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
@@ -197,7 +200,11 @@ int main(int argc, char *argv[]) {
     // Compute initial condition
     std::clock_t timer_init = std::clock();
     std::stringstream file;
-    file << "initial_condition_Re" << static_cast<int>(Re) << ".txt";
+    file << "initial_condition"
+         << "_Re" << static_cast<int>(Re)
+         << "_Gr" << static_cast<int>(Gr)
+         << "_Pr" << static_cast<int>(100.0*Pr)
+         << "_Tc" << static_cast<int>(Tc) << ".txt";
     std::ifstream infile(file.str());
     if (infile.good()) {
       dyn_con->inputTpetraVector(u0_ptr, file.str());
