@@ -108,7 +108,6 @@ APPEND_SET(HEADERS
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
-  Adapters/FROSch_XpetraOperator_decl.hpp
   Adapters/Stratimikos_FROSchXpetra.hpp
   Adapters/Thyra_FROSchLinearOp_decl.hpp
   Adapters/Thyra_FROSchLinearOp_def.hpp
