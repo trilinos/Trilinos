@@ -59,7 +59,7 @@ namespace Teuchos {
   class ParameterList;
 }
 namespace NOX {
-  class SolverStats;
+  struct SolverStats;
   namespace Abstract {
     class Vector;
     class Group;
