@@ -464,11 +464,20 @@ protected:
     int restart = input.resCycle;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-
     SolverOutput<SC> output {};
 
+    if (outPtr != nullptr) {
+      *outPtr << "Gmres" << endl;
+    }
+    Indent indent1 (outPtr);
+    if (outPtr != nullptr) {
+      *outPtr << "Solver input:" << endl;
+      Indent indentInner (outPtr);
+      *outPtr << input;
+    }
+
     mag_type b_norm;  // initial residual norm
-    mag_type b0_norm; // initial residual norm (before left-preconditioner)
+    mag_type b0_norm; // initial residual norm, not left preconditioned
     mag_type r_norm;
     vec_type R (B.getMap ());
     vec_type MP (B.getMap ());
@@ -477,7 +486,6 @@ protected:
 
     // initial residual (making sure R = B - Ax)
     if (input.precoSide == "right") {
-      // right-preconditioner
       M.apply (X, MP);
       A.apply (MP, R);
     }
@@ -497,7 +505,7 @@ protected:
     mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
 
     if (metric <= input.tol) {
-      if (outPtr != NULL) {
+      if (outPtr != nullptr) {
         *outPtr << "Initial guess' residual norm " << b_norm
                 << " meets tolerance " << input.tol << endl;
       }
@@ -530,12 +538,28 @@ protected:
     
     // main loop
     while (output.numIters < input.maxNumIters && ! output.converged) {
+      if (outPtr != nullptr) {
+	*outPtr << "Restart cycle " << output.numRests << ":" << endl;
+      }
+      Indent indent2 (outPtr);
+      if (outPtr != nullptr) {
+	*outPtr << output;
+      }
+      
       int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
+      
       // restart cycle
       for (iter = 0; iter < restart && metric > input.tol; ++iter) {
+	if (outPtr != nullptr) {
+	  *outPtr << "Current iteration: iter=" << iter
+		  << ", restart=" << restart
+		  << ", metric=" << metric << endl;
+	}
+	Indent indent3 (outPtr);
+
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
         vec_type AP = * (Q.getVectorNonConst (iter+1));
@@ -571,29 +595,72 @@ protected:
 	else {
           metric = STM::zero ();
         }
-      } // end of restart-cycle 
+      } // end of restart cycle
+      
       if (iter > 0) {
+	if (outPtr != nullptr) {
+	  dense_matrix_type H_iter (Teuchos::View, H.values (),
+				    H.stride (), iter+1, iter);
+	  *outPtr << "H:" << endl;
+	  for (LO i = 0; i < iter+1; ++i) {
+	    for (LO j = 0; j < iter; ++j) {
+	      *outPtr << H_iter(i,j);
+	      if (j + LO (1) < iter) {
+		*outPtr << " ";
+	      }
+	      else {
+		*outPtr << endl;
+	      }
+	    }
+	  }
+	  
+	  dense_vector_type y_view (Teuchos::View, y.values (), iter+1);
+	  *outPtr << "y before: " << endl;
+	  for (LO i = 0; i < iter+1; ++i) {
+	    *outPtr << y_view(i);
+	    if (i + 1 < iter + 1) {
+	      *outPtr << " ";
+	    }
+	  }
+	  *outPtr << endl;
+	}
+	
         // Compute Ritz values, if requested
         if (input.computeRitzValues && output.numRests == 0) {
 	  computeRitzValues (iter, G, output.ritzValues);
           sortRitzValues (iter, output.ritzValues);
         }
         // Update solution
-        blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-                   Teuchos::NON_UNIT_DIAG, iter, 1, one,
+        blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
+		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+		   iter, 1, one,
                    H.values(), H.stride(), y.values(), y.stride());
+	if (outPtr != nullptr) {
+	  dense_vector_type y_view (Teuchos::View, y.values (), iter);
+	  *outPtr << "y after: " << endl;
+	  for (LO i = 0; i < iter; ++i) {
+	    *outPtr << y_view(i);
+	    if (i + 1 < iter) {
+	      *outPtr << " ";
+	    }
+	  }
+	  *outPtr << endl;
+	}
         Teuchos::Range1D cols(0, iter-1);
         Teuchos::RCP<const MV> Qj = Q.subView(cols);
-        y.resize (iter);
+        //y.resize (iter);
+	dense_vector_type y_iter (Teuchos::View, y.values (), iter);	
         if (input.precoSide == "right") {
-          MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
+          //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
+	  MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
           M.apply (R, MP);
           X.update (one, MP, one);
         }
 	else {
-          MVT::MvTimesMatAddMv (one, *Qj, y, one, X);
+          //MVT::MvTimesMatAddMv (one, *Qj, y, one, X);
+          MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);	  
         }
-        y.resize (restart+1);
+        //y.resize (restart+1);
       }
       // Compute explicit unpreconditioned residual
       P = * (Q.getVectorNonConst (0));
@@ -621,10 +688,22 @@ protected:
 	}
         output.numRests++;
       }
+
+      if (outPtr != nullptr) {
+	*outPtr << "At end of restart cycle:" << endl;
+	Indent indentInner (outPtr);
+	*outPtr << output;
+      }
     }
 
     // return residual norm as B
     Tpetra::deep_copy (B, P);
+
+    if (outPtr != nullptr) {
+      *outPtr << "At end of solve:" << endl;
+      Indent indentInner (outPtr);
+      *outPtr << output;
+    }
     return output;
   }
 

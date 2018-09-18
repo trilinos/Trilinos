@@ -21,6 +21,7 @@ struct CommandLineOptions {
   int maxAllowedNumIters {30};
   int maxNumIters {100};
   int restartLength {30};
+  int stepSize {1};
   bool verbose {true};
 };
 CommandLineOptions commandLineOptions;
@@ -48,6 +49,8 @@ TEUCHOS_STATIC_SETUP()
 		 "Maximum number of iterations per restart cycle.  "
 		 "This corresponds to the standard Belos parameter "
 		 "\"Num Blocks\".");
+  clp.setOption ("stepSize", &commandLineOptions.stepSize, 
+		 "Step size; only applies to algorithms that take it.");
   clp.setOption ("verbose", "quiet", &commandLineOptions.verbose, 
 		 "Whether to print verbose output");
 }
@@ -213,7 +216,8 @@ testSolver (Teuchos::FancyOStream& out,
   RCP<ParameterList> params = parameterList ("Belos");
   params->set ("Verbosity", verbose ? 1 : 0);
   params->set ("Maximum Iterations", commandLineOptions.maxNumIters);
-  params->set ("Num Blocks", commandLineOptions.restartLength);  
+  params->set ("Num Blocks", commandLineOptions.restartLength);
+  params->set ("Step Size", commandLineOptions.stepSize);
   try {
     solver->setParameters (params);
   }
