@@ -1,3 +1,0 @@
-base_dir=`dirname $0`
-
-find . -type f -exec sed -i -f $base_dir/stk_to_stk_classic.sed {} \;

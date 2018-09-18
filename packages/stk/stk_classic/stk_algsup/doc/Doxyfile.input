@@ -1,5 +1,0 @@
-#BANNER @copydoc stk_algsup_banner
-#HOWTO @copydoc stk_algsup_howto
-
-INPUT += ../stk_algsup/doc/index.dox \
-         ../stk_algsup/stk_algsup
