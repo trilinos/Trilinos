@@ -11,8 +11,8 @@ namespace BelosTpetra {
 namespace Impl {
 
 template<class SC = Tpetra::Operator<>::scalar_type,
-	 class MV = Tpetra::MultiVector<>,
-	 class OP = Tpetra::Operator<> >
+         class MV = Tpetra::MultiVector<>,
+         class OP = Tpetra::Operator<> >
 class CholQR {
 private:
   using LO = typename MV::local_ordinal_type;
@@ -84,15 +84,15 @@ public:
 
     // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
     A.template sync<Kokkos::HostSpace> ();
-    A.template modify<Kokkos::HostSpace> ();      
+    A.template modify<Kokkos::HostSpace> ();
     auto A_lcl = A.template getLocalView<Kokkos::HostSpace> ();
     SC* const A_lcl_raw = reinterpret_cast<SC*> (A_lcl.data ());
     const LO LDA = LO (A.getStride ());
-    
+
     blas.TRSM (Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI,
-	       Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-	       nrows, ncols, one, R.values(), R.stride(),
-	       A_lcl_raw, LDA);
+               Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+               nrows, ncols, one, R.values(), R.stride(),
+               A_lcl_raw, LDA);
     A.template sync<typename MV::device_type::memory_space> ();
 
     return (info > 0 ? info : ncols);
@@ -100,8 +100,8 @@ public:
 };
 
 template<class SC = Tpetra::Operator<>::scalar_type,
-	 class MV = Tpetra::MultiVector<SC>,
-	 class OP = Tpetra::Operator<SC>>
+         class MV = Tpetra::MultiVector<SC>,
+         class OP = Tpetra::Operator<SC>>
 class GmresSstep : public Gmres<SC, MV, OP>  {
 private:
   using base_type = Gmres<SC, MV, OP>;
@@ -116,7 +116,7 @@ private:
   using vec_type = typename Krylov<SC, MV, OP>::vec_type;
   using device_type = typename MV::device_type;
   using dot_type = typename MV::dot_type;
-  
+
 public:
   GmresSstep () :
     base_type::Gmres (),
@@ -175,7 +175,7 @@ private:
                const SolverInput<SC>& input)
   {
     using std::endl;
-    const int stepSize = stepSize_;    
+    const int stepSize = stepSize_;
     int restart = input.resCycle;
     int step = stepSize;
     const SC zero = STS::zero ();
@@ -223,8 +223,8 @@ private:
 
     if (metric <= input.tol) {
       if (outPtr != nullptr) {
-	*outPtr << "Initial guess' residual norm " << b_norm
-		<< " meets tolerance " << input.tol << endl;
+        *outPtr << "Initial guess' residual norm " << b_norm
+                << " meets tolerance " << input.tol << endl;
       }
       output.absResid = b_norm;
       output.relResid = STM::one ();
@@ -253,27 +253,27 @@ private:
     // Ritz values for use as Newton shifts
     {
       if (outPtr != nullptr) {
-	*outPtr << "Run standard GMRES for first restart cycle" << endl;
+        *outPtr << "Run standard GMRES for first restart cycle" << endl;
       }
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = true;
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
-					       input_gmres);
+                                               input_gmres);
       if (outPtr != nullptr) {
-	*outPtr << "Standard GMRES results:" << endl;
-	Indent indentInner (outPtr);
-	*outPtr << output;
+        *outPtr << "Standard GMRES results:" << endl;
+        Indent indentInner (outPtr);
+        *outPtr << output;
       }
       if (output.converged) {
-	return output; // standard GMRES converged
+        return output; // standard GMRES converged
       }
       if (input.precoSide == "left") {
         M.apply (R, P);
         r_norm = P.norm2 (); // residual norm
       }
       else {
-	Tpetra::deep_copy (P, R);
+        Tpetra::deep_copy (P, R);
         r_norm = output.absResid;
       }
       output.numRests++;
@@ -283,52 +283,52 @@ private:
     // initialize starting vector
     P.scale (one / b_norm);
     y[0] = b_norm;
-    
+
     // main loop
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
-	*outPtr << "Restart cycle " << output.numRests << ":" << endl;
+        *outPtr << "Restart cycle " << output.numRests << ":" << endl;
       }
       Indent indent2 (outPtr);
       if (outPtr != nullptr) {
-	*outPtr << output;
+        *outPtr << output;
       }
-      
+
       int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
 
-      // Restart cycle 
+      // Restart cycle
       for (iter = 0; iter < restart && metric > input.tol; iter+=step) {
-	if (outPtr != nullptr) {
-	  *outPtr << "Current iteration: iter=" << iter
-		  << ", restart=" << restart
-		  << ", step=" << step
-		  << ", metric=" << metric << endl;
-	}
-	Indent indent3 (outPtr);
-	
+        if (outPtr != nullptr) {
+          *outPtr << "Current iteration: iter=" << iter
+                  << ", restart=" << restart
+                  << ", step=" << step
+                  << ", metric=" << metric << endl;
+        }
+        Indent indent3 (outPtr);
+
         // compute matrix powers
         for (step=0; step < stepSize && iter+step < restart; step++) {
-	  if (outPtr != nullptr) {
-	    *outPtr << "step=" << step
-		    << ", stepSize=" << stepSize
-		    << ", iter+step=" << (iter+step)
-		    << ", restart=" << restart << endl;
-	  }
-	  
+          if (outPtr != nullptr) {
+            *outPtr << "step=" << step
+                    << ", stepSize=" << stepSize
+                    << ", iter+step=" << (iter+step)
+                    << ", restart=" << restart << endl;
+          }
+
           // AP = A*P
           vec_type P  = * (Q.getVectorNonConst (iter+step));
           vec_type AP = * (Q.getVectorNonConst (iter+step+1));
           if (input.precoSide == "none") {
             A.apply (P, AP);
           }
-	  else if (input.precoSide == "right") {
+          else if (input.precoSide == "right") {
             M.apply (P, MP);
             A.apply (MP, AP);
           }
-	  else {
+          else {
             A.apply (P, MP);
             M.apply (MP, AP);
           }
@@ -344,92 +344,92 @@ private:
         // Orthogonalization
         this->projectBelosOrthoManager (iter, step, Q, G);
         const int rank = normalizeCholQR (iter, step, Q, G);
-	if (outPtr != nullptr) {
-	  *outPtr << "Rank of s-step basis: " << rank << endl;
-	}
+        if (outPtr != nullptr) {
+          *outPtr << "Rank of s-step basis: " << rank << endl;
+        }
         updateHessenburg (iter, step, output.ritzValues, H, G);
 
         // Check negative norm
         TEUCHOS_TEST_FOR_EXCEPTION
           (STS::real (H(iter+step, iter+step-1)) < STM::zero (),
-	   std::runtime_error, "At iteration " << output.numIters << ", H("
-	   << iter+step << ", " << iter+step-1 << ") = "
-	   << H(iter+step, iter+step-1) << " < 0.");
+           std::runtime_error, "At iteration " << output.numIters << ", H("
+           << iter+step << ", " << iter+step-1 << ") = "
+           << H(iter+step, iter+step-1) << " < 0.");
 
         // Convergence check
         if (rank == step+1 && H(iter+step, iter+step-1) != zero) {
           // Copy H to T and apply Givens rotations to new columns of T and y
           for (int iiter=0; iiter<step; iiter++) {
             for (int i=0; i<=iter+iiter+1; i++) {
-	      T(i, iter+iiter) = H(i, iter+iiter);
-	    }
+              T(i, iter+iiter) = H(i, iter+iiter);
+            }
             this->reduceHessenburgToTriangular(iter+iiter, T, cs, sn, y);
           }
           metric = this->getConvergenceMetric (STS::magnitude (y(iter+step)), b_norm, input);
         }
-	else {
+        else {
           metric = STM::zero ();
         }
       } // end of restart cycle
 
       if (outPtr != nullptr) {
-	dense_matrix_type H_iter (Teuchos::View, H.values (),
-				  H.stride (), iter+1, iter);
-	*outPtr << "H:" << endl;
-	for (LO i = 0; i < iter+1; ++i) {
-	  for (LO j = 0; j < iter; ++j) {
-	    *outPtr << H_iter(i,j);
-	    if (j + LO (1) < iter) {
-	      *outPtr << " ";
-	    }
-	    else {
-	      *outPtr << endl;
-	    }
-	  }
-	}
-	  
-	dense_vector_type y_view (Teuchos::View, y.values (), iter+1);
-	*outPtr << "y before: " << endl;
-	for (LO i = 0; i < iter+1; ++i) {
-	  *outPtr << y(i);
-	  if (i + 1 < iter + 1) {
-	    *outPtr << " ";
-	  }
-	}
-	*outPtr << endl;
+        dense_matrix_type H_iter (Teuchos::View, H.values (),
+                                  H.stride (), iter+1, iter);
+        *outPtr << "H:" << endl;
+        for (LO i = 0; i < iter+1; ++i) {
+          for (LO j = 0; j < iter; ++j) {
+            *outPtr << H_iter(i,j);
+            if (j + LO (1) < iter) {
+              *outPtr << " ";
+            }
+            else {
+              *outPtr << endl;
+            }
+          }
+        }
+
+        dense_vector_type y_view (Teuchos::View, y.values (), iter+1);
+        *outPtr << "y before: " << endl;
+        for (LO i = 0; i < iter+1; ++i) {
+          *outPtr << y(i);
+          if (i + 1 < iter + 1) {
+            *outPtr << " ";
+          }
+        }
+        *outPtr << endl;
       }
-      
+
       // Update solution
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
-		 Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-		 iter, 1, one,
+                 Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+                 iter, 1, one,
                  T.values(), T.stride(), y.values(), y.stride());
       if (outPtr != nullptr) {
-	dense_vector_type y_view (Teuchos::View, y.values (), iter);
-	*outPtr << "y after: " << endl;
-	for (LO i = 0; i < iter; ++i) {
-	  *outPtr << y_view(i);
-	  if (i + 1 < iter) {
-	    *outPtr << " ";
-	  }
-	}
-	*outPtr << endl;
+        dense_vector_type y_view (Teuchos::View, y.values (), iter);
+        *outPtr << "y after: " << endl;
+        for (LO i = 0; i < iter; ++i) {
+          *outPtr << y_view(i);
+          if (i + 1 < iter) {
+            *outPtr << " ";
+          }
+        }
+        *outPtr << endl;
       }
       Teuchos::Range1D cols(0, iter-1);
       Teuchos::RCP<const MV> Qj = Q.subView(cols);
       if (input.precoSide == "right") {
-	dense_vector_type y_iter (Teuchos::View, y.values (), iter);
-	
+        dense_vector_type y_iter (Teuchos::View, y.values (), iter);
+
         //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
         MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
         M.apply (R, MP);
         X.update (one, MP, one);
       }
       else {
-	dense_vector_type y_iter (Teuchos::View, y.values (), iter);
-	
+        dense_vector_type y_iter (Teuchos::View, y.values (), iter);
+
         //MVT::MvTimesMatAddMv (one, *Qj, y, one, X);
-        MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);	
+        MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);
       }
       // Compute real residual (not-preconditioned)
       P = * (Q.getVectorNonConst (0));
@@ -446,22 +446,22 @@ private:
       else if (output.numIters < input.maxNumIters) {
         // Initialize starting vector for restart
         if (input.precoSide == "left") { // left-precond'd residual norm
-	  Tpetra::deep_copy (R, P);
+          Tpetra::deep_copy (R, P);
           M.apply (R, P);
           r_norm = P.norm2 ();
         }
         P.scale (one / r_norm);
         y[0] = SC {r_norm};
         for (int i=1; i < restart+1; ++i) {
-	  y[i] = STS::zero ();
-	}
+          y[i] = STS::zero ();
+        }
         output.numRests++;
       }
 
       if (outPtr != nullptr) {
-	*outPtr << "At end of restart cycle:" << endl;
-	Indent indentInner (outPtr);
-	*outPtr << output;
+        *outPtr << "At end of restart cycle:" << endl;
+        Indent indentInner (outPtr);
+        *outPtr << output;
       }
     }
 
@@ -479,10 +479,10 @@ private:
 protected:
   void
   updateHessenburg (const int n,
-		    const int s,
-		    std::vector<complex_type>& S,
-		    dense_matrix_type& H,
-		    dense_matrix_type& R) const
+                    const int s,
+                    std::vector<complex_type>& S,
+                    dense_matrix_type& H,
+                    dense_matrix_type& R) const
   {
     const SC one  = STS::one ();
     const SC zero = STS::zero ();
@@ -491,13 +491,13 @@ protected:
     for (int j=0; j<s; j++ ) {
       for (int i=0; i<=n+j+1; i++) {
         H(i, n+j) = R(i, j+1);
-        if (S.size() > j) {
+        if (int (S.size ()) > j) {
           //H(i, n+j) += S[j].real * R(i, j);
           H(i, n+j) += UpdateNewton<SC, MV>::updateNewtonH (i, j, R, S[j]);
         }
       }
       for(int i=n+j+2; i<=n+s; i++) {
-	H(i, n+j) = zero;
+        H(i, n+j) = zero;
       }
     }
 
@@ -524,7 +524,7 @@ protected:
                  h_diag.values(), h_diag.stride());
       H(n+s, n+s-1) /= R(n+s-1, s-1);
 
-      // upper off-diagonal block: H(0:j-1, j:j+n-2) 
+      // upper off-diagonal block: H(0:j-1, j:j+n-2)
       dense_matrix_type r_off (Teuchos::View, R, n, s, 0, 0);
       dense_matrix_type h_off (Teuchos::View, H, n, s, 0, n);
 
@@ -535,7 +535,7 @@ protected:
                 one, h_off.values(), h_off.stride());
 
       blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-                Teuchos::NON_UNIT_DIAG, n, s, one, 
+                Teuchos::NON_UNIT_DIAG, n, s, one,
                 r_diag.values(), r_diag.stride(),
                 h_off.values(),  h_off.stride() );
     }
@@ -544,9 +544,9 @@ protected:
   //! Apply the orthogonalization using Belos' OrthoManager
   int
   normalizeCholQR (const int n,
-		   const int s,
-		   MV& Q,
-		   dense_matrix_type& R)
+                   const int s,
+                   MV& Q,
+                   dense_matrix_type& R)
   {
     // vector to be orthogonalized
     Teuchos::Range1D index_prev(n, n+s);
@@ -570,7 +570,7 @@ private:
 };
 
 template<class SC, class MV, class OP,
-	 template<class, class, class> class KrylovSubclassType>
+         template<class, class, class> class KrylovSubclassType>
 class SolverManager;
 
 // This is the Belos::SolverManager subclass that gets registered with
@@ -581,8 +581,8 @@ using GmresSstepSolverManager = SolverManager<SC, MV, OP, GmresSstep>;
 /// \brief Register GmresSstepSolverManager for all enabled Tpetra
 ///   template parameter combinations.
 void register_GmresSstep (const bool verbose);
-  
+
 } // namespace Impl
 } // namespace BelosTpetra
-  
+
 #endif // BELOS_TPETRA_GMRES_SSTEP_HPP

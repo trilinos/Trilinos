@@ -24,7 +24,7 @@ struct ComputeRitzValues {
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
   using complex_type = std::complex<mag_type>;
-  
+
   static void
   run (const int iter,
        Teuchos::SerialDenseMatrix<LO, SC>& G,
@@ -37,7 +37,7 @@ struct ComputeRitzValues<LO, SC, false> {
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
   using complex_type = std::complex<mag_type>;
-  
+
   static void
   run (const int iter,
        Teuchos::SerialDenseMatrix<LO, SC>& G,
@@ -46,15 +46,15 @@ struct ComputeRitzValues<LO, SC, false> {
     if (ritzValues.size () < std::size_t (iter)) {
       ritzValues.resize (iter);
     }
-    
+
     std::vector<mag_type> WR (iter);
     std::vector<mag_type> WI (iter);
     Teuchos::LAPACK<LO, SC> lapack;
-    SC TEMP = STS::zero ();    
+    SC TEMP = STS::zero ();
     LO info = 0;
     LO lwork = -1;
-    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (), 
-		  WR.data (), WI.data (), nullptr, 1, &TEMP, lwork, &info);
+    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (),
+                  WR.data (), WI.data (), nullptr, 1, &TEMP, lwork, &info);
     TEUCHOS_TEST_FOR_EXCEPTION
       (info != 0, std::runtime_error, "LAPACK {D,S}SEQR LWORK query failed "
        "with INFO = " << info << " != 0.");
@@ -62,11 +62,11 @@ struct ComputeRitzValues<LO, SC, false> {
     TEUCHOS_TEST_FOR_EXCEPTION
       (lwork < LO {0}, std::runtime_error, "LAPACK {C,Z}SEQR LWORK query "
        "returned LWORK = " << lwork << " < 0.");
-    
+
     std::vector<SC> WORK (lwork);
-    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (), 
-		  WR.data (), WI.data (), nullptr, 1, WORK.data (),
-		  lwork, &info);
+    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (),
+                  WR.data (), WI.data (), nullptr, 1, WORK.data (),
+                  lwork, &info);
     TEUCHOS_TEST_FOR_EXCEPTION
       (info != 0, std::runtime_error, "LAPACK {D,S}SEQR failed "
        "with INFO = " << info << " != 0.");
@@ -76,13 +76,13 @@ struct ComputeRitzValues<LO, SC, false> {
   }
 };
 
-// Complex Scalar (SC) case.  
+// Complex Scalar (SC) case.
 template<class LO, class SC>
 struct ComputeRitzValues<LO, SC, true> {
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
   using complex_type = std::complex<mag_type>;
-  
+
   static void
   run (const int iter,
        Teuchos::SerialDenseMatrix<LO, SC>& G,
@@ -96,8 +96,8 @@ struct ComputeRitzValues<LO, SC, true> {
     SC TEMP = STS::zero ();
     LO lwork = -1;
     LO info = 0;
-    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (), 
-		  ritzValues.data (), nullptr, 1, &TEMP, lwork, &info);
+    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (),
+                  ritzValues.data (), nullptr, 1, &TEMP, lwork, &info);
     TEUCHOS_TEST_FOR_EXCEPTION
       (info != 0, std::runtime_error, "LAPACK {C,Z}SEQR LWORK query failed "
        "with INFO = " << info << " != 0.");
@@ -105,10 +105,10 @@ struct ComputeRitzValues<LO, SC, true> {
     TEUCHOS_TEST_FOR_EXCEPTION
       (lwork < LO {0}, std::runtime_error, "LAPACK {C,Z}SEQR LWORK query "
        "returned LWORK = " << lwork << " < 0.");
-    
+
     std::vector<SC> WORK (lwork);
-    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (), 
-		  ritzValues.data (), nullptr, 1, WORK.data (), lwork, &info);
+    lapack.HSEQR ('E', 'N', iter, 1, iter, G.values (), G.stride (),
+                  ritzValues.data (), nullptr, 1, WORK.data (), lwork, &info);
     TEUCHOS_TEST_FOR_EXCEPTION
       (info != 0, std::runtime_error, "LAPACK {C,Z}SEQR failed "
        "with INFO = " << info << " != 0.");
@@ -123,8 +123,8 @@ struct ComputeRitzValues<LO, SC, true> {
 template<class LO, class SC>
 void
 computeRitzValues (const int iter,
-		   Teuchos::SerialDenseMatrix<LO, SC>& G,
-		   std::vector<std::complex<typename Teuchos::ScalarTraits<SC>::magnitudeType>>& ritzValues)
+                   Teuchos::SerialDenseMatrix<LO, SC>& G,
+                   std::vector<std::complex<typename Teuchos::ScalarTraits<SC>::magnitudeType>>& ritzValues)
 {
   ComputeRitzValues<LO, SC>::run (iter, G, ritzValues);
 }
@@ -134,22 +134,24 @@ computeRitzValues (const int iter,
 template<class LO, class SC>
 void
 sortRitzValues (const LO m,
-		std::vector<SC>& RR)
+                std::vector<SC>& RR)
 {
   using STS = Teuchos::ScalarTraits<SC>;
   using real_type = typename STS::magnitudeType;
   using complex_type = std::complex<real_type>;
-  
+  static_assert (std::is_same<SC, complex_type>::value,
+                 "SC != std::complex<real_type> in sortRitzValues");
+
   std::vector<complex_type> ritzValues (m);
 
   // the first Ritz is the largest
   LO i = 0;
   LO next_index = 0;
-  real_type next_value = std::abs( RR[0] );
-  for (int i = 1; i < m; i++) {
-    if( next_value < std::abs( RR[i] ) ) {
+  real_type next_value = STS::magnitude (RR[0]);
+  for (int i = 1; i < m; ++i) {
+    if (next_value < STS::magnitude (RR[i])) {
       next_index = i;
-      next_value = std::abs( RR[i] );
+      next_value = STS::magnitude (RR[i]);
     }
   }
   ritzValues[0] = RR[next_index];
@@ -159,21 +161,21 @@ sortRitzValues (const LO m,
     if (RR[i].imag() != 0.0) {
 
       if (next_index == 0) {
-	ritzValues[1] = ritzValues[0];
-	RR[next_index+1] = RR[1];
+        ritzValues[1] = ritzValues[0];
+        RR[next_index+1] = RR[1];
       } else if (next_index == m-1) {
-	ritzValues[1] = ritzValues[0];
-	RR[next_index-1] = RR[1];
+        ritzValues[1] = ritzValues[0];
+        RR[next_index-1] = RR[1];
       } else {
-	real_type val1 = std::abs(std::conj(RR[next_index-1]) - RR[next_index]);
-	real_type val2 = std::abs(std::conj(RR[next_index+1]) - RR[next_index]);
-	if (val1 < val2) {
-	  ritzValues[1] = ritzValues[0];
-	  RR[next_index-1] = RR[1];
-	} else {
-	  ritzValues[1] = ritzValues[0];
-	  RR[next_index+1] = RR[1];
-	}
+        real_type val1 = STS::magnitude(STS::conjugate(RR[next_index-1]) - RR[next_index]);
+        real_type val2 = STS::magnitude(STS::conjugate(RR[next_index+1]) - RR[next_index]);
+        if (val1 < val2) {
+          ritzValues[1] = ritzValues[0];
+          RR[next_index-1] = RR[1];
+        } else {
+          ritzValues[1] = ritzValues[0];
+          RR[next_index+1] = RR[1];
+        }
       }
 
       ritzValues[0].imag( 0.0 );
@@ -185,19 +187,19 @@ sortRitzValues (const LO m,
   // sort the rest of Ritz values
   for (; i < m; i++) {
     next_index = i;
-    next_value = std::abs( RR[i] - ritzValues[0] );
+    next_value = STS::magnitude( RR[i] - ritzValues[0] );
     for (int j = 1;  j < i; j++ ) {
-      next_value *= std::abs( RR[i] - ritzValues[j] );
+      next_value *= STS::magnitude( RR[i] - ritzValues[j] );
     }
 
     for (int k = i+1;  k < m; k++ ) {
-      real_type value = std::abs( RR[k] - ritzValues[0] );
+      real_type value = STS::magnitude( RR[k] - ritzValues[0] );
       for (int j = 1;  j < i; j++ ) {
-	value *= std::abs( RR[k] - ritzValues[j] );
+        value *= STS::magnitude( RR[k] - ritzValues[j] );
       }
       if (next_value < value) {
-	next_value = value;
-	next_index = k;
+        next_value = value;
+        next_index = k;
       }
     }
     ritzValues[i] = RR[next_index];
@@ -205,25 +207,25 @@ sortRitzValues (const LO m,
 
     if (! STS::isComplex) {
       if (RR[i].imag() != 0.0) {
-	if (next_index == 0) {
-	  ritzValues[i+1] = ritzValues[i];
-	  RR[next_index+1] = RR[i+1];
-	} else if (next_index == m-1) {
-	  ritzValues[i+1] = ritzValues[i];
-	  RR[next_index-1] = RR[i+1];
-	} else {
-	  real_type val1 = std::abs(std::conj(RR[next_index-1]) - ritzValues[i]);
-	  real_type val2 = std::abs(std::conj(RR[next_index+1]) - ritzValues[i]);
-	  if (val1 < val2) {
-	    ritzValues[i+1] = ritzValues[i];
-	    RR[next_index-1] = RR[i+1];
-	  } else {
-	    ritzValues[i+1] = ritzValues[i];
-	    RR[next_index+1] = RR[i+1];
-	  }
-	}
-	ritzValues[i].imag( 0.0 );
-	i++;
+        if (next_index == 0) {
+          ritzValues[i+1] = ritzValues[i];
+          RR[next_index+1] = RR[i+1];
+        } else if (next_index == m-1) {
+          ritzValues[i+1] = ritzValues[i];
+          RR[next_index-1] = RR[i+1];
+        } else {
+          real_type val1 = STS::magnitude(STS::conjugate(RR[next_index-1]) - ritzValues[i]);
+          real_type val2 = STS::magnitude(STS::conjugate(RR[next_index+1]) - ritzValues[i]);
+          if (val1 < val2) {
+            ritzValues[i+1] = ritzValues[i];
+            RR[next_index-1] = RR[i+1];
+          } else {
+            ritzValues[i+1] = ritzValues[i];
+            RR[next_index+1] = RR[i+1];
+          }
+        }
+        ritzValues[i].imag( 0.0 );
+        i++;
       }
     }
   }
@@ -233,12 +235,12 @@ sortRitzValues (const LO m,
     RR[i] = ritzValues[i];
   }
 }
-  
+
 } // namespace (anonymous)
 
 template<class SC = Tpetra::Operator<>::scalar_type,
-	 class MV = Tpetra::MultiVector<SC>,
-	 class OP = Tpetra::Operator<SC>>
+         class MV = Tpetra::MultiVector<SC>,
+         class OP = Tpetra::Operator<SC>>
 class Gmres : public Krylov<SC, MV, OP> {
 public:
   using base_type = Krylov<SC, MV, OP>;
@@ -285,33 +287,38 @@ public:
     params.set ("Maximum Restarts", this->input_.maxNumIters);
   }
 
-  virtual void 
+  virtual void
   setParameters (Teuchos::ParameterList& params) override
-  {    
+  {
     Krylov<SC, MV, OP>::setParameters (params);
 
     bool computeRitzValues = this->input_.computeRitzValues;
     if (params.isParameter ("Compute Ritz Values")) {
-      this->input_.computeRitzValues = params.get<bool> ("Compute Ritz Values");
+      computeRitzValues = params.get<bool> ("Compute Ritz Values");
     }
 
     bool needToReortho = this->input_.needToReortho;
     if (params.isParameter ("Reorthogonalize Blocks")) {
-      this->input_.needToReortho = params.get<bool> ("Reorthogonalize Blocks");
+      needToReortho = params.get<bool> ("Reorthogonalize Blocks");
     }
 
     int resCycle = this->input_.resCycle;
     if (params.isParameter ("Num Blocks")) {
-      const int resCycle = params.get<int> ("Num Blocks");
+      resCycle = params.get<int> ("Num Blocks");
       TEUCHOS_TEST_FOR_EXCEPTION
         (resCycle < 0, std::invalid_argument,
          "\"Num Blocks\" (restart length) = " << resCycle << " < 0.");
-      this->input_.resCycle = resCycle;
     }
 
+    std::string orthoType (this->input_.orthoType);
     if (params.isParameter ("Orthogonalization")) {
-      this->input_.orthoType = params.get<std::string> ("Orthogonalization");
+      orthoType = params.get<std::string> ("Orthogonalization");
     }
+
+    this->input_.computeRitzValues = computeRitzValues;
+    this->input_.needToReortho = needToReortho;
+    this->input_.resCycle = resCycle;
+    this->input_.orthoType = orthoType;
   }
 
 private:
@@ -321,8 +328,8 @@ private:
   {
     if (ortho_.get () == nullptr || this->input_.orthoType != ortho) {
       TEUCHOS_TEST_FOR_EXCEPTION
-	(this->input_.orthoType == "", std::runtime_error,
-	 "Gmres: Failed to specify \"Orthogonalization\" parameter.");
+        (this->input_.orthoType == "", std::runtime_error,
+         "Gmres: Failed to specify \"Orthogonalization\" parameter.");
       // Since setOrthogonalizer only gets called on demand, we know
       // the preconditioner (if any) at this point.  Thus, we can use
       // Belos::OrthoManagerFactory here.
@@ -332,18 +339,18 @@ private:
       Teuchos::RCP<Teuchos::ParameterList> params; // can be null
       ortho_ = factory.makeMatOrthoManager (ortho, M, outMan, "Belos", params);
       TEUCHOS_TEST_FOR_EXCEPTION
-	(ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
-	 "create (Mat)OrthoManager of type \"" << ortho << "\".");
+        (ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
+         "create (Mat)OrthoManager of type \"" << ortho << "\".");
       this->input_.orthoType = ortho;
     }
   }
 
   int
   projectAndNormalize (const int n,
-		       const SolverInput<SC>& /* input */,
-		       MV& Q,
-		       dense_matrix_type& H,
-		       dense_matrix_type& /* WORK */)
+                       const SolverInput<SC>& /* input */,
+                       MV& Q,
+                       dense_matrix_type& H,
+                       dense_matrix_type& /* WORK */)
   {
     return this->projectAndNormalizeBelosOrthoManager (n, Q, H);
   }
@@ -352,9 +359,9 @@ private:
   int
   projectAndNormalizeBelosOrthoManager (int n, MV &Q, dense_matrix_type &H)
   {
-    using Teuchos::RCP;    
+    using Teuchos::RCP;
     using Teuchos::rcp;
-    
+
     // vector to be orthogonalized
     vec_type AP = * (Q.getVectorNonConst (n+1));
     // vectors to be orthogonalized against
@@ -383,13 +390,13 @@ protected:
   //! Apply the orthogonalization using Belos' OrthoManager
   void
   projectBelosOrthoManager (const int n,
-			    const int s,
-			    MV& Q,
-			    dense_matrix_type& R)
+                            const int s,
+                            MV& Q,
+                            dense_matrix_type& R)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
-    
+
     if (n > 0) {
       // vector to be orthogonalized
       Teuchos::Range1D index(n, n+s);
@@ -411,7 +418,7 @@ protected:
       this->ortho_->project (*Qnew, r_array, Qprev);
     }
   }
-  
+
   int
   normalizeBelosOrthoManager (MV& Q, dense_matrix_type& R)
   {
@@ -425,10 +432,10 @@ protected:
   //! Reduce a column of Henssenburg matrix to triangular form
   void
   reduceHessenburgToTriangular(const int j,
-			       dense_matrix_type& H,
-			       std::vector<mag_type>& cs,
-			       std::vector<SC>& sn,
-			       SC y[]) const
+                               dense_matrix_type& H,
+                               std::vector<mag_type>& cs,
+                               std::vector<SC>& sn,
+                               SC y[]) const
   {
     Teuchos::BLAS<LO, SC> blas;
     // Apply previous Givens rotations to new column of H
@@ -444,10 +451,10 @@ protected:
 
   void
   reduceHessenburgToTriangular(const int j,
-			       dense_matrix_type& H,
-			       std::vector<mag_type>& cs,
-			       std::vector<SC>& sn,
-			       dense_vector_type& y) const
+                               dense_matrix_type& H,
+                               std::vector<mag_type>& cs,
+                               std::vector<SC>& sn,
+                               dense_vector_type& y) const
   {
     this->reduceHessenburgToTriangular (j, H, cs, sn, y.values ());
   }
@@ -517,7 +524,7 @@ protected:
       Tpetra::deep_copy (B, P);
       return output;
     }
-    
+
     Teuchos::BLAS<LO ,SC> blas;
     Teuchos::LAPACK<LO ,SC> lapack;
     dense_matrix_type  H (restart+1, restart, true);
@@ -535,30 +542,30 @@ protected:
     // initialize starting vector
     P.scale (one / b_norm);
     y[0] = SC {b_norm};
-    
+
     // main loop
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
-	*outPtr << "Restart cycle " << output.numRests << ":" << endl;
+        *outPtr << "Restart cycle " << output.numRests << ":" << endl;
       }
       Indent indent2 (outPtr);
       if (outPtr != nullptr) {
-	*outPtr << output;
+        *outPtr << output;
       }
-      
+
       int iter = 0;
       if (input.maxNumIters < output.numIters+restart) {
         restart = input.maxNumIters-output.numIters;
       }
-      
+
       // restart cycle
       for (iter = 0; iter < restart && metric > input.tol; ++iter) {
-	if (outPtr != nullptr) {
-	  *outPtr << "Current iteration: iter=" << iter
-		  << ", restart=" << restart
-		  << ", metric=" << metric << endl;
-	}
-	Indent indent3 (outPtr);
+        if (outPtr != nullptr) {
+          *outPtr << "Current iteration: iter=" << iter
+                  << ", restart=" << restart
+                  << ", metric=" << metric << endl;
+        }
+        Indent indent3 (outPtr);
 
         // AP = A*P
         vec_type P  = * (Q.getVectorNonConst (iter));
@@ -566,15 +573,15 @@ protected:
         if (input.precoSide == "none") {
           A.apply (P, AP);
         }
-	else if (input.precoSide == "right") {
+        else if (input.precoSide == "right") {
           M.apply (P, MP);
           A.apply (MP, AP);
         }
-	else { // left
+        else { // left
           A.apply (P, MP);
           M.apply (MP, AP);
         }
-        output.numIters++; 
+        output.numIters++;
 
         const int rank = this->projectAndNormalize (iter, input, Q, H, h);
         // Save H if Ritz values are requested
@@ -584,81 +591,81 @@ protected:
         // Check for negative norm
         TEUCHOS_TEST_FOR_EXCEPTION
           (STS::real (H(iter+1, iter)) < STM::zero (), std::runtime_error,
-	   "At iteration " << iter << ", H(" << iter+1 << ", " << iter << ") = "
-	   << H(iter+1, iter) << " < 0.");
+           "At iteration " << iter << ", H(" << iter+1 << ", " << iter << ") = "
+           << H(iter+1, iter) << " < 0.");
         // Convergence check
         if (rank == 1 && H(iter+1, iter) != zero) {
           // Apply Givens rotations to new column of H and y
           this->reduceHessenburgToTriangular(iter, H, cs, sn, y);
-          metric = this->getConvergenceMetric (std::abs (y(iter+1)), b_norm, input);
+          metric = this->getConvergenceMetric (STS::magnitude (y(iter+1)), b_norm, input);
         }
-	else {
+        else {
           metric = STM::zero ();
         }
       } // end of restart cycle
-      
+
       if (iter > 0) {
-	if (outPtr != nullptr) {
-	  dense_matrix_type H_iter (Teuchos::View, H.values (),
-				    H.stride (), iter+1, iter);
-	  *outPtr << "H:" << endl;
-	  for (LO i = 0; i < iter+1; ++i) {
-	    for (LO j = 0; j < iter; ++j) {
-	      *outPtr << H_iter(i,j);
-	      if (j + LO (1) < iter) {
-		*outPtr << " ";
-	      }
-	      else {
-		*outPtr << endl;
-	      }
-	    }
-	  }
-	  
-	  dense_vector_type y_view (Teuchos::View, y.values (), iter+1);
-	  *outPtr << "y before: " << endl;
-	  for (LO i = 0; i < iter+1; ++i) {
-	    *outPtr << y_view(i);
-	    if (i + 1 < iter + 1) {
-	      *outPtr << " ";
-	    }
-	  }
-	  *outPtr << endl;
-	}
-	
+        if (outPtr != nullptr) {
+          dense_matrix_type H_iter (Teuchos::View, H.values (),
+                                    H.stride (), iter+1, iter);
+          *outPtr << "H:" << endl;
+          for (LO i = 0; i < iter+1; ++i) {
+            for (LO j = 0; j < iter; ++j) {
+              *outPtr << H_iter(i,j);
+              if (j + LO (1) < iter) {
+                *outPtr << " ";
+              }
+              else {
+                *outPtr << endl;
+              }
+            }
+          }
+
+          dense_vector_type y_view (Teuchos::View, y.values (), iter+1);
+          *outPtr << "y before: " << endl;
+          for (LO i = 0; i < iter+1; ++i) {
+            *outPtr << y_view(i);
+            if (i + 1 < iter + 1) {
+              *outPtr << " ";
+            }
+          }
+          *outPtr << endl;
+        }
+
         // Compute Ritz values, if requested
         if (input.computeRitzValues && output.numRests == 0) {
-	  computeRitzValues (iter, G, output.ritzValues);
+          computeRitzValues (iter, G, output.ritzValues);
           sortRitzValues (iter, output.ritzValues);
         }
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
-		   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
-		   iter, 1, one,
+                   Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
+                   iter, 1, one,
                    H.values(), H.stride(), y.values(), y.stride());
-	if (outPtr != nullptr) {
-	  dense_vector_type y_view (Teuchos::View, y.values (), iter);
-	  *outPtr << "y after: " << endl;
-	  for (LO i = 0; i < iter; ++i) {
-	    *outPtr << y_view(i);
-	    if (i + 1 < iter) {
-	      *outPtr << " ";
-	    }
-	  }
-	  *outPtr << endl;
-	}
+        if (outPtr != nullptr) {
+          dense_vector_type y_view (Teuchos::View, y.values (), iter);
+          *outPtr << "y after: " << endl;
+          for (LO i = 0; i < iter; ++i) {
+            *outPtr << y_view(i);
+            if (i + 1 < iter) {
+              *outPtr << " ";
+            }
+          }
+          *outPtr << endl;
+        }
         Teuchos::Range1D cols(0, iter-1);
         Teuchos::RCP<const MV> Qj = Q.subView(cols);
         //y.resize (iter);
-	dense_vector_type y_iter (Teuchos::View, y.values (), iter);	
+        dense_vector_type y_iter (Teuchos::View, y.values (), iter);
         if (input.precoSide == "right") {
           //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
-	  MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
+          MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
           M.apply (R, MP);
           X.update (one, MP, one);
         }
-	else {
+        else {
           //MVT::MvTimesMatAddMv (one, *Qj, y, one, X);
-          MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);	  
+          MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);
         }
         //y.resize (restart+1);
       }
@@ -677,22 +684,22 @@ protected:
       else if (output.numIters < input.maxNumIters) {
         // Initialize starting vector for restart
         if (input.precoSide == "left") {
-	  Tpetra::deep_copy (R, P);
+          Tpetra::deep_copy (R, P);
           M.apply (R, P);
-          r_norm = P.norm2 (); // norm 
+          r_norm = P.norm2 (); // norm
         }
         P.scale (one / r_norm);
         y[0] = SC {r_norm};
         for (int i=1; i < restart+1; i++) {
-	  y[i] = STS::zero ();
-	}
+          y[i] = STS::zero ();
+        }
         output.numRests++;
       }
 
       if (outPtr != nullptr) {
-	*outPtr << "At end of restart cycle:" << endl;
-	Indent indentInner (outPtr);
-	*outPtr << output;
+        *outPtr << "At end of restart cycle:" << endl;
+        Indent indentInner (outPtr);
+        *outPtr << output;
       }
     }
 
@@ -712,7 +719,7 @@ private:
 };
 
 template<class SC, class MV, class OP,
-	 template<class, class, class> class KrylovSubclassType>
+         template<class, class, class> class KrylovSubclassType>
 class SolverManager;
 
 // This is the Belos::SolverManager subclass that gets registered with
