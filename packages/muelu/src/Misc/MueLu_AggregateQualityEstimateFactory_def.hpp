@@ -72,9 +72,9 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
 
-      Input(currentLevel, "A");
-      Input(currentLevel, "Aggregates");
-      Input(currentLevel, "CoarseMap");
+    Input(currentLevel, "A");
+    Input(currentLevel, "Aggregates");
+    Input(currentLevel, "CoarseMap");
 
   }
 
@@ -100,69 +100,69 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const {
 
-      return BuildP(currentLevel);
+    return BuildP(currentLevel);
 
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level & currentLevel) const {
 
-      FactoryMonitor m(*this, "Build", currentLevel);
+    FactoryMonitor m(*this, "Build", currentLevel);
       
-      RCP<Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
-      RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
+    RCP<Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
+    RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
 
-      RCP<const Map> map = Get< RCP<const Map> >(currentLevel, "CoarseMap");
-      RCP<Xpetra::MultiVector<double,LO,GO,NO>> aggregate_qualities = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, 1);
+    RCP<const Map> map = Get< RCP<const Map> >(currentLevel, "CoarseMap");
+    RCP<Xpetra::MultiVector<double,LO,GO,NO>> aggregate_qualities = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, 1);
 
-      assert(!aggregates->AggregatesCrossProcessors());
-      ComputeAggregateQualities(A, aggregates, aggregate_qualities);
+    assert(!aggregates->AggregatesCrossProcessors());
+    ComputeAggregateQualities(A, aggregates, aggregate_qualities);
 
-      Set(currentLevel, "AggregateQualities", aggregate_qualities);
+    Set(currentLevel, "AggregateQualities", aggregate_qualities);
 
-      OutputAggQualities(currentLevel, aggregate_qualities);
+    OutputAggQualities(currentLevel, aggregate_qualities);
 
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConvertAggregatesData(RCP<const Aggregates> aggs, Teuchos::ArrayRCP<LO>& aggSortedVertices, Teuchos::ArrayRCP<LO>& aggsToIndices, Teuchos::ArrayRCP<LO>& aggSizes) {
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConvertAggregatesData(RCP<const Aggregates> aggs, ArrayRCP<LO>& aggSortedVertices, ArrayRCP<LO>& aggsToIndices, ArrayRCP<LO>& aggSizes) {
 
-      // Reorder local aggregate information into a format amenable to computing
-      // per-aggregate quantities. Specifically, we compute a format
-      // similar to compressed sparse row format for sparse matrices in which
-      // we store all the local vertices in a single array in blocks corresponding
-      // to aggregates. (This array is aggSortedVertices.) We then store a second
-      // array (aggsToIndices) whose k-th element stores the index of the first
-      // vertex in aggregate k in the array aggSortedVertices.
+    // Reorder local aggregate information into a format amenable to computing
+    // per-aggregate quantities. Specifically, we compute a format
+    // similar to compressed sparse row format for sparse matrices in which
+    // we store all the local vertices in a single array in blocks corresponding
+    // to aggregates. (This array is aggSortedVertices.) We then store a second
+    // array (aggsToIndices) whose k-th element stores the index of the first
+    // vertex in aggregate k in the array aggSortedVertices.
 
-      const double LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
-      const double LO_ONE = Teuchos::OrdinalTraits<LO>::one();
+    const double LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
+    const double LO_ONE = Teuchos::OrdinalTraits<LO>::one();
 
-      LO numAggs = aggs->GetNumAggregates();
-      aggSizes = aggs->ComputeAggregateSizes();
+    LO numAggs = aggs->GetNumAggregates();
+    aggSizes = aggs->ComputeAggregateSizes();
 
-      aggsToIndices = Teuchos::ArrayRCP<LO>(numAggs+LO_ONE,LO_ZERO);
+    aggsToIndices = ArrayRCP<LO>(numAggs+LO_ONE,LO_ZERO);
 
-      for (LO i=0;i<numAggs;++i) {
-	  aggsToIndices[i+LO_ONE] = aggsToIndices[i] + aggSizes[i];
-      }
+    for (LO i=0;i<numAggs;++i) {
+      aggsToIndices[i+LO_ONE] = aggsToIndices[i] + aggSizes[i];
+    }
 
-      const RCP<LOMultiVector> vertex2AggId = aggs->GetVertex2AggId();
-      const ArrayRCP<const LO> vertex2AggIdData = vertex2AggId->getData(0);
+    const RCP<LOMultiVector> vertex2AggId = aggs->GetVertex2AggId();
+    const ArrayRCP<const LO> vertex2AggIdData = vertex2AggId->getData(0);
 
-      LO numNodes = vertex2AggId->getLocalLength();
-      aggSortedVertices = Teuchos::ArrayRCP<LO>(numNodes,-LO_ONE);
-      std::vector<LO> vertexInsertionIndexByAgg(numNodes,LO_ZERO);
+    LO numNodes = vertex2AggId->getLocalLength();
+    aggSortedVertices = ArrayRCP<LO>(numNodes,-LO_ONE);
+    std::vector<LO> vertexInsertionIndexByAgg(numNodes,LO_ZERO);
       
-      for (LO i=0;i<numNodes;++i) {
+    for (LO i=0;i<numNodes;++i) {
 
-	  LO aggId = vertex2AggIdData[i];
-	  if (aggId<0 || aggId>=numAggs) continue;
+      LO aggId = vertex2AggIdData[i];
+      if (aggId<0 || aggId>=numAggs) continue;
 
-	  aggSortedVertices[aggsToIndices[aggId]+vertexInsertionIndexByAgg[aggId]] = i;
-	  vertexInsertionIndexByAgg[aggId]++;
+      aggSortedVertices[aggsToIndices[aggId]+vertexInsertionIndexByAgg[aggId]] = i;
+      vertexInsertionIndexByAgg[aggId]++;
 
-      }
+    }
 
 
   }
@@ -170,185 +170,185 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateQualities(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const {
 
-      const SC SCALAR_ZERO = Teuchos::ScalarTraits<SC>::zero();
-      const SC SCALAR_ONE = Teuchos::ScalarTraits<SC>::one();
-      const SC SCALAR_TWO = SCALAR_ONE + SCALAR_ONE;
+    const SC SCALAR_ZERO = Teuchos::ScalarTraits<SC>::zero();
+    const SC SCALAR_ONE = Teuchos::ScalarTraits<SC>::one();
+    const SC SCALAR_TWO = SCALAR_ONE + SCALAR_ONE;
 
-      const LO LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
-      const LO LO_ONE = Teuchos::OrdinalTraits<LO>::one();
+    const LO LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
+    const LO LO_ONE = Teuchos::OrdinalTraits<LO>::one();
 
-      ParameterList pL = GetParameterList();
+    ParameterList pL = GetParameterList();
 
-      RCP<const Matrix> AT = A;
+    RCP<const Matrix> AT = A;
 
-      bool check_symmetry = pL.get<bool>("aggregate qualities: check symmetry");
-      if (check_symmetry) {
+    bool check_symmetry = pL.get<bool>("aggregate qualities: check symmetry");
+    if (check_symmetry) {
 
-      	  RCP<MultiVector> x = MultiVectorFactory::Build(A->getMap(), 1, false);
-      	  x->Xpetra_randomize();
+      RCP<MultiVector> x = MultiVectorFactory::Build(A->getMap(), 1, false);
+      x->Xpetra_randomize();
 
-      	  RCP<MultiVector> tmp = MultiVectorFactory::Build(A->getMap(), 1, false);
+      RCP<MultiVector> tmp = MultiVectorFactory::Build(A->getMap(), 1, false);
 
-      	  A->apply(*x, *tmp, Teuchos::NO_TRANS); // tmp now stores A*x
-      	  A->apply(*x, *tmp, Teuchos::TRANS, -SCALAR_ONE, SCALAR_ONE); // tmp now stores A*x - A^T*x
+      A->apply(*x, *tmp, Teuchos::NO_TRANS); // tmp now stores A*x
+      A->apply(*x, *tmp, Teuchos::TRANS, -SCALAR_ONE, SCALAR_ONE); // tmp now stores A*x - A^T*x
 
-      	  Teuchos::Array<SC> tmp_norm(1);
-      	  tmp->norm2(tmp_norm());
+      Array<SC> tmp_norm(1);
+      tmp->norm2(tmp_norm());
 
-      	  Teuchos::Array<SC> x_norm(1);
-      	  tmp->norm2(x_norm());
+      Array<SC> x_norm(1);
+      tmp->norm2(x_norm());
 
-      	  if (tmp_norm[0] > 1e-10*x_norm[0]) {
-      	      std::string transpose_string = "transpose";
-      	      RCP<Teuchos::ParameterList> whatever;
-      	      AT = Utilities::Transpose(*rcp_const_cast<Matrix>(A), true, transpose_string, whatever);
+      if (tmp_norm[0] > 1e-10*x_norm[0]) {
+	std::string transpose_string = "transpose";
+	RCP<ParameterList> whatever;
+	AT = Utilities::Transpose(*rcp_const_cast<Matrix>(A), true, transpose_string, whatever);
 
-      	      assert(A->getMap()->isSameAs( *(AT->getMap()) ));
-      	  }
-
+	assert(A->getMap()->isSameAs( *(AT->getMap()) ));
       }
 
-      // Reorder local aggregate information into a format amenable to computing
-      // per-aggregate quantities. Specifically, we compute a format
-      // similar to compressed sparse row format for sparse matrices in which
-      // we store all the local vertices in a single array in blocks corresponding
-      // to aggregates. (This array is aggSortedVertices.) We then store a second
-      // array (aggsToIndices) whose k-th element stores the index of the first
-      // vertex in aggregate k in the array aggSortedVertices.      
+    }
 
-      ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
-      ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
+    // Reorder local aggregate information into a format amenable to computing
+    // per-aggregate quantities. Specifically, we compute a format
+    // similar to compressed sparse row format for sparse matrices in which
+    // we store all the local vertices in a single array in blocks corresponding
+    // to aggregates. (This array is aggSortedVertices.) We then store a second
+    // array (aggsToIndices) whose k-th element stores the index of the first
+    // vertex in aggregate k in the array aggSortedVertices.      
 
-      LO numAggs = aggs->GetNumAggregates();
+    ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
+    ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
 
-      // Compute the per-aggregate quality estimate
+    LO numAggs = aggs->GetNumAggregates();
 
-      typedef Teuchos::SerialDenseMatrix<LO,double> DenseMatrix;
-      typedef Teuchos::SerialDenseVector<LO,double> DenseVector;
+    // Compute the per-aggregate quality estimate
 
-      ArrayView<const LO> rowIndices;
-      ArrayView<const SC> rowValues;
-      ArrayView<const SC> colValues;
-      Teuchos::LAPACK<LO,double> myLapack;
+    typedef Teuchos::SerialDenseMatrix<LO,double> DenseMatrix;
+    typedef Teuchos::SerialDenseVector<LO,double> DenseVector;
 
-      // Iterate over each aggregate to compute the quality estimate
-      for (LO aggId=LO_ZERO; aggId<numAggs; ++aggId) {
+    ArrayView<const LO> rowIndices;
+    ArrayView<const SC> rowValues;
+    ArrayView<const SC> colValues;
+    Teuchos::LAPACK<LO,double> myLapack;
 
-          LO aggSize = aggSizes[aggId];
-	  DenseMatrix A_aggPart(aggSize, aggSize, true);
-	  DenseVector offDiagonalAbsoluteSums(aggSize, true);
+    // Iterate over each aggregate to compute the quality estimate
+    for (LO aggId=LO_ZERO; aggId<numAggs; ++aggId) {
 
-	  // Iterate over each node in the aggregate
-	  for (LO idx=LO_ZERO; idx<aggSize; ++idx) {
+      LO aggSize = aggSizes[aggId];
+      DenseMatrix A_aggPart(aggSize, aggSize, true);
+      DenseVector offDiagonalAbsoluteSums(aggSize, true);
+
+      // Iterate over each node in the aggregate
+      for (LO idx=LO_ZERO; idx<aggSize; ++idx) {
               
-              LO nodeId = aggSortedVertices[idx+aggsToIndices[aggId]];
-	      A->getLocalRowView(nodeId, rowIndices, rowValues);
-	      AT->getLocalRowView(nodeId, rowIndices, colValues);
+	LO nodeId = aggSortedVertices[idx+aggsToIndices[aggId]];
+	A->getLocalRowView(nodeId, rowIndices, rowValues);
+	AT->getLocalRowView(nodeId, rowIndices, colValues);
 
-	      // Iterate over each element in the row corresponding to the current node
-	      for (LO elem=LO_ZERO; elem<rowIndices.size();++elem) {
+	// Iterate over each element in the row corresponding to the current node
+	for (LO elem=LO_ZERO; elem<rowIndices.size();++elem) {
 
-		  LO nodeId2 = rowIndices[elem];
-		  SC val = (rowValues[elem]+colValues[elem])/2.0;
+	  LO nodeId2 = rowIndices[elem];
+	  SC val = (rowValues[elem]+colValues[elem])/2.0;
 
-		  LO idxInAgg = -LO_ONE; // -1 if element is not in aggregate
+	  LO idxInAgg = -LO_ONE; // -1 if element is not in aggregate
 
-		  // Check whether the element belongs in the aggregate. If it does
-		  // find, its index. Otherwise, add it's value to the off diagonal
-		  // sums
-		  for (LO idx2=LO_ZERO; idx2<aggSize; ++idx2) {
+	  // Check whether the element belongs in the aggregate. If it does
+	  // find, its index. Otherwise, add it's value to the off diagonal
+	  // sums
+	  for (LO idx2=LO_ZERO; idx2<aggSize; ++idx2) {
 
-		      if (aggSortedVertices[idx2+aggsToIndices[aggId]] == nodeId2) {
+	    if (aggSortedVertices[idx2+aggsToIndices[aggId]] == nodeId2) {
 
-			  // Element does belong to aggregate
-			  idxInAgg = idx2;
-			  break;
+	      // Element does belong to aggregate
+	      idxInAgg = idx2;
+	      break;
 
-		      }
+	    }
 
-		  }
+	  }
 
-		  if (idxInAgg == -LO_ONE) { // Element does not belong to aggregate
+	  if (idxInAgg == -LO_ONE) { // Element does not belong to aggregate
 
-		      offDiagonalAbsoluteSums[idx] += fabs(val);
+	    offDiagonalAbsoluteSums[idx] += fabs(val);
 
-		  } else { // Element does belong to aggregate
+	  } else { // Element does belong to aggregate
 
-		      A_aggPart(idx,idxInAgg) = val;
+	    A_aggPart(idx,idxInAgg) = val;
 		      
-		  }
-
-	      }
-
 	  }
 
-	  // Construct a diagonal matrix consisting of the diagonal
-	  // of A_aggPart
-	  DenseMatrix A_aggPartDiagonal(aggSize, aggSize, true);
-	  SC diag_sum = SCALAR_ZERO;
-	  for (int i=0;i<aggSize;++i) {
-	      A_aggPartDiagonal(i,i) = A_aggPart(i,i);
-	      diag_sum += A_aggPart(i,i);
-	  }
+	}
 
-	  DenseMatrix ones(aggSize, aggSize, false);
-	  ones.putScalar(SCALAR_ONE);
-
-	  // Compute matrix on top of generalized Rayleigh quotient
-	  // topMatrix = A_aggPartDiagonal - A_aggPartDiagonal*ones*A_aggPartDiagonal/diag_sum;
-	  DenseMatrix tmp(aggSize, aggSize, false);
-	  DenseMatrix topMatrix(A_aggPartDiagonal);
-
-	  tmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, SCALAR_ONE, ones, A_aggPartDiagonal, SCALAR_ZERO);
-	  topMatrix.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -SCALAR_ONE/diag_sum, A_aggPartDiagonal, tmp, SCALAR_ONE);
-
-	  // Compute matrix on bottom of generalized Rayleigh quotient
-	  DenseMatrix bottomMatrix(A_aggPart);
-	  SC matrixNorm = A_aggPart.normInf();
-	  for (int i=0;i<aggSize;++i){
-	      // Include a small perturbation to the bottom matrix to make it nonsingular
-	      bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
-	  }
-
-	  // Compute generalized eigenvalues
-
-	  // GGES only works on real matrices
-	  assert(!Teuchos::ScalarTraits<SC>::isComplex);
-
-	  LO sdim, info;
-	  DenseVector alpha_real(aggSize, false);
-	  DenseVector alpha_imag(aggSize, false);
-	  DenseVector beta(aggSize, false);
-
-	  DenseVector workArray(14*(aggSize+1), false);
-
-	  LO (*ptr2func)(SC*, SC*, SC*);
-	  ptr2func = NULL;
-	  LO* bwork = NULL;
-	  SC* vl = NULL;
-	  SC* vr = NULL;
-	  
-	  const char NO='N';
-	  myLapack.GGES(NO,NO,NO,ptr2func,aggSize,
-			topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
-			alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
-			vr,aggSize,workArray.values(),workArray.length(),bwork,
-			&info);
-
-	  assert(info == LO_ZERO);
-
-	  SC maxEigenVal = SCALAR_ZERO;
-
-	  for (int i=LO_ZERO;i<aggSize;++i) {
-	      
-	      assert(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
-	      maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
-
-	  }
-
-	  (agg_qualities->getDataNonConst(0))[aggId] = SCALAR_TWO*maxEigenVal;
-	  
       }
+
+      // Construct a diagonal matrix consisting of the diagonal
+      // of A_aggPart
+      DenseMatrix A_aggPartDiagonal(aggSize, aggSize, true);
+      SC diag_sum = SCALAR_ZERO;
+      for (int i=0;i<aggSize;++i) {
+	A_aggPartDiagonal(i,i) = A_aggPart(i,i);
+	diag_sum += A_aggPart(i,i);
+      }
+
+      DenseMatrix ones(aggSize, aggSize, false);
+      ones.putScalar(SCALAR_ONE);
+
+      // Compute matrix on top of generalized Rayleigh quotient
+      // topMatrix = A_aggPartDiagonal - A_aggPartDiagonal*ones*A_aggPartDiagonal/diag_sum;
+      DenseMatrix tmp(aggSize, aggSize, false);
+      DenseMatrix topMatrix(A_aggPartDiagonal);
+
+      tmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, SCALAR_ONE, ones, A_aggPartDiagonal, SCALAR_ZERO);
+      topMatrix.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, -SCALAR_ONE/diag_sum, A_aggPartDiagonal, tmp, SCALAR_ONE);
+
+      // Compute matrix on bottom of generalized Rayleigh quotient
+      DenseMatrix bottomMatrix(A_aggPart);
+      SC matrixNorm = A_aggPart.normInf();
+      for (int i=0;i<aggSize;++i){
+	// Include a small perturbation to the bottom matrix to make it nonsingular
+	bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
+      }
+
+      // Compute generalized eigenvalues
+
+      // GGES only works on real matrices
+      assert(!Teuchos::ScalarTraits<SC>::isComplex);
+
+      LO sdim, info;
+      DenseVector alpha_real(aggSize, false);
+      DenseVector alpha_imag(aggSize, false);
+      DenseVector beta(aggSize, false);
+
+      DenseVector workArray(14*(aggSize+1), false);
+
+      LO (*ptr2func)(SC*, SC*, SC*);
+      ptr2func = NULL;
+      LO* bwork = NULL;
+      SC* vl = NULL;
+      SC* vr = NULL;
+	  
+      const char NO='N';
+      myLapack.GGES(NO,NO,NO,ptr2func,aggSize,
+		    topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
+		    alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
+		    vr,aggSize,workArray.values(),workArray.length(),bwork,
+		    &info);
+
+      assert(info == LO_ZERO);
+
+      SC maxEigenVal = SCALAR_ZERO;
+
+      for (int i=LO_ZERO;i<aggSize;++i) {
+	      
+	assert(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
+	maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
+
+      }
+
+      (agg_qualities->getDataNonConst(0))[aggId] = SCALAR_TWO*maxEigenVal;
+	  
+    }
 
 			  
   }
@@ -357,32 +357,32 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OutputAggQualities(const Level& level, RCP<const Xpetra::MultiVector<double,LO,GO,Node>> agg_qualities) const {
 
-      ParameterList pL = GetParameterList();
+    ParameterList pL = GetParameterList();
 
-      double good_agg_thresh = pL.get<double>("aggregate qualities: good aggregate threshold");
+    double good_agg_thresh = pL.get<double>("aggregate qualities: good aggregate threshold");
       
-      Teuchos::ArrayRCP<const double> data = agg_qualities->getData(0);
+    ArrayRCP<const double> data = agg_qualities->getData(0);
 
-      LO num_bad_aggs = 0;
-      SC worst_agg = 0.0;
+    LO num_bad_aggs = 0;
+    SC worst_agg = 0.0;
 
-      for (size_t i=0;i<agg_qualities->getLocalLength();++i) {
+    for (size_t i=0;i<agg_qualities->getLocalLength();++i) {
 
-	  if (data[i] > good_agg_thresh) num_bad_aggs++;
-	  worst_agg = std::max(worst_agg, data[i]);
+      if (data[i] > good_agg_thresh) num_bad_aggs++;
+      worst_agg = std::max(worst_agg, data[i]);
 
-      }
+    }
 
-      if (num_bad_aggs == 0) {
-	  GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
-      } else {
-	  GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
-      }
+    if (num_bad_aggs == 0) {
+      GetOStream(Statistics1) << "All aggregates passed the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
+    } else {
+      GetOStream(Statistics1) << num_bad_aggs << " out of " << agg_qualities->getLocalLength() << " did not pass the quality measure. Worst aggregate had quality " << worst_agg << std::endl;
+    }
 
-      if (pL.get<bool>("aggregate qualities: file output")) {
-	  std::string filename = pL.get<std::string>("aggregate qualities: file base")+"."+std::to_string(level.GetLevelID());
-	  Xpetra::IO<double,LO,GO,Node>::Write(filename, *agg_qualities);
-      }
+    if (pL.get<bool>("aggregate qualities: file output")) {
+      std::string filename = pL.get<std::string>("aggregate qualities: file base")+"."+std::to_string(level.GetLevelID());
+      Xpetra::IO<double,LO,GO,Node>::Write(filename, *agg_qualities);
+    }
 
   }
     

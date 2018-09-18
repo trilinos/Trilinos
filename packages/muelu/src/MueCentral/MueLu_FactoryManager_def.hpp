@@ -236,7 +236,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building< '" << varName << "' is null");
+    TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
     GetOStream(Runtime1) << "Using default factory (" << factory->ShortClassName() <<"["<<factory->GetID()<<"] "<< ") for building '" << varName << "'." << std::endl;
 
