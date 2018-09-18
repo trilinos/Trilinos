@@ -54,6 +54,8 @@
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
+#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
@@ -72,6 +74,7 @@ private:
   ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
   ROL::Ptr<Intrepid::Cubature<Real>> bdryCub_;
   // Cell node information
+  ROL::Ptr<Intrepid::FieldContainer<Real>> volCellNodes_;
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellNodes_;
   std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   // Finite element definition
@@ -95,6 +98,7 @@ private:
   // Problem parameters.
   Real Re_, Pr_, Gr_, h_;
   const Real grav_;
+  Real Tcyl_;
 
   ROL::Ptr<FieldHelper<Real>> fieldHelper_;
 
@@ -102,9 +106,20 @@ private:
 public:
   PDE_ThermalFluids(Teuchos::ParameterList &parlist) : grav_(-1) {
     // Finite element fields -- NOT DIMENSION INDEPENDENT!
-    basisPtrVel_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-    basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-    basisPtrThr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+    std::string shape = parlist.sublist("Geometry").get("Element Shape","quad");
+    if (shape=="quad") {
+      basisPtrVel_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      basisPtrThr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+    }
+    else if (shape=="tri") {
+      basisPtrVel_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      basisPtrPrs_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      basisPtrThr_ = ROL::makePtr<Intrepid::Basis_HGRAD_TRI_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+    }
+    else {
+      throw ROL::Exception::NotImplemented(">>> Element shape not available.");
+    }
     // Volume quadrature rules.
     shards::CellTopology cellType = basisPtrVel_->getBaseCellTopology();  // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                    // create cubature factory
@@ -124,10 +139,11 @@ public:
     basisPtrs_.push_back(basisPtrThr_); // Heat
 
     // Other problem parameters.
-    Re_ = parlist.sublist("Problem").get("Reynolds Number",   200.0);
-    Pr_ = parlist.sublist("Problem").get("Prandtl Number",    0.72);
-    Gr_ = parlist.sublist("Problem").get("Grashof Number",    40000.0);
-    h_  = parlist.sublist("Problem").get("Robin Coefficient", 1.0);
+    Re_      = parlist.sublist("Problem").get("Reynolds Number",      200.0);
+    Pr_      = parlist.sublist("Problem").get("Prandtl Number",       0.72);
+    Gr_      = parlist.sublist("Problem").get("Grashof Number",       40000.0);
+    h_       = parlist.sublist("Problem").get("Robin Coefficient",    1.0);
+    Tcyl_    = parlist.sublist("Problem").get("Cylinder Temperature", 1.0);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -166,9 +182,8 @@ public:
     R[d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh);
 
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
-    fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Evaluate problem coefficients at quadrature points.
     ROL::Ptr<Intrepid::FieldContainer<Real>> nu, grav, kappa;
@@ -289,37 +304,33 @@ public:
                                                   true);
     // Apply boundary conditions
     // -- Thermal:
-    //      -- Robin Control: i=4 (circle)
+    //    -- Robin boundary: i=0, 2, 4 (top/bottom/circle)
     const int numSideSets = bdryCellLocIds_.size();
     const int numCubPerSide = bdryCub_->getNumPoints();
-    Real bv(0);
     if (numSideSets > 0) {
       // APPLY BOUNDARY CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // THERMAL BOUNDARY CONDITIONS
         // Apply Robin conditions
-        if (i==0 || i==4) {
+        if (i==0 || i==2 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
             if (numCellsSide) {
-              // Get U and Z coefficients on Robin boundary
-              ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff_bdry, z_coeff_bdry;
+              // Get U coefficients on Robin boundary
+              ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff_bdry;
               u_coeff_bdry = getThermalBoundaryCoeff(*(U[d+1]), i, j);
-              z_coeff_bdry = getThermalBoundaryCoeff(*(Z[d+1]), i, j);
-              // Evaluate U and Z on FE basis
-              ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval_bdry, valZ_eval_bdry;
+              // Evaluate U on FE basis
+              ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval_bdry;
               valU_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-              valZ_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               feThrBdry_[i][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
-              feThrBdry_[i][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
-              // Compute Stefan-Boltzmann residual
-              ROL::Ptr<Intrepid::FieldContainer<Real>> robinVal;
-              robinVal = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-              computeThermalRobin(robinVal,valU_eval_bdry,valZ_eval_bdry,i,j,0);
+              // Compute Robin residual
+              ROL::Ptr<Intrepid::FieldContainer<Real>> robinVal
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+              computeThermalRobin(robinVal,valU_eval_bdry,i,j,0);
               // Evaluate boundary integral
-              ROL::Ptr<Intrepid::FieldContainer<Real>> robinRes;
-              robinRes = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, fh);
+              ROL::Ptr<Intrepid::FieldContainer<Real>> robinRes
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, fh);
               Intrepid::FunctionSpaceTools::integrate<Real>(*robinRes,
                                                             *robinVal,
                                                             *(feThrBdry_[i][j]->NdetJ()),
@@ -373,9 +384,8 @@ public:
     J[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
 
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
-    fieldHelper_->splitFieldCoeff(Z, z_coeff);
 
     // Evaluate problem coefficients at quadrature points.
     ROL::Ptr<Intrepid::FieldContainer<Real>> nu, grav, kappa;
@@ -532,28 +542,25 @@ public:
     const int numCubPerSide = bdryCub_->getNumPoints();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        // Robinboundaries
-        if (i==0 || i==4) {
+        // Thermal Robin boundaries
+        if (i==0 || i==2 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
             ROL::Ptr<Intrepid::FieldContainer<Real>> robinJac;
             if (numCellsSide) {
-              // Get U and Z coefficients on Robin boundary
-              ROL::Ptr<Intrepid::FieldContainer<Real >> u_coeff_bdry, z_coeff_bdry;
+              // Get U coefficients on Robin boundary
+              ROL::Ptr<Intrepid::FieldContainer<Real >> u_coeff_bdry;
               u_coeff_bdry = getThermalBoundaryCoeff(*(U[d+1]), i, j);
-              z_coeff_bdry = getThermalBoundaryCoeff(*(Z[d+1]), i, j);
-              // Evaluate U and Z on FE basis
-              ROL::Ptr<Intrepid::FieldContainer<Real >> valU_eval_bdry, valZ_eval_bdry;
+              // Evaluate U on FE basis
+              ROL::Ptr<Intrepid::FieldContainer<Real >> valU_eval_bdry;
               valU_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-              valZ_eval_bdry = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               feThrBdry_[i][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
-              feThrBdry_[i][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
-              // Compute Stefan-Boltzmann residual
+              // Compute Robin Jacobian
               ROL::Ptr< Intrepid::FieldContainer<Real>> robinVal1
                 = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
               Intrepid::FieldContainer<Real> robinVal(numCellsSide, fh, numCubPerSide);
-              computeThermalRobin(robinVal1,valU_eval_bdry,valZ_eval_bdry,i,j,1,0);
+              computeThermalRobin(robinVal1,valU_eval_bdry,i,j,1);
               Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal,
                                                                           *robinVal1,
                                                                           *(feThrBdry_[i][j]->N()));
@@ -587,96 +594,32 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    // Retrieve dimensions.
-    const int c  = feVel_->gradN()->dimension(0);
-    const int fv = feVel_->gradN()->dimension(1);
-    const int fp = fePrs_->gradN()->dimension(1);
-    const int fh = feThr_->gradN()->dimension(1);
-    const int d  = feVel_->gradN()->dimension(3);
- 
-    // Initialize jacobians.
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(d+2);
-    for (int i = 0; i < d+2; ++i) {
-      J[i].resize(d+2);
+    if (z_coeff != ROL::nullPtr) {
+      // Retrieve dimensions.
+      int c  = u_coeff->dimension(0);
+      jac = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_, numDofs_);
     }
-    for (int i = 0; i < d; ++i) {
-      for (int j = 0; j < d; ++j) {
-        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fv);
-      }
-      J[d][i]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fv);
-      J[i][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fp);
-      J[d+1][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fv);
-      J[i][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fv, fh);
+    else {
+      throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_2): Jacobian is zero.");
     }
-    J[d][d]     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fp);
-    J[d+1][d]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fp);
-    J[d][d+1]   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fp, fh);
-    J[d+1][d+1] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fh, fh);
-
-    // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, Z;
-    fieldHelper_->splitFieldCoeff(U, u_coeff);
-    fieldHelper_->splitFieldCoeff(Z, z_coeff);
-
-    // APPLY BOUNDARY CONDITIONS
-    const int numSideSets = bdryCellLocIds_.size();
-    const int numCubPerSide = bdryCub_->getNumPoints();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        // Robin boundaries
-        if (i==0 || i==4) {
-          int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            if (numCellsSide) {
-              // Get U and Z coefficients on Robin boundary
-              ROL::Ptr<Intrepid::FieldContainer<Real >> u_coeff_bdry
-                = getThermalBoundaryCoeff(*(U[d+1]), i, j);
-              ROL::Ptr<Intrepid::FieldContainer<Real >> z_coeff_bdry
-                = getThermalBoundaryCoeff(*(Z[d+1]), i, j);
-              // Evaluate U and Z on FE basis
-              ROL::Ptr<Intrepid::FieldContainer<Real >> valU_eval_bdry
-                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-              ROL::Ptr<Intrepid::FieldContainer<Real >> valZ_eval_bdry
-                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-              feThrBdry_[i][j]->evaluateValue(valU_eval_bdry, u_coeff_bdry);
-              feThrBdry_[i][j]->evaluateValue(valZ_eval_bdry, z_coeff_bdry);
-              // Compute Stefan-Boltzmann residual
-              ROL::Ptr< Intrepid::FieldContainer<Real>> robinVal1
-                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-              Intrepid::FieldContainer<Real> robinVal(numCellsSide, fh, numCubPerSide);
-              computeThermalRobin(robinVal1,valU_eval_bdry,valZ_eval_bdry,i,j,1,1);
-              Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(robinVal,
-                                                                          *robinVal1,
-                                                                          *(feThrBdry_[i][j]->N()));
-              // Evaluate boundary integral
-              Intrepid::FieldContainer<Real> robinJac(numCellsSide, fh, fh);
-              Intrepid::FunctionSpaceTools::integrate<Real>(robinJac,
-                                                            robinVal,
-                                                            *(feThrBdry_[i][j]->NdetJ()),
-                                                            Intrepid::COMP_CPP, false);
-              for (int k = 0; k < numCellsSide; ++k) {
-                int cidx = bdryCellLocIds_[i][j][k];
-                for (int l = 0; l < fh; ++l) {
-                  for (int m = 0; m < fh; ++m) {
-                    (*J[d+1][d+1])(cidx,l,m) += robinJac(k,l,m);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    // Combine the jacobians.
-    fieldHelper_->combineFieldCoeff(jac, J);
   }
 
   void Jacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_3): Jacobian is zero.");
+    if (z_param != ROL::nullPtr) {
+      // Retrieve dimensions.
+      int size = z_param->size();
+      int c    = u_coeff->dimension(0);
+      jac.resize(size,ROL::nullPtr);
+      for (int i = 0; i < size; ++i) {
+        jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
+      }
+    }
+    else {
+      throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_3): Jacobian is zero.");
+    }
   }
 
   void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
@@ -920,6 +863,7 @@ public:
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
                     const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
+    volCellNodes_ = volCellNodes;
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
@@ -955,6 +899,10 @@ public:
     fieldHelper_ = ROL::makePtr<FieldHelper<Real>>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
   }
 
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
+    return volCellNodes_;
+  }
+
   const ROL::Ptr<FE<Real>> getVelocityFE(void) const {
     return feVel_;
   }
@@ -967,20 +915,22 @@ public:
     return feThr_;
   }
 
-  const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getVelocityBdryFE(void) const {
-    return feVelBdry_;
+  const std::vector<std::vector<int>> getBdryCellLocIds(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return bdryCellLocIds_[side];
   }
 
-  const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getPressureBdryFE(void) const {
-    return fePrsBdry_;
+  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return feVelBdry_[side];
   }
 
-  const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getThermalBdryFE(void) const {
-    return feThrBdry_;
+  const std::vector<ROL::Ptr<FE<Real>>> getPressureBdryFE(const int sideset = -1) const {
+    return fePrsBdry_[side];
   }
 
-  const std::vector<std::vector<std::vector<int>>> getBdryCellLocIds(void) const {
-    return bdryCellLocIds_;
+  const std::vector<ROL::Ptr<FE<Real>>> getThermalBdryFE(const int sideset = -1) const {
+    return feThrBdry_[side];
   }
 
   const ROL::Ptr<FieldHelper<Real>> getFieldHelper(void) const {
@@ -1047,14 +997,12 @@ private:
 
   void computeThermalRobin(ROL::Ptr<Intrepid::FieldContainer<Real>> &robin,
                            const ROL::Ptr<Intrepid::FieldContainer<Real>> &u,
-                           const ROL::Ptr<Intrepid::FieldContainer<Real>> &z,
                            const int sideset,
                            const int locSideId,
-                           const int deriv = 0,
-                           const int component = 1) const {
+                           const int deriv = 0) const {
     const Real zero(0);
-    const int c = feThr_->gradN()->dimension(0);
-    const int p = feThr_->gradN()->dimension(2);
+    const int c = u->dimension(0);
+    const int p = u->dimension(1);
     const int d = feThr_->gradN()->dimension(3);
     std::vector<Real> x(d);
     Real h(0);
@@ -1064,27 +1012,34 @@ private:
           x[k] = (*feThrBdry_[sideset][locSideId]->cubPts())(i,j,k);
         }
         h = thermalRobinFunc(x, sideset);
-        if ( sideset==0 ) {
-          if ( deriv == 0 ) {
-            (*robin)(i,j) = h * (*u)(i,j);
-          }
-          else if ( deriv == 1 ) {
-            (*robin)(i,j) = (component==0 ? h : zero);
-          }
-          else {
-            (*robin)(i,j) = zero;
-          }
+        if (deriv == 0) {
+          (*robin)(i,j) = (sideset==0||sideset==2 ? h*(*u)(i,j)
+                         :(sideset==4 ? h*((*u)(i,j)-Tcyl_)
+                         : zero));
         }
-        else if ( sideset==4 ) {
-          if ( deriv == 0 ) {
-            (*robin)(i,j) = h * ((*u)(i,j) - (*z)(i,j));
-          }
-          else if ( deriv == 1 ) {
-            (*robin)(i,j) = (component==0 ? h : -h);
-          }
-          else {
-            (*robin)(i,j) = zero;
-          }
+        else if ( deriv == 1 ) {
+          (*robin)(i,j) = (sideset==0||sideset==2||sideset==4 ? h : zero);
+        }
+        else {
+          (*robin)(i,j) = zero;
+        }
+      }
+    }
+  }
+
+  void computeVelocityRobin(ROL::Ptr<Intrepid::FieldContainer<Real>> &robin,
+                            const ROL::Ptr<Intrepid::FieldContainer<Real>> &pres,
+                            const int sideset,
+                            const int locSideId,
+                            const int deriv = 0) const {
+    const Real zero(0), one(1);
+    const int c = pres->dimension(0);
+    const int p = pres->dimension(1);
+    for (int i = 0; i < c; ++i) {
+      for (int j = 0; j < p; ++j) {
+        if ( sideset==1 ) {
+          (*robin)(i,j) = (deriv==0 ? (*pres)(i,j)
+                        : (deriv==1 ? one : zero));
         }
         else {
           (*robin)(i,j) = zero;
@@ -1099,6 +1054,40 @@ private:
     std::vector<int> bdryCellLocId = bdryCellLocIds_[sideSet][cell];
     const int numCellsSide = bdryCellLocId.size();
     const int f = basisPtrThr_->getCardinality();
+    
+    ROL::Ptr<Intrepid::FieldContainer<Real >> bdry_coeff
+      = ROL::makePtr<Intrepid::FieldContainer<Real >>(numCellsSide, f);
+    for (int i = 0; i < numCellsSide; ++i) {
+      for (int j = 0; j < f; ++j) {
+        (*bdry_coeff)(i, j) = cell_coeff(bdryCellLocId[i], j);
+      }
+    }
+    return bdry_coeff;
+  }
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> getVelocityBoundaryCoeff(
+      const Intrepid::FieldContainer<Real> & cell_coeff,
+      int sideSet, int cell) const {
+    std::vector<int> bdryCellLocId = bdryCellLocIds_[sideSet][cell];
+    const int numCellsSide = bdryCellLocId.size();
+    const int f = basisPtrVel_->getCardinality();
+    
+    ROL::Ptr<Intrepid::FieldContainer<Real >> bdry_coeff
+      = ROL::makePtr<Intrepid::FieldContainer<Real >>(numCellsSide, f);
+    for (int i = 0; i < numCellsSide; ++i) {
+      for (int j = 0; j < f; ++j) {
+        (*bdry_coeff)(i, j) = cell_coeff(bdryCellLocId[i], j);
+      }
+    }
+    return bdry_coeff;
+  }
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> getPressureBoundaryCoeff(
+      const Intrepid::FieldContainer<Real> & cell_coeff,
+      int sideSet, int cell) const {
+    std::vector<int> bdryCellLocId = bdryCellLocIds_[sideSet][cell];
+    const int numCellsSide = bdryCellLocId.size();
+    const int f = basisPtrPrs_->getCardinality();
     
     ROL::Ptr<Intrepid::FieldContainer<Real >> bdry_coeff
       = ROL::makePtr<Intrepid::FieldContainer<Real >>(numCellsSide, f);

@@ -76,7 +76,8 @@ private:
   // Steady PDE without Dirichlet BC
   ROL::Ptr<PDE_ThermalFluids<Real>> pde_;
   Real theta_;   // Time integration factor
-  Real Tinflow_, Tbottom_;
+  Real cx_, cy_; // Cylinder center
+  Real r_;       // Cylinder radius
 
   ROL::Ptr<FieldHelper<Real>> fieldHelper_;
 
@@ -85,8 +86,9 @@ public:
     pde_ = ROL::makePtr<PDE_ThermalFluids<Real>>(parlist);
     // Problem data
     theta_ = parlist.sublist("Time Discretization").get("Theta", 1.0);
-    Tinflow_ = parlist.sublist("Problem").get("Inflow Temperature",0.0);
-    Tbottom_ = parlist.sublist("Problem").get("Bottom Temperature",1.0);
+    cx_    = parlist.sublist("Problem").get("Cylinder Center X", 0.0);
+    cy_    = parlist.sublist("Problem").get("Cylinder Center Y", 0.0);
+    r_     = parlist.sublist("Problem").get("Cylinder Radius",   0.5);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -173,21 +175,21 @@ public:
     Intrepid::RealSpaceTools<Real>::add(*R[3], thr_res);
     // Apply boundary conditions
     // -- Velocity:
-    //      --   No-slip: i=0, i=2, i=4 (top and bottom wall, circle)
-    //      --    Inflow: i=3 (left wall)
-    //      --   Outflow: i=1 (right wall)
+    //    -- Free Stream: i=0, i=2 (top and bottom wall)
+    //    --      Inflow: i=3 (left wall)
+    //    --     Outflow: i=1 (right wall)
     // -- Thermal:
-    //      --   Neumann: i=0, i=1, i=3 (top, right and left wall)
-    //      -- Dirichlet: i=2 (bottom wall)
-    //      --     Robin: i=4 (circle)
+    //      --     Robin: i=0, i=2, i=4 (top and bottom wall and cylinder)
+    //      -- Dirichlet: i=3 (left wall)
+    //      --   Neumann: i=1 (right wall)
     int numSideSets = bdryCellLocIds_.size();
     Real bv(0);
     if (numSideSets > 0) {
       // APPLY BOUNDARY CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
         // VELOCITY BOUNDARY CONDITIONS
-        // Apply no-slip conditions on top and bottom wall and on circle
-        if (i==0 || i==2 || i==4 ) {
+        // Apply free stream conditions on top and bottom walls
+        if (i==0 || i==2 ) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -196,7 +198,8 @@ public:
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < d; ++m) {
-                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]);
+                  bv = (*bdryCellVDofValues_[i][j])(k,fvidx_[j][l],m);
+                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - bv;
                 }
               }
             }
@@ -219,9 +222,26 @@ public:
             }
           }
         }
+        // Apply Dirichlet control on cylinder
+        if (i==4) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                for (int m=0; m < d; ++m) {
+                  bv = (*bdryCellVDofValues_[i][j])(k,fvidx_[j][l],m);
+                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*z_param)[0] * bv;
+                }
+              }
+            }
+          }
+        }
         // THERMAL BOUNDARY CONDITIONS
         // Apply Dirichlet conditions on bottom wall
-        if (i==2 || i==3) {
+        if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();   // Number of sides per cell
           for (int j = 0; j < numLocalSideIds; ++j) {        // Loop over sides of cell: Quad = {0, 1, 2, 3}
             int numCellsSide = bdryCellLocIds_[i][j].size(); // Number of cells with side j
@@ -284,15 +304,15 @@ public:
     Intrepid::RealSpaceTools<Real>::subtract(*J[0][0], velX_jac);
     Intrepid::RealSpaceTools<Real>::subtract(*J[1][1], velY_jac);
     Intrepid::RealSpaceTools<Real>::subtract(*J[3][3], thr_jac);
-    // APPLY BOUNDARY CONDITIONS
+    // Apply boundary conditions
     // -- Velocity:
-    //      --   No-slip: i=0, i=2, i=4 (top and bottom wall, circle)
-    //      --    Inflow: i=3 (left wall)
-    //      --   Outflow: i=1 (right wall)
+    //    -- Free Stream: i=0, i=2 (top and bottom wall)
+    //    --      Inflow: i=3 (left wall)
+    //    --     Outflow: i=1 (right wall)
     // -- Thermal:
-    //      --   Neumann: i=0, i=1, i=3 (top, right and left wall)
-    //      -- Dirichlet: i=2 (bottom wall)
-    //      --     Robin: i=4 (circle)
+    //      --     Robin: i=0, i=2, i=4 (top and bottom wall and cylinder)
+    //      -- Dirichlet: i=3 (left wall)
+    //      --   Neumann: i=1 (right wall)
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
@@ -324,7 +344,7 @@ public:
             }
           }
         }
-        if (i==2 || i==3) {
+        if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -334,7 +354,7 @@ public:
               for (int l = 0; l < numHBdryDofs; ++l) {
                 for (int m = 0; m < fv; ++m) {
                   for (int n = 0; n < d; ++n) {
-                    (*J[d+1][n])(cidx,fhidx_[j][l],m) = zero; 
+                    (*J[d+1][n])(cidx,fhidx_[j][l],m) = zero;
                   }
                 }
                 for (int m = 0; m < fp; ++m) {
@@ -397,6 +417,14 @@ public:
     Intrepid::RealSpaceTools<Real>::add(*J[1][1], velY_jac);
     Intrepid::RealSpaceTools<Real>::add(*J[3][3], thr_jac);
     // APPLY BOUNDARY CONDITIONS
+    // -- Velocity:
+    //    -- Free Stream: i=0, i=2 (top and bottom wall)
+    //    --      Inflow: i=3 (left wall)
+    //    --     Outflow: i=1 (right wall)
+    // -- Thermal:
+    //      --     Robin: i=0, i=2, i=4 (top and bottom wall and cylinder)
+    //      -- Dirichlet: i=3 (left wall)
+    //      --   Neumann: i=1 (right wall)
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
@@ -428,7 +456,7 @@ public:
             }
           }
         }
-        if (i==2 || i==3) {
+        if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -438,7 +466,7 @@ public:
               for (int l = 0; l < numHBdryDofs; ++l) {
                 for (int m = 0; m < fv; ++m) {
                   for (int n = 0; n < d; ++n) {
-                    (*J[d+1][n])(cidx,fhidx_[j][l],m) = zero; 
+                    (*J[d+1][n])(cidx,fhidx_[j][l],m) = zero;
                   }
                 }
                 for (int m = 0; m < fp; ++m) {
@@ -464,19 +492,7 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    const Real one(1);
-    // GET TIME STEP INFORMATION
-    Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
-    // INITILAIZE JACOBIAN
-    ROL::Ptr<Intrepid::FieldContainer<Real>> jtmp;
-    // COMPUTE JACOBIAN
-    pde_->setTime(told);
-    pde_->Jacobian_2(jac,uo_coeff,z_coeff,z_param);
-    Intrepid::RealSpaceTools<Real>::scale(*jac, (one-theta_)*dt);
-    pde_->setTime(tnew);
-    pde_->Jacobian_2(jtmp,un_coeff,z_coeff,z_param);
-    Intrepid::RealSpaceTools<Real>::scale(*jtmp, theta_*dt);
-    Intrepid::RealSpaceTools<Real>::add(*jac, *jtmp);
+    throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_zf): Jacobian is zero.");
   }
 
   void Jacobian_zp(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
@@ -485,7 +501,43 @@ public:
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                    const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                    const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_ThermalFluids::Jacobian_zp): Jacobian is zero.");
+    const Real one(1);
+    // GET DIMENSIONS
+    int fv = feVel_->gradN()->dimension(1);
+    int fp = fePrs_->gradN()->dimension(1);
+    int  d = feVel_->gradN()->dimension(3);
+    // GET TIME STEP INFORMATION
+    Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
+    // INITILAIZE JACOBIAN
+    pde_->Jacobian_3(jac,uo_coeff,z_coeff,z_param); // Resizes and zeros jac
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J;
+    fieldHelper_->splitFieldCoeff(J, jac[0]);
+    // APPLY DIRICHLET CONDITIONS
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      for (int i = 0; i < numSideSets; ++i) {
+        // Apply Dirichlet controls
+        if (i==4) {
+          Real bv(0);
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                for (int m=0; m < d; ++m) {
+                  bv = (*bdryCellTDofValues_[i][j])(k,fvidx_[j][l],m);
+                  (*J[m])(cidx,fvidx_[j][l]) = -bv;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    // Combine the jacobians.
+    fieldHelper_->combineFieldCoeff(jac[0], J);
   }
 
   void Hessian_uo_uo(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
@@ -525,7 +577,7 @@ public:
           }
         }
         // Thermal boundary conditions
-        if (i==2 || i==3) {
+        if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -624,7 +676,7 @@ public:
           }
         }
         // Thermal boundary conditions
-        if (i==2 || i==3) {
+        if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -693,24 +745,7 @@ public:
                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & un_coeff,
                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                      const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    try {
-      const Real one(1);
-      // GET TIME STEP INFORMATION
-      Real told = ts.t[0], tnew = ts.t[1], dt = tnew-told;
-      // INITILAIZE HESSIAN
-      ROL::Ptr<Intrepid::FieldContainer<Real>> htmp;
-      // COMPUTE HESSIAN
-      pde_->setTime(told);
-      pde_->Hessian_22(hess,l_coeff,uo_coeff,z_coeff,z_param);
-      Intrepid::RealSpaceTools<Real>::scale(*hess, (one-theta_)*dt);
-      pde_->setTime(tnew);
-      pde_->Hessian_22(htmp,l_coeff,un_coeff,z_coeff,z_param);
-      Intrepid::RealSpaceTools<Real>::scale(*htmp, theta_*dt);
-      Intrepid::RealSpaceTools<Real>::add(*hess, *htmp);
-    }
-    catch (std::exception &e) {
-      throw Exception::Zero(">>> (PDE_ThermalFluids::Hessian_zf_zf: Hessian is zero.");
-    }
+    throw Exception::Zero(">>> (PDE_ThermalFluids::Hessian_zf_zf: Hessian is zero.");
   }
 
   void Hessian_zf_zp(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
@@ -797,6 +832,10 @@ public:
     fieldHelper_ = pde_->getFieldHelper();
   }
 
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
+    return pde_->getCellNodes();
+  }
+
   const ROL::Ptr<FE<Real>> getVelocityFE(void) const {
     return feVel_;
   }
@@ -809,20 +848,24 @@ public:
     return feThr_;
   }
 
-  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(void) const {
-    return pde_->getVelocityBdryFE();
+  const std::vector<std::vector<int>> getBdryCellLocIds(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return bdryCellLocIds_[side];
   }
 
-  const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getPressureBdryFE(void) const {
-    return pde_->getPressureBdryFE();
+  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return pde_->getVelocityBdryFE(side);
   }
 
-  const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getThermalBdryFE(void) const {
-    return pde_->getThermalBdryFE();
+  const std::vector<ROL::Ptr<FE<Real>>> getPressureBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return pde_->getPressureBdryFE(side);
   }
 
-  const std::vector<std::vector<std::vector<int>>> getBdryCellLocIds(void) const {
-    return bdryCellLocIds_;
+  const std::vector<ROL::Ptr<FE<Real>>> getThermalBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return pde_->getThermalBdryFE(side);
   }
 
   const ROL::Ptr<FieldHelper<Real>> getFieldHelper(void) const {
@@ -831,24 +874,19 @@ public:
 
 private:
   Real velocityDirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
-    const Real one(1);
-    const Real x = coords[0], y = coords[1];
-    Real val(0);
-    if ((sideset==3) && (dir==0)) {
-      val = (one + y) * (one - y);
+    const Real one(1), zero(0);
+    if (sideset==4) {
+      Real x  = coords[0];
+      Real y  = coords[1];
+      Real tx = y-cy_, ty = cx_-x;
+      return (dir==0 ? tx : ty)/r_;
     }
-    return val;
+    return (dir==0 ? one : zero);
   }
 
   Real thermalDirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId) const {
-    Real val(0);
-    if (sideset==2) {
-      val = Tbottom_;
-    }
-    if (sideset==3) {
-      val = Tinflow_;
-    }
-    return val;
+    const Real zero(0);
+    return zero;
   }
 
   void computeDirichlet(void) {

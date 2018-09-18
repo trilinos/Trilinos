@@ -2,14 +2,17 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <Parameter name="Check Derivatives"           type="bool"    value="false"       />
+    <Parameter name="Print Uncontrolled State"    type="bool"    value="true"        />
     <!-- PROBLEM INFORMATION -->
-    <Parameter name="Objective type"              type="string"  value="Vorticity"   />
     <Parameter name="State Cost"                  type="double"  value="1e0"         />
-    <Parameter name="Control Cost"                type="double"  value="1e-2"        />
+    <Parameter name="Control Cost"                type="double"  value="0e0"         />
     <Parameter name="Reynolds Number"             type="double"  value="2e2"         />
     <Parameter name="Prandtl Number"              type="double"  value="0.72"        />
     <Parameter name="Grashof Number"              type="double"  value="4e4"         />
     <Parameter name="Robin Coefficient"           type="double"  value="1e0"         />
+    <Parameter name="Cylinder Center X"           type="double"  value="0.0"         />
+    <Parameter name="Cylinder Center Y"           type="double"  value="0.0"         />
+    <Parameter name="Cylinder Radius"             type="double"  value="0.5"         />
     <!-- FINITE ELEMENT INFORMATION -->
     <Parameter name="Cubature Degree"             type="int"     value="4"           />
   </ParameterList>
@@ -29,8 +32,8 @@
   <!--================================================================================--> 
   <!-- Time Discretization                                                            --> 
   <ParameterList name="Time Discretization">
-    <Parameter name="End Time"                type="double"   value="1.0"   />
-    <Parameter name="Number of Time Steps"    type="int"      value="100"   />
+    <Parameter name="End Time"                type="double"   value="10.0"  />
+    <Parameter name="Number of Time Steps"    type="int"      value="400"   />
     <Parameter name="Theta"                   type="double"   value="1.0"   />
   </ParameterList>
   <!--================================================================================-->
@@ -43,6 +46,7 @@
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
     <Parameter name="Partition type"     type="int"     value="1"    />
+    <Parameter name="Element Shape"      type="string"  value="quad" />
   </ParameterList>
 
   <!-- VECTOR INFORMATION -->
