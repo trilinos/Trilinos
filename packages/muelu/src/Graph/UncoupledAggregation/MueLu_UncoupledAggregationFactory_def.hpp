@@ -50,7 +50,6 @@
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
-#include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -71,7 +70,6 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManager.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Utilities.hpp"
 
