@@ -107,26 +107,26 @@ namespace Thyra {
         Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Coord = Teuchos::null;
         Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
         
-        if(paramList->isParameter("Coordinates")){
-            Coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*paramList);
+        if(paramList_->isParameter("Coordinates")){
+            Coord = FROSch::ExtractCoordinatesFromParameterList<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*paramList_);
         }
         
-        if(paramList->isParameter("RepeatedMap")){
-            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*paramList);
+        if(paramList_->isParameter("RepeatedMap")){
+            RepeatedMap = FROSch::ExtractRepeatedMapFromParameterList<LocalOrdinal,GlobalOrdinal,Node>(*paramList_);
         }
         
         DofOrdering dofOrdering; // AH 08/29/2018: This should be BlockWise
-        if (!paramList->get("DofOrdering","NodeWise").compare("NodeWise")) {
+        if (!paramList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
             dofOrdering = NodeWise;
-        } else if (!paramList->get("DofOrdering","NodeWise").compare("DimensionWise")) {
+        } else if (!paramList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
             dofOrdering = DimensionWise;
-        } else if (!paramList->get("DofOrdering","NodeWise").compare("Custom")) {
+        } else if (!paramList_->get("DofOrdering","NodeWise").compare("Custom")) {
             dofOrdering = Custom;
         } else {
             FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
         }
         
-        TwoLevelPrec->initialize(paramList->get("Dimension",3),paramList->get("Overlap",1),RepeatedMap,paramList->get("DofsPerNode",1),dofOrdering,Coord);
+        TwoLevelPrec->initialize(paramList_->get("Dimension",3),paramList_->get("Overlap",1),RepeatedMap,paramList_->get("DofsPerNode",1),dofOrdering,Coord);
         
         TwoLevelPrec->compute();
         //-----------------------------------------------

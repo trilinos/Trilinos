@@ -30,7 +30,6 @@
 
 //FROSch
 #include <FROSch_Tools_def.hpp>
-#include "FROSch_XpetraOperator_decl.hpp"
 
 //Xpetra
 #include "Xpetra_MapExtractor.hpp"
