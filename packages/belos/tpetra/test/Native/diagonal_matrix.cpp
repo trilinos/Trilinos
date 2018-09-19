@@ -291,6 +291,7 @@ namespace Impl {
   extern void register_CgPipeline (const bool verbose);
   extern void register_CgSingleReduce (const bool verbose);
   extern void register_Gmres (const bool verbose);
+  extern void register_GmresS (const bool verbose);  
   extern void register_GmresPipeline (const bool verbose);  
   extern void register_GmresSingleReduce (const bool verbose);
   extern void register_GmresSstep (const bool verbose);    
@@ -307,7 +308,8 @@ int main (int argc, char* argv[])
   BelosTpetra::Impl::register_CgSingleReduce (verbose);
   BelosTpetra::Impl::register_Gmres (verbose);
   BelosTpetra::Impl::register_GmresPipeline (verbose);
+  BelosTpetra::Impl::register_GmresS (verbose);
   BelosTpetra::Impl::register_GmresSingleReduce (verbose);
-  BelosTpetra::Impl::register_GmresSstep (verbose);      
+  BelosTpetra::Impl::register_GmresSstep (verbose);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }
