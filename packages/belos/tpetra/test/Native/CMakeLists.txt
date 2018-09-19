@@ -97,10 +97,10 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# TRIBITS_ADD_TEST(
-#   Tpetra_Native_solvers_nonsymm_matrix
-#   NAME Tpetra_Native_GMRES_S_STEP_nonsymm_matrix
-#   ARGS "--solver=\"TPETRA GMRES S-STEP\""
-#   COMM serial mpi
-#   STANDARD_PASS_OUTPUT
-#   )
+TRIBITS_ADD_TEST(
+  Tpetra_Native_solvers_nonsymm_matrix
+  NAME Tpetra_Native_GMRES_S_STEP_nonsymm_matrix
+  ARGS "--solver=\"TPETRA GMRES S-STEP\""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
