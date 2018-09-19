@@ -134,24 +134,25 @@ computeRitzValues (const int iter,
 template<class LO, class SC>
 void
 sortRitzValues (const LO m,
-                std::vector<SC>& RR)
+                std::vector<std::complex<typename Teuchos::ScalarTraits<SC>::magnitudeType>>& RR)
 {
   using STS = Teuchos::ScalarTraits<SC>;
   using real_type = typename STS::magnitudeType;
   using complex_type = std::complex<real_type>;
-  static_assert (std::is_same<SC, complex_type>::value,
-                 "SC != std::complex<real_type> in sortRitzValues");
+  using STC = Teuchos::ScalarTraits<complex_type>;
+  //static_assert (std::is_same<SC, complex_type>::value,
+  //               "SC != std::complex<real_type> in sortRitzValues");
 
   std::vector<complex_type> ritzValues (m);
 
   // the first Ritz is the largest
   LO i = 0;
   LO next_index = 0;
-  real_type next_value = STS::magnitude (RR[0]);
+  real_type next_value = STC::magnitude (RR[0]);
   for (int i = 1; i < m; ++i) {
-    if (next_value < STS::magnitude (RR[i])) {
+    if (next_value < STC::magnitude (RR[i])) {
       next_index = i;
-      next_value = STS::magnitude (RR[i]);
+      next_value = STC::magnitude (RR[i]);
     }
   }
   ritzValues[0] = RR[next_index];
@@ -167,8 +168,8 @@ sortRitzValues (const LO m,
         ritzValues[1] = ritzValues[0];
         RR[next_index-1] = RR[1];
       } else {
-        real_type val1 = STS::magnitude(STS::conjugate(RR[next_index-1]) - RR[next_index]);
-        real_type val2 = STS::magnitude(STS::conjugate(RR[next_index+1]) - RR[next_index]);
+        real_type val1 = STC::magnitude(STC::conjugate(RR[next_index-1]) - RR[next_index]);
+        real_type val2 = STC::magnitude(STC::conjugate(RR[next_index+1]) - RR[next_index]);
         if (val1 < val2) {
           ritzValues[1] = ritzValues[0];
           RR[next_index-1] = RR[1];
@@ -187,15 +188,15 @@ sortRitzValues (const LO m,
   // sort the rest of Ritz values
   for (; i < m; i++) {
     next_index = i;
-    next_value = STS::magnitude( RR[i] - ritzValues[0] );
+    next_value = STC::magnitude( RR[i] - ritzValues[0] );
     for (int j = 1;  j < i; j++ ) {
-      next_value *= STS::magnitude( RR[i] - ritzValues[j] );
+      next_value *= STC::magnitude( RR[i] - ritzValues[j] );
     }
 
     for (int k = i+1;  k < m; k++ ) {
-      real_type value = STS::magnitude( RR[k] - ritzValues[0] );
+      real_type value = STC::magnitude( RR[k] - ritzValues[0] );
       for (int j = 1;  j < i; j++ ) {
-        value *= STS::magnitude( RR[k] - ritzValues[j] );
+        value *= STC::magnitude( RR[k] - ritzValues[j] );
       }
       if (next_value < value) {
         next_value = value;
@@ -214,8 +215,8 @@ sortRitzValues (const LO m,
           ritzValues[i+1] = ritzValues[i];
           RR[next_index-1] = RR[i+1];
         } else {
-          real_type val1 = STS::magnitude(STS::conjugate(RR[next_index-1]) - ritzValues[i]);
-          real_type val2 = STS::magnitude(STS::conjugate(RR[next_index+1]) - ritzValues[i]);
+          real_type val1 = STC::magnitude(STC::conjugate(RR[next_index-1]) - ritzValues[i]);
+          real_type val2 = STC::magnitude(STC::conjugate(RR[next_index+1]) - ritzValues[i]);
           if (val1 < val2) {
             ritzValues[i+1] = ritzValues[i];
             RR[next_index-1] = RR[i+1];
@@ -635,7 +636,7 @@ protected:
         // Compute Ritz values, if requested
         if (input.computeRitzValues && output.numRests == 0) {
           computeRitzValues (iter, G, output.ritzValues);
-          sortRitzValues (iter, output.ritzValues);
+          sortRitzValues <LO, SC> (iter, output.ritzValues);
         }
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
