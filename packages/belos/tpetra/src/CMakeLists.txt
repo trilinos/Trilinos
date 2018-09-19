@@ -43,9 +43,10 @@ APPEND_SET(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgSingleReduce.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Gmres.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresS.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresSstep.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresPipeline.hpp  
-  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresSingleReduce.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresSstep.hpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresSingleReduce.hpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Krylov.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Krylov_parameters.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_SolverManager.hpp
@@ -56,8 +57,9 @@ APPEND_SET(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Cg.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgPipeline.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_CgSingleReduce.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Gmres.cpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresS.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresSstep.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Gmres.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresPipeline.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresSingleReduce.cpp
   )
