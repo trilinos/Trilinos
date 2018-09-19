@@ -11,7 +11,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ThyraTpetraCopyFiles
 )
 
 TRIBITS_ADD_TEST(
-    thyra_xpetra
+    thyra_tpetra
     NAME test_thyra_tpetra
     COMM mpi
     NUM_MPI_PROCS 4
