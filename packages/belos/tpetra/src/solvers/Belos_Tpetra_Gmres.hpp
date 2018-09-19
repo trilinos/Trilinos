@@ -139,20 +139,16 @@ sortRitzValues (const LO m,
   using STS = Teuchos::ScalarTraits<SC>;
   using real_type = typename STS::magnitudeType;
   using complex_type = std::complex<real_type>;
-  using STC = Teuchos::ScalarTraits<complex_type>;
-  //static_assert (std::is_same<SC, complex_type>::value,
-  //               "SC != std::complex<real_type> in sortRitzValues");
-
   std::vector<complex_type> ritzValues (m);
 
   // the first Ritz is the largest
   LO i = 0;
   LO next_index = 0;
-  real_type next_value = STC::magnitude (RR[0]);
+  real_type next_value = std::abs (RR[0]);
   for (int i = 1; i < m; ++i) {
-    if (next_value < STC::magnitude (RR[i])) {
+    if (next_value < std::abs (RR[i])) {
       next_index = i;
-      next_value = STC::magnitude (RR[i]);
+      next_value = std::abs (RR[i]);
     }
   }
   ritzValues[0] = RR[next_index];
@@ -168,8 +164,8 @@ sortRitzValues (const LO m,
         ritzValues[1] = ritzValues[0];
         RR[next_index-1] = RR[1];
       } else {
-        real_type val1 = STC::magnitude(STC::conjugate(RR[next_index-1]) - RR[next_index]);
-        real_type val2 = STC::magnitude(STC::conjugate(RR[next_index+1]) - RR[next_index]);
+        real_type val1 = std::abs(std::conj(RR[next_index-1]) - RR[next_index]);
+        real_type val2 = std::abs(std::conj(RR[next_index+1]) - RR[next_index]);
         if (val1 < val2) {
           ritzValues[1] = ritzValues[0];
           RR[next_index-1] = RR[1];
@@ -188,15 +184,15 @@ sortRitzValues (const LO m,
   // sort the rest of Ritz values
   for (; i < m; i++) {
     next_index = i;
-    next_value = STC::magnitude( RR[i] - ritzValues[0] );
+    next_value = std::abs( RR[i] - ritzValues[0] );
     for (int j = 1;  j < i; j++ ) {
-      next_value *= STC::magnitude( RR[i] - ritzValues[j] );
+      next_value *= std::abs( RR[i] - ritzValues[j] );
     }
 
     for (int k = i+1;  k < m; k++ ) {
-      real_type value = STC::magnitude( RR[k] - ritzValues[0] );
+      real_type value = std::abs( RR[k] - ritzValues[0] );
       for (int j = 1;  j < i; j++ ) {
-        value *= STC::magnitude( RR[k] - ritzValues[j] );
+        value *= std::abs( RR[k] - ritzValues[j] );
       }
       if (next_value < value) {
         next_value = value;
@@ -215,8 +211,8 @@ sortRitzValues (const LO m,
           ritzValues[i+1] = ritzValues[i];
           RR[next_index-1] = RR[i+1];
         } else {
-          real_type val1 = STC::magnitude(STC::conjugate(RR[next_index-1]) - ritzValues[i]);
-          real_type val2 = STC::magnitude(STC::conjugate(RR[next_index+1]) - ritzValues[i]);
+          real_type val1 = std::abs(std::conj(RR[next_index-1]) - ritzValues[i]);
+          real_type val2 = std::abs(std::conj(RR[next_index+1]) - ritzValues[i]);
           if (val1 < val2) {
             ritzValues[i+1] = ritzValues[i];
             RR[next_index-1] = RR[i+1];
