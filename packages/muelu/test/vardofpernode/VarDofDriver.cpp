@@ -351,7 +351,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     GlobalOrdinal nGlobalDof = 0;
     GlobalOrdinal nLocalDofs = Teuchos::as<GlobalOrdinal>(nDofs);
 
-    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,comm->getSize(),&nLocalDofs,&nGlobalDof);
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,1,&nLocalDofs,&nGlobalDof);
 
     Teuchos::RCP<const Map> dofLinearMap = Teuchos::null;
     {
