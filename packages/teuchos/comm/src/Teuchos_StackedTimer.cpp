@@ -195,7 +195,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if ( options.output_minmax && active_[i]>1) {
       os << " {min="<<min_[i]<<", max="<<max_[i];
       if (active_[i]>1)
-        os<<", std dev="<<sqrt((sum_sq_[i]-sum_[i]*sum_[i]/active_[i])/(active_[i]-1));
+        os<<", std dev="<<sqrt(std::max<double>(sum_sq_[i]-sum_[i]*sum_[i]/active_[i],0.0)/(active_[i]-1));
       os << "}";
     }
     // Output histogram
