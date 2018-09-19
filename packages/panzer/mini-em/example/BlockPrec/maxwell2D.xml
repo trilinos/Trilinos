@@ -110,7 +110,7 @@
       </ParameterList>
       <!-- Conductivity -->
       <ParameterList name="sigma">
-        <Parameter name="Type" type="string" value="CONDUCTIVITY"/>
+        <Parameter name="Type" type="string" value="TENSOR CONDUCTIVITY"/>
         <Parameter name="sigma" type="double" value="0.0"/>
         <Parameter name="DoF Name" type="string" value="E_edge"/>
       </ParameterList>

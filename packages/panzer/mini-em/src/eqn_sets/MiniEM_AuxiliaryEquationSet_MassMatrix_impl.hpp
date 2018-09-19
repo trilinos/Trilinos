@@ -117,16 +117,6 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Multiplier", multiplier);
       if (fieldMultipliers != Teuchos::null)
         p.set("Field Multipliers", fieldMultipliers);
-      // string resName("AUX_MASS_RESIDUAL_" + dof_name), valName(dof_name);
-      // RCP<Evaluator<Traits>> op;
-      // if (fieldMultipliers != Teuchos::null)
-      //   op = rcp(new
-      //            Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
-      //                                                       resName, valName, *basis, *ir, multiplier, *fieldMultipliers));
-      // else
-      //   op = rcp(new
-      //            Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
-      //                                                       resName, valName, *basis, *ir, multiplier));
       RCP<Evaluator<Traits>> op = rcp(new
         Integrator_BasisTimesScalar<EvalT, Traits>(p));
       fm.template registerEvaluator<EvalT>(op);

@@ -16,6 +16,7 @@
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_TransientBasisTimesScalar.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
+#include "Panzer_Integrator_BasisTimesTensorTimesVector.hpp"
 #include "Panzer_Integrator_CurlBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
@@ -133,12 +134,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Value Name", m_Efield_dof_name);
       p.set("Basis", basis);
       p.set("IR", ir);
-      p.set("Multiplier", 1.0);
-      const std::vector<std::string> fieldMultiplier = {conductivity_};
-      p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
-
-      RCP< PHX::Evaluator<panzer::Traits> > op =
-          rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+      p.set("Tensor Name", conductivity_);
+      RCP<PHX::Evaluator<panzer::Traits> > op =
+        rcp(new panzer::Integrator_BasisTimesTensorTimesVector<EvalT, panzer::Traits>(p));
 
       this->template registerEvaluator<EvalT>(fm, op);
       residual_operator_names.push_back(resid);

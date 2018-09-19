@@ -19,6 +19,7 @@
 #include "MiniEM_InversePermeability.hpp"
 #include "MiniEM_Permittivity.hpp"
 #include "MiniEM_Conductivity.hpp"
+#include "MiniEM_TensorConductivity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -131,6 +132,15 @@ buildClosureModels(const std::string& model_id,
         std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::Conductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="TENSOR CONDUCTIVITY") {
+        double sigma = plist.get<double>("sigma");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::TensorConductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
 	evaluators->push_back(e);
 
         found = true;
