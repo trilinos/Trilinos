@@ -34,13 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
+// Questions? Contact Christian Hochmuth (c.hochmuth@uni-koeln.de)
 //
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_TWOLEVELPRECONDITIONER_DECL_HPP
-#define _FROSCH_TWOLEVELPRECONDITIONER_DECL_HPP
+#ifndef _FROSCH_TWOLEVELBLOCKPRECONDITIONER_DECL_HPP
+#define _FROSCH_TWOLEVELBLOCKPRECONDITIONER_DECL_HPP
 
 #include <FROSch_OneLevelPreconditioner_def.hpp>
 
@@ -50,16 +50,18 @@ namespace FROSch {
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
     class GO = typename Xpetra::Operator<SC, LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC, LO, GO>::node_type>
-    class TwoLevelPreconditioner : public OneLevelPreconditioner<SC,LO,GO,NO> {
+    class TwoLevelBlockPreconditioner : public OneLevelPreconditioner<SC,LO,GO,NO> {
         
     public:
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtr MapPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
 
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
+        typedef typename Teuchos::ArrayRCP<MultiVectorPtr>                  MultiVectorPtrVecPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
 
@@ -70,36 +72,29 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::IPOUHarmonicCoarseOperatorPtr IPOUHarmonicCoarseOperatorPtr;
         
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UN UN;
-        
-        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
-        
-        
-        TwoLevelPreconditioner(CrsMatrixPtr k,
-                               ParameterListPtr parameterList);
 
-        int initialize(bool useDefaultParameters = true);
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVec GOVec;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVec2D GOVec2D;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
+        typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
+        typedef typename Teuchos::ArrayRCP<DofOrdering> DofOrderingVecPtr;
+        
+        TwoLevelBlockPreconditioner(CrsMatrixPtr k,
+                                    ParameterListPtr parameterList);
+        
         
         int initialize(UN dimension,
-                       int overlap,
-                       UN dofsPerNode,
-                       DofOrdering dofOrdering);
-        
-        int initialize(UN dimension,
-                       int overlap,
-                       MapPtr repeatedMap,
-                       UN dofsPerNode,
-                       DofOrdering dofOrdering,
-                       MultiVectorPtr nodeList = Teuchos::null);
-        
-        int initialize(UN dimension,
-                       UN dofsPerNode,
+                       UNVecPtr dofsPerNodeVec,
+                       DofOrderingVecPtr dofOrderingVec,
+                       GOVecPtr blockMaxGIDVec,
                        int overlap = -1,
-                       MultiVectorPtr nullSpaceBasis = Teuchos::null,
-                       MultiVectorPtr nodeList = Teuchos::null,
-                       DofOrdering dofOrdering = NodeWise,
-                       MapPtr repeatedMap = Teuchos::null,
-                       MapPtrVecPtr dofsMaps = Teuchos::null,
-                       GOVecPtr dirichletBoundaryDofs = Teuchos::null);
+                       MapPtrVecPtr repeatedMapVec = Teuchos::null,                       
+                       MultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,
+                       MultiVectorPtrVecPtr nodeListVec = Teuchos::null,
+                       MapPtrVecPtr2D dofsMapsVec = Teuchos::null,
+                       GOVecPtr2D dirichletBoundaryDofsVec = Teuchos::null);
         
         int compute();
         
@@ -110,6 +105,7 @@ namespace FROSch {
         
         int resetMatrix(CrsMatrixPtr &k);
         
+        int preApplyCoarse(MultiVectorPtr &x,MultiVectorPtr &y);
     protected:
         
         CoarseOperatorPtr CoarseOperator_;

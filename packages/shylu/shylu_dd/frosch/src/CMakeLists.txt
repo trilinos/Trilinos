@@ -76,6 +76,8 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_HarmonicCoarseOperator_def.hpp
   SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_decl.hpp
   SchwarzOperators/FROSch_IPOUHarmonicCoarseOperator_def.hpp
+  SchwarzOperators/FROSch_MultiplicativeOperator_decl.hpp
+  SchwarzOperators/FROSch_MultiplicativeOperator_def.hpp
   SchwarzOperators/FROSch_OverlappingOperator_decl.hpp
   SchwarzOperators/FROSch_OverlappingOperator_def.hpp
   SchwarzOperators/FROSch_RGDSWCoarseOperator_decl.hpp
@@ -94,6 +96,8 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_decl.hpp
+  SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp

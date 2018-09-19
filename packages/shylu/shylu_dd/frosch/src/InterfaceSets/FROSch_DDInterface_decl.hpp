@@ -91,6 +91,7 @@ namespace FROSch {
         typedef Teuchos::ArrayRCP<LO> LOVecPtr;
         
         typedef Teuchos::Array<GO> GOVec;
+        typedef Teuchos::ArrayView<const GO> ConstGOVecView;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         typedef Teuchos::ArrayView<GO> GOVecView;
         typedef Teuchos::Array<GOVec> GOVecVec;
@@ -147,10 +148,14 @@ namespace FROSch {
         
         
     protected:
-        
+#ifdef FROSCH_OFFSET_MAPS
+        int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
+                                       GOVecVec &componentsSubdomainsUnique,
+                                       UN priorDofsPerNode = 0);
+#else
         int communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
                                        GOVecVec &componentsSubdomainsUnique);
-        
+#endif
         int identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
                                     GOVecVec &componentsSubdomainsUnique);
         

@@ -45,6 +45,7 @@
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Export.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
@@ -95,7 +96,8 @@ namespace FROSch {
         typedef Xpetra::Export<LO,GO,NO> Exporter;
         typedef Teuchos::RCP<Exporter> ExporterPtr;
         typedef Teuchos::ArrayRCP<ExporterPtr> ExporterPtrVecPtr;
-        
+
+        typedef Teuchos::ParameterList ParameterList;
         typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
         typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
@@ -122,16 +124,19 @@ namespace FROSch {
         typedef Teuchos::Array<LO> LOVec;
         typedef Teuchos::ArrayRCP<LO> LOVecPtr;
         typedef Teuchos::ArrayView<LO> LOVecView;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
+        typedef Teuchos::ArrayView<const LO> ConstLOVecView;
+        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;        
         
         typedef Teuchos::Array<GO> GOVec;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         typedef Teuchos::ArrayView<GO> GOVecView;
         typedef Teuchos::ArrayView<const GO> ConstGOVecView;
+        typedef Teuchos::Array<GOVec> GOVec2D;
         typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
         
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
+        typedef Teuchos::ArrayRCP<const SC> ConstSCVecPtr;
         typedef Teuchos::ArrayView<const SC> ConstSCVecView;
         
         typedef Teuchos::Array<bool> BoolVec;
@@ -176,6 +181,7 @@ namespace FROSch {
         
         bool isComputed() const;
         
+        int resetMatrix(CrsMatrixPtr &k);
         
     protected:
         
