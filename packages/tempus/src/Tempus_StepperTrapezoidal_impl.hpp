@@ -65,6 +65,7 @@ void StepperTrapezoidal<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperTrapezoidal::initialize()\n");
 
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
   this->setObserver();
 }
@@ -128,9 +129,9 @@ void StepperTrapezoidal<Scalar>::takeStep(
       timeDer->compute(x, xDot);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

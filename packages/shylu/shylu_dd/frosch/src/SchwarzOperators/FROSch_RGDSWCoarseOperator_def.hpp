@@ -75,7 +75,7 @@ namespace FROSch {
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",false);
         int option = coarseSpaceList->get("Option",1);
         bool useRotations = coarseSpaceList->get("Rotations",true);
-        
+
         if (useRotations && nodeList.is_null()) {
             FROSCH_ASSERT(option==1,"Only option 1 can be constructed without a valid node list.");
             useRotations = false;
@@ -84,14 +84,16 @@ namespace FROSch {
         
         this->DofsMaps_[blockId] = dofsMaps;
         this->DofsPerNode_[blockId] = dofsPerNode;
-        
+
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
         
         this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap));
         this->DDInterface_->resetGlobalDofs(dofsMaps);
         this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
-        this->DDInterface_->divideUnconnectedEntities(this->K_);
+        if (this->ParameterList_->get("Test Unconnected Interface",true)) {
+            this->DDInterface_->divideUnconnectedEntities(this->K_);
+        }
         
         EntitySetPtr vertices,edges,faces,interface,interior,AncestorVertices,AncestorEdges,AncestorFaces;
         MapPtr AncestorVerticesMap,AncestorEdgesMap,AncestorFacesMap;
@@ -188,7 +190,7 @@ namespace FROSch {
                     numEntitiesGlobal[i] = 0;
                 }
             }
-            
+
             if (this->MpiComm_->getRank() == 0) {
                 std::cout << "\n\
                 --------------------------------------------\n\
@@ -199,17 +201,16 @@ namespace FROSch {
                 Coarse space:\n\
                 --------------------------------------------\n\
                 vertices: translations      --- " << 1 << "\n\
-                vertices: rotations         --- " << 1 << "\n\
+                vertices: rotations         --- " << useRotations << "\n\
                 --------------------------------------------\n";
             }
-            
+            this->BlockCoarseDimension_[blockId] = numEntitiesGlobal[0];
             LOVecPtr2D partMappings;
             this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
-            
             ////////////////////
             // Build PhiGamma //
             ////////////////////
-            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);            
+            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);
         }
         
         return 0;
@@ -231,23 +232,10 @@ namespace FROSch {
             FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         }
         
-        //Epetra_SerialComm serialComm;
         MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
         this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
         
-        //int tmp=0;
-        
-        /*
-         Die Schleife ist noch nicht korrekt. Vermutlich muss man zweimal durchgehen: Einmal um herauszufinden welche Werte auf die Kanten und Flächen gesetzt werden müssen
-         und beim zweiten Mal, um die Werte zu setzen.
-         Außerdem sind im Moment noch zu viel Nullen im Vektor und die Länge des Vektors sollte man überprüfen... Wobei die Länge ist wahrscheinlich korrekt -> 3D
-         
-         PartMappings[itmp]->at(i) dann steht itmp für vertices (translation1=0, translation2=1, translation3=2, rotation1=3, rotation2=4, rotation3=5), edges (translation1=6, ...), faces (...)
-         und i für die Nummer des Vertex, der Edge, etc.
-         */
-        //vector<double> faceVert(faces->getNumEntities());
-        //vector<double> edgeValues(edges->getNumEntities());
-        
+
         LO itmp=0;
         SC x,y,z,rx,ry,rz;
         SC edgeValue;

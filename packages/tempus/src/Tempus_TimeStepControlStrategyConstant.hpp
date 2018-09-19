@@ -46,7 +46,6 @@ public:
      const Scalar errorRel = metaData->getErrorRel();
      int order = metaData->getOrder();
      Scalar dt = metaData->getDt();
-     RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
      bool printChanges = solutionHistory->getVerbLevel() !=
         Teuchos::as<int>(Teuchos::VERB_NONE);
 
@@ -64,7 +63,7 @@ public:
      };
 
      // Stepper failure
-     if (stepperState->stepperStatus_ == Status::FAILED) {
+     if (workingState->getSolutionStatus() == Status::FAILED) {
         if (order+1 <= tsc.getMaxOrder()) {
            if (printChanges) *out << changeOrder(order, order+1,
                  "Stepper failure, increasing order.");

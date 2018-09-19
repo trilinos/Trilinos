@@ -153,6 +153,12 @@ LOCA::Solver::Wrapper::getListPtr() const
   return constSolverPtr->getListPtr();
 }
 
+Teuchos::RCP<const NOX::SolverStats>
+LOCA::Solver::Wrapper::getSolverStatistics() const
+{
+  return constSolverPtr->getSolverStatistics();
+}
+
 void
 LOCA::Solver::Wrapper::resetWrapper()
 {

@@ -62,7 +62,6 @@
 #include <cmath>
 
 namespace {
-  static const double defaultEpsilon = 1e-10;
   bool verbose = false;
   std::string matnamesFile;
 
@@ -854,7 +853,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     if(numProcs > 0 && comm->getSize() != numProcs)
       throw std::runtime_error("Test requires exactly " + std::to_string(numProcs) +" MPI ranks.");
 
-    double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
+    double epsilon = currentSystem.get<double> ("epsilon",
+                                       100. * Teuchos::ScalarTraits<SC>::eps());
     std::string op = currentSystem.get<std::string> ("op");
 
     RCP<Matrix_t> A, B, C, D;
@@ -1196,6 +1196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     newOut << "\tcNorm: " << results.cNorm << endl;
     newOut << "\tcompNorm: " << results.compNorm << endl;
   }
+  const double defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
   TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
   newOut << "Create identity2" << endl;
@@ -1396,6 +1397,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
     newOut << "\tcNorm: " << results.cNorm << endl;
     newOut << "\tcompNorm: " << results.compNorm << endl;
   }
+  const double defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
   TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
   const int lclSuccess = success ? 1 : 0;

@@ -62,6 +62,7 @@ extern "C" {
 #include "Ioss_NodeBlock.h"
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
+#include "Ioss_Region.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_VariableType.h"
@@ -87,11 +88,11 @@ namespace {
   int conditional_define_variable(int exodusFilePtr, const char *var, int dimid, int *varid,
                                   nc_type type);
 
-  size_t max_string_length() { return MAX_STR_LENGTH; }
-  int    put_int_array(int exoid, const char *var_type, const std::vector<int> &array);
-  int    put_id_array(int exoid, const char *var_type, const std::vector<entity_id> &ids);
-  int    define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension,
-                                int dim_dim, int str_dim);
+  constexpr size_t max_string_length() { return MAX_STR_LENGTH; }
+  int              put_int_array(int exoid, const char *var_type, const std::vector<int> &array);
+  int              put_id_array(int exoid, const char *var_type, const std::vector<entity_id> &ids);
+  int define_coordinate_vars(int exodusFilePtr, int64_t nodes, int node_dim, int dimension,
+                             int dim_dim, int str_dim);
   template <typename T>
   int output_names(const std::vector<T> &entities, int exoid, ex_entity_type ent_type);
   template <typename T> size_t get_max_name_length(const std::vector<T> &entities, size_t old_max);
@@ -299,7 +300,7 @@ ElemBlock::ElemBlock(const Ioss::ElementBlock &other)
   // stays the same, the 3D name becomes 'trishell#'
   // Here, we need to map back to the 'triangle' name...
   if (std::strncmp(elType, "trishell", 8) == 0) {
-    std::strncpy(elType, "triangle", 8);
+    std::strncpy(elType, "triangle", max_string_length());
   }
   procOffset = 0;
 }
@@ -483,6 +484,471 @@ Internals::Internals(int exoid, int maximum_name_length, const Ioss::ParallelUti
     : exodusFilePtr(exoid), nodeMapVarID(), elementMapVarID(),
       maximumNameLength(maximum_name_length), parallelUtil(util)
 {
+}
+
+int Internals::initialize_state_file(Ioss::Region &region, const ex_var_params &var_params,
+                                     const std::string &base_filename)
+{
+  // Now need to add a few dimensions to the file...
+  char                   errmsg[MAX_ERR_LENGTH];
+  std::vector<entity_id> edge_blk_id;
+  std::vector<int>       edge_blk_status;
+  std::vector<entity_id> face_blk_id;
+  std::vector<int>       face_blk_status;
+  std::vector<entity_id> elem_blk_id;
+  std::vector<int>       elem_blk_status;
+  std::vector<entity_id> node_set_id;
+  std::vector<int>       node_set_status;
+  std::vector<entity_id> edge_set_id;
+  std::vector<int>       edge_set_status;
+  std::vector<entity_id> face_set_id;
+  std::vector<int>       face_set_status;
+  std::vector<entity_id> elem_set_id;
+  std::vector<int>       elem_set_status;
+  std::vector<entity_id> side_set_id;
+  std::vector<int>       side_set_status;
+
+  {
+    Redefine the_database(exodusFilePtr);
+    int      old_fill = 0;
+
+    int status = nc_set_fill(exodusFilePtr, NC_NOFILL, &old_fill);
+    if (status != EX_NOERR) {
+      return (EX_FATAL);
+    }
+
+    status = nc_put_att_text(exodusFilePtr, NC_GLOBAL, "base_database",
+                             static_cast<int>(base_filename.length()) + 1, base_filename.c_str());
+
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg, "Error: failed to define 'base_database' attribute to file id %d",
+              exodusFilePtr);
+      ex_err(__func__, errmsg, status);
+      return (EX_FATAL);
+    }
+
+    // Time Dimension...
+    int timedim;
+    if ((status = nc_def_dim(exodusFilePtr, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
+      sprintf(errmsg, "Error: failed to define time dimension in file id %d", exodusFilePtr);
+      ex_err(__func__, errmsg, status);
+      return (EX_FATAL);
+    }
+
+    // Name String Length...
+    int namestrdim;
+    status = nc_def_dim(exodusFilePtr, DIM_STR_NAME, maximumNameLength + 1, &namestrdim);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      sprintf(errmsg, "Error: failed to define 'name string length' in file id %d", exodusFilePtr);
+      ex_err(__func__, errmsg, status);
+      return (EX_FATAL);
+    }
+
+    // Nodes (Node Block) ...
+    if (var_params.num_node > 0) {
+      int    numnoddim;
+      size_t node_count = region.get_property("node_count").get_int();
+      status            = nc_def_dim(exodusFilePtr, DIM_NUM_NODES, node_count, &numnoddim);
+      if (status != NC_NOERR) {
+        ex_opts(EX_VERBOSE);
+        sprintf(errmsg, "Error: failed to define number of nodes in file id %d", exodusFilePtr);
+        ex_err(__func__, errmsg, status);
+        return (EX_FATAL);
+      }
+    }
+
+    // Edge Blocks...
+    if (var_params.num_edge > 0) {
+      const Ioss::EdgeBlockContainer &edge_blocks = region.get_edge_blocks();
+
+      if (define_netcdf_vars(exodusFilePtr, "edge block", edge_blocks.size(), DIM_NUM_ED_BLK,
+                             VAR_STAT_ED_BLK, VAR_ID_ED_BLK, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iblk = 0;
+      for (const auto &block : edge_blocks) {
+        size_t edge_count = block->get_property("entity_count").get_int();
+        edge_blk_id.push_back(block->get_property("id").get_int());
+        edge_blk_status.push_back(edge_count > 0 ? 1 : 0);
+
+        int ndim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_ED_IN_EBLK(iblk + 1), edge_count, &ndim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: edge block %" PRId64 " already defined in file id %d",
+                    edge_blk_id[iblk], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of edges/block for block %" PRId64
+                    " file id %d",
+                    edge_blk_id[iblk], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+
+        iblk++;
+      }
+    }
+
+    // Face Blocks...
+    if (var_params.num_face > 0) {
+      const Ioss::FaceBlockContainer &face_blocks = region.get_face_blocks();
+
+      if (define_netcdf_vars(exodusFilePtr, "face block", face_blocks.size(), DIM_NUM_FA_BLK,
+                             VAR_STAT_FA_BLK, VAR_ID_FA_BLK, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iblk = 0;
+      for (const auto &block : face_blocks) {
+        size_t face_count = block->get_property("entity_count").get_int();
+        face_blk_id.push_back(block->get_property("id").get_int());
+        face_blk_status.push_back(face_count > 0 ? 1 : 0);
+
+        int ndim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_FA_IN_FBLK(iblk + 1), face_count, &ndim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: face block %" PRId64 " already defined in file id %d",
+                    face_blk_id[iblk], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of faces/block for block %" PRId64
+                    " file id %d",
+                    face_blk_id[iblk], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+
+        iblk++;
+      }
+    }
+
+    // Element Blocks...
+    if (var_params.num_elem > 0) {
+      const Ioss::ElementBlockContainer &element_blocks = region.get_element_blocks();
+
+      if (define_netcdf_vars(exodusFilePtr, "element block", element_blocks.size(), DIM_NUM_EL_BLK,
+                             VAR_STAT_EL_BLK, VAR_ID_EL_BLK, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iblk = 0;
+      for (const auto &block : element_blocks) {
+        size_t element_count = block->get_property("entity_count").get_int();
+        elem_blk_id.push_back(block->get_property("id").get_int());
+        elem_blk_status.push_back(element_count > 0 ? 1 : 0);
+
+        int ndim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_EL_IN_BLK(iblk + 1), element_count, &ndim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: element block %" PRId64 " already defined in file id %d",
+                    elem_blk_id[iblk], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of elements/block for block %" PRId64
+                    " file id %d",
+                    elem_blk_id[iblk], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+
+        iblk++;
+      }
+    }
+
+    // Node Sets...
+    if (var_params.num_nset > 0) {
+      const auto &node_sets = region.get_nodesets();
+
+      if (define_netcdf_vars(exodusFilePtr, "node set", node_sets.size(), DIM_NUM_NS, VAR_NS_STAT,
+                             VAR_NS_IDS, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iset = 0;
+      for (const auto &set : node_sets) {
+        size_t node_count = set->get_property("entity_count").get_int();
+        node_set_id.push_back(set->get_property("id").get_int());
+        node_set_status.push_back(node_count > 0 ? 1 : 0);
+
+        int nsdim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_NOD_NS(iset + 1), node_count, &nsdim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: node set %" PRId64 " already defined in file id %d",
+                    node_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of nodes/set for set %" PRId64 " file id %d",
+                    node_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+        iset++;
+      }
+    }
+
+    // Edge Sets...
+    if (var_params.num_eset > 0) {
+      const auto &edge_sets = region.get_edgesets();
+
+      if (define_netcdf_vars(exodusFilePtr, "edge set", edge_sets.size(), DIM_NUM_ES, VAR_ES_STAT,
+                             VAR_ES_IDS, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iset = 0;
+      for (const auto &set : edge_sets) {
+        size_t edge_count = set->get_property("entity_count").get_int();
+        edge_set_id.push_back(set->get_property("id").get_int());
+        edge_set_status.push_back(edge_count > 0 ? 1 : 0);
+
+        int nsdim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_EDGE_ES(iset + 1), edge_count, &nsdim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: edge set %" PRId64 " already defined in file id %d",
+                    edge_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of edges/set for set %" PRId64 " file id %d",
+                    edge_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+        iset++;
+      }
+    }
+
+    // Face Sets...
+    if (var_params.num_fset > 0) {
+      const auto &face_sets = region.get_facesets();
+
+      if (define_netcdf_vars(exodusFilePtr, "face set", face_sets.size(), DIM_NUM_FS, VAR_FS_STAT,
+                             VAR_FS_IDS, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iset = 0;
+      for (const auto &set : face_sets) {
+        size_t face_count = set->get_property("entity_count").get_int();
+        face_set_id.push_back(set->get_property("id").get_int());
+        face_set_status.push_back(face_count > 0 ? 1 : 0);
+
+        int nsdim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_FACE_FS(iset + 1), face_count, &nsdim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: face set %" PRId64 " already defined in file id %d",
+                    face_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of faces/set for set %" PRId64 " file id %d",
+                    face_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+        iset++;
+      }
+    }
+
+    // Element Sets...
+    if (var_params.num_elset > 0) {
+      const auto &element_sets = region.get_elementsets();
+
+      if (define_netcdf_vars(exodusFilePtr, "element set", element_sets.size(), DIM_NUM_ELS,
+                             VAR_ELS_STAT, VAR_ELS_IDS, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iset = 0;
+      for (const auto &set : element_sets) {
+        size_t element_count = set->get_property("entity_count").get_int();
+        elem_set_id.push_back(set->get_property("id").get_int());
+        elem_set_status.push_back(element_count > 0 ? 1 : 0);
+
+        int nsdim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_ELE_ELS(iset + 1), element_count, &nsdim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: element set %" PRId64 " already defined in file id %d",
+                    elem_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of elements/set for set %" PRId64 " file id %d",
+                    elem_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+        iset++;
+      }
+    }
+
+    // Side Sets (Surfaces) ...
+    if (var_params.num_sset > 0) {
+      const auto &side_sets = region.get_sidesets();
+
+      if (define_netcdf_vars(exodusFilePtr, "side set", side_sets.size(), DIM_NUM_SS, VAR_SS_STAT,
+                             VAR_SS_IDS, nullptr) != NC_NOERR) {
+        return (EX_FATAL);
+      }
+
+      int iset = 0;
+      for (const auto &set : side_sets) {
+        size_t side_count = set->get_property("entity_count").get_int();
+        side_set_id.push_back(set->get_property("id").get_int());
+        side_set_status.push_back(side_count > 0 ? 1 : 0);
+
+        int ssdim;
+        status = nc_def_dim(exodusFilePtr, DIM_NUM_SIDE_SS(iset + 1), side_count, &ssdim);
+        if (status != NC_NOERR) {
+          if (status == NC_ENAMEINUSE) { // duplicate entry
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg, "Error: side set %" PRId64 " already defined in file id %d",
+                    side_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          else {
+            ex_opts(EX_VERBOSE);
+            sprintf(errmsg,
+                    "Error: failed to define number of sides/set for set %" PRId64 " file id %d",
+                    side_set_id[iset], exodusFilePtr);
+            ex_err(__func__, errmsg, status);
+          }
+          return (EX_FATAL);
+        }
+        iset++;
+      }
+    }
+
+    int varid;
+    int dim[1];
+    dim[0] = timedim;
+    if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim,
+                             &varid)) != NC_NOERR) {
+      sprintf(errmsg, "Error: failed to define whole time step variable in file id %d",
+              exodusFilePtr);
+      ex_err(__func__, errmsg, status);
+      return (EX_FATAL);
+    }
+
+    struct ex_file_item *file = ex_find_file_item(exodusFilePtr);
+    file->time_varid          = varid;
+  } // Exit redefine mode
+
+  if (var_params.num_edge > 0) {
+    if (put_id_array(exodusFilePtr, VAR_ID_ED_BLK, edge_blk_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_STAT_ED_BLK, edge_blk_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_face > 0) {
+    if (put_id_array(exodusFilePtr, VAR_ID_FA_BLK, face_blk_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_STAT_FA_BLK, face_blk_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_elem > 0) {
+    if (put_id_array(exodusFilePtr, VAR_ID_EL_BLK, elem_blk_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_STAT_EL_BLK, elem_blk_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_nset > 0) {
+    if (put_id_array(exodusFilePtr, VAR_NS_IDS, node_set_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_NS_STAT, node_set_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_eset > 0) {
+    if (put_id_array(exodusFilePtr, VAR_ES_IDS, edge_set_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_ES_STAT, edge_set_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_fset > 0) {
+    if (put_id_array(exodusFilePtr, VAR_FS_IDS, face_set_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_FS_STAT, face_set_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_elset > 0) {
+    if (put_id_array(exodusFilePtr, VAR_ELS_IDS, elem_set_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_ELS_STAT, elem_set_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  if (var_params.num_sset > 0) {
+    if (put_id_array(exodusFilePtr, VAR_SS_IDS, side_set_id) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+    if (put_int_array(exodusFilePtr, VAR_SS_STAT, side_set_status) != NC_NOERR) {
+      return (EX_FATAL);
+    }
+  }
+
+  return EX_NOERR;
 }
 
 int Internals::write_meta_data(Mesh &mesh)
@@ -3593,15 +4059,16 @@ namespace {
       return (EX_FATAL);
     }
 
-    dim[0] = dimid;
-    dim[1] = namestrdim;
-
-    status = nc_def_var(exoid, name_var, NC_CHAR, 2, dim, &varid);
-    if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      sprintf(errmsg, "Error: failed to define %s name array in file id %d", type, exoid);
-      ex_err(__func__, errmsg, status);
-      return (EX_FATAL);
+    if (name_var) {
+      dim[0] = dimid;
+      dim[1] = namestrdim;
+      status = nc_def_var(exoid, name_var, NC_CHAR, 2, dim, &varid);
+      if (status != NC_NOERR) {
+        ex_opts(EX_VERBOSE);
+        sprintf(errmsg, "Error: failed to define %s name array in file id %d", type, exoid);
+        ex_err(__func__, errmsg, status);
+        return (EX_FATAL);
+      }
     }
     return (EX_NOERR);
   }

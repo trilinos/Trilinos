@@ -52,19 +52,19 @@
 #define NOX_SOLVER_GENERIC_H
 
 #include "NOX_StatusTest_Generic.H"  // for NOX::StatusTest::StatusType
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace Teuchos {
   class ParameterList;
 }
 namespace NOX {
+  class SolverStats;
   namespace Abstract {
     class Vector;
     class Group;
   }
 }
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Assert.hpp"
 
 namespace NOX {
 
@@ -147,6 +147,9 @@ public:
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const = 0;
 
   //@}
+
+  //! Return a RCP to the solver statistics.
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const = 0;
 
 };
 } // namespace Solver

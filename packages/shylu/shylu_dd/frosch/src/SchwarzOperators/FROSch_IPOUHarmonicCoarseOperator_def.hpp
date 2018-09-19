@@ -73,6 +73,21 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
+    int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::initialize(UN dimension,
+                                                            UNVecPtr dofsPerNodeVec,
+                                                            MapPtrVecPtr repeatedNodesMapVec,
+                                                            MapPtrVecPtr2D repeatedDofMapsVec,
+                                                            MultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                            MultiVectorPtrVecPtr nodeListVec,
+                                                            GOVecPtr2D dirichletBoundaryDofsVec)
+    {
+        buildCoarseSpace(dimension,dofsPerNodeVec,repeatedNodesMapVec,repeatedDofMapsVec,nullSpaceBasisVec,dirichletBoundaryDofsVec,nodeListVec);
+        this->IsInitialized_ = true;
+        this->IsComputed_ = false;
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
     void IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                             const Teuchos::EVerbosityLevel verbLevel) const
     {
@@ -104,11 +119,37 @@ namespace FROSch {
         this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
         this->DofsMaps_.resize(this->DofsMaps_.size()+1);
         this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-        
+        this->BlockCoarseDimension_.resize(this->BlockCoarseDimension_.size()+1);
         this->NumberOfBlocks_++;
         
         return resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
     }
+    
+    template <class SC,class LO,class GO,class NO>
+    int IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::buildCoarseSpace(UN dimension,
+                                                                  UNVecPtr dofsPerNodeVec,
+                                                                  MapPtrVecPtr repeatedNodesMapVec,
+                                                                  MapPtrVecPtr2D repeatedDofMapsVec,
+                                                                  MultiVectorPtrVecPtr nullSpaceBasisVec,
+                                                                  GOVecPtr2D dirichletBoundaryDofsVec,
+                                                                  MultiVectorPtrVecPtr nodeListVec)
+    {
+        // Das könnte man noch ändern
+        // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
+        for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+            this->IDofs_.resize(this->IDofs_.size()+1);
+            this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
+            this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
+            this->BlockCoarseDimension_.resize(this->BlockCoarseDimension_.size()+1);
+            this->NumberOfBlocks_++;
+            resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNodeVec[i],repeatedNodesMapVec[i],repeatedDofMapsVec[i],nullSpaceBasisVec[i],dirichletBoundaryDofsVec[i],nodeListVec[i]);
+        }
+        return 0;
+    }
+
     
     template <class SC,class LO,class GO,class NO>
     int  IPOUHarmonicCoarseOperator<SC,LO,GO,NO>::resetCoarseSpaceBlock(UN blockId,
@@ -128,7 +169,7 @@ namespace FROSch {
         blockIdStringstream << blockId+1;
         std::string blockIdString = blockIdStringstream.str();
         Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
-        
+
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
         if (useForCoarseSpace) {
@@ -137,6 +178,8 @@ namespace FROSch {
             
             // Compute Interface Partition of Unity
             if (!coarseSpaceList->sublist("InterfacePartitionOfUnity").get("Type","GDSW").compare("GDSW")) {
+
+                coarseSpaceList->sublist("InterfacePartitionOfUnity").sublist("GDSW").set("Test Unconnected Interface",this->ParameterList_->get("Test Unconnected Interface",true)); 
                 InterfacePartitionOfUnity_ = InterfacePartitionOfUnityPtr(new GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_,dimension,this->DofsPerNode_[blockId],nodesMap,this->DofsMaps_[blockId],sublist(sublist(coarseSpaceList,"InterfacePartitionOfUnity"),"GDSW")));
             } else {
                 FROSCH_ASSERT(0!=0,"InterfacePartitionOfUnity Type is unknown.");
@@ -177,13 +220,15 @@ namespace FROSch {
             LocalPartitionOfUnityBasis_->buildLocalPartitionOfUnityBasis();
             
             InterfaceCoarseSpace_ = LocalPartitionOfUnityBasis_->getLocalPartitionOfUnitySpace();
-            
+            if (this->Verbose_) std::cout<<"WARNING! Need to build block coarse sizes for use in MueLu nullspace."<< std::endl;
+
             this->BlockCoarseMaps_[blockId] = InterfaceCoarseSpace_->getBasisMap();
             this->MVPhiGamma_[blockId] = InterfaceCoarseSpace_->getLocalBasis(); //if (this->Verbose_) {Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->MVPhiGamma_[blockId]->describe(*fancy,Teuchos::VERB_EXTREME);}
         }
         
         return 0;
     }
+    
 }
 
 #endif

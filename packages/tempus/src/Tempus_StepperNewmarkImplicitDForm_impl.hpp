@@ -136,6 +136,7 @@ StepperNewmarkImplicitDForm<Scalar>::initialize()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
 }
 
@@ -231,9 +232,9 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       status = this->solveNonLinear(this->wrapperModel_, *this->solver_, d_init, inArgs_);
 
       if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED ) {
-        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+        workingState->setSolutionStatus(Status::PASSED);
       } else {
-        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+        workingState->setSolutionStatus(Status::FAILED);
       }
 
       correctAcceleration(*a_old, *d_old, *d_init, dt);
@@ -292,21 +293,21 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 #endif
     // inject d_pred, v_pred, a and other relevant data into wrapperModel
     wrapperModel->initializeNewmark(v_pred, d_pred, dt, t, beta_, gamma_);
-    
+
     // create initial guess in NOX solver
     RCP<Thyra::VectorBase<Scalar>> initial_guess = Thyra::createMember(d_pred->space());
     if ((time == solutionHistory->minTime()) && (initial_guess_ != Teuchos::null)) {
-      //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_ 
-      //Throw an exception if initial_guess is not compatible with solution 
-      bool is_compatible = (initial_guess->space())->isCompatible(*initial_guess_->space()); 
+      //if first time step and initial_guess_ is provided, set initial_guess = initial_guess_
+      //Throw an exception if initial_guess is not compatible with solution
+      bool is_compatible = (initial_guess->space())->isCompatible(*initial_guess_->space());
       TEUCHOS_TEST_FOR_EXCEPTION(
           is_compatible != true, std::logic_error,
             "Error in Tempus::NemwarkImplicitDForm takeStep(): user-provided initial guess'!\n"
-            << "for Newton is not compatible with solution vector!\n"); 
+            << "for Newton is not compatible with solution vector!\n");
       Thyra::copy(*initial_guess_, initial_guess.ptr());
     }
     else {
-      //Otherwise, set initial guess = diplacement predictor 
+      //Otherwise, set initial guess = diplacement predictor
       Thyra::copy(*d_pred, initial_guess.ptr());
     }
 
@@ -315,14 +316,14 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       this->solveImplicitODE(initial_guess);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
     Thyra::copy(*initial_guess, d_new.ptr());
-  
+
     //correct acceleration, velocity
     correctAcceleration(*a_new, *d_pred, *d_new, dt);
     correctVelocity(*v_new, *v_pred, *a_new, dt);

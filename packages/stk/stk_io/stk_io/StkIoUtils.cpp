@@ -73,7 +73,7 @@ size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
                     bool include_shared)
 {
     stk::mesh::Selector selector =  internal_build_selector(params.get_subset_selector(),
-                                                            params.get_output_selector(),
+                                                            params.get_output_selector(type),
                                                             params.get_shared_selector(),
                                                             part,
                                                             include_shared);
@@ -89,7 +89,7 @@ size_t get_entities(stk::io::OutputParams &params,
                         bool include_shared)
 {
     stk::mesh::Selector selector =  internal_build_selector(params.get_subset_selector(),
-                                                            params.get_output_selector(),
+                                                            params.get_output_selector(type),
                                                             nullptr,
                                                             part,
                                                             include_shared);

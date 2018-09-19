@@ -206,7 +206,7 @@ namespace Iocgns {
 
       CGCHECK(cg_set_file_type(CG_FILE_HDF5));
 
-#if CGNS_VERSION >= 3320
+#if CGNS_VERSION > 3320
       CGCHECK(cgp_mpi_comm(util().communicator()));
 #else
       // Older versions of cgp_mpi_comm returned an internal NO_ERROR
@@ -285,7 +285,7 @@ namespace Iocgns {
       return;
     }
 
-    Utils::finalize_database(cgnsFilePtr, m_timesteps, get_region(), myProcessor);
+    Utils::finalize_database(cgnsFilePtr, m_timesteps, get_region(), myProcessor, true);
   }
 
   void ParallelDatabaseIO::release_memory__()
@@ -352,7 +352,7 @@ namespace Iocgns {
     }
 
     Utils::add_transient_variables(cgnsFilePtr, m_timesteps, get_region(), get_field_recognition(),
-                                   get_field_separator(), myProcessor);
+                                   get_field_separator(), myProcessor, true);
   }
 
   void ParallelDatabaseIO::handle_unstructured_blocks()
@@ -894,7 +894,7 @@ namespace Iocgns {
     }
     Utils::write_flow_solution_metadata(cgnsFilePtr, get_region(), state,
                                         &m_currentVertexSolutionIndex,
-                                        &m_currentCellCenterSolutionIndex);
+                                        &m_currentCellCenterSolutionIndex, true);
     return true;
   }
 
@@ -1359,7 +1359,7 @@ namespace Iocgns {
                                                  size_t data_size) const
   {
     int  id   = sb->get_property("id").get_int();
-    auto sset = decomp->m_sideSets[id];
+    const auto &sset = decomp->m_sideSets[id];
 
     ssize_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {

@@ -77,9 +77,8 @@ namespace FROSch {
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
-
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D GOVec2D;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
-        
         
         HarmonicCoarseOperator(CrsMatrixPtr k,
                                ParameterListPtr parameterList);
@@ -87,7 +86,7 @@ namespace FROSch {
         virtual int initialize() = 0;
                 
         int compute();
-
+        
     protected:
         
         int computeHarmonicExtensions();

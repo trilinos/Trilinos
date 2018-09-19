@@ -124,6 +124,8 @@ namespace Ioex {
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
 
+    void open_state_file(int state);
+
     bool begin_state__(Ioss::Region *region, int state, double time) override;
     bool end_state__(Ioss::Region *region, int state, double time) override;
     void get_step_times__() override = 0;
@@ -205,7 +207,7 @@ namespace Ioex {
                                size_t data_size) const override             = 0;
 
     virtual void write_meta_data() = 0;
-    void         write_results_metadata();
+    void         write_results_metadata(bool gather_data = true);
 
     void openDatabase__() const override { get_file_pointer(); }
 
@@ -260,7 +262,7 @@ namespace Ioex {
     int get_database_step(int global_step) const;
 
     void flush_database__() const override;
-    void finalize_write(double sim_time);
+    void finalize_write(int state, double sim_time);
 
     // Private member data...
   protected:
@@ -310,9 +312,12 @@ namespace Ioex {
     mutable std::map<std::string, Ioss::Int64Vector> activeNodesetNodesIndex;
 
     time_t timeLastFlush{0};
+    int    flushInterval{1};
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};
+    mutable bool filePerState{
+        false}; // Output transient data at each state (timestep) to separate file
 
     mutable bool blockAdjacenciesCalculated{false}; // True if the lazy creation of
     // block adjacencies has been calculated.

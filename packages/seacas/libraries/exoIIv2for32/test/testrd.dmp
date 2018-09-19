@@ -1,7 +1,7 @@
 
 after exopen, error =   0
   Model Size 1
-  Maximum Allowed/Used DB Name Size 255  32
+  Maximum Allowed/Used DB Name Size  255  32
 
 after exgini, error =   0
 database parameters:

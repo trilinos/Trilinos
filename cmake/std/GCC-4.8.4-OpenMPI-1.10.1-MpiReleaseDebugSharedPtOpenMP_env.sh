@@ -15,5 +15,5 @@ else
   return
 fi
 
-source ${_SCRIPT_DIR}/../load_sems_dev_env.sh \
-  sems-gcc/4.8.4 sems-openmpi/1.10.1 atdm-cmake/3.11.1
+source ${_SCRIPT_DIR}/../load_sems_dev_env.sh ""
+# NOTE: Above, must pass empty arg "" or bash will pass in "$@" which is bad!
