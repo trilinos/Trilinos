@@ -258,6 +258,8 @@ private:
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = true;
+
+      Tpetra::deep_copy (B, R);
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
                                                input_gmres);
       if (outPtr != nullptr) {
@@ -279,11 +281,10 @@ private:
       output.numRests++;
       metric = this->getConvergenceMetric (r_norm, b0_norm, input);
     }
-
     // initialize starting vector
-    P.scale (one / b_norm);
-    y[0] = b_norm;
-
+    P.scale (one / r_norm);
+    y[0] = r_norm;
+    
     // main loop
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
@@ -333,7 +334,7 @@ private:
             M.apply (MP, AP);
           }
           // Shift for Newton basis
-          {
+          if ( int (output.ritzValues.size()) >= step) {
             //AP.update (-output.ritzValues(step), P, one);
             const complex_type theta = output.ritzValues[step];
             UpdateNewton<SC, MV>::updateNewtonV(iter+step, Q, theta);
@@ -359,8 +360,8 @@ private:
         // Convergence check
         if (rank == step+1 && H(iter+step, iter+step-1) != zero) {
           // Copy H to T and apply Givens rotations to new columns of T and y
-          for (int iiter=0; iiter<step; iiter++) {
-            for (int i=0; i<=iter+iiter+1; i++) {
+          for (int iiter = 0; iiter < step; iiter++) {
+            for (int i = 0; i <= iter+iiter+1; i++) {
               T(i, iter+iiter) = H(i, iter+iiter);
             }
             this->reduceHessenburgToTriangular(iter+iiter, T, cs, sn, y);
@@ -488,15 +489,15 @@ protected:
     const SC zero = STS::zero ();
 
     // copy: H(j:n-1, j:n-1) = R(j:n-1, j:n-1), i.e., H = R*B
-    for (int j=0; j<s; j++ ) {
-      for (int i=0; i<=n+j+1; i++) {
+    for (int j = 0; j < s; j++ ) {
+      for (int i = 0; i <= n+j+1; i++) {
         H(i, n+j) = R(i, j+1);
-        if (int (S.size ()) > j) {
+        if (int (S.size ()) > j && i <= n+j) {
           //H(i, n+j) += S[j].real * R(i, j);
           H(i, n+j) += UpdateNewton<SC, MV>::updateNewtonH (i, j, R, S[j]);
         }
       }
-      for(int i=n+j+2; i<=n+s; i++) {
+      for(int i = n+j+2; i <= n+s; i++) {
         H(i, n+j) = zero;
       }
     }
@@ -514,7 +515,7 @@ protected:
                  r_diag.values(), r_diag.stride(),
                  h_diag.values(), h_diag.stride());
     } else  { // >> rest of iterations <<
-      for (int j=1; j<s; j++ ) {
+      for (int j = 1; j < s; j++ ) {
         H(n, n+j) -= H(n, n-1) * R(n-1, j);
       }
       // diagonal block
