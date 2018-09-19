@@ -22,6 +22,7 @@ struct CommandLineOptions {
   int maxNumIters {100};
   int restartLength {30};
   int stepSize {1};
+  bool computeRitzValues {true};
   bool verbose {true};
 };
 CommandLineOptions commandLineOptions;
@@ -51,6 +52,8 @@ TEUCHOS_STATIC_SETUP()
                  "\"Num Blocks\".");
   clp.setOption ("stepSize", &commandLineOptions.stepSize,
                  "Step size; only applies to algorithms that take it.");
+  clp.setOption ("computeRitzValues", "noRitzValues", &commandLineOptions.computeRitzValues, 
+                 "Whether to compute Ritz values");
   clp.setOption ("verbose", "quiet", &commandLineOptions.verbose,
                  "Whether to print verbose output");
 }
@@ -172,6 +175,7 @@ testSolver (Teuchos::FancyOStream& out,
 
   myOut << "Test \"native\" Tpetra version of solver \"" << solverName << "\""
         << endl;
+  myOut << (STS::isComplex ? "complex type" : "real type") << endl;
   Teuchos::OSTab tab1 (out);
 
   myOut << "Create the linear system to solve" << endl;
@@ -214,6 +218,7 @@ testSolver (Teuchos::FancyOStream& out,
   params->set ("Maximum Iterations", commandLineOptions.maxNumIters);
   params->set ("Num Blocks", commandLineOptions.restartLength);
   params->set ("Step Size", commandLineOptions.stepSize);
+  params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);
   try {
     solver->setParameters (params);
   }
