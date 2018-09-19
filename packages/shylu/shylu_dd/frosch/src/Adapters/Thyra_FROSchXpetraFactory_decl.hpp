@@ -50,6 +50,7 @@
 #include "Thyra_FROSchLinearOP_def.hpp"
 
 
+
 #include "Kokkos_DefaultNode.hpp"
 
 namespace Thyra {

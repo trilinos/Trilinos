@@ -111,8 +111,8 @@ namespace Thyra {
                 Teuchos::ArrayView< const GO > 	nodeList = repeatedMap->getNodeElementList();
                 Teuchos::Array<GO> nodeListOffset(nodeList.size());
                 
-                for (unsigned i=0; i<nodeList.size(); i++) {
-                    nodeListOffset[i] = nodeList[i] + offsetAllPrior;
+                for (unsigned j=0; j<nodeList.size(); j++) {
+                    nodeListOffset[j] = nodeList[j] + offsetAllPrior;
                 }
                 repeatedMapVec[i] = Xpetra::MapFactory<LO,GO,NO>::Build(repeatedMap->lib(),-1,nodeListOffset,0,comm);
                 offsetAllPrior = repeatedMapVec[i]->getMaxAllGlobalIndex()+1;
