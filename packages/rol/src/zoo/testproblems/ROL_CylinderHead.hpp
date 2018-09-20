@@ -149,7 +149,7 @@ namespace ZOO {
       ajv[0] = two*smax(twall(x[0],0),1)/syield * twall(x[0],1) * v[0];
       ajv[1] = -warranty(x[1],1)/w0 * v[1] + tcycle(x[1],1)/sixty * v[2];
     }
-
+#if USE_HESSVEC
     void applyAdjointHessian( std::vector<Real> &ahuv, const std::vector<Real> &u, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
       const Real two(2), sixty(60), syield(3000), w0(1e5);
       Real tw = twall(x[0],0);
@@ -157,6 +157,7 @@ namespace ZOO {
                 + smax(tw,1) * twall(x[0],2))/syield * u[0] * v[0];
       ahuv[1] = (-warranty(x[1],2)/w0 * u[1] + tcycle(x[1],2)/sixty * u[2]) * v[1];
     }
+#endif
   };
 
   template<class Real>

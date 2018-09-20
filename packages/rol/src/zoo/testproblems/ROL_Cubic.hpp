@@ -108,12 +108,13 @@ namespace ZOO {
       ajv[0] = three*std::pow(x[0],2)*v[0];
       ajv[1] = v[0];
     }
-
+#if USE_HESSVEC
     void applyAdjointHessian( std::vector<Real> &ahuv, const std::vector<Real> &u, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
       const Real zero(0), six(6);
       ahuv[0] = six*x[0]*u[0]*v[0];
       ahuv[1] = zero;
     }
+#endif
   };
 
   template<class Real>
