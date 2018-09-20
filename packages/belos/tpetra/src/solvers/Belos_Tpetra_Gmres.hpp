@@ -602,33 +602,6 @@ protected:
       } // end of restart cycle
 
       if (iter > 0) {
-        if (outPtr != nullptr) {
-          dense_matrix_type H_iter (Teuchos::View, H.values (),
-                                    H.stride (), iter+1, iter);
-          *outPtr << "H:" << endl;
-          for (LO i = 0; i < iter+1; ++i) {
-            for (LO j = 0; j < iter; ++j) {
-              *outPtr << H_iter(i,j);
-              if (j + LO (1) < iter) {
-                *outPtr << " ";
-              }
-              else {
-                *outPtr << endl;
-              }
-            }
-          }
-
-          dense_vector_type y_view (Teuchos::View, y.values (), iter+1);
-          *outPtr << "y before: " << endl;
-          for (LO i = 0; i < iter+1; ++i) {
-            *outPtr << y_view(i);
-            if (i + 1 < iter + 1) {
-              *outPtr << " ";
-            }
-          }
-          *outPtr << endl;
-        }
-
         // Compute Ritz values, if requested
         if (input.computeRitzValues && output.numRests == 0) {
           computeRitzValues (iter, G, output.ritzValues);
@@ -639,17 +612,6 @@ protected:
                    Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG,
                    iter, 1, one,
                    H.values(), H.stride(), y.values(), y.stride());
-        if (outPtr != nullptr) {
-          dense_vector_type y_view (Teuchos::View, y.values (), iter);
-          *outPtr << "y after: " << endl;
-          for (LO i = 0; i < iter; ++i) {
-            *outPtr << y_view(i);
-            if (i + 1 < iter) {
-              *outPtr << " ";
-            }
-          }
-          *outPtr << endl;
-        }
         Teuchos::Range1D cols(0, iter-1);
         Teuchos::RCP<const MV> Qj = Q.subView(cols);
         //y.resize (iter);
@@ -691,12 +653,6 @@ protected:
           y[i] = STS::zero ();
         }
         output.numRests++;
-      }
-
-      if (outPtr != nullptr) {
-        *outPtr << "At end of restart cycle:" << endl;
-        Indent indentInner (outPtr);
-        *outPtr << output;
       }
     }
 
