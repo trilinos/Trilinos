@@ -23,6 +23,7 @@ struct CommandLineOptions {
   int restartLength {30};
   int stepSize {1};
   bool computeRitzValues {true};
+  bool zeroInitialGuess {true};
   bool verbose {true};
 };
 CommandLineOptions commandLineOptions;
@@ -52,8 +53,11 @@ TEUCHOS_STATIC_SETUP()
                  "\"Num Blocks\".");
   clp.setOption ("stepSize", &commandLineOptions.stepSize,
                  "Step size; only applies to algorithms that take it.");
-  clp.setOption ("computeRitzValues", "noRitzValues", &commandLineOptions.computeRitzValues, 
+  clp.setOption ("computeRitzValues", "noRitzValues", &commandLineOptions.computeRitzValues,
                  "Whether to compute Ritz values");
+  clp.setOption ("zeroInitialGuess", "nonzeroInitialGuess",
+                 &commandLineOptions.zeroInitialGuess, "Whether to test "
+                 "with a zero, or a nonzero, initial guess vector");
   clp.setOption ("verbose", "quiet", &commandLineOptions.verbose,
                  "Whether to print verbose output");
 }
@@ -186,11 +190,16 @@ testSolver (Teuchos::FancyOStream& out,
   RCP<const map_type> map (new map_type (gblNumRows, indexBase, comm));
   auto A = createNonsymmTridiagMatrix (map, commandLineOptions.offDiagDiff);
 
-  MV X (A->getDomainMap (), 1);
+  MV X_initial (A->getDomainMap (), 1);
+  if (commandLineOptions.zeroInitialGuess) {
+    X_initial.putScalar (ZERO); // (re)set initial guess to zero
+  }
+  else {
+    X_initial.putScalar (ONE); // just something nonzero, to test
+  }
+  MV X (X_initial, Teuchos::Copy);
   MV B (A->getRangeMap (), 1);
   B.randomize ();
-  // Get ready for next solve by resetting initial guess to zero.
-  X.putScalar (ZERO);
 
   myOut << "Create solver instance using Belos::SolverFactory" << endl;
 
@@ -269,22 +278,26 @@ testSolver (Teuchos::FancyOStream& out,
       return pl->get<mag_type> (tolParamName);
     } ();
 
-  MV X_copy (X, Teuchos::Copy);
-  MV R (B.getMap (), B.getNumVectors ());
-  A->apply (X_copy, R);
-  R.update (ONE, B, -ONE);
-  Teuchos::Array<mag_type> R_norms (R.getNumVectors ());
-  R.norm2 (R_norms ());
-  Teuchos::Array<mag_type> B_norms (B.getNumVectors ());
-  B.norm2 (B_norms ());
+  MV R_initial (B.getMap (), B.getNumVectors ());
+  A->apply (X_initial, R_initial);
+  R_initial.update (ONE, B, -ONE);
+  Teuchos::Array<mag_type> R_initial_norms (R_initial.getNumVectors ());
+  R_initial.norm2 (R_initial_norms ());
 
-  for (size_t j = 0; j < R.getNumVectors (); ++j) {
-    const mag_type relResNorm = (B_norms[j] == STM::zero ()) ?
-      R_norms[j] :
-      R_norms[j] / B_norms[j];
-    myOut << "Column " << (j+1) << " of " << R.getNumVectors ()
-          << ": Absolute residual norm: " << R_norms[j]
+  MV R_final (B.getMap (), B.getNumVectors ());
+  A->apply (X, R_final);
+  R_final.update (ONE, B, -ONE);
+  Teuchos::Array<mag_type> R_final_norms (R_final.getNumVectors ());
+  R_final.norm2 (R_final_norms ());
+
+  for (size_t j = 0; j < R_final.getNumVectors (); ++j) {
+    const mag_type relResNorm = (R_initial_norms[j] == STM::zero ()) ?
+      R_final_norms[j] :
+      R_final_norms[j] / R_initial_norms[j];
+    myOut << "Column " << (j+1) << " of " << R_final.getNumVectors ()
+          << ": Absolute residual norm: " << R_final_norms[j]
           << ", Relative residual norm: " << relResNorm
+          << ", Tolerance: " << tol
           << endl;
     TEST_ASSERT( relResNorm <= tol );
   }
@@ -323,7 +336,7 @@ int main (int argc, char* argv[])
   // BelosTpetra::Impl::register_CgSingleReduce (verbose);
   BelosTpetra::Impl::register_Gmres (verbose);
   BelosTpetra::Impl::register_GmresPipeline (verbose);
-  BelosTpetra::Impl::register_GmresS (verbose);  
+  BelosTpetra::Impl::register_GmresS (verbose);
   BelosTpetra::Impl::register_GmresSingleReduce (verbose);
   BelosTpetra::Impl::register_GmresSstep (verbose);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);

@@ -34,26 +34,26 @@ namespace Impl {
 /// Belos::SolverFactory.  The BelosTpetra::Impl::SolverManager
 /// instance wraps an instance of a subclass of Krylov.
 template<class SC = Tpetra::MultiVector<>::scalar_type,
-	 class MV = Tpetra::MultiVector<SC>,
-	 class OP = Tpetra::Operator<SC>>
+         class MV = Tpetra::MultiVector<SC>,
+         class OP = Tpetra::Operator<SC>>
 class Krylov {
 private:
   static_assert (std::is_same<MV, Tpetra::MultiVector<typename MV::scalar_type,
-		 typename MV::local_ordinal_type,
-		 typename MV::global_ordinal_type,
-		 typename MV::node_type>>::value,
-		 "MV must be a Tpetra::MultiVector specialization.");
+                 typename MV::local_ordinal_type,
+                 typename MV::global_ordinal_type,
+                 typename MV::node_type>>::value,
+                 "MV must be a Tpetra::MultiVector specialization.");
   static_assert (std::is_same<OP, Tpetra::Operator<typename OP::scalar_type,
-		 typename OP::local_ordinal_type,
-		 typename OP::global_ordinal_type,
-		 typename OP::node_type>>::value,
-		 "OP must be a Tpetra::Operator specialization.");
+                 typename OP::local_ordinal_type,
+                 typename OP::global_ordinal_type,
+                 typename OP::node_type>>::value,
+                 "OP must be a Tpetra::Operator specialization.");
 public:
   using vec_type = Tpetra::Vector<typename MV::scalar_type,
-				  typename MV::local_ordinal_type,
-				  typename MV::global_ordinal_type,
-				  typename MV::node_type>;
-  
+                                  typename MV::local_ordinal_type,
+                                  typename MV::global_ordinal_type,
+                                  typename MV::node_type>;
+
 private:
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
@@ -116,8 +116,8 @@ public:
     }
     else {
       const std::string implResScal = input_.needToScale ?
-	"Norm of Preconditioned Initial Residual" : "None"; // ???
-    
+        "Norm of Preconditioned Initial Residual" : "None"; // ???
+
       params.set ("Convergence Tolerance", input_.tol);
       params.set ("Implicit Residual Scaling", implResScal);
       params.set ("Maximum Iterations", input_.maxNumIters);
@@ -132,7 +132,7 @@ public:
     const int verbosity = 0;
     const std::string implResScal = input.needToScale ?
       "Norm of Preconditioned Initial Residual" : "None"; // ???
-    
+
     params.set ("Convergence Tolerance", input.tol);
     params.set ("Implicit Residual Scaling", implResScal);
     params.set ("Maximum Iterations", input.maxNumIters);
@@ -172,7 +172,8 @@ public:
         // FIXME (mfh 26 Oct 2016) If we want to implement this, it
         // would make sense to combine that all-reduce with the
         // all-reduce for computing the initial residual norms.  We
-        // could modify computeResiduals to have an option to do this.
+        // could modify computeResidualVectorsAndNorms to have an
+        // option to do this.
         TEUCHOS_TEST_FOR_EXCEPTION
           (true, std::logic_error,
            "\"Norm of RHS\" scaling option not implemented");
@@ -207,23 +208,17 @@ public:
   }
 
 private:
-  static void
-  computeResiduals (Kokkos::DualView<mag_type*, device_type>& norms,
-                    MV& R,
-                    const OP& A,
-                    const MV& X,
-                    const MV& B)
+  static MV
+  computeResidualVectorsAndNorms (const Teuchos::ArrayView<mag_type>& norms,
+                                  const OP& A,
+                                  const MV& X,
+                                  const MV& B)
   {
-    typedef typename device_type::memory_space dev_mem_space;
-
     const SC ONE = STS::one ();
-    A.apply (X, R);
-    R.update (ONE, B, -ONE); // R := B - A*X
-
-    norms.template modify<dev_mem_space> ();
-    Kokkos::View<mag_type*, device_type> norms_d =
-      norms.template view<dev_mem_space> ();
-    R.norm2 (norms_d);
+    MV R (B, Teuchos::Copy);
+    A.apply (X, R, Teuchos::NO_TRANS, -ONE, ONE); // R := -1*(A*X) + 1*B
+    R.norm2 (norms);
+    return R; // shallow copy
   }
 
   static mag_type
@@ -315,40 +310,66 @@ private:
   {
     using Teuchos::RCP;
     using std::endl;
-
+    const char prefix[] = "BelosTpetra::Impl::Krylov::solveImpl: ";
     TEUCHOS_TEST_FOR_EXCEPTION
       (M_.get () == nullptr && input_.precoSide != "none",
-       std::logic_error, "BelosTpetra::Impl::Krylov::solveImpl: M_ is null "
-       "but input_.precoSide=\"" << input_.precoSide << "\" != \"none\".  "
-       "This should never happen.  "
+       std::logic_error, prefix << "The preconditioner M_ is null, but "
+       "input_.precoSide=\"" << input_.precoSide << "\" != \"none\".  "
        "Please report this bug to the Belos developers.");
-    
-    const size_t numVecs = B.getNumVectors ();
-    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
-    MV R (B.getMap (), numVecs);
 
-    computeResiduals (norms, R, *A_, X, B);
-    norms.template sync<Kokkos::HostSpace> ();
-    auto norms_h = norms.template view<Kokkos::HostSpace> ();
+    const size_t numVecs = B.getNumVectors ();
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (X.getNumVectors () != numVecs, std::runtime_error, prefix
+       << "X.getNumVectors() = " << X.getNumVectors ()
+       << " != B.getNumVectors() = " << numVecs << ".");
+
+    Teuchos::Array<mag_type> norms (numVecs);
+    MV R = computeResidualVectorsAndNorms (norms (), *A_, X, B);
+
+    // Solving $A X = B$ with a nonzero initial guess $X_0$ is
+    // equivalent to solving $A*\Delta = R (= B - A*X_0)$ with a zero
+    // initial guess, then computing $X = X_0 + \Delta$.  This
+    // approach will avoid the extra overhead of each solver
+    // recomputing the residual vector.
+    //
+    // TODO (mfh 19 Sep 2018) It would make sense to optimize for the
+    // case where users know their initial guess is zero, by skipping
+    // the extra copy here and the extra update at the end.
+    MV Delta (X.getMap (), numVecs);
+
     SolverOutput<SC> allOutput {};
     for (size_t j = 0; j < numVecs; ++j) {
       if (outPtr != nullptr) {
         *outPtr << "Solve for column " << (j+1) << " of " << numVecs << ":"
-		<< endl;
-        outPtr->pushTab ();
+                << endl;
       }
+      Indent indentInner (outPtr);
       RCP<vec_type> R_j = R.getVectorNonConst (j);
-      RCP<vec_type> X_j = X.getVectorNonConst (j);
-      input_.r_norm_orig = norms_h(j);
+      RCP<vec_type> Delta_j = Delta.getVectorNonConst (j);
+      input_.r_norm_orig = norms[j];
       const SolverOutput<SC> curOutput =
-        solveOneVec (outPtr, *X_j, *R_j, *A_,
-		     (input_.precoSide == "none" ? *A_ : *M_), input_);
+        solveOneVec (outPtr, *Delta_j, *R_j, *A_,
+                     (input_.precoSide == "none" ? *A_ : *M_), input_);
       combineSolverOutput (allOutput, curOutput);
     }
+    // See note above about a potential optimization.
+    X.update (STS::one (), Delta, STS::one ()); // $X := X_0 + \Delta$
+
     return allOutput;
   }
-  
+
 protected:
+  /// \brief Implementation of solving the linear system.
+  ///
+  /// This is the method that subclasses must override.
+  ///
+  /// \param outPtr [out] If nonnull, print verbose output to this.
+  ///
+  /// \param X [in/out] On input: initial guess vector; on output:
+  ///   computed solution vector.
+  ///
+  /// \param R [in/out] On input: initial residual vector (R = B -
+  ///   A*X); on output: final residual vector (again, R = B - A*X).
   virtual SolverOutput<SC>
   solveOneVec (Teuchos::FancyOStream* outPtr,
                vec_type& X, // in X/out X
