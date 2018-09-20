@@ -51,7 +51,7 @@
 #include "NOX_Common.H"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "NOX_Abstract_PrePostOperator.H"
+#include "NOX_Observer.hpp"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_StatusTest_Generic.H"
 

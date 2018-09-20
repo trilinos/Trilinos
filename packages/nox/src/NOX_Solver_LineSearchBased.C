@@ -127,13 +127,22 @@ reset(const NOX::Abstract::Vector& initialGuess)
   status = NOX::StatusTest::Unconverged;
 }
 
+void NOX::Solver::LineSearchBased::
+reset()
+{
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+}
+
 NOX::Solver::LineSearchBased::~LineSearchBased()
 {
 
 }
 
 
-NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus()
+NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus() const
 {
   return status;
 }
@@ -243,6 +252,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)

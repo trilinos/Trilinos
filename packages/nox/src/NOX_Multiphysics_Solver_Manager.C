@@ -141,6 +141,8 @@ reset(const Abstract::Vector& initialGuess)
   cplPtr->reset(initialGuess);
 }
 
+void NOX::Multiphysics::Solver::Manager::reset() {}
+
 // PRIVATE
 void NOX::Multiphysics::Solver::Manager::deprecated(const std::string& oldName, const std::string& newName) const
 {

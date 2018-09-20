@@ -36,37 +36,93 @@
 //
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_MeritFunction_Generic.H"
+#include "NOX_Observer_Print.hpp"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Factory.H"
-#include "Teuchos_ParameterList.hpp"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Factory.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_Divergence.H"
-#include "NOX_StatusTest_RelativeNormF.H"
-#include "NOX_StatusTest_NStep.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_SolverStats.hpp"
 #include "NOX_Utils.H"
-#include "NOX_LineSearch_UserDefinedFactory.H"
-#include "NOX_LineSearch_UserDefinedFactoryT.H"
-#include "NOX_Direction_UserDefinedFactory.H"
-#include "NOX_Direction_UserDefinedFactoryT.H"
+
+NOX::ObserverPrint::ObserverPrint(const Teuchos::RCP<NOX::Utils>& os) :
+  os_(os)
+{}
+
+void NOX::ObserverPrint::runPreIterate(const NOX::Solver::Generic& solver)
+{
+  if (solver.getNumIterations() == 0) {
+    auto& os = os_->out();
+    auto original_flags = os.flags();
+
+    os.setf(std::ios::left);
+    os.width(5);
+    os << "N";
+
+    os.width(12);
+    os << "Status";
+
+    os.setf(std::ios::left);
+    os.width(14);
+    os << "||F||";
+
+    os.setf(std::ios::left);
+    os.width(11);
+    os << "Linear Its";
+
+    os.setf(std::ios::left);
+    os.width(14);
+    os << "Achieved Tol";
+
+    os << std::endl;
+
+    os.flags(original_flags);
+    this->printStep(solver);
+  }
+}
+
+void NOX::ObserverPrint::runPostIterate(const NOX::Solver::Generic& solver)
+{
+  this->printStep(solver);
+}
+
+void NOX::ObserverPrint::printStep(const NOX::Solver::Generic& solver)
+{
+  const auto& stats = *solver.getSolverStatistics();
+  auto& os = os_->out();
+  auto original_flags = os.flags();
+  const int precision = 6;
+
+  os.width(5);
+  os.setf(std::ios::left);
+  os << stats.numNonlinearIterations;
+
+  os.width(12);
+  if (solver.getStatus() == NOX::StatusTest::Unconverged)
+    os << "Unconverged";
+  else if (solver.getStatus() == NOX::StatusTest::Converged)
+    os << "Converged!";
+  else if (solver.getStatus() == NOX::StatusTest::Failed)
+    os << "Failed!";
+
+  os.width(14);
+  os.precision(precision);
+  os.setf(std::ios::left|std::ios::scientific);
+  auto& grp = solver.getSolutionGroup();
+  if (not grp.isF())
+    const_cast<NOX::Abstract::Group&>(grp).computeF();
+  os << grp.getNormF();
+
+  os.width(11);
+  os.setf(std::ios::left);
+  os.precision(precision);
+  os << stats.linearSolve.lastLinearSolve_NumIterations;
+
+  os.width(14);
+  os.setf(std::ios::left|std::ios::scientific);
+  os.precision(precision);
+  os << stats.linearSolve.lastLinearSolve_AchievedTolerance;
+
+  os << std::endl;
+
+  os.flags(original_flags);
+}
