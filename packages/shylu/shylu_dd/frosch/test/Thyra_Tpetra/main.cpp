@@ -39,8 +39,6 @@
 // ************************************************************************
 //@HEADER
 
-//#define Tpetra_issue_1752
-
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
 
@@ -60,7 +58,6 @@
 #include <BelosOperatorT.hpp>
 #include <BelosXpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
-//#include <BelosPseudoBlockGmresSolMgr.hpp>
 
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>

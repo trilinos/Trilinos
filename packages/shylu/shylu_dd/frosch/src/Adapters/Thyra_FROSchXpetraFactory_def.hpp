@@ -103,7 +103,7 @@ namespace Thyra {
         RCP<FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > TwoLevelPrec (new FROSch::TwoLevelPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,paramList_));
         
         
-        //Initialize (Coordinates and Repeates Map to build TwoLevelPrec)
+        //Initialize (Coordinates and Repeated Map to build TwoLevelPrec)
         Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Coord = Teuchos::null;
         Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RepeatedMap =  Teuchos::null;
         
