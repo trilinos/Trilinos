@@ -42,6 +42,7 @@
 #ifndef _FROSCH_RGDSWPRECONDITIONER_DECL_HPP
 #define _FROSCH_RGDSWPRECONDITIONER_DECL_HPP
 
+#include <FROSch_OneLevelPreconditioner_def.hpp>
 #include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
 #include <FROSch_RGDSWCoarseOperator_def.hpp>
 

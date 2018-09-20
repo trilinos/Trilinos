@@ -1,0 +1,181 @@
+<ParameterList name="MueLu">
+		  
+
+  <ParameterList name="Matrix">
+    <Parameter name="PDE equations" type="int" value="1"/> <!-- input matrix is padded -->
+  </ParameterList>  
+		  
+<ParameterList name="Factories">
+  
+    <!-- Build distance laplacian given default A -->  
+    <ParameterList name="myLaplFactory">
+      <Parameter name="factory"                             type="string" value="VariableDofLaplacianFactory"/>
+      <Parameter name="maxDofPerNode"                       type="int" value="4"/>
+    </ParameterList>
+
+    <!-- We only need the distance laplacian on the finest level -->
+    <!-- On the coarse levels we use the coarse A produced by the inner RAPFactory -->
+    <!-- We cannot define "Coarse level factory" here, since the inner RAPFactory has
+      not been defined, yet. We have to extend the Factory information later -->
+    <ParameterList name="myInputAFact">
+      <Parameter name="factory" type="string" value="FineLevelInputDataFactory"/>      
+      <Parameter name="Variable" type="string" value="A"/>  
+      <Parameter name="Fine level factory" type="string" value="myLaplFactory"/>  
+      <!--<Parameter name="Coarse level factory" type="string" value="NoFactory"/> TO BE DEFINED LATER -->
+    </ParameterList>
+    
+    <!-- build graph for inner A -->
+    <!-- In fact, the inner A always has 1 Dof per node (distance laplacian), but still we need
+      the graph as input for the aggregation -->
+    <ParameterList name="myGraphFact">
+      <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
+      <Parameter name="A" type="string" value="myInputAFact"/>
+    </ParameterList>
+
+    <!-- We have to explicitly define the CoarseMapFactory, since we need to build the coarse map (= domain map)
+      for the inner smooshed prolongation operator. Therefore we have to build a coarse map and provide inner A -->
+    <ParameterList name="myCoarseMap">
+      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
+      <Parameter name="A" type="string" value="myInputAFact"/>
+    </ParameterList>
+
+    <!-- build aggregates -->
+    <ParameterList name="myAggFact">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: min agg size" type="int" value="5"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
+      <Parameter name="DofsPerNode" type="string" value="myGraphFact"/>
+      <Parameter name="Graph" type="string" value="myGraphFact"/>
+    </ParameterList>
+   
+    <!-- build the unsmoothed transfer operator -->
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap"/>
+      <Parameter name="A" type="string" value="myInputAFact"/>
+    </ParameterList>
+
+    <!-- prolongator smoothing. Note, we have to use the inner A as input -->
+    <ParameterList name="mySaPFact">
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFact"/>
+      <Parameter name="A" type="string" value="myInputAFact"/>
+    </ParameterList>
+    
+    <!-- Same for the nullspace -->
+    <ParameterList name="myNullspaceFact">
+      <Parameter name="factory" type="string" value="NullspaceFactory"/>
+      <Parameter name="Nullspace" type="string" value="myTentativePFact"/>
+      <Parameter name="A" type="string" value="myInputAFact"/>
+    </ParameterList>
+
+    <!-- Just use the transpose of P for restriction for the inner multigrid loop -->
+    <ParameterList name="myInnerRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="mySaPFact"/>
+    </ParameterList>
+
+    <!-- do we need the coarse coordinates? -->
+    <ParameterList name="myCoordTransferFact">
+      <Parameter name="factory" type="string" value="CoordinatesTransferFactory"/>
+    </ParameterList>
+
+    <!-- inner RAP factory for smooshed multigrid built from the distance laplacian operator -->
+    <ParameterList name="myInnerRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="mySaPFact"/>
+      <Parameter name="R"                                   type="string" value="myInnerRestrictorFact"/>
+      <Parameter name="A" type="string" value="myInputAFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="YYY" type="string" value="myCoordTransferFact"/>
+      </ParameterList>
+    </ParameterList>
+    
+    <!-- Set "Coarse level factory" information to close the dependency cycle -->
+    <ParameterList name="myInputAFactDeps">
+      <Parameter name="dependency for" type="string" value="myInputAFact"/>
+      <Parameter name="Coarse level factory" type="string" value="myInnerRAPFact"/>
+    </ParameterList>
+    
+    <!-- Unsmoosh the prolongation operator to be compatible with the full operator -->
+    <ParameterList name="myUnsmooshPFact">
+      <Parameter name="factory"                             type="string" value="UnsmooshFactory"/>
+      <!--<Parameter name="A"                                   type="string" value="myRAPFact"/>-->
+      <Parameter name="P"                                   type="string" value="mySaPFact"/>
+      <Parameter name="DofStatus"                           type="string" value="myLaplFactory"/>
+      <Parameter name="maxDofPerNode"                       type="int" value="4"/>
+      <Parameter name="fineIsPadded"                        type="bool" value="false"/>
+    </ParameterList>
+
+    <!-- Use the transposed for restriction -->
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="TransPFactory"/>
+      <Parameter name="P"                                   type="string" value="myUnsmooshPFact"/>
+    </ParameterList>
+    
+    <!-- Outer RAP factory -->
+    <!-- Note, that the inner RAP factory is declared to be a transfer factory of the outer RAP factory -->
+    <!-- That is, we first build the inner prolongator, unsmoosh it for the outer prolongator, build the outer
+         restrictor using the transpose, build the outer coarse A using the following RAP factory and then
+	 build the inner coarse A using the "myInnerRAPFact", that serves as input for the next level when doing
+	   the aggregation etc... -->
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myUnsmooshPFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <Parameter name="CheckMainDiagonal"                   type="bool" value="true"/>
+      <Parameter name="RepairMainDiagonal"                  type="bool" value="true"/>
+      <ParameterList name="TransferFactories">
+	<Parameter name="XXX" type="string" value="myInnerRAPFact"/>
+      </ParameterList>
+    </ParameterList>   
+
+    <!-- =======================  SMOOTHERS  ======================= -->
+    <ParameterList name="ILU0">
+      <Parameter name="factory"                        type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                           type="string" value="ILUT"/>
+      <Parameter name="overlap"                        type="int" value="0"/>
+      <ParameterList name="ParameterList">
+	<Parameter name="fact: level-of-fill" type="int" value="0"/>
+	<Parameter name="schwarz: reordering type" type="string" value="rcm"/> 
+	<!--<Parameter name="fact: drop tolerance" type="double" value="1.0e-6"/>-->
+	<Parameter name="fact: maximum fill factor" type="double" value="100"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="3"/>
+    <Parameter name="coarse: max size"                      type="int"      value="5000"/>
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    
+    <ParameterList name="All">
+      <Parameter name="A"                                   type="string"   value="myRAPFact"/>
+      <Parameter name="Smoother"                            type="string"   value="ILU0"/>
+      <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
+      <Parameter name="P"                                   type="string"   value="myUnsmooshPFact"/>
+      <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+      <Parameter name="Coordinates"                         type="string"   value="myCoordTransferFact"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap"/>
+      <Parameter name="Graph" type="string" value="myGraphFact"/>
+      <Parameter name="DofsPerNode" type="string" value="myGraphFact"/>
+    </ParameterList>
+    
+    <ParameterList name="DataToWrite">
+      <Parameter name="Matrices" type="string" value="{11}"/>
+      <Parameter name="Prolongators" type="string" value="{12}"/>
+      <Parameter name="Restrictors" type="string" value="{13}"/>
+    </ParameterList>
+
+  </ParameterList>
+                
+
+</ParameterList>
+<!-- end "MueLu" -->
