@@ -208,8 +208,10 @@ sortRitzValues (const LO m,
           ritzValues[i+1] = ritzValues[i];
           RR[next_index+1] = RR[i+1];
         } else if (next_index == m-1) {
-          ritzValues[i+1] = ritzValues[i];
-          RR[next_index-1] = RR[i+1];
+          if (i + 1 < m) {
+            ritzValues[i+1] = ritzValues[i];
+            RR[next_index-1] = RR[i+1];
+          }
         } else {
           real_type val1 = std::abs(std::conj(RR[next_index-1]) - ritzValues[i]);
           real_type val2 = std::abs(std::conj(RR[next_index+1]) - ritzValues[i]);
