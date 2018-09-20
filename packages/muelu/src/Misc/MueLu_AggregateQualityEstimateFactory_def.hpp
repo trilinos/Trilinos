@@ -135,8 +135,8 @@ namespace MueLu {
     // array (aggsToIndices) whose k-th element stores the index of the first
     // vertex in aggregate k in the array aggSortedVertices.
 
-    const double LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
-    const double LO_ONE = Teuchos::OrdinalTraits<LO>::one();
+    const LO LO_ZERO = Teuchos::OrdinalTraits<LO>::zero();
+    const LO LO_ONE = Teuchos::OrdinalTraits<LO>::one();
 
     LO numAggs = aggs->GetNumAggregates();
     aggSizes = aggs->ComputeAggregateSizes();
@@ -223,8 +223,8 @@ namespace MueLu {
 
     // Compute the per-aggregate quality estimate
 
-    typedef Teuchos::SerialDenseMatrix<LO,double> DenseMatrix;
-    typedef Teuchos::SerialDenseVector<LO,double> DenseVector;
+    typedef Teuchos::SerialDenseMatrix<LO,SC> DenseMatrix;
+    typedef Teuchos::SerialDenseVector<LO,SC> DenseVector;
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
@@ -249,7 +249,7 @@ namespace MueLu {
 	for (LO elem=LO_ZERO; elem<rowIndices.size();++elem) {
 
 	  LO nodeId2 = rowIndices[elem];
-	  SC val = (rowValues[elem]+colValues[elem])/2.0;
+	  SC val = (rowValues[elem]+colValues[elem])/SCALAR_TWO;
 
 	  LO idxInAgg = -LO_ONE; // -1 if element is not in aggregate
 
@@ -270,7 +270,7 @@ namespace MueLu {
 
 	  if (idxInAgg == -LO_ONE) { // Element does not belong to aggregate
 
-	    offDiagonalAbsoluteSums[idx] += fabs(val);
+	    offDiagonalAbsoluteSums[idx] += Teuchos::ScalarTraits<SC>::magnitude(val);
 
 	  } else { // Element does belong to aggregate
 
