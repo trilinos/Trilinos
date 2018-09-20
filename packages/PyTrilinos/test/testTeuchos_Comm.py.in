@@ -77,11 +77,10 @@ class TeuchosDefaultCommTestCase(unittest.TestCase):
         self.comm  = Teuchos.DefaultComm.getComm()
         if ('MpiComm' in dir(Teuchos)):
             self.commType = "MPI"
-            self.output   = "Teuchos::MpiComm<int>{size=%d,rank=%d" % \
-                            (self.comm.getSize(), self.comm.getRank())
+            self.output   = "MpiComm"
         else:
             self.commType = "Serial"
-            self.output   = "Teuchos::SerialComm<int>"
+            self.output   = "SerialComm"
         self.comm.barrier()
 
     def tearDown(self):
@@ -106,8 +105,9 @@ class TeuchosDefaultCommTestCase(unittest.TestCase):
 
     def testStr(self):
         "Test Teuchos.DefaultComm __str__ method"
-        n = len(self.output)
-        self.assertEqual(str(self.comm)[:n], self.output)
+        output = str(self.comm)
+        self.assertTrue("Teuchos"   in output)
+        self.assertTrue(self.output in output)
 
     def testBroadcastBadArg(self):
         "Test Teuchos.DefaultComm broadcast method with bad argument"
