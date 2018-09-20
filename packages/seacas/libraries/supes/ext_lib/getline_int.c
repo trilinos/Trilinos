@@ -323,8 +323,7 @@ int pc_keymap(int c)
   case K_DELETE:
     c = 4; /* del -> ^D */
     break;
-  default:
-    c = 0; /* make it garbage */
+  default: c = 0; /* make it garbage */
   }
   return c;
 }
@@ -1245,7 +1244,7 @@ static int gl_tab(char *buf, int offset, int *loc, size_t bufsize)
   return i;
 }
 
-  /******************* History stuff **************************************/
+/******************* History stuff **************************************/
 
 #ifndef HIST_SIZE
 #define HIST_SIZE 100
@@ -1813,7 +1812,7 @@ void gl_set_home_dir(const char *homedir)
   char        wdir[64];
 #else
   struct passwd *pw;
-  char *cp;
+  char *         cp;
 #endif
 
   if (gl_home_dir != NULL) {

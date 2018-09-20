@@ -72,11 +72,8 @@ SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& fm)
+                                                       PHX::FieldManager<Traits>& /* fm */)
 {
-
-  this->utils.setFieldData(source,fm);
-
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 

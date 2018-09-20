@@ -2994,9 +2994,10 @@ namespace {
     // Verify that the default Scalar type is double.  We can't put
     // the std::is_same expression in the macro, since it has a comma
     // (commas separate arguments in a macro).
-    const bool defaultScalarIsDouble =
-      std::is_same<scalar_type, double>::value;
-    TEST_ASSERT( defaultScalarIsDouble );
+    const bool defaultScalarMatchesTpetra =
+      std::is_same<scalar_type, 
+                   Tpetra::Details::DefaultTypes::scalar_type>::value;
+    TEST_ASSERT( defaultScalarMatchesTpetra );
 
     // Verify that the default LocalOrdinal type is the same as Map's
     // default LocalOrdinal type.  This assumes that all of Map's

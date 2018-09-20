@@ -93,13 +93,8 @@ void
 InterfaceResidual<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(normal_dot_flux,fm);
-  this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(normal,fm);
-
   num_ip = flux.extent(1);
   num_dim = flux.extent(2);
 

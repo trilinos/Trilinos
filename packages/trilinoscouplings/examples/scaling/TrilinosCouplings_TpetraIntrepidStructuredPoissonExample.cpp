@@ -156,7 +156,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
-                            Teuchos::Array<Teuchos::Array<ST> >& coordArray,
+                            Teuchos::Array<Teuchos::Array<MT> >& coordArray,
                             Teuchos::Array<LO>& lNodesPerDim,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
@@ -183,7 +183,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
-                            Teuchos::Array<Teuchos::Array<ST> >& coordArray,
+                            Teuchos::Array<Teuchos::Array<MT> >& coordArray,
                             Teuchos::Array<LO>& lNodesPerDim,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
@@ -357,10 +357,10 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   }
 
   // Read node coordinates and place in field container
-  FieldContainer<ST> nodeCoord (numNodes, dim);
-  ST * nodeCoordx = new ST [numNodes];
-  ST * nodeCoordy = new ST [numNodes];
-  ST * nodeCoordz = new ST [numNodes];
+  FieldContainer<MT> nodeCoord (numNodes, dim);
+  MT * nodeCoordx = new MT [numNodes];
+  MT * nodeCoordy = new MT [numNodes];
+  MT * nodeCoordz = new MT [numNodes];
   im_ex_get_coord_l (id, nodeCoordx, nodeCoordy, nodeCoordz);
   for (int i=0; i<numNodes; i++) {
     nodeCoord(i,0)=nodeCoordx[i];
@@ -551,9 +551,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   Array<int> ownedGIDs;
   RCP<const map_type> globalMapG;
-  Teuchos::Array<ST> coordXArray;
-  Teuchos::Array<ST> coordYArray;
-  Teuchos::Array<ST> coordZArray;
   {
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build global maps", build_maps);
 
@@ -569,9 +566,9 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // NTS: will need to switch back to long long
     // Get owned coordinates
     ownedGIDs.resize(ownedNodes);
-    coordXArray.resize(ownedNodes);
-    coordYArray.resize(ownedNodes);
-    coordZArray.resize(ownedNodes);
+    coordArray[0].resize(ownedNodes);
+    coordArray[1].resize(ownedNodes);
+    coordArray[2].resize(ownedNodes);
 
     // It is expected that some nodes are duplicated locally
     // so the values extracted with lNodePerDim are possibly
@@ -619,16 +616,13 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
       if (nodeIsOwned[i]) {
         ownedGIDs[oidx] = as<int> (globalNodeIds[i]);
 
-        coordXArray[oidx] = nodeCoord(i,0);
-        coordYArray[oidx] = nodeCoord(i,1);
-        coordZArray[oidx] = nodeCoord(i,2);
+        coordArray[0][oidx] = nodeCoord(i,0);
+        coordArray[1][oidx] = nodeCoord(i,1);
+        coordArray[2][oidx] = nodeCoord(i,2);
 
         ++oidx;
       }
     }
-    coordArray[0] = coordXArray;
-    coordArray[1] = coordYArray;
-    coordArray[2] = coordZArray;
     globalMapG = rcp (new map_type (-1, ownedGIDs (), 0, comm, node));
   }
 

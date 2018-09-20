@@ -51,9 +51,6 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <string>
 
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::string;
 
 //
@@ -80,9 +77,9 @@ static string strParams[NUMSTR][3]={
   {"error_check_level", "basic_assertions", "invalid_assertion_request"},
   {"debug_level", "basic_status", "invalid_status"},
   {"timer_type", "no_timers", "invalid_timers"},
-  {"debug_output_stream", "cout", "invalid_stream"},
+  {"debug_output_stream", "std::cout", "invalid_stream"},
   {"timer_output_stream", "/dev/null", "invalid_stream"},
-  {"memory_output_stream", "cerr", "invalid_stream"},
+  {"memory_output_stream", "std::cerr", "invalid_stream"},
   {"debug_procs", "all", "not_a_valid_list_of_any_type"},
   {"mj_parts", "2,3,4", "not_a_valid_list_of_any_type"},
   {"memory_procs", "2-10", "not_a_valid_list_of_any_type"},
@@ -123,8 +120,8 @@ int testInvalidValue( Teuchos::ParameterList &pl,
 {
   Teuchos::ParameterList validParameters;
   pl.set(paramName, badValue);
-  cout << endl;
-  cout << paramName << " = " << badValue << endl;
+  std::cout << std::endl;
+  std::cout << paramName << " = " << badValue << std::endl;
 
   bool failed = false;
   try{
@@ -132,13 +129,13 @@ int testInvalidValue( Teuchos::ParameterList &pl,
     pl.validateParametersAndSetDefaults(validParameters);
   }
   catch(std::exception &e){
-    cout << "Correctly generated an error:" << endl;
-    cout << e.what() << endl;
+    std::cout << "Correctly generated an error:" << std::endl;
+    std::cout << e.what() << std::endl;
     failed = true;
   }
 
   if (!failed){
-    cerr << "Bad parameter value was not detected in parameter list." << endl;
+    std::cerr << "Bad parameter value was not detected in parameter list." << std::endl;
     return 1;
   }
   return 0;
@@ -285,15 +282,15 @@ int main(int narg, char *arg[])
     Zoltan2::Environment::convertStringToInt(myParams);
   }
   catch(std::exception &e){
-    std::cerr << "Validate parameters generated an error:" << endl;
-    std::cerr << e.what() << endl;
-    std::cerr << "FAIL" << endl;
+    std::cerr << "Validate parameters generated an error:" << std::endl;
+    std::cerr << e.what() << std::endl;
+    std::cerr << "FAIL" << std::endl;
     return 1;
   }
 
-  cout << endl;
-  cout << "Parameters after validation: " << endl;
-  cout << myParams << endl;
+  std::cout << std::endl;
+  std::cout << "Parameters after validation: " << std::endl;
+  std::cout << myParams << std::endl;
 
   // Try invalid parameter values
   for (int i=0; i < NUMSTR; i++){
@@ -301,7 +298,7 @@ int main(int narg, char *arg[])
     int fail = 
       testInvalidValue<string>(badParams, strParams[i][0], strParams[i][2]);
     if (fail){
-      cout << "FAIL" << endl;
+      std::cout << "FAIL" << std::endl;
       return 1;
     }
   }
@@ -314,7 +311,7 @@ int main(int narg, char *arg[])
     int fail = 
        testInvalidValue<double>(badParams, fnParams[i][0], badVal);
     if (fail){
-      cout << "FAIL" << endl;
+      std::cout << "FAIL" << std::endl;
       return 1;
     }
   }
@@ -322,10 +319,10 @@ int main(int narg, char *arg[])
 
   // Print out all the documentation
 
-  cout << endl;
-  cout << "Parameter documentation:" << endl;
-  Zoltan2::printListDocumentation(validParameters, cout, std::string()); 
+  std::cout << std::endl;
+  std::cout << "Parameter documentation:" << std::endl;
+  Zoltan2::printListDocumentation(validParameters, std::cout, std::string()); 
 
-  cout << "PASS"  << endl;
+  std::cout << "PASS"  << std::endl;
   return 0;
 }

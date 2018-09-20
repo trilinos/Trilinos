@@ -50,6 +50,21 @@ namespace stk {
 
 #if defined( STK_HAS_MPI )
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
+#if MPI_VERSION >= 3
+#define STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
+#ifdef OMPI_MAJOR_VERSION
+//OpenMPI 3.1.x seems to have a bug in the MPI_Neighbor* functions.
+#if OMPI_MAJOR_VERSION == 3 && OMPI_MINOR_VERSION == 1
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+#endif
+
 void CommNeighbors::rank_error( const char * method , int p ) const
 {
   std::ostringstream os ;
@@ -75,17 +90,19 @@ stk::ParallelMachine CommNeighbors::setup_neighbor_comm(stk::ParallelMachine ful
                                                         const std::vector<int>& sendProcs,
                                                         const std::vector<int>& recvProcs)
 {
+  stk::ParallelMachine neighborComm = fullComm;
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
   MPI_Info info;
   MPI_Info_create(&info);
   int reorder = 0;
   const int* weights = (int*)MPI_UNWEIGHTED;
-  stk::ParallelMachine neighborComm;
   MPI_Dist_graph_create_adjacent(fullComm,
               recvProcs.size(), recvProcs.data(), weights,
               sendProcs.size(), sendProcs.data(), weights,
               info, reorder, &neighborComm);
   m_created_dist_graph = true;
   MPI_Info_free(&info);
+#endif
   return neighborComm;
 }
 
@@ -190,14 +207,14 @@ void store_recvd_data(const std::vector<unsigned char>& recvBuf,
                       const std::vector<int>& recvCounts,
                       const std::vector<int>& recvDispls,
                       const std::vector<int>& recvProcs,
-                      std::vector<CommBufferV>& m_recv)
+                      std::vector<CommBufferV>& recvBuffers)
 {
   for(size_t i=0; i<recvProcs.size(); ++i) {
     int p = recvProcs[i];
     const unsigned char* buf = recvBuf.data() + recvDispls[i];
     int len = recvCounts[i];
-    m_recv[p].resize(len);
-    std::memcpy(m_recv[p].raw_buffer(), buf, len);
+    recvBuffers[p].resize(len);
+    std::memcpy(recvBuffers[p].raw_buffer(), buf, len);
   }
 }
 
@@ -214,11 +231,13 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
   ThrowAssertMsg(recvCounts.size()==m_recv_procs.size(), "Error, recvCounts should be same size as m_recv_procs.");
   ThrowAssertMsg(recvDispls.size()==m_recv_procs.size(), "Error, recvDispls should be same size as m_recv_procs.");
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
   const int* sendCountsPtr = sendCounts.size() > 0 ? sendCounts.data() : nullptr;
   const int* recvCountsPtr = recvCounts.size() > 0 ? recvCounts.data() : nullptr;
 
   MPI_Neighbor_alltoall((void*)sendCountsPtr, 1, MPI_INT,
                         (void*)recvCountsPtr, 1, MPI_INT, neighborComm);
+#endif
 
   int totalRecv = 0;
   for(size_t i=0; i<recvCounts.size(); ++i) {
@@ -227,6 +246,7 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
   }
   recvBuf.resize(totalRecv);
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM 
   const unsigned char* sendBufPtr = sendBuf.size() > 0 ? sendBuf.data() : nullptr;
   const unsigned char* recvBufPtr = recvBuf.size() > 0 ? recvBuf.data() : nullptr;
   const int* sendDisplsPtr = sendDispls.size() > 0 ? sendDispls.data() : nullptr;
@@ -234,7 +254,62 @@ void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
   MPI_Neighbor_alltoallv(
       (void*)sendBufPtr, sendCountsPtr, sendDisplsPtr, MPI_BYTE,
       (void*)recvBufPtr, recvCountsPtr, recvDisplsPtr, MPI_BYTE, neighborComm);
+#endif
 }
+
+#ifndef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+
+void old_communicate(MPI_Comm comm,
+                     const std::vector<int>& send_procs,
+                     const std::vector<int>& recv_procs,
+                     const std::vector<CommBufferV>& send_buffers,
+                     std::vector<CommBufferV>& recv_buffers)
+{
+  const int mpitag = 10101, mpitag2 = 10102;
+  int maxRecvProcs = recv_procs.size();
+  int maxSendProcs = send_procs.size();
+  int max = std::max(maxSendProcs, maxRecvProcs);
+  std::vector<int> recv_sizes(maxRecvProcs, 0); 
+  std::vector<MPI_Request> requests(max, MPI_REQUEST_NULL);
+  std::vector<MPI_Request> requests2(max, MPI_REQUEST_NULL);
+  std::vector<MPI_Request> requests3(max, MPI_REQUEST_NULL);
+  std::vector<MPI_Status> statuses(max);
+  for(int i=0; i<maxRecvProcs; ++i) {
+      int p = recv_procs[i];
+      MPI_Irecv(&recv_sizes[i], 1, MPI_INT, p, mpitag, comm, &requests[i]);
+  }
+
+  int numSends = 0;
+  for(int p : send_procs) {
+      int send_size = send_buffers[p].size_in_bytes();
+      MPI_Ssend(&send_size, 1, MPI_INT, p, mpitag, comm);
+      if (send_size > 0) {
+          MPI_Issend(send_buffers[p].raw_buffer(), send_buffers[p].size_in_bytes(), MPI_BYTE, p, mpitag2, comm, &requests2[numSends++]);
+      }   
+  }
+
+  MPI_Status status;
+  int numRecvProcs = 0;
+  for(int i=0; i<maxRecvProcs; ++i) {
+      int idx = 0;
+      MPI_Waitany(maxRecvProcs, &requests[0], &idx, &status);
+      int p = status.MPI_SOURCE;
+      if (recv_sizes[idx] > 0) {
+          recv_buffers[p].resize(recv_sizes[idx]);
+          MPI_Irecv(recv_buffers[p].raw_buffer(), recv_buffers[p].size_in_bytes(), MPI_BYTE, p, mpitag2, comm, &requests3[numRecvProcs]);
+          numRecvProcs++;
+      }   
+  }
+
+  if (numRecvProcs > 0) {
+      MPI_Waitall(numRecvProcs, requests3.data(), statuses.data());
+  }
+  if (numSends > 0) {
+      MPI_Waitall(numSends, requests2.data(), statuses.data());
+  }
+}
+
+#endif
 
 void CommNeighbors::communicate()
 {
@@ -246,6 +321,7 @@ void CommNeighbors::communicate()
     return;
   }
 
+#ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
   std::vector<int> sendCounts, recvCounts(m_recv_procs.size(), 0);
   std::vector<int> sendDispls, recvDispls(m_recv_procs.size(), 0);
   std::vector<unsigned char> sendBuf, recvBuf;
@@ -256,6 +332,12 @@ void CommNeighbors::communicate()
                                          recvBuf, recvCounts, recvDispls);
 
   store_recvd_data(recvBuf, recvCounts, recvDispls, m_recv_procs, m_recv);
+
+#else
+
+  old_communicate(m_comm, m_send_procs, m_recv_procs, m_send, m_recv);
+
+#endif
 }
 
 #endif

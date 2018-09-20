@@ -954,11 +954,6 @@
       <Email address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="MeshingGenie">
-    <EmailAddresses>
-      <Email address="meshinggenie-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="TrilinosCouplings">
     <Dependency name="Teuchos" type="ILO"/>
     <Dependency name="ThreadPool" type="ILO"/>

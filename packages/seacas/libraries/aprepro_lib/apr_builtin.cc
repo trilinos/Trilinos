@@ -72,10 +72,27 @@ namespace SEAMS {
 
 namespace {
   std::unordered_map<size_t, std::vector<std::string>> tokenized_strings;
+  unsigned int hash(const char *symbol)
+  {
+    // Hash function from Aho, Sethi, Ullman "Compilers: Principles,
+    // Techniques, and Tools.  Page 436
+    unsigned int hashval;
+    unsigned int g;
+    for (hashval = 0; *symbol != '\0'; symbol++) {
+      hashval = (hashval << 4) + *symbol;
+      g       = hashval & 0xf0000000;
+      if (g != 0) {
+	hashval = hashval ^ (g >> 24);
+	hashval = hashval ^ g;
+      }
+    }
+    return hashval;
+  }
+
   std::vector<std::string> &get_tokenized_strings(const char *string, const char *delm)
   {
     // key is address of string + hash of delimiter
-    size_t key = *string + SEAMS::hash_symbol(delm);
+    size_t key = hash(string) + hash(delm);
     if (tokenized_strings.find(key) == tokenized_strings.end()) {
       std::string temp       = string;
       auto        tokens     = SEAMS::tokenize(temp, delm);
@@ -1104,7 +1121,7 @@ namespace SEAMS {
           auto tokens = tokenize(line, delim);
           for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
-              array_data->data[idx++] = atof(tokens[i].c_str());
+              array_data->data[idx++] = std::stod(tokens[i]);
             }
             else {
               array_data->data[idx++] = 0.0;
@@ -1151,7 +1168,7 @@ namespace SEAMS {
           auto tokens = tokenize(line, delim);
           for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
-              array_data->data[idx++] = atof(tokens[i].c_str());
+              array_data->data[idx++] = std::stod(tokens[i]);
             }
             else {
               array_data->data[idx++] = 0.0;
@@ -1166,4 +1183,16 @@ namespace SEAMS {
     return nullptr;
   }
 
+  array *do_array_from_string(const char *string, const char *delm)
+  {
+    auto tokens     = SEAMS::tokenize(string, delm);
+    auto array_data = new array(tokens.size(), 1);
+
+    int idx = 0;
+    for (const auto &token : tokens) {
+      array_data->data[idx++] = std::stod(token);
+    }
+    assert(idx == array_data->rows);
+    return array_data;
+  }
 } // namespace SEAMS

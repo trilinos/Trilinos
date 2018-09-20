@@ -63,9 +63,6 @@ public:
     FieldSpy(const std::string & name,
              const Teuchos::RCP<PHX::DataLayout> & data_layout);
                                                                         
-    void postRegistrationSetup(typename Traits::SetupData d,           
-                               PHX::FieldManager<Traits>& fm);        
-                                                                     
     void evaluateFields(typename Traits::EvalData d);               
 
     const PHX::FieldTag & getRequiredFieldTag() const 

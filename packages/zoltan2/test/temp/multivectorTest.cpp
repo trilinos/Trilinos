@@ -291,8 +291,6 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using std::cout;
-  using std::endl;
   typedef Tpetra::Map<TPETRA_LO, TPETRA_GO> map_type;
   typedef Tpetra::MultiVector<TPETRA_SCALAR, TPETRA_LO, TPETRA_GO> MV;
   typedef ArrayView<const TPETRA_SCALAR> coordList_t;
@@ -330,7 +328,7 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
 
   if (rank == 0 && doMemory) {
     const long nkb = Zoltan2::getProcessKilobytes ();
-    cout << "Create mvector 1: " << nkb << endl;
+    std::cout << "Create mvector 1: " << nkb << std::endl;
   }
 
   ///////////// Step 2 //////////////////////////////////
@@ -361,7 +359,7 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
 
   if (rank == 0 && doMemory) {
     const long nkb = Zoltan2::getProcessKilobytes ();
-    cout << "Create mvector 2: " << nkb << endl;
+    std::cout << "Create mvector 2: " << nkb << std::endl;
   }
 
   ///////////// Step 3 //////////////////////////////////

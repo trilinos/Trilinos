@@ -424,7 +424,7 @@ namespace Iovs {
 
   void DatabaseIO::create_global_node_and_element_ids() const
   {
-    Ioss::ElementBlockContainer element_blocks = this->get_region()->get_element_blocks();
+    const Ioss::ElementBlockContainer &element_blocks = this->get_region()->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator I;
     std::vector<std::string>                    component_names;
     component_names.emplace_back("GlobalElementId");
@@ -742,7 +742,7 @@ namespace Iovs {
     // Node Blocks --
     {
       // std::cerr << "DatabaseIO::write_meta_data node blocks\n";
-      Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
+      const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
       assert(node_blocks.size() == 1);
       nodeCount = node_blocks[0]->entity_count();
       // std::cerr << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";
@@ -750,7 +750,7 @@ namespace Iovs {
 
     // Nodesets ...
     {
-      Ioss::NodeSetContainer                 nodesets = region->get_nodesets();
+      const Ioss::NodeSetContainer &         nodesets = region->get_nodesets();
       Ioss::NodeSetContainer::const_iterator I;
       for (I = nodesets.begin(); I != nodesets.end(); ++I) {
         set_id(*I, &ids_);
@@ -759,7 +759,7 @@ namespace Iovs {
 
     // SideSets ...
     {
-      Ioss::SideSetContainer                 ssets = region->get_sidesets();
+      const Ioss::SideSetContainer &         ssets = region->get_sidesets();
       Ioss::SideSetContainer::const_iterator I;
 
       for (I = ssets.begin(); I != ssets.end(); ++I) {
@@ -769,7 +769,7 @@ namespace Iovs {
 
     // Element Blocks --
     {
-      Ioss::ElementBlockContainer                 element_blocks = region->get_element_blocks();
+      const Ioss::ElementBlockContainer &         element_blocks = region->get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator I;
       // Set ids of all entities that have "id" property...
       for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {

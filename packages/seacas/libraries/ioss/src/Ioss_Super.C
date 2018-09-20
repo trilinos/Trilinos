@@ -72,7 +72,7 @@ void Ioss::Super::make_super(const std::string &type)
   size_t digits = type.find_last_not_of("0123456789");
   if (digits != std::string::npos) {
     std::string node_count_str = type.substr(digits + 1);
-    int         node_count     = std::atoi(node_count_str.c_str());
+    int         node_count     = std::stoi(node_count_str);
     new Ioss::Super(type, node_count);
   }
 }

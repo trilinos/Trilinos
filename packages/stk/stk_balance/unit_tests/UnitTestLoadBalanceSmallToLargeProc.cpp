@@ -112,7 +112,7 @@ TEST(SomeProcessorsWithNoElements, writeSubdomains_onlyProcsWithElementsWrite)
     {
         stk::mesh::MetaData meta;
         stk::mesh::Field<double> &targetDecompField = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "junk", 1);
-        stk::mesh::put_field(targetDecompField, meta.universal_part());
+        stk::mesh::put_field_on_mesh(targetDecompField, meta.universal_part(), nullptr);
         stk::mesh::BulkData bulk(meta, comm);
         stk::io::fill_mesh(inputMesh, bulk);
 

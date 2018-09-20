@@ -783,11 +783,11 @@ namespace Iopg {
           // Seed the topo_map map with <block->name, face_topo>
           // pairs so we are sure that all processors have the same
           // starting topo_map (size and order).
-          Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+          const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
           for (int i = 0; i < elementBlockCount; i++) {
             Ioss::ElementBlock *         block        = element_blocks[i];
-            std::string                  name         = block->name();
+            const std::string &          name         = block->name();
             const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
             if (common_ftopo != nullptr) {
               // All sides of this element block's topology have the same topology
@@ -1599,7 +1599,7 @@ void DatabaseIO::compute_block_membership(Ioss::SideBlock *         sideblock,
     util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
   }
 
-  Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+  const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
   for (int i = 0; i < elementBlockCount; i++) {
     if (block_ids[i] == 1) {

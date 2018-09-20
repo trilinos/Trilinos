@@ -105,21 +105,6 @@ ScatterVectorFields(const std::string & scatterName,
 template<typename EvalT, typename Traits>
 void
 ScatterVectorFields<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* d */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  // this->utils.setFieldData(pointField_,fm);
-
-  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
-    // setup the field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-  }
-}
-
-template<typename EvalT, typename Traits>
-void
-ScatterVectorFields<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
 {

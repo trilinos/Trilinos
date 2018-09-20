@@ -128,13 +128,8 @@ void
 PointEvaluator<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  if(isVector)
-     this->utils.setFieldData(vectorField,fm);
-  else
-     this->utils.setFieldData(scalar,fm);
-
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 

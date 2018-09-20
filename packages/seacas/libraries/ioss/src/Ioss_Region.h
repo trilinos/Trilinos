@@ -346,8 +346,8 @@ inline void Ioss::Region::add_information_records(const std::vector<std::string>
 /** \brief Add an information record (an informative string) to the region's database.
  *
  *  \param[in] info The string to add.
- */ inline void
-Ioss::Region::add_information_record(const std::string &info)
+ */
+inline void Ioss::Region::add_information_record(const std::string &info)
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->add_information_record(info);

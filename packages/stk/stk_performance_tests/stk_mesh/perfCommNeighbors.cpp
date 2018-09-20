@@ -92,7 +92,7 @@ void fill_small_mesh_with_big_ids(stk::mesh::BulkData& bulkData)
     int otherProc = 1-myProc;
 
     stk::mesh::Field<double, stk::mesh::Cartesian3d>& coordField = bulkData.mesh_meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(coordField, bulkData.mesh_meta_data().universal_part(), 3);
+    stk::mesh::put_field_on_mesh(coordField, bulkData.mesh_meta_data().universal_part(), 3, nullptr);
     bulkData.mesh_meta_data().set_coordinate_field(&coordField);
 
     stk::mesh::Part& hexPart = bulkData.mesh_meta_data().get_topology_root_part(stk::topology::HEX_8);
@@ -144,8 +144,8 @@ protected:
             timerCommNeighbors("CommNeighbors", CHILDMASK1, rootTimer),
             duration(0.0), num_times(100)
     {
-        stk::mesh::put_field(nodeFieldScalar, get_meta().universal_part());
-        stk::mesh::put_field(nodeFieldVector, get_meta().universal_part(), 3);
+        stk::mesh::put_field_on_mesh(nodeFieldScalar, get_meta().universal_part(), nullptr);
+        stk::mesh::put_field_on_mesh(nodeFieldVector, get_meta().universal_part(), 3, nullptr);
     }
 
     ~StkPerfComm()

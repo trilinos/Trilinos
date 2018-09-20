@@ -310,7 +310,7 @@ namespace Ioex {
     std::size_t found  = str_id.find_first_not_of("0123456789");
     if (found == std::string::npos) {
       // All digits...
-      return std::atoi(str_id.c_str());
+      return std::stoi(str_id);
     }
 
     return 0;
@@ -584,8 +584,8 @@ namespace Ioex {
     // array consistent.
 
     // Get all element blocks in region...
-    bool                        omitted        = false;
-    Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
+    bool                               omitted        = false;
+    const Ioss::ElementBlockContainer &element_blocks = region->get_element_blocks();
     for (const auto &block : element_blocks) {
 
       if (Ioss::Utils::block_is_omitted(block)) {

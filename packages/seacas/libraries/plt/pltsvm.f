@@ -71,7 +71,7 @@ C=======================================================================
       REAL MAPP
       COMMON /STORAG/MEMORY(1000)
       COMMON /PSAVE/TDEVP(5,10),TTEXTP(40,10),TVECTP(5,10),
-     *       TGRAPH(100,10),TMAPP(5,10),IPOPD,IPOPT,IPOPV,IPOPG,IPOPM
+     *       TGRAPH(100,10),TMAPP(11,10),IPOPD,IPOPT,IPOPV,IPOPG,IPOPM
       EXTERNAL PLTBLK
 
       IF (IPOPM.EQ.10) THEN

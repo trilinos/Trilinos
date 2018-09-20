@@ -101,13 +101,17 @@ int main (int argc, char *argv[])
   // Entry point
   if(opts.useStaticProfile)
   {
-    if(opts.execTotalElementLoop && executeTotalElementLoopSP(comm, opts))        status = EXIT_FAILURE;
+    if(opts.execTotalElementLoop && executeTotalElementLoopSP(comm, opts))
+      status = EXIT_FAILURE;
   }
   else
   {
-    if(opts.execInsertGlobalIndices && executeInsertGlobalIndicesDP(comm, opts))  status = EXIT_FAILURE;
-    if(opts.execLocalElementLoop    && executeLocalElementLoopDP(comm, opts))     status = EXIT_FAILURE;
-    if(opts.execTotalElementLoop    && executeTotalElementLoopDP(comm, opts))     status = EXIT_FAILURE;
+    if(opts.execInsertGlobalIndices && executeInsertGlobalIndicesDP(comm, opts))
+       status = EXIT_FAILURE;
+    if(opts.execLocalElementLoop    && executeLocalElementLoopDP(comm, opts))
+       status = EXIT_FAILURE;
+    if(opts.execTotalElementLoop    && executeTotalElementLoopDP(comm, opts))
+       status = EXIT_FAILURE;
   }
 
   // Print out timing results.

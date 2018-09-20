@@ -73,5 +73,6 @@ C ... Write the property (unless it is 'ID')
 
  120  continue
  130  continue
+      CALL PRTERR('FATAL', 'Problem reading property')
       return 1
       end

@@ -109,9 +109,6 @@ public:
   { std::string postfixFieldName = (useCoordPostfix ? coordinateName : ""); 
     initialize(fieldName,fieldBasis,coordinateName,coordLayout,quadLayout,postfixFieldName); }
   
-  void postRegistrationSetup(typename TRAITST::SetupData d,
-			     PHX::FieldManager<TRAITST>& vm);
-
   void evaluateFields(typename TRAITST::EvalData workset);
 
 private:

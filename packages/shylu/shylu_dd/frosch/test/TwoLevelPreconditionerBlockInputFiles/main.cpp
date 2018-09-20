@@ -47,12 +47,12 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
-
+#if defined(HAVE_SHYLU_DDFROSCH_EPETRAEXT) && defined(HAVE_EPETRAEXT_HDF5)
 #include "EpetraExt_BlockMapIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_HDF5.h"
-
+#endif
 #include <Galeri_Maps.h>
 #include <Galeri_CrsMatrices.h>
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 				parameterList->print(cout);
 				cout << "--------------------------------------------------------------------------------\n\n";
 			}
-            
+#if defined(HAVE_SHYLU_DDFROSCH_EPETRAEXT) && defined(HAVE_EPETRAEXT_HDF5)
             unsigned Dimension = 2;
             RCP<HDF5> hDF5IO(new HDF5(*Comm));
             hDF5IO->Open("stokes.h5");
@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
             
 			if (Comm->MyPID()==0) cout << "done" << endl;
 
+#endif
 		}
 
 	}
