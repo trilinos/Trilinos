@@ -76,6 +76,7 @@
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_CantileverBeam.hpp"
 #include "ROL_Cubic.hpp"
+#include "ROL_CylinderHead.hpp"
 #include "ROL_Minimax1.hpp"
 #include "ROL_Minimax2.hpp"
 #include "ROL_Minimax3.hpp"
@@ -112,6 +113,7 @@ namespace ROL {
       \arg    SIMPLEEQCONSTRAINED       describe
       \arg    CANTILEVERBEAM            describe
       \arg    CUBIC                     describe
+      \arg    CYLINDERHEAD              describe
       \arg    MINIMAX1                  describe
       \arg    MINIMAX2                  describe
       \arg    MINIMAX3                  describe
@@ -143,6 +145,7 @@ namespace ROL {
     TESTOPTPROBLEM_SIMPLEEQCONSTRAINED,
     TESTOPTPROBLEM_CANTILEVERBEAM,
     TESTOPTPROBLEM_CUBIC,
+    TESTOPTPROBLEM_CYLINDERHEAD,
     TESTOPTPROBLEM_MINIMAX1,
     TESTOPTPROBLEM_MINIMAX2,
     TESTOPTPROBLEM_MINIMAX3,
@@ -178,6 +181,7 @@ namespace ROL {
       case TESTOPTPROBLEM_SIMPLEEQCONSTRAINED: retString = "Simple Equality Constrained";            break;
       case TESTOPTPROBLEM_CANTILEVERBEAM:      retString = "Cantilever Beam";                        break;
       case TESTOPTPROBLEM_CUBIC:               retString = "Cubic";                                  break;
+      case TESTOPTPROBLEM_CYLINDERHEAD:        retString = "Cylinder Head";                          break;
       case TESTOPTPROBLEM_MINIMAX1:            retString = "Minimax #1";                             break;
       case TESTOPTPROBLEM_MINIMAX2:            retString = "Minimax #2";                             break;
       case TESTOPTPROBLEM_MINIMAX3:            retString = "Minimax #3";                             break;
@@ -219,6 +223,7 @@ namespace ROL {
             (to == TESTOPTPROBLEM_SIMPLEEQCONSTRAINED) ||
             (to == TESTOPTPROBLEM_CANTILEVERBEAM)      ||
             (to == TESTOPTPROBLEM_CUBIC)               ||
+            (to == TESTOPTPROBLEM_CYLINDERHEAD)        ||
             (to == TESTOPTPROBLEM_MINIMAX1)            ||
             (to == TESTOPTPROBLEM_MINIMAX2)            ||
             (to == TESTOPTPROBLEM_MINIMAX3) );
@@ -287,6 +292,7 @@ namespace ROL {
       case TESTOPTPROBLEM_SIMPLEEQCONSTRAINED: tp = makePtr<ZOO::getSimpleEqConstrained<Real>>(); break;
       case TESTOPTPROBLEM_CANTILEVERBEAM:      tp = makePtr<ZOO::getCantileverBeam<Real>>();      break;
       case TESTOPTPROBLEM_CUBIC:               tp = makePtr<ZOO::getCubic<Real>>(2);              break;
+      case TESTOPTPROBLEM_CYLINDERHEAD:        tp = makePtr<ZOO::getCylinderHead<Real>>();        break;
       case TESTOPTPROBLEM_MINIMAX1:            tp = makePtr<ZOO::getMinimax1<Real>>();            break;
       case TESTOPTPROBLEM_MINIMAX2:            tp = makePtr<ZOO::getMinimax1<Real>>();            break;
       case TESTOPTPROBLEM_MINIMAX3:            tp = makePtr<ZOO::getMinimax1<Real>>();            break;
