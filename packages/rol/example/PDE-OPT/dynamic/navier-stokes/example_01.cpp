@@ -69,7 +69,6 @@
 #include "../../TOOLS/meshreader.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "dynpde_navier-stokes.hpp"
-#include "steadypde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
 #include "initial_condition.hpp"
 
@@ -93,6 +92,7 @@ int main(int argc, char *argv[]) {
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  const int numProcs = (comm->getSize() > 1) ? comm->getSize() : 0;
   const int myRank = comm->getRank();
   ROL::Ptr<std::ostream> outStream = ROL::makeStreamPtr( std::cout, (argc > 1) && (myRank==0) );
 
@@ -123,13 +123,10 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /*** Initialize mesh data structure. ***/
     ROL::Ptr<MeshManager<RealT>> meshMgr
-      = ROL::makePtr<MeshReader<RealT>>(*parlist);
+      = ROL::makePtr<MeshReader<RealT>>(*parlist, numProcs);
     // Initialize PDE describing Navier-Stokes equations.
     ROL::Ptr<DynamicPDE_NavierStokes<RealT>> pde
       = ROL::makePtr<DynamicPDE_NavierStokes<RealT>>(*parlist);
-    // Initalize PDE describing steady Navier-Stokes equations.
-    ROL::Ptr<SteadyPDE_NavierStokes<RealT>> pde0
-      = ROL::makePtr<SteadyPDE_NavierStokes<RealT>>(*parlist);
 
     /*************************************************************************/
     /***************** BUILD CONSTRAINT **************************************/
@@ -139,9 +136,6 @@ int main(int argc, char *argv[]) {
     const ROL::Ptr<Assembler<RealT>> assembler = dyn_con->getAssembler();
     dyn_con->setSolveParameters(*parlist);
     dyn_con->getAssembler()->printMeshData(*outStream);
-    ROL::Ptr<PDE_Constraint<RealT>> steady_con
-      = ROL::makePtr<PDE_Constraint<RealT>>(pde0,meshMgr,comm,*parlist,*outStream);
-    steady_con->setSolveParameters(*parlist);
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
@@ -253,14 +247,12 @@ int main(int argc, char *argv[]) {
       ROL::Ptr<ROL::PartitionedVector<RealT>> hz = ROL::PartitionedVector<RealT>::create(*zk, nt);
       zk->randomize(); z->randomize(); dz->randomize(); hz->randomize();
       uo->randomize(); un->randomize();
-      steady_con->checkApplyJacobian_1(*uo,*zk,*un,*uo,true,*outStream);
       ROL::ValidateFunction<RealT> validate(1,13,20,11,true,*outStream);
       ROL::DynamicObjectiveCheck<RealT>::check(*dyn_obj,validate,*uo,*un,*zk);
       ROL::DynamicConstraintCheck<RealT>::check(*dyn_con,validate,*uo,*un,*zk);
       obj->checkGradient(*z,*dz,true,*outStream);
       obj->checkHessVec(*z,*dz,true,*outStream);
       obj->checkHessSym(*z,*dz,*hz,true,*outStream);
-
     }
 
     /*************************************************************************/
