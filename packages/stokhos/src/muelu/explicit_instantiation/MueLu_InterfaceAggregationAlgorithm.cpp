@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMGX)
+
+
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -54,12 +54,12 @@
 // Sacado headers must be included first so that overloaded operators
 // are defined in the muelu template code
 #include "Stokhos_Sacado.hpp"
-#include "MueLu_AMGXOperator_def.hpp"
+#include "MueLu_InterfaceAggregationAlgorithm_def.hpp"
 
 typedef Stokhos::StandardStorage<int,double> Storage;
 typedef Sacado::PCE::OrthogPoly<double,Storage> pce_type;
-template class MueLu::AMGXOperator<pce_type, int, int>;
+template class MueLu::InterfaceAggregationAlgorithm<pce_type, int, int>;
 
 #endif
 
-#endif
+
