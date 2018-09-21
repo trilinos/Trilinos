@@ -44,7 +44,7 @@
 //
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMGX)
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_AMGX)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
