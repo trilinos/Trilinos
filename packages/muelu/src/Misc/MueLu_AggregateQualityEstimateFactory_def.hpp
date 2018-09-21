@@ -192,10 +192,10 @@ namespace MueLu {
       A->apply(*x, *tmp, Teuchos::NO_TRANS); // tmp now stores A*x
       A->apply(*x, *tmp, Teuchos::TRANS, -SCALAR_ONE, SCALAR_ONE); // tmp now stores A*x - A^T*x
 
-      Array<SC> tmp_norm(1);
+      Array<double> tmp_norm(1);
       tmp->norm2(tmp_norm());
 
-      Array<SC> x_norm(1);
+      Array<double> x_norm(1);
       tmp->norm2(x_norm());
 
       if (tmp_norm[0] > 1e-10*x_norm[0]) {
