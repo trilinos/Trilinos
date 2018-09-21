@@ -242,7 +242,7 @@ namespace MueLu {
       }
       for (size_t j = rowptr[i]; j < rowptr[i+1]; j++) {
         if(doNotDrop == true ||
-            ( STS::magnitude(values[j] / sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]]))   ) >= STS::magnitude(amalgDropTol) )) {
+           ( STS::magnitude(values[j] / STS::magnitude(sqrt(STS::magnitude(diagVecData[i]) * STS::magnitude(diagVecData[colind[j]])))   ) >= STS::magnitude(amalgDropTol) )) {
           blockColumn = myLocalNodeIds[colind[j]];
           if(isNonZero[blockColumn] == false) {
             isNonZero[blockColumn] = true;
@@ -392,7 +392,7 @@ namespace MueLu {
             vals[j] = std::sqrt( (x[i]-x[cols[j]]) * (x[i]-x[cols[j]]) +
                                  (y[i]-y[cols[j]]) * (y[i]-y[cols[j]]) );
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i]);
-            vals[j] = -1./vals[j];
+            vals[j] = -Teuchos::ScalarTraits<SC>::one()/vals[j];
             sum = sum - vals[j];
           }
           else diag = j;
@@ -418,7 +418,7 @@ namespace MueLu {
 
             TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == Teuchos::ScalarTraits<Scalar>::zero(), MueLu::Exceptions::RuntimeError, "buildLaplacian: error, " << i << " and " << cols[j] << " have same coordinates: " << x[i] << " and " << y[i] << " and " << z[i]);
 
-            vals[j] = -1./vals[j];
+            vals[j] = -Teuchos::ScalarTraits<SC>::one()/vals[j];
             sum = sum - vals[j];
           }
           else diag = j;

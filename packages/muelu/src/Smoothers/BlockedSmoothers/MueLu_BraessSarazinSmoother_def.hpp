@@ -362,7 +362,7 @@ namespace MueLu {
           ArrayRCP<SC> deltaX1data = deltaX1->getDataNonConst(0);
           ArrayRCP<SC> Rtmpdata    = Rtmp->getDataNonConst(0);
           for (GO row = 0; row < deltaX1data.size(); row++)
-            deltaX1data[row] = 1.1*Rtmpdata[row] / Sdiag[row];
+            deltaX1data[row] = Teuchos::as<SC>(1.1)*Rtmpdata[row] / Sdiag[row];
         } else {
           TEUCHOS_TEST_FOR_EXCEPTION(true,MueLu::Exceptions::RuntimeError,"MueLu::BraessSarazinSmoother: q2q1 mode only supported for non-blocked operators.")
         }

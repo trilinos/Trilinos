@@ -126,7 +126,8 @@ namespace MueLu {
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");

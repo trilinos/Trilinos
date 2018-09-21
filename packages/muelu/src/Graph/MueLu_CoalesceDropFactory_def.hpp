@@ -118,9 +118,9 @@ namespace MueLu {
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> dxMV;
-
     typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename STS::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     if (predrop_ != Teuchos::null)
       GetOStream(Parameters0) << predrop_->description();
@@ -201,7 +201,7 @@ namespace MueLu {
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
-        } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) || 
+        } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) ||
                     (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
@@ -525,7 +525,7 @@ namespace MueLu {
         // ap: somehow, if I move this line to [*1*], Belos throws an error
         // I'm not sure what's going on. Do we always have to Get data, if we did
         // DeclareInput for it?
-        RCP<dxMV> Coords = Get< RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
+        RCP<RealValuedMultiVector> Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
@@ -590,9 +590,9 @@ namespace MueLu {
           }
           LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
 
-          RCP<dxMV>             ghostedCoords;
-          RCP<Vector>           ghostedLaplDiag;
-          Teuchos::ArrayRCP<SC> ghostedLaplDiagData;
+          RCP<RealValuedMultiVector> ghostedCoords;
+          RCP<Vector>                ghostedLaplDiag;
+          Teuchos::ArrayRCP<SC>      ghostedLaplDiagData;
           if (threshold != STS::zero()) {
             // Get ghost coordinates
             RCP<const Import> importer;
@@ -606,7 +606,7 @@ namespace MueLu {
                 importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
               }
             } //subtimer
-            ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
+            ghostedCoords = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
             {
             SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
             ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
@@ -616,12 +616,12 @@ namespace MueLu {
             RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
             ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             Array<LO> indicesExtra;
-            Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
+            Teuchos::Array<Teuchos::ArrayRCP<const real_type>> coordData;
             if (threshold != STS::zero()) {
               const size_t numVectors = ghostedCoords->getNumVectors();
               coordData.reserve(numVectors);
               for (size_t j = 0; j < numVectors; j++) {
-                Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+                Teuchos::ArrayRCP<const real_type> tmpData=ghostedCoords->getData(j);
                 coordData.push_back(tmpData);
               }
             }
@@ -646,7 +646,7 @@ namespace MueLu {
                 const LO col = indices[colID];
 
                 if (row != col) {
-                  localLaplDiagData[row] += STS::one()/MueLu::Utilities<double,LO,GO,NO>::Distance2(coordData, row, col);
+                  localLaplDiagData[row] += STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
                 }
               }
             }
@@ -675,12 +675,12 @@ namespace MueLu {
           Array<LO> indicesExtra;
           {
           SubFactoryMonitor m1(*this, "Laplacian dropping", currentLevel);
-          Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
+          Teuchos::Array<Teuchos::ArrayRCP<const real_type>> coordData;
           if (threshold != STS::zero()) {
             const size_t numVectors = ghostedCoords->getNumVectors();
             coordData.reserve(numVectors);
             for (size_t j = 0; j < numVectors; j++) {
-              Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+              Teuchos::ArrayRCP<const real_type> tmpData=ghostedCoords->getData(j);
               coordData.push_back(tmpData);
             }
           }
@@ -723,7 +723,7 @@ namespace MueLu {
                   continue;
                 }
 
-                SC laplVal = STS::one() / MueLu::Utilities<double,LO,GO,NO>::Distance2(coordData, row, col);
+                SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
@@ -859,7 +859,7 @@ namespace MueLu {
         for(LO col=0; col<Teuchos::as<LO>(nnz); col++) {
           GO gcid = colMap->getGlobalElement(indices[col]); // global column id
 
-          if(vals[col]!=0.0) {
+          if(vals[col]!=STS::zero()) {
             GO cnodeId = AmalgamationFactory::DOFGid2NodeId(gcid, blockdim, offset, indexBase);
             cnodeIds->push_back(cnodeId);
             realnnz++; // increment number of nnz in matrix row
