@@ -93,7 +93,8 @@ int main(int argc, char *argv[]) {
       ROL::Ptr<ROL::OptimizationProblem<RealT> > problem;
       ROL::GetTestProblem<RealT>(problem,x0,z,prob);
 
-      if ((problem->getProblemType() == ROL::TYPE_E || problem->getProblemType() == ROL::TYPE_EB) && prob != ROL::TESTOPTPROBLEM_CANTILEVERBEAM) {
+      if ((problem->getProblemType() == ROL::TYPE_E || problem->getProblemType() == ROL::TYPE_EB)
+          && (prob != ROL::TESTOPTPROBLEM_CANTILEVERBEAM && prob != ROL::TESTOPTPROBLEM_QUARTIC)) {
         *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
         // Get Dimension of Problem
