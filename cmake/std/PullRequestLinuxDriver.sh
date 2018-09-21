@@ -109,6 +109,8 @@ do
     else
       exit $ierror
     fi
+  else
+    break
   fi
 done
 
