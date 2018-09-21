@@ -108,10 +108,12 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
   }
-  else if ( name == "Entropic Risk"                   ||
-            name == "Mean Plus Deviation From Target" ||
-            name == "Mean Plus Deviation"             ||
-            name == "Mean Plus Variance From Target"  ||
+  else if ( name == "Entropic Risk"                        ||
+            name == "Mean Plus Semi-Deviation From Target" ||
+            name == "Mean Plus Semi-Deviation"             ||
+            name == "Mean Plus Deviation From Target"      ||
+            name == "Mean Plus Deviation"                  ||
+            name == "Mean Plus Variance From Target"       ||
             name == "Mean Plus Variance" ) {
     nStatistic = 0;
   }
@@ -184,10 +186,12 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
           upper.push_back(ROL_INF<Real>());
         }
       }
-      else if ( riskString[i] == "Entropic Risk"                   ||
-                riskString[i] == "Mean Plus Deviation From Target" ||
-                riskString[i] == "Mean Plus Deviation"             ||
-                riskString[i] == "Mean Plus Variance From Target"  ||
+      else if ( riskString[i] == "Entropic Risk"                        ||
+                riskString[i] == "Mean Plus Semi-Deviation From Target" ||
+                riskString[i] == "Mean Plus Semi-Deviation"             ||
+                riskString[i] == "Mean Plus Deviation From Target"      ||
+                riskString[i] == "Mean Plus Deviation"                  ||
+                riskString[i] == "Mean Plus Variance From Target"       ||
                 riskString[i] == "Mean Plus Variance" ) {
         nStatistic += 0;
       }
