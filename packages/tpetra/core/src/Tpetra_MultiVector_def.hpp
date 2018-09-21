@@ -3996,18 +3996,19 @@ namespace Classes {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcpFromRef;
-    typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    using std::endl;
+    using ATS = Kokkos::Details::ArithTraits<impl_scalar_type>;
+    using STS = Teuchos::ScalarTraits<Scalar>;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "multiply: ";
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::multiply");
 
     // This routine performs a variety of matrix-matrix multiply
     // operations, interpreting the MultiVector (this-aka C , A and B)
     // as 2D matrices.  Variations are due to the fact that A, B and C
-    // can be local replicated or global distributed MultiVectors and
-    // that we may or may not operate with the transpose of A and B.
-    // Possible cases are:
+    // can be locally replicated or globally distributed MultiVectors
+    // and that we may or may not operate with the transpose of A and
+    // B.  Possible cases are:
     //
     //     Operations                          # Cases  Notes
     //  1) C(local) = A^X(local) * B^X(local)  4        X=Trans or Not, no comm needed
@@ -4030,6 +4031,10 @@ namespace Classes {
 
     impl_scalar_type beta_local = beta; // local copy of beta; might be reassigned below
 
+    const bool A_is_local = ! A.isDistributed ();
+    const bool B_is_local = ! B.isDistributed ();
+    const bool C_is_local = ! this->isDistributed ();
+    
     // In debug mode, check compatibility of local dimensions.  We
     // only do this in debug mode, since it requires an all-reduce
     // to ensure correctness on all processses.  It's entirely
@@ -4038,14 +4043,15 @@ namespace Classes {
     // could cause this method to hang.
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
-      if (! this->getMap ().is_null () && ! this->getMap ()->getComm ().is_null ()) {
+      auto myMap = this->getMap ();
+      if (! myMap.is_null () && ! myMap->getComm ().is_null ()) {
         using Teuchos::Comm;
         using Teuchos::RCP;
         using Teuchos::REDUCE_MIN;
         using Teuchos::reduceAll;
         using Teuchos::outArg;
 
-        RCP<const Comm<int> > comm = this->getMap ()->getComm ();
+        RCP<const Comm<int> > comm = myMap->getComm ();
         const size_t A_nrows =
           (transA != NO_TRANS) ? A.getNumVectors () : A.getLocalLength ();
         const size_t A_ncols =
@@ -4057,20 +4063,54 @@ namespace Classes {
 
         const bool lclBad = this->getLocalLength () != A_nrows ||
           this->getNumVectors () != B_ncols || A_ncols != B_nrows;
+
+	const int myRank = comm->getRank ();
+	std::ostringstream errStrm;
+	if (this->getLocalLength () != A_nrows) {
+	  errStrm << "Proc " << myRank << ": this->getLocalLength()="
+	    << this->getLocalLength () << " != A_nrows=" << A_nrows
+	    << "." << std::endl;
+	}
+	if (this->getNumVectors () != B_ncols) {
+	  errStrm << "Proc " << myRank << ": this->getNumVectors()="
+	    << this->getNumVectors () << " != B_ncols=" << B_ncols
+	    << "." << std::endl;
+	}
+	if (A_ncols != B_nrows) {
+	  errStrm << "Proc " << myRank << ": A_ncols="
+	    << A_ncols << " != B_nrows=" << B_nrows
+	    << "." << std::endl;
+	}
+	
         const int lclGood = lclBad ? 0 : 1;
         int gblGood = 0;
         reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
+	if (gblGood != 1) {
+	  std::ostringstream os;
+	  ::Tpetra::Details::gathervPrint (os, errStrm.str (), *comm);
 
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (gblGood != 1, std::runtime_error, "Local dimensions of '*this', "
-           "op(A), and op(B) are not consistent on at least one process "
-           "in this object's communicator.");
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::runtime_error, "Inconsistent local dimensions on at "
+	     "least one process in this object's communicator." << std::endl
+	     << "Operation: "
+	     << "C(" << (C_is_local ? "local" : "distr") << ") = "
+	     << alpha << "*A" 
+	     << (transA == Teuchos::TRANS ? "^T" :
+		 (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
+	     << "(" << (A_is_local ? "local" : "distr") << ") + "
+	     << beta << "*B"
+	     << (transA == Teuchos::TRANS ? "^T" :
+		 (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
+	     << "(" << (B_is_local ? "local" : "distr") << ")." << std::endl
+	     << "Global dimensions: C(" << this->getGlobalLength () << ", "
+	     << this->getNumVectors () << "), A(" << A.getGlobalLength ()
+	     << ", " << A.getNumVectors () << "), B(" << B.getGlobalLength ()
+	     << ", " << B.getNumVectors () << ")." << std::endl
+	     << os.str ());
+	}
       }
     }
 
-    const bool A_is_local = ! A.isDistributed ();
-    const bool B_is_local = ! B.isDistributed ();
-    const bool C_is_local = ! this->isDistributed ();
     // Case 1: C(local) = A^X(local) * B^X(local)
     const bool Case1 = C_is_local && A_is_local && B_is_local;
     // Case 2: C(local) = A^T(distr) * B  (distr)
