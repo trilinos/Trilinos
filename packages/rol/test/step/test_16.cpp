@@ -80,7 +80,9 @@ int main(int argc, char *argv[]) {
     std::vector<ROL::Ptr<ROL::Vector<RealT>>> z;
     ROL::Ptr<ROL::OptimizationProblem<RealT>> optProblem;
     //ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CANTILEVERBEAM);
-    ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CYLINDERHEAD);
+    //ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CYLINDERHEAD);
+    //ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_QUARTIC);
+    ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CANTILEVER);
 
     // Get Dimension of Problem
     int dim = x0->dimension(); 
