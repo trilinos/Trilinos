@@ -86,16 +86,17 @@ public:
   SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& grp,
          const Teuchos::RCP<Teuchos::ParameterList>& params);
   virtual ~SingleStep();
+  virtual void reset();
   virtual void reset(const NOX::Abstract::Vector& initial_guess);
   virtual void reset(const NOX::Abstract::Vector& initial_guess,
              const Teuchos::RCP<NOX::StatusTest::Generic>& test);
-  virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;

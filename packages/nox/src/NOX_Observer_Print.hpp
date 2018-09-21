@@ -36,37 +36,36 @@
 //
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_MeritFunction_Generic.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_Factory.H"
-#include "Teuchos_ParameterList.hpp"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Factory.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_Divergence.H"
-#include "NOX_StatusTest_RelativeNormF.H"
-#include "NOX_StatusTest_NStep.H"
-#include "NOX_Utils.H"
-#include "NOX_LineSearch_UserDefinedFactory.H"
-#include "NOX_LineSearch_UserDefinedFactoryT.H"
-#include "NOX_Direction_UserDefinedFactory.H"
-#include "NOX_Direction_UserDefinedFactoryT.H"
+#ifndef NOX_OBSERVER_PRINT_HPP
+#define NOX_OBSERVER_PRINT_HPP
+
+#include "NOX_Common.H"
+#include "Teuchos_RCP.hpp"
+#include "NOX_Observer.hpp"
+
+namespace NOX {
+
+  class Utils;
+
+  /** \brief A NOX::Observer that provides summary solver output.
+
+      This object demonstrates how to tailor the output from NOX for a
+      particular user application. Users can disable the default
+      output from NOX and use the NOX::Observer to output information
+      in their own format.
+  */
+  class ObserverPrint : public NOX::Observer {
+  public:
+    ObserverPrint(const Teuchos::RCP<NOX::Utils>& printUtils);
+    // Derived methods
+    void runPreIterate(const NOX::Solver::Generic& solver);
+    void runPostIterate(const NOX::Solver::Generic& solver);
+  private:
+    void printStep(const NOX::Solver::Generic& solver);
+    Teuchos::RCP<NOX::Utils> os_;
+  };
+}
+
+#endif

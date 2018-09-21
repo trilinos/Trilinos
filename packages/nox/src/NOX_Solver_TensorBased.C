@@ -269,6 +269,17 @@ reset(const NOX::Abstract::Vector& initialGuess)
   init();
 }
 
+void NOX::Solver::TensorBased::
+reset()
+{
+  stepSize = 0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  counter->reset();
+  numJvMults = 0;
+  numJ2vMults = 0;
+}
+
 NOX::Solver::TensorBased::~TensorBased()
 {
 #ifdef DEVELOPER_CODE
@@ -281,7 +292,7 @@ NOX::Solver::TensorBased::~TensorBased()
 }
 
 
-NOX::StatusTest::StatusType  NOX::Solver::TensorBased::getStatus()
+NOX::StatusTest::StatusType  NOX::Solver::TensorBased::getStatus() const
 {
   return status;
 }
@@ -391,6 +402,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::step()
 NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)

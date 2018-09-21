@@ -175,17 +175,36 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnPtr->setX(initialGuess);
   testPtr = t;
-  init();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  time = 0.0;
 }
 
 void NOX::Solver::PseudoTransient::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
-  init();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  time = 0.0;
 }
 
-NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::getStatus()
+void NOX::Solver::PseudoTransient::
+reset()
+{
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  time = 0.0;
+}
+
+NOX::StatusTest::StatusType
+NOX::Solver::PseudoTransient::getStatus() const
 {
   return status;
 }
@@ -376,6 +395,8 @@ NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::step()
 NOX::StatusTest::StatusType NOX::Solver::PseudoTransient::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
