@@ -108,7 +108,7 @@ namespace MueLu {
   void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level & currentLevel) const {
 
     FactoryMonitor m(*this, "Build", currentLevel);
-      
+
     RCP<Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
     RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
 
@@ -153,7 +153,7 @@ namespace MueLu {
     LO numNodes = vertex2AggId->getLocalLength();
     aggSortedVertices = ArrayRCP<LO>(numNodes,-LO_ONE);
     std::vector<LO> vertexInsertionIndexByAgg(numNodes,LO_ZERO);
-      
+
     for (LO i=0;i<numNodes;++i) {
 
       LO aggId = vertex2AggIdData[i];
@@ -199,11 +199,11 @@ namespace MueLu {
       tmp->norm2(x_norm());
 
       if (tmp_norm[0] > 1e-10*x_norm[0]) {
-	std::string transpose_string = "transpose";
-	RCP<ParameterList> whatever;
-	AT = Utilities::Transpose(*rcp_const_cast<Matrix>(A), true, transpose_string, whatever);
+        std::string transpose_string = "transpose";
+        RCP<ParameterList> whatever;
+        AT = Utilities::Transpose(*rcp_const_cast<Matrix>(A), true, transpose_string, whatever);
 
-	assert(A->getMap()->isSameAs( *(AT->getMap()) ));
+        assert(A->getMap()->isSameAs( *(AT->getMap()) ));
       }
 
     }
@@ -240,45 +240,45 @@ namespace MueLu {
 
       // Iterate over each node in the aggregate
       for (LO idx=LO_ZERO; idx<aggSize; ++idx) {
-              
-	LO nodeId = aggSortedVertices[idx+aggsToIndices[aggId]];
-	A->getLocalRowView(nodeId, rowIndices, rowValues);
-	AT->getLocalRowView(nodeId, rowIndices, colValues);
 
-	// Iterate over each element in the row corresponding to the current node
-	for (LO elem=LO_ZERO; elem<rowIndices.size();++elem) {
+        LO nodeId = aggSortedVertices[idx+aggsToIndices[aggId]];
+        A->getLocalRowView(nodeId, rowIndices, rowValues);
+        AT->getLocalRowView(nodeId, rowIndices, colValues);
 
-	  LO nodeId2 = rowIndices[elem];
-	  SC val = (rowValues[elem]+colValues[elem])/SCALAR_TWO;
+        // Iterate over each element in the row corresponding to the current node
+        for (LO elem=LO_ZERO; elem<rowIndices.size();++elem) {
 
-	  LO idxInAgg = -LO_ONE; // -1 if element is not in aggregate
+          LO nodeId2 = rowIndices[elem];
+          SC val = (rowValues[elem]+colValues[elem])/SCALAR_TWO;
 
-	  // Check whether the element belongs in the aggregate. If it does
-	  // find, its index. Otherwise, add it's value to the off diagonal
-	  // sums
-	  for (LO idx2=LO_ZERO; idx2<aggSize; ++idx2) {
+          LO idxInAgg = -LO_ONE; // -1 if element is not in aggregate
 
-	    if (aggSortedVertices[idx2+aggsToIndices[aggId]] == nodeId2) {
+          // Check whether the element belongs in the aggregate. If it does
+          // find, its index. Otherwise, add it's value to the off diagonal
+          // sums
+          for (LO idx2=LO_ZERO; idx2<aggSize; ++idx2) {
 
-	      // Element does belong to aggregate
-	      idxInAgg = idx2;
-	      break;
+            if (aggSortedVertices[idx2+aggsToIndices[aggId]] == nodeId2) {
 
-	    }
+              // Element does belong to aggregate
+              idxInAgg = idx2;
+              break;
 
-	  }
+            }
 
-	  if (idxInAgg == -LO_ONE) { // Element does not belong to aggregate
+          }
 
-	    offDiagonalAbsoluteSums[idx] += Teuchos::ScalarTraits<SC>::magnitude(val);
+          if (idxInAgg == -LO_ONE) { // Element does not belong to aggregate
 
-	  } else { // Element does belong to aggregate
+            offDiagonalAbsoluteSums[idx] += Teuchos::ScalarTraits<SC>::magnitude(val);
 
-	    A_aggPart(idx,idxInAgg) = val;
-		      
-	  }
+          } else { // Element does belong to aggregate
 
-	}
+            A_aggPart(idx,idxInAgg) = val;
+
+          }
+
+        }
 
       }
 
@@ -287,8 +287,8 @@ namespace MueLu {
       DenseMatrix A_aggPartDiagonal(aggSize, aggSize, true);
       SC diag_sum = SCALAR_ZERO;
       for (int i=0;i<aggSize;++i) {
-	A_aggPartDiagonal(i,i) = A_aggPart(i,i);
-	diag_sum += A_aggPart(i,i);
+        A_aggPartDiagonal(i,i) = A_aggPart(i,i);
+        diag_sum += A_aggPart(i,i);
       }
 
       DenseMatrix ones(aggSize, aggSize, false);
@@ -306,8 +306,8 @@ namespace MueLu {
       DenseMatrix bottomMatrix(A_aggPart);
       SC matrixNorm = A_aggPart.normInf();
       for (int i=0;i<aggSize;++i){
-	// Include a small perturbation to the bottom matrix to make it nonsingular
-	bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
+        // Include a small perturbation to the bottom matrix to make it nonsingular
+        bottomMatrix(i,i) -= offDiagonalAbsoluteSums(i) - 1e-12*matrixNorm;
       }
 
       // Compute generalized eigenvalues
@@ -327,30 +327,30 @@ namespace MueLu {
       LO* bwork = NULL;
       SC* vl = NULL;
       SC* vr = NULL;
-	  
+
       const char NO='N';
       myLapack.GGES(NO,NO,NO,ptr2func,aggSize,
-		    topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
-		    alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
-		    vr,aggSize,workArray.values(),workArray.length(),bwork,
-		    &info);
+                    topMatrix.values(),aggSize,bottomMatrix.values(),aggSize,&sdim,
+                    alpha_real.values(),alpha_imag.values(),beta.values(),vl,aggSize,
+                    vr,aggSize,workArray.values(),workArray.length(),bwork,
+                    &info);
 
       assert(info == LO_ZERO);
 
       SC maxEigenVal = SCALAR_ZERO;
 
       for (int i=LO_ZERO;i<aggSize;++i) {
-	      
-	assert(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
-	maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
+
+        assert(fabs(alpha_imag[i]) <= 1e-8*fabs(alpha_real[i])); // Eigenvalues should be nearly real
+        maxEigenVal = std::max(maxEigenVal, alpha_real[i]/beta[i]);
 
       }
 
       (agg_qualities->getDataNonConst(0))[aggId] = SCALAR_TWO*maxEigenVal;
-	  
+
     }
 
-			  
+
   }
 
 
@@ -360,7 +360,7 @@ namespace MueLu {
     ParameterList pL = GetParameterList();
 
     double good_agg_thresh = pL.get<double>("aggregate qualities: good aggregate threshold");
-      
+
     ArrayRCP<const double> data = agg_qualities->getData(0);
 
     LO num_bad_aggs = 0;
@@ -385,8 +385,8 @@ namespace MueLu {
     }
 
   }
-    
-  
+
+
 
 } // namespace MueLu
 
