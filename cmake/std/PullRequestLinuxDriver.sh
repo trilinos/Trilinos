@@ -106,6 +106,7 @@ do
     if i != num_retries
     then
       echo "retry $i"
+      sleep $(($i*20))
     else
       exit $ierror
     fi
