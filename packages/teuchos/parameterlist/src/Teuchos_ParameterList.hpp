@@ -802,13 +802,28 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  * example, two parameters can have the same values but not have the same
  * documentation strings or the same validators.
  *
- * \note This test respects ordering of the ParameterList entries; the same values in a different 
+ * \note This function respects ordering of the ParameterList entries; the same values in a different
  *       order will result in \false.
  *
  * \relates ParameterList
  */
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2,
     bool verbose = false);
+
+
+/** \brief Returns true if two parameter lists have the same values independent of ordering.
+ *
+ * Two parameter lists may have the same values but may not be identical.  For
+ * example, two parameters can have the same values but not have the same
+ * documentation strings or the same validators.
+ *
+ * \note This function does not respect ordering of the ParameterList entries; the same values in a different
+ *       order will result in \true.
+ *
+ * \relates ParameterList
+ */
+TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT bool haveSameValuesSorted( const ParameterList& list1,
+    const ParameterList& list2, bool verbose = false);
 
 
 // /////////////////////////////////////////////////////

@@ -52,6 +52,7 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Thyra.H"
+#include "NOX_SolverStats.hpp"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -314,11 +315,9 @@ TEUCHOS_UNIT_TEST(SingleStepSolver, reuseJacobian)
   TEST_EQUALITY(solve_status.extraParameters->get<int>("Number of Iterations"), 1);
   TEST_EQUALITY(solve_status.solveStatus, ::Thyra::SOLVE_STATUS_CONVERGED);
   // Value is 50 for 4 mpi processes. Pad for different process counts
-  TEST_ASSERT(group->getNumIterationsLastLinearSolve() < 52);
-  double normLastLinearSolveResidual = 0.0;
-  auto lastLinearSolveStatus = group->getNormLastLinearSolveResidual(normLastLinearSolveResidual);
-  TEST_EQUALITY(lastLinearSolveStatus, NOX::Abstract::Group::Ok);
-  TEST_ASSERT(normLastLinearSolveResidual < 1.0e-7);
+  TEST_ASSERT(solver->getNOXSolver()->getSolverStatistics()->linearSolve.lastLinearSolve_NumIterations < 55);
+  TEST_EQUALITY(solver->getNOXSolver()->getSolverStatistics()->linearSolve.lastLinearSolve_Converged, true);
+  TEST_ASSERT(solver->getNOXSolver()->getSolverStatistics()->linearSolve.lastLinearSolve_AchievedTolerance < 1.0e-7);
 
   if (Comm.MyPID() == 0)
     std::cout << "Final Parameters\n****************\n" << *nl_params << std::endl; 

@@ -62,7 +62,7 @@ namespace NOX {
   namespace MeritFunction {
     class Generic;
   }
-  class SolverStats;
+  struct SolverStats;
 }
 
 namespace NOX {

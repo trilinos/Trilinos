@@ -73,7 +73,7 @@ SafeguardedDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
   paramsPtr_(NULL),
   globalDataPtr_(gd),
   print_(gd->getUtils()),
-  counter_(&gd->getNonConstSolverStatistics()->line_search)
+  counter_(&gd->getNonConstSolverStatistics()->lineSearch)
 {
   reset(gd, params);
 }
@@ -84,7 +84,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 {
   globalDataPtr_ = gd;
   print_.reset(gd->getUtils());
-  counter_ = &gd->getNonConstSolverStatistics()->line_search;
+  counter_ = &gd->getNonConstSolverStatistics()->lineSearch;
   paramsPtr_ = &params;
 
   Teuchos::ParameterList& p = params.sublist("Safeguarded Direction");

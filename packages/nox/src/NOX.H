@@ -66,7 +66,6 @@
 #include "NOX_StatusTest_RelativeNormF.H"
 #include "NOX_StatusTest_NStep.H"
 #include "NOX_Utils.H"
-#include "NOX_Version.H"
 #include "NOX_LineSearch_UserDefinedFactory.H"
 #include "NOX_LineSearch_UserDefinedFactoryT.H"
 #include "NOX_Direction_UserDefinedFactory.H"

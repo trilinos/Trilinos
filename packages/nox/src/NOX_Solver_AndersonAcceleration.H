@@ -52,7 +52,6 @@
 #define NOX_SOLVER_ANDERSON_ACCELERATION_H
 
 #include "NOX_Solver_Generic.H"             // base class
-#include "NOX_Solver_PrePostOperator.H"  // class data element
 #include "Teuchos_ParameterList.hpp"             // class data element
 #include "NOX_Utils.H"                 // class data element
 #include "Teuchos_RCP.hpp"       // class data element
@@ -62,6 +61,7 @@
 // Forward declarations
 namespace NOX {
   class GlobalData;
+  class Observer;
   namespace LineSearch {
     class Generic;
   }
@@ -142,14 +142,15 @@ public:
   //! Destructor
   virtual ~AndersonAcceleration();
 
-  virtual void reset(const NOX::Abstract::Vector& initialGuess,
-             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual void reset();
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
-  virtual NOX::StatusTest::StatusType getStatus();
+  virtual void reset(const NOX::Abstract::Vector& initialGuess,
+                     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
   virtual double getStepSize() const;
@@ -157,10 +158,11 @@ public:
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const {return oldSolnPtr;};
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
 protected:
 
-  //! Print out initialization information and calcuation the RHS.
+  //! Print out initialization information and calcuate the RHS.
   virtual void init();
 
   //! Prints the current iteration information.
@@ -246,8 +248,8 @@ protected:
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
   //! Scratch space for condition number estimation using LAPACK.
   std::vector<double> WORK;
