@@ -47,7 +47,7 @@
 
 //FROSch
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
-#include "Thyra_FROSchLinearOP_def.hpp"
+#include <Thyra_FROSchLinearOp_def.hpp>
 
 
 

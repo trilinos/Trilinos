@@ -83,7 +83,7 @@
 
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include "stratimikos_FROSchXpetra.hpp"
+#include <Stratimikos_FROSchXpetra.hpp>
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
