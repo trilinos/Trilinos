@@ -57,7 +57,7 @@ typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode; // Hier Default verwenden???
+typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
 typedef EpetraNode NO;
 
 using namespace std;
