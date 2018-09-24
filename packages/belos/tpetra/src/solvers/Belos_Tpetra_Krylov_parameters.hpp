@@ -18,6 +18,11 @@ public:
       out_->pushTab ();
     }
   }
+
+  Indent () = delete;
+  Indent (const Indent&) = delete;
+  Indent& operator= (const Indent&) = delete;
+
   ~Indent () {
     if (out_ != nullptr) {
       out_->popTab ();
@@ -34,9 +39,13 @@ public:
 
 private:
   using STS = Teuchos::ScalarTraits<ScalarType>;
-  using STM = Teuchos::ScalarTraits<mag_type>;  
+  using STM = Teuchos::ScalarTraits<mag_type>;
 
 public:
+  SolverInput () = default;
+  SolverInput (const SolverInput<ScalarType>&) = default;
+  SolverInput& operator= (const SolverInput<ScalarType>&) = default;
+
   mag_type r_norm_orig = STM::zero ();
   mag_type tol = STM::squareroot (STS::eps ());
   int maxNumIters = 1000;
@@ -61,6 +70,8 @@ struct SolverOutput {
   using complex_type = std::complex<mag_type>;
 
   SolverOutput () = default;
+  SolverOutput (const SolverOutput<SC>&) = default;
+  SolverOutput& operator= (const SolverOutput<SC>&) = default;
 
   //! Absolute residual norm.
   mag_type absResid = Teuchos::ScalarTraits<mag_type>::zero ();
@@ -97,7 +108,7 @@ combineSolverOutput (SolverOutput<SC>& dst, const SolverOutput<SC>& src)
   if (src.ritzValues.size () > dst.ritzValues.size ()) {
     dst.ritzValues.resize (src.ritzValues.size ());
     std::copy (std::begin (src.ritzValues), std::end (src.ritzValues),
-	       std::begin (dst.ritzValues));
+               std::begin (dst.ritzValues));
   }
 }
 
@@ -121,7 +132,7 @@ operator<< (std::ostream& out,
     for (std::size_t k = 0; k < so.ritzValues.size (); ++k) {
       out << so.ritzValues[k];
       if (k + std::size_t (1) < so.ritzValues.size ()) {
-	out << ", ";
+        out << ", ";
       }
     }
     out << "]" << endl;
