@@ -89,9 +89,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::TimeMonitor;
 
-extern bool isMMOverride;
-
-
 // =========================================================================
 // =========================================================================
 // =========================================================================
@@ -350,7 +347,6 @@ bool epetra_check_importer_correctness(const Epetra_Import & A, const Epetra_Imp
 }
 #endif //if defined(HAVE_MUELU_EPETRA)
 
-extern bool isMM;
 // =========================================================================
 // =========================================================================
 // =========================================================================
@@ -483,6 +479,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
   std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
   int         numImports        = 100;               clp.setOption("numImport",              &numImports,        "#times to test");
+  int         MM_TAFC_OptimizationCoreCount=3000;   clp.setOption("mmTAFC_OptCores",       &MM_TAFC_OptimizationCoreCount, "Num Cores above which Optimized MatrixMatrix transferAndFillComplete is used"); 
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -752,9 +749,5 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
 
 int main(int argc, char *argv[]) {
 
-    char * foo =           std::getenv("ISMMOVER");
-    if(foo == nullptr) ::isMMOverride = false;
-    else ::isMMOverride = true;
-    
     return Automatic_Test_ETI(argc,argv);
 }

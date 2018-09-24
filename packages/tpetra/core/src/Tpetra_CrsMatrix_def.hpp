@@ -83,8 +83,6 @@
 
 using Teuchos::rcpFromRef;
 
-extern bool isMMOverride;
-
 namespace Tpetra {
 
 namespace { // (anonymous)
@@ -8195,13 +8193,9 @@ namespace Classes {
     MPI_Comm rawComm            = getRawMpiComm(*getComm());
 
     int immRedErr = 0;
-    if(isMM)    immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
+    if(isMM) 
+	immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
 
-
-// cbl debug only, REMOVE before checkin.
-    if(isMM && ::isMMOverride) {
-        isMM=false;
-    }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label;

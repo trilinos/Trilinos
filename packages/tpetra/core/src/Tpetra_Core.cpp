@@ -49,8 +49,6 @@
 
 #include <Kokkos_Core.hpp>
 
-bool isMMOverride=false;
-
 namespace Tpetra {
   namespace { // (anonymous)
 
