@@ -239,7 +239,7 @@ public:
     // Initialize unglobalized step
     ROL::ParameterList& list
       = parlist_.sublist("Step").sublist("Line Search").sublist("Descent Method");
-    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method") );
+    EDescent edesc = StringToEDescent(list.get("Type","Quasi-Newton Method"));
     if (bnd.isActivated()) {
       switch(edesc) {
         case DESCENT_STEEPEST: {

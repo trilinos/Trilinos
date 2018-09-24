@@ -47,7 +47,6 @@
 
 #include "ROL_DynamicObjective_CheckInterface.hpp"
 #include "ROL_ValidateFunction.hpp"
-#include "ROL_RandomVector.hpp"
 #include <string>
 
 // TODO: Add symmetry check for diagonal Hessian blocks and adjoint consistency
@@ -70,8 +69,8 @@ struct DynamicObjectiveCheck {
     auto vu = uo.clone();
     auto vz = z.clone();
 
-    RandomizeVector(*vu);
-    RandomizeVector(*vz);
+    vu->randomize();
+    vz->randomize();
 
     auto obj_check = make_check( obj );
 

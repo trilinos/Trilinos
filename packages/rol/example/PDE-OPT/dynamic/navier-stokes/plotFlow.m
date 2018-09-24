@@ -42,6 +42,7 @@ for i=1:nt
   xlabel('x');
   ylabel('y');
   caxis([minUx,maxUx])
+  colormap(bone)
   title('x-Velocity','fontsize',16);
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 
@@ -53,6 +54,7 @@ for i=1:nt
   xlabel('x');
   ylabel('y');
   caxis([minUm,maxUm])
+  colormap(bone)
   title('Velocity Magnitude','fontsize',16);
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 
@@ -64,6 +66,7 @@ for i=1:nt
   xlabel('x');
   ylabel('y');
   caxis([minUy,maxUy])
+  colormap(bone)
   title('y-Velocity','fontsize',16);
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 
@@ -74,7 +77,8 @@ for i=1:nt
   axis('equal','tight');
   xlabel('x');
   ylabel('y');
-  %caxis([minP,maxP])
+  caxis([minP,maxP])
+  colormap(bone)
   title('Pressure','fontsize',16);
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
 

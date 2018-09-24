@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_k
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wts,assembler);
     ROL::Ptr<LTI_Objective<RealT>> dyn_obj
-      = ROL::makePtr<LTI_Objective<RealT>>(obj_k,*zk,*parlist);
+      = ROL::makePtr<LTI_Objective<RealT>>(*parlist,obj_k,false);
 
     /*************************************************************************/
     /***************** BUILD REDUCED COST FUNCTIONAL *************************/

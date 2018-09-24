@@ -2226,6 +2226,7 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
   int totalNumCells = meshMgr_->getNumCells();
   int cellsPerProc  = totalNumCells / numProcs_;
   numCells_         = cellsPerProc;
+  ROL::Ptr<std::vector<std::vector<int>>> procCellIds = meshMgr_->getProcCellIds();
   switch(cellSplit) {
     case 0:
       if (myRank_ == 0) {
@@ -2256,6 +2257,10 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
                           + (static_cast<int>(i-1<(totalNumCells%numProcs_)));
       }
       break;
+    case 3:
+      // Define using MeshManager.
+      numCells_ = (*procCellIds)[myRank_].size();
+      break;
   }
 
   Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
@@ -2264,11 +2269,25 @@ void Assembler<Real>::setParallelStructure(Teuchos::ParameterList &parlist,
     outStream << "Cell offsets across processors: " << cellOffsets_
               << std::endl;
   }
-  for (int i=0; i<numCells_; ++i) {
-    myCellIds_.push_back(cellOffsets_[myRank_]+i);
-    for (int j=0; j<numLocalDofs; ++j) {
-      myGlobalIds.push_back( cellDofs(cellOffsets_[myRank_]+i,j) );
+  switch(cellSplit) {
+    case 0:
+    case 1:
+    case 2:
+    for (int i=0; i<numCells_; ++i) {
+      myCellIds_.push_back(cellOffsets_[myRank_]+i);
+      for (int j=0; j<numLocalDofs; ++j) {
+        myGlobalIds.push_back( cellDofs(cellOffsets_[myRank_]+i,j) );
+      }
     }
+      break;
+    case 3:
+    for (int i=0; i<numCells_; ++i) {
+      myCellIds_.push_back((*procCellIds)[myRank_][i]);
+      for (int j=0; j<numLocalDofs; ++j) {
+        myGlobalIds.push_back( cellDofs((*procCellIds)[myRank_][i],j) );
+      }
+    }
+      break;
   }
   std::sort(myGlobalIds.begin(), myGlobalIds.end());
   myGlobalIds.erase( std::unique(myGlobalIds.begin(),myGlobalIds.end()),myGlobalIds.end() );
@@ -2374,6 +2393,14 @@ void Assembler<Real>::setCellNodes(std::ostream &outStream) {
 
 template<class Real>
 int Assembler<Real>::mapGlobalToLocalCellId(const int & gid) {
+  auto it = std::find(myCellIds_.begin(),myCellIds_.end(),gid);
+  if (it != myCellIds_.end()) {
+    return it-myCellIds_.begin();
+  }
+  else {
+    return -1;
+  }
+/*
   int minId = cellOffsets_[myRank_];
   int maxId = cellOffsets_[myRank_]+numCells_-1;
   if ((gid >= minId) && (gid <= maxId)) {
@@ -2382,6 +2409,7 @@ int Assembler<Real>::mapGlobalToLocalCellId(const int & gid) {
   else {
     return -1;
   }
+*/
 }
 
 template<class Real>

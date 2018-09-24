@@ -1,3 +1,4 @@
+// @HEADER
 // ************************************************************************
 //
 //               Rapid Optimization Library (ROL) Package
@@ -78,45 +79,37 @@ int main(int argc, char *argv[]) {
     // Setup optimization problem
     ROL::Ptr<ROL::Vector<RealT>> x0;
     std::vector<ROL::Ptr<ROL::Vector<RealT>>> z;
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> optProblem;
-    //ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CANTILEVERBEAM);
-    //ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CYLINDERHEAD);
-    //ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_QUARTIC);
-    ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CANTILEVER);
+    ROL::Ptr<ROL::ZOO::getCubic<RealT>> cubic;
+    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
+    for (int i = 0; i < 3; ++i) {
+      cubic = ROL::makePtr<ROL::ZOO::getCubic<RealT>>(i);
+      cubic->get(problem,x0,z);
 
-    // Get Dimension of Problem
-    int dim = x0->dimension(); 
-    parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+      // Check Derivatives
+      problem->check(*outStream);
 
-    // Check Derivatives
-    optProblem->check(*outStream);
+      // Setup optimization solver
+      ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
+      solver.solve(*outStream);
 
-    // Error Vector
-//    ROL::Ptr<ROL::Vector<RealT>> e = x0->clone();
-//    e->zero();
-
-    // Setup optimization solver
-    parlist->sublist("Status Test").set("Gradient Tolerance",static_cast<RealT>(1e-6));
-    parlist->sublist("Step").set("Type", "Augmented Lagrangian");
-    ROL::OptimizationSolver<RealT> optSolver(*optProblem,*parlist);
-    optSolver.solve(*outStream);
-
-    // Compute Error
-//    RealT err(0);
-//    for (int i = 0; i < static_cast<int>(z.size()); ++i) {
-//      e->set(*x0);
-//      e->axpy(-1.0,*z[i]);
-//      if (i == 0) {
-//        err = e->norm();
-//      }
-//      else {
-//        err = std::min(err,e->norm());
-//      }
-//    }
-//    *outStream << std::endl << "Norm of Error: " << err << std::endl;
-//
-//    RealT tol = static_cast<RealT>(1e-3)*std::max(z[0]->norm(),static_cast<RealT>(1));
-//    errorFlag += ((err < tol) ? 0 : 1);
+      // Compute Error
+      ROL::Ptr<ROL::Vector<RealT>> e = x0->clone();
+      e->zero();
+      RealT err(0);
+      for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+        e->set(*x0);
+        e->axpy(-1.0,*z[i]);
+        if (i == 0) {
+          err = e->norm();
+        }
+        else {
+          err = std::min(err,e->norm());
+        }
+      }
+      *outStream << std::endl << "Norm of Error: " << err << std::endl;
+      RealT tol = static_cast<RealT>(1e-3)*std::max(z[0]->norm(),static_cast<RealT>(1));
+      errorFlag += ((err < tol) ? 0 : 1);
+    }
   }
   catch (std::logic_error err) {
     *outStream << err.what() << std::endl;
