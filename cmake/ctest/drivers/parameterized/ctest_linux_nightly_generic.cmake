@@ -69,7 +69,17 @@ IF(COMM_TYPE STREQUAL MPI)
   STRING(REPLACE "sems-" "" COMM_DIR $ENV{MPI_MODULE})
   STRING(REPLACE "/" "_" COMM_DIR ${COMM_DIR})
 ENDIF()
-SET(BUILD_DIR_NAME ${COMM_TYPE}_${BUILD_TYPE}_${COMPILER_DIR}_${COMM_DIR}_DEV)
+
+# If JENKINS_BUILD_TAG is nonempty, prepend an underscore to it, otherwise leave
+# it blank
+SET(BUILD_TAG "$ENV{JENKINS_BUILD_TAG}")
+IF(NOT "{BUILD_TAG}" STREQUAL "")
+    SET(BUILD_TAG "_${BUILD_TAG}")
+ENDIF()
+
+# Set the build name of the job (this is reported to CDash as the job name)
+SET(BUILD_DIR_NAME ${COMM_TYPE}_${BUILD_TYPE}_${COMPILER_DIR}_${COMM_DIR}${BUILD_TAG}_DEV)
+
 SET(CTEST_PARALLEL_LEVEL 16)
 
 # Note: CTEST_TEST_TYPE drives some side-effects in Tribits that should be 
@@ -104,6 +114,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DAnasazi_Epetra_ModalSolversTester_MPI_4_DISABLE:BOOL=ON"
   "-DAnasazi_Epetra_OrthoManagerGenTester_0_MPI_4_DISABLE:BOOL=ON"
   "-DAnasazi_Epetra_OrthoManagerGenTester_1_MPI_4_DISABLE:BOOL=ON"
+
+  $ENV{JENKINS_Trilinos_EXTRA_CONFIGURE_OPTIONS}
 )
 
 #"-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to;socket;--map-by;socket"
