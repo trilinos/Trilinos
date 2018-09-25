@@ -248,6 +248,7 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     PartitionedVector<Real>       &gp = partition(g);
+    gp.get(0)->zero(); // zero for the nonexistant zeroth control interval
     const PartitionedVector<Real> &xp = partition(x);
     const Real one(1);
     size_type uindex = (useSketch_ ? 1 : Nt_-1);
@@ -334,6 +335,7 @@ public:
       const PartitionedVector<Real> &xp  = partition(x);
       const PartitionedVector<Real> &vp  = partition(v);
       PartitionedVector<Real>       &hvp = partition(hv);
+      hvp.get(0)->zero(); // zero for the nonexistant zeroth control interval
       // Compute state sensitivity
       whist_[0]->zero();
       if (useSketch_) {
