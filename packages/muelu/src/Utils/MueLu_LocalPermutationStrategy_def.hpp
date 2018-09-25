@@ -50,6 +50,9 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalPermutationStrategy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPermutation(const Teuchos::RCP<Matrix> & A, const Teuchos::RCP<const Map> permRowMap, Level & currentLevel, const FactoryBase* genFactory) const {
+
+    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+
     size_t nDofsPerNode = 1;
     if (A->IsView("stridedMaps")) {
       Teuchos::RCP<const Map> permRowMapStrided = A->getRowMap("stridedMaps");
@@ -172,8 +175,8 @@ namespace MueLu {
     Teuchos::RCP<Vector> Pperm = VectorFactory::Build(A->getRowMap());
     Teuchos::RCP<Vector> Qperm = VectorFactory::Build(A->getDomainMap());
 
-    Pperm->putScalar(0.0);
-    Qperm->putScalar(0.0);
+    Pperm->putScalar(SC_ZERO);
+    Qperm->putScalar(SC_ZERO);
 
     Teuchos::ArrayRCP<Scalar> PpermData = Pperm->getDataNonConst(0);
     Teuchos::ArrayRCP<Scalar> QpermData = Qperm->getDataNonConst(0);
@@ -242,7 +245,7 @@ namespace MueLu {
     LO lCntZeroDiagonals = 0;
     permPApermQt->getLocalDiagCopy(*diagVec);
     for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagVecData[i] != 0.0)
+      if(diagVecData[i] != SC_ZERO)
         invDiagVecData[i] = Teuchos::ScalarTraits<Scalar>::one()/diagVecData[i];
       else {
         invDiagVecData[i] = Teuchos::ScalarTraits<Scalar>::one();
@@ -283,7 +286,7 @@ namespace MueLu {
     GlobalOrdinal lNumRowPermutations = 0;
     GlobalOrdinal gNumRowPermutations = 0;
     for(size_t i = 0; i<diagPVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagPVecData[i] == 0.0) {
+      if(diagPVecData[i] == SC_ZERO) {
         lNumRowPermutations++;
       }
     }
@@ -299,7 +302,7 @@ namespace MueLu {
     GlobalOrdinal lNumColPermutations = 0;
     GlobalOrdinal gNumColPermutations = 0;
     for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
-      if(diagQTVecData[i] == 0.0) {
+      if(diagQTVecData[i] == SC_ZERO) {
         lNumColPermutations++;
       }
     }

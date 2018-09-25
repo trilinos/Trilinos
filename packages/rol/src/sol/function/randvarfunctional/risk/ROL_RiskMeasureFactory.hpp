@@ -62,6 +62,8 @@
 #include "ROL_MeanDeviation.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
 #include "ROL_MeanVariance.hpp"
+#include "ROL_MeanSemiDeviation.hpp"
+#include "ROL_MeanSemiDeviationFromTarget.hpp"
 
 // Risk Quadrangle Risk Measure Implementations
 #include "ROL_ExpectationQuadRisk.hpp"
@@ -91,6 +93,8 @@ namespace ROL {
     RISKMEASURE_HMCR,
     RISKMEASURE_ENTROPICRISK,
     RISKMEASURE_COHERENTENTROPICRISK,
+    RISKMEASURE_MEANSEMIDEVIATION,
+    RISKMEASURE_MEANSEMIDEVIATIONFROMTARGET,
     RISKMEASURE_MEANDEVIATIONFROMTARGET, 
     RISKMEASURE_MEANDEVIATION,
     RISKMEASURE_MEANVARIANCEFROMTARGET,
@@ -130,6 +134,10 @@ namespace ROL {
              retString = "Entropic Risk";                           break;
       case RISKMEASURE_COHERENTENTROPICRISK:
              retString = "Coherent Entropic Risk";                  break;
+      case RISKMEASURE_MEANSEMIDEVIATION:
+             retString = "Mean Plus Semi-Deviation";                break;
+      case RISKMEASURE_MEANSEMIDEVIATIONFROMTARGET:
+             retString = "Mean Plus Semi-Deviation From Target";    break;
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              retString = "Mean Plus Deviation From Target";         break;
       case RISKMEASURE_MEANDEVIATION:
@@ -161,27 +169,29 @@ namespace ROL {
   }
 
   inline int isValidRiskMeasure(ERiskMeasure ed) {
-    return( (ed == RISKMEASURE_CVAR)                    ||
-            (ed == RISKMEASURE_MOREAUYOSIDACVAR)        ||
-            (ed == RISKMEASURE_GENMOREAUYOSIDACVAR)     ||
-            (ed == RISKMEASURE_MIXEDCVAR)               ||
-            (ed == RISKMEASURE_SPECTRALRISK)            ||
-            (ed == RISKMEASURE_SECONDORDERCVAR)         ||
-            (ed == RISKMEASURE_CHEBYSHEVSPECTRAL)       ||
-            (ed == RISKMEASURE_QUANTILERADIUS)          ||
-            (ed == RISKMEASURE_HMCR)                    ||
-            (ed == RISKMEASURE_ENTROPICRISK)            ||
-            (ed == RISKMEASURE_COHERENTENTROPICRISK)    ||
-            (ed == RISKMEASURE_MEANDEVIATIONFROMTARGET) ||
-            (ed == RISKMEASURE_MEANDEVIATION)           ||
-            (ed == RISKMEASURE_MEANVARIANCEFROMTARGET)  ||
-            (ed == RISKMEASURE_MEANVARIANCE)            ||
-            (ed == RISKMEASURE_TRUNCATEDMEAN)           ||
-            (ed == RISKMEASURE_LOGQUANTILE)             ||
-            (ed == RISKMEASURE_SMOOTHEDWORSTCASE)       ||
-            (ed == RISKMEASURE_LOGEXPONENTIAL)          ||
-            (ed == RISKMEASURE_SAFETYMARGIN)            ||
-            (ed == RISKMEASURE_CHI2DIVERGENCE)          ||
+    return( (ed == RISKMEASURE_CVAR)                        ||
+            (ed == RISKMEASURE_MOREAUYOSIDACVAR)            ||
+            (ed == RISKMEASURE_GENMOREAUYOSIDACVAR)         ||
+            (ed == RISKMEASURE_MIXEDCVAR)                   ||
+            (ed == RISKMEASURE_SPECTRALRISK)                ||
+            (ed == RISKMEASURE_SECONDORDERCVAR)             ||
+            (ed == RISKMEASURE_CHEBYSHEVSPECTRAL)           ||
+            (ed == RISKMEASURE_QUANTILERADIUS)              ||
+            (ed == RISKMEASURE_HMCR)                        ||
+            (ed == RISKMEASURE_ENTROPICRISK)                ||
+            (ed == RISKMEASURE_COHERENTENTROPICRISK)        ||
+            (ed == RISKMEASURE_MEANSEMIDEVIATION)           ||
+            (ed == RISKMEASURE_MEANSEMIDEVIATIONFROMTARGET) ||
+            (ed == RISKMEASURE_MEANDEVIATIONFROMTARGET)     ||
+            (ed == RISKMEASURE_MEANDEVIATION)               ||
+            (ed == RISKMEASURE_MEANVARIANCEFROMTARGET)      ||
+            (ed == RISKMEASURE_MEANVARIANCE)                ||
+            (ed == RISKMEASURE_TRUNCATEDMEAN)               ||
+            (ed == RISKMEASURE_LOGQUANTILE)                 ||
+            (ed == RISKMEASURE_SMOOTHEDWORSTCASE)           ||
+            (ed == RISKMEASURE_LOGEXPONENTIAL)              ||
+            (ed == RISKMEASURE_SAFETYMARGIN)                ||
+            (ed == RISKMEASURE_CHI2DIVERGENCE)              ||
             (ed == RISKMEASURE_KLDIVERGENCE));
   }
 
@@ -242,6 +252,10 @@ namespace ROL {
              return makePtr<EntropicRisk<Real>>(parlist);
       case RISKMEASURE_COHERENTENTROPICRISK:
              return makePtr<CoherentEntropicRisk<Real>>();
+      case RISKMEASURE_MEANSEMIDEVIATION:
+             return makePtr<MeanSemiDeviation<Real>>(parlist);
+      case RISKMEASURE_MEANSEMIDEVIATIONFROMTARGET:
+             return makePtr<MeanSemiDeviationFromTarget<Real>>(parlist);
       case RISKMEASURE_MEANDEVIATIONFROMTARGET:
              return makePtr<MeanDeviationFromTarget<Real>>(parlist);
       case RISKMEASURE_MEANDEVIATION:
@@ -266,7 +280,7 @@ namespace ROL {
              return makePtr<KLDivergence<Real>>(parlist);
       default:
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                   "Invalid risk measure type " << risk << "!");
+                               "Invalid risk measure type " << risk << "!");
     }
   }
 }

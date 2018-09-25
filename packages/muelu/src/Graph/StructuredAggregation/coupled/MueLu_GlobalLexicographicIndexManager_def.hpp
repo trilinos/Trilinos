@@ -335,7 +335,7 @@ namespace MueLu {
   getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
     // Assumptions: (i,j,k) is a tuple on the coarse mesh
     //              myLID is the corresponding local ID on the fine mesh
-    const GO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
+    const LO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
     const LO indices[3] = {i, j, k};
 
     myLID = 0;

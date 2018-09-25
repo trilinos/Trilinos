@@ -113,7 +113,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
     {
-      FactoryMonitor m(*this, "Computing Ac", coarseLevel);      
+      FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       const Teuchos::ParameterList& pL = GetParameterList();
 
       // Inputs: K, M, P
@@ -167,7 +167,7 @@ namespace MueLu {
       Scalar shift  = Teuchos::ScalarTraits<Scalar>::zero();
       if(level < (int)shifts_.size())
 	shift = shifts_[level];
-      else 
+      else
 	shift  = Teuchos::as<Scalar>(pL.get<double>("rap: shift"));
 
       // recombine to get K+shift*M
@@ -213,7 +213,7 @@ namespace MueLu {
     Ac->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
     for (size_t r=0; r<Ac->getRowMap()->getNodeNumElements(); r++) {
-      if(diagVal[r]==0.0) {
+      if(diagVal[r]==Teuchos::ScalarTraits<SC>::zero()) {
         lZeroDiags++;
         if(repairZeroDiagonals_) {
           GlobalOrdinal grid = Ac->getRowMap()->getGlobalElement(r);
