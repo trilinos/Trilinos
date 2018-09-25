@@ -187,8 +187,8 @@ def get_typedefs():
                        "DefaultLOType"))
         result.append(("Tpetra::Details::DefaultTypes::global_ordinal_type",
                        "DefaultGOType"))
-        result.append(("Tpetra::Details::DefaultTypes::node_type",
-                       "DefaultNodeType"))
+        # result.append(("Tpetra::Details::DefaultTypes::node_type",
+        #                "DefaultNodeType"))
 
     return result
 
@@ -308,7 +308,7 @@ def get_ignores():
 def get_rcp_classes(swig_filenames):
     """
     Return a list of strings that represent the C++ classes that are stored
-    using a Teucho::RCP in PyTrilinos. The input argument, swig_filenames, is a
+    using a Teuchos::RCP in PyTrilinos. The input argument, swig_filenames, is a
     list of SWIG interface files to search.
     """
     match_excludes = ("##", "CLASS", "%shared_ptr", "ostream", "std::vector")
@@ -334,19 +334,19 @@ def get_rcp_classes(swig_filenames):
                         result.add(match)
     # Hack for Tpetra
     if "Tpetra.i" in swig_filenames:
-        result.add("Tpetra::Map<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
-        result.add("Tpetra::Details::Transfer<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
-        result.add("Tpetra::Export<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
-        result.add("Tpetra::Import<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
+        result.add("Tpetra::Map<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
+        result.add("Tpetra::Details::Transfer<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
+        result.add("Tpetra::Export<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
+        result.add("Tpetra::Import<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
         regex = re.compile(r"%tpetra_scalars\((.+),.+\)", re.MULTILINE)
         text = open("Tpetra.i",'r').read()
         matches = regex.findall(text)
         for scalar in matches:
             if "SCALAR" not in scalar:
                 scalar = scalar.strip()
-                result.add("Tpetra::DistObject<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
-                result.add("Tpetra::MultiVector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
-                result.add("Tpetra::Vector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
+                result.add("Tpetra::DistObject<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >" % scalar)
+                result.add("Tpetra::MultiVector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >" % scalar)
+                result.add("Tpetra::Vector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >" % scalar)
     # End hack for Tpetra
 
     result = list(result)
@@ -442,7 +442,7 @@ def get_import_directives(teuchos_rcps):
     #     result.insert(index+1, "%ignore Tpetra::Map::getGlobalNumElements;")
     #     result.insert(index+2, "%ignore Tpetra::Map::getRemoteIndexList;")
     #     result.insert(index+3, "%ignore Tpetra::Map::getMyGlobalIndices;")
-    #     result.insert(index+5, "%template(Map_default) Tpetra::Map<PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD,DefaultNodeType>;")
+    #     result.insert(index+5, "%template(Map_default) Tpetra::Map<PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD>;")
 
     if (WITH_ANASAZI):
         # Find the first Anasazi import and insert AnasaziTypes.hpp before it
