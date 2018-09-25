@@ -242,7 +242,7 @@ namespace MueLu {
       // recombine to get K+shift*M
       {
 	SubFactoryMonitor m2(*this, "Add: RKP + s*RMP", coarseLevel);
-	Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
+	Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, Teuchos::ScalarTraits<Scalar>::one(), *Mc, false, shift, Ac, GetOStream(Statistics2));
 	Ac->fillComplete();
       }
 
@@ -293,9 +293,10 @@ namespace MueLu {
     LO lZeroDiags = 0;
     RCP<Vector> diagVec = VectorFactory::Build(Ac->getRowMap());
     Ac->getLocalDiagCopy(*diagVec);
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero()
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
     for (size_t r=0; r<Ac->getRowMap()->getNodeNumElements(); r++) {
-      if(diagVal[r]==0.0) {
+      if(diagVal[r]==zero) {
         lZeroDiags++;
         if(repairZeroDiagonals_) {
           GlobalOrdinal grid = Ac->getRowMap()->getGlobalElement(r);
