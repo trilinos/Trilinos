@@ -20,42 +20,43 @@ int main(int narg, char**arg)
 
   int nrecvs = nprocs;
   int nsends = nprocs;
+  int i;
   
   int *vals_from = (int *) malloc(nrecvs*sizeof(int));
-  for (int i = 0; i < nrecvs; i++) vals_from[i] = -1000-i;
+  for (i = 0; i < nrecvs; i++) vals_from[i] = -1000-i;
 
   int *vals_to = (int *) malloc(nsends*sizeof(int));
-  for (int i = 0; i < nsends; i++) vals_to[i] = (my_proc+1)*1000+i;
+  for (i = 0; i < nsends; i++) vals_to[i] = (my_proc+1)*1000+i;
 
   int *procs_from = (int *) malloc(nrecvs*sizeof(int));
-  for (int i = 0; i < nrecvs; i++) procs_from[i] = -1;
+  for (i = 0; i < nrecvs; i++) procs_from[i] = -1;
 
   int *procs_to = (int *) malloc(nsends*sizeof(int));
-  for (int i = 0; i < nsends; i++) procs_to[i] = i;
+  for (i = 0; i < nsends; i++) procs_to[i] = i;
 
   MPI_Request *req = (MPI_Request *)malloc(nrecvs*sizeof(MPI_Request));
 
   int tag = 30000;
   
-  for (int i=0; i < nrecvs; i++){
+  for (i=0; i < nrecvs; i++){
     printf("%d posting receive %d %p\n", my_proc, i, (void *)(vals_from+i));
     MPI_Irecv(vals_from + i, 1, MPI_INT, MPI_ANY_SOURCE, tag, comm, req + i);
   }
   
-  for (int i=0; i < nsends; i++){
+  for (i=0; i < nsends; i++){
     printf("%d sending to %d value %d\n", my_proc, procs_to[i], vals_to[i]);
     MPI_Send(vals_to + i, 1, MPI_INT, procs_to[i], tag, comm);
   }
   
   MPI_Status status;
-  for (int i=0; i < nrecvs; i++){
+  for (i=0; i < nrecvs; i++){
     MPI_Wait(req + i, &status);
     procs_from[i] = status.MPI_SOURCE;
     printf("%d wait source %d count %lu \n", 
            my_proc, status.MPI_SOURCE, status._ucount);
   }
 
-  for (int i = 0; i < nrecvs; i++)
+  for (i = 0; i < nrecvs; i++)
     printf("%d procs_from %d vals_from %d %s \n",
            my_proc, procs_from[i], vals_from[i], 
            (vals_from[i] < 0 ? "FAIL FAIL FAIL" : " "));
