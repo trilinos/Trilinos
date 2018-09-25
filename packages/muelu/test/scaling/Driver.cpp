@@ -475,11 +475,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined(HAVE_MUELU_EPETRA)
       Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
       Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
+#ifdef DO_NOT_SKIPME
       if(lib==Xpetra::UseEpetra) {
         Aepetra = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
         Xepetra = Teuchos::rcp(& Xpetra::toEpetra(*X),false);
         Bepetra = Teuchos::rcp(& Xpetra::toEpetra(*B),false);
       }
+#endif
 #endif
 
       comm->barrier();

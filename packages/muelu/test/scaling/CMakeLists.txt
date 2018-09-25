@@ -89,7 +89,8 @@ ENDIF() # Galeri
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Xpetra_INT_LONG_LONG))
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack
+AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Xpetra_INT_LONG_LONG))
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     TRIBITS_ADD_TEST(
@@ -139,14 +140,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   ENDIF()
 
   TRIBITS_ADD_TEST(
-    ImportPerformance
-    NAME "ImportPerformance_Epetra"
-    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
-    NUM_MPI_PROCS 4
-    COMM mpi # HAVE_MPI required
-  )
-
-  TRIBITS_ADD_TEST(
     Driver
     NAME "RAPScalingTestEpetra"
     ARGS "--linAlgebra=Epetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
@@ -169,6 +162,26 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
     NUM_MPI_PROCS 4
     COMM serial mpi
     )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
+
+  TRIBITS_ADD_TEST(
+    ImportPerformance
+    NAME "ImportPerformance_Epetra"
+    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
+  TRIBITS_ADD_TEST(
+    ImportPerformance
+    NAME "ImportPerformance_Tpetra"
+    ARGS "--linAlgebra=Tpetra --nx=30 --ny=30"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
 
 ENDIF()
 
