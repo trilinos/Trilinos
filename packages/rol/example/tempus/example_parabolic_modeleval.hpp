@@ -669,7 +669,7 @@ public: // ParabolicModelMEWrapper methods.
   ParabolicModelMEWrapper(const ROL::Ptr<ParabolicModel<Real>> &model);
   ROL::Ptr<const Thyra::VectorSpaceBase<Real>> get_x_space() const;
   ROL::Ptr<const Thyra::VectorSpaceBase<Real>> get_f_space() const;
-  ROL::Ptr<const Thyra::VectorSpaceBase<Real>> get_p_space() const;
+  ROL::Ptr<const Thyra::VectorSpaceBase<Real>> get_p_space(int l) const;
   Thyra::ModelEvaluatorBase ::InArgs<Real>     getNominalValues() const;
   Thyra::ModelEvaluatorBase::InArgs<Real>      createInArgs() const;
   ROL::Ptr<Thyra::LinearOpWithSolveBase<Real>> create_W() const;
@@ -731,7 +731,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Real>> ParabolicModelMEWrapper<Real>::
 
 
 template<class Real>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Real>> ParabolicModelMEWrapper<Real>::get_p_space() const {
+Teuchos::RCP<const Thyra::VectorSpaceBase<Real>> ParabolicModelMEWrapper<Real>::get_p_space(int l) const {
   return p_space_;
 }
 
