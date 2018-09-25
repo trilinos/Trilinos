@@ -81,6 +81,21 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+
+  TRIBITS_ADD_EXECUTABLE(
+    ImportPerformanceEpetra
+    SOURCES ImportPerformance
+    COMM mpi
+    )
+
+  # This command defines the preprocessor macro MueLu_UNDEFINE_Tpetra solely for
+  # the target "ImportPerformanceEpetra".  This effectively allows compilation of the test with only
+  # Epetra defined.
+  target_compile_definitions(MueLu_ImportPerformanceEpetra PRIVATE ${PACKAGE_NAME}_UNDEFINE_Tpetra=1)
+
+ENDIF()
+
 ENDIF() # Galeri
 
 #
@@ -168,7 +183,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
 
   TRIBITS_ADD_TEST(
-    ImportPerformance
+    ImportPerformanceEpetra
     NAME "ImportPerformance_Epetra"
     ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
     NUM_MPI_PROCS 4
