@@ -24,3 +24,6 @@
     
 29.08.2018 Alexander Heinlein:
     - Standardize the names in the Thyra interface
+
+25.09.2018 Alexander Heinlein:
+    - Merge Thyra_FROSchXpetraFactory and Thyra_FROSchXpetraTwoLevelBlockPrec
