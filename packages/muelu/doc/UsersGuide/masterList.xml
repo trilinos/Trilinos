@@ -1072,7 +1072,7 @@
       <name>rap: shift diagonal M</name>
       <type>bool</type>
       <default>false</default>
-      <description>Shift for the RAPShiftFactory is a stored as a
+      <description>Shift for the RAPShiftFactory is stored as a
       vector (representing the matrix diagonal)</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
