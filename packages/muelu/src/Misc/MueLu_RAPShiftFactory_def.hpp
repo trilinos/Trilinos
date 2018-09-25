@@ -75,17 +75,17 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: shift");
+    SET_VALID_ENTRY("rap: shift diagonal M");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("M",              Teuchos::null, "Generating factory of the matrix M used during the non-Galerkin RAP");
+    validParamList->set< RCP<const FactoryBase> >("Mdiag",          Teuchos::null, "Generating factory of the matrix Mdiag used during the non-Galerkin RAP");
     validParamList->set< RCP<const FactoryBase> >("K",              Teuchos::null, "Generating factory of the matrix K used during the non-Galerkin RAP");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Prolongator factory");
     validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Restrictor factory");
 
     validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
     validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
-    validParamList->set< bool >("rap: shift diagonal M",false,"If true, M is diagonal and is stored as a Vector, not a Matrix");
-
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -103,8 +103,15 @@ namespace MueLu {
     }
 
     Input(fineLevel,   "K");
-    Input(fineLevel,   "M");
     Input(coarseLevel, "P");
+
+    const Teuchos::ParameterList& pL = GetParameterList();
+    bool use_mdiag = false;
+    if(pL.isParameter("rap: shift diagonal M")) 
+      use_mdiag = pL.get<bool>("rap: shift diagonal M");
+
+    if(!use_mdiag) Input(fineLevel, "M");
+    else Input(fineLevel, "Mdiag");
 
     // call DeclareInput of all user-given transfer factories
     for(std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it!=transferFacts_.end(); ++it) {
@@ -115,7 +122,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
     {
-      FactoryMonitor m(*this, "Computing Ac", coarseLevel);
+      FactoryMonitor m(*this, "Computing Ac", coarseLevel);      
       const Teuchos::ParameterList& pL = GetParameterList();
       bool M_is_diagonal = false; 
       if(pL.isParameter("rap: shift diagonal M"))
@@ -126,7 +133,7 @@ namespace MueLu {
       RCP<Matrix> M;
       RCP<Vector> Mdiag;
       if(!M_is_diagonal) M = Get< RCP<Matrix> >(fineLevel, "M");
-      else Mdiag = Get< RCP<Vector> >(fineLevel, "M");
+      else Mdiag = Get< RCP<Vector> >(fineLevel, "Mdiag");
 
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P");
 
@@ -183,7 +190,7 @@ namespace MueLu {
       Scalar shift  = Teuchos::ScalarTraits<Scalar>::zero();
       if(level < (int)shifts_.size())
 	shift = shifts_[level];
-      else
+      else 
 	shift  = Teuchos::as<Scalar>(pL.get<double>("rap: shift"));
 
       // recombine to get K+shift*M
@@ -211,7 +218,7 @@ namespace MueLu {
         // NOTE: Should we be doing some kind of rowsum instead?
         RCP<Vector> Mcv = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Mc->getRowMap(),false);
         Mc->getLocalDiagCopy(*Mcv);
-        Set(coarseLevel, "M", Mcv);
+        Set(coarseLevel, "Mdiag", Mcv);
       }
 
       //      Set(coarseLevel, "RAP Pattern", Ac);
@@ -240,7 +247,7 @@ namespace MueLu {
     Ac->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
     for (size_t r=0; r<Ac->getRowMap()->getNodeNumElements(); r++) {
-      if(diagVal[r]==Teuchos::ScalarTraits<SC>::zero()) {
+      if(diagVal[r]==0.0) {
         lZeroDiags++;
         if(repairZeroDiagonals_) {
           GlobalOrdinal grid = Ac->getRowMap()->getGlobalElement(r);
