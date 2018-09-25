@@ -1,3 +1,0 @@
-
-ADD_SUBDIRECTORY(stk_mesh)
-

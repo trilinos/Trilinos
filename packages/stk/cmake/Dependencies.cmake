@@ -1,5 +1,4 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  Classic         stk_classic          EX  OPTIONAL
   Util            stk_util             PT  OPTIONAL
   Simd            stk_simd             PT  OPTIONAL
   Topology        stk_topology         PT  OPTIONAL
