@@ -1049,6 +1049,7 @@ namespace MueLu {
     if (alg == "shift" || alg == "non-galerkin") {
       RAPs = rcp(new RAPShiftFactory());
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift", double, RAPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift diagonal M", bool, RAPparams);
 
     } else {
       RAP = rcp(new RAPFactory());

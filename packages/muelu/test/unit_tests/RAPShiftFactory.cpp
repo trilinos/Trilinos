@@ -478,6 +478,7 @@ namespace MueLuTests {
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
     GO nx = 1999*comm->getSize();
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx);
 
@@ -490,17 +491,19 @@ namespace MueLuTests {
     A->getLocalDiagCopy(*Mdiag);
 
     // The pretty way of managing input decks
+    double shift = 1.0;
     RCP<Teuchos::ParameterList> Params = rcp(new Teuchos::ParameterList);
     Params->set("rap: algorithm","shift");
-    Params->set("rap: shift",1.0);
+    Params->set("rap: shift",shift);
     Params->set("rap: shift diagonal M",true);
     Params->set("coarse: max size",1000);
     Params->set("verbosity","none");
     Params->set("use kokkos refactor",false);
-
+    Params->set("coarse: max size",10);
+    Params->set("max levels",2);
     Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
     pLevel0.set("K",A);
-    pLevel0.set("M",Mdiag);
+    pLevel0.set("Mdiag",Mdiag);
 
     // Build hierarchy
     RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params,coordinates,Teuchos::null);
@@ -513,26 +516,22 @@ namespace MueLuTests {
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(A->getRangeMap(),1);
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> result1a = MultiVectorFactory::Build(P->getDomainMap(),1);
+    RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
     X->randomize();
 
-    //Calculate result1 = (P^T*A*P)*X + P^T*diag(A)*P*X
-    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)2.0,(Scalar)0.0);
-    A->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
-    P->apply(*workVec2,*result1,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-
-    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)2.0,(Scalar)0.0);
-    workVec1->elementWiseMultiply((Scalar)1.0,*Mdiag,*workVec1,(Scalar)0.0);
-    P->apply(*workVec2,*result1a,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
-
-    result1->update((Scalar)1.0,*result1a,(Scalar)1.0);
-
+    //Calculate result1 = (P^T*(A+shift*M)*P)*X
+    P->apply(*X,*workVec1);
+    A->apply(*workVec1,*workVec2);
+    workVec2->elementWiseMultiply((Scalar)shift,*Mdiag,*workVec1,one);
+    P->apply(*workVec2,*result1,Teuchos::TRANS);
 
     //Calculate result2 = (R*A*P)*X
     RCP<Matrix> coarseOp = Level1->Get< RCP<Matrix> >("A");
-    RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
-    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    coarseOp->apply(*X,*result2);
 
     Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
@@ -541,8 +540,7 @@ namespace MueLuTests {
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);
-  TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1000*Teuchos::ScalarTraits<Scalar>::eps());
-
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1000*Teuchos::ScalarTraits<Scalar>::eps());
   }
 
 
