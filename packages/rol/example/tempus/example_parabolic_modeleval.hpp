@@ -610,9 +610,9 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
 
-  ROL::Ptr<const Thyra::VectorSpaceBase<Real>> range() const { return controlspace_; }
+  ROL::Ptr<const Thyra::VectorSpaceBase<Real>> range() const { return constraintspace_; }
 
-  ROL::Ptr<const Thyra::VectorSpaceBase<Real>> domain() const { return constraintspace_; }
+  ROL::Ptr<const Thyra::VectorSpaceBase<Real>> domain() const { return controlspace_; }
 
   ROL::Ptr<const Thyra::LinearOpBase<Real>> clone() const {
     ROL::Ptr<ParabolicModelDfDpop<Real>> op =
