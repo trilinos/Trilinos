@@ -290,7 +290,10 @@ namespace FROSch {
     {
         NumProcsCoarseSolve_ = DistributionList_->get("NumProcs",0);
         double fac = DistributionList_->get("Factor",1.0);
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
         
+        k0->describe(*fancy,Teuchos::VERB_EXTREME);
+
         // Redistribute Matrix
         if (NumProcsCoarseSolve_==0) {
             NumProcsCoarseSolve_ = this->MpiComm_->getSize();//Phi->DomainMap().Comm().getSize();

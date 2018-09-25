@@ -100,11 +100,11 @@ int main(int argc, char *argv[])
 			// ParameterList //
 			///////////////////
 			RCP<ParameterList> parameterList = getParametersFromXmlFile("Parameters.xml");
-			if (Comm->MyPID()==0) {
+			/*if (Comm->MyPID()==0) {
 				cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
 				parameterList->print(cout);
 				cout << "--------------------------------------------------------------------------------\n\n";
-			}
+			}*/
 
 			//////////////////
 			// Repeated Map //
