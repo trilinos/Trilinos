@@ -284,13 +284,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
                              "Cannot provide both xml and yaml input files");
 
+  // Instead of checking each time for rank, create a rank 0 stream
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& out = *fancy;
+  out.setOutputToRootOnly(0);
+ 
   ParameterList paramList;
+  auto inst = xpetraParameters.GetInstantiation();
+  
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
-
   } else {
-    xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
+    if (inst == Xpetra::COMPLEX_INT_INT)
+      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-complex.xml");
+    else
+      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  }
+
+  if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "cg") { 
+    dsolveType = "gmres";
+    out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES"<<std::endl;
   }
 
   bool isDriver = paramList.isSublist("Run1");
@@ -337,7 +351,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
-
+  
   // Do equilibration if requested
 #ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
@@ -414,11 +428,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         if (runList.isParameter("solver")) solveType = runList.get<std::string>("solver");
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
       }
-
-      // Instead of checking each time for rank, create a rank 0 stream
-      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      Teuchos::FancyOStream& out = *fancy;
-      out.setOutputToRootOnly(0);
 
       out << galeriStream.str();
 
