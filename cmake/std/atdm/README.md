@@ -287,8 +287,13 @@ $ bsub -x -Is -q rhel7F -n 16 ctest -j16
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
-(Dual-Socket POWER8, 8 cores per socket, K80 GPUs).  This confiugration will
+(Dual-Socket POWER8, 8 cores per socket, K80 GPUs).  This configuration will
 not work on the other GPU nodes currently.
+
+**NOTE:** While the above example shows loading the environment, configuring
+and building on the login node, one can also do these on the compute nodes as
+well.  In fact, that is what the CTest -S drivers do in automated testing on
+'white' and 'ride'.
 
 Note that one can also run the same build a tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -328,6 +333,11 @@ $ make NP=16
 
 $ srun ctest -j16
 ```
+
+**NOTE:** While the above example shows loading the environment, configuring
+and building on the login node, one can also do these on the compute nodes as
+well.  In fact, that is what the CTest -S drivers do in automated testing on
+'hansen' and 'shiller'.
 
 Note that one can also run the same build a tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -369,6 +379,11 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
 To get information on <YOUR_WCID> used above, there is a WC tool tab on
 computing.sandia.gov
 
+**NOTE:** Unlike some of the other machines, one must load the environment,
+configure and build on the login node and then run the test suite on a compute
+node on this system.  This is what the CTest -S driver on 'chama' and
+'serrano' does in order to drive jobs and submit to CDash.
+
 To use the checkin-test-atdm.sh script, you must split running the tests from
 the configure and build as with:
 
@@ -381,6 +396,7 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
   ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-packages=MueLu --test
 ```
+
 
 ### mutrino
 
@@ -405,6 +421,12 @@ $ make -j16
 
 $ salloc -N 1 -p standard -J $JOB_NAME ctest -j16
 ```
+
+**NOTE:** Unlike some of the other machines, one must load the environment,
+configure and build on the login node and then run the test suite on a compute
+node on this system.  This is what the CTest -S driver on 'mutrino' does in
+order to drive jobs and submit to CDash.
+
 
 ### SEMS rhel6 environment
 
@@ -455,6 +477,11 @@ $ make NP=20
 
 $ bsub -x -Is -n 20 ctest -j20
 ```
+
+**NOTE:** While the above example shows loading the environment, configuring
+and building on the login node, one can also do these on the compute nodes as
+well.  In fact, that is what the CTest -S drivers do in automated testing on
+'waterman'.
 
 Note that one can also run the same build a tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -769,4 +796,4 @@ they support are:
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
 
-* `wateman/`: Supports GNU and CUDA builds on the SRN machine `waterman`.
+* `waterman/`: Supports GNU and CUDA builds on the SRN machine `waterman`.
