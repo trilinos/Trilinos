@@ -561,8 +561,8 @@ contents:
     environment.sh  # Load env for the given system based on $JOB_NAME keys
     all_supported_builds.sh  # [Optional] List of all supported builds
     tweaks/
-       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>.cmake  # [Optional]
-       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>.cmake  # [Optional]
+       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>-<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>-<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
 ```
 
@@ -581,17 +581,25 @@ a system with `checkin-test-atdm.sh all [other options]`.
 The files in the `cmake/std/atdm/<system-name>/tweaks/` directory contain
 special settings for specific builds for a specific system.  Typically, this
 file contains (temporary) disables for tests for that given build.  When a
-configure is performed, the variable `ATDM_JOB_NAME_KEYS_STR` set to
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT) is
-used to define a default file name:
+configure is performed, the internal CMake variable `ATDM_JOB_NAME_KEYS_STR`
+set to `<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT)
+is used to define a default file name:
 
 ```
-  Trilinos/cmake/std/atdm/<system-name>/tweaks/$ATDM_JOB_NAME_KEYS_STR.cmake
+  Trilinos/cmake/std/atdm/<system-name>/tweaks/${ATDM_JOB_NAME_KEYS_STR}.cmake
 ```
 
 If that file exists, then it is set as the default for the cmake cache
 variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
-its options are read.
+its options are read.  For example, this is what the output looks like on
+'waterman':
+
+```
+-- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
+-- ATDM_JOB_NAME_KEYS_STR='GNU-RELEASE-OPENMP-POWER9'
+-- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake'
+-- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake ...
+```
 
 
 ## Disabling failing tests
