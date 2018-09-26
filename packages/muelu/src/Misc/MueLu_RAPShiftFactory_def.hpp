@@ -76,6 +76,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("rap: fix zero diagonals");
     SET_VALID_ENTRY("rap: shift");
     SET_VALID_ENTRY("rap: shift diagonal M");
     SET_VALID_ENTRY("rap: shift low storage");
