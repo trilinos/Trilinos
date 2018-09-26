@@ -50,8 +50,10 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
+
 
 #include "MueLu_RAPShiftFactory_decl.hpp"
 #include "MueLu_MasterList.hpp"
@@ -64,7 +66,7 @@ namespace MueLu {
   /*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RAPShiftFactory()
-    : implicitTranspose_(false), checkAc_(false), repairZeroDiagonals_(false) { }
+    : implicitTranspose_(false)  { }
 
 
   /*********************************************************************************************************/
@@ -185,9 +187,7 @@ namespace MueLu {
         Set(coarseLevel, "AP Pattern", KP);
       }
 
-      // Optimization storage option. If not modifying matrix later (inserting local values),
-      // allow optimization of storage.  This is necessary for new faster Epetra MM kernels.
-      bool doOptimizedStorage = !checkAc_;
+      bool doOptimizedStorage = true;
 
       RCP<Matrix> Ac, Kc, Mc;
 
@@ -246,8 +246,10 @@ namespace MueLu {
 	Ac->fillComplete();
       }
 
-      if (checkAc_)
-        CheckMainDiagonal(Ac);
+      bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+      bool checkAc             = pL.get<bool>("CheckMainDiagonal")|| pL.get<bool>("rap: fix zero diagonals"); ;
+      if (checkAc || repairZeroDiagonals)
+        Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1));
 
       RCP<ParameterList> params = rcp(new ParameterList());;
       params->set("printLoadBalancingInfo", true);
@@ -284,37 +286,6 @@ namespace MueLu {
         // of dangling data for CoordinatesTransferFactory
         coarseLevel.Release(*fac);
       }
-    }
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckMainDiagonal(RCP<Matrix> & Ac) const {
-    // plausibility check: no zeros on diagonal
-    LO lZeroDiags = 0;
-    RCP<Vector> diagVec = VectorFactory::Build(Ac->getRowMap());
-    Ac->getLocalDiagCopy(*diagVec);
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero()
-    Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
-    for (size_t r=0; r<Ac->getRowMap()->getNodeNumElements(); r++) {
-      if(diagVal[r]==zero) {
-        lZeroDiags++;
-        if(repairZeroDiagonals_) {
-          GlobalOrdinal grid = Ac->getRowMap()->getGlobalElement(r);
-          LocalOrdinal lcid = Ac->getColMap()->getLocalElement(grid);
-          Teuchos::ArrayRCP<LocalOrdinal> indout(1,lcid);
-          Teuchos::ArrayRCP<Scalar> valout(1,Teuchos::ScalarTraits<Scalar>::one());
-          Ac->insertLocalValues(r, indout.view(0,indout.size()), valout.view(0,valout.size()));
-        }
-      }
-    }
-
-    if(IsPrint(Warnings0)) {
-      const RCP<const Teuchos::Comm<int> > & comm = Ac->getRowMap()->getComm();
-      GO lZeroDiagsGO = lZeroDiags; /* LO->GO conversion */
-      GO gZeroDiags = 0;
-      MueLu_sumAll(comm, lZeroDiagsGO, gZeroDiags);
-      if(repairZeroDiagonals_) GetOStream(Warnings0) << "RAPShiftFactory (WARNING): repaired " << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
-      else                     GetOStream(Warnings0) << "RAPShiftFactory (WARNING): found "    << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
     }
   }
 
