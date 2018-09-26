@@ -152,7 +152,7 @@ ENDIF()
 
 
 
-IF (${PACKAGE_NAME}_ENABLE_Intrepid)
+IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
 APPEND_SET(SOURCES_INTREPID2
   IntrepidPCoarsenFactory.cpp
 )
