@@ -490,10 +490,7 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 $ bsub -x -Is -n 20 \
-  ./checkin-test-atdm.sh cuda-debug \
-  --enable-all-packages=off --no-enable-fwd-packages \
-  --enable-packages=MueLu \
-  --local-do-all
+  ./checkin-test-atdm.sh cuda-debug --enable-packages=MueLu --local-do-all
 ```
 
 
