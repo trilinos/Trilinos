@@ -8172,15 +8172,14 @@ namespace Classes {
     bool restrictComm = false; // Do we need to restrict the communicator?
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     if (! params.is_null ()) {
+      auto p = *params();
       reverseMode = params->get ("Reverse Mode", reverseMode);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
-      matrixparams = sublist (params, "CrsMatrix");
       isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
-
-      int mm_optimization_core_count=3000; // ~800 for serrano
+      matrixparams = sublist (params, "CrsMatrix");
+      int mm_optimization_core_count=3000; // ~3000 for serrano
       mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      int commSize = getComm() -> getSize();
-      if(commSize < mm_optimization_core_count) isMM = false;
+      if(getComm()->getSize() < mm_optimization_core_count) isMM = false;
       if(reverseMode) isMM = false;
     }
 
@@ -9097,6 +9096,11 @@ namespace Classes {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
+      if(domainMap->getComm ()->getRank () ==0) {
+      std::cout<<" iAFC pars ";
+      params->print();
+      std::cout<<std::endl;
+      }
     transferAndFillComplete (destMatrix, importer, Teuchos::null, domainMap, rangeMap, params);
   }
 

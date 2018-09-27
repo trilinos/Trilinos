@@ -224,6 +224,8 @@ void Multiply(
   // above to handle that.
   if (!use_optimized_ATB) {
     RCP<const import_type> dummyImporter;
+    int mypid = targetMap_A->getComm()->getRank();
+    if(mypid == 0) { std::cout <<" MM::!u_o_ATB "; if(!params.is_null()) params->print(); std::cout<<std::endl;}
     MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview, dummyImporter, true, label, params);
   }
 
@@ -235,6 +237,9 @@ void Multiply(
   // Import any needed remote rows and populate the Bview struct.
   if (!use_optimized_ATB)
     MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
+
+  int mypid = targetMap_A->getComm()->getRank();
+  if(mypid == 0) { std::cout <<" MM::!u_o_ATB(b) "; if(!params.is_null()) params->print(); std::cout<<std::endl;}
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM All Multiply"))));
@@ -363,7 +368,13 @@ void Jacobi(Scalar omega,
   // Enable globalConstants by default
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()) {
+      importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+      int mm_optimization_core_count=3000; // ~3000 for serrano
+      mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      importParams1->set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(A.getComm()->getRank() == 0 ) { std::cout<<" Multipy params for importParams1 "; importParams1->print();}
+  }
 
   //Now import any needed remote rows and populate the Aview struct.
   RCP<const import_type> dummyImporter;
@@ -378,7 +389,15 @@ void Jacobi(Scalar omega,
   // Enable globalConstants by default
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()) {
+      importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+      int mm_optimization_core_count=3000; // ~3000 for serrano
+      mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      importParams2->set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(A.getComm()->getRank() == 0 ) { std::cout<<" Multipy params for importParams2 "; importParams2->print();}
+
+  }
+
   MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1459,11 +1478,30 @@ void mult_AT_B_newmatrix(
 
   // NOTE: the I&X routine sticks an importer on the paramlist as output, so we have to use a unique guy here
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()) {
+      importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
+      int mm_optimization_core_count=3000; // ~3000 for serrano
+      mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      importParams1->set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(A.getComm()->getRank() == 0 ) 
+      { 
+	  std::cout<<" 2/3 Multipy params for importParams1 "; importParams1->print();
+      }
+  }
+
   MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true, label,importParams1);
 
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
-  if(!params.is_null()) importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+  if(!params.is_null()){
+      importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
+      int mm_optimization_core_count=3000; // ~3000 for serrano
+      mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      importParams1->set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(A.getComm()->getRank() == 0 ) 
+      { 
+	  std::cout<<" 2/3 Multipy params for importParams2 "; importParams1->print();
+      }
+  }
 
   if(B.getRowMap()->isSameAs(*Atrans->getColMap())){
     MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true, label,importParams2);
@@ -1496,12 +1534,23 @@ void mult_AT_B_newmatrix(
 #endif
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Crcp(&C,false);
+
+  
   if (needs_final_export) {
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label", label);
+
+    Teuchos::ParameterList& mmlist = params->sublist("matrixmatrix: kernel params",false);
+    int foundcount = mmlist.get("MM_TAFC_OptimizationCoreCount",-1);
+    std::cout<<" TEMM-export OCC = "<<foundcount<<std::endl;
+    labelList.set("MM_TAFC_OptimizationCoreCount",foundcount,"Core Count above which the optimized neighbor discovery is used");
+
     if(!params.is_null()) labelList.set("compute global constants",params->get("compute global constants",true));
     labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
                   "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+
+    if(A.getComm()->getRank() == 0 ) { std::cout<<" eAFC:: labelList "; labelList.print(); std::cout<<std::endl;}
+
     Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
                                  B.getDomainMap(),A.getDomainMap(),rcp(&labelList,false));
   }
@@ -1528,6 +1577,12 @@ void mult_A_B(
   using Teuchos::ArrayView;
   using Teuchos::OrdinalTraits;
   using Teuchos::null;
+
+
+  Teuchos::ParameterList& mmlist = params->sublist("matrixmatrix: kernel params",false);
+  int foundcount = mmlist.get("MM_TAFC_OptimizationCoreCount",-1);
+  std::cout<<" mult_a_b OCC = "<<foundcount<<std::endl;
+  mmlist.set("MM_TAFC_OptimizationCoreCount",foundcount,"Core Count above which the optimized neighbor discovery is used");
 
   typedef Teuchos::ScalarTraits<Scalar> STS;
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
@@ -3158,6 +3213,7 @@ void import_and_extract_views(
     }
 
     const int numProcs = rowMap->getComm()->getSize();
+
     if (numProcs < 2) {
       TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
             "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows.");
@@ -3203,10 +3259,17 @@ void import_and_extract_views(
     labelList.set("Timer Label", label);
     labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
                   "This parameter should be set to true only for MatrixMatrix operations: the optimization in Epetra that was ported to Tpetra does _not_ take into account the possibility that for any given source PID, a particular GID may not exist on the target PID: i.e. a transfer operation. A fix for this general case is in development.");
+    
+
+    const int MyPID = A.getRowMap()->getComm()->getRank();
+    if(MyPID==0 && !params.is_null()) { std::cout<<" TE_MM params "; params->print();}
 
     // Minor speedup tweak - avoid computing the global constants
     if(!params.is_null())
       labelList.set("compute global constants", params->get("compute global constants",false));
+    int mm_optimization_core_count=3000; // ~3000 for serrano
+    mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+    labelList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
     Aview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<crs_matrix_type>(rcpFromRef(A), *importer,
                                     A.getDomainMap(), importer->getTargetMap(), rcpFromRef(labelList));
 
