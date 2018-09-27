@@ -14,6 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
 * <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
@@ -144,7 +145,8 @@ Some examples of `<job-name>` keyword sets used on various platforms include:
 
 The script `cmake/std/atdm/load-env.sh` when sourced sets some bash
 environment variables that are prefixed with `ATDM_CONFIG_` and other standard
-variables.
+variables.  This includes setting the var `ATDM_CONFIG_JOB_NAME` which stores
+the input `<job-name>` which is used in other parts of the system.
 
 The file `ATDMDevEnv.cmake` pulls bash environment variables set by the
 sourced `atdm/load-env.sh` script and sets up a number of CMake cache
@@ -169,6 +171,43 @@ When `ATDMDevEnv.cmake` is being processed, if there is a "tweaks" file
 defined for a build, then it will be picked up in the CMake cache var <a
 href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and that file will be read in
 using `INCLUDE()` to process the extra options contained within it.
+
+
+## Installation and usage
+
+When including the `ATDMDevEnv.cmake` file (or `ATDMDevEnvSettings.cmake`) at
+configure time as described above, the cmake configure automatically sets up
+to install an environment script:
+
+```
+  <install-prefix>/<load-matching-env-sh>
+```
+
+where `<install-prefix>` and `<load-matching-env-sh>` are set at
+configure-time using:
+
+```
+  -D CMAKE_INSTALL_PREFIX=<install-prefix> \
+  -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
+  -D ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME=<trilinos-install-prefix-var-name> \
+```
+
+* If `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not specified then it is given the
+name `load_matching_env.sh` by default.
+
+* If `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is not specified then it is
+given the name `ATDM_TRILINOS_INSTALL_PREFIX` by default.
+
+After installation with `make install`, a client can load the environment to
+use this ATDM configuration of Trilinos by running:
+
+```
+$ source <install-prefix>/<load-matching-env-sh>
+```
+
+Sourcing this file sets all of the various `ATDM_CONG_` environment variables
+described above and also sets the environment variable
+`<trilinos-install-prefix-var-name>` to `<install-prefix>`.
 
 
 ## checkin-test-atdm.sh
@@ -419,7 +458,7 @@ $ cmake \
 
 $ make -j16
 
-$ salloc -N 1 -p standard -J $JOB_NAME ctest -j16
+$ salloc -N 1 -p standard -J $ATDM_CONFIG_JOB_NAME ctest -j16
 ```
 
 **NOTE:** Unlike some of the other machines, one must load the environment,
@@ -555,7 +594,7 @@ contents:
 
 ```
   <system-name>/
-    environment.sh  # Load env for the given system based on $JOB_NAME keys
+    environment.sh  # Load env for the given system based on $ATDM_CONFIG_JOB_NAME keys
     all_supported_builds.sh  # [Optional] List of all supported builds
     tweaks/
        <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>-<KOKKOS_ARCH0>.cmake  # [Optional]
