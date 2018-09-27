@@ -433,10 +433,34 @@ import numpy
 }
 %include "Domi_MDMap.hpp"
 #ifdef HAVE_TPETRA
-%template(getTpetraMap) Domi::MDMap::getTpetraMap< PYTRILINOS_LOCAL_ORD,
-                                                   PYTRILINOS_GLOBAL_ORD >;
-%template(getTpetraAxisMap) Domi::MDMap::getTpetraAxisMap< PYTRILINOS_LOCAL_ORD,
-                                                           PYTRILINOS_GLOBAL_ORD >;
+%extend Domi::MDMap
+{
+  // This extension returns a Tpetra::Classes::Map instead of a
+  // Tpetra::Map, to help SWIG with type checking
+  Teuchos::RCP< const Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
+                                            PYTRILINOS_GLOBAL_ORD,
+                                            DefaultNodeType > >
+  getTpetraMap(bool withCommPad=true)
+  {
+    return self->template getTpetraMap< PYTRILINOS_LOCAL_ORD,
+                                        PYTRILINOS_GLOBAL_ORD,
+                                        DefaultNodeType >(withCommPad);
+  }
+
+  // This extension returns a Tpetra::Classes::Map instead of a
+  // Tpetra::Map, to help SWIG with type checking
+  Teuchos::RCP< const Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
+                                            PYTRILINOS_GLOBAL_ORD,
+                                            DefaultNodeType > >
+  getTpetraAxisMap(int axis,
+                   bool withCommPad=true)
+  {
+    return self->template getTpetraAxisMap< PYTRILINOS_LOCAL_ORD,
+                                            PYTRILINOS_GLOBAL_ORD,
+                                            DefaultNodeType >(axis,
+                                                              withCommPad);
+  }
+}
 #endif
 
 ///////////////////////////
