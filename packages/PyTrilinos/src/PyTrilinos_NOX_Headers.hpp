@@ -48,6 +48,5 @@
 #include "NOX_Config.h"
 
 // NOX include files
-#include "NOX_Version.H"
 
 #endif
