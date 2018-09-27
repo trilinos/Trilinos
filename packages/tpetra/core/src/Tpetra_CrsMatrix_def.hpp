@@ -8499,7 +8499,8 @@ namespace Classes {
       SourcePids.resize (getColMap ()->getNodeNumElements ());
       SourceCol_pids.get1dCopy (SourcePids ());
     }
-    else if (BaseDomainMap->isSameAs (*BaseRowMap) &&
+    else if ( ! MyImporter.is_null () &&
+             BaseDomainMap->isSameAs (*BaseRowMap) &&
              getDomainMap ()->isSameAs (*getRowMap ())) {
       // We can use the rowTransfer + SourceMatrix's Import to find out who owns what.
 

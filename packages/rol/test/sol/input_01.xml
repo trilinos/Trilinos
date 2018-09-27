@@ -126,6 +126,10 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="Mean Plus Semi-Deviation From Target">
+        <Parameter name="Coefficient"                  type="double" value="0.95"           />
+        <Parameter name="Target"                       type="double" value="1.0"            />
+      </ParameterList>
       <!-- ===========  MEAN PLUS DEVIATION SUBLIST  =========== -->
       <ParameterList name="Mean Plus Deviation">
         <Parameter name="Orders"                       type="string" value="{ 2.0, 4.0 }"   />
@@ -140,6 +144,9 @@
             <Parameter name="Upper Bound" type="double" value="0.5"  />
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+      <ParameterList name="Mean Plus Semi-Deviation">
+        <Parameter name="Coefficient"                  type="double" value="0.95"           />
       </ParameterList>
       <!-- ===========  MEAN PLUS VARIANCE FROM TARGET SUBLIST  =========== -->
       <ParameterList name="Mean Plus Variance From Target">
