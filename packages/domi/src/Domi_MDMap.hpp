@@ -72,6 +72,9 @@
 #ifdef HAVE_TPETRA
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
+typedef Tpetra::Details::DefaultTypes::local_ordinal_type  TpetraLOType;
+typedef Tpetra::Details::DefaultTypes::global_ordinal_type TpetraGOType;
+typedef Tpetra::Details::DefaultTypes::node_type           TpetraNodeType;
 #endif
 
 namespace Domi
@@ -764,9 +767,10 @@ public:
    *
    * Note that the boundary padding is always included in the map
    */
-  template< class LocalOrdinal,
-            class GlobalOrdinal = LocalOrdinal >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal > >
+  template< class LocalOrdinal  = TpetraLOType,
+            class GlobalOrdinal = TpetraGOType,
+            class Node          = TpetraNodeType>
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that represents the
@@ -781,9 +785,10 @@ public:
    *
    * Note that the boundary padding is always included in the map
    */
-  template< class LocalOrdinal,
-            class GlobalOrdinal = LocalOrdinal >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal > >
+  template< class LocalOrdinal  = TpetraLOType,
+            class GlobalOrdinal = TpetraGOType,
+            class Node          = TpetraNodeType >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true) const;
 
@@ -1127,8 +1132,9 @@ getGlobalDims() const
 #ifdef HAVE_TPETRA
 
 template< class LocalOrdinal,
-          class GlobalOrdinal >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal > >
+          class GlobalOrdinal,
+          class Node >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
 MDMap::getTpetraMap(bool withCommPad) const
 {
   if (withCommPad)
@@ -1163,10 +1169,11 @@ MDMap::getTpetraMap(bool withCommPad) const
       _mdComm->getTeuchosComm();
     return
       Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
-                                    GlobalOrdinal >(Teuchos::OrdinalTraits< Tpetra::global_size_t >::invalid(),
-                                                    myElements(),
-                                                    0,
-                                                    teuchosComm));
+                                    GlobalOrdinal,
+                                    Node >(Teuchos::OrdinalTraits< Tpetra::global_size_t >::invalid(),
+                                           myElements(),
+                                           0,
+                                           teuchosComm));
   }
   else
   {
@@ -1210,10 +1217,11 @@ MDMap::getTpetraMap(bool withCommPad) const
       _mdComm->getTeuchosComm();
     return
       Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
-                                    GlobalOrdinal >(Teuchos::OrdinalTraits< Tpetra::global_size_t>::invalid(),
-                                                    myElements(),
-                                                    0,
-                                                    teuchosComm));
+                                    GlobalOrdinal,
+                                    Node >(Teuchos::OrdinalTraits< Tpetra::global_size_t>::invalid(),
+                                           myElements(),
+                                           0,
+                                           teuchosComm));
   }
 }
 #endif
@@ -1223,8 +1231,9 @@ MDMap::getTpetraMap(bool withCommPad) const
 #ifdef HAVE_TPETRA
 
 template< class LocalOrdinal,
-          class GlobalOrdinal >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal > >
+          class GlobalOrdinal,
+          class Node >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
 MDMap::
 getTpetraAxisMap(int axis,
                  bool withCommPad) const
@@ -1245,10 +1254,11 @@ getTpetraAxisMap(int axis,
   for (LocalOrdinal i = 0; i < elements.size(); ++i)
     elements[i] = i + start;
   return Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
-                                       GlobalOrdinal >(Teuchos::OrdinalTraits< Tpetra::global_size_t>::invalid(),
-                                                       elements,
-                                                       0,
-                                                       teuchosComm));
+                                       GlobalOrdinal,
+                                       Node >(Teuchos::OrdinalTraits< Tpetra::global_size_t>::invalid(),
+                                              elements,
+                                              0,
+                                              teuchosComm));
 }
 #endif
 
