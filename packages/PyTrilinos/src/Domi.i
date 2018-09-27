@@ -432,6 +432,12 @@ import numpy
   }
 }
 %include "Domi_MDMap.hpp"
+#ifdef HAVE_TPETRA
+%template(getTpetraMap) Domi::MDMap::getTpetraMap< PYTRILINOS_LOCAL_ORD,
+                                                   PYTRILINOS_GLOBAL_ORD >;
+%template(getTpetraAxisMap) Domi::MDMap::getTpetraAxisMap< PYTRILINOS_LOCAL_ORD,
+                                                           PYTRILINOS_GLOBAL_ORD >;
+#endif
 
 ///////////////////////////
 // Domi MDVector support //
