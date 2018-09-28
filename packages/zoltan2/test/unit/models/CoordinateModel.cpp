@@ -63,8 +63,6 @@
 
 using Teuchos::RCP;
 using Teuchos::Comm;
-using std::cout;
-using std::endl;
 
 void testCoordinateModel(std::string &fname, int nWeights,
   const RCP<const Comm<int> > &comm,
@@ -73,10 +71,10 @@ void testCoordinateModel(std::string &fname, int nWeights,
   int fail = 0, gfail = 0;
 
   if (printInfo){
-    cout << "Test: " << fname << endl;
-    cout << "Num Weights: " << nWeights;
-    cout << " proc 0 has all: " << nodeZeroHasAll;
-    cout << endl;
+    std::cout << "Test: " << fname << std::endl;
+    std::cout << "Num Weights: " << nWeights;
+    std::cout << " proc 0 has all: " << nodeZeroHasAll;
+    std::cout << std::endl;
   }
 
   //////////////////////////////////////////////////////////////
@@ -296,7 +294,7 @@ int main(int narg, char *arg[])
 
   testCoordinateModel(fname, 2, comm, true, rank==0);
 
-  if (rank==0) cout << "PASS" << endl;
+  if (rank==0) std::cout << "PASS" << std::endl;
 
   return 0;
 }

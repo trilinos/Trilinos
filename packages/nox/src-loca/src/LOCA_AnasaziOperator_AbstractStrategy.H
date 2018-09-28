@@ -122,7 +122,7 @@ namespace LOCA {
        * \brief Give strategy an opportunit to massage the random seed vector
        */
       virtual void
-      preProcessSeedVector(NOX::Abstract::MultiVector& ivec) {};
+      preProcessSeedVector(NOX::Abstract::MultiVector& /* ivec */) {};
 
       /*!
        * \brief Hook to precompute info for subsequent repeated calls to

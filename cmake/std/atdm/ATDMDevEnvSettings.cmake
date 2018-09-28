@@ -5,7 +5,6 @@
 ###############################################################################
 
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
-
 #
 # A) Assert the right env vars are set and set local defaults
 #
@@ -17,6 +16,8 @@ IF (NOT "$ENV{ATDM_CONFIG_COMPLETED_ENV_SETUP}" STREQUAL "TRUE")
     ) 
 ENDIF()
 
+
+ASSERT_DEFINED(ENV{ATDM_CONFIG_JOB_NAME})
 
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_COUNT})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_CTEST_PARALLEL_LEVEL})
@@ -64,8 +65,22 @@ iF (ATDM_USE_HWLOC AND "$ENV{ATDM_CONFIG_HWLOC_LIBS}" STREQUAL "")
     " HWLOC_LIBS is not set!")
 ENDIF()
 
+# If ATDM_CONFIG_KOKKOS_ARCH is set to empty, don't append the KOKKOS_ARCH
+# name.  This makes sense for platforms like 'rhel'" that may involve
+# different CPU architectures where it would not make sense to try to set a
+# specific KOKKOS_ARCH value.
+SET(ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS $ENV{ATDM_CONFIG_KOKKOS_ARCH})
+IF(ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS)
+  STRING(TOUPPER ${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS}
+    ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS)
+  STRING(REPLACE , - ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS
+    ${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS})
+  SET(ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS
+    -${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS})
+ENDIF()
+
 SET(ATDM_JOB_NAME_KEYS_STR
-  "$ENV{ATDM_CONFIG_COMPILER}-$ENV{ATDM_CONFIG_BUILD_TYPE}-${ATDM_NODE_TYPE}")
+  "$ENV{ATDM_CONFIG_COMPILER}-$ENV{ATDM_CONFIG_BUILD_TYPE}-${ATDM_NODE_TYPE}${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS}")
 PRINT_VAR(ATDM_JOB_NAME_KEYS_STR)
 
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(MPI_EXEC mpiexec)
@@ -89,10 +104,10 @@ ADVANCED_SET(ATDM_TWEAKS_FILES "${ATDM_TWEAKS_FILES_DEFAULT}"
   )
 PRINT_VAR(ATDM_TWEAKS_FILES)
 
-FOREACH(ATDM_TREAKS_FILE ${ATDM_TWEAKS_FILES})
-  MESSAGE("-- " "Including ATDM build treaks file ${ATDM_TREAKS_FILE} ...")
-  TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE "${ATDM_TREAKS_FILE}")
-  INCLUDE("${ATDM_TREAKS_FILE}")
+FOREACH(ATDM_TWEAKS_FILE ${ATDM_TWEAKS_FILES})
+  MESSAGE("-- " "Including ATDM build tweaks file ${ATDM_TWEAKS_FILE} ...")
+  TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE "${ATDM_TWEAKS_FILE}")
+  INCLUDE("${ATDM_TWEAKS_FILE}")
 ENDFOREACH()
 
 #
@@ -236,10 +251,52 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
 
 #
-# E) Test Disables
+# G) Test Disables
 #
 # There are some tests that have to be disabled for a braod set of builds
 # for example, if all openmp builds are failing a certain test then it 
 # makes more sense to disbale it once in this file instead of in every openmp
 # buid's tweaks file
 #
+
+
+#
+# H) ATDM env config install hooks
+#
+# Install just enough to allow loading the exact matching env and nothing
+# else!
+#
+
+IF (COMMAND INSTALL)
+
+SET(ATDM_CONFIG_SCRIPTS_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/atdm-trilinos)
+
+  INSTALL( FILES ${CMAKE_CURRENT_LIST_DIR}/load-env.sh
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR} )
+  
+  INSTALL( DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/utils
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}
+    PATTERN "*.cmake" EXCLUDE )
+  
+  INSTALL( DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/$ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME}
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}
+    PATTERN "*.cmake" EXCLUDE )
+  
+  SET( ATDM_JOB_NAME $ENV{ATDM_CONFIG_JOB_NAME} )
+  
+  SET( ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME load_matching_env.sh
+    CACHE STRING
+    "Name of script installed in <CMAKE_INSTALL_PREFIX> to source to load matching env." )
+  
+  SET( ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME  ATDM_TRILINOS_INSTALL_PREFIX
+    CACHE STRING
+    "Name of env var set to <CMAKE_INSTALL_PREFIX> set in installed script <ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME>." )
+  
+  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/load_matching_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh @ONLY )
+  
+  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    RENAME ${ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME} )
+
+ENDIF()

@@ -139,12 +139,12 @@ STK_MATH_FORCE_INLINE double erf(const double a) {
   return std::erf(a);
 }
 
-STK_MATH_FORCE_INLINE double multiplysign(const double x, const double y) { // return x times sign of y
-  return x * ( 1 - 2*(y<0) );
+STK_MATH_FORCE_INLINE double multiplysign(const double& x, const double& y) { // return x times sign of y
+  return x * std::copysign(1.0, y);
 }
 
-STK_MATH_FORCE_INLINE double copysign(const double x, const double y) { // return abs(x) times sign of y
-  return std::abs(x) * ( 1 - 2*(y<0) );
+STK_MATH_FORCE_INLINE double copysign(const double& x, const double& y) { // return abs(x) times sign of y
+  return std::copysign(x, y);
 }
 
 STK_MATH_FORCE_INLINE double abs(const double x) {
@@ -160,7 +160,7 @@ STK_MATH_FORCE_INLINE double min(const double x, const double y) {
 }
 
 STK_MATH_FORCE_INLINE bool isnan(const double a) {
-  return a!=a;
+  return std::isnan(a);
 }
 
 STK_MATH_FORCE_INLINE double if_then_else(const bool b, const double v1, const double v2) {
@@ -262,11 +262,11 @@ STK_MATH_FORCE_INLINE float erf(const float a) {
 }
 
 STK_MATH_FORCE_INLINE float multiplysign(const float x, const float y) { // return x times sign of y
-  return x * ( 1 - 2*(y<0) );
+  return x * std::copysign(1.0f, y);
 }
 
 STK_MATH_FORCE_INLINE float copysign(const float x, const float y) { // return abs(x) times sign of y
-  return std::abs(x) * ( 1 - 2*(y<0) );
+  return std::copysign(x, y);
 }
 
 STK_MATH_FORCE_INLINE float abs(const float x) {
@@ -282,7 +282,7 @@ STK_MATH_FORCE_INLINE float min(const float x, const float y) {
 }
 
 STK_MATH_FORCE_INLINE bool isnan(const float a) {
-  return a!=a;
+  return std::isnan(a);
 }
 
 STK_MATH_FORCE_INLINE float if_then_else(const bool b, const float v1, const float v2) {
@@ -290,7 +290,7 @@ STK_MATH_FORCE_INLINE float if_then_else(const bool b, const float v1, const flo
 }
 
 STK_MATH_FORCE_INLINE float if_then_else_zero(const bool b, const float v) {
-  return b ? v : 0.0;
+  return b ? v : 0;
 }
 
 } // namespace math

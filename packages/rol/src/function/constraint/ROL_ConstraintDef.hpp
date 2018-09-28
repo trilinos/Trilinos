@@ -45,6 +45,9 @@
 #ifndef ROL_CONSTRAINT_DEF_H
 #define ROL_CONSTRAINT_DEF_H
 
+#include "ROL_LinearAlgebra.hpp"
+#include "ROL_LAPACK.hpp"
+
 namespace ROL {
 
 template <class Real>
@@ -328,7 +331,9 @@ std::vector<Real> Constraint<Real>::solveAugmentedSystem(Vector<Real> &v1,
     // Evaluate special stopping condition.
     tol = tol;
 
+    std::cout << "  " << i+1 << ": " << res[i+1]/res[0] << std::endl;
     if (res[i+1] <= tol) {
+      std::cout << "  solved in " << i+1 << " iterations to " << res[i+1] << " (" << res[i+1]/res[0] << ")" << std::endl;
       // Update solution vector.
       v1.plus(*z1);
       v2.plus(*z2);

@@ -1,25 +1,23 @@
-#include <gtest/gtest.h>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "BulkDataTester.hpp"
-#include <algorithm>                    // for find, sort, etc
-#include <ostream>                      // for operator<<, basic_ostream, etc
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
-#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
-#include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
-#include "stk_mesh/base/FEMHelpers.hpp"
-#include "stk_mesh/base/MetaData.hpp"   // for MetaData
-#include "stk_mesh/base/Selector.hpp"   // for Selector
-#include "stk_mesh/base/Types.hpp"      // for EntityVector, etc
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
-#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
-#include "stk_util/util/PairIter.hpp"   // for PairIter
-#include "BucketTester.hpp"  // for BucketTester
+#include <algorithm>                                 // for find, sort, etc
+#include <ostream>                                   // for operator<<, etc
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
-
+#include <stk_util/parallel/CommSparse.hpp>          // for CommSparse
+#include <vector>                                    // for vector, etc
+#include "stk_mesh/base/BulkData.hpp"                // for BulkData, etc
+#include "stk_mesh/base/Entity.hpp"                  // for Entity
+#include "stk_mesh/base/EntityKey.hpp"               // for EntityKey, etc
+#include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg, etc
+#include "stk_util/parallel/ParallelComm.hpp"        // for CommBuffer
+#include "stk_util/util/PairIter.hpp"                // for PairIter
 namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+
 
 namespace stk { namespace unit_test_util {
 

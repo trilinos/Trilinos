@@ -67,6 +67,11 @@ namespace panzer {
   }
 
   template<typename LO, typename GO>
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO>>
+  panzer::L2Projection<LO,GO>::getTargetGlobalIndexer() const 
+  {return targetGlobalIndexer_;}
+
+  template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
   panzer::L2Projection<LO,GO>::buildMassMatrix()
   {
@@ -89,61 +94,125 @@ namespace panzer {
     auto M = ghostedMatrix->getLocalMatrix();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
+    const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const";
+
     // Loop over element blocks and fill mass matrix
-    for (const auto& block : elementBlockNames_) {
+    if(is_scalar){
+      for (const auto& block : elementBlockNames_) {
 
-      // Based on descriptor, currently assumes there should only be one workset
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto& worksets = worksetContainer_->getWorksets(wd);
+        // Based on descriptor, currently assumes there should only be one workset
+        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+        const auto& worksets = worksetContainer_->getWorksets(wd);
 
-      for (const auto& workset : *worksets) {
+        for (const auto& workset : *worksets) {
 
-        const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+          const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
         
-        const auto& unweightedBasis = basisValues.basis_scalar;
-        const auto& weightedBasis = basisValues.weighted_basis_scalar;
+          const auto& unweightedBasis = basisValues.basis_scalar;
+          const auto& weightedBasis = basisValues.weighted_basis_scalar;
         
-        // Offsets (this assumes UVM, need to fix)
-        const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
-        PHX::View<LO*> kOffsets("MassMatrix: Offsets",offsets.size());
-        for(const auto& i : offsets)
-          kOffsets(i) = offsets[i];
+          // Offsets (this assumes UVM, need to fix)
+          const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          PHX::View<LO*> kOffsets("MassMatrix: Offsets",offsets.size());
+          for(const auto& i : offsets)
+            kOffsets(i) = offsets[i];
         
-        PHX::Device::fence();
+          PHX::Device::fence();
         
-        // Local Ids
-        Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
-                                                targetGlobalIndexer_->getElementBlockGIDCount(block));
+          // Local Ids
+          Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                  targetGlobalIndexer_->getElementBlockGIDCount(block));
         
-        // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         
-        targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
+          targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
         
-        const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
-        Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+          const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
             
-          LO cLIDs[256];
-          const int numIds = static_cast<int>(localIds.extent(1));
-          for(int i=0;i<numIds;++i)
-            cLIDs[i] = localIds(cell,i);
+            LO cLIDs[256];
+            const int numIds = static_cast<int>(localIds.extent(1));
+            for(int i=0;i<numIds;++i)
+              cLIDs[i] = localIds(cell,i);
           
-          double vals[256];
-          const int numQP = static_cast<int>(unweightedBasis.extent(2));
+            double vals[256];
+            const int numQP = static_cast<int>(unweightedBasis.extent(2));
           
-          for (int qp=0; qp < numQP; ++qp) {
-            for (int row=0; row < numBasisPoints; ++row) {
-              int offset = kOffsets(row);
-              LO lid = localIds(cell,offset);
+            for (int qp=0; qp < numQP; ++qp) {
+              for (int row=0; row < numBasisPoints; ++row) {
+                int offset = kOffsets(row);
+                LO lid = localIds(cell,offset);
               
-              for (int col=0; col < numIds; ++col)
-                vals[col] = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                for (int col=0; col < numIds; ++col)
+                  vals[col] = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
               
-              M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+              }
             }
-          }
    
-        });
+          });
+        }
+      }
+    } else {
+      for (const auto& block : elementBlockNames_) {
+
+        // Based on descriptor, currently assumes there should only be one workset
+        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+        const auto& worksets = worksetContainer_->getWorksets(wd);
+
+        for (const auto& workset : *worksets) {
+
+          const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+        
+          const auto& unweightedBasis = basisValues.basis_vector;
+          const auto& weightedBasis = basisValues.weighted_basis_vector;
+        
+          // Offsets (this assumes UVM, need to fix)
+          const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          PHX::View<LO*> kOffsets("MassMatrix: Offsets",offsets.size());
+          for(const auto& i : offsets)
+            kOffsets(i) = offsets[i];
+        
+          PHX::Device::fence();
+        
+          // Local Ids
+          Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                  targetGlobalIndexer_->getElementBlockGIDCount(block));
+        
+          // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        
+          targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
+        
+          const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+            
+            LO cLIDs[256];
+            const int numIds = static_cast<int>(localIds.extent(1));
+            for(int i=0;i<numIds;++i)
+              cLIDs[i] = localIds(cell,i);
+          
+            double vals[256];
+            const int numQP = static_cast<int>(unweightedBasis.extent(2));
+          
+            for (int qp=0; qp < numQP; ++qp) {
+              for (int row=0; row < numBasisPoints; ++row) {
+                int offset = kOffsets(row);
+                LO lid = localIds(cell,offset);
+              
+                for (int col=0; col < numIds; ++col){
+                  vals[col] = 0.0;
+                  for(int dim=0; dim < weightedBasis.extent(3); dim++)
+                    vals[col] += unweightedBasis(cell,row,qp,dim) * weightedBasis(cell,col,qp,dim);
+                }             
+ 
+                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+              }
+            }
+   
+          });
+        }
       }
     }
     PHX::exec_space::fence();

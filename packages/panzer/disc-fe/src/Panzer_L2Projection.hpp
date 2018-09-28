@@ -9,16 +9,13 @@
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Tpetra_Map.hpp" // for KokkosDeviceWrapperNode
+#include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
 #include <vector>
 #include <string>
 
 namespace Teuchos {
   template<typename T> class MpiComm;
-}
-
-namespace Tpetra {
-  template<typename S,typename LO,typename GO,typename Node> class CrsMatrix;
-  template<typename S,typename LO,typename GO,typename Node> class MultiVector;
 }
 
 namespace panzer {
@@ -68,6 +65,9 @@ namespace panzer {
                const Teuchos::RCP<const panzer::ConnManager<LO,GO>>& connManager,
                const std::vector<std::string>& elementBlockNames,
                const Teuchos::RCP<panzer::WorksetContainer> worksetContainer = Teuchos::null);
+
+    /// Returns the target global indexer. Will be null if setup() has not been called.
+    Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO>> getTargetGlobalIndexer() const;
 
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.

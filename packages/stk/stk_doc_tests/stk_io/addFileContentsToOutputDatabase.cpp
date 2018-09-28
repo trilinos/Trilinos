@@ -39,7 +39,6 @@
 #include <string>                       // for string, basic_string, etc
 #include <vector>                       // for vector
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
-#include "Ioss_IOFactory.h"             // for IOFactory
 #include "Ioss_Property.h"              // for Property
 #include "Ioss_Region.h"                // for Region
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
@@ -105,37 +104,39 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
     // ============================================================
     // VERIFICATION 
 
-    // Verify output mesh contains the data in
-    // 'input_file' as information records...  Note that
-    // the output mesh will contain all element blocks; however, the
-    // non-shell element block will have zero elements.  This is due
-    // to the subset_selector subsetting the entities and not the
-    // parts...
-    Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", filename,
-						       Ioss::READ_MODEL, communicator);
-    Ioss::Region ioRegion(iossDb);
+    {
+      stk::io::StkMeshIoBroker stkIo(communicator);
+      // Verify output mesh contains the data in
+      // 'input_file' as information records...  Note that
+      // the output mesh will contain all element blocks; however, the
+      // non-shell element block will have zero elements.  This is due
+      // to the subset_selector subsetting the entities and not the
+      // parts...
+      size_t index = stkIo.add_mesh_database(filename, stk::io::READ_MESH);
+      stkIo.set_active_mesh(index);
+      stkIo.create_input_mesh();
 
-    const std::vector<std::string> &info_records =
-      ioRegion.get_information_records();
-    // First 2 lines of info records are host information (node name,
-    // os version) (2) Next record is the file name of the input file
-    // data that follows (1) File contains 4 records; 1 is longer than
-    // 80 characters, so it wraps (4+1) Next line is the
-    // "additional_info_record" added above (1)
-    size_t expected_info_record_count = 2 + (4+1)  + 1 + 1;
-    EXPECT_EQ(expected_info_record_count, info_records.size());
+      const std::vector<std::string> &info_records = stkIo.get_info_records();
+      // First 2 lines of info records are host information (node name,
+      // os version) (2) Next record is the file name of the input file
+      // data that follows (1) File contains 4 records; 1 is longer than
+      // 80 characters, so it wraps (4+1) Next line is the
+      // "additional_info_record" added above (1)
+      size_t expected_info_record_count = 2 + (4+1)  + 1 + 1;
+      EXPECT_EQ(expected_info_record_count, info_records.size());
 
-    EXPECT_STREQ(input_file.c_str(), info_records[2].c_str());
-    
-    EXPECT_STREQ(info1.c_str(), info_records[3].c_str());
-    EXPECT_STREQ(info2.substr(0,79).c_str(), info_records[4].substr(0,79).c_str());
-    EXPECT_STREQ(info2.substr(79).c_str(), info_records[5].c_str());
-    EXPECT_STREQ(info3.c_str(), info_records[6].c_str());
-    EXPECT_STREQ(info4.c_str(), info_records[7].c_str());
-    EXPECT_STREQ(additional_info_record.c_str(), info_records[8].c_str());
-    
-    unlink(filename.c_str());
-    unlink(input_file.c_str());
+      EXPECT_STREQ(input_file.c_str(), info_records[2].c_str());
+
+      EXPECT_STREQ(info1.c_str(), info_records[3].c_str());
+      EXPECT_STREQ(info2.substr(0,79).c_str(), info_records[4].substr(0,79).c_str());
+      EXPECT_STREQ(info2.substr(79).c_str(), info_records[5].c_str());
+      EXPECT_STREQ(info3.c_str(), info_records[6].c_str());
+      EXPECT_STREQ(info4.c_str(), info_records[7].c_str());
+      EXPECT_STREQ(additional_info_record.c_str(), info_records[8].c_str());
+
+      unlink(filename.c_str());
+      unlink(input_file.c_str());
+    }
 }
 
 }

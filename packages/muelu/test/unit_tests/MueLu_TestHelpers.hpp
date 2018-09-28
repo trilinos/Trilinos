@@ -157,6 +157,10 @@ namespace MueLuTests {
 
     public:
 
+      typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+      typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+      typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+
       //
       // Method that creates a map containing a specified number of local elements per process.
       //
@@ -347,7 +351,6 @@ namespace MueLuTests {
       BuildGeoCoordinates(const int numDimensions, const Array<GO> gNodesPerDir,
                           Array<LO>& lNodesPerDir, Array<GO>& meshData,
                           const std::string meshLayout = "Global Lexicographic") {
-        typedef typename RealValuedMultiVector::scalar_type real_type;
 
         // Get MPI infos
         Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
@@ -481,7 +484,7 @@ namespace MueLuTests {
             if(meshLayout == "Global Lexicographic") {
               myGIDOffset = std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)*gNodesPerDir[0];
             } else if(meshLayout == "Local Lexicographic") {
-              myGIDOffset = gNodesPerDir[0]*myLowestTuple[1]*gNodesPerDir[2];
+              myGIDOffset = myLowestTuple[1]*gNodesPerDir[0]*gNodesPerDir[2];
             }
           } else if(myRank == 3) {
             myLowestTuple[0] = std::ceil(Teuchos::as<real_type>(gNodesPerDir[0]) / 2);
@@ -489,7 +492,7 @@ namespace MueLuTests {
             if(meshLayout == "Global Lexicographic") {
               myGIDOffset = myLowestTuple[1]*gNodesPerDir[0] + myLowestTuple[0];
             } else if(meshLayout == "Local Lexicographic") {
-              myGIDOffset = (myLowestTuple[0]*std::ceil(Teuchos::as<real_type>(gNodesPerDir[1]) / 2)
+              myGIDOffset = (myLowestTuple[0]*(gNodesPerDir[1] - myLowestTuple[1])
                              + myLowestTuple[1]*gNodesPerDir[0])*gNodesPerDir[2];
             }
           }

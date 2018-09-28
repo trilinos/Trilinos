@@ -95,10 +95,16 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #endif
 
 /* Determine if the new fad design is supported.  Requies C++11,
-   and gcc version 4.8 or greater.
+   and if gcc, version 4.8 or greater.
 */
-#if defined(HAVE_SACADO_CXX11) && !( defined(__GNUC__) &&  (__GNUC__ == 4) && (__GNUC_MINOR__ < 8) )
-#define SACADO_ENABLE_NEW_DESIGN 1
+#if defined(HAVE_SACADO_CXX11)
+#  if defined(__GNUC__) && !defined(__clang__)
+#    if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8) )
+#      define SACADO_ENABLE_NEW_DESIGN 1
+#    endif
+#  else
+#    define SACADO_ENABLE_NEW_DESIGN 1
+#  endif
 #endif
 
 #endif /* SACADO_CONFIGDEFS_H */

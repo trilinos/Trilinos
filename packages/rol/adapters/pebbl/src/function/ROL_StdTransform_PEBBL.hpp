@@ -66,10 +66,6 @@ private:
     return dynamic_cast<StdVector<Real>&>(x).getVector();
   }
 
-  Ptr<const std::vector<Real>> getConstData(const Vector<Real> &x) const {
-    return dynamic_cast<const StdVector<Real>&>(x).getVector();
-  }
-
  using Transform_PEBBL<Real>::map_; 
 
 public:
@@ -79,28 +75,19 @@ public:
   StdTransform_PEBBL(const StdTransform_PEBBL &T)
     : Transform_PEBBL<Real>(T) {}
 
-  void value(Vector<Real> &c,
-       const Vector<Real> &x,
-             Real &tol) {
-    Ptr<std::vector<Real>>       cval = getData(c);
-    Ptr<const std::vector<Real>> xval = getConstData(x);
-    cval->assign(xval->begin(),xval->end());
+  void pruneVector(Vector<Real> &c) {
+    Ptr<std::vector<Real>> cval = getData(c);
     typename std::map<int,Real>::iterator it;
     for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*cval)[it->first] = it->second;
+      (*cval)[it->first] = static_cast<Real>(0);
     }
   }
 
-  void applyJacobian(Vector<Real> &jv,
-               const Vector<Real> &v,
-               const Vector<Real> &x,
-                     Real &tol) {
-    Ptr<std::vector<Real>>       jval = getData(jv);
-    Ptr<const std::vector<Real>> vval = getConstData(v);
-    jval->assign(vval->begin(),vval->end());
+  void shiftVector(Vector<Real> &c) {
+    Ptr<std::vector<Real>> cval = getData(c);
     typename std::map<int,Real>::iterator it;
     for (it=map_.begin(); it!=map_.end(); ++it) {
-      (*jval)[it->first] = static_cast<Real>(0);
+      (*cval)[it->first] = it->second;
     }
   }
 

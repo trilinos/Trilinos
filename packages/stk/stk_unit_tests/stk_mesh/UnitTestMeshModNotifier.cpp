@@ -40,7 +40,7 @@
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/Types.hpp>      // for EntityRank
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_max
 #include <vector>                       // for vector

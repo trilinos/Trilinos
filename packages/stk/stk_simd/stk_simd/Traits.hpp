@@ -6,7 +6,6 @@
 #include <cmath>
 
 namespace stk {
-
 namespace {
     
 // length
@@ -26,12 +25,10 @@ struct SimdLength<float> {
   static constexpr int length = 1;
 };
 
-#if defined(STK_SIMD)
 template <>
 struct SimdLength<simd::Float> {
   static constexpr int length = simd::nfloats;
 };
-#endif
 
 // bools (get bool type from real type)
 
@@ -55,7 +52,6 @@ struct BoolT<bool> {
   typedef bool type;
 };
 
-#if defined(STK_SIMD)
 template <>
 struct BoolT<simd::Float> {
   typedef simd::Boolf type;
@@ -65,9 +61,8 @@ template <>
 struct BoolT<simd::Boolf> {
   typedef simd::Boolf type;
 };
-#endif
 
-// // reals (get real type from bool type)
+// reals (get real type from bool type)
 
 template <typename T>
 struct RealT {
@@ -84,7 +79,6 @@ struct RealT<bool> {
   typedef double type;
 };
 
-#if defined(STK_SIMD)
 template <>
 struct RealT<simd::Float> {
   typedef simd::Float type;
@@ -99,7 +93,6 @@ template <>
 struct RealT<double> {
   typedef double type;
 };
-#endif
 
 // simd type from base type
 
@@ -160,7 +153,6 @@ struct BaseT {
   typedef T type;
 };
    
-#if defined(STK_SIMD)
 template <>
 struct BaseT<simd::Double> {
   typedef double type;
@@ -180,7 +172,6 @@ template <>
 struct BaseT<simd::Bool> {
   typedef bool type;
 };
-#endif
 
 }
 

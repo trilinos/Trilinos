@@ -147,22 +147,20 @@ namespace Ifpack2 {
     template<typename T, int N>
     static 
     KOKKOS_INLINE_FUNCTION 
-    volatile ArrayValueType<T,N>& 
+    void
     operator+=(volatile ArrayValueType<T,N> &a, 
                volatile const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i) 
         a.v[i] += b.v[i];
-      return a;
     }
     template<typename T, int N>
     static 
     KOKKOS_INLINE_FUNCTION
-    ArrayValueType<T,N>& 
+    void
     operator+=(ArrayValueType<T,N> &a, 
                const ArrayValueType<T,N> &b) {
       for (int i=0;i<N;++i) 
         a.v[i] += b.v[i];
-      return a;
     }
 
     ///
@@ -1762,7 +1760,7 @@ namespace Ifpack2 {
       void copy_multivectors(const local_ordinal_type &j, 
                              const local_ordinal_type &vi, 
                              const local_ordinal_type &pri, 
-                             const local_ordinal_type &nrow,  
+                             const local_ordinal_type &/* nrow */,  
                              const local_ordinal_type &ri0) const {
         if (TagType::id == 0) { // ToPackedMultiVectorTag
           for (local_ordinal_type col=0;col<num_vectors;++col) 
@@ -1785,7 +1783,7 @@ namespace Ifpack2 {
       void copy_multivectors_with_norm(const local_ordinal_type &j, 
                                        const local_ordinal_type &vi, 
                                        const local_ordinal_type &pri, 
-                                       const local_ordinal_type &nrow,  
+                                       const local_ordinal_type &/* nrow */,  
                                        const local_ordinal_type &ri0,
                                        /* */ magnitude_type *norm) const {
         if (TagType::id > 0) { //ToScalarMultiVector
@@ -2151,7 +2149,7 @@ namespace Ifpack2 {
 
       inline
       void 
-      serialSolveMultiVector(const local_ordinal_type &blocksize, 
+      serialSolveMultiVector(const local_ordinal_type &/* blocksize */, 
                              const local_ordinal_type &packidx) const {
         namespace KB = KokkosBatched::Experimental;
         using AlgoType = KB::Algo::Level3::Blocked;

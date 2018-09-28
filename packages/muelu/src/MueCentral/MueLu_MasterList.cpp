@@ -219,6 +219,8 @@ namespace MueLu {
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"gmg: interpolation order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"gmg: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=\"\"/>"
@@ -249,6 +251,8 @@ namespace MueLu {
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
@@ -580,6 +584,10 @@ namespace MueLu {
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       
+         ("gmg: interpolation order","gmg: interpolation order")
+      
+         ("gmg: build coarse coordinates","gmg: build coarse coordinates")
+      
          ("transfer: params","transfer: params")
       
          ("pcoarsen: element","pcoarsen: element")
@@ -639,6 +647,10 @@ namespace MueLu {
          ("rap: fix zero diagonals","rap: fix zero diagonals")
       
          ("rap: shift","rap: shift")
+      
+         ("rap: shift diagonal M","rap: shift diagonal M")
+      
+         ("rap: shift low storage","rap: shift low storage")
       
          ("rap: algorithm","rap: algorithm")
       

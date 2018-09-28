@@ -340,17 +340,20 @@ protected:
 
 }; // class FadFadOpsUnitTest
 
+// Set the random number generator with a specific seed to prevent NaN's
+// in the second derivatives, likely due to overflow
+
 template <class FadFadType, class ScalarType>
 FadFadOpsUnitTest<FadFadType,ScalarType>::
 FadFadOpsUnitTest() :
-  urand(), n1(5), n2(3), tol_a(1.0e-15), tol_r(1.0e-14) {}
+  urand(0.0, 1.0, 123456), n1(5), n2(3), tol_a(1.0e-15), tol_r(1.0e-14) {}
 
 template <class FadFadType, class ScalarType>
 FadFadOpsUnitTest<FadFadType,ScalarType>::
 FadFadOpsUnitTest(int numComponents1, int numComponents2,
                   ScalarType absolute_tolerance,
                   ScalarType relative_tolerance) :
-  urand(),
+  urand(0.0, 1.0, 123456),
   n1(numComponents1),
   n2(numComponents2),
   tol_a(absolute_tolerance),

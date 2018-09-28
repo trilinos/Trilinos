@@ -1,12 +1,20 @@
 #ifndef meshcreationhelpers_hpp
 #define meshcreationhelpers_hpp
 
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include <stk_unit_test_utils/meshCreationHelpers.hpp>
-#include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose::READ_MESH, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stddef.h>                    // for size_t
+#include <stk_io/DatabasePurpose.hpp>  // for DatabasePurpose::READ_MESH, etc
+#include <stk_io/StkMeshIoBroker.hpp>  // for StkMeshIoBroker
+#include <stk_mesh/base/Field.hpp>     // for Field
+#include <stk_mesh/base/MetaData.hpp>  // for MetaData, put_field
+#include <stk_topology/topology.hpp>   // for topology, etc
+#include <string>                      // for string
+#include "mpi.h"                       // for MPI_Comm, ompi_communicator_t
+#include "stk_mesh/base/BulkData.hpp"  // for BulkData
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {
@@ -26,9 +34,9 @@ size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, 
     stk::mesh::Field<double> & field3 = meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "field_3", 1);
 
     double fieldValues[] = {1.0, 2.0, 3.0};
-    stk::mesh::put_field(field1, meta.universal_part(), &fieldValues[0]);
-    stk::mesh::put_field(field2, meta.universal_part(), &fieldValues[1]);
-    stk::mesh::put_field(field3, meta.universal_part(), &fieldValues[2]);
+    stk::mesh::put_field_on_mesh(field1, meta.universal_part(), &fieldValues[0]);
+    stk::mesh::put_field_on_mesh(field2, meta.universal_part(), &fieldValues[1]);
+    stk::mesh::put_field_on_mesh(field3, meta.universal_part(), &fieldValues[2]);
     stkIo.populate_bulk_data();
 
     size_t results_output_index = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);

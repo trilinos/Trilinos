@@ -33,7 +33,7 @@
 
 
 #include <stk_mesh/base/Stencils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequire
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequire
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
 
 namespace stk {

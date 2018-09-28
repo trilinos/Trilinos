@@ -412,7 +412,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
   }
   integratorTimer_->start();
   // get optimal initial time step
-  const Scalar initDt = 
+  const Scalar initDt =
      std::min(timeStepControl_->getInitTimeStep(),
               stepper_->getInitTimeStep(solutionHistory_));
   // update initial time step
@@ -521,7 +521,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
 
        // Stepper failure
   if ( solutionHistory_->getWorkingState()->getSolutionStatus() == FAILED or
-       solutionHistory_->getWorkingState()->getStepperStatus() == FAILED or
        // Constant time step failure
        ((timeStepControl_->getStepType() == "Constant") and
         (wsmd->getDt() != timeStepControl_->getInitTimeStep()) and
@@ -540,10 +539,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
     if ( solutionHistory_->getWorkingState()->getSolutionStatus() == FAILED) {
       *out << "Solution Status = "
            << toString(solutionHistory_->getWorkingState()->getSolutionStatus())
-           << std::endl;
-    } else if (solutionHistory_->getWorkingState()->getStepperStatus()==FAILED){
-      *out << "Stepper Status = "
-           << toString(solutionHistory_->getWorkingState()->getStepperStatus())
            << std::endl;
     } else if ((timeStepControl_->getStepType() == "Constant") and
                (wsmd->getDt() != timeStepControl_->getInitTimeStep())) {
@@ -565,9 +560,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
 
   RCP<SolutionStateMetaData<Scalar> > csmd =
     solutionHistory_->getCurrentState()->getMetaData();
-
-  csmd->setNFailures(std::max(csmd->getNFailures()-1,0));
-  csmd->setNConsecutiveFailures(0);
 
   // Output and screen output
   if (csmd->getOutput() == true) {

@@ -44,6 +44,7 @@
 #ifndef PANZER_SUBCELL_CONNECTIVITY_HPP
 #define PANZER_SUBCELL_CONNECTIVITY_HPP
 
+#include "PanzerCore_config.hpp"
 #include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
@@ -190,7 +191,7 @@ public:
    *
    * \param[in] partition Partition of mesh
    */
-  void setup(const panzer::LocalMeshPartition<int,int> & partition);
+  void setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition);
 
 };
 

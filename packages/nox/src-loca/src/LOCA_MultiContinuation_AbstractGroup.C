@@ -52,13 +52,13 @@
 
 void
 LOCA::MultiContinuation::AbstractGroup::preProcessContinuationStep(
-                 LOCA::Abstract::Iterator::StepStatus stepStatus)
+                 LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
 }
 
 void
 LOCA::MultiContinuation::AbstractGroup::postProcessContinuationStep(
-                 LOCA::Abstract::Iterator::StepStatus stepStatus)
+                 LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
 }
 
@@ -85,6 +85,6 @@ LOCA::MultiContinuation::AbstractGroup::computeScaledDotProduct(
 }
 
 void
-LOCA::MultiContinuation::AbstractGroup::scaleVector(NOX::Abstract::Vector& x) const
+LOCA::MultiContinuation::AbstractGroup::scaleVector(NOX::Abstract::Vector& /* x */) const
 {
 }

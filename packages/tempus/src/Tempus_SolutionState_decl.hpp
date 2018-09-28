@@ -147,9 +147,13 @@ public:
   /// This is a deep copy
   virtual void copy(const Teuchos::RCP<const SolutionState<Scalar> >& ss);
 
-  /// This is a deep copy of the solution and stepper state
-  virtual void copySolutionStepperState(
+  /// Deep copy solution data, but keep metaData untouched.
+  virtual void copySolutionData(
     const Teuchos::RCP<const SolutionState<Scalar> >& s);
+
+  /// Swap solution data, but keep metaData untouched.
+  virtual void swapSolutionData(
+    const Teuchos::RCP<SolutionState<Scalar> >& ss);
 
   /// Destructor
   virtual ~SolutionState() {}
@@ -217,8 +221,6 @@ public:
         return stepperState_nc_; }
     virtual Teuchos::RCP<const StepperState<Scalar> > getStepperState() const
       { return stepperState_; }
-    virtual Status getStepperStatus() const
-      {return stepperState_->stepperStatus_;}
 
     virtual Teuchos::RCP<PhysicsState<Scalar> > getPhysicsState()
       { return physicsState_nc_; }
@@ -228,10 +230,6 @@ public:
 
   /// \name Set State Data
   //@{
-    virtual void setStepperStatus(Status status)
-      { TEUCHOS_ASSERT(stepperState_nc_ != Teuchos::null);
-        stepperState_nc_->stepperStatus_ = status; }
-
     virtual void setPhysicsState(const Teuchos::RCP<PhysicsState<Scalar> >& ps)
       { physicsState_nc_ = ps; physicsState_ = physicsState_nc_; }
   //@}

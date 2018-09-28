@@ -66,13 +66,23 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::compute()
     {
+
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) {
-            cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
+            std::cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
         }
-        this->computeHarmonicExtensions();
-        this->setUpCoarseOperator();
-        this->IsComputed_ = true;
+        if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
+            this->setUpCoarseOperator();
+            this->IsComputed_ = true;
+        }
+        else if(!this->ParameterList_->get("Recycling","none").compare("all") && this->IsComputed_) {
+            // Maybe use some advanced settings in the future
+        }
+        else {
+            this->computeHarmonicExtensions();
+            this->setUpCoarseOperator();
+            this->IsComputed_ = true;
+        }
         return 0;
     }
 
@@ -221,16 +231,18 @@ namespace FROSch {
         this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
         MultiVectorPtr mVtmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
         MultiVectorPtr mVPhiI = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-        
+        SC thresholdPhi = this->ParameterList_->get("Threshold Phi",1.e-8);
         //Build mVPhiGamma
         MultiVectorPtr mVPhiGamma = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
         LO jj=0;
         LO kk=0;
+        LOVec numberBlockInterfaceEntity(NumberOfBlocks_);
         for (UN i=0; i<NumberOfBlocks_; i++) {
             UN j = 0;
             UN k = 0;
             //if (this->Verbose_) std::cout << MVPhiGamma_[i]->MyLength() << std::endl;
             if (!MVPhiGamma_[i].is_null()) {
+                numberBlockInterfaceEntity[i] = MVPhiGamma_[i]->getNumVectors();
                 for (j=0; j<MVPhiGamma_[i]->getNumVectors(); j++) {
                     for (k=0; k<MVPhiGamma_[i]->getLocalLength(); k++) {
                         //if (this->Verbose_) std::cout << j << " " << k << " " <<  (*(*MVPhiGamma_[i])(j))[k] << std::endl;
@@ -255,7 +267,7 @@ namespace FROSch {
             values.resize(0);
             for (UN j=0; j<mVPhiGamma->getNumVectors(); j++) {
                 valueTmp=mVPhiGamma->getData(j)[i];
-                if (fabs(valueTmp) > 1.0e-8) {
+                if (fabs(valueTmp) > thresholdPhi) {
                     indices.push_back(j);
                     values.push_back(valueTmp);
                 }
@@ -283,27 +295,85 @@ namespace FROSch {
         ExtensionSolver_->initialize();
         ExtensionSolver_->compute();
         ExtensionSolver_->apply(*mVtmp,*mVPhiI);
+
+        GOVec priorIndex(NumberOfBlocks_,0);
+        GOVec postIndex(NumberOfBlocks_,0);
         
+        GOVec2D excludeCols(NumberOfBlocks_);
+        
+        for (UN i=0; i<NumberOfBlocks_; i++) {
+            std::stringstream blockIdStringstream;
+            blockIdStringstream << i+1;
+            std::string blockIdString = blockIdStringstream.str();
+            Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+            std::string excludeBlocks = coarseSpaceList->get("Exclude","0");
+            LOVec indices = FROSch::GetIndicesFromString(excludeBlocks,(LO)0);
+            for (int j=0; j<indices.size(); j++) {
+                indices[j] -= 1;
+            }
+            if (indices[0]>-1) {
+                for (UN j=0; j<(UN)indices.size(); j++) {
+                    LO priorCoarseSize = 0;
+                    for (UN r=0; r<(UN)indices[j]; r++) {
+                        priorCoarseSize += numberBlockInterfaceEntity[indices[r]-1];// GammaDofs_[indices[r]-1].size();
+                    }
+                    excludeCols[i].push_back(priorCoarseSize);
+                    excludeCols[i].push_back(priorCoarseSize + numberBlockInterfaceEntity[indices[j]] - 1);
+
+                }
+            }
+            GO maxGID = 0;
+            for (UN dofs=0; dofs<DofsPerNode_[i]; dofs++) {
+                if (maxGID < DofsMaps_[i][dofs]->getMaxAllGlobalIndex()) {
+                    maxGID = DofsMaps_[i][dofs]->getMaxAllGlobalIndex();
+                }
+            }
+            if (i<NumberOfBlocks_-1) {
+                priorIndex[i+1] = maxGID;
+            }
+            postIndex[i] = maxGID+1;
+        }
+        priorIndex[0] = -1;
+ 
+
         // Now we have to insert the values to the global matrix Phi
         // IST DAS LANGSAM??????? TESTEN!!!!!
         for (UN i=0; i<mVPhiI->getLocalLength(); i++) {
             indices.resize(0);
             values.resize(0);
+            GO gid = repeatedMap->getGlobalElement(indicesIDofsAll[i]);
+            LO block = -1;
+            bool use;
+            
+            for (UN j=0; j<priorIndex.size(); j++) {
+                if (gid>priorIndex[j] && gid<postIndex[j]) {
+                    block = j;
+                }
+            }
             for (UN j=0; j<mVPhiI->getNumVectors(); j++) {
-                valueTmp=mVPhiI->getData(j)[i]; //if (this->Verbose_) std::cout << i << " " << this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i])) << " " << j << " " << valueTmp << std::endl;
-                if (fabs(valueTmp) > 1.0e-8) {
-                    indices.push_back(j);
-                    values.push_back(valueTmp);
+                use = true;
+                for (UN r=0; r<(UN)excludeCols[block].size(); r=r+2) {
+                    if (j>=(UN)excludeCols[block][r] && j<=(UN)excludeCols[block][r+1]){
+                        use = false;
+                    }
+                }
+                if (use) {
+                    valueTmp=mVPhiI->getData(j)[i];
+                    if (fabs(valueTmp) > thresholdPhi) {
+                        indices.push_back(j);
+                        values.push_back(valueTmp);
+                    }
                 }
             }
             
             // CHECK, IF OK?!?!?
-            iD = this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesIDofsAll[i]));
+            iD = this->K_->getRowMap()->getLocalElement(gid);
             //ID = IndicesI[0][i];
             if (iD!=-1) {
                 this->Phi_->insertLocalValues(iD,indices(),values());
             }
         }
+
         this->Phi_->fillComplete(coarseMap,this->Phi_->getRowMap());
 //        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
         return 0;

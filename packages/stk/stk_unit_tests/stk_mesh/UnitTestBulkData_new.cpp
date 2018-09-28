@@ -37,7 +37,7 @@
 #include <set>                          // for set, etc
 #include <stdexcept>                    // for logic_error, runtime_error
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
 #include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
 #include <stk_unit_tests/stk_mesh_fixtures/HexFixture.hpp>  // for HexFixture, etc
 #include <stk_unit_tests/stk_mesh_fixtures/QuadFixture.hpp>  // for QuadFixture
@@ -274,7 +274,7 @@ TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
   BulkData            &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
-  Entity new_cell = bulk.declare_element(1, {&fixture.get_elem_part()});
+  Entity new_cell = bulk.declare_element(1, stk::mesh::ConstPartVector{&fixture.get_elem_part()});
   unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
   for (unsigned i = 0; i < cell_num_nodes; ++i)
   {
@@ -300,15 +300,13 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
   add_parts.push_back ( &fixture.m_cell_part );
 
   bulk.modification_begin();
-  Entity new_cell = bulk.declare_element(1, {&fixture.get_elem_part()});
+  Entity new_cell = bulk.declare_element(1, stk::mesh::ConstPartVector{&fixture.get_elem_part()});
   unsigned cell_num_nodes = fixture.get_elem_topology().num_nodes();
   for (unsigned i = 0; i < cell_num_nodes; ++i)
   {
     Entity new_node = bulk.declare_node(i+1);
     bulk.declare_relation(new_cell, new_node, i);
   }
-  // Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
-  // bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );
@@ -391,7 +389,7 @@ TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
   Entity node0 = bulk.declare_node(2);
   Entity node = bulk.declare_node(1);
-  Entity cell = bulk.declare_element(1, {&fixture.get_elem_part()});
+  Entity cell = bulk.declare_element(1, stk::mesh::ConstPartVector{&fixture.get_elem_part()});
   bulk.change_entity_parts ( node , create_node_parts , PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , PartVector () );
   // Add node to cell part
@@ -778,8 +776,10 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   ScalarFieldType & temperature =
     fem_meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "temperature" , 4 );
   Part  & universal     = fem_meta.universal_part ();
-  put_field ( volume , universal );
-  put_field ( temperature , universal );
+  put_field_on_mesh ( volume , universal ,
+                      (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
+  put_field_on_mesh ( temperature , universal ,
+                      (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
 
   fem_meta.commit();
 
@@ -1212,12 +1212,12 @@ TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )
     for (unsigned ielem=0; ielem < nelems; ielem++) {
       int owner = static_cast<int>(elems_0[ielem][3]);
       if (owner == p_rank) {
-        elem = mesh.declare_element(elems_0[ielem][0], {&elem_part});
+        elem = mesh.declare_element(elems_0[ielem][0], stk::mesh::ConstPartVector{&elem_part});
 
         EntityVector nodes;
         // Create node on all procs
-        nodes.push_back( mesh.declare_node(elems_0[ielem][2], {&node_part}) );
-        nodes.push_back( mesh.declare_node(elems_0[ielem][1], {&node_part}) );
+        nodes.push_back( mesh.declare_node(elems_0[ielem][2], stk::mesh::ConstPartVector{&node_part}) );
+        nodes.push_back( mesh.declare_node(elems_0[ielem][1], stk::mesh::ConstPartVector{&node_part}) );
 
         // Add relations to nodes
         mesh.declare_relation( elem, nodes[0], 0 );

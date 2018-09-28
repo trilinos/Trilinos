@@ -177,8 +177,8 @@ namespace panzer
       /**
        *  \brief Post-Registration Setup.
        *
-       *  Sets the number of nodes and quadrature points, sets the basis index,
-       *  and then creates the `tmp_` `Kokkos::View`.
+       *  Get the Kokkos::Views of the field multipliers, and determine the
+       *  index in the Workset bases for our particular basis name.
        *
        *  \param[in] sd Essentially a list of `Workset`s, which are collections
        *                of cells (elements) that all live on a single process.

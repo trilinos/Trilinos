@@ -8,7 +8,7 @@
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <stk_mesh/base/DestroyElements.hpp>
 
 namespace stk {
@@ -391,6 +391,7 @@ void copy_bulk(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSe
     copy_selected(inputBulk, inputSelector, outputBulk);
     outputBulk.modification_end();
 
+    outputBulk.set_large_ids_flag(inputBulk.supports_large_ids());
 //    if(inputBulk.has_face_adjacent_element_graph())
 //        outputBulk.initialize_face_adjacent_element_graph();
 }

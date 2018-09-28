@@ -91,6 +91,18 @@ namespace MueLu {
     // Clean up the handle
     void Cleanup();
 
+    // Returns 1 if the given parameters are within same 
+    // same domain as training data, 0 otherwise
+    int checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString) const;
+
+    int hybrid(float * probabilities, std::vector<int> acceptableCombos) const; 
+
+    int highProb(float * probabilities, std::vector<int> acceptableCombos) const; 
+ 
+    int lowCrash(float * probabilities, std::vector<int> acceptableCombos) const; 
+
+    int weighted(float * probabilities, std::vector<int> acceptableCombos) const; 
+
   private:
     // Utility functions
     Teuchos::ArrayRCP<std::string> ReadFromFiles(const char * param_name) const;
@@ -102,9 +114,13 @@ namespace MueLu {
 
     // Cached data
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    Teuchos::ParameterList params_;
+    mutable Teuchos::ParameterList params_; // The mutable is a hack to deal with issues in Teuchos
     Teuchos::ArrayRCP<std::string> avatarStrings_;
     Teuchos::ArrayRCP<std::string> namesStrings_;
+    Teuchos::Array<std::string> filestem_;
+    Teuchos::ArrayRCP<std::string> boundsString_;
+    int avatarGoodClass_;
+    int heuristicToUse_;
 
     // RCP's don't handle opaque pointers well
     Avatar_handle * avatarHandle_;
@@ -113,7 +129,7 @@ namespace MueLu {
     Teuchos::Array<std::string> avatarParameterName_;
 
     Teuchos::ArrayRCP<Teuchos::Array<double> > mueluParameterValues_;
-    Teuchos::ArrayRCP<Teuchos::Array<int> > avatarParameterValues_;
+    Teuchos::ArrayRCP<Teuchos::Array<double> > avatarParameterValues_;
 
   };
 

@@ -133,8 +133,8 @@ namespace Ioss {
 
     template <typename T> static T find_index_location(T node, const std::vector<T> &index)
     {
-    // 0-based node numbering
-    // index[p] = first node (0-based) on processor p
+      // 0-based node numbering
+      // index[p] = first node (0-based) on processor p
 
 #if 1
       // Assume data coherence.  I.e., a new search will be close to the

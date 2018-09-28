@@ -657,9 +657,9 @@ namespace Ioss {
         }
       }
 
-        // GroupingEntity consistency check:
-        // -- debug and parallel     -- default to true; can disable via environment variable
-        // -- non-debug and parallel -- default to false; can enable via environment variable
+      // GroupingEntity consistency check:
+      // -- debug and parallel     -- default to true; can disable via environment variable
+      // -- non-debug and parallel -- default to false; can enable via environment variable
 #ifndef NDEBUG
       bool check_consistency = true;
 #else
@@ -1356,8 +1356,8 @@ namespace Ioss {
   bool Region::add_alias__(const GroupingEntity *ge)
   {
     // See if an entity with this name already exists...
-    std::string db_name = ge->name();
-    std::string alias   = get_alias__(db_name);
+    const std::string &db_name = ge->name();
+    std::string        alias   = get_alias__(db_name);
 
     if (!alias.empty()) {
       const GroupingEntity *old_ge = get_entity(db_name);

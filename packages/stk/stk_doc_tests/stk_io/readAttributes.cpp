@@ -125,7 +125,7 @@ TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute)
     mark_field_as_attribute(newAttrField);
 
     const stk::mesh::Part *partBlock10 = get_meta().get_part("block_10");
-    stk::mesh::put_field(newAttrField, *partBlock10, &initialValue);
+    stk::mesh::put_field_on_mesh(newAttrField, *partBlock10, &initialValue);
 
     stkIo.populate_bulk_data();
 

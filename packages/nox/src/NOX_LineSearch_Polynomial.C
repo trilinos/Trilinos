@@ -51,6 +51,8 @@
 #include "NOX_LineSearch_Polynomial.H"
 
 #include "NOX_LineSearch_Utils_Printing.H"
+#include "NOX_SolverStats.hpp"
+#include "NOX_LineSearch_Utils_Counters.H"
 #include "NOX_LineSearch_Utils_Slope.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -66,6 +68,7 @@ Polynomial(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr(gd),
   paramsPtr(NULL),
   print(gd->getUtils()),
+  counter(&gd->getNonConstSolverStatistics()->lineSearch),
   slopeUtil(gd)
 {
   reset(gd, params);
@@ -83,6 +86,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
   print.reset(gd->getUtils());
+  counter = &gd->getNonConstSolverStatistics()->lineSearch;
   paramsPtr = &params;
   slopeUtil.reset(gd);
 
@@ -145,7 +149,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   // Set up counter
   if (useCounter)
-    counter.reset();
+    counter->reset();
 
   return true;
 }
@@ -160,7 +164,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   int nNonlinearIters = s.getNumIterations();
 
   if (useCounter)
-    counter.incrementNumLineSearches();
+    counter->incrementNumLineSearches();
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
   std::string direction = const_cast<Teuchos::ParameterList&>(s.getList()).
@@ -197,7 +201,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
 
   // Increment the number of newton steps requiring a line search
   if ((useCounter) && (!isConverged))
-    counter.incrementNumNonTrivialLineSearches();
+    counter->incrementNumNonTrivialLineSearches();
 
   double prevPhi = 0.0;        // \phi(\lambda_{k-1})
   double prevPrevPhi = 0.0;    // \phi(\lambda_{k-2})
@@ -318,7 +322,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     nIters ++;
 
     if (useCounter)
-      counter.incrementNumIterations();
+      counter->incrementNumIterations();
 
     isConverged = checkConvergence(newValue, oldValue, oldSlope, step,
                    eta, nIters, nNonlinearIters);
@@ -329,7 +333,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   if (isFailed)
   {
     if (useCounter)
-      counter.incrementNumFailedLineSearches();
+      counter->incrementNumFailedLineSearches();
 
     if (recoveryStepType == Constant)
       step = recoveryStep;
@@ -354,7 +358,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   paramsPtr->set("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
 
   if (useCounter)
-    counter.setValues(*paramsPtr);
+    counter->setValues(*paramsPtr);
 
   return (!isFailed);
 }

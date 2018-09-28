@@ -34,22 +34,27 @@
 #ifndef STK_MESH_FIXTURES_HEX_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_HEX_MESH_FIXTURE_HPP
 
-#include <stddef.h>                     // for size_t, NULL
-#include <map>                          // for map
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Types.hpp>      // for EntityId, PartVector
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <stddef.h>
+#include <map>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp>
 #include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <vector>                       // for vector
+#include <stk_util/parallel/Parallel.hpp>
+#include <string>
+#include <vector>
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_mesh/base/Entity.hpp"
+#include "stk_topology/topology.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 namespace stk { namespace mesh { struct ConnectivityMap; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 
 namespace stk {
@@ -200,12 +205,12 @@ class HexFixture
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 
-  template <typename Iterator>
-  void add_node_parts(Iterator itr, size_t num)
-  {
-    ThrowRequire(!m_meta.is_commit());
-    m_node_parts.insert(m_node_parts.end(), itr, itr + num);
-  }
+  //template <typename Iterator>
+  //void add_node_parts(Iterator itr, size_t num)
+  //{
+  //  ThrowRequire(!m_meta.is_commit());
+  //  m_node_parts.insert(m_node_parts.end(), itr, itr + num);
+  //}
 
  private:
 

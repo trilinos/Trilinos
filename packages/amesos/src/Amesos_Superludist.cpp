@@ -53,7 +53,7 @@ public:
   //! SuperLU_DIST's grid information.
   gridinfo_t grid_;
   //! Vector of options.
-#if SUPERLU_DIST_MAJOR_VERSION == 5
+#if SUPERLU_DIST_MAJOR_VERSION > 4
   //Note we may add the need for minor or patch version as need
   superlu_dist_options_t options_;
 #else

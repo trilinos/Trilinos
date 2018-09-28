@@ -34,10 +34,16 @@
 #ifndef stk_io_AttributeFields_hpp
 #define stk_io_AttributeFields_hpp
 
-#include <stk_mesh/base/Types.hpp>
-
-namespace stk { namespace mesh { class Part; } }
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <stk_mesh/base/Types.hpp>  // for FieldVector
+#include <string>                   // for string
+namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+
 
 namespace stk {
 namespace io {

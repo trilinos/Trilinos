@@ -450,7 +450,7 @@ namespace Iocgns {
     if (props.exists("LOAD_BALANCE_THRESHOLD")) {
       if (props.get("LOAD_BALANCE_THRESHOLD").get_type() == Ioss::Property::STRING) {
         std::string lb_thresh  = props.get("LOAD_BALANCE_THRESHOLD").get_string();
-        m_loadBalanceThreshold = std::strtod(lb_thresh.c_str(), nullptr);
+        m_loadBalanceThreshold = std::stod(lb_thresh);
       }
       else if (props.get("LOAD_BALANCE_THRESHOLD").get_type() == Ioss::Property::REAL) {
         m_loadBalanceThreshold = props.get("LOAD_BALANCE_THRESHOLD").get_real();
@@ -983,7 +983,7 @@ namespace Iocgns {
           sset.fileCount        = num_entity;
           sset.topologyType     = Utils::map_cgns_to_topology_type(e_type);
           sset.parentBlockIndex = last_blk_location;
-          m_sideSets.push_back(sset);
+          m_sideSets.emplace_back(std::move(sset));
         }
       }
       zone_node_offset += size[0];
@@ -1165,6 +1165,9 @@ namespace Iocgns {
             }
             m_sideSets[i].hasEntities[p] = has_elems[p * m_sideSets.size() + i];
           }
+          int color = m_sideSets[i].hasEntities[m_decomposition.m_processor] ? 1 : MPI_UNDEFINED;
+          MPI_Comm_split(m_decomposition.m_comm, color, m_decomposition.m_processor,
+                         &m_sideSets[i].setComm_);
         }
       }
     }

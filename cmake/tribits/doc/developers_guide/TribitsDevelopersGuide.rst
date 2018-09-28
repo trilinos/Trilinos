@@ -4512,7 +4512,7 @@ components.  However, detailed descriptions of these processes are deferred to
 the later sections `Pre-push Testing using checkin-test.py`_ and `TriBITS
 CTest/CDash Driver`_.
 
-The standard TriBITS-suupported project testing processes are:
+The standard TriBITS-supported project testing processes are:
 
 * `Pre-Push CI Testing`_
 * `Post-Push CI Testing`_
@@ -5058,7 +5058,7 @@ TriBITS packages, one must perform the following actions**:
 1) Change the TriBITS CMake files as described above that will result in the
    desired email addresses in the ``CDashSubprojectDependencies.xml``
    file. One can debug this by generating the file
-   `<Project>PackageDependencies.xml`_ as using the cmake -P script
+   `<Project>PackageDependencies.xml`_ by using the cmake -P script
    `TribitsDumpDepsXmlScript.cmake`_.
 
 2) Log onto the CDash server using an administrator account and then remove

@@ -205,10 +205,10 @@ TEST(UnitTestField, testFieldMaxSize)
   stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
 
-  stk::mesh::put_field( f0 , p0 );
-  stk::mesh::put_field( f1 , p1 , 10 );
-  stk::mesh::put_field( f2 , p2 , 10 , 20 );
-  stk::mesh::put_field( f3 , p3 , 10 , 20 , 30 );
+  stk::mesh::put_field_on_mesh( f0 , p0 , (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f1 , p1 , 10 , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f2 , p2 , 10 , 20 , (stk::mesh::FieldTraits<rank_two_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f3 , p3 , 10 , 20 , 30 , (stk::mesh::FieldTraits<rank_three_field>::data_type*) nullptr);
 
   meta_data.commit();
 
@@ -262,7 +262,7 @@ TEST(UnitTestField, testFieldWithSelector)
   stk::mesh::Selector select_p0 = p0;
   std::cout <<"select_p0: "<< select_p0 << std::endl;
 
-  stk::mesh::put_field( f0 , select_p0 );
+  stk::mesh::put_field_on_mesh( f0 , select_p0 , (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -328,8 +328,8 @@ TEST(UnitTestField, testFieldWithSelectorAnd)
   std::cout <<"elem_hex_selector: "<< elem_hex_selector << std::endl;
   std::cout <<"elem_tet_selector: "<< elem_tet_selector << std::endl;
 
-  stk::mesh::put_field( f0 , elem_hex_selector, 8u );
-  stk::mesh::put_field( f0 , elem_tet_selector, 4u );
+  stk::mesh::put_field_on_mesh( f0 , elem_hex_selector, 8u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0 , elem_tet_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -399,12 +399,12 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
   std::cout <<"elem_hexA_selector: "<< elem_hexA_selector << std::endl;
   std::cout <<"elem_hexB_selector: "<< elem_hexB_selector << std::endl;
 
-  stk::mesh::put_field( f0 , elem_hexA_selector, 8u );
+  stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 8u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
   ASSERT_THROW(
-    stk::mesh::put_field( f0 , elem_hexA_selector, 4u ),
+    stk::mesh::put_field_on_mesh( f0 , elem_hexA_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr),
     std::runtime_error
   );
-  stk::mesh::put_field( f0 , elem_hexB_selector, 4u );
+  stk::mesh::put_field_on_mesh( f0 , elem_hexB_selector, 4u , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -445,10 +445,10 @@ TEST(UnitTestField, writeFieldsWithSameName)
         stkIo.create_input_mesh();
 
         stk::mesh::Field<double> &nodeField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
-        stk::mesh::put_field(nodeField, stkIo.meta_data().universal_part(), &nodeInitialValue);
+        stk::mesh::put_field_on_mesh(nodeField, stkIo.meta_data().universal_part(), &nodeInitialValue);
 
         stk::mesh::Field<double> &elemField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field(elemField, stkIo.meta_data().universal_part(), &elemInitialValue);
+        stk::mesh::put_field_on_mesh(elemField, stkIo.meta_data().universal_part(), &elemInitialValue);
 
         stkIo.populate_bulk_data();
 
@@ -506,10 +506,10 @@ TEST(UnitTestField, writeFieldsWithSameName)
         const double badInitialData = -1.2345;
 
         stk::mesh::Field<double> &nodeField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
-        stk::mesh::put_field(nodeField, stkIo.meta_data().universal_part(), &badInitialData);
+        stk::mesh::put_field_on_mesh(nodeField, stkIo.meta_data().universal_part(), &badInitialData);
 
         stk::mesh::Field<double> &elemField = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field(elemField, stkIo.meta_data().universal_part(), &badInitialData);
+        stk::mesh::put_field_on_mesh(elemField, stkIo.meta_data().universal_part(), &badInitialData);
 
         stkIo.populate_bulk_data();
         stkIo.add_input_field(stk::io::MeshField(nodeField, fieldName));
@@ -613,7 +613,7 @@ public:
                     meta.declare_field<stk::mesh::Field<double>>(rank,
                             fieldNames[j],  1u);
             stk::mesh::Selector sel = part;
-            stk::mesh::put_field(field, sel, &init_val);
+            stk::mesh::put_field_on_mesh(field, sel, &init_val);
         }
     }
 

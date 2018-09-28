@@ -417,12 +417,12 @@ inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::stri
 }
 
 template <typename Identifier>
-inline void kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
+inline void do_kdtree_search(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
     stk::search::coarse_search(local_domain, local_range, stk::search::KDTREE, comm, searchResults);
 }
 
-enum NewSearchMethod { BOOST_RTREE, OCTREE, KDTREE };
+enum NewSearchMethod { BOOST_RTREE, KDTREE };
 inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 {
     if ( method == BOOST_RTREE )
@@ -430,11 +430,6 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
         return stk::search::BOOST_RTREE;
     }
 
-    if ( method == OCTREE )
-    {
-        return stk::search::KDTREE;
-    }
-    
     if ( method == KDTREE )
     {
       return stk::search::KDTREE;
@@ -447,9 +442,9 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
 template <typename Identifier>
 inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
-    if ( algorithm == KDTREE || algorithm == OCTREE )
+    if ( algorithm == KDTREE )
     {
-        kdtree_search(local_domain, local_range, comm, searchResults);
+        do_kdtree_search(local_domain, local_range, comm, searchResults);
     }
     else if ( algorithm == BOOST_RTREE )
     {

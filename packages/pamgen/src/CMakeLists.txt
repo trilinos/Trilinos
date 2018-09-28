@@ -176,3 +176,8 @@ TRIBITS_ADD_LIBRARY(
 #
 
 #PACKAGE_EXPORT_DEPENDENCY_VARIABLES()
+
+if (WIN32)
+  target_compile_definitions (pamgen PRIVATE _USE_MATH_DEFINES)
+endif ()
+

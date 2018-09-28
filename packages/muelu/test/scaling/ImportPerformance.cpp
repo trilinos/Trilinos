@@ -78,6 +78,9 @@
 #include <EpetraExt_RowMatrixOut.h>
 #endif
 
+#ifdef MueLu_UNDEFINE_Tpetra
+#undef HAVE_MUELU_TPETRA
+#endif
 
 #ifdef HAVE_MUELU_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
@@ -466,6 +469,8 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC one = STS::one();
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   // =========================================================================
   // Parameters initialization

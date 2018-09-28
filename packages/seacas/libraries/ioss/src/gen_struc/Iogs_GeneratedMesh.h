@@ -240,7 +240,7 @@ namespace Iogs {
 
     Ioss::IJK_t block_range(int64_t id) const
     {
-      return Ioss::IJK_t{(int)numX, (int)numY, (int)numZ};
+      return Ioss::IJK_t{{(int)numX, (int)numY, (int)numZ}};
     }
     Ioss::IJK_t block_range_proc(int64_t id) const;
     Ioss::IJK_t block_offset_proc(int64_t id) const;

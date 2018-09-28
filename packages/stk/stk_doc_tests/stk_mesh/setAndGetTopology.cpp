@@ -73,8 +73,8 @@ TEST(stkMeshHowTo, setAndGetTopology)
 
     bulkData.modification_begin();
     stk::mesh::EntityId elem1Id = 1, elem2Id = 2;
-    stk::mesh::Entity elem1 = bulkData.declare_element(elem1Id, {&tetPart});
-    stk::mesh::Entity elem2 = bulkData.declare_element(elem2Id, {&hexPart});
+    stk::mesh::Entity elem1 = bulkData.declare_element(elem1Id, stk::mesh::ConstPartVector{&tetPart});
+    stk::mesh::Entity elem2 = bulkData.declare_element(elem2Id, stk::mesh::ConstPartVector{&hexPart});
     declare_element_nodes(bulkData, elem1, elem2);
     bulkData.modification_end();
 

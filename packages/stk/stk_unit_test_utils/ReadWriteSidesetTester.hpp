@@ -33,19 +33,35 @@
 #ifndef READWRITESIDESETTESTER_HPP_
 #define READWRITESIDESETTESTER_HPP_
 
-#include <vector>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <stddef.h>                                  // for size_t
+#include <stk_io/InputFile.hpp>                      // for InputFile
+#include <stk_io/StkMeshIoBroker.hpp>                // for StkMeshIoBroker, etc
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_mesh/base/MetaData.hpp>                // for BulkData
+#include <stk_mesh/base/Part.hpp>                // for BulkData
+#include <stk_mesh/base/SideSetEntry.hpp>            // for SideSet, etc
+#include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
+#include <string>                                    // for string
+#include <vector>                                    // for vector
+#include "Ioss_Property.h"                           // for Property
+#include "Ioss_Region.h"                             // for Region
+#include "Ioss_SideBlock.h"                          // for SideBlock
+#include "Ioss_SideSet.h"                            // for SideSet
+#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
+#include "Teuchos_RCPDecl.hpp"                       // for RCP
+#include "mpi.h"
+#include "stk_io/IossBridge.hpp"                     // for include_entity
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"                  // for Entity
+#include "stk_topology/topology.hpp"                 // for topology, etc
+#include "stk_unit_test_utils/FaceTestingUtils.hpp"
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/SideSetEntry.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_io/InputFile.hpp>   // for InputFile for m_input_files
-#include <stk_util/parallel/Parallel.hpp> // for stk::parallel_machine_size
-#include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
-#include "Ioss_SideBlock.h"             // for SideBlock
-#include "Ioss_SideSet.h"               // for SideSet, SideBlockContainer
-#include "stk_util/util/SortAndUnique.hpp"
-#include "stk_unit_test_utils/ioUtils.hpp"
+namespace stk { namespace mesh { class MetaData; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+
 
 namespace stk{ namespace unit_test_util{ namespace sideset{
 
@@ -142,8 +158,6 @@ private:
         }
     }
 
-
-
 private:
     void extract_sideset_data_from_io()
     {
@@ -151,7 +165,9 @@ private:
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
         for ( const Ioss::SideSet * sset : region->get_sidesets() )
         {
-            stk::mesh::SideSet &sideSet = bulk.create_sideset(sset->get_property("id").get_int());
+            int id = sset->get_property("id").get_int();
+            stk::mesh::Part *surface_part = get_surface_part_with_id(bulk.mesh_meta_data(), id);
+            stk::mesh::SideSet &sideSet = bulk.create_sideset(stk::io::get_sideset_parent(*surface_part));
             convert_ioss_sideset_to_stk_sideset(bulk, sset, sideSet);
         }
     }
@@ -190,7 +206,6 @@ void compare_sidesets(const std::string& input_file_name,
                       stk::mesh::BulkData &bulk,
                       const SideSetIdAndElemIdSidesVector &sideset,
                       const SideSetIdAndElemIdSidesVector &expected);
-
 
 }
 }

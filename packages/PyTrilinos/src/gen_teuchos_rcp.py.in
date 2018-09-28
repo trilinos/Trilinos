@@ -61,7 +61,8 @@ def get_input_files():
     os.chdir("${CMAKE_CURRENT_SOURCE_DIR}")
     result = glob.glob("Teuchos*.i")
     if (WITH_EPETRA):
-        result.extend(glob.glob("Epetra*.i"))
+        result.append("Epetra.i")
+        result.extend(glob.glob("Epetra_*.i"))
     if (WITH_TRIUTILS):
         result.extend(glob.glob("TriUtils*.i"))
     if (WITH_TPETRA):

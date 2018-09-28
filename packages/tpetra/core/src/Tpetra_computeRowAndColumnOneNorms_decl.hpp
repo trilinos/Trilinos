@@ -48,23 +48,9 @@
 #include "TpetraCore_config.h"
 #include "Kokkos_ArithTraits.hpp"
 #include "Tpetra_Details_EquilibrationInfo.hpp"
+#include "Tpetra_RowMatrix_fwd.hpp"
 
 namespace Tpetra {
-
-//
-// Dear users: These are just forward declarations.  Please skip over
-// them and go down to the leftAndOrRightScaleCrsMatrix function
-// declaration.  Thank you.
-//
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-template<class SC, class LO, class GO, class N>
-class RowMatrix;
-
-namespace Details {
-template<class ValueType, class DeviceType>
-struct EquilibrationInfo;
-} // namespace Details
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \brief Compute global row and column one-norms ("row sums" and
 ///   "column sums") of the input sparse matrix A, in a way suitable

@@ -33,6 +33,8 @@
 #include "Panzer_Response_Functional.hpp"
 
 #include "Panzer_STK_MeshFactory.hpp"
+#include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -58,7 +60,7 @@
 #include <iostream>
 
 
-Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu);
+Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order);
 std::vector<panzer::BC> homogeneousBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 std::vector<panzer::BC> auxiliaryBoundaries(Teuchos::RCP<panzer_stk::STK_Interface> mesh);
 Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, const double massMultiplier);
@@ -131,11 +133,12 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     double epsilon = 8.854187817e-12;
     double mu = 1.2566370614e-6;
     bool build_tet_mesh = false;
+    int dim = 3;
+    int numberOfPeriodicBCs = 0;
     bool doSolveTimings = false;
     int numReps = 0;
     std::string linAlgebra = "Tpetra";
     use_stacked_timer = true;
-    Teuchos::CommandLineProcessor clp;
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
     clp.setOption("z-elements",&z_elements);
@@ -150,6 +153,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("solver",&solver);
     clp.setOption("build-tet-mesh","build-hex-mesh",&build_tet_mesh);
+    clp.setOption("spatialDim",&dim);
+    clp.setOption("numberOfPeriodicBCs",&numberOfPeriodicBCs);
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("epsilon",&epsilon);
@@ -199,27 +204,45 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         // set mesh factory parameters
         RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
         pl->set("X Blocks",1);
-        pl->set("Y Blocks",1);
-        pl->set("Z Blocks",1);
         pl->set("X Elements",x_elements);
-        pl->set("Y Elements",y_elements);
-        pl->set("Z Elements",z_elements);
         pl->set("X Procs",x_procs);
+        pl->set("Y Blocks",1);
+        pl->set("Y Elements",y_elements);
         pl->set("Y Procs",y_procs);
-        pl->set("Z Procs",z_procs);
+        if (dim==3) {
+          pl->set("Z Blocks",1);
+          pl->set("Z Elements",z_elements);
+          pl->set("Z Procs",z_procs);
+        }
 
         // periodic boundaries
-        //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
-        //      per_pl.set("Count", 3);
-        //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
-        //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
-        //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+        if (numberOfPeriodicBCs>0) {
+          Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
+          per_pl.set("Count", numberOfPeriodicBCs);
+          if (dim==3) {
+            per_pl.set("Periodic Condition 1", "xz-all 1e-8: top;bottom");
+            if (numberOfPeriodicBCs>1)
+              per_pl.set("Periodic Condition 2", "yz-all 1e-8: left;right");
+            if (numberOfPeriodicBCs>2)
+              per_pl.set("Periodic Condition 3", "xy-all 1e-8: front;back");
+          } else if (dim==2) {
+            per_pl.set("Periodic Condition 1", "x-all 1e-8: top;bottom");
+            if (numberOfPeriodicBCs>1)
+              per_pl.set("Periodic Condition 2", "y-all 1e-8: left;right");
+          }
+        }
 
         // build mesh
-        if (build_tet_mesh) {
-          mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
-        } else {
-          mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+        if (dim == 3) {
+          if (build_tet_mesh)
+            mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+          else
+            mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+        } else if (dim == 2) {
+          if (build_tet_mesh)
+            mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory());
+          else
+            mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory());
         }
         mesh_factory->setParameterList(pl);
         mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
@@ -228,7 +251,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
     // compute dt from cfl
     double c  = std::sqrt(1.0/epsilon/mu);
-    double min_dx = 1.0/std::max(x_elements,std::max(y_elements,z_elements));
+    double min_dx = dim == 3 ? 1.0/std::max(x_elements,std::max(y_elements,z_elements)) : 1.0/std::max(x_elements,y_elements);
     double dt = cfl*min_dx/c;
 
     std::string xml;
@@ -238,10 +261,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       else
         xml = "solverAugmentationEpetra.xml";
     else if (solver == "MueLu-RefMaxwell") {
-      if (linAlgebra == "Tpetra")
-        xml = "solverMueLuRefMaxwell.xml";
-      else
-        xml = "solverMueLuRefMaxwellEpetra.xml";
+      if (linAlgebra == "Tpetra") {
+        if (dim == 3)
+          xml = "solverMueLuRefMaxwell.xml";
+        else
+          xml = "solverMueLuRefMaxwell2D.xml";
 #ifdef KOKKOS_ENABLE_OPENMP
       if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
         if (linAlgebra == "Tpetra")
@@ -256,6 +280,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         }
       }
 #endif
+      } else
+        xml = "solverMueLuRefMaxwellEpetra.xml";
 #ifdef KOKKOS_ENABLE_CUDA
       if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
         xml = "solverMueLuRefMaxwellCuda.xml";
@@ -292,7 +318,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::RCP<panzer::GlobalData> globalData = panzer::createGlobalData();
 
     // define physics block parameter list and boundary conditions
-    Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order, epsilon, mu);
+    Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order);
     std::vector<panzer::BC> bcs = homogeneousBoundaries(mesh);
     std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
 
@@ -327,10 +353,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // build the auxiliary physics blocks objects
     Teuchos::RCP<Teuchos::ParameterList> auxPhysicsBlock_pl;
     if (use_refmaxwell) {
-      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, epsilon / dt / cfl / cfl / min_dx / min_dx);
-      // We actually want Q_rho with weight 1/mu but for that we
-      // would need to be able to request a Q_E with weight 1
-      // instead of eps/dt.
+      auxPhysicsBlock_pl = auxOpsParameterList(basis_order, mu/dt);
     } else
       auxPhysicsBlock_pl = auxOpsParameterList(basis_order, 1.0);
     std::vector<RCP<panzer::PhysicsBlock> > auxPhysicsBlocks;
@@ -410,11 +433,36 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     cm_factory.buildObjects(cm_builder);
     Teuchos::ParameterList closure_models("Closure Models");
     {
+      // current source
       closure_models.sublist("electromagnetics").sublist("CURRENT").set<std::string>("Type","GAUSSIAN PULSE"); // a gaussian current source
       closure_models.sublist("electromagnetics").sublist("CURRENT").set<double>("dt",dt); // set pulse width such that dt resolves it
-      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY"); // compute 1/2(eps*||E||^2 + 1/mu*||B||^2)
-      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("mu",mu);
-      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<double>("epsilon",epsilon);
+
+      // variable permeability and permittivity
+      closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<std::string>("Type","PERMITTIVITY");
+      closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<double>("epsilon",epsilon);
+      closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<std::string>("DoF Name","E_edge");
+      closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<std::string>("Type","INVERSE PERMEABILITY");
+      closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<std::string>("DoF Name","B_face");
+      closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<std::string>("Type","CONDUCTIVITY");
+      closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<double>("sigma",0.0);
+      closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<std::string>("DoF Name","E_edge");
+      closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("Type","PERMITTIVITY");
+      closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("epsilon",epsilon);
+      closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<std::string>("DoF Name","AUXILIARY_EDGE");
+      closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<std::string>("Type","INVERSE PERMEABILITY");
+      closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<double>("mu",mu);
+      closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<std::string>("DoF Name","AUXILIARY_EDGE");
+
+      // constant permeability, permittivity and conductivity
+      // closure_models.sublist("electromagnetics").sublist("PERMITTIVITY").set<double>("Value",epsilon);
+      // closure_models.sublist("electromagnetics").sublist("INVERSE_PERMEABILITY").set<double>("Value",1.0/mu);
+      // closure_models.sublist("electromagnetics").sublist("CONDUCTIVITY").set<double>("Value",0.0);
+      // closure_models.sublist("electromagnetics_aux").sublist("PERMITTIVITY").set<double>("Value",epsilon);
+      // closure_models.sublist("electromagnetics_aux").sublist("INVERSE_PERMEABILITY").set<double>("Value",1.0/mu);
+
+      // electromagnetic energy: 1/2 * ((E, epsilon * E) + (B, 1/mu * B))
+      closure_models.sublist("electromagnetics").sublist("EM_ENERGY").set<std::string>("Type","ELECTROMAGNETIC ENERGY");
     }
 
     Teuchos::ParameterList user_data("User Data"); // user data can be empty here
@@ -661,7 +709,7 @@ int main(int argc,char * argv[]){
 }
 
 //! Create a parameter list defining the Maxwell equations physics block
-Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order, const double epsilon, const double mu)
+Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList("Physics Block"));
   const int integration_order = 2*basis_order;
@@ -671,8 +719,6 @@ Teuchos::RCP<Teuchos::ParameterList> maxwellParameterList(const int basis_order,
   p.set("Model ID","electromagnetics");
   p.set("Basis Order",basis_order);
   p.set("Integration Order",integration_order);
-  p.set("Epsilon",epsilon);
-  p.set("Mu", mu);
 
   return pl;
 }
@@ -752,11 +798,37 @@ Teuchos::RCP<Teuchos::ParameterList> auxOpsParameterList(const int basis_order, 
   {
     Teuchos::ParameterList& p = pl->sublist("Auxiliary Mass Physics");
     p.set("Type","Auxiliary Mass Matrix");
+    p.set("Model ID","electromagnetics_aux");
     p.set("DOF Name","AUXILIARY_NODE");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",basis_order);
     p.set("Integration Order",integration_order);
     p.set("Multiplier",massMultiplier);
+  }
+
+  {
+    Teuchos::ParameterList& p = pl->sublist("Auxiliary Edge Mass Physics");
+    p.set("Type","Auxiliary Mass Matrix");
+    p.set("Model ID","electromagnetics_aux");
+    p.set("DOF Name","AUXILIARY_EDGE");
+    p.set("Basis Type","HCurl");
+    p.set("Basis Order",basis_order);
+    p.set("Integration Order",integration_order);
+    p.set("Multiplier",1.0);
+  }
+
+  {
+    Teuchos::ParameterList& p = pl->sublist("Auxiliary Edge Curl Curl Physics");
+    p.set("Type","Auxiliary Curl Curl");
+    p.set("Model ID","electromagnetics_aux");
+    p.set("DOF Name","AUXILIARY_EDGE");
+    p.set("Basis Type","HCurl");
+    p.set("Basis Order",basis_order);
+    p.set("Integration Order",integration_order);
+    p.set("Multiplier",1.0/massMultiplier);
+    // Teuchos::RCP<std::vector<std::string> > fieldMultipliers = Teuchos::rcp(new std::vector<std::string>);
+    // fieldMultipliers->push_back("INVERSE_PERMEABILITY");
+    // p.set("Field Multipliers",fieldMultipliers.getConst());
   }
 
   {

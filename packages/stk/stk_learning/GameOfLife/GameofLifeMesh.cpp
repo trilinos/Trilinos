@@ -53,14 +53,14 @@ void GameofLifeMesh::declare_fields()
 void GameofLifeMesh::put_fields_on_parts()
 {
     int val = 0;
-    stk::mesh::put_field(*m_lifeField, m_metaData.universal_part(), &val);
-    stk::mesh::put_field(*m_activeNeighborField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(*m_lifeField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(*m_activeNeighborField, m_metaData.universal_part(), &val);
 
     double factor = 1.0;
-    stk::mesh::put_field(*m_distFactors, *m_nodeset1, &factor);
-    stk::mesh::put_field(*m_distFactors, *m_nodeset2, &factor);
-    stk::mesh::put_field(*m_distFactors, *m_nodeset3, &factor);
-    stk::mesh::put_field(*m_distFactors, *m_nodeset4, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset1, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset2, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset3, &factor);
+    stk::mesh::put_field_on_mesh(*m_distFactors, *m_nodeset4, &factor);
 }
 void GameofLifeMesh::declare_parts()
 {
@@ -132,7 +132,7 @@ void TwoDimGameofLifeMesh::declare_coordinate_field()
 {
     m_nodeCoords = &meta_data().declare_field<stk::mesh::Field<double,stk::mesh::Cartesian2d>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_nodeCoords, meta_data().universal_part(), 2);
+    stk::mesh::put_field_on_mesh(*m_nodeCoords, meta_data().universal_part(), 2, nullptr);
 }
 bool TwoDimGameofLifeMesh::only_one_active_proc()
 {
@@ -302,7 +302,7 @@ void ThreeDimGameofLifeMesh::declare_coordinate_field()
 {
     m_nodeCoords = &meta_data().declare_field<stk::mesh::Field<double,stk::mesh::Cartesian>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_nodeCoords, meta_data().universal_part(), 3);
+    stk::mesh::put_field_on_mesh(*m_nodeCoords, meta_data().universal_part(), 3, nullptr);
 }
 bool ThreeDimGameofLifeMesh::only_one_active_proc()
 {

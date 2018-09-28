@@ -60,7 +60,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
 #include "stk_mesh/baseImpl/PartImpl.hpp"  // for PartImpl
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/CSet.hpp"       // for CSet
 
 namespace shards { class ArrayDimTag; }
@@ -650,74 +650,145 @@ const std::vector<std::string>& entity_rank_names();
  *
  * See Field.hpp for a full discussion of field restrictions.
  */
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
-field_type & put_field( field_type & field ,
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Part & part ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Selector & selector ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
-/** \brief Declare a field to exist for a given entity type and Part. The
+template< class field_type >
+field_type & put_field_on_mesh( field_type & field ,
+                        const Selector & selector ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+/** \brief Declare a field to be allocated for a given Part. The
  *         extra unsigned arguments specify the size of a dimension. So,
  *         put_field( field, rank, part, 3, 3 ) would create a 3x3 2D field.
  *         Fields of up to seven dimensions are supported.
  */
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
-field_type & put_field( field_type & field ,
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Part & part ,
+                        unsigned     n1 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Selector & selector ,
+                        unsigned     n1 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Part & part ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Selector & selector ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Part & part ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        unsigned     n3 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Selector & selector ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
-field_type & put_field( field_type & field ,
+field_type & put_field_on_mesh( field_type & field ,
+                        const Selector & selector ,
+                        unsigned     n1 ,
+                        unsigned     n2 ,
+                        unsigned     n3 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
+template< class field_type >
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
                         unsigned     n3 ,
                         unsigned     n4 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
-field_type & put_field( field_type & field ,
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -725,9 +796,11 @@ field_type & put_field( field_type & field ,
                         unsigned     n4 ,
                         unsigned     n5 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
-field_type & put_field( field_type & field ,
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -736,9 +809,11 @@ field_type & put_field( field_type & field ,
                         unsigned     n5 ,
                         unsigned     n6 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
-field_type & put_field( field_type & field ,
+STK_DEPRECATED field_type & put_field( field_type & field ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -748,17 +823,18 @@ field_type & put_field( field_type & field ,
                         unsigned     n6 ,
                         unsigned     n7 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
+#endif
 
 template< class field_type >
 field_type & put_field_on_entire_mesh_with_initial_value(field_type & field, const typename FieldTraits<field_type>::data_type *initial_value)
 {
-    return put_field(field, field.mesh_meta_data().universal_part(), initial_value);
+    return put_field_on_mesh(field, field.mesh_meta_data().universal_part(), initial_value);
 }
 
 template< class field_type >
 field_type & put_field_on_entire_mesh(field_type & field)
 {
-    typename FieldTraits<field_type>::data_type* init_value = NULL;
+    typename FieldTraits<field_type>::data_type* init_value = nullptr;
     return put_field_on_entire_mesh_with_initial_value(field, init_value);
 }
 
@@ -809,7 +885,6 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
                                       const std::string & name ,
                                       unsigned number_of_states )
 {
-
   typedef FieldTraits< field_type > Traits ;
 
   const DataTraits & traits = data_traits< typename Traits::data_type >();
@@ -846,10 +921,23 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
   field_type * f[ MaximumFieldStates ] = {nullptr};
 
-  f[0] = dynamic_cast<field_type*>(m_field_repo.get_field(
-      arg_entity_rank , name ,
-      traits , Traits::Rank , dim_tags , number_of_states
-      ));
+  FieldBase* rawField = m_field_repo.get_field(arg_entity_rank , name ,
+                                               traits , Traits::Rank , dim_tags , number_of_states);
+  
+
+  f[0] = dynamic_cast<field_type*>(rawField);
+
+
+  /*
+  //
+  //  NKC, this error would check that a field is not registred with the same name, but a differnt template type.
+  //  Seems like would never want to do this.  But percept does.  Maybe in all cases a lurking error....
+  //
+  if(rawField != nullptr) {
+    ThrowRequireMsg(f[0] == rawField, "Internal STK Error: Reregistration of field: '"<<name<<"' "
+                    <<"with a different template type.  ");
+  }
+  */
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
@@ -902,9 +990,34 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 }
 
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field(
+STK_DEPRECATED field_type & put_field(
+  field_type & field ,
+  const Part & part ,
+  const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+  unsigned stride[8] = {0,0,0,0,0,0,0,0};
+  Helper::assign(stride);
+
+  unsigned numScalarsPerEntity = 1;
+  if(field.field_array_rank() > 0)
+  {
+      numScalarsPerEntity = stride[0];
+  }
+  unsigned firstDimension = numScalarsPerEntity;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh(
   field_type & field ,
   const Part & part ,
   const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
@@ -925,9 +1038,34 @@ field_type & put_field(
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field(
+STK_DEPRECATED field_type & put_field(
+  field_type & field ,
+  const Selector & selector ,
+  const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
+{
+  typedef FieldTraits< field_type > Traits ;
+  typedef typename Traits::Helper   Helper ;
+  unsigned stride[8] = {0,0,0,0,0,0,0,0};
+  Helper::assign(stride);
+
+  unsigned numScalarsPerEntity = 1;
+  if(field.field_array_rank() > 0)
+  {
+      numScalarsPerEntity = stride[0];
+  }
+  unsigned firstDimension = numScalarsPerEntity;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh(
   field_type & field ,
   const Selector & selector ,
   const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
@@ -948,9 +1086,25 @@ field_type & put_field(
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
+                        const Part &part ,
+                        unsigned    n1 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
@@ -962,9 +1116,25 @@ field_type & put_field( field_type &field ,
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
+                        const Selector &selector ,
+                        unsigned    n1 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+
+return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh( field_type &field ,
                         const Selector &selector ,
                         unsigned    n1 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
@@ -976,9 +1146,26 @@ field_type & put_field( field_type &field ,
 return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
+                        const Part &part ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1*n2;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -991,9 +1178,26 @@ field_type & put_field( field_type &field ,
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
+                        const Selector &selector ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1*n2;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh( field_type &field ,
                         const Selector &selector ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1006,9 +1210,27 @@ field_type & put_field( field_type &field ,
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
+                        const Part &part ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        unsigned    n3 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1*n2*n3;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1022,9 +1244,27 @@ field_type & put_field( field_type &field ,
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
+                        const Selector &selector ,
+                        unsigned    n1 ,
+                        unsigned    n2 ,
+                        unsigned    n3 ,
+                        const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1*n2*n3;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, selector, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+#endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh( field_type &field ,
                         const Selector &selector ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1038,9 +1278,10 @@ field_type & put_field( field_type &field ,
   return field ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1054,10 +1295,12 @@ field_type & put_field( field_type &field ,
 
   return field ;
 }
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1072,10 +1315,12 @@ field_type & put_field( field_type &field ,
 
   return field ;
 }
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1091,10 +1336,12 @@ field_type & put_field( field_type &field ,
 
   return field ;
 }
+#endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
-field_type & put_field( field_type &field ,
+STK_DEPRECATED field_type & put_field( field_type &field ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -1111,6 +1358,7 @@ field_type & put_field( field_type &field ,
 
   return field ;
 }
+#endif
 
 template<class T>
 inline

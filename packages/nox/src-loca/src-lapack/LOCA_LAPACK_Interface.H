@@ -85,8 +85,8 @@ namespace LOCA {
       virtual void setParams(const ParameterVector& p) = 0;
 
       //! Call user's own print routine for vector-parameter pair
-      virtual void printSolution(const NOX::LAPACK::Vector& x_,
-                                 const double conParam) {}
+      virtual void printSolution(const NOX::LAPACK::Vector& /* x_ */,
+                                 const double /* conParam */) {}
 
       /*!
        * \brief Compute shifted matrix alpha*J + beta*M where J is the

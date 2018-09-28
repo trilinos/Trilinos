@@ -260,5 +260,9 @@ namespace panzer {
       cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
     }
   }
+
+  Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> >
+  Intrepid2FieldPattern::getIntrepidBasis() const
+  { return intrepidBasis_; }
   
 }

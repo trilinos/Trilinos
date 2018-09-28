@@ -38,7 +38,7 @@
 #include <stdint.h>                     // for uint64_t
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowAssertMsg
 
 namespace stk {
 namespace mesh {

@@ -57,7 +57,7 @@
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-typedef Zoltan2::BasicUserTypes<double, int, int>           basic_user_t;
+typedef Zoltan2::BasicUserTypes<> basic_user_t;
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
@@ -163,7 +163,7 @@ int main(int narg, char *arg[]) {
   int *element_num_map = new int [num_elem];
   error += im_ex_get_elem_num_map(exoid, element_num_map);
 
-  inputAdapter_t::gno_t *node_num_map = new int [num_nodes];
+  int *node_num_map = new int [num_nodes];
   error += im_ex_get_node_num_map(exoid, node_num_map);
 
   int *elem_blk_ids = new int [num_elem_blk];
@@ -217,7 +217,7 @@ int main(int narg, char *arg[]) {
         for (int j = 0; j < num_nodes_per_elem[b]; j++) {
           ssize_t in_list = -1;
 
-          for(inputAdapter_t::offset_t k=offsets[telct];k<offsets[telct+1];k++) {
+          for(inputAdapter_t::offset_t k=offsets[telct];k<offsets[telct+1];k++){
             if(adjacencyIds[k] ==
                node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
               in_list = k;

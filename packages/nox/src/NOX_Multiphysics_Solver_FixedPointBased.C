@@ -55,6 +55,8 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_Observer.hpp"
+#include "NOX_Solver_SolverUtils.H"
 
 NOX::Multiphysics::Solver::FixedPointBased::
 FixedPointBased(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
@@ -68,9 +70,10 @@ FixedPointBased(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic
   utilsPtr(globalDataPtr->getUtils()),
   solnPtr( Teuchos::rcp(new Group(solvers, t, p)) ),
   testPtr(t),
-  paramsPtr(p),
-  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
+  paramsPtr(p)
 {
+  NOX::Solver::validateSolverOptionsSublist(paramsPtr->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   init();
 }
 
@@ -124,7 +127,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
 bool
 NOX::Multiphysics::Solver::FixedPointBased::reset(
       const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
-      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i,
+      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& /* i */,
       const Teuchos::RCP<NOX::StatusTest::Generic>& t,
       const Teuchos::RCP<Teuchos::ParameterList>& p)
 {
@@ -134,7 +137,8 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
   testPtr = t;
   paramsPtr = p;
   utilsPtr = globalDataPtr->getUtils();
-  prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
+  NOX::Solver::validateSolverOptionsSublist(paramsPtr->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
 
   init();
 
@@ -143,8 +147,8 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
 
 void
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const NOX::Abstract::Vector& initialGuess,
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
+      const NOX::Abstract::Vector& /* initialGuess */,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& /* t */)
 {
   std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
@@ -152,7 +156,14 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
 
 void
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const NOX::Abstract::Vector& initialGuess)
+      const NOX::Abstract::Vector& /* initialGuess */)
+{
+  std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+}
+
+void
+NOX::Multiphysics::Solver::FixedPointBased::reset()
 {
   std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
@@ -165,7 +176,7 @@ NOX::Multiphysics::Solver::FixedPointBased::~FixedPointBased()
 
 
 NOX::StatusTest::StatusType
-NOX::Multiphysics::Solver::FixedPointBased::getStatus()
+NOX::Multiphysics::Solver::FixedPointBased::getStatus() const
 {
   return status;
 }
@@ -173,7 +184,7 @@ NOX::Multiphysics::Solver::FixedPointBased::getStatus()
 NOX::StatusTest::StatusType
 NOX::Multiphysics::Solver::FixedPointBased::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // On the first step, do some initializations
   if (nIter == 0)
@@ -204,7 +215,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   // First check status
   if (status != NOX::StatusTest::Unconverged)
   {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     return status;
   }
 
@@ -244,7 +255,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   {
     utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     return status;
   }
 
@@ -267,7 +278,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   // Evaluate the current status.
   status = test.checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   // Return status.
   return status;
@@ -276,7 +287,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
 NOX::StatusTest::StatusType
 NOX::Multiphysics::Solver::FixedPointBased::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
@@ -289,7 +300,7 @@ NOX::Multiphysics::Solver::FixedPointBased::solve()
   outputParams.set("Nonlinear Iterations", nIter);
   outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }
@@ -325,6 +336,12 @@ const Teuchos::ParameterList&
 NOX::Multiphysics::Solver::FixedPointBased::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Multiphysics::Solver::FixedPointBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

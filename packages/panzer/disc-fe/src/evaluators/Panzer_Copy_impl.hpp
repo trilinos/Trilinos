@@ -74,12 +74,9 @@ template<typename EvalT, typename Traits>
 void
 Copy<EvalT, Traits>::
 postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
+  typename Traits::SetupData /* worksets */,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(input,fm);
-  this->utils.setFieldData(output,fm);
-
   TEUCHOS_ASSERT(input.size()==output.size());
 }
 

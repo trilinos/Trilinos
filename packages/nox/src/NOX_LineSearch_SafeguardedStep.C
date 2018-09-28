@@ -54,6 +54,7 @@
 #include "NOX_LineSearch_Utils_Slope.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_SolverStats.hpp"
 #include "NOX_Solver_Generic.H"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
@@ -67,7 +68,8 @@ SafeguardedStep(const Teuchos::RCP<NOX::GlobalData>& gd,
         Teuchos::ParameterList& params) :
   paramsPtr_(NULL),
   globalDataPtr_(gd),
-  print_(gd->getUtils())
+  print_(gd->getUtils()),
+  counter_(&gd->getNonConstSolverStatistics()->lineSearch)
 {
   reset(gd, params);
 }
@@ -79,6 +81,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr_ = gd;
   print_.reset(gd->getUtils());
   paramsPtr_ = &params;
+  counter_ = &gd->getNonConstSolverStatistics()->lineSearch;
 
   Teuchos::ParameterList& p = params.sublist("Safeguarded Step");
   p.validateParametersAndSetDefaults(*getValidParameters());
@@ -100,7 +103,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   // Set up counter
   if (useCounter_)
-    counter_.reset();
+    counter_->reset();
 
   return true;
 }
@@ -108,13 +111,13 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp,
                            double& step,
                            const Abstract::Vector& dir,
-                           const Solver::Generic& s)
+                           const Solver::Generic& /* s */)
 {
   printOpeningRemarks();
 
   if (useCounter_) {
-    counter_.incrementNumLineSearches();
-    counter_.incrementNumNonTrivialLineSearches();
+    counter_->incrementNumLineSearches();
+    counter_->incrementNumNonTrivialLineSearches();
   }
 
   invLimits_->reciprocal(*userLimits_);
@@ -160,7 +163,7 @@ bool NOX::LineSearch::SafeguardedStep::compute(Abstract::Group& newGrp,
   }
 
   if (useCounter_)
-    counter_.setValues(*paramsPtr_);
+    counter_->setValues(*paramsPtr_);
 
   return true;
 }

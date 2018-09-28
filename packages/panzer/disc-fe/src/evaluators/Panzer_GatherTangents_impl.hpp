@@ -98,9 +98,6 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
-
-  // setup the field data object
-  this->utils.setFieldData(gatherFieldTangents,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 }
 

@@ -93,6 +93,8 @@ namespace MueLuTests {
 
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -276,6 +278,8 @@ namespace MueLuTests {
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
     typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();

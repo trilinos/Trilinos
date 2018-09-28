@@ -63,6 +63,8 @@
 #include <typeinfo>
 
 namespace Tpetra {
+namespace Classes {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
@@ -1324,7 +1326,7 @@ namespace Tpetra {
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  isLocallyFitted (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
   {
     if (this == &map)
       return true;
@@ -1421,7 +1423,7 @@ namespace Tpetra {
     // execution does not require interprocess communication."
     // However, just to be sure, I'll put this call after the above
     // tests that don't communicate.
-    if (! Details::congruent (*comm_, * (map.getComm ()))) {
+    if (! ::Tpetra::Details::congruent (*comm_, * (map.getComm ()))) {
       return false;
     }
 
@@ -2011,6 +2013,7 @@ namespace Tpetra {
     return global;
   }
 
+} // namespace Classes
 } // namespace Tpetra
 
 template <class LocalOrdinal, class GlobalOrdinal>
@@ -2288,7 +2291,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 //! Explicit instantiation macro supporting the Map class. Instantiates the class and the non-member constructors.
 #define TPETRA_MAP_INSTANT(LO,GO,NODE) \
   \
-  template class Map< LO , GO , NODE >; \
+  namespace Classes { template class Map< LO , GO , NODE >; } \
   \
   template Teuchos::RCP< const Map<LO,GO,NODE> > \
   createLocalMapWithNode<LO,GO,NODE> (const size_t numElements, \

@@ -107,7 +107,7 @@ C      --Identify elements to be retained...
 C        Loop 1 to number of element blocks
          DO IELB = 1, NELBLK
 C           Loop over cumulative element count in element block IELB
-           if (isevok(ielb)) then
+           if (isevok(ielb) .and. viselb(ielb)) then
              if (cmpflt .eq. 1) then
                call dolt(ixlast+1, ixelbo(ielb), ixelem, values,
      *           valflt, numelo)

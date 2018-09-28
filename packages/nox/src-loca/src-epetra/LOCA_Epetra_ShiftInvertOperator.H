@@ -78,8 +78,8 @@ namespace LOCA {
       ~ShiftInvertInterface() {};
 
       //! Compute Jacobian \f$J\f$.
-      bool computeJacobian(const Epetra_Vector &x,
-               Epetra_Operator& Jac) {return true;};
+      bool computeJacobian(const Epetra_Vector &/* x */,
+               Epetra_Operator& /* Jac */) {return true;};
     };
 
     //! Epetra operator for \f$(J-\sigma M)^{-1}\f$.

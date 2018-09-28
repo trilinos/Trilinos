@@ -85,6 +85,7 @@ public:
   }
 
   void setParameters (const Teuchos::ParameterList& pl) {
+    (void)pl;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const char* block_size_s = "trisolver: block size";
     if (pl.isParameter(block_size_s)) {
@@ -109,6 +110,8 @@ public:
   }
 
   void compute (const crs_matrix_type& T_in, const Teuchos::RCP<Teuchos::FancyOStream>& out) {
+    (void)T_in;
+    (void)out;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     using Teuchos::ArrayRCP;
 
@@ -179,8 +182,12 @@ public:
 
   // Y := beta * Y + alpha * (M * X)
   void localApply (const MV& X, MV& Y,
-                   const Teuchos::ETransp mode,
+                   const Teuchos::ETransp /* mode */,
                    const scalar_type& alpha, const scalar_type& beta) const {
+    (void)X;
+    (void)Y;
+    (void)alpha;
+    (void)beta;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
     const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();

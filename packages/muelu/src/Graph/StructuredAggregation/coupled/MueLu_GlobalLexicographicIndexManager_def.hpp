@@ -110,10 +110,9 @@ namespace MueLu {
     // mesh as this data will be used to fill vertex2AggId and procWinner vectors.
     Array<GO> lCoarseNodeCoarseGIDs(this->lNumCoarseNodes),
       lCoarseNodeFineGIDs(this->lNumCoarseNodes);
-    //Array<GO> ghostedNodeCoarseGIDs(this->numGhostedNodes);
-      Array<GO> ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
+    Array<GO> ghostedCoarseNodeFineGIDs(this->numGhostedNodes);
     Array<LO> ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3), ijk(3);
-    LO currentIndex = -1, /*coarseNodeFineLID = -1,*/ currentCoarseIndex = -1;
+    LO currentIndex = -1, currentCoarseIndex = -1;
     for(ijk[2] = 0; ijk[2] < this->ghostedNodesPerDir[2]; ++ijk[2]) {
       for(ijk[1] = 0; ijk[1] < this->ghostedNodesPerDir[1]; ++ijk[1]) {
         for(ijk[0] = 0; ijk[0] < this->ghostedNodesPerDir[0]; ++ijk[0]) {
@@ -195,6 +194,52 @@ namespace MueLu {
   } // End getGhostedMeshData
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
+                     Array<GO>& coarseNodeCoarseGIDs,
+                     Array<GO>& coarseNodeFineGIDs) const {
+
+    // Allocate sufficient storage space for outputs
+    coarseNodeCoarseGIDs.resize(this->getNumLocalCoarseNodes());
+    coarseNodeFineGIDs.resize(this->getNumLocalCoarseNodes());
+
+    // Load all the GIDs on the fine mesh
+    ArrayView<const GO> fineNodeGIDs = fineCoordinatesMap->getNodeElementList();
+
+    Array<GO> coarseStartIndices(3);
+    GO tmp;
+    for(int dim = 0; dim < 3; ++dim) {
+      coarseStartIndices[dim] = this->startIndices[dim] / this->coarseRate[dim];
+      tmp = this->startIndices[dim] % this->coarseRate[dim];
+      if(tmp > 0) {++coarseStartIndices[dim];}
+    }
+
+    // Extract the fine LIDs of the coarse nodes and store the corresponding GIDs
+    LO fineLID;
+    Array<LO> lCoarseIndices(3);
+    Array<GO> gCoarseIndices(3);
+    for(LO coarseLID = 0; coarseLID < this->getNumLocalCoarseNodes(); ++coarseLID) {
+      this->getCoarseNodeLocalTuple(coarseLID,
+                                    lCoarseIndices[0],
+                                    lCoarseIndices[1],
+                                    lCoarseIndices[2]);
+      getCoarseNodeFineLID(lCoarseIndices[0], lCoarseIndices[1], lCoarseIndices[2], fineLID);
+      coarseNodeFineGIDs[coarseLID] = fineNodeGIDs[fineLID];
+
+      // Get Coarse Global IJK
+      for(int dim=0; dim<3; dim++) {
+        gCoarseIndices[dim] = coarseStartIndices[dim] + lCoarseIndices[dim];
+      }
+      getCoarseNodeGID(gCoarseIndices[0],
+                       gCoarseIndices[1],
+                       gCoarseIndices[2],
+                       coarseNodeCoarseGIDs[coarseLID] );
+
+    }
+
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   std::vector<std::vector<GlobalOrdinal> > GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseMeshData() const {
     std::vector<std::vector<GO> > coarseMeshData;
@@ -263,8 +308,8 @@ namespace MueLu {
     LO tmp;
     k   = myLID / this->lNumCoarseNodes10;
     tmp = myLID % this->lNumCoarseNodes10;
-    j   = tmp / this->lCoarseNodesPerDir[0];
-    i   = tmp % this->lCoarseNodesPerDir[0];
+    j   = tmp   / this->lCoarseNodesPerDir[0];
+    i   = tmp   % this->lCoarseNodesPerDir[0];
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -288,23 +333,21 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void GlobalLexicographicIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+    // Assumptions: (i,j,k) is a tuple on the coarse mesh
+    //              myLID is the corresponding local ID on the fine mesh
+    const LO multiplier[3] = {1, this->lFineNodesPerDir[0], this->lNumFineNodes10};
+    const LO indices[3] = {i, j, k};
+
     myLID = 0;
-    if(k*this->coarseRate[2] < this->lFineNodesPerDir[2]) {
-      myLID += k*this->coarseRate[2]*this->lNumCoarseNodes10;
-    } else {
-      myLID += (this->lFineNodesPerDir[2] - 1)*this->lNumCoarseNodes10;
-    }
-
-    if(j*this->coarseRate[1] < this->lFineNodesPerDir[1]) {
-      myLID += j*this->coarseRate[1]*this->lFineNodesPerDir[0];
-    } else {
-      myLID += (this->lFineNodesPerDir[1] - 1)*this->lFineNodesPerDir[1];
-    }
-
-    if(i*this->coarseRate[0] < this->lFineNodesPerDir[0]) {
-      myLID += i*this->coarseRate[0];
-    } else {
-      myLID += this->lFineNodesPerDir[0] - 1;
+    for(int dim = 0; dim < 3; ++dim) {
+      if((indices[dim] == this->getLocalCoarseNodesInDir(dim) - 1) && this->meshEdge[2*dim + 1]) {
+        // We are dealing with the last node on the mesh in direction dim
+        // so we can simply use the number of nodes on the fine mesh in that direction
+        myLID += (this->getLocalFineNodesInDir(dim) - 1)*multiplier[dim];
+      } else {
+        myLID += (indices[dim]*this->getCoarseningRate(dim) + this->getCoarseNodeOffset(dim))
+          *multiplier[dim];
+      }
     }
   }
 

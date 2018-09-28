@@ -72,9 +72,6 @@ public:
 		   const PureBasis & sourceBasis,
 		   const PureBasis & targetBasis);
 
-  void postRegistrationSetup(typename TRAITST::SetupData d,
-			     PHX::FieldManager<TRAITST>& vm);
-
   void evaluateFields(typename TRAITST::EvalData workset);
 
 private:

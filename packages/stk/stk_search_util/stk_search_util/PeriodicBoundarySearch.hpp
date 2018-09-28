@@ -267,7 +267,7 @@ public:
 
     for (size_t i = 0; i < m_search_results.size(); ++i)
     {
-      m_unique_search_results.push_back(std::make_pair(m_search_results[i].first.id(), m_search_results[i].second.id()));
+      m_unique_search_results.emplace_back(m_search_results[i].first.id(), m_search_results[i].second.id());
     }
 
     std::sort(m_unique_search_results.begin(), m_unique_search_results.end());
@@ -294,7 +294,7 @@ public:
                                 const double search_tol = 1.e-10)
   {
     ThrowErrorIf(m_hasRotationalPeriodicity);
-    m_periodic_mappings.push_back(SelectorMapping(domain, range));
+    m_periodic_mappings.emplace_back(domain, range);
     m_transforms.push_back( TransformHelper() );
     m_search_tolerances.push_back(search_tol);
   }
@@ -306,7 +306,7 @@ public:
       const double point[],
       const double search_tol = 1.e-10)
   {
-    m_periodic_mappings.push_back(SelectorMapping(domain, range));
+    m_periodic_mappings.emplace_back(domain, range);
     m_search_tolerances.push_back(search_tol);
 
     //only one periodic BC can exist with rotational periodicity
@@ -336,7 +336,7 @@ public:
     ThrowRequire(m_bulk_data.in_modifiable_state());
     const int parallel_rank = m_bulk_data.parallel_rank();
     std::vector<stk::mesh::EntityProc> send_nodes;
-    for (size_t i=0, size=m_search_results.size(); i<size; ++i) {
+    for (size_t i=0; i<m_search_results.size(); ++i) {
         stk::mesh::Entity domain_node = m_bulk_data.get_entity(m_search_results[i].first.id());
         stk::mesh::Entity range_node = m_bulk_data.get_entity(m_search_results[i].second.id());
 
@@ -353,7 +353,7 @@ public:
 
           ThrowRequire(m_bulk_data.parallel_owner_rank(domain_node) == domain_proc);
 
-          send_nodes.push_back(stk::mesh::EntityProc(domain_node, range_proc));
+          send_nodes.emplace_back(domain_node, range_proc);
 //          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we are sending domain node to range node "
 //              << m_bulk_data.identifier(domain_node) << ":" << m_bulk_data.identifier(range_node)
 //              << " since we own the domain and the range resides on proc " << range_proc << std::endl;
@@ -364,7 +364,7 @@ public:
 
           ThrowRequire(m_bulk_data.parallel_owner_rank(range_node) == range_proc);
 
-          send_nodes.push_back(stk::mesh::EntityProc(range_node, domain_proc));
+          send_nodes.emplace_back(range_node, domain_proc);
 //          std::cout << "On proc " << m_bulk_data.parallel_rank() << " we are sending range node to domain node "
 //              << m_bulk_data.identifier(domain_node) << ":" << m_bulk_data.identifier(range_node)
 //              << " since we own the range and the domain resides on proc " << domain_proc << std::endl;
@@ -417,7 +417,7 @@ private:
         const stk::mesh::Selector rangeIntersection = rangeA & rangeB;
 
         //now add new pair with this
-        m_periodic_mappings.push_back(SelectorMapping(domainIntersection, rangeIntersection));
+        m_periodic_mappings.emplace_back(domainIntersection, rangeIntersection);
         m_search_tolerances.push_back(1.e-10);
         m_transforms.push_back(TransformHelper());
 
@@ -541,7 +541,7 @@ private:
         ++num_nodes;
         m_get_coordinates(b[ord], &center[0]);
         SearchId search_id( m_bulk_data.entity_key(b[ord]), parallel_rank);
-        aabb_vector.push_back( std::make_pair( Sphere(center, search_tolerance), search_id));
+        aabb_vector.emplace_back( Sphere(center, search_tolerance), search_id);
       }
     }
   }
@@ -619,11 +619,11 @@ private:
       const std::vector<double> &translate) const
   {
     // translate domain to range, i.e. master to slave
-    for (size_t i = 0, size = side_1_vector.size(); i < size; ++i)
+    for (auto && side_1 : side_1_vector)
     {
       for (int j = 0; j < 3; ++j)
       {
-        side_1_vector[i].first.center()[j] += translate[j];
+        side_1.first.center()[j] += translate[j];
       }
     }
   }
@@ -633,9 +633,9 @@ private:
       SphereIdVector & side_2_vector,
       const matrix3x3 & rotation) const
   {
-    for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
+    for (auto && side_1 : side_1_vector)
     {
-      double *center = &side_1_vector[iPoint].first.center()[0];
+      double *center = &side_1.first.center()[0];
       std::vector<double> ctr(center, center+3);
       rotation.transformVec(&ctr[0], center);
     }
@@ -647,9 +647,9 @@ private:
       const matrix3x3 & rotation,
       const std::vector<double> & translation) const
   {
-    for (size_t iPoint = 0, size = side_1_vector.size(); iPoint < size; ++iPoint)
+    for (auto && side_1 : side_1_vector)
     {
-      double *center = &side_1_vector[iPoint].first.center()[0];
+      double *center = &side_1.first.center()[0];
       std::vector<double> ctr(center, center+3);
       rotation.transformVec(ctr.data(), center);
       for (int i = 0; i < 3; ++i) {

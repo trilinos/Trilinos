@@ -33,6 +33,7 @@ APPEND_SET(HEADERS
   NOX_Abstract_Vector.H
   NOX_Abstract_MultiVector.H
   NOX_Abstract_Group.H
+  NOX_Observer.hpp
   NOX_Abstract_PrePostOperator.H
   NOX_Abstract_ImplicitWeighting.H
   )
@@ -124,8 +125,8 @@ APPEND_SET(HEADERS
   NOX_Solver_InexactTrustRegionBased.H
   NOX_Solver_TensorBased.H
   NOX_Solver_AndersonAcceleration.H
-  NOX_Solver_PrePostOperator.H
   NOX_Solver_SingleStep.H
+  NOX_SolverStats.hpp
   )
 APPEND_SET(SOURCES
   NOX_Solver_Factory.C
@@ -135,7 +136,6 @@ APPEND_SET(SOURCES
   NOX_Solver_InexactTrustRegionBased.C
   NOX_Solver_TensorBased.C
   NOX_Solver_AndersonAcceleration.C
-  NOX_Solver_PrePostOperator.C
   NOX_Solver_SingleStep.C
   )
 
@@ -183,17 +183,20 @@ APPEND_SET(HEADERS
   NOX_Utils.H
   NOX_SharedObjectTemplate.H
   NOX_Random.H
-  NOX_Version.H
   NOX_GlobalData.H
   NOX_PrePostOperator_Vector.H
+  NOX_Observer_Vector.hpp
+  NOX_Observer_Log.hpp
+  NOX_Observer_Print.hpp
   NOX_Assert.H
   )
 APPEND_SET(SOURCES
   NOX_Utils.C
   NOX_Random.C
-  NOX_Version.C
   NOX_GlobalData.C
-  NOX_PrePostOperator_Vector.C
+  NOX_Observer_Vector.cpp
+  NOX_Observer_Log.cpp
+  NOX_Observer_Print.cpp
   )
 
 # Multivector

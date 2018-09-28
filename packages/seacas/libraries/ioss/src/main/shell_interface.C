@@ -174,6 +174,9 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 #endif
 
+  options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
+                  "put transient data for each timestep in separate file (EXPERMENTAL)", nullptr);
+
   options_.enroll(
       "split_times", Ioss::GetLongOption::MandatoryValue,
       "If non-zero, then put <$val> timesteps in each file. Then close file and start new file.",
@@ -403,6 +406,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("debug") != nullptr) {
     debug = true;
+  }
+
+  if (options_.retrieve("file_per_state") != nullptr) {
+    file_per_state = true;
   }
 
   if (options_.retrieve("quiet") != nullptr) {
