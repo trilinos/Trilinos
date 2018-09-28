@@ -686,7 +686,7 @@ namespace MueLu {
              /* inject the null space */
             // int FineStride  = Ntotal*DofsPerNode;
             // int CoarseStride= NVertLines*NCLayers*DofsPerNode;
-            for (int k = 0; k < fineNullspace->getNumVectors(); k++) {
+            for (int k = 0; k < static_cast<int>(fineNullspace->getNumVectors()); k++) {
               Teuchos::ArrayRCP<SC> OneCNull = coarseNullspace->getDataNonConst(k);
               Teuchos::ArrayRCP<SC> OneFNull = fineNullspace->getDataNonConst(k);
               for (int dof_i = 0; dof_i < DofsPerNode; dof_i++) {
