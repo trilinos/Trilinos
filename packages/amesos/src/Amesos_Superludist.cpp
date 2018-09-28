@@ -135,7 +135,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
   Equil_ = true;
   ColPerm_ = "MMD_AT_PLUS_A";
   perm_c_ = 0;
-#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION == 4)
+#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION > 3)
   RowPerm_ = "LargeDiag_MC64";
 #else
   RowPerm_ = "LargeDiag";
@@ -476,7 +476,7 @@ int Amesos_Superludist::Factor()
     }
 
     if( RowPerm_ == "NATURAL" ) PrivateSuperluData_->options_.RowPerm = (rowperm_t)NATURAL;
-#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION == 4)
+#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION > 3)
     if( RowPerm_ == "LargeDiag_MC64" ) PrivateSuperluData_->options_.RowPerm = LargeDiag_MC64;
 #else
     if( RowPerm_ == "LargeDiag" ) PrivateSuperluData_->options_.RowPerm = LargeDiag;
