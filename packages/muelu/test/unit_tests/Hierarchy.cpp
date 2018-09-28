@@ -1083,8 +1083,9 @@ namespace MueLuTests {
     X->putScalar( Teuchos::ScalarTraits<Scalar>::zero());
 
     int iterations = 10;
+    real_type tol = 1.0e-10;
     H.IsPreconditioner(false);
-    H.Iterate(*RHS, *X, iterations);
+    H.Iterate(*RHS, *X, std::pair<LO,real_type>(iterations,tol));
 #endif
     TEST_EQUALITY(0,0);
   }
