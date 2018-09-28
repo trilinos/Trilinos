@@ -8172,15 +8172,15 @@ namespace Classes {
     bool restrictComm = false; // Do we need to restrict the communicator?
     RCP<ParameterList> matrixparams; // parameters for the destination matrix
     if (! params.is_null ()) {
-      auto p = *params();
       reverseMode = params->get ("Reverse Mode", reverseMode);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
-      isMM = params->get("isMatrixMatrix_TransferAndFillComplete",false);
-      matrixparams = sublist (params, "CrsMatrix");
+      auto slist = params->sublist("matrixmatrix: kernel params",false);
+      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       int mm_optimization_core_count=3000; // ~3000 for serrano
-      mm_optimization_core_count = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       if(getComm()->getSize() < mm_optimization_core_count) isMM = false;
       if(reverseMode) isMM = false;
+      matrixparams = sublist (params, "CrsMatrix");
     }
 
     // Test for pathalogical matrix transfer
@@ -8425,9 +8425,6 @@ namespace Classes {
     /***************************************************/
     /***** 2) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    Teuchos::TimeMonitor MM2iptSup(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ImportSetup")));
-#endif
     // Get the owning PIDs
     RCP<const import_type> MyImporter = getGraph ()->getImporter ();
 
@@ -8540,10 +8537,6 @@ namespace Classes {
         "getDomainMap () == getRowMap ()).");
     }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    Teuchos::TimeMonitor MMpac2(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack-2")));
-#endif
-
     // Tpetra-specific stuff
     size_t constantNumPackets = destMat->constantNumberOfPackets ();
     if (constantNumPackets == 0) {
@@ -8628,10 +8621,6 @@ namespace Classes {
 #endif // HAVE_TPETRA_DEBUG
 
     // Do the exchange of remote data.
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor mmTAFCxfer(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Transfer")));
-#endif
-
     if (communication_needed) {
       if (reverseMode) {
         if (constantNumPackets == 0) { // variable number of packets per LID
@@ -8735,10 +8724,6 @@ namespace Classes {
     /**** 3) Copy all of the Same/Permute/Remote data into CSR_arrays ****/
     /*********************************************************************/
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor mmTAFCupk (*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-1")));
-#endif
-
     // Backwards compatibility measure.  We'll use this again below.
     destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
@@ -8804,9 +8789,6 @@ namespace Classes {
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-   TimeMonitor mm5(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-2")));
-#endif
     // Call an optimized version of makeColMap that avoids the
     // Directory lookups (since the Import object knows who owns all
     // the GIDs).
@@ -8844,9 +8826,6 @@ namespace Classes {
     /***************************************************/
     /**** 5) Sort                                   ****/
     /***************************************************/
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor mm6(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Unpack-3")));
-#endif
     if ((! reverseMode && xferAsImport != NULL) ||
         (reverseMode && xferAsExport != NULL)) {
       Import_Util::sortCrsEntries (CSR_rowptr (),
@@ -8947,14 +8926,12 @@ namespace Classes {
             for(auto && rlid : MyImporter->getRemoteLIDs() ) // the remoteLIDs must be from sourcematrix
                 IsOwned[rlid]=false;
 
-        // 25 Jul 2018: Change usrtg to ArrayRCP.
         std::vector<std::pair<int,GO> > usrtg;
         usrtg.reserve(TEPID2.size());
 
         for(uint i=0;i<TEPID2.size() ;++i) {
             const LO  row = TELID2[i];
             const int pid = TEPID2[i];
-            // skip sort, it'll be done later.
             for(uint j=rowptr[row]; j<rowptr[row+1]; j++) {
                     int col=colind[j];
                     if(IsOwned[col] && SentTo[col]!=pid){
@@ -8999,9 +8976,6 @@ namespace Classes {
         Teuchos::ArrayRCP<int> userExportPIDs = Teuchos::arcp(new int[MyLen],0,MyLen,true);
         int iloc = 0; // will be the size of the userExportLID/PIDs
         
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-	auto ssortMM(*TimeMonitor::getNewTimer(prefix + std::string("isMMType123Sort")));
-#endif
 	while(i1 < Len1 || i2 < Len2 || i3 < Len3){
 	    int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
 	    int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
@@ -9039,21 +9013,21 @@ namespace Classes {
 		}
 		i3++;
 	    }
-	}// end while
-	{
+	}
+	
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	    auto ismmIctor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor")));
+	auto ismmIctor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor")));
 #endif
-            Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
-            // 25 Jul 2018: Test for equality with the non-isMM path's Import object.
-            MyImport = rcp ( new import_type (MyDomainMap,
-                                              MyColMap,
-                                              RemotePids,
-                                              userExportLIDs.view(0,iloc).getConst(),
-                                              userExportPIDs.view(0,iloc).getConst(),
-                                              plist)
-                );
-        }
+	Teuchos::RCP<Teuchos::ParameterList> plist = rcp(new Teuchos::ParameterList());
+	// 25 Jul 2018: Test for equality with the non-isMM path's Import object.
+	MyImport = rcp ( new import_type (MyDomainMap,
+					  MyColMap,
+					  RemotePids,
+					  userExportLIDs.view(0,iloc).getConst(),
+					  userExportPIDs.view(0,iloc).getConst(),
+					  plist)
+	    );
+        
 	
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -9097,11 +9071,6 @@ namespace Classes {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-      if(domainMap->getComm ()->getRank () ==0) {
-      std::cout<<" iAFC pars ";
-      params->print();
-      std::cout<<std::endl;
-      }
     transferAndFillComplete (destMatrix, importer, Teuchos::null, domainMap, rangeMap, params);
   }
 

@@ -494,10 +494,9 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
   ParameterList paramList;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
-  if(MM_TAFC_OptCoreCnt!=3000) {
-      ParameterList& mmlist = paramList.sublist("matrixmatrix: kernel params",false);
-      mmlist.setEntry("MM_TAFC_OptimizationCoreCount",Teuchos::ParameterEntry::ParameterEntry(MM_TAFC_OptCoreCnt));
-  }
+  ParameterList& mmlist = paramList.sublist("matrixmatrix: kernel params",false);
+  mmlist.setEntry("MM_TAFC_OptimizationCoreCount",Teuchos::ParameterEntry::ParameterEntry(MM_TAFC_OptCoreCnt));
+
   bool isDriver = paramList.isSublist("Run1");
   if (isDriver) {
     // update galeriParameters with the values from the XML file
