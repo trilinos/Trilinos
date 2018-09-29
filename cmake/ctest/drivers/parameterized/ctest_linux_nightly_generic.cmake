@@ -97,18 +97,20 @@ IF(JENKINS_EXTRA_CONFIGURE_OPTIONS)
     # Strip leading and trailing whitespace
     STRING(STRIP "${JENKINS_EXTRA_CONFIGURE_OPTIONS}" JENKINS_EXTRA_CONFIGURE_OPTIONS)
 
-    # There should just be one leading and trailing '"' character, if Jenkins added
-    # extras, the this will strip them off.
-    STRING(REGEX REPLACE "^\"+" "\"" JENKINS_EXTRA_CONFIGURE_OPTIONS ${JENKINS_EXTRA_CONFIGURE_OPTIONS})
-    STRING(REGEX REPLACE "\"+$" "\"" JENKINS_EXTRA_CONFIGURE_OPTIONS ${JENKINS_EXTRA_CONFIGURE_OPTIONS})
+    # There should just be one leading and trailing '"' character,
+    # But when JENKINS_EXTRA_CONFIGURE_OPTIONS is added to EXTRA_CONFIGURE_OPTIONS 
+    # CMake is adding in an extra quotation by the time this gets to the command line.
+    # So let's strip off the leading and trailing quotation from the string itself.
+    STRING(REGEX REPLACE "^\"+" "" JENKINS_EXTRA_CONFIGURE_OPTIONS ${JENKINS_EXTRA_CONFIGURE_OPTIONS})
+    STRING(REGEX REPLACE "\"+$" "" JENKINS_EXTRA_CONFIGURE_OPTIONS ${JENKINS_EXTRA_CONFIGURE_OPTIONS})
 ENDIF()
 
 # Debugging Message
-MESSAGE(STATUS, "---")
-MESSAGE(STATUS, "--- ENV:JENKINS_EXTRA_CONFIGURE_OPTIONS: '$ENV{JENKINS_Trilinos_EXTRA_CONFIGURE_OPTIONS}'")
-MESSAGE(STATUS, "--- JENKINS_EXTRA_CONFIGURE_OPTIONS: '${JENKINS_EXTRA_CONFIGURE_OPTIONS}'")
-MESSAGE(STATUS, "--- JENKINS_BUILD_TAG..............: '${JENKINS_BUILD_TAG}'")
-MESSAGE(STATUS, "---")
+MESSAGE("---")
+MESSAGE("--- ENV:JENKINS_EXTRA_CONFIGURE_OPTIONS: '$ENV{JENKINS_Trilinos_EXTRA_CONFIGURE_OPTIONS}'")
+MESSAGE("--- JENKINS_EXTRA_CONFIGURE_OPTIONS....: '${JENKINS_EXTRA_CONFIGURE_OPTIONS}'")
+MESSAGE("--- BUILD_TAG..........................: '${BUILD_TAG}'")
+MESSAGE("---")
 
 # Set the build name of the job (this is reported to CDash as the job name)
 SET(BUILD_DIR_NAME ${COMM_TYPE}_${BUILD_TYPE}_${COMPILER_DIR}_${COMM_DIR}${BUILD_TAG}_DEV)
