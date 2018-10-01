@@ -85,9 +85,10 @@
 \cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
       non-Dirichlet nodes that have no on-rank neighbors.  This only
       works for Uncoupled Aggregation.}
-
-\cbb{aggregation: phase3 avoid singletons}{bool}{false}{Causes phase 3 aggregation to try and group any vertices that remain
-      unaggregated with any other on-rank vertex (even if it is not a neighbor) to define an aggregate.  This only
+        
+\cbb{aggregation: phase3 avoid singletons}{bool}{false}{Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
       works for Uncoupled Aggregation.}
         
 \cbb{aggregation: allow empty prolongator columns}{bool}{false}{Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.}

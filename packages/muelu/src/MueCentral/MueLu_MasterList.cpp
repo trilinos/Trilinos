@@ -526,7 +526,7 @@ namespace MueLu {
          ("aggregation: error on nodes with no on-rank neighbors","aggregation: error on nodes with no on-rank neighbors")
       
          ("aggregation: phase3 avoid singletons","aggregation: phase3 avoid singletons")
-
+      
          ("aggregation: allow empty prolongator columns","aggregation: allow empty prolongator columns")
       
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
