@@ -484,6 +484,17 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: phase3 avoid singletons</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
     <parameter>
       <name>aggregation: allow empty prolongator columns</name>
