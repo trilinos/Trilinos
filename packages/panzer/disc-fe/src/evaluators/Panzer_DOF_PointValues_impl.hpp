@@ -84,7 +84,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 
   // setup all basis fields that are required
   Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
-  basisValues = Teuchos::rcp(new BasisValues2<ScalarT>(basis->name()+"_"+pointRule->getName()+"_"));
+  basisValues = Teuchos::rcp(new BasisValues2<double>(basis->name()+"_"+pointRule->getName()+"_"));
   basisValues->setupArrays(layout,false);
 
   // the field manager will allocate all of these field
@@ -140,16 +140,16 @@ evaluateFields(typename TRAITS::EvalData workset)
   if(is_vector_basis) {
     int spaceDim  = basisValues->basis_vector.extent(3);
     if(spaceDim==3) {
-      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
   }
   else {
-    dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
+    dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
     Kokkos::parallel_for(workset.num_cells,functor);
   }
 }
@@ -195,7 +195,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 
   // setup all basis fields that are required
   Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
-  basisValues = Teuchos::rcp(new BasisValues2<ScalarT>(basis->name()+"_"+pointRule->getName()+"_"));
+  basisValues = Teuchos::rcp(new BasisValues2<double>(basis->name()+"_"+pointRule->getName()+"_"));
   basisValues->setupArrays(layout,false);
 
   // the field manager will allocate all of these field
@@ -252,33 +252,33 @@ evaluateFields(typename TRAITS::EvalData workset)
     if(accelerate_jacobian) {
       int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
-        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
+        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);
       }
       else {
-        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
+        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);
       }
     }
     else {
       int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
-        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);
       }
       else {
-        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
+        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,basisValues->basis_vector);
         Kokkos::parallel_for(workset.num_cells,functor);
       }
     }
   }
   else {
     if(accelerate_jacobian) {
-      dof_functors::EvaluateDOFFastSens_Scalar<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,offsets_array,basisValues->basis_scalar);
+      dof_functors::EvaluateDOFFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,offsets_array,basisValues->basis_scalar);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<ScalarT>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
+      dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
   }
