@@ -97,12 +97,10 @@ namespace FROSch {
         xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
 
         xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
-        
         SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
-
-        xTmp->putScalar(0.0);
         yOverlap->replaceMap(OverlappingMap_);
 
+        xTmp->putScalar(0.0);
         if (Combine_ == Restricted){
             GO globID = 0;
             LO localID = 0;
