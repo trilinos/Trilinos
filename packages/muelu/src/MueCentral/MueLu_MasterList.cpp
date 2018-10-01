@@ -251,6 +251,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: fix diagonals threshold\" type=\"double\" value=\"0.\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
@@ -648,6 +649,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
          ("rap: fix zero diagonals","rap: fix zero diagonals")
+      
+         ("rap: fix diagonals threshold","rap: fix diagonals threshold")
       
          ("rap: shift","rap: shift")
       

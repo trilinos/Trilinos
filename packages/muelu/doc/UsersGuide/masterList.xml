@@ -1071,6 +1071,15 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals threshold</name>
+      <type>double</type>
+      <default>0.</default>
+      <description>Threshold at which diagonal entry is considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
