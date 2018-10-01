@@ -45,7 +45,7 @@
 
 // Configuration
 #include "PyTrilinos_config.h"
-#include "IFPACK_ConfigDefs.h"
+#include "Ifpack_ConfigDefs.h"
 
 // IFPACK include files
 #include "Ifpack.h"
