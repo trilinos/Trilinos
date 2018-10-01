@@ -11,6 +11,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_StackedTimer.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
@@ -64,6 +65,7 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
                       Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory,
                       Teuchos::RCP<panzer_stk::STK_Interface> mesh,
                       const bool & exodus_out);
+
 Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >
 buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
     const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linObjFactory,
@@ -72,9 +74,11 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
     const Teuchos::ParameterList & closure_model_pl);
+
+template <class Scalar>
 void writeToExodus(double time_stamp,
-    const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-    const panzer::ModelEvaluator<double> & model,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & x,
+    const panzer::ModelEvaluator<Scalar> & model,
     panzer::ResponseLibrary<panzer::Traits> & stkIOResponseLibrary,
     panzer_stk::STK_Interface & mesh);
 
@@ -97,6 +101,17 @@ void writeToExodus(double time_stamp,
  *
  * ******************************************************************************
  */
+
+enum solverType {
+  AUGMENTATION,
+  MUELU_REFMAXWELL,
+  ML_REFMAXWELL
+};
+
+enum linearAlgebraType {
+  linAlgTpetra,
+  linAlgEpetra
+};
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLinObjFactory>
 int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
@@ -124,11 +139,16 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool exodus_output = false;
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
-    std::string solver = "Augmentation";
+    solverType solverValues[3] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL};
+    const char * solverNames[3] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell"};
+    solverType solver = AUGMENTATION;
     int numTimeSteps = 1;
     bool doSolveTimings = false;
     int numReps = 0;
-    std::string linAlgebra = "Tpetra";
+    linearAlgebraType linAlgebraValues[2] = {linAlgTpetra, linAlgEpetra};
+    const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
+    linearAlgebraType linAlgebra = linAlgTpetra;
+    clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
     use_stacked_timer = true;
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
@@ -138,11 +158,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("meshFile",&meshFile,"Override input mesh file specified in input file.");
     clp.setOption("exodus-output","no-exodus-output",&exodus_output);
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
-    clp.setOption("inputFile",&input_file);
-    clp.setOption("solver",&solver);
+    clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
+    clp.setOption<solverType>("solver",&solver,3,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
-    clp.setOption("linAlgebra",&linAlgebra,"Linear algebra library to use (\"Tpetra\" or \"Epetra\")");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
 
     // parse command-line argument
@@ -166,7 +185,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       numReps = numTimeSteps;
       numTimeSteps = 1;
     }
-    TEUCHOS_ASSERT(solver == "Augmentation" || solver == "ML-RefMaxwell" || solver == "MueLu-RefMaxwell");
+
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
     // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
     Teuchos::RCP<panzer::GlobalEvaluationDataContainer> auxGlobalData = Teuchos::rcp(new panzer::GlobalEvaluationDataContainer);
@@ -283,20 +304,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // * spatial dimension
     // * node type
     std::string xml;
-    if (solver == "Augmentation")
-      if (linAlgebra == "Tpetra")
+    if (solver == AUGMENTATION)
+      if (linAlgebra == linAlgTpetra)
         xml = "solverAugmentation.xml";
       else
         xml = "solverAugmentationEpetra.xml";
-    else if (solver == "MueLu-RefMaxwell") {
-      if (linAlgebra == "Tpetra") {
+    else if (solver == MUELU_REFMAXWELL) {
+      if (linAlgebra == linAlgTpetra) {
         if (dim == 3)
           xml = "solverMueLuRefMaxwell.xml";
         else
           xml = "solverMueLuRefMaxwell2D.xml";
 #ifdef KOKKOS_ENABLE_OPENMP
       if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
-        if (linAlgebra == "Tpetra")
+        if (linAlgebra == linAlgTpetra)
           xml = "solverMueLuRefMaxwellOpenMP.xml";
         else {
           std::cout << std::endl
@@ -320,7 +341,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                     << "No configuration available for 2D + Epetra." << std::endl;
           return EXIT_FAILURE;
         }
-    } else if (solver == "ML-RefMaxwell") {
+    } else if (solver == ML_REFMAXWELL) {
       xml = "solverMLRefMaxwell.xml";
     }
     *out << "Loading solver config from " << xml << std::endl;
@@ -467,14 +488,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     }
 
     // build linear solver
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
+    RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > lowsFactory
       = panzer_stk::buildLOWSFactory(true, dofManager, conn_manager,
                                      Teuchos::as<int>(mesh->getDimension()),
                                      comm, lin_solver_pl,req_handler, false, false, auxDofManager);
 
     //setup model evaluators
-    RCP<panzer::ModelEvaluator<double> > physics = rcp(new panzer::ModelEvaluator<double> (linObjFactory, lowsFactory, globalData, true, 0.0));
-    RCP<panzer::ModelEvaluator<double> > auxPhysics = rcp(new panzer::ModelEvaluator<double> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
+    RCP<panzer::ModelEvaluator<Scalar> > physics = rcp(new panzer::ModelEvaluator<Scalar> (linObjFactory, lowsFactory, globalData, true, 0.0));
+    RCP<panzer::ModelEvaluator<Scalar> > auxPhysics = rcp(new panzer::ModelEvaluator<Scalar> (auxLinObjFactory, lowsFactory, globalData, false, 0.0));
 
     // add a volume response functionals
     std::map<int,std::string> responseIndexToName;
@@ -535,9 +556,9 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         auxPhysics->addNonParameterGlobalEvaluationData(itr->first,itr->second);
     }
 
-    Thyra::ModelEvaluatorBase::InArgs<double> auxInArgs = auxPhysics->getNominalValues();
-    Thyra::ModelEvaluatorBase::OutArgs<double> auxOutArgs = auxPhysics->createOutArgs();
-    Teuchos::RCP<Thyra::LinearOpBase<double> > aux_W_op = auxPhysics->create_W_op();
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> auxInArgs = auxPhysics->getNominalValues();
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> auxOutArgs = auxPhysics->createOutArgs();
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar> > aux_W_op = auxPhysics->create_W_op();
     auxOutArgs.set_W_op(aux_W_op);
     auxPhysics->evalModel(auxInArgs, auxOutArgs);
 
@@ -549,37 +570,37 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
 
     // set up the solution vector, jacobian, and residual
-    RCP<Thyra::VectorBase<double> > solution_vec = Thyra::createMember(physics->get_x_space());
-    Thyra::assign(solution_vec.ptr(),0.0);
-    RCP<Thyra::LinearOpWithSolveBase<double> > jacobian = physics->create_W();
+    RCP<Thyra::VectorBase<Scalar> > solution_vec = Thyra::createMember(physics->get_x_space());
+    Thyra::assign(solution_vec.ptr(),zero);
+    RCP<Thyra::LinearOpWithSolveBase<Scalar> > jacobian = physics->create_W();
 
-    RCP<Thyra::VectorBase<double> > residual = Thyra::createMember(physics->get_f_space());
+    RCP<Thyra::VectorBase<Scalar> > residual = Thyra::createMember(physics->get_f_space());
 
     // set up the model evaluator
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgs = physics->createInArgs();
-    inArgs.set_alpha(1.0/dt);
-    inArgs.set_beta(1.0);
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = physics->createInArgs();
+    inArgs.set_alpha(one/dt);
+    inArgs.set_beta(one);
 
     // initial condition is zero, define x_dot accordingly
-    RCP<const Thyra::VectorBase<double> > x = inArgs.get_x();
-    RCP<Thyra::VectorBase<double> > x_dot = Thyra::createMember(physics->get_x_space());
-    Thyra::V_StV(x_dot.ptr(),1.0/dt,*x);
+    RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+    RCP<Thyra::VectorBase<Scalar> > x_dot = Thyra::createMember(physics->get_x_space());
+    Thyra::V_StV(x_dot.ptr(),one/dt,*x);
     inArgs.set_x_dot(x_dot);
-    Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = physics->createOutArgs();
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = physics->createOutArgs();
     outArgs.set_f(residual);
     outArgs.set_W(jacobian);
 
     // compute the jacobian matrix only once
     Kokkos::fence();
     physics->evalModel(inArgs,outArgs);
-    outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<double> >(NULL));
+    outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<Scalar> >(NULL));
 
     // take time-steps with Backward Euler
     if (exodus_output)
-      writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
+      writeToExodus<Scalar>(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
 
-    RCP<Thyra::VectorBase<double> > correction_vec = Thyra::createMember(physics->get_x_space());
-    Thyra::assign(correction_vec.ptr(),0.0);
+    RCP<Thyra::VectorBase<Scalar> > correction_vec = Thyra::createMember(physics->get_x_space());
+    Thyra::assign(correction_vec.ptr(),zero);
 
     {
       Teuchos::TimeMonitor tMts(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper")));
@@ -589,14 +610,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           (*out) << "**************************************************" << std::endl;
           (*out) << "* starting time step " << ts << std::endl;
 
-          RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
+          RCP<Thyra::VectorBase<Scalar> > x_old = solution_vec->clone_v();
 
           inArgs.set_t(dt*ts);
 
           // start Newton loop (nonlinear case)
           // for() until convergence
 
-          Thyra::V_StVpStV(x_dot.ptr(),1.0/dt,*solution_vec,-1.0/dt,*x_old);
+          Thyra::V_StVpStV(x_dot.ptr(),one/dt,*solution_vec,-one/dt,*x_old);
           inArgs.set_x(solution_vec);
           inArgs.set_x_dot(x_dot);
 
@@ -606,32 +627,32 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           // solve
           if (doSolveTimings)
             for (int rep = 0; rep < numReps; rep++) {
-              Thyra::assign(correction_vec.ptr(),0.0);
+              Thyra::assign(correction_vec.ptr(),zero);
               jacobian->solve(Thyra::NOTRANS,*residual,correction_vec.ptr());
             }
           else
             jacobian->solve(Thyra::NOTRANS,*residual,correction_vec.ptr());
-          Thyra::V_StVpStV(solution_vec.ptr(),1.0,*solution_vec,-1.0,*correction_vec);
+          Thyra::V_StVpStV(solution_vec.ptr(),one,*solution_vec,-one,*correction_vec);
 
           // end for()
           // end Newton loop (nonlinear case)
           
           // print out responses
           {
-            Thyra::ModelEvaluatorBase::InArgs<double> respInArgs = physics->createInArgs();
-            Thyra::ModelEvaluatorBase::OutArgs<double> respOutArgs = physics->createOutArgs();
+            Thyra::ModelEvaluatorBase::InArgs<Scalar> respInArgs = physics->createInArgs();
+            Thyra::ModelEvaluatorBase::OutArgs<Scalar> respOutArgs = physics->createOutArgs();
 
             respInArgs.set_x(solution_vec);
 
             for(int i=0;i<respOutArgs.Ng();i++) {
-              Teuchos::RCP<Thyra::VectorBase<double> > response = Thyra::createMember(*physics->get_g_space(i));
+              Teuchos::RCP<Thyra::VectorBase<Scalar> > response = Thyra::createMember(*physics->get_g_space(i));
               respOutArgs.set_g(i,response);
             }
 
             physics->evalModel(respInArgs, respOutArgs);
 
             for (auto elem: responseIndexToName) {
-              Teuchos::RCP<Thyra::VectorBase<double> > g = respOutArgs.get_g(elem.first);
+              Teuchos::RCP<Thyra::VectorBase<Scalar> > g = respOutArgs.get_g(elem.first);
               *out << elem.second << " = " << Thyra::get_ele(*g,0) << std::endl;
             }
           }
@@ -646,7 +667,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           if (exodus_output)
             {
               Teuchos::TimeMonitor tMexodus(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper: writeToExodus")));
-              writeToExodus(dt*ts,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
+              writeToExodus<Scalar>(dt*ts,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
             }
 
           (*out) << std::endl;
@@ -673,10 +694,16 @@ int main(int argc,char * argv[]){
   Kokkos::initialize(argc, argv);
 
   Teuchos::CommandLineProcessor clp(false);
-  std::string linAlgebra = "Tpetra";
-  std::string solver = "Augmentation";
-  clp.setOption("linAlgebra",&linAlgebra);
-  clp.setOption("solver",&solver);
+  linearAlgebraType linAlgebraValues[2] = {linAlgTpetra, linAlgEpetra};
+  const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
+  linearAlgebraType linAlgebra = linAlgTpetra;
+  clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
+  solverType solverValues[3] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL};
+  const char * solverNames[3] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell"};
+  solverType solver = AUGMENTATION;
+  clp.setOption<solverType>("solver",&solver,3,solverValues,solverNames,"Solver that is used");
+  // bool useComplex = false;
+  // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);
   switch (clp.parse(argc, argv, NULL)) {
     case Teuchos::CommandLineProcessor::PARSE_ERROR:                return EXIT_FAILURE;
@@ -685,14 +712,29 @@ int main(int argc,char * argv[]){
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:         break;
   }
 
-  if (solver == "ML-RefMaxwell")
-    TEUCHOS_ASSERT(linAlgebra == "Epetra");
+  if (solver == ML_REFMAXWELL) {
+    TEUCHOS_ASSERT(linAlgebra == linAlgEpetra);
+    // TEUCHOS_ASSERT(!useComplex);
+  }
 
   int retVal;
-  if (linAlgebra == "Tpetra") {
-    typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> blockedLinObjFactory;
-    retVal = main_<double,int,panzer::Ordinal64,blockedLinObjFactory>(clp, argc, argv);
-  } else if (linAlgebra == "Epetra") {
+  if (linAlgebra == linAlgTpetra) {
+    // if (useComplex) {
+// #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
+//       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::Ordinal64> blockedLinObjFactory;
+//       retVal = main_<std::complex<double>,int,panzer::Ordinal64,blockedLinObjFactory>(clp, argc, argv);
+// #else
+//       std::cout << std::endl
+//                 << "WARNING" << std::endl
+//                 << "Tpetra was compiled without Scalar=std::complex<double>." << std::endl << std::endl;
+//       return EXIT_FAILURE;
+// #endif
+//     } else {
+      typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64> blockedLinObjFactory;
+      retVal = main_<double,int,panzer::Ordinal64,blockedLinObjFactory>(clp, argc, argv);
+//    }
+  } else if (linAlgebra == linAlgEpetra) {
+    // TEUCHOS_ASSERT(!useComplex);
     typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> blockedLinObjFactory;
     retVal = main_<double,int,int,blockedLinObjFactory>(clp, argc, argv);
   } else
@@ -800,14 +842,15 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   return stkIOResponseLibrary;
 }
 
+template <class Scalar>
 void writeToExodus(double time_stamp,
-    const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-    const panzer::ModelEvaluator<double> & model,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & x,
+    const panzer::ModelEvaluator<Scalar> & model,
     panzer::ResponseLibrary<panzer::Traits> & stkIOResponseLibrary,
     panzer_stk::STK_Interface & mesh)
 {
   // fill STK mesh objects
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs = model.createInArgs();
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = model.createInArgs();
   inArgs.set_x(x);
   inArgs.set_t(time_stamp);
 
