@@ -336,6 +336,12 @@ SET_TARGET_PROPERTIES(${TEUCHOS_RCP_TARGET} PROPERTIES
   LINK_FLAGS "${EXTRA_LINK_ARGS}"
   )
 LIST(APPEND ADDITIONAL_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/${TEUCHOS_RCP})
+INSTALL(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/RCP.py
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/RCP.pyc
+  DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
+INSTALL(TARGETS ${TEUCHOS_RCP_TARGET}
+  DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
 
 #
 # Loop over the PyTrilinos-enabled Trilinos modules and define the
@@ -358,7 +364,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       python
       "${MODULE}.i"
       "${MODULE_OUTDIR}/${MODULE_NAME}"
-      "__init__")
+      "${MODULE_NAME}")
   ELSE("${MODULE_NAME}" MATCHES "Teuchos")
     SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
       python
