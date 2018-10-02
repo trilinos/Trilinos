@@ -438,7 +438,7 @@ public:
 
   static void CheckRepairMainDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
                                  bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
-                                 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<double>::zero())
+                                 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero())
   {
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
     Scalar one = TST::one();
