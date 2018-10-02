@@ -1019,8 +1019,8 @@ private:
     , void
     >  array_offset_type ;
 
-  handle_type  m_handle ;
-  offset_type  m_offset ;
+  handle_type  m_impl_handle ;
+  offset_type  m_impl_offset ;
   array_offset_type  m_array_offset ;
   sacado_size_type m_fad_size ;
   sacado_stride_type m_fad_stride ;
@@ -1035,53 +1035,53 @@ public:
   // Using the internal offset mapping so limit to public rank:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
-    { return m_offset.m_dim.extent(r) ; }
+    { return m_impl_offset.m_dim.extent(r) ; }
 
   KOKKOS_INLINE_FUNCTION constexpr
   typename Traits::array_layout layout() const
-    { return m_offset.layout(); }
+    { return m_impl_offset.layout(); }
 
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
-    { return m_offset.dimension_0(); }
+    { return m_impl_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
-    { return m_offset.dimension_1(); }
+    { return m_impl_offset.dimension_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const
-    { return m_offset.dimension_2(); }
+    { return m_impl_offset.dimension_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_3() const
-    { return m_offset.dimension_3(); }
+    { return m_impl_offset.dimension_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_4() const
-    { return m_offset.dimension_4(); }
+    { return m_impl_offset.dimension_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const
-    { return m_offset.dimension_5(); }
+    { return m_impl_offset.dimension_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const
-    { return m_offset.dimension_6(); }
+    { return m_impl_offset.dimension_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const
-    { return m_offset.dimension_7(); }
+    { return m_impl_offset.dimension_7(); }
 
   // Can only be regular layout with uniform striding
   // when LayoutRight with contiguous values so not guaranteed true.
   using is_regular = std::false_type ;
 
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_0() const
-    { return m_offset.stride_0(); }
+    { return m_impl_offset.stride_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_1() const
-    { return m_offset.stride_1(); }
+    { return m_impl_offset.stride_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_2() const
-    { return m_offset.stride_2(); }
+    { return m_impl_offset.stride_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_3() const
-    { return m_offset.stride_3(); }
+    { return m_impl_offset.stride_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_4() const
-    { return m_offset.stride_4(); }
+    { return m_impl_offset.stride_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_5() const
-    { return m_offset.stride_5(); }
+    { return m_impl_offset.stride_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const
-    { return m_offset.stride_6(); }
+    { return m_impl_offset.stride_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const
-    { return m_offset.stride_7(); }
+    { return m_impl_offset.stride_7(); }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
-    { m_offset.stride(s) ; }
+    { m_impl_offset.stride(s) ; }
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
@@ -1111,13 +1111,13 @@ public:
 
   /** \brief Raw data access */
   KOKKOS_INLINE_FUNCTION constexpr pointer_type data() const
-    { return m_handle ; }
+    { return m_impl_handle ; }
 
   //----------------------------------------
 
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference() const
-    { return reference_type( m_handle
+    { return reference_type( m_impl_handle
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1125,14 +1125,14 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type
   reference( const I0 & i0 ) const
-    { return reference_type( m_handle + m_array_offset(i0,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
-    { return reference_type( m_handle + m_array_offset(i0,i1,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1140,14 +1140,14 @@ public:
   template< typename I0 , typename I1 , typename I2 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
-    { return reference_type( m_handle + m_array_offset(i0,i1,i2,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
-    { return reference_type( m_handle + m_array_offset(i0,i1,i2,i3,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1156,7 +1156,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 ) const
-    { return reference_type( m_handle + m_array_offset(i0,i1,i2,i3,i4,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1165,7 +1165,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 ) const
-    { return reference_type( m_handle + m_array_offset(i0,i1,i2,i3,i4,i5,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,i5,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1175,7 +1175,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
-    { return reference_type( m_handle + m_array_offset(i0,i1,i2,i3,i4,i5,i6,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,i5,i6,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1203,7 +1203,7 @@ public:
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_array_offset() , m_fad_size(0) , m_fad_stride(0) {}
+  KOKKOS_INLINE_FUNCTION ViewMapping() : m_impl_handle(0) , m_impl_offset() , m_array_offset() , m_fad_size(0) , m_fad_stride(0) {}
 
   KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
@@ -1217,8 +1217,8 @@ public:
     ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & local_layout
     )
-    : m_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
-    , m_offset( std::integral_constant< unsigned , 0 >()
+    : m_impl_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
+    , m_impl_offset( std::integral_constant< unsigned , 0 >()
               , local_layout )
     , m_array_offset( std::integral_constant< unsigned , 0 >()
                     , local_layout )
@@ -1280,7 +1280,7 @@ public:
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
     using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad
                                                            , typename Traits::value_type >;
-    m_offset = offset_type( padding(), local_layout );
+    m_impl_offset = offset_type( padding(), local_layout );
 
     m_array_offset = array_offset_type( padding(),
                             ( test_traits_check == true
@@ -1323,13 +1323,13 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
-      m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
+      m_impl_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
       if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
         record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
-                                        , (fad_value_type *) m_handle
+                                        , (fad_value_type *) m_impl_handle
                                         , m_array_offset.span()
                                         );
 
@@ -1434,8 +1434,8 @@ public:
       typedef typename DstType::offset_type  dst_offset_type ;
       typedef typename DstType::array_offset_type  dst_array_offset_type ;
 
-      dst.m_handle  = src.m_handle ;
-      dst.m_offset  = dst_offset_type( src.m_offset );
+      dst.m_impl_handle  = src.m_impl_handle ;
+      dst.m_impl_offset  = dst_offset_type( src.m_impl_offset );
       dst.m_array_offset = dst_array_offset_type( src.m_array_offset );
       dst.m_fad_size = src.m_fad_size.value ;
       dst.m_fad_stride = src.m_fad_stride.value ;
@@ -1515,11 +1515,11 @@ public:
           if ( is_layout_left ) {
             auto prepend_layout = Kokkos::Impl::prependFadToLayout< DstLayoutType >::returnNewLayoutPlusFad(src_layout, InnerStaticDim+1);
             TmpOffsetType offset_tmp( padding(), prepend_layout );
-            dst.m_offset = offset_tmp;
+            dst.m_impl_offset = offset_tmp;
           }
           else {
             TmpOffsetType offset_tmp( padding(), src_layout );
-            dst.m_offset = offset_tmp;
+            dst.m_impl_offset = offset_tmp;
           }
 
         } else {
@@ -1536,7 +1536,7 @@ public:
       {
 
         typedef typename DstType::offset_type  dst_offset_type ;
-        dst.m_offset  = dst_offset_type( src.m_array_offset );
+        dst.m_impl_offset  = dst_offset_type( src.m_array_offset );
       }
     };
 
@@ -1545,7 +1545,7 @@ public:
 // In the case of two nested fads, the innermost must be an SFad (static Fad)
 // The offset_type's are not compatible in the case of nested fads because the ViewDimension's ranks will not agree
 // In this case, rather than trying to construct an offset_type from src (which will fail at compile time)
-// and assign to dst.m_offset, manually assign the ViewDimension arguments to dst;
+// and assign to dst.m_impl_offset, manually assign the ViewDimension arguments to dst;
 // requires appending the missing inner SFad dim + 1 to the Rank-1 ViewDimension
   // DstType and SrcFadType are MAPS...
   template < class DstType >
@@ -1594,7 +1594,7 @@ public:
 
     AssignOffset< DstType, SrcFadType >::assign( dst, src );
 
-    dst.m_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_handle) ;
+    dst.m_impl_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_impl_handle) ;
   }
 };
 
@@ -1717,14 +1717,14 @@ public:
       typedef typename DstType::handle_type  dst_handle_type ;
 
       const SubviewExtents< SrcTraits::rank , rank >
-        extents( src.m_offset.m_dim , args... );
+        extents( src.m_impl_offset.m_dim , args... );
       const SubviewExtents< SrcTraits::rank + 1 , rank + 1 >
         array_extents( src.m_array_offset.m_dim , args... , Kokkos::ALL() );
 
-      dst.m_offset = dst_offset_type( src.m_offset , extents );
+      dst.m_impl_offset = dst_offset_type( src.m_impl_offset , extents );
       dst.m_array_offset = dst_array_offset_type( src.m_array_offset , array_extents );
-      dst.m_handle =
-        dst_handle_type( src.m_handle +
+      dst.m_impl_handle =
+        dst_handle_type( src.m_impl_handle +
                          src.m_array_offset( array_extents.domain_offset(0)
                                            , array_extents.domain_offset(1)
                                            , array_extents.domain_offset(2)

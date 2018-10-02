@@ -677,47 +677,47 @@ public:
 
       const SubviewExtents< 7 , rank > extents =
         ExtentGenerator< Args ... >::generator(
-          src.m_map.m_offset.m_dim , args... ) ;
+          src.m_map.m_impl_offset.m_dim , args... ) ;
       const SubviewExtents< 8 , rank+1 > array_extents =
         ArrayExtentGenerator< Args ... >::generator(
           src.m_map.m_array_offset.m_dim , args... ) ;
 
-      dst_offset_type tempdst( src.m_map.m_offset , extents ) ;
+      dst_offset_type tempdst( src.m_map.m_impl_offset , extents ) ;
       dst_array_offset_type temparraydst(
         src.m_map.m_array_offset , array_extents ) ;
 
       dst.m_track = src.m_track ;
 
-      dst.m_map.m_offset.m_dim.N0 = tempdst.m_dim.N0 ;
-      dst.m_map.m_offset.m_dim.N1 = tempdst.m_dim.N1 ;
-      dst.m_map.m_offset.m_dim.N2 = tempdst.m_dim.N2 ;
-      dst.m_map.m_offset.m_dim.N3 = tempdst.m_dim.N3 ;
-      dst.m_map.m_offset.m_dim.N4 = tempdst.m_dim.N4 ;
-      dst.m_map.m_offset.m_dim.N5 = tempdst.m_dim.N5 ;
-      dst.m_map.m_offset.m_dim.N6 = tempdst.m_dim.N6 ;
+      dst.m_map.m_impl_offset.m_dim.N0 = tempdst.m_dim.N0 ;
+      dst.m_map.m_impl_offset.m_dim.N1 = tempdst.m_dim.N1 ;
+      dst.m_map.m_impl_offset.m_dim.N2 = tempdst.m_dim.N2 ;
+      dst.m_map.m_impl_offset.m_dim.N3 = tempdst.m_dim.N3 ;
+      dst.m_map.m_impl_offset.m_dim.N4 = tempdst.m_dim.N4 ;
+      dst.m_map.m_impl_offset.m_dim.N5 = tempdst.m_dim.N5 ;
+      dst.m_map.m_impl_offset.m_dim.N6 = tempdst.m_dim.N6 ;
 
-      dst.m_map.m_offset.m_stride.S0 = tempdst.m_stride.S0;
-      dst.m_map.m_offset.m_stride.S1 = tempdst.m_stride.S1;
-      dst.m_map.m_offset.m_stride.S2 = tempdst.m_stride.S2;
-      dst.m_map.m_offset.m_stride.S3 = tempdst.m_stride.S3;
-      dst.m_map.m_offset.m_stride.S4 = tempdst.m_stride.S4;
-      dst.m_map.m_offset.m_stride.S5 = tempdst.m_stride.S5;
-      dst.m_map.m_offset.m_stride.S6 = tempdst.m_stride.S6;
+      dst.m_map.m_impl_offset.m_stride.S0 = tempdst.m_stride.S0;
+      dst.m_map.m_impl_offset.m_stride.S1 = tempdst.m_stride.S1;
+      dst.m_map.m_impl_offset.m_stride.S2 = tempdst.m_stride.S2;
+      dst.m_map.m_impl_offset.m_stride.S3 = tempdst.m_stride.S3;
+      dst.m_map.m_impl_offset.m_stride.S4 = tempdst.m_stride.S4;
+      dst.m_map.m_impl_offset.m_stride.S5 = tempdst.m_stride.S5;
+      dst.m_map.m_impl_offset.m_stride.S6 = tempdst.m_stride.S6;
 
       // Move last non-unit dim and stride to N7/S7 since subview collapses
       // out all singleton dimensions between the last rank and the fad
       // dimension.  Equivalent to:
-      //   dst.m_map.m_offset.m_dim.N* = tempdst.m_dim.N*
-      //   dst.m_map.m_offset.m_dim.N7 = tempdst.m_dim.N{rank}
-      //   dst.m_map.m_offset.m_stride.S* = tempdst.m_stride.S*
-      //   dst.m_map.m_offset.m_stride.S7 = tempdst.m_stride.S{rank}
+      //   dst.m_map.m_impl_offset.m_dim.N* = tempdst.m_dim.N*
+      //   dst.m_map.m_impl_offset.m_dim.N7 = tempdst.m_dim.N{rank}
+      //   dst.m_map.m_impl_offset.m_stride.S* = tempdst.m_stride.S*
+      //   dst.m_map.m_impl_offset.m_stride.S7 = tempdst.m_stride.S{rank}
       AssignFadDimStride<rank,FadStaticDim>::eval( dst.m_map.m_array_offset, temparraydst );
 
       dst.m_track = src.m_track ;
 
-      dst.m_map.m_handle =
+      dst.m_map.m_impl_handle =
         dst_handle_type(
-          src.m_map.m_handle +
+          src.m_map.m_impl_handle +
           src.m_map.m_array_offset( array_extents.domain_offset(0)
                                   , array_extents.domain_offset(1)
                                   , array_extents.domain_offset(2)
@@ -845,11 +845,11 @@ public:
         dst_array_offset_type(std::integral_constant<unsigned,0>(),
                               permute_fad_layout(src.m_map.m_array_offset.layout(),
                                                  SrcTraits::rank) );
-      dst.m_map.m_offset =
+      dst.m_map.m_impl_offset =
         dst_offset_type(std::integral_constant<unsigned,0>(),
-                        src.m_map.m_offset.layout() );
+                        src.m_map.m_impl_offset.layout() );
 
-      dst.m_map.m_handle = src.m_map.m_handle ;
+      dst.m_map.m_impl_handle = src.m_map.m_impl_handle ;
       dst.m_rank = src.Rank ;
 
       dst.m_map.m_fad_size = src.m_map.m_fad_size ;
@@ -917,12 +917,12 @@ public:
         "View assignment must have same value type or const = non-const" );
 
       typedef typename DstType::offset_type dst_offset_type;
-      dst.m_map.m_offset =
+      dst.m_map.m_impl_offset =
         dst_offset_type(std::integral_constant<unsigned,0>(),
                         permute_fad_layout(src.m_map.m_array_offset.layout(),
                                            SrcTraits::rank));
 
-      dst.m_map.m_handle  = src.m_map.m_handle ;
+      dst.m_map.m_impl_handle  = src.m_map.m_impl_handle ;
       dst.m_rank    = src.Rank ;
     }
 };
