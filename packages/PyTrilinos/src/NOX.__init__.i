@@ -124,15 +124,6 @@ from . import ___init__
 %constant bool Have_Epetra = false;
 #endif
 
-/////////////////////////
-// NOX Version support //
-/////////////////////////
-%include "NOX_Version.H"
-%pythoncode
-%{
-__version__ = version().split()[2]
-%}
-
 ///////////////////////
 // NOX Utils support //
 ///////////////////////
