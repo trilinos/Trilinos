@@ -10,7 +10,7 @@
 Build](https://scan.coverity.com/projects/1680/badge.svg)](https://scan.coverity.com/projects/1680)
 
 The Trilinos Project is an effort to develop algorithms and enabling
-technologies within an object-oriented software framework for the solution of
+technologies within an object oriented software framework for the solution of
 large-scale, complex multi-physics engineering and scientific problems. A
 unique design feature of Trilinos is its focus on packages.
 
