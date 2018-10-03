@@ -1,12 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//     Domi: Multi-dimensional Distributed Linear Albebra Services
-//                 Copyright (2014) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia
-// Corporation, the U.S. Government retains certain rights in this
-// software.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,20 +34,47 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
+#include <Tpetra_Core.hpp>
+#include <Tpetra_Version.hpp>
 
-#include "Domi_DefaultNode.hpp"
-
-namespace Domi
+int
+main (int argc, char *argv[])
 {
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
-Teuchos::RCP< DefaultNode::DefaultNodeType >
-DefaultNode::getDefaultNode()
-{
-  return Details::getNode< DefaultNodeType >();
-}
+    // Tpetra's default communicator will use a 1-process comm.
+#ifdef HAVE_TPETRA_MPI
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv, MPI_COMM_SELF);
+#else
+  // Not building with MPI, so default comm won't use MPI.
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+#endif // HAVE_TPETRA_MPI
 
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+  // With a "serial" communicator, the rank is always 0,
+  // and the number of processes is always 1.
+  const int myRank = comm->getRank();
+  const int numProcs = comm->getSize();
+
+  if (myRank == 0) {
+    std::cout << "Total number of processes: " << numProcs << std::endl;
+  }
+
+  if (comm->getRank () == 0) {
+    // On Process 0, print out the Tpetra software version.
+    std::cout << Tpetra::version() << std::endl << std::endl;
+  }
+
+  // This tells the Trilinos test framework that the test passed.
+  if (myRank == 0) {
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  }
+  return 0;
 }

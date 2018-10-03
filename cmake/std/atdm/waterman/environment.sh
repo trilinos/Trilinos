@@ -2,7 +2,7 @@
 #
 # Set up env on waterman for ATMD builds of Trilinos
 #
-# This source script gets the settings from the JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
 #
 ################################################################################
 

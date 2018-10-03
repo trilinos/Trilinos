@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
   ArrayView< const dim_type > const_dims(dims());
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, const_dims);
+  MDMap mdMap(mdComm, const_dims);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(    mdMap.onSubcommunicator());
@@ -224,7 +224,7 @@ TEUCHOS_UNIT_TEST( MDMap, pListDimensionsConstructor )
   plist.set("dimensions", dims);
 
   // Construct an MDMap
-  MDMap<> mdMap(comm, plist);
+  MDMap mdMap(comm, plist);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -334,7 +334,7 @@ TEUCHOS_UNIT_TEST( MDMap, commPadConstructor )
     commPad[axis] = axis+1;
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dims(), commPad());
+  MDMap mdMap(mdComm, dims(), commPad());
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -476,7 +476,7 @@ TEUCHOS_UNIT_TEST( MDMap, pListCommPadConstructor )
   plist.set("communication pad sizes", commPad);
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, plist);
+  MDMap mdMap(mdComm, plist);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -616,7 +616,7 @@ TEUCHOS_UNIT_TEST( MDMap, bndryPadConstructor )
     bndryPad[axis] = axis+1;
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dims(), commPad(), bndryPad());
+  MDMap mdMap(mdComm, dims(), commPad(), bndryPad());
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -776,7 +776,7 @@ TEUCHOS_UNIT_TEST( MDMap, pListBndryPadConstructor )
   plist.set("boundary pad sizes", bndryPad);
 
   // Construct an MDMap
-  MDMap<> mdMap(comm, plist);
+  MDMap mdMap(comm, plist);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -937,7 +937,7 @@ TEUCHOS_UNIT_TEST( MDMap, paddingConstructor )
   }
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dims(), commPad(), bndryPad());
+  MDMap mdMap(mdComm, dims(), commPad(), bndryPad());
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -1081,7 +1081,7 @@ TEUCHOS_UNIT_TEST( MDMap, pListPaddingConstructor )
   plist.set("boundary pad sizes"     , bndryPad);
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, plist);
+  MDMap mdMap(mdComm, plist);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());
@@ -1219,7 +1219,7 @@ TEUCHOS_UNIT_TEST( MDMap, indexes )
   }
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dims(), commPad(), bndryPad());
+  MDMap mdMap(mdComm, dims(), commPad(), bndryPad());
 
   // Compute some quantities for testing
   Array< int > commIndex(num_dims);
@@ -1296,7 +1296,7 @@ TEUCHOS_UNIT_TEST( MDMap, exceptions )
     dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dims());
+  MDMap mdMap(mdComm, dims());
 
   // Unit test methods that should throw exceptions
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -1355,7 +1355,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeft )
     dimensions[axis] = 10 * commDims[axis];
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions);
+  MDMap mdMap(mdComm, dimensions);
   
   // Figure out the lower left slice
   Array< Slice >    slices(num_dims);
@@ -1381,7 +1381,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeft )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1439,7 +1439,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeftWithCommPad )
   }
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions, commPad);
+  MDMap mdMap(mdComm, dimensions, commPad);
   
   // Figure out the lower left slice
   Array< Slice >    slices(num_dims);
@@ -1465,7 +1465,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerLeftWithCommPad )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1543,7 +1543,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerRight )
     dimensions[axis] = 10 * commDims[axis];
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions);
+  MDMap mdMap(mdComm, dimensions);
   
   // Figure out the lower right slice
   Array< Slice >    slices(num_dims);
@@ -1577,7 +1577,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerRight )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1645,7 +1645,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerRightWithBndryPad )
   }
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions, ArrayView<int>(), bndryPad);
+  MDMap mdMap(mdComm, dimensions, ArrayView<int>(), bndryPad);
   
   // Figure out the lower right slice
   Array< Slice >    slices(num_dims);
@@ -1679,7 +1679,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapLowerRightWithBndryPad )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1747,7 +1747,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeft )
     dimensions[axis] = 10 * commDims[axis];
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions);
+  MDMap mdMap(mdComm, dimensions);
   
   // Figure out the upper left slice
   Array< Slice >    slices(num_dims);
@@ -1781,7 +1781,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeft )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1851,7 +1851,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeftPadding )
   }
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // Figure out the upper left slice
   Array< Slice >    slices(num_dims);
@@ -1885,7 +1885,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeftPadding )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -1977,7 +1977,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRight )
     dimensions[axis] = 10 * commDims[axis];
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions);
+  MDMap mdMap(mdComm, dimensions);
   
   // Figure out the upper right slice
   Array< Slice >    slices(num_dims);
@@ -2002,7 +2002,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRight )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -2074,7 +2074,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRightNewBndryPad )
   }
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // Compute the new boundary padding sizes and figure out the upper
   // right slice
@@ -2103,7 +2103,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRightNewBndryPad )
   }
 
   // Construct the sub-MDMap
-  MDMap<> subMDMap(mdMap, slices, newBndryPad);
+  MDMap subMDMap(mdMap, slices, newBndryPad);
 
   // Should this processor be a part of the sub-MDComm?
   bool partOfSubComm = true;
@@ -2200,7 +2200,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapReduce )
     commPad[axis] = axis + 1;
     bndryPad[axis] = axis + 2;
   }
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // We will reduce this parent MDMap several times by using the
   // single dim_type constructor along each dimension
@@ -2212,7 +2212,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapReduce )
     bool     partOfSubMap = true;
     if ((myOrd < bounds.start()) || (bounds.stop() <= myOrd))
       partOfSubMap = false;
-    MDMap<> reducedMdMap(mdMap, axis, myOrd);
+    MDMap reducedMdMap(mdMap, axis, myOrd);
     if (partOfSubMap)
     {
       TEST_ASSERT(reducedMdMap.onSubcommunicator());
@@ -2360,8 +2360,8 @@ TEUCHOS_UNIT_TEST( MDMap, subMapPeriodic )
   }
 
   // Construct the MDMap and the sub-MDMap
-  MDMap<> mdMap(mdComm, dimensions);
-  MDMap<> subMDMap(mdMap, slices);
+  MDMap mdMap(mdComm, dimensions);
+  MDMap subMDMap(mdMap, slices);
 
   // Should this processor be a part of the sub-MDMap?
   bool partOfSubComm = true;
@@ -2414,7 +2414,7 @@ TEUCHOS_UNIT_TEST( MDMap, isPad )
   Array< int >      bndryPad(num_dims,2);
   for (int axis = 0; axis < num_dims; ++axis)
     dimensions[axis] = 10 * commDims[axis];
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // I want to implement a test that is relatively simple and works
   // with different numbers of dimensions (1D, 2D, 3D).  The MDArray
@@ -2494,10 +2494,10 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedLeading )
   Array< int >      bndryPad(num_dims,2);
   for (int axis = 0; axis < num_dims; ++axis)
     dimensions[axis] = 10 * commDims[axis];
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // Compute the augmented MDMap with leading dimension
-  Teuchos::RCP< const MDMap<> > newMdMap = mdMap.getAugmentedMDMap(3);
+  Teuchos::RCP< const MDMap > newMdMap = mdMap.getAugmentedMDMap(3);
 
   // Check global MDMap attributes
   TEST_ASSERT(newMdMap->onSubcommunicator());
@@ -2520,7 +2520,7 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedLeading )
   // Check the MDMap attributes for the remaining axes
   for (int dof = 0; dof < 3; ++dof)
   {
-    MDMap<> oldMdMap(*newMdMap, 0, dof);
+    MDMap oldMdMap(*newMdMap, 0, dof);
     TEST_ASSERT(mdMap.isSameAs(oldMdMap));
   }
 }
@@ -2545,10 +2545,10 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedTrailing )
   Array< int >      bndryPad(num_dims,2);
   for (int axis = 0; axis < num_dims; ++axis)
     dimensions[axis] = 10 * commDims[axis];
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // Compute the augmented MDMap with trailing dimension
-  Teuchos::RCP< const MDMap<> > newMdMap = mdMap.getAugmentedMDMap(0,5);
+  Teuchos::RCP< const MDMap > newMdMap = mdMap.getAugmentedMDMap(0,5);
 
   // Check global MDMap attributes
   TEST_ASSERT(newMdMap->onSubcommunicator());
@@ -2571,7 +2571,7 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedTrailing )
   // Check the MDMap attributes for the remaining axes
   for (int dof = 0; dof < 5; ++dof)
   {
-    MDMap<> oldMdMap(*newMdMap, num_dims, dof);
+    MDMap oldMdMap(*newMdMap, num_dims, dof);
     TEST_ASSERT(mdMap.isSameAs(oldMdMap));
   }
 }
@@ -2596,10 +2596,10 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedBoth )
   Array< int >      bndryPad(num_dims,2);
   for (int axis = 0; axis < num_dims; ++axis)
     dimensions[axis] = 10 * commDims[axis];
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // Compute the augmented MDMap with trailing dimension
-  Teuchos::RCP< const MDMap<> > newMdMap = mdMap.getAugmentedMDMap(2,3);
+  Teuchos::RCP< const MDMap > newMdMap = mdMap.getAugmentedMDMap(2,3);
 
   // Check global MDMap attributes
   TEST_ASSERT(newMdMap->onSubcommunicator());
@@ -2636,10 +2636,10 @@ TEUCHOS_UNIT_TEST( MDMap, augmentedBoth )
   // Check the MDMap attributes for the remaining axes
   for (int ldof = 0; ldof < 2; ++ldof)
   {
-    MDMap<> tempMdMap(*newMdMap, 0, ldof);
+    MDMap tempMdMap(*newMdMap, 0, ldof);
     for (int tdof = 0; tdof < 3; ++tdof)
     {
-      MDMap<> oldMdMap(tempMdMap, num_dims, tdof);
+      MDMap oldMdMap(tempMdMap, num_dims, tdof);
       TEST_ASSERT(mdMap.isSameAs(oldMdMap));
     }
   }
@@ -2665,13 +2665,13 @@ TEUCHOS_UNIT_TEST( MDMap, contiguous )
   Array< int >      bndryPad(num_dims,3);
   for (int axis = 0; axis < num_dims; ++axis)
     dimensions[axis] = 8 * commDims[axis];
-  MDMap<> mdMap(mdComm, dimensions, commPad, bndryPad);
+  MDMap mdMap(mdComm, dimensions, commPad, bndryPad);
 
   // Initial MDMap should be contiguous
   TEST_ASSERT(mdMap.isContiguous());
 
   // Take a slice of the MDMap
-  MDMap<> slicedMap(mdMap, 0, 4);
+  MDMap slicedMap(mdMap, 0, 4);
 
   // New MDMap should not be contiguous, unless the original MDMap was 1D
   if (slicedMap.onSubcommunicator())

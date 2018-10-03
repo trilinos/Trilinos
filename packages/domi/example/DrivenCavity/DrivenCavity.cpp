@@ -109,10 +109,10 @@ int main(int argc, char *argv[])
   // Construct an MDMap suitable for 2nd order finite
   // differencing. This will create a map with no boundary padding and
   // communication padding with a width of 1 in each direction.
-  Teuchos::RCP< Domi::MDMap<> > mdMap =
-    Teuchos::rcp(new Domi::MDMap<>(mdComm,          // Domi MDComm
-                                   tuple(nx, ny),   // Dimensions
-                                   tuple( 1,  1))); // Communication padding
+  Teuchos::RCP< Domi::MDMap > mdMap =
+    Teuchos::rcp(new Domi::MDMap(mdComm,          // Domi MDComm
+                                 tuple(nx, ny),   // Dimensions
+                                 tuple( 1,  1))); // Communication padding
 
   // Construct the structured, distributed field variables, all
   // collocated at the same grid points

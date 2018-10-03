@@ -1,12 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//     Domi: Multi-dimensional Distributed Linear Albebra Services
-//                 Copyright (2014) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia
-// Corporation, the U.S. Government retains certain rights in this
-// software.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,63 +34,44 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 // @HEADER
-#ifndef DOMI_DEFAULTNODE_HPP
-#define DOMI_DEFAULTNODE_HPP
+#include <Tpetra_Core.hpp>
+#include <Tpetra_Version.hpp>
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-
-#ifdef HAVE_TPETRA
-#include "Kokkos_DefaultNode.hpp"
-#endif
-
-namespace Domi
+  int
+main (int argc, char *argv[])
 {
 
-namespace Details
-{
-
-template< class NodeType >
-Teuchos::RCP< NodeType >
-getNode(const Teuchos::RCP< Teuchos::ParameterList > & params = Teuchos::null)
-{
-  static Teuchos::RCP< NodeType > theNode;
-  if (theNode.is_null())
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
-    if (params.is_null())
-    {
-      Teuchos::ParameterList defaultParams;
-      theNode = Teuchos::rcp(new NodeType(defaultParams));
+    // Get a communicator corresponding to MPI_COMM_WORLD
+    Teuchos::RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
+
+    // Get my process' rank, and the total number of processes.
+    // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
+    const int myRank = comm->getRank();
+    const int numProcs = comm->getSize();
+
+    if (myRank == 0) {
+      std::cout << "Total number of processes: " << numProcs << std::endl;
     }
-    else
-    {
-      theNode = Teuchos::rcp(new NodeType(*params));
+
+    if (myRank == 0) {
+      // On (MPI) Process 0, print out the Tpetra software version.
+      std::cout << Tpetra::version() << std::endl << std::endl;
     }
+
+    // This tells the Trilinos test framework that the test passed.
+    if (myRank == 0) {
+      std::cout << "End Result: TEST PASSED" << std::endl;
+    }
+
+    // ScopeGuard's destructor calls MPI_Finalize, if its constructor
+    // called MPI_Init.  Likewise, it calls Kokkos::finalize, if its
+    // constructor called Kokkos::initialize.
   }
-  return theNode;
+  return 0;
 }
-
-}    // namespace Details
-
-class DefaultNode
-{
-public:
-#ifdef HAVE_TPETRA
-  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
-#else
-  typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-#endif
-
-  //! \brief Return a pointer to the default Node
-  static Teuchos::RCP< DefaultNodeType > getDefaultNode();
-
-};
-
-}  // namespace Domi
-
-#endif
