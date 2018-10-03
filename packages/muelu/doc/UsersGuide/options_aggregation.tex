@@ -1,6 +1,8 @@
 
 \cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.}
           
+\cbb{aggregation: mode}{string}{"uncoupled"}{Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.}
+          
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
           
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian".}
@@ -36,4 +38,14 @@
 \cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
           
 \cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+          
+\cbb{aggregation: mesh layout}{string}{Global Lexicographic}{Type of ordering for structured mesh aggregation. Possible values: "Global Lexicographic" and "Local Lexicographic".}
+          
+\cbb{aggregation: output type}{string}{Aggregates}{Type of object holding the aggregation data. Possible values: "Aggregates" or "CrsGraph".}
+          
+\cbb{aggregation: coarsening rate}{string}{{3}}{Coarsening rate per spatial dimensions, the string must be interpretable as an array by Teuchos.}
+          
+\cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
+          
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
           

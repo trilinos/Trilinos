@@ -22,9 +22,9 @@
       </ParameterList>
 
       <ParameterList name="myAggregationFact">
-        <!-- <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/> -->
-        <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/>
-        <Parameter name="aggregation: mode"               type="string" value="uncoupled"/>
+        <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
+        <!-- <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/> -->
+        <!-- <Parameter name="aggregation: coupling"               type="string" value="uncoupled"/> -->
         <Parameter name="Graph"                               type="string" value="myCoalesceDropFact"/>
       </ParameterList>
 
@@ -40,27 +40,21 @@
         <Parameter name="Aggregates"                          type="string" value="myAggregationFact"/>
       </ParameterList>
 
-      <ParameterList name="myNullspaceFact">
-        <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
-        <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
-      </ParameterList>
-
       <ParameterList name="myRestrictorFact">
         <Parameter name="factory"                             type="string" value="TransPFactory"/>
-        <!-- Parameter name="R"                                   type="string" value="myRestrictorFact"/ -->
+        <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       </ParameterList>
 
-      <ParameterList name="myNullspaceFact">
-        <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
-        <Parameter name="Nullspace"                           type="string" value="myProlongatorFact"/>
-      </ParameterList>
+      <!-- <ParameterList name="myLineDetectionFact"> -->
+      <!--   <Parameter name="factory"                             type="string" value="StructuredLineDetectionFactory"/> -->
+      <!-- </ParameterList> -->
 
-      <ParameterList name="myCoordTransferFact">
-        <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
-        <Parameter name="structured aggregation"              type="bool"   value="true"/>
-        <Parameter name="gCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
-        <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
-      </ParameterList>
+      <!-- <ParameterList name="myCoordTransferFact"> -->
+      <!--   <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/> -->
+        <!-- <Parameter name="structured aggregation"              type="bool"   value="true"/> -->
+        <!-- <Parameter name="gCoarseNodesPerDim"                  type="string" value="myAggregationFact"/> -->
+        <!-- <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/> -->
+      <!-- </ParameterList> -->
 
       <ParameterList name="myRAPFact">
         <Parameter name="factory"                             type="string" value="RAPFactory"/>
@@ -71,17 +65,25 @@
         <!-- </ParameterList> -->
       </ParameterList>
 
-      <ParameterList name="myILU">
-        <Parameter name="factory" type="string" value="TrilinosSmoother"/>
-        <Parameter name="type"  type="string" value="RILUK"/>
+      <ParameterList name="myLineJacobi">
+        <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+        <Parameter name="type"                                type="string" value="LINESMOOTHING_BANDEDRELAXATION"/>
         <ParameterList name="ParameterList">
-          <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
-          <Parameter name="schwarz: combine mode"             type="string" value="Zero"/>
-          <Parameter name="schwarz: use reordering"           type="bool"   value="false"/>
-          <Parameter name="fact: iluk level-of-fill"         type="int"    value="0"/>
-          <Parameter name="fact: absolute threshold"         type="double" value="0."/>
-          <Parameter name="fact: relative threshold"         type="double" value="1."/>
-          <Parameter name="fact: relax value"                type="double" value="0."/>
+          <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+          <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+          <Parameter name="relaxation: damping factor"        type="double" value="0.8"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="myIfpack2Line">
+        <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+        <Parameter name="type"                                type="string" value="BLOCK_RELAXATION"/>
+        <ParameterList name="ParameterList">
+          <Parameter name="relaxation: container"             type="string" value="Banded"/>
+          <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+          <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+          <Parameter name="relaxation: damping factor"        type="double" value="0.8"/>
+          <Parameter name="partitioner: type"                 type="string" value="line"/>
         </ParameterList>
       </ParameterList>
 
@@ -97,19 +99,17 @@
       <Parameter name="verbosity"                             type="string"   value="High"/>
 
       <ParameterList name="All">
-        <Parameter name="PreSmoother"                         type="string"   value="myILU"/>
+        <Parameter name="PreSmoother"                         type="string"   value="myIfpack2Line"/>
         <Parameter name="PostSmoother"                        type="string"   value="NoSmoother"/>
-        <Parameter name="Nullspace"                           type="string"   value="myNullspaceFact"/>
-        <Parameter name="Aggregates"                          type="string"   value="myAggregationFact"/>
+        <Parameter name="Nullspace"                           type="string"   value="myProlongatorFact"/>
         <Parameter name="P"                                   type="string"   value="myProlongatorFact"/>
         <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
         <Parameter name="A"                                   type="string"   value="myRAPFact"/>
         <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
-        <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
-        <Parameter name="gNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
-        <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
+        <!-- <Parameter name="Coordinates"                         type="string"   value="myCoordTransferFact"/> -->
+        <!-- <Parameter name="gNodesPerDim"                        type="string"   value="myCoordTransferFact"/> -->
+        <!-- <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/> -->
         <!-- <Parameter name="CoarseNumZLayers"                    type="string"   value="myLineDetectionFact"/> -->
-        <!-- <Parameter name="LineDetection_Layers"                type="string"   value="myLineDetectionFact"/> -->
         <!-- <Parameter name="LineDetection_VertLineIds"           type="string"   value="myLineDetectionFact"/> -->
       </ParameterList>
     </ParameterList>
