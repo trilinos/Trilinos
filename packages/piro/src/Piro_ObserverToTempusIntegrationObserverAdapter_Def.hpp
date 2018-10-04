@@ -191,8 +191,9 @@ template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
-  //Don't observe solution if step failed to converge 
-  if (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED) { 
+  //Don't observe solution if step failed to converge
+  if ((solutionHistory_->getWorkingState() != Teuchos::null) && 
+     (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) { 
     return;
   }
  
