@@ -83,7 +83,7 @@ namespace TpetraIntrepidPoissonExample {
 typedef double ST;
 typedef int    LO;
 typedef int    GO;
-typedef Tpetra::Map<>::NodeType  Node;
+typedef Tpetra::Map<>::node_type Node;
 
 //
 // mfh 19 Apr 2012: If you want to change the template parameters of
