@@ -434,13 +434,14 @@ public:
     return bA;
   }
 
-  /** Given a matrix A, detect zero diagonals and replace any found with ones. */
+  /** Given a matrix A, detect too small diagonals and replace any found with ones. */
 
   static void CheckRepairMainDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
-                                 bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos)
+                                 bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
+                                 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero())
   {
-
-    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero(), one = Teuchos::ScalarTraits<Scalar>::one();
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    Scalar one = TST::one();
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
     p->set("DoOptimizeStorage", true);
@@ -453,7 +454,7 @@ public:
     Teuchos::ArrayRCP< Scalar > diagVal = diagVec->getDataNonConst(0);
 
     for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
-      if (diagVal[i] == zero) {
+      if (TST::magnitude(diagVal[i]) <= threshold) {
         lZeroDiags++;
       }
     }
@@ -480,7 +481,7 @@ public:
       Teuchos::Array<GlobalOrdinal> indout(1);
       Teuchos::Array<Scalar> valout(1);
       for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
-        if (diagVal[r] == zero) {
+        if (TST::magnitude(diagVal[r]) <= threshold) {
           GlobalOrdinal grid = rowMap->getGlobalElement(r);
           indout[0] = grid;
           valout[0] = one;
@@ -513,15 +514,15 @@ public:
 
     // print some output
     fos << "CheckRepairMainDiagonal: " << (repairZeroDiagonals ? "repaired " : "found ")
-              << gZeroDiags << " zeros on main diagonal of Ac." << std::endl;
+              << gZeroDiags << " too small entries on main diagonal of Ac." << std::endl;
 
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
     // check whether Ac has been repaired...
     Ac->getLocalDiagCopy(*diagVec);
     Teuchos::ArrayRCP< Scalar > diagVal2 = diagVec->getDataNonConst(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
-      if (diagVal2[r] == zero) {
-        fos << "Error: there are zeros left on diagonal after repair..." << std::endl;
+      if (TST::magnitude(diagVal[r]) <= threshold) {
+        fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;
         break;
       }
     }
