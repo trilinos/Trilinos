@@ -39,6 +39,13 @@ WITH_LOCA      = cmake_bool("${NOX_ENABLE_LOCA}"            )
 WITH_MPI       = cmake_bool("${TPL_ENABLE_MPI}"             )
 WITH_PETSC     = cmake_bool("${TPL_ENABLE_PETSC}"           )
 
+# Find the MPI base directory
+MPI_BASE_DIR   = "${MPI_BASE_DIR}"
+if WITH_MPI:
+    if MPI_BASE_DIR == "":
+        MPI_BIN_DIR  = os.path.split("${MPI_CXX_COMPILER}")[0]
+        MPI_BASE_DIR = os.path.split(MPI_BIN_DIR)[0]
+
 ################################################################################
 
 def get_mpi_version():
