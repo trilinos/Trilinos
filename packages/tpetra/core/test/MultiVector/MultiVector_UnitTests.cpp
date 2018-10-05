@@ -101,20 +101,23 @@ namespace {
   using std::ostream_iterator;
   using std::string;
 
-  using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
-  using Teuchos::rcp;
-  using Teuchos::null;
-  using Teuchos::Array;
+  using Teuchos::Array;  
+  using Teuchos::ArrayRCP;  
   using Teuchos::ArrayView;
-  using Teuchos::Comm;
-  using Teuchos::SerialDenseMatrix;
-  using Teuchos::Range1D;
-  using Teuchos::Tuple;
+  using Teuchos::arrayView;  
   using Teuchos::as;
+  using Teuchos::Comm;  
+  using Teuchos::null;
+  using Teuchos::Range1D;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
   using Teuchos::OrdinalTraits;
-  using Teuchos::ScalarTraits;
-  using Teuchos::arrayView;
+  using Teuchos::outArg;
+  using Teuchos::ScalarTraits;    
+  using Teuchos::SerialDenseMatrix;
+  using Teuchos::Tuple;
   using Teuchos::tuple;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
@@ -167,24 +170,40 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
+    constexpr bool debug = true;
 
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test: MultiVector, NonMemberConstructors" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create a Map" << endl;
+    auto comm = getDefaultComm ();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
-    // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
     const GO indexBase = 0;
     RCP<const map_type> map =
-      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
-    // Create a MultiVector, and make sure that it has the right
-    // number of vectors (columns).
+    myOut << "Create a MultiVector, and make sure that it has "
+      "the right number of vectors (columns)" << endl;
     RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
     TEST_EQUALITY(mvec->getNumVectors(), numVecs);
 
-    // Create a Vector, and make sure that it has exactly one vector
-    // (column).
+    myOut << "Create a Vector, and make sure that "
+      "it has exactly one vector (column)" << endl;
     RCP<V> vec = Tpetra::createVector<Scalar>(map);
     TEST_EQUALITY_CONST(vec->getNumVectors(), 1);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
   ////
@@ -194,13 +213,17 @@ namespace {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Details::MultiVectorCloner<MV,MV> cloner_type;
 
+    out << "Test: MultiVector, Cloner" << endl;
+    Teuchos::OSTab tab0 (out);
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
     const GO indexBase = 0;
+    auto comm = getDefaultComm ();
     RCP<const map_type> map =
-      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
     // Create a MultiVector
     RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
@@ -211,6 +234,12 @@ namespace {
     // Check that the vectors are the same: same map, same values
     TEST_EQUALITY(mvec->getMap()->isSameAs(*mvec_clone->getMap()), true);
     TEST_COMPARE_FLOATING_ARRAYS(mvec->get1dView(),mvec_clone->get1dView(),0.0);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
   ////
@@ -220,19 +249,28 @@ namespace {
     using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
     using vec_type = Tpetra::Vector<Scalar, LO, GO, Node>;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    constexpr bool debug = true;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test: MultiVector, basic" << endl;
+    Teuchos::OSTab tab0 (myOut);
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int numImages = comm->getSize ();
 
-    // create a Map
+    myOut << "Create Map" << endl;
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
-    // Test the default constructors of MultiVector and Vector.
+    myOut << "Test MultiVector's & Vector's default constructors" << endl;
     {
       MV defaultConstructedMultiVector;
       auto dcmv_map = defaultConstructedMultiVector.getMap ();
@@ -250,17 +288,18 @@ namespace {
       }
     }
 
+    myOut << "Test MultiVector's usual constructor" << endl;    
     RCP<MV> mvec;
     TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
     if (mvec.is_null ()) {
-      out << "MV constructor threw an exception: returning" << endl;
+      myOut << "MV constructor threw an exception: returning" << endl;
       return;
     }
     TEST_EQUALITY( mvec->getNumVectors(), numVecs );
     TEST_EQUALITY( mvec->getLocalLength(), numLocal );
     TEST_EQUALITY( mvec->getGlobalLength(), numImages*numLocal );
 
-    // we zeroed it out in the constructor; all norms should be zero
+    myOut << "Test that all norms are zero" << endl;        
     Array<Magnitude> norms(numVecs), zeros(numVecs);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
     TEST_NOTHROW( mvec->norm2(norms) );
@@ -270,7 +309,13 @@ namespace {
     TEST_NOTHROW( mvec->normInf(norms) );
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
     // print it
-    out << *mvec << endl;
+    myOut << *mvec << endl;
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -281,6 +326,10 @@ namespace {
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, BadConstLDA" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -301,6 +350,12 @@ namespace {
 #endif
     // LDA < numLocal throws an exception anytime
     TEST_THROW(MV mvec(map,values(0,4),1,numVecs), std::runtime_error);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -310,6 +365,10 @@ namespace {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+
+    out << "Test: MultiVector, NonContigView" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const Mag tol = errorTolSlack * errorTolSlack * testingTol<Scalar>();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
     const Mag M0  = ScalarTraits<Mag>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -502,6 +561,12 @@ namespace {
         TEST_FLOATING_EQUALITY(nrmOrigC[exView2[j]], nrmOrigC_aft[exView2[j]], tol);
       }
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -509,6 +574,10 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Describable, LO , GO , Scalar, Node )
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, Describable" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -557,11 +626,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadMultiply, LO , GO , Scalar , Node )
   {
-
     // mfh 05 May 2016: Tpetra::MultiVector::multiply only checks
     // local dimensions in a debug build.
 #ifdef HAVE_TPETRA_DEBUG
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, BadMultiply" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -624,6 +696,12 @@ namespace {
       TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
 #endif // HAVE_TPETRA_DEBUG
   }
 
@@ -634,6 +712,10 @@ namespace {
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, Multiply" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -758,6 +840,12 @@ namespace {
       mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx3,mv2x3,S0);
       tmpView = mv3nx2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
   // Test Tpetra::MultiVector::elementWiseMultiply.
@@ -1077,6 +1165,12 @@ namespace {
         TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
       }
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1087,6 +1181,10 @@ namespace {
     // A.size() == NumVectors
     // A[i].size() >= MyLength
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, BadConstAA" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1106,6 +1204,12 @@ namespace {
     // individual ArrayViews could be too small
     TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1114,6 +1218,10 @@ namespace {
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
+
+    out << "Test: MultiVector, BadDot" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1147,6 +1255,12 @@ namespace {
       TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
 #endif
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1155,6 +1269,10 @@ namespace {
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, OrthoDot" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1222,14 +1340,8 @@ namespace {
     // Make sure that the test passed on all processes, not just Proc 0.
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
-                                  Teuchos::outArg (gblSuccess));
-    if (gblSuccess) {
-      out << "Test PASSED on all processes" << endl;
-    } else {
-      out << "Test FAILED on one or more processes" << endl;
-      success = false;
-    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1237,9 +1349,12 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyView, LO , GO , Scalar , Node )
   {
     using std::endl;
-
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, CopyView" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1450,6 +1565,12 @@ namespace {
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1458,6 +1579,10 @@ namespace {
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, OffsetView" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1597,6 +1722,12 @@ namespace {
         TEST_EQUALITY_CONST( A2_aft[i], S0 );
       }
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1618,6 +1749,10 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    out << "Test: MultiVector, OffsetViewZeroLength" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     // Get a communicator and Kokkos node instance.
@@ -1858,6 +1993,12 @@ namespace {
         throw;
       }
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -1868,6 +2009,9 @@ namespace {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::global_size_t GST;
+
+    out << "Test: MultiVector, ZeroScaleUpdate" << endl;
+    Teuchos::OSTab tab0 (out);
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const Mag M0 = ScalarTraits<Mag>::zero ();
@@ -1952,24 +2096,27 @@ namespace {
       C.norm1 (norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ScaleAndAssign, LO , GO , Scalar , Node )
   {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
 
+    out << "Test: MultiVector, ScaleAndAssign" << endl;
+    Teuchos::OSTab tab0 (out);
+
     int lclSuccess = 1;
     int gblSuccess = 0; // to be set below
-
-    out << "Tpetra::MultiVector scale and assign test" << endl;
-    Teuchos::OSTab tab0 (out);
 
     Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -2185,6 +2332,10 @@ namespace {
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
+
+    out << "Test: Vector, ZeroScaleUpdate" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
@@ -2260,6 +2411,12 @@ namespace {
       TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2274,6 +2431,9 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename MV::mag_type Mag;
     typedef Teuchos::ScalarTraits<Mag> STM;
+
+    out << "Test: MultiVector, CopyConst" << endl;
+    Teuchos::OSTab tab0 (out);
 
     const Mag M0 = STM::zero ();
     // This test should even pass in the field of the integers mod 2.
@@ -2291,8 +2451,9 @@ namespace {
     const size_t numVectors = 7;
     const GO indexBase = 0;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    auto comm = getDefaultComm ();
     RCP<const map_type> map =
-      rcp (new map_type (INVALID, numLocal, indexBase, getDefaultComm ()));
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
 
     out << "Part 1:" << endl;
     {
@@ -2433,6 +2594,12 @@ namespace {
       TEST_COMPARE_FLOATING_ARRAYS(ncopy1, ones, M0);
       TEST_COMPARE_FLOATING_ARRAYS(ncopy2, twos, M0);
     }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2441,6 +2608,10 @@ namespace {
   {
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+
+    out << "Test: Vector, CopyConst" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -2471,6 +2642,12 @@ namespace {
     TEST_EQUALITY(norig, as<Scalar>(0));
     TEST_EQUALITY(ncopy1,as<Scalar>(1));
     TEST_EQUALITY(ncopy2,as<Scalar>(2));
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2480,6 +2657,10 @@ namespace {
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     typedef ScalarTraits<Scalar>              SCT;
     typedef typename SCT::magnitudeType Magnitude;
+
+    out << "Test: Vector, Indexing" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -2506,6 +2687,12 @@ namespace {
     v1.update(-1.0,v2,1.0);
     err = v1.norm1();
     TEST_EQUALITY_CONST(err,SCT::zero());
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2513,6 +2700,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SingleVecNormalize, LO , GO , Scalar , Node )
   {
     typedef Map<LO, GO, Node> map_type;
+
+    out << "Test: MultiVector, SingleVecNormalize" << endl;
+    Teuchos::OSTab tab0 (out);
 
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(),
@@ -2563,6 +2753,12 @@ namespace {
     mv.norm2(norms()); // should be all one now
     Array<Magnitude> ones(numVectors,M1);
     TEST_COMPARE_FLOATING_ARRAYS(norms,ones,testingTol<Scalar>()*errorTolSlack);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2571,6 +2767,10 @@ namespace {
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+
+    out << "Test: MultiVector, CountDot" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
     // get a comm and node
@@ -2621,14 +2821,8 @@ namespace {
     // Make sure that the test passed on all processes, not just Proc 0.
     lclSuccess = success ? 1 : 0;
     gblSuccess = 1;
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
-                                  Teuchos::outArg (gblSuccess));
-    if (gblSuccess) {
-      out << "Test PASSED on all processes" << endl;
-    } else {
-      out << "Test FAILED on one or more processes" << endl;
-      success = false;
-    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2691,14 +2885,8 @@ namespace {
     // Make sure that the test passed on all processes, not just Proc 0.
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
-                                  Teuchos::outArg (gblSuccess));
-    if (gblSuccess) {
-      out << "Test PASSED on all processes" << endl;
-    } else {
-      out << "Test FAILED on one or more processes" << endl;
-      success = false;
-    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2709,7 +2897,8 @@ namespace {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
-
+    out << "Test: MultiVector, CountNorm1" << endl;
+    Teuchos::OSTab tab0 (out);
 
     const MT M0 = Teuchos::ScalarTraits<MT>::zero ();
 
@@ -2776,14 +2965,8 @@ namespace {
     // Make sure that the test passed on all processes, not just Proc 0.
     lclSuccess = success ? 1 : 0;
     gblSuccess = 1;
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
-                                  Teuchos::outArg (gblSuccess));
-    if (gblSuccess) {
-      out << "Test PASSED on all processes" << endl;
-    } else {
-      out << "Test FAILED on one or more processes" << endl;
-      success = false;
-    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2792,6 +2975,10 @@ namespace {
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
+
+    out << "Test: MultiVector, CountNormInf" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
     // get a comm and node
@@ -2820,6 +3007,12 @@ namespace {
     mvec.normInf(norms());
     // check the answers
     TEST_COMPARE_FLOATING_ARRAYS(norms,answer,M0);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2828,6 +3021,10 @@ namespace {
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
+
+    out << "Test: MultiVector, Norm2" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
     // get a comm and node
@@ -2857,14 +3054,8 @@ namespace {
     // Make sure that the test passed on all processes, not just Proc 0.
     int lclSuccess = success ? 1 : 0;
     int gblSuccess = 1;
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MIN, lclSuccess,
-                                  Teuchos::outArg (gblSuccess));
-    if (gblSuccess) {
-      out << "Test PASSED on all processes" << endl;
-    } else {
-      out << "Test FAILED on one or more processes" << endl;
-      success = false;
-    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -2873,6 +3064,10 @@ namespace {
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+
+    out << "Test: MultiVector, BadCombinations" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -2913,6 +3108,12 @@ namespace {
     TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat
     TEST_THROW(m1n2.reciprocal(m1n1), std::runtime_error);                  // reciprocal
     TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
   ////
@@ -2923,16 +3124,19 @@ namespace {
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
+
+    out << "Test: MultiVector, Typedefs" << endl;
+    Teuchos::OSTab tab0 (out);
+    
     TEST_EQUALITY_CONST( (std::is_same< scalar_type         , Scalar  >::value) == true, true );
     TEST_EQUALITY_CONST( (std::is_same< local_ordinal_type  , LO >::value) == true, true );
     TEST_EQUALITY_CONST( (std::is_same< global_ordinal_type , GO >::value) == true, true );
     TEST_EQUALITY_CONST( (std::is_same< node_type           , Node    >::value) == true, true );
   }
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ComplexDotOneColumn, RealType, LO, GO, Node )
   {
-    using Teuchos::as;
     using Teuchos::rcp_implicit_cast;
 
     typedef RealType magnitude_type;
@@ -2943,6 +3147,17 @@ namespace {
 
     typedef Teuchos::SerialComm<int> comm_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
+    constexpr bool debug = true;
+    
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test: MultiVector, ComplexDotOneColumn" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create Comm and Map" << endl;
 
     // We use a SerialComm so that we don't complicate the test by
     // introducing interprocess communication.  The point of this test
@@ -2956,25 +3171,50 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> map (new map_type (numGlobalElts, indexBase, serialComm,
                                            Tpetra::GloballyDistributed));
+
+    myOut << "Create MultiVectors x and y" << endl;    
     MV x (map, 1);
     MV y (map, 1);
 
     std::vector<scalar_type> results (1, STS::zero ()); // dot product result
 
+    myOut << "Modify entries of x and y" << endl;
+    
+    x.template sync<Kokkos::HostSpace> ();
+    y.template sync<Kokkos::HostSpace> ();
+    x.template modify<Kokkos::HostSpace> ();
+    y.template modify<Kokkos::HostSpace> ();    
+    
     // dot([i], [i]) should be 1, not -1.
-    x.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
-    y.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
+    y.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
+
+    myOut << "Compute dot product of x and y" << endl;    
     x.dot (y, results);
     TEST_EQUALITY( results[0], STS::one() );
 
+    myOut << "Modify entries of x and y" << endl;
+
+    x.template sync<Kokkos::HostSpace> ();
+    y.template sync<Kokkos::HostSpace> ();
+    x.template modify<Kokkos::HostSpace> ();
+    y.template modify<Kokkos::HostSpace> ();    
+    
     // dot([-i], [i]) should be -1, not +1.
-    x.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), -STM::one ()));
-    y.replaceLocalValue (as<LO> (0), 0, scalar_type (STM::zero (), STM::one ()));
+    x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), -STM::one ()));
+    y.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
+
+    myOut << "Compute dot product of x and y" << endl;    
     x.dot (y, results);
     TEST_EQUALITY( results[0], -STS::one() );
-  }
-#endif // HAVE_TEUCHOS_COMPLEX
 
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*getDefaultComm (), REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+  }
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))  
 
   // Test that MultiVector can be declared with no template
   // parameters, so that every template parameter has its default
@@ -3016,6 +3256,13 @@ namespace {
     // default LocalOrdinal type, but at some point we may want to
     // change it to default to a 64-bit integer type.
     TEST_ASSERT( sizeof (global_ordinal_type) >= sizeof (local_ordinal_type) );
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 
 
@@ -3024,14 +3271,13 @@ namespace {
   {
     using Teuchos::Comm;
     using Teuchos::RCP;
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     using std::endl;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
+    out << "Test: MultiVector, ReplaceMap" << endl;
+    Teuchos::OSTab tab0 (out);
     //
     // Create a Map, on which every process in the communicator has nonzero rows.
     //
@@ -3191,6 +3437,9 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename MV::mag_type mag_type;
 
+    out << "Test: MultiVector, DeepCopy" << endl;
+    Teuchos::OSTab tab0 (out);
+
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
@@ -3245,17 +3494,14 @@ namespace {
   // the data, NOT a deep copy.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, getDualView, LO, GO, Scalar, Node )
   {
-    out << "Tpetra::MultiVector::getDualView test" << endl;
-    Teuchos::OSTab tab0 (out);
-
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename MV::device_type device_type;
+
+    out << "Test: MultiVector, getDualView" << endl;
+    Teuchos::OSTab tab0 (out);
 
     int lclSuccess = 1;
     int gblSuccess = 1;
@@ -3400,9 +3646,6 @@ namespace {
   // make a deep copy.)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewCtor, LO, GO, Scalar, Node )
   {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
@@ -3522,9 +3765,6 @@ namespace {
   // Tpetra::MultiVector (or the underlying Kokkos::DualView).
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ViewCtor, LO, GO, Scalar, Node )
   {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
@@ -3773,9 +4013,6 @@ namespace {
   // some processes have zero rows.  Contributed by Andrew Bradley.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, SubViewSomeZeroRows, LO, GO, ST, Node )
   {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::Vector<ST, LO, GO, Node> V;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
@@ -4136,9 +4373,6 @@ namespace {
   // getGlobalLength(), and getNumVectors() return the correct values.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DimsWithSomeZeroRows, LO, GO, ST, Node )
   {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
     typedef Tpetra::global_size_t GST;
@@ -4220,9 +4454,6 @@ namespace {
   // Then, do the same thing with a globally 0 x 0 multivector.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DimsWithAllZeroRows, LO, GO, ST, Node )
   {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
     typedef Tpetra::global_size_t GST;
@@ -4340,9 +4571,6 @@ namespace {
 
   // Swap test
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Swap, LO , GO , Scalar , Node ) {
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
     typedef Tpetra::global_size_t GST;

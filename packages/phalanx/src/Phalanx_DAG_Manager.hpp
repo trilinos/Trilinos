@@ -200,6 +200,14 @@ namespace PHX {
     std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
     getEvaluatorsBindingField(const PHX::FieldTag& ft);
 
+    /** \brief Print to user specified ostream when each evalautor
+        starts and stops. Useful for debugging. Enabled only in debug
+        builds.
+
+        @param [in] ostr RCP to output stream. If set to null, this disables printing.
+    */
+    void printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr);
+
   protected:
 
     /*! @brief Depth-first search algorithm. */ 
@@ -275,6 +283,9 @@ namespace PHX {
     
     //! Contians pointers to DeviceEvaluators for Device DAG support.
     Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> device_evaluators_;
+
+    //! If non-null, in debug builds, the DAG manager will print when an evalautor starts and stops.
+    Teuchos::RCP<std::ostream> start_stop_debug_ostream_;
   };
   
   template<typename Traits>
