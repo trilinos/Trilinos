@@ -96,9 +96,6 @@
 #include "Thyra_FROSchXpetraFactory_def.hpp"
 #include <MueLu_Utilities_def.hpp>
 #include <MueLu_Utilities_decl.hpp>
-
-
-
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;

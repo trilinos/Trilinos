@@ -53,6 +53,7 @@
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchXpetraFactory_def.hpp"
 
+
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;
