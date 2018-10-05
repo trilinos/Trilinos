@@ -890,12 +890,13 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos:
         return 0;
     }
 template <class SC, class LO, class GO, class NO>
-Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > subdomains, Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
+Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
     //connection: alternativ in Sparse Matrix...
-    Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = subdomains->getMap()->getComm();
+    
+    Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = connection->getMap()->getComm();
     int MYPID = TeuchosComm->getRank();
     
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg  = Xpetra::MapFactory<LO,GO,NO>::Build(subdomains->getMap(),1);
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg  = Xpetra::MapFactory<LO,GO,NO>::Build(connection->getMap(),1);
     
     //Fill Graph -> Needs make better -> Insert one row at once
      Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(Mapg,connection->getNumVectors());
@@ -936,7 +937,7 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Mul
     
     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
     
-    NNodeEleList->doImport(*NodeEleList,*scatter,Xpetra::ADD); //New Repeated NodeElementList
+    NNodeEleList->doImport(*NodeElementList,*scatter,Xpetra::ADD); //New Repeated NodeElementList
     
     
     
@@ -946,14 +947,15 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Mul
     //std::vector<std::vector<long long> > el1(NodeEleList->getNumVectors());
     //std::vector<std::vector<long long> > el2(NodeEleList->getNumVectors());
     Teuchos::ArrayRCP<const long long> arr;
-    for(int i = 0;i<NodeEleList->getNumVectors();i++){
+    for(int i = 0;i<NodeElementList->getNumVectors();i++){
         arr = NNodeEleList->getData(i);
-        el1.resize(arr.size())
+        //el1.resize(arr.size())
         for(int j = 0;j<arr.size();j++){
-            rep.insert(std::pair<long long,int>(arr[j],MyPID));
+            rep.insert(std::pair<long long,int>(arr[j],MYPID));
         }
     }
 
+    
     Teuchos::Array<GO> repeatedIndices;
     for (auto& x: rep) {
         repeatedIndices.push_back(x.first);
