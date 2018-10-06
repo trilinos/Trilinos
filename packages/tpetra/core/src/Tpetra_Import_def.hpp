@@ -1163,7 +1163,9 @@ namespace Classes {
 
       const size_type numInvalidRemote =
         std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
-                       std::bind1st (std::equal_to<int> (), -1));
+                       [] (const int processor_id) {
+                         return processor_id == -1;
+                       });
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
          "on the source Map returned IDNotPresent, but none of the returned "
