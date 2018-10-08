@@ -103,7 +103,6 @@ namespace Teuchos {
 } // namespace Teuchos
 
 namespace Tpetra {
-namespace Classes {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1741,12 +1740,10 @@ namespace Classes {
                                  newExportPIDs, newDistor));
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 #define TPETRA_IMPORT_CLASS_INSTANT(LO, GO, NODE) \
-  \
-  namespace Classes { template class Import< LO , GO , NODE >; }
+  template class Import< LO , GO , NODE >;
 
 // Explicit instantiation macro.
 // Only invoke this when in the Tpetra namespace.
