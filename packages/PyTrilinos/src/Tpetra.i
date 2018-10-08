@@ -955,7 +955,6 @@ protected:
 
 // %ignore Tpetra::removeEmptyProcessesInPlace;
 // %include "Tpetra_DistObject_decl.hpp"
-// %include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
 
 ////////////////////////////////
 // Tpetra MultiVector support //
@@ -1239,7 +1238,6 @@ public:
 };  // class MultiVector
 }   // namespace Tpetra
 // %include "Tpetra_MultiVector_decl.hpp"
-// %include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 %pythoncode
 %{
   def MultiVector_getattr(self, name):
@@ -1389,7 +1387,6 @@ public:
 // %ignore Tpetra::Vector::getLocalMVNonConst;
 // %warnfilter(302) Tpetra::createVectorFromView;
 // %include "Tpetra_Vector_decl.hpp"
-// %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 %pythoncode
 %{
   def Vector_getattr(self, name):
