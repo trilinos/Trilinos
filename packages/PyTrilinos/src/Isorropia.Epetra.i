@@ -133,6 +133,11 @@ from . import _IsorropiaEpetra
 %ignore *::operator<<;
 %ignore operator<<;
 
+// Configuration
+%include "PyTrilinos_config.h"
+%include "Isorropia_config.h"
+%include "Isorropia_ConfigDefs.hpp"
+
 // Teuchos interface import
 %import "Teuchos.i"
 
