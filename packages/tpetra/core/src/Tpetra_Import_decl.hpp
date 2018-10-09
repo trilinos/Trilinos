@@ -101,14 +101,7 @@ namespace Classes {
   ///
   /// This method accepts an optional list of parameters, either
   /// through the constructor or through the setParameterList()
-  /// method.  Most users do not need to worry about these parameters;
-  /// the default values are fine.  However, for expert users, we
-  /// expose the following parameter:
-  /// - "Barrier between receives and sends" (\c bool): Whether to
-  ///   execute a barrier between receives and sends, when executing
-  ///   the Import (i.e., when calling DistObject's doImport()
-  ///   (forward mode) or doExport() (reverse mode)).
-  ///
+  /// method.  These parameters are for expert users only.
   template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
            class Node = ::Tpetra::Details::DefaultTypes::node_type>

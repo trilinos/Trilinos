@@ -153,19 +153,6 @@ namespace Tpetra {
   ///
   /// Instances of Distributor take the following parameters that
   /// control communication and debug output:
-  /// - "Barrier between receives and sends" (<tt>bool</tt>):
-  ///   Whether to execute a barrier between receives and sends in
-  ///   do[Reverse]Posts().  A barrier is required for correctness
-  ///   when the "Send type" parameter is "Rsend".  Otherwise, a
-  ///   barrier is correct and may be useful for debugging, but not
-  ///   recommended, since it introduces useless synchronization.
-  /// - "Send type" (<tt>std::string</tt>): When using MPI, the
-  ///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
-  ///   values include "Isend", "Rsend", "Send", and "Ssend".  The
-  ///   default is "Send".  (The receive type is always MPI_Irecv, a
-  ///   nonblocking receive.  Since we post receives first before
-  ///   sends, this prevents deadlock, even if MPI_Send blocks and
-  ///   does not buffer.)
   /// - "Debug" (\c bool): If true, print copious debugging output on
   ///   all processes in the Distributor's communicator.  This is
   ///   useful only for debugging Distributor and other Tpetra classes
@@ -812,12 +799,6 @@ namespace Tpetra {
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
 
-    //! The variant of send to use in do[Reverse]Posts().
-    Details::EDistributorSendType sendType_;
-
-    //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
-    bool barrierBetween_;
-
     //! Whether to print copious debug output to stderr on all processes.
     bool debug_;
     //@}
@@ -1020,12 +1001,6 @@ namespace Tpetra {
     ///
     /// This method computes numReceives_, lengthsFrom_, procsFrom_,
     /// totalReceiveLength_, indicesFrom_, and startsFrom_.
-    ///
-    /// \note This method currently ignores the sendType_ and
-    ///   barrierBetween_ parameters, and always uses ireceive() /
-    ///   send() for communication of the process IDs from which our
-    ///   process is receiving and their corresponding receive packet
-    ///   counts.
     void computeReceives ();
 
     /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
@@ -1065,15 +1040,35 @@ namespace Tpetra {
                    size_t numPackets,
                    const Teuchos::ArrayView<Packet>& imports)
   {
+    using Tpetra::Details::Behavior;
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
     typedef typename ArrayRCP<const Packet>::size_type size_type;
+    using std::endl;
+    const char funcPrefix[] =
+      "Tpetra::Distributor::doPostsAndWaits(3 args, Teuchos::ArrayView)";
+    const char briefFuncPrefix[] = "doPostsAndWaits(3,Teuchos)";
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << requests_.size () <<
-      " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
+    const bool verbose = Behavior::verbose ("Distributor");
+    const int myRank = comm_->getRank ();
+
+    std::unique_ptr<std::string> prefix;
+    Teuchos::OSTab tab0 (out_);
+    if (verbose) {
+      std::ostringstream os;
+      os << "Proc " << myRank << ": " << briefFuncPrefix;
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      std::ostringstream os2; // start by printing "long" func name
+      os2 << "Proc " << myRank << ": " << funcPrefix << endl;
+      *out_ << os2.str ();
+    }
+    Teuchos::OSTab tab1 (out_);
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (requests_.size () != 0, std::runtime_error, funcPrefix << "On Process "
+       << myRank << ", there are " << requests_.size () << " outstanding "
+       "nonblocking messages pending.  It is incorrect to call this method "
+       "with posts outstanding.");
 
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
@@ -1089,6 +1084,11 @@ namespace Tpetra {
                                         static_cast<size_type> (0),
                                         exports.size(), false);
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call doPosts" << endl;
+      *out_ << os.str ();
+    }
     // For some reason, neither of the options below (that use arcp)
     // compile for Packet=std::complex<double> with GCC 4.5.1.  The
     // issue only arises with the exports array.  This is why we
@@ -1103,10 +1103,21 @@ namespace Tpetra {
     doPosts (exportsArcp,
              numPackets,
              arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Call doWaits" << endl;
+      *out_ << os.str ();
+    }
     doWaits ();
 
     lastRoundBytesSend_ = exports.size () * sizeof (Packet);
     lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      *out_ << os.str ();
+    }
   }
 
   template <class Packet>
@@ -1935,46 +1946,50 @@ namespace Tpetra {
                    size_t numPackets,
                    const ImpView& imports)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
+    using Tpetra::Details::Behavior;
     using std::endl;
-    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const char funcPrefix[] =
+      "Tpetra::Distributor::doPostsAndWaits(3 args, Kokkos::View)";
+    const char briefFuncPrefix[] = "doPostsAndWaits(3,Kokkos)";
 
-    RCP<Teuchos::OSTab> tab0, tab1;
+    const bool verbose = Behavior::verbose ("Distributor");
+    const int myRank = comm_->getRank ();
+
+    std::unique_ptr<std::string> prefix;
+    Teuchos::OSTab tab0 (out_);
     if (verbose) {
-      tab0 = rcp (new Teuchos::OSTab (out_));
-      const int myRank = comm_->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank
-         << ": Distributor::doPostsAndWaits(3 args, Kokkos): "
-         << "{sendType: " << DistributorSendTypeEnumToString (sendType_)
-         << ", barrierBetween: " << barrierBetween_ << "}" << endl;
-      *out_ << os.str ();
-      tab1 = rcp (new Teuchos::OSTab (out_));
+      os << "Proc " << myRank << ": " << briefFuncPrefix;
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      std::ostringstream os2; // start by printing "long" func name
+      os2 << "Proc " << myRank << ": " << funcPrefix << endl;
+      *out_ << os2.str ();
     }
+    Teuchos::OSTab tab1 (out_);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << requests_.size () <<
-      " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (requests_.size () != 0, std::runtime_error, funcPrefix << "On Process "
+       << myRank << ", there are " << requests_.size () << " outstanding "
+       "nonblocking messages pending.  It is incorrect to call this method "
+       "with posts outstanding.");
 
     if (verbose) {
-      const int myRank = comm_->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank
-         << ": Distributor::doPostsAndWaits: Call doPosts" << endl;
+      os << *prefix << "Call doPosts" << endl;
       *out_ << os.str ();
     }
     doPosts (exports, numPackets, imports);
     if (verbose) {
-      const int myRank = comm_->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank
-         << ": Distributor::doPostsAndWaits: Call doWaits" << endl;
+      os << *prefix << "Call doWaits" << endl;
       *out_ << os.str ();
     }
     doWaits ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      *out_ << os.str ();
+    }
   }
 
   template <class ExpView, class ImpView>

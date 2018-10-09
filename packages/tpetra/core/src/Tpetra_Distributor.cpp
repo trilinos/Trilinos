@@ -105,8 +105,6 @@ namespace Tpetra {
   namespace {
     // Default value of the "Debug" parameter.
     const bool tpetraDistributorDebugDefault = false;
-    // Default value of the "Barrier between receives and sends" parameter.
-    const bool barrierBetween_default = false;
     // Default value of the "Use distinct tags" parameter.
     const bool useDistinctTags_default = true;
   } // namespace (anonymous)
@@ -174,8 +172,6 @@ namespace Tpetra {
   Distributor::Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     : comm_ (comm)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -194,8 +190,6 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::FancyOStream>& out)
     : comm_ (comm)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -214,8 +208,6 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -235,8 +227,6 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : comm_ (comm)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , selfMessage_ (false)
     , numSends_ (0)
@@ -255,8 +245,6 @@ namespace Tpetra {
     : comm_ (distributor.comm_)
     , out_ (distributor.out_)
     , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
-    , sendType_ (distributor.sendType_)
-    , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
@@ -321,8 +309,6 @@ namespace Tpetra {
     std::swap (comm_, rhs.comm_);
     std::swap (out_, rhs.out_);
     std::swap (howInitialized_, rhs.howInitialized_);
-    std::swap (sendType_, rhs.sendType_);
-    std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
@@ -395,10 +381,6 @@ namespace Tpetra {
     RCP<const ParameterList> validParams = getValidParameters ();
     plist->validateParametersAndSetDefaults (*validParams);
 
-    const bool barrierBetween =
-      plist->get<bool> ("Barrier between receives and sends");
-    const Details::EDistributorSendType sendType =
-      getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
     const bool debug = plist->get<bool> ("Debug");
     {
@@ -418,22 +400,7 @@ namespace Tpetra {
          "pointer points to host memory or CUDA device memory.");
     }
 
-    // We check this property explicitly, since we haven't yet learned
-    // how to make a validator that can cross-check properties.
-    // Later, turn this into a validator so that it can be embedded in
-    // the valid ParameterList and used in Optika.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
-      std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
-      << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
-      "between receives and sends." << endl << "This is invalid; you must "
-      "include the barrier if you use ready sends." << endl << "Ready sends "
-      "require that their corresponding receives have already been posted, "
-      "and the only way to guarantee that in general is with a barrier.");
-
     // Now that we've validated the input list, save the results.
-    sendType_ = sendType;
-    barrierBetween_ = barrierBetween;
     useDistinctTags_ = useDistinctTags;
     debug_ = debug;
 
@@ -451,12 +418,11 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = barrierBetween_default;
     const bool useDistinctTags = useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
-    const std::string defaultSendType ("Send");
+    const std::string defaultSendType ("Isend");
     Array<Details::EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
@@ -464,13 +430,12 @@ namespace Tpetra {
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
-    plist->set ("Barrier between receives and sends", barrierBetween,
-                "Whether to execute a barrier between receives and sends in do"
-                "[Reverse]Posts().  Required for correctness when \"Send type\""
-                "=\"Rsend\", otherwise correct but not recommended.");
+    plist->set ("Barrier between receives and sends", false,
+                "NOTE: This option no longer has an effect; "
+		"see GitHub Issue #3580.");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of send to use in "
-      "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+      defaultSendType, "NOTE: This option no longer has an effect; see GitHub "
+      "Issue #3580.", sendTypes(), sendTypeEnums(), plist.getRawPtr ());
     plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
                 "MPI message tags for different code paths.  Highly recommended"
                 " to avoid message collisions.");
@@ -541,8 +506,6 @@ namespace Tpetra {
     
     reverseDistributor_ = Teuchos::rcp (new Distributor (comm_, out_));
     reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
-    reverseDistributor_->sendType_ = sendType_;
-    reverseDistributor_->barrierBetween_ = barrierBetween_;
     reverseDistributor_->debug_ = debug_;
 
     // The maximum length of any of the receives of this Distributor.
@@ -699,11 +662,7 @@ namespace Tpetra {
     out << "How initialized: "
         << Details::DistributorHowInitializedEnumToString (howInitialized_)
         << ", Parameters: {"
-        << "Send type: "
-        << DistributorSendTypeEnumToString (sendType_)
-        << ", Barrier between receives and sends: "
-        << (barrierBetween_ ? "true" : "false")
-        << ", Use distinct tags: "
+        << "Use distinct tags: "
         << (useDistinctTags_ ? "true" : "false")
         << ", Debug: " << (debug_ ? "true" : "false")
         << "}}";
@@ -815,11 +774,7 @@ namespace Tpetra {
       {
         out << "Parameters: " << endl;
         Teuchos::OSTab tab2 (out);
-        out << "\"Send type\": "
-            << DistributorSendTypeEnumToString (sendType_) << endl
-            << "\"Barrier between receives and sends\": "
-            << (barrierBetween_ ? "true" : "false") << endl
-            << "\"Use distinct tags\": "
+        out << "\"Use distinct tags\": "
             << (useDistinctTags_ ? "true" : "false") << endl
             << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
       }

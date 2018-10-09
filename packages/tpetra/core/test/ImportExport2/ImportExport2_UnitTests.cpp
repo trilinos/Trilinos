@@ -129,8 +129,6 @@ namespace {
   // Command-line argument values (initially set to defaults).
   bool testMpi = true;
   double errorTolSlack = 1e+1;
-  std::string distributorSendType ("Send");
-  bool barrierBetween = true;
   bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
@@ -144,16 +142,6 @@ namespace {
     clp.setOption(
         "error-tol-slack", &errorTolSlack,
         "Slack off of machine epsilon used to check test results" );
-    // FIXME (mfh 02 Apr 2012) It would be better to ask Distributor
-    // for the list of valid send types, but setOption() needs a const
-    // char[], not an std::string.
-    clp.setOption ("distributor-send-type", &distributorSendType,
-                   "In MPI tests, the type of send operation that the Tpetra::"
-                   "Distributor will use.  Valid values include \"Isend\", "
-                   "\"Rsend\", \"Send\", and \"Ssend\".");
-    clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
-                   "In MPI tests, whether Tpetra::Distributor will execute a "
-                   "barrier between posting receives and posting sends.");
     clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
                    "output.");
   }
@@ -175,12 +163,6 @@ namespace {
     static RCP<ParameterList> plist; // NOT THREAD SAFE, but that's OK here.
     if (plist.is_null ()) {
       plist = parameterList ("Tpetra::Distributor");
-      plist->set ("Send type", distributorSendType);
-      plist->set ("Barrier between receives and sends", barrierBetween);
-
-      if (verbose && getDefaultComm()->getRank() == 0) {
-        cout << "ParameterList for Distributor: " << *plist << endl;
-      }
 
       if (verbose) {
         // Tell Distributor to print verbose output.
