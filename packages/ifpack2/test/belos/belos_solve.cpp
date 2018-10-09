@@ -127,6 +127,12 @@ int main (int argc, char* argv[])
 
     *out << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
 
+    Teuchos::RCP<const TOP> prec = problem->getLeftPrec();
+    if (prec !=Teuchos::null) {
+      *out << "Preconditioner attributes:" << std::endl;
+      prec->describe (*out, Teuchos::VERB_LOW);
+    }
+
     Teuchos::RCP<TMV> R = Teuchos::rcp(new TMV(*problem->getRHS()));
     problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
     Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
@@ -137,6 +143,7 @@ int main (int argc, char* argv[])
     }
 
     *out << "2-Norm of 0th residual vec: " << norms[0] << std::endl;
+    *out << "Achieved tolerance: " << solver->achievedTol() << std::endl;
 
     //If the xml file specified a number of iterations to expect, then we will
     //use that as a test pass/fail criteria.
