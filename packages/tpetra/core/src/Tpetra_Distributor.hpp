@@ -1164,19 +1164,10 @@ namespace Tpetra {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
-    using Teuchos::as;
-    using Teuchos::FancyOStream;
-    using Teuchos::includesVerbLevel;
     using Teuchos::ireceive;
     using Teuchos::isend;
     using Teuchos::OSTab;
-    using Teuchos::readySend;
-    using Teuchos::send;
-    using Teuchos::ssend;
-    using Teuchos::TypeNameTraits;
-    using Teuchos::typeName;
     using std::endl;
-    typedef Array<size_t>::size_type size_type;
     const char funcPrefix[] =
       "Tpetra::Distributor::doPosts(3 args,Teuchos::ArrayRCP): ";
     const char briefFuncPrefix[] = "doPosts(3,ARCP): ";
