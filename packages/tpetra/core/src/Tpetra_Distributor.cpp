@@ -180,6 +180,7 @@ namespace Tpetra {
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
+    , totalSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
     , lastRoundBytesSend_ (0)
@@ -199,6 +200,7 @@ namespace Tpetra {
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
+    , totalSendLength_ (0)      
     , numReceives_ (0)
     , totalReceiveLength_ (0)
     , lastRoundBytesSend_ (0)
@@ -218,6 +220,7 @@ namespace Tpetra {
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
+    , totalSendLength_ (0)      
     , numReceives_ (0)
     , totalReceiveLength_ (0)
     , lastRoundBytesSend_ (0)
@@ -238,6 +241,7 @@ namespace Tpetra {
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
+    , totalSendLength_ (0)      
     , numReceives_ (0)
     , totalReceiveLength_ (0)
     , lastRoundBytesSend_ (0)
@@ -260,6 +264,7 @@ namespace Tpetra {
     , startsTo_ (distributor.startsTo_)
     , lengthsTo_ (distributor.lengthsTo_)
     , maxSendLength_ (distributor.maxSendLength_)
+    , totalSendLength_ (distributor.totalSendLength_)      
     , indicesTo_ (distributor.indicesTo_)
     , numReceives_ (distributor.numReceives_)
     , totalReceiveLength_ (distributor.totalReceiveLength_)
@@ -325,6 +330,7 @@ namespace Tpetra {
     std::swap (startsTo_, rhs.startsTo_);
     std::swap (lengthsTo_, rhs.lengthsTo_);
     std::swap (maxSendLength_, rhs.maxSendLength_);
+    std::swap (totalSendLength_, rhs.totalSendLength_);
     std::swap (indicesTo_, rhs.indicesTo_);
     std::swap (numReceives_, rhs.numReceives_);
     std::swap (totalReceiveLength_, rhs.totalReceiveLength_);
@@ -531,31 +537,35 @@ namespace Tpetra {
   void
   Distributor::createReverseDistributor() const
   {
+    const char prefix[] = "Tpetra::Distributor::createReverseDistributor: ";
+    
     reverseDistributor_ = Teuchos::rcp (new Distributor (comm_, out_));
     reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
     reverseDistributor_->debug_ = debug_;
 
-    // The total length of all the sends of this Distributor.  We
-    // calculate it because it's the total length of all the receives
-    // of the reverse Distributor.
-    size_t totalSendLength =
-      std::accumulate (lengthsTo_.begin(), lengthsTo_.end(), 0);
-
     // The maximum length of any of the receives of this Distributor.
     // We calculate it because it's the maximum length of any of the
     // sends of the reverse Distributor.
     size_t maxReceiveLength = 0;
-    const int myProcID = comm_->getRank();
+    const int myRank = comm_->getRank();
+    size_t totalReceiveLength = 0;
     for (size_t i=0; i < numReceives_; ++i) {
-      if (procsFrom_[i] != myProcID) {
+      if (procsFrom_[i] != myRank) {
         // Don't count receives for messages sent by myself to myself.
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
         }
+	totalReceiveLength += lengthsFrom_[i];
       }
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (totalReceiveLength != totalReceiveLength_, std::logic_error, prefix <<
+       "Process " << myRank << ": totalReceiveLength(=" << totalReceiveLength
+       << ") != totalReceiveLength_(=" << totalReceiveLength_
+       << ").  Please report this bug to the Tpetra developers.");
 
     // Initialize all of reverseDistributor's data members.  This
     // mainly just involves flipping "send" and "receive," or the
@@ -567,9 +577,10 @@ namespace Tpetra {
     reverseDistributor_->startsTo_ = startsFrom_;
     reverseDistributor_->lengthsTo_ = lengthsFrom_;
     reverseDistributor_->maxSendLength_ = maxReceiveLength;
+    reverseDistributor_->totalSendLength_ = totalReceiveLength_;
     reverseDistributor_->indicesTo_ = indicesFrom_;
     reverseDistributor_->numReceives_ = numSends_;
-    reverseDistributor_->totalReceiveLength_ = totalSendLength;
+    reverseDistributor_->totalReceiveLength_ = totalSendLength_;
     reverseDistributor_->lengthsFrom_ = lengthsTo_;
     reverseDistributor_->procsFrom_ = procsTo_;
     reverseDistributor_->startsFrom_ = startsTo_;
@@ -1320,15 +1331,26 @@ namespace Tpetra {
       if (numSends_ > 0) {
         sort2(procsTo_.begin(), procsTo_.end(), startsTo_.begin());
       }
-      // compute the maximum send length
+      // compute the maximum and total send length
       maxSendLength_ = 0;
+      totalSendLength_ = 0;
       for (size_t i = 0; i < numSends_; ++i) {
-        int procID = procsTo_[i];
-        lengthsTo_[i] = starts[procID];
-        if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
-          maxSendLength_ = lengthsTo_[i];
+        const int procID = procsTo_[i];
+	const size_t lenTo = starts[procID];
+        lengthsTo_[i] = lenTo;
+        if (procID != myProcID) {
+	  if (lenTo > maxSendLength_) {
+	    maxSendLength_ = lenTo;
+	  }
+	  totalSendLength_ += lenTo;	  
         }
       }
+#ifdef HAVE_TEUCHOS_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(maxSendLength_ != 0 && totalSendLength_ == 0, std::logic_error,
+	 "maxSendLength_ = " << maxSendLength_ << " != 0, but totalSendLength_"
+	 " = 0.");
+#endif
     }
     else {
       // not grouped by proc, need send buffer and indicesTo_
@@ -1402,20 +1424,28 @@ namespace Tpetra {
       // the length, and the offset for this send into the
       // send buffer (startsTo_)
       maxSendLength_ = 0;
+      totalSendLength_ = 0;
       size_t snd = 0;
       for (int proc = 0; proc < numProcs; ++proc ) {
         if (starts[proc+1] != starts[proc]) {
           lengthsTo_[snd] = starts[proc+1] - starts[proc];
           startsTo_[snd] = starts[proc];
           // record max length for all off-proc sends
-          if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
-            maxSendLength_ = lengthsTo_[snd];
+          if (proc != myProcID) {
+	    if (lengthsTo_[snd] > maxSendLength_) {
+	      maxSendLength_ = lengthsTo_[snd];
+	    }
+	    totalSendLength_ += lengthsTo_[snd];
           }
           procsTo_[snd] = proc;
           ++snd;
         }
       }
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG      
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(maxSendLength_ != 0 && totalSendLength_ == 0, std::logic_error,
+	 "maxSendLength_ = " << maxSendLength_ << " != 0, but totalSendLength_"
+	 " = 0.");
       if (snd != numSends_) {
         send_neq_numSends = true;
       }
@@ -1533,15 +1563,19 @@ namespace Tpetra {
         startsTo_.resize(numSends_);
         lengthsTo_.resize(numSends_);
         maxSendLength_ = 0;
+	totalSendLength_ = 0;
         size_t snd = 0;
         for (int proc = 0; proc < numProcs; ++proc ) {
           if (starts[proc+1] != starts[proc]) {
             lengthsTo_[snd] = starts[proc+1] - starts[proc];
             startsTo_[snd] = starts[proc];
             // record max length for all off-proc sends
-            if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
-              maxSendLength_ = lengthsTo_[snd];
-            }
+            if (proc != myProcID) {
+	      if (lengthsTo_[snd] > maxSendLength_) {
+		maxSendLength_ = lengthsTo_[snd];
+	      }
+	      totalSendLength_ += lengthsTo_[snd];
+	    }
             procsTo_[snd] = proc;
             ++snd;
           }
@@ -1591,12 +1625,16 @@ namespace Tpetra {
       }
       // compute the maximum send length
       maxSendLength_ = 0;
+      totalSendLength_ = 0;
       for (size_t i = 0; i < numSends_; ++i) {
         int procID = procsTo_[i];
         lengthsTo_[i] = starts[procID];
-        if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
-          maxSendLength_ = lengthsTo_[i];
-        }
+        if (procID != myProcID) {
+	  if (lengthsTo_[i] > maxSendLength_) {
+	    maxSendLength_ = lengthsTo_[i];
+	  }
+	  totalSendLength_ += lengthsTo_[i];
+	}
       }
     }
 
