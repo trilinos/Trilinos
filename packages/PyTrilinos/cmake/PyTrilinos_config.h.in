@@ -57,13 +57,13 @@
 #cmakedefine EpetraExt_BUILD_MODEL_EVALUATOR
 
 /* Define if Epetra namespace is enabled within NOX */
-#cmakedefine NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#cmakedefine HAVE_NOX_EPETRA
 
 /* Define if EpetraExt capabilities are enabled within NOX::Epetra */
 #cmakedefine HAVE_NOX_EPETRAEXT
 
 /* Define if Petsc namespace is enabled within NOX */
-#cmakedefine NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+#cmakedefine HAVE_NOX_PETSC
 
 /* Define ML options */
 #define MLAPI_LC

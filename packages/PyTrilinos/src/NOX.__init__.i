@@ -118,7 +118,7 @@ from . import ___init__
 // PyTrilinos configuration support //
 //////////////////////////////////////
 %include "PyTrilinos_config.h"
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#ifdef HAVE_NOX_EPETRA
 %constant bool Have_Epetra = true;
 #else
 %constant bool Have_Epetra = false;
@@ -144,7 +144,7 @@ from . import StatusTest
 %}
 
 // NOX.Epetra namespace
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#ifdef HAVE_NOX_EPETRA
 %pythoncode
 %{
 
@@ -155,7 +155,7 @@ from . import Epetra
 #endif
 
 // NOX.PETSc namespace
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+#ifdef HAVE_NOX_PETSC
 %pythoncode
 %{
 

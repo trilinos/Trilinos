@@ -50,18 +50,18 @@
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#ifdef HAVE_NOX_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // NOX include files
 #include "PyTrilinos_NOX_Abstract_Headers.hpp"
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+#ifdef HAVE_NOX_PETSC
 #include "PyTrilinos_NOX_PETSc_Headers.hpp"
 #endif
 %}
 
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+#ifdef HAVE_NOX_PETSC
 %include "petsc4py/petsc4py.i"
 #endif
 
@@ -85,7 +85,7 @@
     static swig_type_info * swig_NAV_ptr =
       SWIG_TypeQuery("NOX::Abstract::Vector *");
 
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_EV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
@@ -105,7 +105,7 @@
     }
 #endif
 
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+#ifdef HAVE_NOX_PETSC
     // Try to downcast to a NOX::Petsc::Vector
     NOX::Petsc::Vector * npvResult = dynamic_cast< NOX::Petsc::Vector * >(&nav);
     if (npvResult != NULL)
@@ -137,7 +137,7 @@
     static swig_type_info * swig_NAV_ptr =
       SWIG_TypeQuery("const NOX::Abstract::Vector *");
 
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_EV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< const Epetra_Vector > *");
@@ -157,7 +157,7 @@
     }
 #endif
 
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+#ifdef HAVE_NOX_PETSC
     // Try to downcast to a const NOX::Petsc::Vector
     const NOX::Petsc::Vector * npvResult =
       dynamic_cast< const NOX::Petsc::Vector * >(&nav);
@@ -193,7 +193,7 @@
 
 /////////////////////////////////////////////////////////////////////
 
-#ifdef NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+#ifdef HAVE_NOX_EPETRA
 
 /////////////////////////////////////////////////////////////////////
 
