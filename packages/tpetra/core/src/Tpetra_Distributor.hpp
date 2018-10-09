@@ -1170,7 +1170,7 @@ namespace Tpetra {
     using std::endl;
     const char funcPrefix[] =
       "Tpetra::Distributor::doPosts(3 args,Teuchos::ArrayRCP): ";
-    const char briefFuncPrefix[] = "doPosts(3,ARCP): ";
+    const char briefFuncPrefix[] = "doPosts(3,Teuchos): ";
     
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
@@ -1179,7 +1179,6 @@ namespace Tpetra {
     using Tpetra::Details::Behavior;
     const bool debug = Behavior::debug ("Distributor");    
     const bool verbose = Behavior::verbose ("Distributor");
-
     const int myRank = comm_->getRank ();
 
     std::unique_ptr<std::string> prefix;
@@ -1284,13 +1283,13 @@ namespace Tpetra {
           //    array, given the offset and size (total number of
           //    packets from process procsFrom_[i]).
           // 2. Start the Irecv and save the resulting request.
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (curBufOffset + curBufLen > size_t (imports.size ()),
-	     std::logic_error, funcPrefix << "Exceeded size of "
-	     "'imports' array in packing loop on Process " <<
-	     myRank << ".  imports.size() = " << imports.size () <<
-	     " < curBufOffset(" << curBufOffset << ") + curBufLen("
-	     << curBufLen << ").");
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            curBufOffset + curBufLen > size_t (imports.size ()),
+            std::logic_error, funcPrefix << "Process " << myRank << ": "
+	    "Exceeded size of 'imports' array in packing loop.  "
+	    "imports.size() = " << imports.size () << " < "
+	    "curBuffOffset(=" << curBufOffset << ") + curBufLen(="
+            << curBufLen << ").");
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufOffset, curBufLen);
           requests_.push_back (ireceive<int, Packet> (recvBuf, srcProc,
@@ -2056,28 +2055,24 @@ namespace Tpetra {
            size_t numPackets,
            const ImpView &imports)
   {
-    using Teuchos::Array;
-    using Teuchos::as;
-    using Teuchos::FancyOStream;
-    using Teuchos::includesVerbLevel;
-    using Teuchos::ireceive;
-    using Teuchos::isend;
-    using Teuchos::OSTab;
-    using Teuchos::readySend;
-    using Teuchos::send;
-    using Teuchos::ssend;
-    using Teuchos::TypeNameTraits;
-    using Teuchos::typeName;
-    using std::endl;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::create_view;
     using Kokkos::Compat::subview_offset;
     using Kokkos::Compat::deep_copy_offset;
-    typedef Array<size_t>::size_type size_type;
+    using Teuchos::ireceive;
+    using Teuchos::isend;
+    using Teuchos::OSTab;
+    using std::endl;
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
+    const char funcPrefix[] =
+      "Tpetra::Distributor::doPosts(3 args,Kokkos::View): ";
+    const char briefFuncPrefix[] = "doPosts(3,Kokkos): ";
 
-    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+#ifdef TPETRA_DISTRIBUTOR_TIMERS
+    Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
+#endif // TPETRA_DISTRIBUTOR_TIMERS
+    
 #ifdef KOKKOS_ENABLE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
@@ -2085,32 +2080,23 @@ namespace Tpetra {
                    "allocations.  See GitHub issue #1088.");
 #endif // KOKKOS_ENABLE_CUDA
 
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
-#endif // TPETRA_DISTRIBUTOR_TIMERS
-
+    using Tpetra::Details::Behavior;
+    const bool debug = Behavior::debug ("Distributor");    
+    const bool verbose = Behavior::verbose ("Distributor");
     const int myRank = comm_->getRank ();
-    // Run-time configurable parameters that come from the input
-    // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
-
+    
+    std::unique_ptr<std::string> prefix;
     Teuchos::OSTab tab0 (out_);
     if (verbose) {
       std::ostringstream os;
-      os << "Proc " << myRank
-         << ": Distributor::doPosts(3 args, Kokkos)" << endl;
-      *out_ << os.str ();
+      os << "Proc " << myRank << ": " << briefFuncPrefix;
+      // std::make_unique requires C++14, alas.
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      std::ostringstream os2; // start by printing "long" func name
+      os2 << "Proc " << myRank << ": " << funcPrefix << endl;
+      *out_ << os2.str ();
     }
     Teuchos::OSTab tab1 (out_);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error,
-      "Tpetra::Distributor::doPosts(3 args, Kokkos): Ready-send version "
-      "requires a barrier between posting receives and posting ready sends.  "
-      "This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
 
     size_t selfReceiveOffset = 0;
 
@@ -2169,13 +2155,12 @@ namespace Tpetra {
     const int pathTag = 0;
     const int tag = this->getTag (pathTag);
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0,
-       std::logic_error,
-       "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
-       << myRank << ": requests_.size() = " << requests_.size () << " != 0.");
-#endif // HAVE_TPETRA_DEBUG
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(requests_.size () != 0, std::logic_error, funcPrefix << "Process "
+	 << myRank << ": requests_.size() = " << requests_.size () << " != 0."
+	 "  Please report this bug to the Tpetra developers.");
+    }
 
     // Distributor uses requests_.size() as the number of outstanding
     // nonblocking message requests, so we resize to zero to maintain
@@ -2190,15 +2175,13 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
+    const size_t actualNumReceives =
+      numReceives_ + size_t (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
     if (verbose) {
       std::ostringstream os;
-      os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
-         << (indicesTo_.empty () ? "fast" : "slow") << "): Post receives"
-         << endl;
+      os << *prefix << "Post receives" << endl;
       *out_ << os.str ();
     }
 
@@ -2212,16 +2195,16 @@ namespace Tpetra {
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3_recvs_);
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-      size_t curBufferOffset = 0;
-      for (size_type i = 0; i < actualNumReceives; ++i) {
+      size_t curBufOffset = 0;
+      for (size_t i = 0; i < actualNumReceives; ++i) {
         const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (procsFrom_[i] != myRank) {
+	const int srcProc = procsFrom_[i];
+	
+        if (srcProc != myRank) {
           if (verbose) {
             std::ostringstream os;
-            os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
-               << (indicesTo_.empty () ? "fast" : "slow") << "): "
-               << "Post irecv: {source: " << procsFrom_[i]
-               << ", tag: " << tag << "}" << endl;
+	    os << *prefix << "Post irecv: {source: " << srcProc
+	       << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
           // If my process is receiving these packet(s) from another
@@ -2229,44 +2212,25 @@ namespace Tpetra {
           //
           // 1. Set up the persisting view (recvBuf) of the imports
           //    array, given the offset and size (total number of
-          //    packets from process procsFrom_[i]).
+          //    packets from process srcProc).
           // 2. Start the Irecv and save the resulting request.
           TEUCHOS_TEST_FOR_EXCEPTION(
-            curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
-            std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-            "Exceeded size of 'imports' array in packing loop on Process " <<
-            myRank << ".  imports.size() = " << imports.size () << " < "
-            "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
-            curBufLen << ").");
+            curBufOffset + curBufLen > size_t (imports.extent (0)),
+            std::logic_error, funcPrefix << "Process " << myRank << ": "
+	    "Exceeded size of 'imports' array in packing loop.  "
+	    "imports.extent(0) = " << imports.extent (0) << " < "
+	    "curBuffOffset(=" << curBufOffset << ") + curBufLen(="
+            << curBufLen << ").");
           imports_view_type recvBuf =
-            subview_offset (imports, curBufferOffset, curBufLen);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+            subview_offset (imports, curBufOffset, curBufLen);
+          requests_.push_back (ireceive<int> (recvBuf, srcProc,
                                               tag, *comm_));
         }
         else { // Receiving from myself
-          selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
+          selfReceiveOffset = curBufOffset; // Remember the self-recv offset
         }
-        curBufferOffset += curBufLen;
+        curBufOffset += curBufLen;
       }
-    }
-
-    if (doBarrier) {
-#ifdef TPETRA_DISTRIBUTOR_TIMERS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3_barrier_);
-#endif // TPETRA_DISTRIBUTOR_TIMERS
-
-      if (verbose) {
-        std::ostringstream os;
-        os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
-           << (indicesTo_.empty () ? "fast" : "slow") << "): Barrier" << endl;
-        *out_ << os.str ();
-      }
-      // If we are using ready sends (MPI_Rsend) below, we need to do
-      // a barrier before we post the ready sends.  This is because a
-      // ready send requires that its matching receive has already
-      // been posted before the send has been posted.  The only way to
-      // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
     }
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
@@ -2291,20 +2255,14 @@ namespace Tpetra {
     size_t selfIndex = 0;
 
     if (verbose) {
+      const bool fastPath = indicesTo_.empty ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": doPosts(3 args, Kokkos, "
-         << (indicesTo_.empty () ? "fast" : "slow") << "): Post sends" << endl;
+      os << *prefix << (fastPath ? "fast" : "slow")
+	 << " path: Post sends" << endl;
       *out_ << os.str ();
     }
 
-    if (indicesTo_.empty()) {
-      if (verbose) {
-        std::ostringstream os;
-        os << "Proc " << myRank
-           << ": doPosts(3 args, Kokkos, fast): posting sends" << endl;
-        *out_ << os.str ();
-      }
-
+    if (indicesTo_.empty ()) {
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
@@ -2313,55 +2271,18 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myRank) {
+	const int tgtProc = procsTo_[p];
+        if (tgtProc != myRank) {
           if (verbose) {
             std::ostringstream os;
-            os << "Proc " << myRank << ": doPosts(3 args, Kokkos, fast): Post send: "
-              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
+	    os << *prefix << "Post send: {target: " << tgtProc
+	       << ", tag: " << tag << "}" << endl;
             *out_ << os.str ();
           }
-          // if (debug_) {
-          //   const size_t off = startsTo_[p] * numPackets;
-          //   const size_t len = lengthsTo_[p] * numPackets;
-          //   TEUCHOS_TEST_FOR_EXCEPTION
-          //     (static_cast<size_t> (off + len) >
-          //      static_cast<size_t> (exports.size ()), std::logic_error,
-          //      "doPosts: off=" << off << " + len=" << len << " > "
-          //      "exports.size()=" << exports.size () << ".");
-          // }
-
-          exports_view_type tmpSend = subview_offset(
-            exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int> (tmpSend,
-                       as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (exports, startsTo_[p] * numPackets,
-                              lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                            as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                        as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
+	  const size_t offset = startsTo_[p] * numPackets;
+	  const size_t len = lengthsTo_[p] * numPackets;
+	  exports_view_type tmpSendBuf = subview_offset (exports, offset, len);
+	  requests_.push_back (isend<int> (tmpSendBuf, tgtProc, tag, *comm_));
         }
         else { // "Sending" the message to myself
           selfNum = p;
@@ -2371,9 +2292,7 @@ namespace Tpetra {
       if (selfMessage_) {
         if (verbose) {
           std::ostringstream os;
-          os << "Proc " << myRank
-             << ": doPosts(3 args, Kokkos, fast): Self-send" << endl;
-          *out_ << os.str ();
+          os << *prefix << "Self-send" << endl;
         }
         // This is how we "send a message to ourself": we copy from
         // the export buffer to the import buffer.  That saves
@@ -2388,32 +2307,18 @@ namespace Tpetra {
       }
       if (verbose) {
         std::ostringstream os;
-        os << "Proc " << myRank << ": doPosts(3 args, Kokkos, fast) done" << endl;
+        os << *prefix << "Fast send path done";
         *out_ << os.str ();
       }
     }
     else { // data are not blocked by proc, use send buffer
-      if (verbose) {
-        std::ostringstream os;
-        os << "Proc " << myRank
-           << ": doPosts(3 args, Kokkos, slow): posting sends" << endl;
-        *out_ << os.str ();
-      }
-
+      // TODO (mfh 08 Oct 2018) Don't reallocate each time.      
       typedef typename ExpView::non_const_value_type Packet;
       typedef typename ExpView::array_layout Layout;
       typedef typename ExpView::device_type Device;
       typedef typename ExpView::memory_traits Mem;
-      Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
-                                               maxSendLength_ * numPackets);
-
-      // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
-      // sends), because the buffer is only long enough for one send.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
-        "doesn't currently work with nonblocking sends.");
+      Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", totalSendLength_ * numPackets);
+      size_t sendArrayOffset = 0;
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + procIndex;
@@ -2422,53 +2327,65 @@ namespace Tpetra {
         }
 
         if (procsTo_[p] != myRank) {
-          if (verbose) {
-            std::ostringstream os;
-            os << "Proc " << myRank
-               << ": doPosts(3 args, Kokkos, slow): Post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
-            *out_ << os.str ();
-          }
-
-          size_t sendArrayOffset = 0;
+	  size_t tgtOffset = sendArrayOffset;
           size_t j = startsTo_[p];
           for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
-            deep_copy_offset(sendArray, exports, sendArrayOffset,
-                             indicesTo_[j]*numPackets, numPackets);
-            sendArrayOffset += numPackets;
+	    if (verbose) {
+	      std::ostringstream os;
+	      os << *prefix << "k=" << k << ", lengthsTo_[" << p << "]="
+		 << lengthsTo_[p] << ", j=" << j << endl;
+	      *out_ << os.str ();
+	    }
+	    const size_t offsetIntoExports = indicesTo_[j] * numPackets;
+	    TEUCHOS_TEST_FOR_EXCEPTION
+	      (offsetIntoExports + numPackets > size_t (exports.extent (0)),
+	       std::logic_error, funcPrefix << "Process " << myRank << ": "
+	       "offsetIntoExports(=" << offsetIntoExports << ") + numPackets(="
+	       << numPackets << ") > exports.extent(0) = " << exports.extent (0)
+	       << ".  Please report this bug to the Tpetra developers.");
+            deep_copy_offset(sendArray, exports, tgtOffset,
+                             offsetIntoExports, numPackets);
+            tgtOffset += numPackets;
           }
-          ImpView tmpSend =
-            subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
+	  const size_t sendArrayLen = lengthsTo_[p] * numPackets;
+	  TEUCHOS_TEST_FOR_EXCEPTION
+	    (sendArrayOffset + sendArrayLen > totalSendLength_ * numPackets,
+	     std::logic_error, funcPrefix << "Process " << myRank << ": At i="
+	     << i << ", sendArrayOffset+sendArrayLen = "
+	     << (sendArrayOffset + sendArrayLen) << " > totalSendLength_*"
+	     "numPackets=" << totalSendLength_ * numPackets
+	     << ".  Please report this bug to the Tpetra developers.");
 
-          if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int> (tmpSend,
-                       as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
+          if (verbose) {
+            std::ostringstream os;
+	    os << *prefix << "sendArray.extent(0)=" << sendArray.extent (0)
+	       << ", sendArrayOffset=" << sendArrayOffset
+	       << ", sendArrayLen=" << sendArrayLen << endl;
+            *out_ << os.str ();
           }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
+	  exports_view_type tmpSendBuf =
+	    subview_offset (sendArray, sendArrayOffset, sendArrayLen);
+	  TEUCHOS_TEST_FOR_EXCEPTION
+	    (sendArrayLen != 0 && tmpSendBuf.data () == nullptr,
+	     std::logic_error, funcPrefix << "Process " << myRank << ": "
+	     "sendArrayLen = " << sendArrayLen << " != 0, but "
+	     "tmpSendBuf.data() == nullptr.  "
+	     "Please report this bug to the Tpetra developers.");
+          if (verbose) {
+            std::ostringstream os;
+	    os << *prefix << "Post send: {target: " << procsTo_[p]
+	       << ", tag: " << tag << "}" << endl;
+            *out_ << os.str ();
           }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                            as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                        as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
+	  requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+					   tag, *comm_));
+	  sendArrayOffset += sendArrayLen;
+	  TEUCHOS_TEST_FOR_EXCEPTION
+	    (sendArrayOffset > totalSendLength_ * numPackets, std::logic_error,
+	     funcPrefix << "Process " << myRank << ": At i=" << i << ", "
+	     "sendArrayOffset=" << sendArrayOffset << " > totalSendLength_*"
+	     "numPackets=" << totalSendLength_ * numPackets
+	     << ".  Please report this bug to the Tpetra developers.");
         }
         else { // "Sending" the message to myself
           selfNum = p;
@@ -2479,8 +2396,7 @@ namespace Tpetra {
       if (selfMessage_) {
         if (verbose) {
           std::ostringstream os;
-          os << "Proc " << myRank
-             << ": doPosts(3 args, Kokkos, slow): Self-send" << endl;
+          os << *prefix << "Self-send" << endl;
           *out_ << os.str ();
         }
         for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
@@ -2492,15 +2408,14 @@ namespace Tpetra {
       }
       if (verbose) {
         std::ostringstream os;
-        os << "Proc " << myRank
-           << ": doPosts(3 args, Kokkos, slow) done" << endl;
+        os << *prefix << "Slow send path done" << endl;
         *out_ << os.str ();
       }
     }
 
     if (verbose) {
       std::ostringstream os;
-      os << "Proc " << myRank << ": doPosts done" << endl;
+      os << *prefix << "Done" << endl;
       *out_ << os.str ();
     }
   }
