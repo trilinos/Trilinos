@@ -53,6 +53,9 @@
 /* Define if Domi is enabled */
 #cmakedefine HAVE_DOMI
 
+/* Define if EpetraExt ModelEvaluator is flagged to be built */
+#cmakedefine EpetraExt_BUILD_MODEL_EVALUATOR
+
 /* Define if Epetra namespace is enabled within NOX */
 #cmakedefine HAVE_NOX_EPETRA
 

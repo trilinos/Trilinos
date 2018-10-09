@@ -642,7 +642,7 @@ __version__ = version()
 // Tpetra Map support //
 ////////////////////////
 
-%extend Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >
+%extend Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >
 {
   Map()
   {
@@ -791,11 +791,11 @@ __version__ = version()
   }
 }
 
-%ignore Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::Map;
-%ignore Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getLocalElement;
-%ignore Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getGlobalElement;
-%ignore Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getRemoteIndexList;
-%ignore Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getMyGlobalIndices;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::Map;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getLocalElement;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getGlobalElement;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getRemoteIndexList;
+%ignore Tpetra::Map< PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType >::getMyGlobalIndices;
 
 %include "Tpetra_Map_decl.hpp"
 
@@ -803,21 +803,21 @@ __version__ = version()
 // directives below are redundant, because it is the same as the
 // default template argument.  But SWIG is much more acurate when
 // comparing types when all template arguments are specified.
-%teuchos_rcp(Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                   PYTRILINOS_GLOBAL_ORD,
-                                   DefaultNodeType >)
-%template(Map_default) Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                             PYTRILINOS_GLOBAL_ORD,
-                                             DefaultNodeType >;
+%teuchos_rcp(Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                          PYTRILINOS_GLOBAL_ORD,
+                          DefaultNodeType >)
+%template(Map_default) Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                    PYTRILINOS_GLOBAL_ORD,
+                                    DefaultNodeType >;
 %pythoncode
 {
 Map = Map_default
 }
 %inline
 %{
-  typedef Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                PYTRILINOS_GLOBAL_ORD,
-                                DefaultNodeType > DefaultMapType;
+  typedef Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                       PYTRILINOS_GLOBAL_ORD,
+                       DefaultNodeType > DefaultMapType;
 %}
 
 /////////////////////////////
@@ -869,12 +869,12 @@ public:
 // Tpetra Export support //
 ///////////////////////////
 %include "Tpetra_Export_decl.hpp"
-%teuchos_rcp(Tpetra::Classes::Export< PYTRILINOS_LOCAL_ORD,
-                                      PYTRILINOS_GLOBAL_ORD,
-                                      DefaultNodeType >)
-%template(Export_default) Tpetra::Classes::Export< PYTRILINOS_LOCAL_ORD,
-                                                   PYTRILINOS_GLOBAL_ORD,
-                                                   DefaultNodeType >;
+%teuchos_rcp(Tpetra::Export< PYTRILINOS_LOCAL_ORD,
+                             PYTRILINOS_GLOBAL_ORD,
+                             DefaultNodeType >)
+%template(Export_default) Tpetra::Export< PYTRILINOS_LOCAL_ORD,
+                                          PYTRILINOS_GLOBAL_ORD,
+                                          DefaultNodeType >;
 %pythoncode
 {
 Export = Export_default
@@ -884,12 +884,12 @@ Export = Export_default
 // Tpetra Import support //
 ///////////////////////////
 %include "Tpetra_Import_decl.hpp"
-%teuchos_rcp(Tpetra::Classes::Import< PYTRILINOS_LOCAL_ORD,
-                                      PYTRILINOS_GLOBAL_ORD,
-                                      DefaultNodeType >)
-%template(Import_default) Tpetra::Classes::Import< PYTRILINOS_LOCAL_ORD,
-                                                   PYTRILINOS_GLOBAL_ORD,
-                                                   DefaultNodeType >;
+%teuchos_rcp(Tpetra::Import< PYTRILINOS_LOCAL_ORD,
+                             PYTRILINOS_GLOBAL_ORD,
+                             DefaultNodeType >)
+%template(Import_default) Tpetra::Import< PYTRILINOS_LOCAL_ORD,
+                                          PYTRILINOS_GLOBAL_ORD,
+                                          DefaultNodeType >;
 %pythoncode
 {
 Import = Import_default
@@ -955,7 +955,6 @@ protected:
 
 // %ignore Tpetra::removeEmptyProcessesInPlace;
 // %include "Tpetra_DistObject_decl.hpp"
-// %include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
 
 ////////////////////////////////
 // Tpetra MultiVector support //
@@ -1239,7 +1238,6 @@ public:
 };  // class MultiVector
 }   // namespace Tpetra
 // %include "Tpetra_MultiVector_decl.hpp"
-// %include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 %pythoncode
 %{
   def MultiVector_getattr(self, name):
@@ -1389,7 +1387,6 @@ public:
 // %ignore Tpetra::Vector::getLocalMVNonConst;
 // %warnfilter(302) Tpetra::createVectorFromView;
 // %include "Tpetra_Vector_decl.hpp"
-// %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 %pythoncode
 %{
   def Vector_getattr(self, name):

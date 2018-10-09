@@ -435,11 +435,9 @@ import numpy
 #ifdef HAVE_TPETRA
 %extend Domi::MDMap
 {
-  // This extension returns a Tpetra::Classes::Map instead of a
-  // Tpetra::Map, to help SWIG with type checking
-  Teuchos::RCP< const Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                            PYTRILINOS_GLOBAL_ORD,
-                                            DefaultNodeType > >
+  Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD,
+                                   DefaultNodeType > >
   getTpetraMap(bool withCommPad=true)
   {
     return self->template getTpetraMap< PYTRILINOS_LOCAL_ORD,
@@ -447,11 +445,9 @@ import numpy
                                         DefaultNodeType >(withCommPad);
   }
 
-  // This extension returns a Tpetra::Classes::Map instead of a
-  // Tpetra::Map, to help SWIG with type checking
-  Teuchos::RCP< const Tpetra::Classes::Map< PYTRILINOS_LOCAL_ORD,
-                                            PYTRILINOS_GLOBAL_ORD,
-                                            DefaultNodeType > >
+  Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
+                                   PYTRILINOS_GLOBAL_ORD,
+                                   DefaultNodeType > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true)
   {
@@ -664,7 +660,7 @@ def from_DistArray(comm, distarray):
 #         trailingDim = kwargs.get("trailingDim", 0      )
 #         if type(dtype) == str:
 #             dtype = numpy.dtype(dtype)
-# 
+#
 #         # Factory for arg is MDMap
 #         if isinstance(args[0], MDMap):
 #             if dtype.type is numpy.int32:
@@ -690,21 +686,21 @@ def from_DistArray(comm, distarray):
 #             else:
 #                 raise TypeError("Unsupported or unrecognized dtype = %s" %
 #                                 str(dtype))
-# 
+#
 #         # Factory for arg is DistArray
 #         elif hasattr(arg, '__distarray__'):
 #             self._vector = from_DistArray(*args)
-# 
+#
 #         self.dtype = dtype
-# 
+#
 #     def __getattribute__(self, name):
 #         if name in ('__class__', '__dir__', '__getitem__', '_vector', 'dtype'):
 #             return object.__getattribute__(self, name)
 #         return getattr(object.__getattribute__(self, '_vector'), name)
-# 
+#
 #     def __dir__(self):
 #         return sorted(set(dir(self._vector) + dir(MDVector)))
-# 
+#
 #     def __getitem__(self, args):
 #         return self._vector.__getitem__(args)
 

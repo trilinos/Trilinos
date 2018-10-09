@@ -27,23 +27,23 @@ FOREACH( ORDER 1 2 3 4 )
   TRIBITS_ADD_ADVANCED_TEST(
     CurlLaplacianExample-ConvTest-Quad-Order-${ORDER}
     TEST_0 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=4 --y-elements=4 --z-elements=4 --basis-order=${ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      ARGS --use-tpetra --use-twod --cell="Quad" --x-elements=4 --y-elements=4 --z-elements=4 --basis-order=${ORDER}
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-04
     TEST_1 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=8 --y-elements=8 --z-elements=4 --basis-order=${ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      ARGS --use-tpetra --use-twod --cell="Quad" --x-elements=8 --y-elements=8 --z-elements=4 --basis-order=${ORDER}
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-08
     TEST_2 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=16 --y-elements=16 --z-elements=4 --basis-order=${ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      ARGS --use-tpetra --use-twod --cell="Quad" --x-elements=16 --y-elements=16 --z-elements=4 --basis-order=${ORDER}
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-16
     TEST_3 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=32 --y-elements=32 --z-elements=4 --basis-order=${ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      ARGS --use-tpetra --use-twod --cell="Quad" --x-elements=32 --y-elements=32 --z-elements=4 --basis-order=${ORDER}
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-32
     TEST_4 CMND python
