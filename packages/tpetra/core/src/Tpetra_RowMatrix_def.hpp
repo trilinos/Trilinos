@@ -47,7 +47,6 @@
 #include "Tpetra_RowGraph.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~RowMatrix() {}
@@ -620,7 +619,6 @@ namespace Classes {
     return static_cast<LocalOrdinal> (0);
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -630,7 +628,7 @@ namespace Classes {
 //
 
 #define TPETRA_ROWMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
-  namespace Classes { template class RowMatrix< SCALAR , LO , GO , NODE >; }
+  template class RowMatrix< SCALAR , LO , GO , NODE >;
 
 
 #endif // TPETRA_ROWMATRIX_DEF_HPP

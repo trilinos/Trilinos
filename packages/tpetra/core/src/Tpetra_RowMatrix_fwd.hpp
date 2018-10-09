@@ -47,30 +47,14 @@
 /// \file Tpetra_RowMatrix_fwd.hpp
 /// \brief Forward declaration of Tpetra::RowMatrix
 
-namespace Tpetra {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of RowMatrix.
-template <class SC, class LO, class GO, class N> class RowMatrix;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Classes::RowMatrix.
+namespace Tpetra {
 template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node = ::Tpetra::Details::DefaultTypes::node_type>
-using RowMatrix = Classes::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
+class RowMatrix;
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_ROWMATRIX_FWD_HPP

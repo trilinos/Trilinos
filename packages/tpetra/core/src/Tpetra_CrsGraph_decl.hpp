@@ -187,14 +187,6 @@ namespace Tpetra {
     };
   } // namespace Details
 
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
   /// \class CrsGraph
   /// \brief A distributed graph accessed by rows (adjacency lists)
   ///   and stored sparsely.
@@ -253,9 +245,9 @@ namespace Classes {
   /// stored in the local graph and communicated to the appropriate
   /// node on the next call to globalAssemble() or fillComplete() (the
   /// latter calls the former).
-  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsGraph :
     public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<GlobalOrdinal,
@@ -2330,7 +2322,6 @@ namespace Classes {
     bool sortGhostsAssociatedWithEachProcessor_;
 
   }; // class CrsGraph
-} // namespace Classes
 
   /// \brief Nonmember function to create an empty CrsGraph given a
   ///   row Map and the max number of entries allowed locally per row.
