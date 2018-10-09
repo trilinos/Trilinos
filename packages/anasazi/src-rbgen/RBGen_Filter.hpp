@@ -201,7 +201,7 @@ namespace RBGen {
       std::vector<int> ret;
       if (LARGEST == which_) {
         const int num = find(svals.begin(),svals.end(),
-                             [] (const ScalarType sval) {
+                             [=] (const ScalarType sval) {
                                return sval < tval;
                              }) - svals.begin();
         ret.resize(num);
@@ -211,7 +211,7 @@ namespace RBGen {
       }
       else if (SMALLEST == which_) {
         const int num = svals.end() - find(svals.begin(),svals.end(),
-                                           [] (const ScalarType sval) {
+                                           [=] (const ScalarType sval) {
                                              return sval < tval;
                                            }) + 1;
         ret.resize(num);
