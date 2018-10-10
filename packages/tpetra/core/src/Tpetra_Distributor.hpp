@@ -65,6 +65,7 @@
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
+#include <memory>
 #include <type_traits>
 
 namespace Tpetra {
