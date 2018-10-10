@@ -47,7 +47,7 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include <iostream>
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int>> comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    = Tpetra::getDefaultComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   const int myRank = comm->getRank();

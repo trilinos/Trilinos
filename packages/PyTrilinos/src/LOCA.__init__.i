@@ -109,7 +109,7 @@ and classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
@@ -283,7 +283,7 @@ if 'NOX' in Abstract.__file__.split(os.path.sep):
 %include "LOCA_Parameter_Vector.H"
 
 // LOCA.Epetra
-#ifdef HAVE_NOX_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 %pythoncode
 %{
 

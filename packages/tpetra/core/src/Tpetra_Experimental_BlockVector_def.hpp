@@ -44,7 +44,6 @@
 
 namespace Tpetra {
 namespace Experimental {
-namespace Classes {
 
   template<class Scalar, class LO, class GO, class Node>
   BlockVector<Scalar, LO, GO, Node>::
@@ -170,7 +169,6 @@ namespace Classes {
     }
   }
 
-} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 
@@ -181,9 +179,7 @@ namespace Classes {
 //
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_INSTANT(S,LO,GO,NODE) \
   namespace Experimental { \
-    namespace Classes { \
-      template class BlockVector< S, LO, GO, NODE >; \
-    } \
+    template class BlockVector< S, LO, GO, NODE >; \
   }
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKVECTOR_DEF_HPP

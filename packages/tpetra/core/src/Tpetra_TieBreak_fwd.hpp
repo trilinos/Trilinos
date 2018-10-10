@@ -47,31 +47,14 @@
 /// \file Tpetra_TieBreak_fwd.hpp
 /// \brief Forward declaration for Tpetra::TieBreak.
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
 namespace Details {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra::Details, use
-///   the alias Tpetra::Details::CLASS, <i>NOT</i>
-///   Tpetra::Details::Classes::CLASS.  Furthermore, everything in
-///   Tpetra::Details is an implementation detail of Tpetra anyway.
-namespace Classes {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-template <class LO, class GO> class TieBreak;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Details::Classes::TieBreak.
 template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type>
-using TieBreak = ::Tpetra::Details::Classes::TieBreak<LocalOrdinal, GlobalOrdinal>;
-
+class TieBreak;
 } // namespace Details
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_DETAILS_TIEBREAK_FWD_HPP
