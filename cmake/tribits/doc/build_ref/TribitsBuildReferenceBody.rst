@@ -304,6 +304,7 @@ See the following use cases:
 * `Determine the list of packages that can be enabled`_
 * `Print package dependencies`_
 * `Enable a set of packages`_
+* `Enable or disable tests for specific packages`_
 * `Enable to test all effects of changing a given package(s)`_
 * `Enable all packages with tests and examples`_
 * `Disable a package and all its dependencies`_
@@ -411,6 +412,42 @@ not enforce this if you set the value on the command line or in a SET()
 statement in an input ```*.cmake`` options files.  However, setting
 ``-DXXX_ENABLE_YYY=TRUE`` and ``-DXXX_ENABLE_YYY=FALSE`` is allowed and will
 be interpreted correctly..
+
+
+Enable or disable tests for specific packages
++++++++++++++++++++++++++++++++++++++++++++++
+
+The enable tests for explicitly enabled packages, configure with::
+
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+
+This wil result in the enable of the test suites for any package that
+explicitly enabled with ``-D <Project>_ENABLE_<TRIBITS_PACKAGE>=ON``.  Note
+that his will **not** result in the enable of the test suites for any packages
+that may only be implicitly enabled in order to build the explicitly enabled
+packages.
+
+If one wants to enable a package along with the enable of other packages, but
+not the test suite for that package, then when can disable the tests for that
+package by configuring with::
+
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_2>=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE_3>=ON \
+  -D <Project>_ENABLE_TESTS=ON \
+  -D <TRIBITS_PACKAGE_2>_ENABLE_TESTS=OFF \
+
+The above will enable the package test suites for ``<TRIBITS_PACKGE_1>`` and
+``<TRIBITS_PACKGE_3>`` but **not** for ``<TRIBITS_PACKAGE_2>`` (or any other
+packages that might get implicitly enabled).  One might use this if one wants
+to build and install package ``<TRIBITS_PACKAGE_2>`` but does not want to
+build and run the test suite for that package.
+
+These and other options give the user complete control of what packages get
+enabled or disabled and what package test suites are enabled or disabled.
+
 
 Enable to test all effects of changing a given package(s)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
