@@ -337,7 +337,7 @@ Return a CrsMatrix read from an open HDF5 file with group name 'name'.
 %apply double& NORM {double& NormOne,
                      double& NormInf};
 
-#ifdef HAVE_EPETRAEXT_HDF5
+#ifdef HAVE_PYTRILINOS_EPETRAEXT_HDF5
 namespace EpetraExt
 {
 %extend HDF5
@@ -630,7 +630,7 @@ EpetraExt::Multiply;
   }
 %}
 
-#ifdef EpetraExt_BUILD_MODEL_EVALUATOR
+#ifdef HAVE_PYTRILINOS_EPETRAEXT_MODEL_EVALUATOR
 ///////////////////////////////////////////
 // EpetraExt ModelEvaluator support code //
 ///////////////////////////////////////////

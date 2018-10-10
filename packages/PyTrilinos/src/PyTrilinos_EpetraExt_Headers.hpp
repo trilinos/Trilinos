@@ -67,7 +67,7 @@
 #include "EpetraExt_XMLReader.h"
 #include "EpetraExt_XMLWriter.h"
 
-#ifdef EpetraExt_BUILD_MODEL_EVALUATOR
+#ifdef HAVE_PYTRILINOS_EPETRAEXT_MODEL_EVALUATOR
 #include "EpetraExt_ModelEvaluator.h"
 #endif
 

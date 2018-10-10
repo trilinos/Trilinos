@@ -71,12 +71,12 @@ other Trilinos solver technologies.
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // Tpetra include files
-#ifdef HAVE_TPETRA
+#ifdef HAVE_PYTRILINOS_TPETRA
 #include "PyTrilinos_Tpetra_Headers.hpp"
 #endif
 
@@ -128,12 +128,12 @@ import numpy
 %teuchos_array_typemaps(Domi::size_type, NPY_LONG)
 
 // External Epetra interface imports
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 
 // External Tpetra interface imports
-#ifdef HAVE_TPETRA
+#ifdef HAVE_PYTRILINOS_TPETRA
 %import "Tpetra.i"
 
 // Define shortcuts for the default Tpetra template types
@@ -432,7 +432,7 @@ import numpy
   }
 }
 %include "Domi_MDMap.hpp"
-#ifdef HAVE_TPETRA
+#ifdef HAVE_PYTRILINOS_TPETRA
 %extend Domi::MDMap
 {
   Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,

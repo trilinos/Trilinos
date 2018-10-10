@@ -114,7 +114,7 @@ package:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
@@ -125,7 +125,7 @@ package:
 // Include configuration
 %include "PyTrilinos_config.h"
 %include "Anasazi_config.h"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "Anasaziepetra_DLLExportMacro.h"
 #endif
 
@@ -151,7 +151,7 @@ package:
 // Support for other Trilinos packages
 %import "Teuchos.i"
 
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "numpy.i"
 %import "Epetra.i"
 #endif
@@ -192,7 +192,7 @@ package:
 %teuchos_rcp(Anasazi::MultiVec< double >)
 %teuchos_rcp(Anasazi::OutputManager< double >)
 %teuchos_rcp(Anasazi::BasicOutputManager< double >)
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %teuchos_rcp(Anasazi::EpetraMultiVecAccessor)
 %teuchos_rcp(Anasazi::EpetraMultiVec)
 %teuchos_rcp(Anasazi::EpetraGenOp)
@@ -437,7 +437,7 @@ namespace std { struct ostream; }
 ///////////////////////////////////
 // Anasazi EpetraAdapter support //
 ///////////////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "AnasaziEpetraAdapter.hpp"
 %ignore
 Anasazi::MultiVecTraits< double,
