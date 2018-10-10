@@ -35,6 +35,9 @@ typedef MueLu::AggregationPhase3Algorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node
 #ifdef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_SHORT
 typedef MueLu::AggregationStructuredAlgorithm<LocalOrdinal,GlobalOrdinal,Node> AggregationStructuredAlgorithm;
 #endif
+#ifdef MUELU_AGGREGATIONSTRUCTUREDALGORITHM_KOKKOS_SHORT
+typedef MueLu::AggregationStructuredAlgorithm_kokkos<LocalOrdinal,GlobalOrdinal,Node> AggregationStructuredAlgorithm_kokkos;
+#endif
 #ifdef MUELU_AMALGAMATIONINFO_SHORT
 typedef MueLu::AmalgamationInfo<LocalOrdinal,GlobalOrdinal,Node> AmalgamationInfo;
 #endif
@@ -58,6 +61,9 @@ typedef MueLu::HybridAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> HybridA
 #endif
 #ifdef MUELU_INDEXMANAGER_SHORT
 typedef MueLu::IndexManager<LocalOrdinal,GlobalOrdinal,Node> IndexManager;
+#endif
+#ifdef MUELU_INDEXMANAGER_KOKKOS_SHORT
+typedef MueLu::IndexManager_kokkos<LocalOrdinal,GlobalOrdinal,Node> IndexManager_kokkos;
 #endif
 #ifdef MUELU_INTERFACEAGGREGATIONALGORITHM_SHORT
 typedef MueLu::InterfaceAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationAlgorithm;
@@ -106,6 +112,9 @@ typedef MueLu::RebalanceMapFactory<LocalOrdinal,GlobalOrdinal,Node> RebalanceMap
 #endif
 #ifdef MUELU_REPARTITIONINTERFACE_SHORT
 typedef MueLu::RepartitionInterface<LocalOrdinal,GlobalOrdinal,Node> RepartitionInterface;
+#endif
+#ifdef MUELU_STRUCTUREDAGGREGATIONFACTORY_KOKKOS_SHORT
+typedef MueLu::StructuredAggregationFactory_kokkos<LocalOrdinal,GlobalOrdinal,Node> StructuredAggregationFactory_kokkos;
 #endif
 #ifdef MUELU_UNCOUPLEDAGGREGATIONFACTORY_SHORT
 typedef MueLu::UncoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> UncoupledAggregationFactory;

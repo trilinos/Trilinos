@@ -173,8 +173,6 @@ class AggregateGenerator {
       aggFact->SetFactory("Graph", dropFact);
       aggFact->SetParameter("aggregation: mode", Teuchos::ParameterEntry(coupling));
       aggFact->SetParameter("aggregation: mesh layout", Teuchos::ParameterEntry(meshLayout));
-      aggFact->SetParameter("aggregation: number of spatial dimensions",
-                            Teuchos::ParameterEntry(numDimensions));
       aggFact->SetParameter("aggregation: coarsening order", Teuchos::ParameterEntry(0));
       aggFact->SetParameter("aggregation: coarsening rate",
                             Teuchos::ParameterEntry(std::string("{3}")));
@@ -241,6 +239,7 @@ class AggregateGenerator {
       Level level;
       TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
       level.Set("A", A);
+      level.Set("numDimensions", numDimensions);
       level.Set("gNodesPerDim", gNodesPerDir);
       level.Set("lNodesPerDim", lNodesPerDir);
       level.Set("aggregation: mesh data", meshData);
@@ -258,7 +257,6 @@ class AggregateGenerator {
       // Structured
       aggFact->SetParameter("aggregation: mode",                         Teuchos::ParameterEntry(coupling));
       aggFact->SetParameter("aggregation: mesh layout",                  Teuchos::ParameterEntry(meshLayout));
-      aggFact->SetParameter("aggregation: number of spatial dimensions", Teuchos::ParameterEntry(numDimensions));
       aggFact->SetParameter("aggregation: coarsening order",             Teuchos::ParameterEntry(0));
       aggFact->SetParameter("aggregation: coarsening rate",              Teuchos::ParameterEntry(std::string("{3}")));
       // Uncoupled

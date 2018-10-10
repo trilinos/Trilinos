@@ -62,6 +62,7 @@
 #include "MueLu_BaseClass.hpp"
 
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
+#include "MueLu_IndexManager_kokkos.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -157,6 +158,18 @@ namespace MueLu {
     */
     void SetNumAggregates(LO nAggregates) { numAggregates_ = nAggregates; }
 
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+
+        This has to be done by the aggregation factory.
+    */
+    RCP<IndexManager_kokkos>& GetIndexManager() { return geoData_; }
+
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+
+        This has to be done by the aggregation factory.
+    */
+    void SetIndexManager(RCP<IndexManager_kokkos> & geoData) { geoData_ = geoData; }
+
     //! @brief Record whether aggregates include DOFs from other processes.
     KOKKOS_INLINE_FUNCTION void AggregatesCrossProcessors(const bool& flag) {
       aggregatesIncludeGhosts_ = flag;
@@ -243,6 +256,11 @@ namespace MueLu {
      * id given by procWinner[k]
      */
     RCP<LOVector> procWinner_;
+
+    /*! geoData stores an index manager object that is used to perform structured aggreation
+     *  on a problem.
+     */
+    RCP<IndexManager_kokkos> geoData_;
 
     Kokkos::View<bool*, DeviceType> isRoot_;
 
