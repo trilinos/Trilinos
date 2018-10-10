@@ -148,6 +148,14 @@ namespace MueLu {
     // By default, we don't need global constants for SaP
     APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
+// *** This section is dubious CBL
+    auto &APpsub = APparams->sublist( "matrixmatrix: kernel params",false);
+    bool isMM  = APparams->get("isMatrixMatrix_TransferAndFillComplete",false);
+    int  mmOCC = APparams->get("MM_TAFC_OptimizationCoreCount",2997);
+	
+    APpsub.set("isMatrixMatrix_TransferAndFillComplete", isMM);
+    APpsub.set("MM_TAFC_OptimizationCoreCount", mmOCC);
+// *** End dubious section
 
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));

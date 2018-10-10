@@ -4007,6 +4007,7 @@ namespace Classes {
 
     // set domain/range map: may clear the import/export objects
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-Maps"))));
 #endif
     setDomainRangeMaps (domainMap, rangeMap);
@@ -4017,6 +4018,7 @@ namespace Classes {
 
     // makeImportExport won't create a new importer/exporter if I set one here first.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXcheckI"))));
 #endif
 
@@ -4032,6 +4034,7 @@ namespace Classes {
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXcheckE"))));
 #endif
 
@@ -4044,6 +4047,7 @@ namespace Classes {
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXmake"))));
 #endif
     Teuchos::Array<int> remotePIDs (0); // unused output argument
@@ -4051,6 +4055,7 @@ namespace Classes {
 
     // Since we have a StaticProfile, fillLocalGraph will do the right thing...
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-fLG"))));
 #endif
     this->fillLocalGraph (params);
@@ -4062,12 +4067,14 @@ namespace Classes {
 
     if (callComputeGlobalConstants) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (const)"))));
+    MM = Teuchos::null;
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (const)"))));
 #endif // HAVE_TPETRA_MMM_TIMINGS
       this->computeGlobalConstants (computeLocalTriangularConstants);
     }
     else {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+      MM = Teuchos::null;
       MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC (noconst)"))));
 #endif // HAVE_TPETRA_MMM_TIMINGS
       this->computeLocalConstants (computeLocalTriangularConstants);
@@ -4076,6 +4083,7 @@ namespace Classes {
     fillComplete_ = true;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cIS"))));
 #endif
     checkInternalState ();
@@ -6578,6 +6586,7 @@ namespace Classes {
     /***** 2) From Tpera::DistObject::doTransfer() ****/
     /***************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2+string("ImportSetup"))));
 #endif
     // Get the owning PIDs
@@ -6715,6 +6724,7 @@ namespace Classes {
 
     // Do the exchange of remote data.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2+string("Transfer"))));
 #endif
 
@@ -6822,6 +6832,7 @@ namespace Classes {
     /*********************************************************************/
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2+string("Unpack-1"))));
 #endif
 
@@ -6870,6 +6881,7 @@ namespace Classes {
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2+string("Unpack-2"))));
 #endif
     // Call an optimized version of makeColMap that avoids the
@@ -6940,10 +6952,12 @@ namespace Classes {
     // Pre-build the importer using the existing PIDs
     Teuchos::ParameterList esfc_params;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2+string("CreateImporter"))));
 #endif
     RCP<import_type> MyImport = rcp(new import_type(MyDomainMap, MyColMap, RemotePids));
 #ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::null;
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix2+string("ESFC"))));
 
     esfc_params.set("Timer Label",prefix + std::string("TAFC"));

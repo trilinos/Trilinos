@@ -277,7 +277,7 @@ namespace Teuchos {
         std::ostringstream warning;
         warning <<
           "\n*********************************************************************\n"
-          "WARNING: Overlapping timers detected!\n"
+	    "WARNING: Overlapping timers detected! Near: " <<counter().name()<<"\n"
           "A TimeMonitor timer was stopped before a nested subtimer was\n"
           "stopped. This is not allowed by the StackedTimer. This corner case\n"
           "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
