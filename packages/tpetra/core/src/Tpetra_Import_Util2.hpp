@@ -194,7 +194,6 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                          const Teuchos::ArrayRCP<const size_t> & rowptr,
                          const Teuchos::ArrayRCP<const LocalOrdinal> & colind,
                          const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& RowTransfer,
-
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
                          Teuchos::ArrayRCP<int>& type3PIDs,
@@ -296,8 +295,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                             int newsize = RSB[pid_order].size()*2;
                             auto tmp = Teuchos::arcp(new pidgidpair_t[newsize],0,newsize,true);
                             std::copy(RSB[pid_order],RSB[pid_order]+RSB[pid_order].size(),tmp);
-                            RSB[pid_order]=tmp;
-			    
+                            RSB[pid_order]=tmp;			    
                         }
                     }
                 }

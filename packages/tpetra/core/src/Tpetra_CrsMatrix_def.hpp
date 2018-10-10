@@ -137,7 +137,6 @@ struct AbsMax {
 } // namespace Tpetra
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4840,9 +4839,6 @@ namespace Classes {
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
     if (callComputeGlobalConstants) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-	TimeMonitor  cgc(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-cGC")));
-#endif
 	this->computeGlobalConstants ();
     }
     
@@ -4867,12 +4863,13 @@ namespace Classes {
       ": We're at the end of fillComplete(), but isFillActive() is true.  "
       "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
-
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     Teuchos::TimeMonitor cIS(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS")));
 #endif
 
     checkInternalState();
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -8170,30 +8167,35 @@ namespace Classes {
     bool isMM = false; // optimize for matrix-matrix ops.
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
-    RCP<ParameterList> matrixparams; // parameters for the destination matrix
-    if (! params.is_null ()) {
+
+   int mm_optimization_core_count=3000; // ~3000 for serrano
+   RCP<ParameterList> matrixparams; // parameters for the destination matrix
+   if (! params.is_null ()) {
+      matrixparams = sublist (params, "CrsMatrix");
       reverseMode = params->get ("Reverse Mode", reverseMode);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
-      auto slist = params->sublist("matrixmatrix: kernel params",false);
-      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      auto & slist = params->sublist("matrixmatrix: kernel params",false);
+      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);   
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(getComm()->getSize() < mm_optimization_core_count) isMM = false;
+
+      if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
       if(reverseMode) isMM = false;
-      matrixparams = sublist (params, "CrsMatrix");
     }
 
-    // Test for pathalogical matrix transfer
-    bool source_vals = ! getGraph ()->getImporter ().is_null();
-    bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 || rowTransfer.getRemoteLIDs ().size() == 0);
-    bool mismatch = source_vals != target_vals;
-    bool reduced_mismatch = false; 
+   
     MPI_Request rawRequest = MPI_REQUEST_NULL;
     MPI_Comm rawComm            = getRawMpiComm(*getComm());
 
-    int immRedErr = 0;
-    if(isMM) 
+    bool reduced_mismatch = false; 
+    if(isMM) {
+	int immRedErr = 0;
+	// Test for pathological matrix transfer
+	bool source_vals = ! getGraph ()->getImporter ().is_null();
+	bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 || rowTransfer.getRemoteLIDs ().size() == 0);
+	bool mismatch = source_vals != target_vals;
+
 	immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
+    }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
@@ -8206,7 +8208,9 @@ namespace Classes {
         std::ostringstream os;
         if(isMM) os<<":MMOpt";
         else os<<":MMLegacy";
+	tlstr = os.str();
     }
+
     Teuchos::TimeMonitor MMall(*TimeMonitor::getNewTimer(prefix + std::string("TAFC All") +tlstr ));
 #endif
 
@@ -8874,7 +8878,7 @@ namespace Classes {
     // now resolve the non-blocking allreduce on reduced_mismatch;
     MPI_Status stat;
     int mmwaiterr = 0;
-    if(isMM) mmwaiterr = MPI_Wait (&rawRequest,&stat);
+    if(isMM) mmwaiterr = MPI_Wait (&rawRequest,&stat); 
     (void)mmwaiterr;
     if(isMM && reduced_mismatch) isMM = false; 
 
@@ -8905,7 +8909,6 @@ namespace Classes {
                                                   rowptr,
                                                   colind,
                                                   rowTransfer,
-
                                                   MyImporter,
                                                   MyDomainMap,
                                                   type3PIDs,
@@ -9034,30 +9037,31 @@ namespace Classes {
             TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMM::destMat->eSFC")));
             esfc_params.set("Timer Label",label+std::string("isMM eSFC"));
 #endif
-            destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
+            destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
+
         }
 
     }  // if(isMM)
     else {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-	TimeMonitor MMnotMMblock (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMblock")));
+ 	TimeMonitor MMnotMMblock (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMblock")));
 #endif
 
-        {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-            TimeMonitor notMMIcTor (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
+        
+#ifdef HAVE_TPETRA_MMM_TIMINGS	    
+	TimeMonitor  notMMIcTor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
 #endif
-            Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
-            mypars->set("Timer Label","notMMFrom_tAFC");
-            MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
-        }
-        {
+	Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
+	mypars->set("Timer Label","notMMFrom_tAFC");
+	MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
+	
+	
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-            TimeMonitor esfcnotmm (*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
-            esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
+	TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
 #endif
-            destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
-        }
+	esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
+	destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
+	
     }
   }
 
@@ -9112,7 +9116,6 @@ namespace Classes {
     transferAndFillComplete (destMatrix, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -9123,9 +9126,7 @@ namespace Classes {
 
 #define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  namespace Classes { \
-    template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  } \
+  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
   template Teuchos::RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
                 CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
 

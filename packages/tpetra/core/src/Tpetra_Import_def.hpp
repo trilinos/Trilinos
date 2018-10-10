@@ -131,71 +131,74 @@ namespace Classes {
         Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
   {
-    using Teuchos::Array;
-    using Teuchos::null;
-    using Teuchos::Ptr;
-    using Teuchos::rcp;
-    using std::endl;
-    typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
+      using Teuchos::Array;
+      using Teuchos::null;
+      using Teuchos::Ptr;
+      using Teuchos::rcp;
+      using std::endl;
+      typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
 
-    this->debug_ = getBoolParameter (plist.getRawPtr (), "Debug",
-                                     tpetraImportDebugDefault);
-    if (! out_.is_null ()) {
-      out_->pushTab ();
-    }
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor" << endl;
-      *out_ << os.str ();
-    }
+      this->debug_ = getBoolParameter (plist.getRawPtr (), "Debug",
+				       tpetraImportDebugDefault);
+      if (! out_.is_null ()) {
+	  out_->pushTab ();
+      }
+      if (debug_) {
+	  std::ostringstream os;
+	  const int myRank = source->getComm ()->getRank ();
+	  os << myRank << ": Import ctor" << endl;
+	  *out_ << os.str ();
+      }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    using Teuchos::TimeMonitor;
-    std::string label;
-    if(!plist.is_null())
-      label = plist->get("Timer Label",label);
-    std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
-    auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
-#endif
-
-
-    ImportData_ = rcp (new data_type (source, target, out_, plist));
-
-    Array<GlobalOrdinal> remoteGIDs;
-    setupSamePermuteRemote (remoteGIDs);
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: "
-         << "setupSamePermuteRemote done" << endl;
-      *out_ << os.str ();
-    }
+      Array<GlobalOrdinal> remoteGIDs;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preSetupExport: ");
-    MM.release();
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+      using Teuchos::TimeMonitor;
+      std::string label;
+      if(!plist.is_null())
+	  label = plist->get("Timer Label",label);
+      std::string prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preIData: ");
 #endif
-
-    if (source->isDistributed ()) {
-      setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
-    }
-
+      {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:postSetupExport: ");
-    MM.release();
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+	  auto MM(*TimeMonitor::getNewTimer(prefix));
 #endif
-    if (debug_) {
-      std::ostringstream os;
-      const int myRank = source->getComm ()->getRank ();
-      os << myRank << ": Import ctor: done" << endl;
-      *out_ << os.str ();
-    }
-    if (! out_.is_null ()) {
-      out_->popTab ();
-    }
+	  ImportData_ = rcp (new data_type (source, target, out_, plist));
+	  setupSamePermuteRemote (remoteGIDs);
+	  if (debug_) {
+	      std::ostringstream os;
+	      const int myRank = source->getComm ()->getRank ();
+	      os << myRank << ": Import ctor: "
+		 << "setupSamePermuteRemote done" << endl;
+	      *out_ << os.str ();
+	  }
+      }
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	  prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:preSetupExport: ");
+	  auto MM2(*TimeMonitor::getNewTimer(prefix));
+#endif
+
+	  if (source->isDistributed ()) {
+	      setupExport (remoteGIDs,useRemotePIDs,remotePIDs);
+	  }
+      }
+      {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+	  prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:postSetupExport: ");
+	  auto MM3(*TimeMonitor::getNewTimer(prefix));
+#endif
+	  if (debug_) {
+	      std::ostringstream os;
+	      const int myRank = source->getComm ()->getRank ();
+	      os << myRank << ": Import ctor: done" << endl;
+	      *out_ << os.str ();
+	  }
+	  if (! out_.is_null ()) {
+	      out_->popTab ();
+	  }
+      }
+
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -343,16 +346,6 @@ namespace Classes {
           tRemoteGIDs.size() == tRemoteLIDs.size()),
         std::runtime_error,
         "Import::Import createExpert version: Size miss match on userRemotePIDs, remoteGIDs and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    using Teuchos::TimeMonitor;
-    std::string label;
-    std::string prefix;
-    if(!plist.is_null())
-      label = plist->get("Timer Label",label);
-    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:presort ");
-    auto MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
-#endif
     
     sort3 (tRemotePIDs.begin (),
            tRemotePIDs.end (),
@@ -400,13 +393,14 @@ namespace Classes {
     }
 
     ImportData_->isLocallyComplete_ = locallyComplete;
-
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    prefix = std::string("Tpetra ")+ label + std::string(":iport_ctor:cFSAR ");
-    MM2.release();
-    MM2= rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix)));
+	std::string prefix = std::string("Tpetra ")+std::string(":iport_ctor:cFSAR ");
+
+	auto MM3(*Teuchos::TimeMonitor::getNewTimer(prefix));
 #endif
-    ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,tRemotePIDs);
+	ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,tRemotePIDs);
+    }
   }
 
 
@@ -1439,9 +1433,7 @@ namespace Classes {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
     std::string label = std::string("Tpetra::Import::setUnion");
-    RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
-    label = "Tpetra::Import::setUnion : Union GIDs";
-    RCP<TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+    TimeMonitor MM(*TimeMonitor::getNewTimer(label));
 #endif
 
     RCP<const map_type> srcMap = this->getSourceMap ();
@@ -1543,9 +1535,9 @@ namespace Classes {
     }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM.release();
-    label = "Tpetra::Import::setUnion : Construct Tgt Map";
-    MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+    MM.disableTimer(label);
+    label = "Tpetra::Import::setUnion : Construct Target Map";
+    TimeMonitor MM2(*TimeMonitor::getNewTimer(label));
 #endif
 
     // Create the union target Map.
@@ -1555,9 +1547,9 @@ namespace Classes {
       rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm));
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM.release();
+    MM2.disableTimer(label);
     label = "Tpetra::Import::setUnion : Export GIDs";
-    MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+    TimeMonitor MM3(*TimeMonitor::getNewTimer(label));
 #endif
 
     // Thus far, we have computed the following in the union Import:
@@ -1658,9 +1650,9 @@ namespace Classes {
 
     // Create and return the union Import. This uses the "expert" constructor
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM2.release();
+    MM3.disableTimer(label);
     label = "Tpetra::Import::setUnion : Construct Import";
-    MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+    TimeMonitor MM4(*TimeMonitor::getNewTimer(label));
 #endif
     RCP<const import_type> unionImport =
       rcp (new import_type (srcMap, unionTgtMap,
