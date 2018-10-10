@@ -197,6 +197,8 @@ namespace KokkosBatched {
                      std::is_same<T,size_t>::value                   ||
                      std::is_same<T,double>::value                   ||
 		     std::is_same<T,float>::value                    ||
+		     std::is_same<T,Kokkos::complex<float> >::value ||
+		     std::is_same<T,std::complex<float> >::value    ||
 		     std::is_same<T,Kokkos::complex<double> >::value ||
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
