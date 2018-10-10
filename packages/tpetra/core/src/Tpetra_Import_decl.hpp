@@ -48,7 +48,7 @@
 #include "Tpetra_ImportExportData_fwd.hpp"
 
 namespace Tpetra {
-namespace Classes {
+
   /// \brief Communication plan for data redistribution from a
   ///   uniquely-owned to a (possibly) multiply-owned distribution.
   ///
@@ -109,9 +109,9 @@ namespace Classes {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-           class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template<class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   class Import:
     public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -600,8 +600,6 @@ namespace Classes {
 
 
   }; // class Import
-
-} // namespace Classes
 
   /// \brief Nonmember constructor for Import.
   ///

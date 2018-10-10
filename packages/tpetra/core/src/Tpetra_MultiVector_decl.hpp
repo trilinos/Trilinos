@@ -155,7 +155,6 @@ namespace Tpetra {
   createMultiVector (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                      const size_t numVectors);
 
-namespace Classes {
   // WARNING NOT FOR USERS
   // This means we don't need to make MultiVector a friend of
   // Vector or of itself (with different template parameters).
@@ -382,10 +381,10 @@ namespace Classes {
   ///   That is, if some but not all rows are shared by more than one
   ///   process in the communicator, then inner products and norms may
   ///   be wrong.  This behavior may change in future releases.
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class MultiVector :
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -2399,7 +2398,6 @@ namespace Classes {
   {
     return X.whichVectors_ ();
   }
-} // namespace Classes
 
   namespace Details {
 
@@ -2455,7 +2453,7 @@ namespace Classes {
   {
     typedef typename DN::device_type DD;
     //typedef typename SN::device_type SD;
-    using ::Tpetra::Classes::getMultiVectorWhichVectors;
+    using ::Tpetra::getMultiVectorWhichVectors;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       dst.getGlobalLength () != src.getGlobalLength () ||

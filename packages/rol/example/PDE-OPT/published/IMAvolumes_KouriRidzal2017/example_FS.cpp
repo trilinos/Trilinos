@@ -51,7 +51,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 #include <iostream>
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   int nLinAlg = parlist->sublist("Solver").get("Number of Cores", 4);
   split_comm_world(comm_linalg, comm_sample, nLinAlg);
 #else
-  comm_sample = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  comm_sample = Tpetra::getDefaultComm();
   comm_linalg = ROL::makePtr<Teuchos::SerialComm<int>>();
 #endif
   const int myRankLinAlg = comm_linalg->getRank();
