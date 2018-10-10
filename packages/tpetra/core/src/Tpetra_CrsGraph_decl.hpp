@@ -2170,7 +2170,9 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is locally indexed
+  public: // TJF FIXME
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
+  protected: // TJF FIXME
 
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<GlobalOrdinal*, execution_space> t_GlobalOrdinal_1D;
@@ -2208,7 +2210,9 @@ namespace Tpetra {
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
+  public: // TJF FIXME
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
+  protected: // TJF FIXME
 
     //@}
     /// \name 2-D storage (DynamicProfile) data structures
@@ -2275,7 +2279,9 @@ namespace Tpetra {
     /// "Optimize Storage" parameter is set to \c true.
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
+  public: // TJF FIXME
     num_row_entries_type k_numRowEntries_;
+  protected: // TJF FIXME
 
     //@}
 
