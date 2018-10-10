@@ -1055,7 +1055,7 @@ get_matrix_p (const CrsMatrix& A, const Array<Int>& p,
     Sclr* const d_start = sd.d + sd.ir[i];
     memcpy(d_start, A.d + A.ir[r], nc*sizeof(*sd.d));
     if (set_diag_reciprocal)
-      d_start[nc-1] = 1.0/d_start[nc-1];
+      d_start[nc-1] = Sclr{1.0}/d_start[nc-1];
   }
 
   CrsMatrix* cm;
@@ -1999,7 +1999,7 @@ OnDiagTri::init_numeric (const CrsMatrix& T, const bool invert) {
         if (lcol >= this->n_) break;
         Size& i = ir[lrow+1];
         jc[i] = lcol;
-        d[i] = lrow == lcol ? 1.0/T.d[k] : T.d[k];
+        d[i] = lrow == lcol ? Sclr{1.0}/T.d[k] : T.d[k];
         ++i;
       }
     }
@@ -2023,7 +2023,7 @@ OnDiagTri::reinit_numeric (const CrsMatrix& T, const bool invert) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= this->n_) break;
         const Size di = (lrow*(lrow + 1))/2 + lcol;
-        const Sclr dv = lrow == lcol ? 1.0/T.d[k] : T.d[k];
+        const Sclr dv = lrow == lcol ? Sclr{1.0}/T.d[k] : T.d[k];
         // Compressed dense triangle.
         d_[di] = dv;
         ++nnz;
@@ -2043,7 +2043,7 @@ OnDiagTri::reinit_numeric (const CrsMatrix& T, const bool invert) {
            k < irgp1; ++k) {
         const Int lcol = T.jc[k] - c0_;
         if (lcol >= this->n_) break;
-        d[i] = lrow == lcol ? 1.0/T.d[k] : T.d[k];
+        d[i] = lrow == lcol ? Sclr{1.0}/T.d[k] : T.d[k];
         ++i;
       }
     }
@@ -3271,7 +3271,7 @@ LevelSetTri::reinit_numeric (const CrsMatrix& T) {
       assert(nc == static_cast<Int>(t.m->ir[i+1] - t.m->ir[i]));
       Sclr* const d_start = t.m->d + t.m->ir[i];
       memcpy(d_start, T.d + T.ir[r], nc*sizeof(*t.m->d));
-      d_start[nc-1] = 1.0/d_start[nc-1];
+      d_start[nc-1] = Sclr{1.0}/d_start[nc-1];
     }
   } while (0);
   if ( ! nthreads_ok) throw hts::Exception(msg);
@@ -3897,8 +3897,8 @@ to_outside (Sclr* x, const Int nrhs, const Sclr a, const Sclr b,
   const Int i0 = part_[tid], i1 = part_[tid+1];
   Sclr* ppx = px_;
   Sclr* px = x;
-  if (b != 1.0) {
-    if (a != 0.0) {
+  if (b != Sclr{1.0}) {
+    if (a != Sclr{0.0}) {
       for (int k = 0; ; ) {
         for (Int i = i0; i < i1; ++i) {
           Sclr* const pxqi = px + q_[i];
@@ -3918,7 +3918,7 @@ to_outside (Sclr* x, const Int nrhs, const Sclr a, const Sclr b,
       }
     }
   } else {
-    if (a != 0.0) {
+    if (a != Sclr{0.0}) {
       for (int k = 0; ; ) {
         for (Int i = i0; i < i1; ++i) {
           Sclr* const pxqi = px + q_[i];
