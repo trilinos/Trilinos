@@ -53,8 +53,8 @@ private:
     int ell = 1;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-    const SC eps  = STS::eps ();
-    const SC tolOrtho = 10.0*std::sqrt(eps);
+    const mag_type eps = STS::eps ();
+    const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
     SolverOutput<SC> output {};
 
     Teuchos::BLAS<LO ,SC> blas;
