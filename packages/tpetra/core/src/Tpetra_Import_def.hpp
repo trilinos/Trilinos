@@ -103,7 +103,6 @@ namespace Teuchos {
 } // namespace Teuchos
 
 namespace Tpetra {
-namespace Classes {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1099,18 +1098,11 @@ namespace Classes {
 	   "Please report this bug to the Tpetra developers.");
       const map_type& source = * (getSourceMap ());
 
-      Teuchos::OSTab tab (out_);
-
-      // if (debug_ && ! out_.is_null ()) {
-      //   std::ostringstream os;
-      //   const int myRank = source.getComm ()->getRank ();
-      //   os << myRank << ": Import::setupExport:" << endl;
-      // }
-
       // Sanity checks
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
 	  (! useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
 	   "remotePIDs are non-empty but their use has not been requested.");
+
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
 	  (userRemotePIDs.size () > 0 && remoteGIDs.size () != userRemotePIDs.size (),
 	   std::invalid_argument, "remotePIDs must either be of size zero or match "
@@ -1778,12 +1770,10 @@ namespace Classes {
                                  newExportPIDs, newDistor));
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 #define TPETRA_IMPORT_CLASS_INSTANT(LO, GO, NODE) \
-  \
-  namespace Classes { template class Import< LO , GO , NODE >; }
+  template class Import< LO , GO , NODE >;
 
 // Explicit instantiation macro.
 // Only invoke this when in the Tpetra namespace.

@@ -484,6 +484,17 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: phase3 avoid singletons</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
     <parameter>
       <name>aggregation: allow empty prolongator columns</name>
@@ -1055,6 +1066,15 @@
       <type>bool</type>
       <default>false</default>
       <description>Set zero diagonals on coarse grids to one.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: fix zero diagonals threshold</name>
+      <type>double</type>
+      <default>0.</default>
+      <description>Threshold at which diagonal entry is considered zero.</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>

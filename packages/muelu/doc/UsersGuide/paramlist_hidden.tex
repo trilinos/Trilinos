@@ -86,6 +86,11 @@
       non-Dirichlet nodes that have no on-rank neighbors.  This only
       works for Uncoupled Aggregation.}
         
+\cbb{aggregation: phase3 avoid singletons}{bool}{false}{Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.}
+        
 \cbb{aggregation: allow empty prolongator columns}{bool}{false}{Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.}
         
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
@@ -215,6 +220,8 @@
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
+        
+\cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
         
 \cbb{rap: shift}{double}{0.0}{Shift to use in the RAPShiftFactory}
         

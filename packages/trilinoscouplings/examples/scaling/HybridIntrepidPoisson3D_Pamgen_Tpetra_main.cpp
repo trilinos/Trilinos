@@ -63,6 +63,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "Tpetra_Core.hpp"
+
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_TpetraIntrepidHybridPoisson3DExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
@@ -87,7 +89,6 @@ main (int argc, char *argv[])
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
   using IntrepidPoissonExample::setUpCommandLineArguments;
-  using Tpetra::DefaultPlatform;
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
@@ -120,9 +121,8 @@ main (int argc, char *argv[])
     //const int numProcs = mpiSession.getNProc ();
 
     // Get the default communicator and Kokkos Node instance
-    RCP<const Comm<int> > comm =
-      DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<Node> node = Teuchos::null;
 
     // Did the user specify --help at the command line to print help
     // with command-line arguments?

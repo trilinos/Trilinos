@@ -109,7 +109,7 @@
 // Macro to set MueLu's internal oh-so FancyOStream to be the same as the one used by Teuchos' unit testing framework.
 // This prevents MueLu's output from intermingling with with the unit test pass/fail summary lines.
 #define MUELU_TESTING_SET_OSTREAM \
-   MueLu::VerboseObject::SetDefaultOStream(Teuchos::fancyOStream(out.getOStream()));
+   MueLu::VerboseObject::SetMueLuOStream(Teuchos::fancyOStream(out.getOStream()));
 
 #define MUELU_TESTING_DO_NOT_TEST(lib,packagesNotEnabled) \
   if (TestHelpers_kokkos::Parameters::getLib() == lib) { \

@@ -123,11 +123,6 @@ build_precond (Teuchos::ParameterList& test_params,
 	}
       }
   }
-  if (myRank == 0) {
-    *out << "Preconditioner attributes:" << endl;
-    OSTab tab (*out);
-    prec->describe (*out, Teuchos::VERB_LOW);
-  }
 
   return prec;
 }

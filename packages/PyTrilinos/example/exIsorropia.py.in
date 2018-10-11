@@ -103,34 +103,34 @@ def main(comm):
     print(colorer.elemsWithColor(0))
 
 
-    pList = Teuchos.ParameterList()
-    pList.set("PARTITIONING METHOD", "RANDOM")
+    pList = {"partitioning method": "random",
+             "Zoltan": {"debug_level": "0"}}
 
     if iAmRoot: print("Constructing Isorropia.Epetra.Partitioner")
     partitioner = Isorropia.Epetra.Partitioner(crsg, pList)
     partitioner.partition(True)
-    print(partitioner)
+    #print(partitioner)
 
-    #pList.set("PARTITIONING METHOD", "HYPERGRAPH2D")
+    #pList["partitioning method"] = "hypergraph2d"
     #if iAmRoot: print("Constructing Isorropia.Epetra.Partitioner2D")
     #part2D = Isorropia.Epetra.Partitioner2D(crsg, pList)
     #print(part2D)
 
-    pList.set("PARTITIONING METHOD", "HYPERGRAPH2D")
+    pList["partitioning method"] = "hypergraph2d"
     if iAmRoot: print("Constructing Isorropia.Epetra.Partitioner")
     part2D = Isorropia.Epetra.Partitioner(crsg, pList)
-    print(part2D)
+    #print(part2D)
 
     if iAmRoot: print("Constructing Isorropia.Epetra.Redistributor")
     Redis = Isorropia.Epetra.Redistributor(partitioner)
     newCrsg = Redis.redistribute(crsg)
-    print(Redis)
+    #print(Redis)
 
     print(newCrsg)
 
-    print("BUILDING COSTDESCRIBER")
+    print("Building CostDescriber")
     costDesc = Isorropia.Epetra.CostDescriber()
-    print(costDesc)
+    #print(costDesc)
 
 ################################################################################
 
