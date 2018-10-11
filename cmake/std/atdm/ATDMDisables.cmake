@@ -10,7 +10,7 @@ ATDM_SET_CACHE(TPL_ENABLE_SuperLU OFF CACHE BOOL)
 ATDM_SET_CACHE(TPL_ENABLE_X11 OFF CACHE BOOL)
 ATDM_SET_CACHE(TPL_ENABLE_yaml-cpp OFF CACHE BOOL)
 
-# Packages and sub-packages disables.
+# Packages and sub-packages disables common to both SPARC and EMPIRE
 SET(ATDM_SE_PACKAGE_DISABLES
   ThreadPool
   GlobiPack
@@ -45,6 +45,40 @@ SET(ATDM_SE_PACKAGE_DISABLES
 # from the output for using the
 # em-plasma/BuildScripts/ALL/configure-trilinos.sh script (see TRIL-171).
 # This list can be easily maintained going forward.
+
+#
+# Set of ATDM Trilinos packages for wich we don't want to run the test suite.
+#
+# This allows us to use Trilinos_ENABLE_ALL_PACKAGES=ON
+#
+SET(ATDM_SE_PACKAGE_TEST_DISABLES
+  TrilinosFrameworkTests
+  Gtest
+  RTOp
+  Epetra
+  Zoltan
+  Shards
+  Triutils
+  EpetraExt
+  AztecOO
+  Galeri
+  Amesos
+  Pamgen
+  Ifpack
+  ML
+  )
+
+#
+# We should have the same set of disables for the SPARC and EMPIRE builds!
+# Therefore, let's not add any more disables for now!  This just enables more
+# subpackages which should hopefully be harmless.  Also, with the STK disables
+# for the SPARC settings, I got build failures in the remaining STK packages.
+# We will just need to get SPARC and EMPIRE and Trilinos to work with these
+# same sets of enabled packages (even if it is more than they were using
+# before).
+#
+
+IF (ATDM_ADD_EXTRA_APP_SPECIFIC_DISABLES)  # Undefined and therefore fasle!
 
 IF (ATDM_ENABLE_SPARC_SETTINGS)
   # Add extra disables if using SPARC settings
@@ -93,9 +127,17 @@ ELSE()
     )
 ENDIF()
 
+ENDIF (ATDM_ADD_EXTRA_APP_SPECIFIC_DISABLES)
+
 # ToDo: These disables need to be merged into a single list of disables!
 
 # Disable the disabled SE packages
 FOREACH(ATDM_SE_PACKAGE ${ATDM_SE_PACKAGE_DISABLES})
   ATDM_SET_CACHE(Trilinos_ENABLE_${ATDM_SE_PACKAGE} OFF CACHE BOOL)
+ENDFOREACH()
+
+# Disable the disabled SE package tests and examples
+FOREACH(ATDM_SE_PACKAGE ${ATDM_SE_PACKAGE_TEST_DISABLES})
+  ATDM_SET_CACHE(${ATDM_SE_PACKAGE}_ENABLE_TESTS OFF CACHE BOOL)
+  ATDM_SET_CACHE(${ATDM_SE_PACKAGE}_ENABLE_EXAMPLES OFF CACHE BOOL)
 ENDFOREACH()
