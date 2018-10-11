@@ -111,8 +111,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
     dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims()));
   MDVector< Sca > mdVector(mdMap);
 
   // Perform unit tests of MDVector as a whole
@@ -239,8 +239,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
     dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims()));
 
   // Construct an MDArrayView with initialization values
   typedef typename Domi::size_type size_type;
@@ -337,8 +337,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
     dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap and a source MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims()));
   MDVector< Sca > source(mdMap);
   Sca scalar = 27;
   source.putScalar(scalar);
@@ -822,7 +822,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
     dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap
-  Teuchos::RCP< const MDMap<> > mdMap = Teuchos::rcp(new MDMap<>(mdComm, dims));
+  Teuchos::RCP< const MDMap > mdMap = Teuchos::rcp(new MDMap(mdComm, dims));
 
   // Construct and test an MDVector with a leading dimension
   MDVector< Sca > mdv1(mdMap, 3);
@@ -911,8 +911,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
     dims[axis] = localDim * mdComm->getCommDim(axis);
 
   // Construct an MDMap and MDVector
-  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
-  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  typedef Teuchos::RCP< MDMap > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap(mdComm, dims()));
   MDVector< Sca > mdVector(mdMap, true);
 
   // Test that all values are zero

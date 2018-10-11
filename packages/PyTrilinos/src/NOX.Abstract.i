@@ -77,7 +77,7 @@ NOX.Abstract provides the following user-level classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
@@ -91,7 +91,7 @@ NOX.Abstract provides the following user-level classes:
 
 // Configuration and optional include files
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 %{
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
@@ -119,7 +119,9 @@ del sys, op
 
 // Trilinos module imports
 %import "Teuchos.i"
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 %import "Epetra.i"
+#endif
 
 // General exception handling
 %feature("director:except")

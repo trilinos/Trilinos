@@ -96,8 +96,8 @@ clp.add_option(
 clp.add_option(
   "--min-cmake-version", dest="minCMakeVersion", type="string",
   help="Minimum version of CMake needed for given project" \
-    " [Default '2.8.11']",
-  default="2.8.11" )
+    " [Default '3.10.0']",
+  default="3.10.0" )
 
 GenerateDocUtilsOutput.addCmndLineOptions(clp)
 

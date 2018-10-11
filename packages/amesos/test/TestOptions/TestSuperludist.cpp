@@ -14,32 +14,32 @@
 //  always return 0
 //
 //  TestSuperludist performs the following tests:
-//                         Redistribute   AddZeroToDiag   SUB:  ReuseSymbolic MaxProcesses
+//                            Redistribute   AddZeroToDiag   SUB:  ReuseSymbolic MaxProcesses
 //  Test number:
-//   1 disabled AddToDiag=100 true           true                   true           2
-//   2 disabled AddToDiag=100 true           false                  true           2
-//   3                        true           true                   false          2
-//   4                        true           true                   true           1
-//   5                        true           true                   false          1
-//   6                        true           true                   false          10
-//   7                        true           false                  true           -1
-//   8                        true           false                  true           -2
-//   9                        true           false                  true           -3
-//   10                       true           false                  false          4
-//   11                       false/true     true                   true           4
-//   12                       false/true     true                   true           2
+//   1 disabled AddToDiag=100    true           true                   true           2
+//   2 disabled AddToDiag=100    true           false                  true           2
+//   3                           true           true                   false          2
+//   4                           true           true                   true           1
+//   5                           true           true                   false          1
+//   6                           true           true                   false          10
+//   7                           true           false                  true           -1
+//   8                           true           false                  true           -2
+//   9                           true           false                  true           -3
+//   10                          true           false                  false          4
+//   11                          false/true     true                   true           4
+//   12                          false/true     true                   true           2
 //     Test #12 appears to duplicate test #11 and perhaps #4
-//   13                       false/true     true                   false          1
-//   14                       false/true     true                   false          2
-//   15                       false/true     false                  true           1
-//   16                       false/true     false                  true           2
-//   17 SamePattern           true           false                  true           10
-//   18 RowPerm - NATURAL     true           false                  false          10
-//   19 RowPerm - LargeDiag   true           false                  false          10
-//   20 RowPerm - NATURAL     true           false                  false          10
-//   21 RowPerm - LargeDiag   true           false                  false          10
-//   22 RowPerm - TinyPivot=t true           false                  false          10
-//   23 RowPerm - TinyPivot=f true           false                  false          10
+//   13                          false/true     true                   false          1
+//   14                          false/true     true                   false          2
+//   15                          false/true     false                  true           1
+//   16                          false/true     false                  true           2
+//   17 SamePattern              true           false                  true           10
+//   18 RowPerm - NATURAL        true           false                  false          10
+//   19 RowPerm - LargeDiag_MC64 true           false                  false          10
+//   20 RowPerm - NATURAL        true           false                  false          10
+//   21 RowPerm - LargeDiag_MC64 true           false                  false          10
+//   22 RowPerm - TinyPivot=t    true           false                  false          10
+//   23 RowPerm - TinyPivot=f    true           false                  false          10
 //
 
 
@@ -703,7 +703,11 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
+#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION > 3)
+      SuperludistParams.set( "RowPerm", "LargeDiag_MC64" );
+#else
       SuperludistParams.set( "RowPerm", "LargeDiag" );
+#endif
       SuperludistParams.set( "MaxProcesses", 10 );
       //  ParamList.print( std::cerr, 10 ) ;
 
@@ -772,7 +776,11 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
+#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION > 3)
+      SuperludistParams.set( "RowPerm", "LargeDiag_MC64" );
+#else
       SuperludistParams.set( "RowPerm", "LargeDiag" );
+#endif
       SuperludistParams.set( "MaxProcesses", 10 );
       //  ParamList.print( std::cerr, 10 ) ;
 

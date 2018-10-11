@@ -293,7 +293,7 @@ def getReposStats(inOptions, tribitsGitRepos):
     repoStatTableDirName = getRepoStatTableDirName(inOptions, gitRepo.repoDir)
     repoStatTable.insertRepoStat(repoStatTableDirName, gitRepo.gitRepoStats, repoIdx)
     repoIdx += 1
-  print(gitdist.createAsciiTable(repoStatTable.getTableData()))
+  print(gitdist.createTable(repoStatTable.getTableData()))
   return hasChangesToPush
   # NOTE: Above, we could just call 'gitdist dist-repo-status' but by
   # printing the table here with the actualy gitRepoStat data, we ensure

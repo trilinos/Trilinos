@@ -2,7 +2,7 @@
 #
 # Set up env on chama for ATMD builds of Trilinos
 #
-# This source script gets the settings from the JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
 #
 ################################################################################
 
@@ -17,7 +17,7 @@ fi
 if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "SNB" ] ; then
   echo "***"
   echo "*** ERROR: KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a valid option on this system."
-  echo "*** '$ATDM_CONFIG_KOKKOS_ARCH' appears in $JOB_NAME which then sets the KOKKOS_ARCH"
+  echo "*** '$ATDM_CONFIG_KOKKOS_ARCH' appears in $ATDM_CONFIG_JOB_NAME which then sets the KOKKOS_ARCH"
   echo "*** on Chama 'SNB' is the only valid KOKKOS_ARCH. If no KOKKOS_ARCH is specified then"
   echo "*** 'SNB' will be used by default"
   echo "***"
