@@ -70,7 +70,7 @@ To keep all packages, use:
 
   filter-packages-list.py --keep-test-test-categories=PT,ST,EX [other args]
 
-(or don't both running the script).
+(or don't bother running the script).
 """
 
 from optparse import OptionParser

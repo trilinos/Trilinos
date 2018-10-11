@@ -64,26 +64,26 @@ namespace {
     static int       nodes_per_face[nface + 1];
     static int       edges_per_face[nface + 1];
   };
+
+  // Edge numbers are zero-based [0..number_edges)
+  int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
+      {{0, 1}, {1, 2}, {2, 0}};
+
+  // Face numbers are zero-based [0..number_faces)
+  int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
+      {{0, 1, 2}, {0, 2, 1}};
+
+  int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
+      {{0, 1, 2}, {2, 1, 0}};
+
+  // face 0 returns number of nodes for all faces if homogenous
+  //        returns -1 if faces have differing topology
+  int Constants::nodes_per_face[nface + 1] = {3, 3, 3};
+
+  // face 0 returns number of edges for all faces if homogenous
+  //        returns -1 if faces have differing topology
+  int Constants::edges_per_face[nface + 1] = {3, 3, 3};
 } // namespace
-
-// Edge numbers are zero-based [0..number_edges)
-int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-    {{0, 1}, {1, 2}, {2, 0}};
-
-// Face numbers are zero-based [0..number_faces)
-int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    {{0, 1, 2}, {0, 2, 1}};
-
-int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-    {{0, 1, 2}, {2, 1, 0}};
-
-// face 0 returns number of nodes for all faces if homogenous
-//        returns -1 if faces have differing topology
-int Constants::nodes_per_face[nface + 1] = {3, 3, 3};
-
-// face 0 returns number of edges for all faces if homogenous
-//        returns -1 if faces have differing topology
-int Constants::edges_per_face[nface + 1] = {3, 3, 3};
 
 void Ioss::TriShell3::factory()
 {

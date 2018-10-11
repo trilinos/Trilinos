@@ -14,6 +14,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Smoothers)
 #TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 
 SET(SOURCES "")
+SET(SOURCES_INTREPID2 "")
+SET(SOURCES_BLOCKED "")
 
 APPEND_SET(SOURCES
   Aggregates.cpp
@@ -25,7 +27,7 @@ APPEND_SET(SOURCES
   GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
-  IntrepidPCoarsenFactory.cpp
+  IndexManager.cpp
   Level.cpp
   Memory.cpp
   MueLu_UnitTests.cpp
@@ -51,6 +53,16 @@ APPEND_SET(SOURCES
   VariableDofLaplacianFactory.cpp
 )
 
+APPEND_SET(SOURCES_INTREPID2
+  MueLu_UnitTests.cpp
+  MueLu_TestHelpers.cpp
+)
+
+APPEND_SET(SOURCES_BLOCKED
+  MueLu_UnitTests.cpp
+  MueLu_TestHelpers.cpp
+)
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsUserData_cp
   SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/UserData
   SOURCE_FILES test.xml
@@ -64,14 +76,14 @@ APPEND_SET(SOURCES
 )
 ENDIF()
 
-APPEND_SET(SOURCES
+APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )
 IF (TPL_ENABLE_MPI)
-  APPEND_SET(SOURCES
+  APPEND_SET(SOURCES_BLOCKED
   BlockedRepartition.cpp
   )
 ENDIF()
@@ -97,7 +109,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
-  APPEND_SET(SOURCES Smoothers/BlockedSmoother.cpp)
+  APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedSmoother.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -107,13 +119,13 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
   IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra OR NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
-    APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
+    APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
   ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
-  APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
+  APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
@@ -140,8 +152,8 @@ ENDIF()
 
 
 
-IF (${PACKAGE_NAME}_ENABLE_Intrepid)
-APPEND_SET(SOURCES
+IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
+APPEND_SET(SOURCES_INTREPID2
   IntrepidPCoarsenFactory.cpp
 )
 ENDIF()
@@ -161,10 +173,24 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   APPEND_SET(SOURCES Galeri.cpp)
+  APPEND_SET(SOURCES_INTREPID2 Galeri.cpp)
+  APPEND_SET(SOURCES_BLOCKED Galeri.cpp)
 
   TRIBITS_ADD_EXECUTABLE(
     UnitTests
     SOURCES ${SOURCES}
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    UnitTests_Intrepid2
+    SOURCES ${SOURCES_INTREPID2}
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    UnitTests_Blocked
+    SOURCES ${SOURCES_BLOCKED}
     COMM serial mpi
     )
 
@@ -188,6 +214,24 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
       COMM mpi
       )
 
+    TRIBITS_ADD_TEST(
+      UnitTests_Blocked
+      NAME "UnitTestsBlockedEpetra"
+      ARGS "--linAlgebra=Epetra"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+
+    TRIBITS_ADD_TEST(
+      UnitTests
+      NAME "UnitTestsBlockedEpetra"
+      ARGS "--linAlgebra=Epetra"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+
   ENDIF()
 
   IF (${PACKAGE_NAME}_ENABLE_Tpetra)
@@ -204,6 +248,42 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
     TRIBITS_ADD_TEST(
       UnitTests
       NAME "UnitTestsTpetra"
+      ARGS "--linAlgebra=Tpetra"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+
+    TRIBITS_ADD_TEST(
+      UnitTests_Blocked
+      NAME "UnitTestsBlockedTpetra"
+      ARGS "--linAlgebra=Tpetra"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+
+    TRIBITS_ADD_TEST(
+      UnitTests_Blocked
+      NAME "UnitTestsBlockedTpetra"
+      ARGS "--linAlgebra=Tpetra"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 4
+      COMM mpi
+      )
+
+    TRIBITS_ADD_TEST(
+      UnitTests_Intrepid2
+      NAME "UnitTestsIntrepid2Tpetra"
+      ARGS "--linAlgebra=Tpetra"
+      PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+      )
+
+    TRIBITS_ADD_TEST(
+      UnitTests_Intrepid2
+      NAME "UnitTestsIntrepid2Tpetra"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4

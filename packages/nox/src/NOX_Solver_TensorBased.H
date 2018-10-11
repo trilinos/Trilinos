@@ -52,14 +52,12 @@
 #define NOX_SOLVER_TENSORBASED_H
 
 #include "NOX_Solver_Generic.H"        // base class
-#include "NOX_Solver_PrePostOperator.H"  // class data member
 #include "Teuchos_ParameterList.hpp"        // class data element
 #include "NOX_Utils.H"                // class data element
 #include "Teuchos_RCP.hpp"  // class data element
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
-#include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 
@@ -68,6 +66,9 @@ namespace NOX {
   namespace Direction {
     class Generic;
   }
+
+  class LineSearchCounters;
+  class Observer;
 
 namespace Solver {
 
@@ -292,17 +293,19 @@ public:
   virtual void reset(const NOX::Abstract::Vector& initialGuess,
              const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
-  virtual NOX::StatusTest::StatusType getStatus();
+  virtual void reset();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
 
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
   inline virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const {return oldSolnPtr;};
   inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+  virtual Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
 
 protected:
 
@@ -538,7 +541,7 @@ protected:
   Teuchos::RCP<NOX::LineSearch::Utils::Printing> print;
 
   //! Common common counters for line searches.
-  NOX::LineSearch::Utils::Counters counter;
+  NOX::LineSearchCounters* counter;
 
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;
@@ -549,8 +552,8 @@ protected:
   //! Counter for number of "double" Jacobian-vector products
   mutable int numJ2vMults;
 
-  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
-  NOX::Solver::PrePostOperator prePostOperator;
+  //! Pointer to a user defined NOX::Observer object.
+  Teuchos::RCP<NOX::Observer> observer;
 
 };
 } // namespace Solver

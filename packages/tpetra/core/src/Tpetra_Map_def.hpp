@@ -63,6 +63,7 @@
 #include <typeinfo>
 
 namespace Tpetra {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
@@ -1324,7 +1325,7 @@ namespace Tpetra {
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  isLocallyFitted (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
   {
     if (this == &map)
       return true;
@@ -1421,7 +1422,7 @@ namespace Tpetra {
     // execution does not require interprocess communication."
     // However, just to be sure, I'll put this call after the above
     // tests that don't communicate.
-    if (! Details::congruent (*comm_, * (map.getComm ()))) {
+    if (! ::Tpetra::Details::congruent (*comm_, * (map.getComm ()))) {
       return false;
     }
 

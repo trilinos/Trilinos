@@ -71,11 +71,12 @@ private:
   ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
   ROL::Ptr<Intrepid::Cubature<Real>> bdryCub_;
   // Cell node information
+  ROL::Ptr<Intrepid::FieldContainer<Real>> volCellNodes_;
   std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   // Finite element definition
   ROL::Ptr<FE<Real>> feVel_;
   ROL::Ptr<FE<Real>> fePrs_;
-  std::vector<ROL::Ptr<FE<Real>>> feVelBdry_;
+  std::vector<std::vector<ROL::Ptr<FE<Real>>>> feVelBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int>> fvidx_;
   std::vector<std::vector<int>> fpidx_;
@@ -678,7 +679,7 @@ public:
       int size = z_param->size();
       int c    = u_coeff->dimension(0);
       std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> tmp(size,ROL::nullPtr);
-      hess.resize(size,tmp);
+      hess.clear(); hess.resize(size,tmp);
       for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
           hess[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
@@ -686,7 +687,7 @@ public:
       }
     }
     else {
-      throw Exception::Zero(">>> (PDE_NavierStokes::Jacobian_3): Jacobian is zero.");
+      throw Exception::Zero(">>> (PDE_NavierStokes::Hessian_33): Hessian is zero.");
     }
   }
 
@@ -767,6 +768,7 @@ public:
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
                     const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
+    volCellNodes_   = volCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
     feVel_ = ROL::makePtr<FE<Real>>(volCellNodes,basisPtrVel_,cellCub_);
@@ -774,12 +776,15 @@ public:
     fvidx_ = feVel_->getBoundaryDofs();
     fpidx_ = fePrs_->getBoundaryDofs();
     // Construct control boundary FE
-    int sideset = 4;
-    int numLocSides = bdryCellNodes[sideset].size();
-    feVelBdry_.resize(numLocSides);
-    for (int j = 0; j < numLocSides; ++j) {
-      if (bdryCellNodes[sideset][j] != ROL::nullPtr) {
-        feVelBdry_[j] = ROL::makePtr<FE<Real>>(bdryCellNodes[sideset][j],basisPtrVel_,bdryCub_,j);
+    int numSideSets = bdryCellNodes.size();;
+    feVelBdry_.resize(numSideSets);
+    for (int i = 0; i < numSideSets; ++i) {
+      int numLocSides = bdryCellNodes[i].size();
+      feVelBdry_[i].resize(numLocSides);
+      for (int j = 0; j < numLocSides; ++j) {
+        if (bdryCellNodes[i][j] != ROL::nullPtr) {
+          feVelBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtrVel_,bdryCub_,j);
+        }
       }
     }
   }
@@ -797,15 +802,17 @@ public:
     return fePrs_;
   }
 
-  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(void) const {
-    return feVelBdry_;
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
+    return volCellNodes_;
+  }
+
+  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(const int sideset = -1) const {
+    int side = (sideset < 0 ? 4 : sideset);
+    return feVelBdry_[side];
   }
 
   const std::vector<std::vector<int>> getBdryCellLocIds(const int sideset = -1) const {
-    int side = sideset;
-    if ( sideset < 0 ) {
-      side = 4;
-    }
+    int side = (sideset < 0 ? 4 : sideset);
     return bdryCellLocIds_[side];
   }
 

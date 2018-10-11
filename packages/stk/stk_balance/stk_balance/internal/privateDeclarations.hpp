@@ -33,7 +33,7 @@
 #ifndef BALANCE_PRIVATEDECLARATIONS_HPP
 #define BALANCE_PRIVATEDECLARATIONS_HPP
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
@@ -45,6 +45,7 @@
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
+#include <stk_util/environment/Env.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <stk_balance/internal/StkMeshAdapterForZoltan2.hpp>
@@ -85,6 +86,17 @@ void rebalance(DecompositionChangeList &changeList);
 
 void logMessage(MPI_Comm communicator, const std::string &message);
 
+bool isElementPartOfSpider(const stk::mesh::BulkData & stkMeshBulkData,
+                           const stk::mesh::Field<int> & beamConnectivityCountField,
+                           stk::mesh::Entity element);
+
+bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
+                             const stk::balance::BalanceSettings & balanceSettings,
+                             stk::mesh::Entity elem);
+
+void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList);
+void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData);
+
 void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
                                const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds,
                                Zoltan2ParallelGraph& zoltan2Graph);
@@ -93,7 +105,7 @@ void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::m
 
 void fill_list_of_entities_to_send_for_aura_like_ghosting(stk::mesh::BulkData& bulkData, stk::mesh::EntityProcVec &entitiesToGhost);
 
-stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData);
+stk::mesh::Ghosting * create_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, const BalanceSettings & balanceSettings);
 void destroy_custom_ghosting(stk::mesh::BulkData & stkMeshBulkData, stk::mesh::Ghosting * customAura);
 
 unsigned get_local_id(const stk::mesh::impl::LocalIdMapper& localIds, stk::mesh::Entity entity);
@@ -115,36 +127,34 @@ void print_zoltan_statistics(const ZoltanAdapter& stkMeshAdapter, Zoltan2::Evalu
     stkMeshAdapter.getWeightsView(kdd, kddstride, 0);
     double localsum = 0.;
     for (size_t i = 0; i< stkMeshAdapter.getLocalNumIDs(); i++) localsum += kdd[i];
-    if (parallel_rank == 0)
-    {
-        std::cout << parallel_rank
-                << " PRINTING METRICS nObj " << stkMeshAdapter.getLocalNumIDs()
-                << " nwgts " << stkMeshAdapter.getNumWeightsPerID()
-                << " sumwgt " << localsum << std::endl;
-        zoltanEvaluateParition.printMetrics(std::cout);
-        //std::cout << parallel_rank
-        //        << " PRINTING GRAPH METRICS" << std::endl;
-        //zoltanEvaluateParition.printGraphMetrics(std::cout);
-    }
+
+    sierra::Env::outputP0() << parallel_rank
+            << " PRINTING METRICS nObj " << stkMeshAdapter.getLocalNumIDs()
+            << " nwgts " << stkMeshAdapter.getNumWeightsPerID()
+            << " sumwgt " << localsum << std::endl;
+    zoltanEvaluateParition.printMetrics(sierra::Env::outputP0());
+    //sierra::Env::outputP0() << parallel_rank
+    //        << " PRINTING GRAPH METRICS" << std::endl;
+    //zoltanEvaluateParition.printGraphMetrics(sierra::Env::outputP0());
 }
 
 template <class ZoltanAdapter>
-void print_statistics(const ZoltanAdapter& stkMeshAdapter, int parallel_rank )
+void print_statistics(const ZoltanAdapter& stkMeshAdapter, MPI_Comm comm, int parallel_rank )
 {
     //KDD Expect this interface to change -- I promise!!!
-    auto comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
+    auto teuchos_comm = Teuchos::rcp(new Teuchos::MpiComm<int>(comm));
     Teuchos::ParameterList pl;
-    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, comm, nullptr);
+    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, teuchos_comm, nullptr);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
 
 template <class ZoltanAdapter>
-void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan2::PartitioningSolution<ZoltanAdapter>& solution, int parallel_rank )
+void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan2::PartitioningSolution<ZoltanAdapter>& solution, MPI_Comm comm, int parallel_rank )
 {
     //KDD Expect this interface to change -- I promise!!!
-    auto comm = Teuchos::DefaultComm<int>::getComm(); // This should be our stkMeshBulkData.parallel()
+    auto teuchos_comm = Teuchos::rcp(new Teuchos::MpiComm<int>(comm));
     Teuchos::ParameterList pl;
-    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, comm, &solution);
+    Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, teuchos_comm, &solution);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
 

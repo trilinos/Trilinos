@@ -62,6 +62,7 @@ namespace NOX {
   namespace MeritFunction {
     class Generic;
   }
+  struct SolverStats;
 }
 
 namespace NOX {
@@ -115,6 +116,12 @@ namespace NOX {
     */
     Teuchos::RCP<Teuchos::ParameterList> getNoxParameterList() const;
 
+    //! Returns const version of solver statistics
+    Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
+
+    //! Returns non-const version of solver statistics
+    Teuchos::RCP<NOX::SolverStats> getNonConstSolverStatistics();
+
   private:
 
     //! Copy constructor is private to preclude copying.
@@ -155,6 +162,9 @@ namespace NOX {
        data object.
     */
     Teuchos::RCP<Teuchos::ParameterList> paramListPtr;
+
+    /** \brief Stores solver statistics */
+    Teuchos::RCP<NOX::SolverStats> solverStatsPtr;
 
   }; // Class GlobalData
 

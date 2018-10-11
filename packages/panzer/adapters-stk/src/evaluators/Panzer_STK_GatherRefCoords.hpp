@@ -76,9 +76,6 @@ public:
                   const panzer::BasisIRLayout & basis,
                   const std::string & fieldName);
   
-  void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
-  
   void evaluateFields(typename Traits::EvalData d);
 
 private:

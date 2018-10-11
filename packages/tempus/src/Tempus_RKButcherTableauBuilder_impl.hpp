@@ -190,6 +190,11 @@ void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 
   builder_.setObjectFactory(
       abstractFactoryStd< RKButcherTableau<Scalar>,
+                          IRK1StageTheta_RKBT<Scalar> >(),
+      "Implicit Midpoint");
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< RKButcherTableau<Scalar>,
                           EDIRK2StageTheta_RKBT<Scalar> >(),
       "EDIRK 2 Stage Theta Method");
 

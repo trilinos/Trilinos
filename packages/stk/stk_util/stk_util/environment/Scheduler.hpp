@@ -44,15 +44,15 @@ namespace stk
 namespace util
 {
 
-typedef double Time;
-typedef int Step;
-typedef std::map<Time, Time> TimeContainer;
-typedef std::map<Step, Step> StepContainer;
+using Time = long double;
+using Step = int;
+using TimeContainer = std::map<double, double>;
+using StepContainer = std::map<Step, Step>;
 
 struct TolerancedTime {
     // A simple container to hold toleranced time values;
-    Time min;
-    Time max;
+    double min;
+    double max;
 };
 
 class Scheduler
@@ -64,24 +64,25 @@ class Scheduler
 
     ~Scheduler();
 
-    bool is_it_time(Time time, Step step);
+    bool is_it_time(double time, Step step);
 
-    bool add_interval(Time time, Time delta=0.0);
+    bool add_interval(double time, double delta=0.0);
+    bool add_interval(Time time, Time delta);
     bool add_interval(Step step, Step interval=1);
 
-    bool set_termination_time(Time time);
+    bool set_termination_time(double time);
 
-    bool add_explicit(Time time);
+    bool add_explicit(double time);
     bool add_explicit(Step step);
     void set_force_schedule(); //!< Force true on next call to scheduler
 
-    Time adjust_dt(Time dt, Time time);
+    double adjust_dt(double dt, double time);
     bool set_lookahead(int lookahead);
-    bool set_start_time(Time time);
+    bool set_start_time(double time);
     void set_synchronize() {synchronize_ = true;}
     bool get_synchronize() {return synchronize_;}
 
-    void set_restart_time(Time time) {restartTime_ = time;}
+    void set_restart_time(double time) { restartTime_ = time; }
 
     bool set_signal(const std::string& signal);
 
@@ -96,14 +97,15 @@ class Scheduler
 
     void print(std::ostream &out) const;
 
-    const std::string & name() const       {return name_;}
-    void set_name(const std::string &n) {name_ = n;}
+    const std::string & name() const { return name_; }
+    void set_name(const std::string &n) { name_ = n; }
 
   private:
 
     bool internal_is_it_time(Time time);
-    bool internal_is_it_step(Step  step);
+    bool internal_is_it_step(Step step);
     bool force_schedule();
+    bool add_explicit_internal(Time time);
 
     Time next_implicit_output_time(Time time) const;
     Time next_explicit_output_time(Time time) const;

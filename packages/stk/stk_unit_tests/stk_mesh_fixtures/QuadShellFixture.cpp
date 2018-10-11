@@ -39,7 +39,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
 #include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
@@ -67,17 +67,18 @@ QuadShellFixture::QuadShellFixture(
     m_elem_parts(1, &m_quad_part),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
-    node_id_start(nid_start),
-    elem_id_start(eid_start),
+    m_node_id_start(nid_start),
+    m_elem_id_start(eid_start),
     owns_mesh(false),
     m_nx( nx ),
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -97,10 +98,11 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -109,7 +111,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
                           const std::string& coordsName,
                           const std::vector<std::string>& rank_names )
   : m_meta_p( new MetaData(3,rank_names) ),
-    m_bulk_p( new BulkData(m_meta, pm) ),
+    m_bulk_p( new BulkData(*m_meta_p, pm) ),
     m_spatial_dimension(3),
     m_meta( *m_meta_p ),
     m_bulk_data( *m_bulk_p ),
@@ -121,10 +123,11 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -132,7 +135,7 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
                           unsigned nx , unsigned ny,
                           bool auraOn )
   : m_meta_p( new MetaData(3) ),
-    m_bulk_p( new BulkData(m_meta, pm, (auraOn ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA)) ),
+    m_bulk_p( new BulkData(*m_meta_p, pm, (auraOn ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA)) ),
     m_spatial_dimension(3),
     m_meta( *m_meta_p ),
     m_bulk_data( *m_bulk_p ),
@@ -144,10 +147,11 @@ QuadShellFixture::QuadShellFixture( stk::ParallelMachine pm ,
     m_ny( ny )
 {
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
       m_coord_field,
       m_meta.universal_part(),
-      m_spatial_dimension
+      m_spatial_dimension,
+      (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr
       );
 }
 
@@ -161,7 +165,7 @@ QuadShellFixture::~QuadShellFixture()
 
 void QuadShellFixture::node_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const
 {
-  entity_id -= node_id_start;
+  entity_id -= m_node_id_start;
 
   x = entity_id % (m_nx+1);
   entity_id /= (m_nx+1);
@@ -171,7 +175,7 @@ void QuadShellFixture::node_x_y( EntityId entity_id, unsigned &x , unsigned &y )
 
 void QuadShellFixture::elem_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const
 {
-  entity_id -= elem_id_start;
+  entity_id -= m_elem_id_start;
 
   x = entity_id % m_nx;
   entity_id /= m_nx;
@@ -180,7 +184,7 @@ void QuadShellFixture::elem_x_y( EntityId entity_id, unsigned &x , unsigned &y )
 }
 
 
-void QuadShellFixture::generate_mesh()
+void QuadShellFixture::generate_mesh(const CoordinateMapping & coordMap)
 {
   std::vector<EntityId> element_ids_on_this_processor;
 
@@ -193,17 +197,18 @@ void QuadShellFixture::generate_mesh()
     fill_node_map(proc_rank);
   }
 
-  const EntityId beg_elem = elem_id_start + ( num_elems * p_rank ) / p_size ;
-  const EntityId end_elem = elem_id_start + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+  const EntityId beg_elem = m_elem_id_start + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = m_elem_id_start + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
   for ( EntityId i = beg_elem; i != end_elem; ++i) {
     element_ids_on_this_processor.push_back(i);
   }
 
-  generate_mesh(element_ids_on_this_processor);
+  generate_mesh(element_ids_on_this_processor, coordMap);
 }
 
-void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor)
+void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor,
+    const CoordinateMapping & coordMap)
 {
   {
     //sort and unique the input elements
@@ -251,9 +256,7 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
 
         Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
-        data[0] = (Scalar)nx ;
-        data[1] = (Scalar)ny ;
-        data[2] = 0.0;
+        coordMap.getNodeCoordinates(data, nx, ny, 0);
       }
     }
   }
@@ -271,8 +274,8 @@ void QuadShellFixture::fill_node_map(int p_rank)
   const size_t p_size = m_bulk_data.parallel_size();
   const size_t num_elems = m_nx * m_ny;
 
-  const EntityId beg_elem = elem_id_start + ( num_elems * p_rank ) / p_size ;
-  const EntityId end_elem = elem_id_start + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+  const EntityId beg_elem = m_elem_id_start + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = m_elem_id_start + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
   for ( EntityId i = beg_elem; i != end_elem; ++i) {
     element_ids_on_this_processor.push_back(i);

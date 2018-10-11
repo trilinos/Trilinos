@@ -84,7 +84,7 @@ public:
     {
     }
 
-    void track_set_global_id(stk::mesh::Entity entity, uint32_t newId)
+    void track_set_global_id(stk::mesh::Entity entity, int64_t newId)
     {
     }
 

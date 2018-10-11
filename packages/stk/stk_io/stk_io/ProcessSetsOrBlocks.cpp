@@ -1,23 +1,33 @@
-#include "ProcessSetsOrBlocks.hpp"
-#include <iosfwd>
-#include <map>
-#include "Ioss_Field.h"
-#include "Ioss_SideSet.h"
-#include "IossBridge.hpp"
-#include "SidesetTranslator.hpp"
-#include "StkIoUtils.hpp"
 
-#include "StkMeshIoBroker.hpp"
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include "stk_topology/topology.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"
-#include "stk_mesh/base/Field.hpp"
-#include "stk_util/parallel/CommSparse.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
-#include "stk_mesh/base/TopologyDimensions.hpp"
-#include "stk_mesh/base/Field.hpp"
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include "ProcessSetsOrBlocks.hpp"
+#include <cstdint>                                 // for int64_t
+#include <map>                                     // for allocator, etc
+#include <stk_mesh/base/BulkData.hpp>              // for BulkData
+#include <stk_mesh/base/MetaData.hpp>              // for MetaData, etc
+#include <utility>                                 // for pair
+#include "IossBridge.hpp"                          // for include_entity, etc
+#include "Ioss_ElementTopology.h"                  // for ElementTopology
+#include "Ioss_Field.h"                            // for Field, etc
+#include "Ioss_NodeBlock.h"                        // for NodeBlock
+#include "Ioss_SideBlock.h"                        // for SideBlock
+#include "Ioss_SideSet.h"                          // for SideSet, etc
+#include "StkIoUtils.hpp"
+#include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker, etc
+#include "stk_mesh/base/Bucket.hpp"                // for Bucket
+#include "stk_mesh/base/CoordinateSystems.hpp"     // for Cartesian
+#include "stk_mesh/base/Field.hpp"                 // for Field
+#include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
+#include "stk_mesh/base/Types.hpp"                 // for OrdinalVector, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_topology/topology.hpp"               // for topology, etc
+#include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/diag/StringUtil.hpp"
+#include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, etc
+#include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk { namespace io {
 
@@ -40,8 +50,9 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   meta.set_coordinate_field(&coord_field);
 
   Ioss::NodeBlock *nb = node_blocks[0];
-  stk::mesh::put_field(coord_field, meta.universal_part(),
-                       meta.spatial_dimension());
+  stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(),
+                               meta.spatial_dimension(),
+                               (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian>>::data_type*) nullptr);
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), stk::topology::NODE_RANK);
 }
 
@@ -66,7 +77,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* const part = meta.get_part(entity->name());
 
-      STKIORequire(part != NULL);
+      STKIORequire(part !=  nullptr);
       STKIORequire(entity->field_exists("distribution_factors"));
 
       std::string nodesetName = part->name();
@@ -76,7 +87,8 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
         meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, nodesetDistFieldName);
 
       stk::io::set_field_role(distribution_factors_field_per_nodeset, Ioss::Field::MESH);
-      stk::mesh::put_field(distribution_factors_field_per_nodeset, *part);
+      stk::mesh::put_field_on_mesh(distribution_factors_field_per_nodeset, *part,
+                                   (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
     }
   }
 }
@@ -88,9 +100,9 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
   const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
   stk::io::default_part_processing(blocks, meta);
   stk::mesh::Part* const ss_part = meta.get_part(sset->name());
-  STKIORequire(ss_part != NULL);
+  STKIORequire(ss_part !=  nullptr);
 
-  stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
+  stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = nullptr;
   bool surface_df_defined = false; // Has the surface df field been defined yet?
 
   size_t block_count = sset->block_count();
@@ -98,7 +110,7 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
     Ioss::SideBlock *sb = sset->get_block(i);
     if (stk::io::include_entity(sb)) {
       stk::mesh::Part * const sb_part = meta.get_part(sb->name());
-      STKIORequire(sb_part != NULL);
+      STKIORequire(sb_part != nullptr);
       meta.declare_part_subset(*ss_part, *sb_part);
 
       if (sb->field_exists("distribution_factors")) {
@@ -113,8 +125,9 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
         }
         stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
         int side_node_count = sb->topology()->number_nodes();
-        stk::mesh::put_field(*distribution_factors_field,
-                             *sb_part, side_node_count);
+        stk::mesh::put_field_on_mesh(*distribution_factors_field,
+                                     *sb_part, side_node_count,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::ElementNode>>::data_type*) nullptr);
       }
     }
   }
@@ -142,13 +155,28 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 
     const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
 
+    Ioss::Region *region = sset->get_database()->get_region();
+    const std::string universalAlias = region->get_alias("universal_sideset");
+    if (sset->name() == universalAlias)
+        return;
+
     size_t block_count = sset->block_count();
     for (size_t i=0; i < block_count; i++) {
         Ioss::SideBlock *block = sset->get_block(i);
         if (stk::io::include_entity(block)) {
             std::vector<INT> elem_side ;
 
-            stk::mesh::Part * const sb_part = meta.get_part(block->name());
+            stk::mesh::Part *sb_part = get_part_for_grouping_entity(*region, meta, block);
+            if (sb_part == nullptr)
+            {
+               sb_part = get_part_for_grouping_entity(*region, meta, sset);
+            }
+
+            if (sb_part == nullptr)
+            {
+                continue;
+            }
+
             stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
 
             // NOTE: Using the exodus sideset definition which is the
@@ -235,6 +263,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
   }
 }
 
+
 void send_element_side_to_element_owner(stk::CommSparse &comm,
                                         const stk::mesh::EntityIdProcMap &elemIdMovedToProc,
                                         const std::vector<ElemSidePartOrds> &sidesToMove)
@@ -266,7 +295,7 @@ void unpack_and_declare_element_side(stk::CommSparse & comm, stk::mesh::BulkData
     bulk.declare_element_side(elem, sideOrdinal, add_parts);
 }
 
-void move_sidset_to_follow_element(stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, const std::vector<ElemSidePartOrds> &sidesToMove)
+void move_sideset_to_follow_element(stk::mesh::BulkData &bulk, const stk::mesh::EntityIdProcMap &elemIdMovedToProc, const std::vector<ElemSidePartOrds> &sidesToMove)
 {
     stk::CommSparse comm(bulk.parallel());
     stk::pack_and_communicate(comm, [&comm, &elemIdMovedToProc, &sidesToMove]() { send_element_side_to_element_owner(comm, elemIdMovedToProc, sidesToMove); });
@@ -282,7 +311,62 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk, const stk
         if(stk::io::include_entity(*it))
             process_surface_entity(*it, bulk, sidesToMove, behavior);
 
-    move_sidset_to_follow_element(bulk, elemIdMovedToProc, sidesToMove);
+    move_sideset_to_follow_element(bulk, elemIdMovedToProc, sidesToMove);
 }
+
+void populate_hidden_nodesets(Ioss::Region &io, const stk::mesh::MetaData & meta, NodesetMap &nodesetMap)
+{
+    static const std::string s_nodeset_suffix("_n");
+
+    for(auto mesh_part : meta.get_mesh_parts())
+    {
+        if(stk::io::is_part_io_part(*mesh_part))
+        {
+            const std::string& part_name(mesh_part->name());
+
+            // Determine the type of io entity and load into the pairing vector
+            auto entity = io.get_entity(part_name);
+            if(entity == nullptr) {
+                continue;
+            }
+
+            if(entity->type() == Ioss::SIDEBLOCK || entity->type() == Ioss::SIDESET)
+            {
+                std::string ns_name = part_name;
+                ns_name += s_nodeset_suffix;
+                auto io_node_set = io.get_nodeset(ns_name);
+                if(io_node_set != nullptr) {
+                    nodesetMap[io_node_set] = mesh_part;
+                }
+            }
+        }
+    }
+}
+
+stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity)
+{
+    const std::string &name = entity->name();
+    stk::mesh::Part* part = meta.get_part(name);
+
+    if(nullptr == part)
+    {
+        std::vector<std::string> aliases;
+        region.get_aliases(name, aliases);
+
+        for(std::string &alias : aliases)
+        {
+            if(sierra::case_strcmp(alias, name) != 0)
+            {
+                part = meta.get_part(alias);
+
+                if(nullptr != part) {
+                    return part;
+                }
+            }
+        }
+    }
+    return part;
+}
+
 
 }} // namespace stk io

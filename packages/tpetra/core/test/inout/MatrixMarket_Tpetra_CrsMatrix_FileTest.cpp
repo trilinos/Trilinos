@@ -300,7 +300,7 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
                       const std::string& matrixInFile)
 {
   using map_type = Tpetra::Map<>;
-  using crs_matrix_type = Tpetra::CrsMatrix<double>;
+  using crs_matrix_type = Tpetra::CrsMatrix<>;
   using reader_type = Tpetra::MatrixMarket::Reader<crs_matrix_type>;
   using writer_type = Tpetra::MatrixMarket::Writer<crs_matrix_type>;
   const bool tolerant = false;

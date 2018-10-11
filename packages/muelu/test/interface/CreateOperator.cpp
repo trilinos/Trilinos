@@ -74,8 +74,7 @@
 #include <Xpetra_EpetraVector.hpp>
 #include <MueLu_CreateEpetraPreconditioner.hpp>
 #endif
-
-void run_sed(const std::string& pattern, const std::string& baseFile);
+#include <MueLu_TestHelpers.hpp>
 
 const std::string thickSeparator = "==========================================================================================================================";
 const std::string thinSeparator  = "--------------------------------------------------------------------------------------------------------------------------";
@@ -143,6 +142,9 @@ namespace MueLuExamples {
 #include <MueLu_UseShortNames.hpp>
     using Teuchos::RCP;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& out = *fancy;
 
@@ -180,7 +182,18 @@ namespace MueLuExamples {
     }
   }
 
+  void run_sed(const std::string& pattern, const std::string& baseFile) {
+    // sed behaviour differs between Mac and Linux
+    // You can run "sed -i 's//' " in Linux, but you always have to specify
+    // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
+    std::string sed_pref = "sed -i ";
+#ifdef __APPLE__
+    sed_pref = sed_pref +  "\"\" ";
+#endif
 
+    system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
+    system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
+  }
 
   bool compare_to_gold(int myRank, const std::string & baseFile) {
     bool failed=false;
@@ -249,20 +262,6 @@ namespace MueLuExamples {
     return !failed;
   }
 
-
-  void run_sed(const std::string& pattern, const std::string& baseFile) {
-    // sed behaviour differs between Mac and Linux
-    // You can run "sed -i 's//' " in Linux, but you always have to specify
-    // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
-    std::string sed_pref = "sed -i ";
-#ifdef __APPLE__
-    sed_pref = sed_pref +  "\"\" ";
-#endif
-
-    system((sed_pref + pattern + " " + baseFile + ".res").c_str());
-    system((sed_pref + pattern + " " + baseFile + ".out").c_str());
-  }
-
 }//namespace
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -272,6 +271,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using Teuchos::rcp;
   using Teuchos::ParameterList;
   using Teuchos::TimeMonitor;
+
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   bool success = true;
   bool verbose = true;
@@ -288,6 +290,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     GO nx = 100, ny = 100, nz = 100;
     Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
     ::Xpetra::Parameters xpetraParameters(clp);
+
+    bool useKokkos = false;
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
+    useKokkos = true;
+#endif
+    clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -311,13 +319,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     MueLuExamples::generate_user_matrix_and_nullspace<Scalar,LocalOrdinal,GlobalOrdinal,Node>(matrixType, lib, galeriList, comm, A, nullspace, coordinates0);
     map = A->getRowMap();
 
+    std::string prefix;
+    if (useKokkos) {
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+      if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
+        prefix = "kokkos-complex/";
+      } else {
+        prefix = "kokkos/";
+      }
+#else
+      out << "No kokkos refactor available." << std::endl;
+      return EXIT_FAILURE;
+#endif
+    } else {
+      if (TYPE_EQUAL(Scalar, std::complex<double>) || TYPE_EQUAL(Scalar, std::complex<float>)) {
+        prefix = "complex/";
+      } else {
+        prefix = "default/";
+      }
+    }
+    std::cout << "Testing folder \"" << prefix << "\"" << std::endl;
     // =========================================================================
     // Solve #1 (standard MueLu)
     // =========================================================================
     out << thickSeparator << std::endl;
     out << prefSeparator << " Solve 1: Standard "<< prefSeparator <<std::endl;
     {
-      std::string fname = "Output/operator_solve_1_np" + Teuchos::toString(numProc);
+      std::string fname = prefix+"Output/operator_solve_1_np" + Teuchos::toString(numProc);
       fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
       std::filebuf    buffer;
@@ -333,6 +361,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       ParameterList mueluList;
       mueluList.set("verbosity",                           "test");
       mueluList.set("coarse: max size",                    100);
+      mueluList.set("use kokkos refactor",                 useKokkos);
 
       ParameterListInterpreter mueLuFactory(mueluList);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
@@ -368,7 +397,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << thickSeparator << std::endl;
     out << prefSeparator << " Solve 5: LevelWrap, Fast Way, P, R "<< prefSeparator <<std::endl;
     {
-      std::string fname = "Output/operator_solve_5_np" + Teuchos::toString(numProc);
+      std::string fname = prefix+"Output/operator_solve_5_np" + Teuchos::toString(numProc);
       fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
       std::srand(12345);
@@ -376,6 +405,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       ParameterList mueluList;
       mueluList.set("verbosity",          "test");
       mueluList.set("coarse: max size",   100);
+      mueluList.set("use kokkos refactor", useKokkos);
       ParameterList& level0 = mueluList.sublist("level 0");
       level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
@@ -396,7 +426,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << thickSeparator << std::endl;
     out << prefSeparator << " Solve 6: LevelWrap, Fast Way, P only, explicit transpose "<< prefSeparator <<std::endl;
     {
-      std::string fname = "Output/operator_solve_6_np" + Teuchos::toString(numProc);
+      std::string fname = prefix+"Output/operator_solve_6_np" + Teuchos::toString(numProc);
       fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
       std::srand(12345);
@@ -406,6 +436,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("transpose: use implicit",    false);
       mueluList.set("max levels",                 4);
       mueluList.set("coarse: max size",           100);
+      mueluList.set("use kokkos refactor", useKokkos);
       ParameterList& level0 = mueluList.sublist("level 0");
       level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
@@ -425,7 +456,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << thickSeparator << std::endl;
     out << prefSeparator << " Solve 7: LevelWrap, Fast Way, P only, implicit transpose "<< prefSeparator <<std::endl;
     {
-      std::string fname = "Output/operator_solve_7_np" + Teuchos::toString(numProc);
+      std::string fname = prefix+"Output/operator_solve_7_np" + Teuchos::toString(numProc);
       fname = fname + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
 
       std::srand(12345);
@@ -435,6 +466,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       mueluList.set("coarse: max size",           100);
       mueluList.set("transpose: use implicit",    true);
       mueluList.set("max levels",                 2);
+      mueluList.set("use kokkos refactor", useKokkos);
       ParameterList& level0 = mueluList.sublist("level 0");
       level0.set("Coordinates", coordinates0);
       ParameterList& level1 = mueluList.sublist("level 1");
@@ -462,18 +494,4 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
 int main(int argc, char *argv[]) {
   return Automatic_Test_ETI(argc,argv);
-}
-
-
-void run_sed(const std::string& pattern, const std::string& baseFile) {
-  // sed behaviour differs between Mac and Linux
-  // You can run "sed -i 's//' " in Linux, but you always have to specify
-  // "sed -i "<smth,could be empty>" 's//'" in Mac. Both, however, take '-i<extension>'
-  std::string sed_pref = "sed -i ";
-#ifdef __APPLE__
-  sed_pref = sed_pref +  "\"\" ";
-#endif
-
-  system((sed_pref + pattern + " " + baseFile + ".gold_filtered").c_str());
-  system((sed_pref + pattern + " " + baseFile + ".out_filtered").c_str());
 }

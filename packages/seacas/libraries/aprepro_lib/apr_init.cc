@@ -317,6 +317,10 @@ namespace SEAMS {
        "Create a 2D array from the data in a csv file optionally skipping rows."
        " If skip is integer skip that many rows; if skip is a character, skip lines beginning with "
        "that character"},
+      {"array_from_string", do_array_from_string, "array_from_string(string, delim)",
+       "Create a 1D array from the data in a delimited string."
+       " The array double values are separated by one or more of the characters in the string "
+       "variable delim."},
       {nullptr, nullptr, nullptr, nullptr}};
 
   array_dd_init array_dd_fncts[] = {

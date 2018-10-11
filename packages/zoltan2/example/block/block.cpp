@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::Map<> Map_t;
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
-  typedef double scalar_t;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Generate some input data.

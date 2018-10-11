@@ -49,7 +49,6 @@
 
 // Domi include files
 #include "PyTrilinos_Domi_Util.hpp"
-#include "Domi_DefaultNode.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_Version.hpp"
 #include "Domi_getValidParameters.hpp"

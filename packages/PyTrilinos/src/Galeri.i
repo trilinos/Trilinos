@@ -87,7 +87,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -119,7 +119,7 @@ example subdirectory of the PyTrilinos package:
 
 // Trilinos package imports
 %import "Teuchos.i"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 
@@ -185,7 +185,7 @@ __version__ = Galeri_Version().split()[2]
 ///////////////////////////
 // Galeri_ReadHB support //
 ///////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %feature("autodoc",
 "ReadHB(str filename, Epetra.Comm comm) -> (Epetra.Map map, Epetra.CrsMatrix A,
                                            Epetra.Vector x, Epetra.Vector b,

@@ -284,20 +284,6 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
-  {
-    // The 2-argument copy constructor with second argument =
-    // Teuchos::Copy does a deep copy of its input.
-    Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> dst (src, Teuchos::Copy);
-
-    // The Kokkos refactor version of Vector has view semantics, so
-    // returning the Vector directly, rather than through RCP, only
-    // does a shallow copy.
-    return dst;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   offsetView (const Teuchos::RCP<const map_type>& subMap,
@@ -335,6 +321,21 @@ namespace Tpetra {
   {
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> V;
     return Teuchos::rcp_const_cast<V> (this->offsetView (subMap, offset));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
+  {
+    using vec_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    // The 2-argument copy constructor with second argument =
+    // Teuchos::Copy does a deep copy of its input.
+    vec_type dst (src, Teuchos::Copy);
+
+    // The Kokkos refactor version of Vector has view semantics, so
+    // returning the Vector directly, rather than through RCP, only
+    // does a shallow copy.
+    return dst;
   }
 
 } // namespace Tpetra

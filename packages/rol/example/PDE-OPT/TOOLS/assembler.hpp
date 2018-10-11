@@ -51,7 +51,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -637,6 +636,8 @@ public:
   void printMeshData(std::ostream &outStream) const;
   void outputTpetraVector(const ROL::Ptr<const Tpetra::MultiVector<>> &vec,
                           const std::string &filename) const;
+  void inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
+                         const std::string &filename) const;
   void serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                  const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                  const std::string &filename,

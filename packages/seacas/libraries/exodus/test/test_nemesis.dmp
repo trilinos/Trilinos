@@ -1,5 +1,5 @@
 *********************Output Tests***********************
-creating ExodusII file... successful
+creating ExodusII file...successful
 testing init info output...successful
 testing global init info output...successful
 testing global element block ID output...successful

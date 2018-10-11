@@ -57,7 +57,6 @@
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_ModelEvaluator.h"
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_RowMatrixOut.h"
@@ -67,5 +66,9 @@
 #include "EpetraExt_Version.h"
 #include "EpetraExt_XMLReader.h"
 #include "EpetraExt_XMLWriter.h"
+
+#ifdef HAVE_PYTRILINOS_EPETRAEXT_MODEL_EVALUATOR
+#include "EpetraExt_ModelEvaluator.h"
+#endif
 
 #endif

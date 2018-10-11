@@ -727,3 +727,68 @@ bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& l
   }
   return true;
 }
+
+
+bool Teuchos::haveSameValuesSorted( const ParameterList& list1, const ParameterList& list2, bool verbose )
+{
+  // Check that the top-level names of the two parameter lists are the same
+  //const std::string &paramListName1 = list1.name();
+  //const std::string &paramListName2 = list2.name();
+  //if ( paramListName1 != paramListName2 ) {
+  //  return false;
+  //}
+  ParameterList::ConstIterator itr1, itr2;
+  Array<std::string> arr1, arr2;
+  for(itr1 = list1.begin(); itr1 != list1.end(); ++itr1){
+    arr1.push_back(list1.name(itr1));
+  }
+  for(itr2 = list2.begin(); itr2 != list2.end(); ++itr2){
+    arr2.push_back(list2.name(itr2));
+  }
+  // Check that the two parameter lists are the same length:
+  if (arr1.size() != arr2.size()) {
+    if (verbose) std::cerr << "lists are not the same size\n";
+    return false;
+  }
+  std::sort(arr1.begin(), arr1.end());
+  std::sort(arr2.begin(), arr2.end());
+  Array<std::string>::iterator iarr1, iarr2;
+  for(
+    iarr1 = arr1.begin(), iarr2 = arr2.begin();
+    iarr1 != arr1.end() && iarr2 != arr2.end();
+    ++iarr1, ++iarr2
+    )
+  {
+    const std::string    &entryName1   = *iarr1;
+    const std::string    &entryName2   = *iarr2;
+    const ParameterEntry &entry1       = list1.getEntry(entryName1);
+    const ParameterEntry &entry2       = list2.getEntry(entryName2);
+    if( entryName1 != entryName2 ) {
+      if (verbose) std::cerr << "entryName1 \"" << entryName1 << "\" != entryName2 \"" << entryName2 << "\"\n";
+      return false;
+    }
+    if( entry1.isList() && entry2.isList() ) {
+      if (
+        !haveSameValuesSorted(
+          getValue<ParameterList>(entry1),
+          getValue<ParameterList>(entry2),
+          verbose)
+        )
+      {
+        // Note: Above we cast to a non-const ParameterList even through we
+        // only need a const ParameterList.  We have to do this since a
+        // non-const ParameterList is always added initially which determines
+        // the value.
+        if (verbose) std::cerr << "sublists \"" << entryName1 << "\" differ\n";
+        return false;
+      }
+    }
+    else {
+      if( entry1.getAny() != entry2.getAny() ) {
+        if (verbose) std::cerr << "for key \"" << entryName1 << "\", value \"" << entry1.getAny() << "\" != \"" << entry2.getAny() << "\"\n";
+        return false;
+      }
+    }
+  }
+  return true;
+}

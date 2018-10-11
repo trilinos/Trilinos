@@ -189,6 +189,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
@@ -219,6 +220,8 @@ namespace MueLu {
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"gmg: interpolation order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"gmg: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=\"\"/>"
@@ -248,7 +251,10 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
   "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"rap: shift diagonal M\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: shift low storage\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
@@ -520,6 +526,8 @@ namespace MueLu {
       
          ("aggregation: error on nodes with no on-rank neighbors","aggregation: error on nodes with no on-rank neighbors")
       
+         ("aggregation: phase3 avoid singletons","aggregation: phase3 avoid singletons")
+      
          ("aggregation: allow empty prolongator columns","aggregation: allow empty prolongator columns")
       
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
@@ -580,6 +588,10 @@ namespace MueLu {
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       
+         ("gmg: interpolation order","gmg: interpolation order")
+      
+         ("gmg: build coarse coordinates","gmg: build coarse coordinates")
+      
          ("transfer: params","transfer: params")
       
          ("pcoarsen: element","pcoarsen: element")
@@ -638,7 +650,13 @@ namespace MueLu {
       
          ("rap: fix zero diagonals","rap: fix zero diagonals")
       
+         ("rap: fix zero diagonals threshold","rap: fix zero diagonals threshold")
+      
          ("rap: shift","rap: shift")
+      
+         ("rap: shift diagonal M","rap: shift diagonal M")
+      
+         ("rap: shift low storage","rap: shift low storage")
       
          ("rap: algorithm","rap: algorithm")
       

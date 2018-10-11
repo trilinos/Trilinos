@@ -39,6 +39,8 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string
+#include <algorithm>
+#include <cctype>
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL, etc
 #include "Ioss_ElementTopology.h"       // for NameList
 #include "Ioss_Field.h"                 // for Field, etc
@@ -58,17 +60,28 @@ void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::str
 {
     const int numberOfStates = 1;
     stk::mesh::Field<double> &field0 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, internalClientFieldName, numberOfStates);
-    stk::mesh::put_field(field0, stkMeshMetaData.universal_part());
+    stk::mesh::put_field_on_mesh(field0, stkMeshMetaData.universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 }
 
-void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, const std::string &goldFieldName)
+void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, std::vector<std::string> goldFieldNames)
 {
     Ioss::NodeBlock *nodeBlockAssociatedWithField0 = ioRegion.get_node_blocks()[0];
     Ioss::NameList fieldNames;
     nodeBlockAssociatedWithField0->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
+    for (std::string & name : goldFieldNames) {
+        for (char & c : name) {
+            c = tolower(c);
+        }
+    }
 
-    ASSERT_EQ(1u, fieldNames.size());
-    EXPECT_STRCASEEQ(goldFieldName.c_str(), fieldNames[0].c_str());
+    ASSERT_EQ(goldFieldNames.size(), fieldNames.size());
+    for (auto goldFieldName : goldFieldNames) {
+        auto entry = std::find(fieldNames.begin(), fieldNames.end(), goldFieldName.c_str());
+        if (entry == fieldNames.end()) {
+            EXPECT_TRUE(false) << "Field " << goldFieldName << " not found in file" << std::endl;
+        }
+    }
 }
 
 TEST(FieldNamesTest, FieldNameRenameTwice)
@@ -77,6 +90,7 @@ TEST(FieldNamesTest, FieldNameRenameTwice)
     MPI_Comm communicator = MPI_COMM_WORLD;
     const std::string internalClientFieldName = "Field0";
     std::string requestedFieldNameForResultsOutput("NotjeSSe");
+    std::vector<std::string> outputFieldNames;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
@@ -92,16 +106,19 @@ TEST(FieldNamesTest, FieldNameRenameTwice)
 
         stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(stk::topology::NODE_RANK, internalClientFieldName);
         stkIo.add_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
+        outputFieldNames.push_back(requestedFieldNameForResultsOutput);
+
 
         requestedFieldNameForResultsOutput = "jeSSe";
         stkIo.add_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
+        outputFieldNames.push_back(requestedFieldNameForResultsOutput);
 
         stkIo.process_output_request(results_output_index, 0.0);
     }
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", outputFilename, Ioss::READ_MODEL, communicator);
     Ioss::Region ioRegion(iossDb);
-    testFieldNamedCorrectly(ioRegion, communicator, requestedFieldNameForResultsOutput);
+    testFieldNamedCorrectly(ioRegion, communicator, outputFieldNames);
 
     unlink(outputFilename.c_str());
 }
@@ -136,7 +153,7 @@ TEST(FieldNamesTest, FieldNameWithRestart)
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
     Ioss::Region iossRegion(iossDb);
     std::string goldFieldName = sierra::make_lower(internalClientFieldName);
-    testFieldNamedCorrectly(iossRegion, communicator, goldFieldName);
+    testFieldNamedCorrectly(iossRegion, communicator, {goldFieldName});
 
     unlink(restartFilename.c_str());
 }
@@ -178,11 +195,11 @@ TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
     Ioss::DatabaseIO *iossResultDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_MODEL, communicator);
     Ioss::Region resultRegion(iossResultDb);
     std::string goldFieldName = sierra::make_lower(internalClientFieldName);
-    testFieldNamedCorrectly(resultRegion, communicator, goldFieldName);
+    testFieldNamedCorrectly(resultRegion, communicator, {goldFieldName});
 
     Ioss::DatabaseIO *iossRestartDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
     Ioss::Region restartRegion(iossRestartDb);
-    testFieldNamedCorrectly(restartRegion, communicator, goldFieldName);
+    testFieldNamedCorrectly(restartRegion, communicator, {goldFieldName});
 
     unlink(outputFileName.c_str());
     unlink(restartFilename.c_str());

@@ -183,8 +183,8 @@ void setUpMeshWithFieldOnBlock1(stk::mesh::BulkData& bulk, stk::mesh::Field<doub
 
     double init = initialValue();
     stk::mesh::Part* block1 = bulk.mesh_meta_data().get_part("block_1");
-    stk::mesh::put_field(field1, *block1, &init);
-    stk::mesh::put_field(field2, *block1, &init);
+    stk::mesh::put_field_on_mesh(field1, *block1, &init);
+    stk::mesh::put_field_on_mesh(field2, *block1, &init);
 
     stkIo.add_all_mesh_fields_as_input_fields();
     stkIo.populate_bulk_data();
@@ -308,6 +308,58 @@ TEST(StkMeshIoBrokerHowTo, writeHistoryOfElementAndNode)
 
         verifyHistoryFileOutput(historyFilename);
     }
+}
+
+
+TEST(StkMeshIoBrokerHowTo, writeEmptyHistory)
+{
+
+    const std::string file_name = "EmptyHistory.e";
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(communicator);
+    if (numProcs != 1) {
+      return;
+    }
+
+    stk::util::ParameterList params;
+
+    {
+      // ========================================================================
+      // EXAMPLE USAGE...
+      // Begin use of stk io history file...
+      stk::io::StkMeshIoBroker stkIo(communicator);
+
+      //-BEGIN
+      //+ Define the heartbeat output and the format (BINARY)
+      size_t hb = stkIo.add_heartbeat_output(file_name, stk::io::BINARY);
+      //-END
+
+      stkIo.begin_define_transient_for_heartbeat(hb);
+
+      stk::util::ParameterMapType::const_iterator i = params.begin();
+      stk::util::ParameterMapType::const_iterator iend = params.end();
+      for (; i != iend; ++i) {
+        const std::string parameterName = (*i).first;
+        stk::util::Parameter &parameter = params.get_param(parameterName);
+
+        // Tell history database which global variables should be output at each step...
+        stkIo.add_heartbeat_global(hb, parameterName, &parameter.value, parameter.type);
+      }
+
+      stkIo.end_define_transient_for_heartbeat(hb);
+
+      // Now output the global variables...
+      int timestep_count = 2;
+      double time = 0.0;
+      for (int step=1; step <= timestep_count; step++) {
+        time = step;
+        EXPECT_NO_THROW(stkIo.process_heartbeat_output(hb, step, time));
+      }
+    }
+
+    // ========================================================================
+    // CLEANUP:
+    unlink(file_name.c_str());
 }
 
 }

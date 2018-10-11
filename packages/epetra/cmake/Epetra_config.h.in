@@ -46,6 +46,9 @@
 /* Copy of the following file, edited to be used with CMake */
 /* src/Epetra_config.h.in.  Generated from configure.ac by autoheader.  */
 
+#ifndef EPETRA_CONFIG_H
+#define EPETRA_CONFIG_H
+
 /* Define the Fortran name mangling to be used for the BLAS */
 #ifndef F77_BLAS_MANGLE
  #define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
@@ -156,3 +159,5 @@
 #cmakedefine EPETRA_NO_64BIT_GLOBAL_INDICES
 
 @EPETRA_DEPRECATED_DECLARATIONS@
+
+#endif

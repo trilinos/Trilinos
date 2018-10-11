@@ -164,9 +164,6 @@ int main()
   bool success = false;
   bool verbose = false;
   try {
-    // Print out the NOX code version number
-    std::cout << "\n" << NOX::version() << std::endl;
-
     // Set up the problem interface
     Rosenbrock rosenbrock;
 

@@ -65,8 +65,6 @@
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>
 
-//#include "Tools/FROSch_Tools_def.hpp"
-
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;

@@ -88,7 +88,7 @@ private:
   // General sketch information.
   const bool                         useSketch_;
   // State sketch information.
-  const int                          rankState_;
+  int                                rankState_;
   Ptr<Sketch<Real>>                  stateSketch_;
   // Adjoint sketch information.
   const int                          rankAdjoint_;
@@ -96,6 +96,10 @@ private:
   // State sensitivity sketch information.
   const int                          rankStateSens_;
   Ptr<Sketch<Real>>                  stateSensSketch_;
+  // Inexactness information.
+  const bool                         useInexact_;
+  const Real                         updateFactor_;
+  const int                          maxRank_;
   // Vector storage for intermediate computations.
   std::vector<Ptr<Vector<Real>>>     uhist_;              // State history.
   std::vector<Ptr<Vector<Real>>>     lhist_;              // Adjoint history.
@@ -130,23 +134,26 @@ public:
                           const Ptr<Vector<Real>>            &cvec,
                           const std::vector<TimeStamp<Real>> &timeStamp,
                           ROL::ParameterList                 &pl)
-    : obj_               ( obj ),                                            // Dynamic objective function.
-      con_               ( con ),                                            // Dynamic constraint function.
-      u0_                ( u0 ),                                             // Initial condition.
-      timeStamp_         ( timeStamp ),                                      // Vector of time stamps.
-      Nt_                ( timeStamp.size() ),                               // Number of time intervals.
-      useSketch_         ( pl.get("Use Sketching",                 true) ),  // Use state sketch if true.
-      rankState_         ( pl.get("State Rank",                      10) ),  // Rank of state sketch.
-      stateSketch_       ( nullPtr ),                                        // State sketch object.
-      rankAdjoint_       ( pl.get("Adjoint Rank",                    10) ),  // Rank of adjoint sketch.
-      adjointSketch_     ( nullPtr ),                                        // Adjoint sketch object.
-      rankStateSens_     ( pl.get("State Sensitivity Rank",          10) ),  // Rank of state sensitivity sketch.
-      stateSensSketch_   ( nullPtr ),                                        // State sensitivity sketch object.
-      isValueComputed_   ( false ),                                          // Flag indicating whether value has been computed.
-      isStateComputed_   ( false ),                                          // Flag indicating whether state has been computed.
-      isAdjointComputed_ ( false ),                                          // Flag indicating whether adjoint has been computed.
-      useHessian_        ( pl.get("Use Hessian",                   true) ),  // Flag indicating whether to use the Hessian.
-      useSymHess_        ( pl.get("Use Only Sketched Sensitivity", true) ) { // Flag indicating whether to use symmetric sketched Hessian.
+    : obj_               ( obj ),                                           // Dynamic objective function.
+      con_               ( con ),                                           // Dynamic constraint function.
+      u0_                ( u0 ),                                            // Initial condition.
+      timeStamp_         ( timeStamp ),                                     // Vector of time stamps.
+      Nt_                ( timeStamp.size() ),                              // Number of time intervals.
+      useSketch_         ( pl.get("Use Sketching", true) ),                 // Use state sketch if true.
+      rankState_         ( pl.get("State Rank", 10) ),                      // Rank of state sketch.
+      stateSketch_       ( nullPtr ),                                       // State sketch object.
+      rankAdjoint_       ( pl.get("Adjoint Rank", 10) ),                    // Rank of adjoint sketch.
+      adjointSketch_     ( nullPtr ),                                       // Adjoint sketch object.
+      rankStateSens_     ( pl.get("State Sensitivity Rank", 10) ),          // Rank of state sensitivity sketch.
+      stateSensSketch_   ( nullPtr ),                                       // State sensitivity sketch object.
+      useInexact_        ( pl.get("Adaptive Rank", false) ),                // Update rank adaptively.
+      updateFactor_      ( pl.get("Rank Update Factor", 2.0) ),             // Rank update factor.
+      maxRank_           ( pl.get("Maximum Rank", Nt_) ),                   // Maximum rank.
+      isValueComputed_   ( false ),                                         // Flag indicating whether value has been computed.
+      isStateComputed_   ( false ),                                         // Flag indicating whether state has been computed.
+      isAdjointComputed_ ( false ),                                         // Flag indicating whether adjoint has been computed.
+      useHessian_        ( pl.get("Use Hessian", true) ),                   // Flag indicating whether to use the Hessian.
+      useSymHess_        ( pl.get("Use Only Sketched Sensitivity", true) ) {// Flag indicating whether to use symmetric sketched Hessian.
     uhist_.clear(); lhist_.clear(); whist_.clear(); phist_.clear();
     if (useSketch_) { // Only maintain a sketch of the state time history
       stateSketch_ = makePtr<Sketch<Real>>(*u0_,static_cast<int>(Nt_)-1,rankState_);
@@ -241,12 +248,16 @@ public:
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     PartitionedVector<Real>       &gp = partition(g);
+    gp.get(0)->zero(); // zero for the nonexistant zeroth control interval
     const PartitionedVector<Real> &xp = partition(x);
     const Real one(1);
     size_type uindex = (useSketch_ ? 1 : Nt_-1);
     size_type lindex = (useSketch_ ? 0 : Nt_-1);
     // Must first compute the value
     solveState(x);
+    if (useSketch_ && useInexact_) {
+      tol = updateSketch(x,tol);
+    }
     // Recover state from sketch
     if (useSketch_) {
       uhist_[1]->set(*uhist_[0]);
@@ -324,6 +335,7 @@ public:
       const PartitionedVector<Real> &xp  = partition(x);
       const PartitionedVector<Real> &vp  = partition(v);
       PartitionedVector<Real>       &hvp = partition(hv);
+      hvp.get(0)->zero(); // zero for the nonexistant zeroth control interval
       // Compute state sensitivity
       whist_[0]->zero();
       if (useSketch_) {
@@ -500,6 +512,36 @@ private:
       }
       isStateComputed_ = true;
     }
+  }
+
+  Real updateSketch(const Vector<Real> &x, const Real tol) {
+    const PartitionedVector<Real> &xp = partition(x);
+    Real err(0), cnorm(0);
+    bool flag = true;
+    while (flag) {
+      err = static_cast<Real>(0);
+      uhist_[0]->set(*u0_);
+      for (size_type k = 1; k < Nt_; ++k) {
+        stateSketch_->reconstruct(*uhist_[1],static_cast<int>(k));
+        con_->value(*cprimal_, *uhist_[0], *uhist_[1], *xp.get(k), timeStamp_[k]);
+        cnorm = cprimal_->norm();
+        err   = (cnorm > err ? cnorm : err); // Use Linf norm.  Could change to use, e.g., L2.
+        if (err > tol) {
+          break;
+        }
+      }
+      if (err > tol) {
+        rankState_ *= updateFactor_; // Perhaps there is a better update strategy
+        rankState_  = (maxRank_ < rankState_ ? maxRank_ : rankState_);
+        stateSketch_->setRank(rankState_);
+        solveState(x);
+      }
+      else {
+        flag = false;
+        break;
+      }
+    }
+    return err;
   }
 
   /***************************************************************************/

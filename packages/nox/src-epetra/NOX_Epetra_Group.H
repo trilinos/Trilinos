@@ -318,6 +318,8 @@ protected:
   //! resets the isValid flags to false
   virtual void resetIsValid();
 
+  virtual void logLastLinearSolveStats(NOX::SolverStats& stats) const;
+
   /*!
     \brief
     Computes the 2-norm of the residual of the linear model used in
@@ -394,6 +396,11 @@ protected:
 
   //! Reference to the user supplied interface functions
   Teuchos::RCP<NOX::Epetra::Interface::Required> userInterfacePtr;
+
+  // Linear solver stats
+  mutable bool linearSolveConverged;
+  mutable int numIterations;
+  mutable double achievedTol;
 
 };
 

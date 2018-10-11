@@ -42,7 +42,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommNeighbors.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t
 #include <vector>                       // for vector
@@ -79,9 +79,9 @@ void copy_owned_to_shared( const BulkData& mesh,
 /** Sum/Max/Min (assemble) field-data for the specified fields on shared entities such that each shared entity
  * will have the same field values on each sharing proc.
  */
-void parallel_sum(const BulkData& mesh, const std::vector<FieldBase*>& fields, bool deterministic = true);
-void parallel_max(const BulkData& mesh, const std::vector<FieldBase*>& fields);
-void parallel_min(const BulkData& mesh, const std::vector<FieldBase*>& fields);
+void parallel_sum(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic = true);
+void parallel_max(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
+void parallel_min(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
 
 
 inline bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc, int index)
@@ -274,162 +274,9 @@ inline void communicate_field_data(
   }
 }
 
-template<typename FIELD_DATA_TYPE>
-inline void send_or_recv_field_data_for_assembly(stk::CommNeighbors& sparse, int phase, const stk::mesh::FieldBase& f, int owner, const EntityCommInfoVector& infovec, unsigned scalars_per_entity, unsigned bucketId, unsigned bucket_ordinal)
-{
-    FIELD_DATA_TYPE * ptr =
-      reinterpret_cast<FIELD_DATA_TYPE *>(stk::mesh::field_data( f , bucketId, bucket_ordinal, scalars_per_entity*sizeof(FIELD_DATA_TYPE) ));
-
-    if (phase == 0)
-    { // send
-        CommBufferV & b = sparse.send_buffer( owner );
-        for(unsigned i=0; i<scalars_per_entity; ++i)
-        {
-          b.pack<FIELD_DATA_TYPE>( ptr[i] );
-        }
-    }
-    else
-    { //recv
-        PairIterEntityComm ec(infovec.begin(), infovec.end());
-        for ( ; !ec.empty() ; ++ec )
-        {
-            CommBufferV & b = sparse.recv_buffer( ec->proc );
-            for(unsigned i=0; i<scalars_per_entity; ++i)
-            {
-                FIELD_DATA_TYPE recvd_value;
-                b.unpack<FIELD_DATA_TYPE>( recvd_value );
-                ptr[i] += recvd_value;
-            }
-        }
-    }
-}
-
-inline void parallel_sum_including_ghosts(
-  const BulkData                        & mesh ,
-  const std::vector< const FieldBase *> & fields )
-{
-  if ( fields.empty() ) { return; }
-
-  const int parallel_size = mesh.parallel_size();
-  const int parallel_rank = mesh.parallel_rank();
-
-  const std::vector<const FieldBase *>::const_iterator fe = fields.end();
-  const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
-        std::vector<const FieldBase *>::const_iterator fi ;
-
-  // Sizing for send and receive
-
-  const unsigned zero = 0 ;
-  std::vector<int> send_size( parallel_size , zero );
-  std::vector<int> recv_size( parallel_size , zero );
-
-  const EntityCommListInfoVector& comm_info_vec = mesh.internal_comm_list();
-  size_t comm_info_vec_size = comm_info_vec.size();
-  for ( fi = fb ; fi != fe ; ++fi ) {
-    const FieldBase & f = **fi ;
-
-    for (size_t i=0; i<comm_info_vec_size; ++i) {
-        if (!mesh.is_valid(comm_info_vec[i].entity))
-        {
-            ThrowAssertMsg(mesh.is_valid(comm_info_vec[i].entity),"parallel_sum_including_ghosts found invalid entity");
-        }
-      const Bucket* bucket = comm_info_vec[i].bucket;
-
-      unsigned e_size = 0 ;
-      if(is_matching_rank(f, *bucket)) {
-        const unsigned bucketId = bucket->bucket_id();
-        e_size += field_bytes_per_entity( f , bucketId );
-      }
-
-      if (e_size == 0) {
-        continue;
-      }
-
-      const bool owned = comm_info_vec[i].owner == parallel_rank ;
-
-      if ( !owned ) {
-         send_size[ comm_info_vec[i].owner ] += e_size ;
-      }
-      else {
-          const EntityCommInfoVector& infovec = comm_info_vec[i].entity_comm->comm_map;
-          size_t info_vec_size = infovec.size();
-          for (size_t j=0; j<info_vec_size; ++j ) {
-              recv_size[ infovec[j].proc ] += e_size ;
-          }
-      }
-    }
-  }
-
-  std::vector<int> send_procs, recv_procs;
-  for(int p=0; p<mesh.parallel_size(); ++p) {
-      if (send_size[p] > 0) {
-          send_procs.push_back(p);
-      }
-      if (recv_size[p] > 0) {
-          recv_procs.push_back(p);
-      }
-  }
-
-  CommNeighbors sparse(mesh.parallel(), send_procs, recv_procs);
-
-  for(int p=0; p<mesh.parallel_size(); ++p) {
-      if (send_size[p] > 0) {
-          sparse.send_buffer(p).reserve(send_size[p]);
-      }
-  }
-
-  // Send packing:
-
-  for (int phase = 0; phase < 2; ++phase) {
-
-    for ( fi = fb ; fi != fe ; ++fi ) {
-      const FieldBase & f = **fi ;
-
-      for (size_t i=0; i<comm_info_vec_size; ++i) {
-        const bool owned = comm_info_vec[i].owner == parallel_rank;
-        if ( (!owned && phase == 0) || (owned && phase == 1) )
-        {
-            const Bucket* bucket = comm_info_vec[i].bucket;
-
-            if(!is_matching_rank(f, *bucket)) continue;
-
-            const unsigned bucketId = bucket->bucket_id();
-            const size_t bucket_ordinal = comm_info_vec[i].bucket_ordinal;
-            const unsigned scalars_per_entity = field_scalars_per_entity(f, bucketId);
-
-            if ( scalars_per_entity > 0 ) {
-              int owner = comm_info_vec[i].owner;
-
-              if (f.data_traits().is_floating_point && f.data_traits().size_of == 8)
-              {
-                  send_or_recv_field_data_for_assembly<double>(sparse, phase, f, owner, comm_info_vec[i].entity_comm->comm_map, scalars_per_entity, bucketId, bucket_ordinal);
-              }
-              else if (f.data_traits().is_floating_point && f.data_traits().size_of == 4)
-              {
-                  send_or_recv_field_data_for_assembly<float>(sparse, phase, f, owner, comm_info_vec[i].entity_comm->comm_map, scalars_per_entity, bucketId, bucket_ordinal);
-              }
-              else if (f.data_traits().is_integral && f.data_traits().size_of == 4 && f.data_traits().is_unsigned)
-              {
-                  send_or_recv_field_data_for_assembly<unsigned>(sparse, phase, f, owner, comm_info_vec[i].entity_comm->comm_map, scalars_per_entity, bucketId, bucket_ordinal);
-              }
-              else if (f.data_traits().is_integral && f.data_traits().size_of == 4 && f.data_traits().is_signed)
-              {
-                  send_or_recv_field_data_for_assembly<int>(sparse, phase, f, owner, comm_info_vec[i].entity_comm->comm_map, scalars_per_entity, bucketId, bucket_ordinal);
-              }
-              else
-              {
-                  ThrowRequireMsg(false,"Unsupported field type in parallel_sum_including_ghosts");
-              }
-            }
-          }
-        }
-      }
-
-      if (phase == 0) { sparse.communicate(); }
-  }
-
-  communicate_field_data(mesh, fields);
-}
+void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 
 } // namespace mesh
 } // namespace stk

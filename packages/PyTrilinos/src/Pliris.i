@@ -67,7 +67,7 @@ python version of the Pliris package supports the following class:
 #include "PyTrilinos_config.h"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 // #undef HAVE_INTTYPES_H
 // #undef HAVE_STDINT_H
 #include "PyTrilinos_Epetra_Headers.hpp"
@@ -96,7 +96,7 @@ using std::string;
 // %include "Pliris_dox.i"
 
 // External Trilinos modules
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
 #endif

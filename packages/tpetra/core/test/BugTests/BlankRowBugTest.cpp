@@ -57,7 +57,8 @@ namespace {
     typedef Tpetra::Map<>                     map_type;
     typedef map_type::local_ordinal_type      LO;
     typedef map_type::global_ordinal_type     GO;
-    typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
+    typedef Tpetra::CrsMatrix<>::scalar_type  SC;
+    typedef Tpetra::CrsMatrix<>               crs_matrix_type;
     typedef Tpetra::Import<LO, GO>            import_type;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
@@ -75,9 +76,9 @@ namespace {
     }
     destRowMap = Tpetra::createNonContigMap<LO, GO> (tuple<GO> (0, 1), comm);
 
-    RCP<crs_matrix_type> srcMat = Tpetra::createCrsMatrix<double>(sourceRowMap);
+    RCP<crs_matrix_type> srcMat = Tpetra::createCrsMatrix<SC>(sourceRowMap);
     if (rank == 0) {
-      srcMat->insertGlobalValues (static_cast<GO> (0), tuple<GO> (0), tuple<double> (1.0));
+      srcMat->insertGlobalValues (static_cast<GO> (0), tuple<GO> (0), tuple<SC> (1.0));
     }
     srcMat->fillComplete();
     /*
@@ -90,7 +91,7 @@ namespace {
       TEST_EQUALITY_CONST( srcMat->getNumEntriesInGlobalRow(1), static_cast<size_t> (0) );
     }
 
-    RCP<crs_matrix_type> dstMat = Tpetra::createCrsMatrix<double> (destRowMap);
+    RCP<crs_matrix_type> dstMat = Tpetra::createCrsMatrix<SC> (destRowMap);
     RCP<const import_type> importer = Tpetra::createImport (sourceRowMap, destRowMap);
     // global row 1 in srcMat is empty: this is a null communication to dstMat
     dstMat->doImport (*srcMat, *importer, Tpetra::INSERT);

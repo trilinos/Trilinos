@@ -19,25 +19,36 @@ def cmake_bool(value):
 ################################################################################
 
 # Get the PyTrilinos configuration
-WITH_EPETRA    = cmake_bool("${PyTrilinos_ENABLE_Epetra}"   )
-WITH_TRIUTILS  = cmake_bool("${PyTrilinos_ENABLE_Triutils}" )
-WITH_TPETRA    = cmake_bool("${PyTrilinos_ENABLE_Tpetra}"   )
-WITH_DOMI      = cmake_bool("${PyTrilinos_ENABLE_Domi}"     )
-WITH_EPETRAEXT = cmake_bool("${PyTrilinos_ENABLE_EpetraExt}")
-WITH_ISORROPIA = cmake_bool("${PyTrilinos_ENABLE_Isorropia}")
-WITH_PLIRIS    = cmake_bool("${PyTrilinos_ENABLE_Pliris}"   )
-WITH_AZTECOO   = cmake_bool("${PyTrilinos_ENABLE_AztecOO}"  )
-WITH_GALERI    = cmake_bool("${PyTrilinos_ENABLE_Galeri}"   )
-WITH_AMESOS    = cmake_bool("${PyTrilinos_ENABLE_Amesos}"   )
-WITH_IFPACK    = cmake_bool("${PyTrilinos_ENABLE_Ifpack}"   )
-WITH_KOMPLEX   = cmake_bool("${PyTrilinos_ENABLE_Komplex}"  )
-WITH_ANASAZI   = cmake_bool("${PyTrilinos_ENABLE_Anasazi}"  )
-WITH_ML        = cmake_bool("${PyTrilinos_ENABLE_ML}"       )
-WITH_NOX       = cmake_bool("${PyTrilinos_ENABLE_NOX}"      )
-WITH_LOCA      = cmake_bool("${NOX_ENABLE_LOCA}"            )
+WITH_EPETRA        = cmake_bool("${PyTrilinos_ENABLE_Epetra}"       )
+WITH_TRIUTILS      = cmake_bool("${PyTrilinos_ENABLE_Triutils}"     )
+WITH_TPETRA        = cmake_bool("${PyTrilinos_ENABLE_Tpetra}"       )
+WITH_DOMI          = cmake_bool("${PyTrilinos_ENABLE_Domi}"         )
+WITH_EPETRAEXT     = cmake_bool("${PyTrilinos_ENABLE_EpetraExt}"    )
+WITH_EPETRAEXT_ME  = cmake_bool("${EpetraExt_BUILD_MODEL_EVALUATOR}")
+WITH_ISORROPIA     = cmake_bool("${PyTrilinos_ENABLE_Isorropia}"    )
+WITH_PLIRIS        = cmake_bool("${PyTrilinos_ENABLE_Pliris}"       )
+WITH_AZTECOO       = cmake_bool("${PyTrilinos_ENABLE_AztecOO}"      )
+WITH_GALERI        = cmake_bool("${PyTrilinos_ENABLE_Galeri}"       )
+WITH_AMESOS        = cmake_bool("${PyTrilinos_ENABLE_Amesos}"       )
+WITH_IFPACK        = cmake_bool("${PyTrilinos_ENABLE_Ifpack}"       )
+WITH_KOMPLEX       = cmake_bool("${PyTrilinos_ENABLE_Komplex}"      )
+WITH_ANASAZI       = cmake_bool("${PyTrilinos_ENABLE_Anasazi}"      )
+WITH_ML            = cmake_bool("${PyTrilinos_ENABLE_ML}"           )
+WITH_NOX           = cmake_bool("${PyTrilinos_ENABLE_NOX}"          )
+WITH_NOX_EPETRA    = cmake_bool("${HAVE_PYTRILINOS_NOX_EPETRA}"     )
+WITH_NOX_EPETRAEXT = cmake_bool("${HAVE_PYTRILINOS_NOX_EPETRAEXT}"  )
+WITH_NOX_PETSC     = cmake_bool("${HAVE_PYTRILINOS_NOX_PETSC}"      )
+WITH_LOCA          = cmake_bool("${NOX_ENABLE_LOCA}"                )
 
-WITH_MPI       = cmake_bool("${TPL_ENABLE_MPI}"             )
-WITH_PETSC     = cmake_bool("${TPL_ENABLE_PETSC}"           )
+WITH_MPI           = cmake_bool("${TPL_ENABLE_MPI}"                 )
+WITH_PETSC         = cmake_bool("${TPL_ENABLE_PETSC}"               )
+
+# Find the MPI base directory
+MPI_BASE_DIR   = "${MPI_BASE_DIR}"
+if WITH_MPI:
+    if MPI_BASE_DIR == "":
+        MPI_BIN_DIR  = os.path.split("${MPI_CXX_COMPILER}")[0]
+        MPI_BASE_DIR = os.path.split(MPI_BIN_DIR)[0]
 
 ################################################################################
 
@@ -46,7 +57,7 @@ def get_mpi_version():
     version = ""
     for line in open(header, 'r').readlines():
         if "MPI_VERSION" in line:
-            version = line.split(" ")[2]
+            version = line.split()[2]
             break
     return version
 
@@ -61,7 +72,8 @@ def get_input_files():
     os.chdir("${CMAKE_CURRENT_SOURCE_DIR}")
     result = glob.glob("Teuchos*.i")
     if (WITH_EPETRA):
-        result.extend(glob.glob("Epetra*.i"))
+        result.append("Epetra.i")
+        result.extend(glob.glob("Epetra_*.i"))
     if (WITH_TRIUTILS):
         result.extend(glob.glob("TriUtils*.i"))
     if (WITH_TPETRA):
@@ -98,7 +110,7 @@ def get_input_files():
         swig_files = glob.glob("NOX*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if (WITH_EPETRA):
+                if (WITH_NOX_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
@@ -106,7 +118,7 @@ def get_input_files():
         swig_files = glob.glob("LOCA*.i")
         for file in swig_files:
             if "Epetra" in file:
-                if (WITH_EPETRA):
+                if (WITH_NOX_EPETRA):
                     result.append(file)
             else:
                 result.append(file)
@@ -159,9 +171,9 @@ def get_header_files():
         result.append("PyTrilinos_NOX_Abstract_Headers.hpp")
         result.append("PyTrilinos_NOX_Solver_Headers.hpp")
         result.append("PyTrilinos_NOX_StatusTest_Headers.hpp")
-        if (WITH_EPETRA):
+        if (WITH_NOX_EPETRA):
             result.append("PyTrilinos_NOX_Epetra_Headers.hpp")
-        if (WITH_PETSC):
+        if (WITH_NOX_PETSC):
             result.append("PyTrilinos_NOX_PETSc_Headers.hpp")
     if (WITH_LOCA):
         result.append("PyTrilinos_LOCA_Headers.hpp")
@@ -186,8 +198,8 @@ def get_typedefs():
                        "DefaultLOType"))
         result.append(("Tpetra::Details::DefaultTypes::global_ordinal_type",
                        "DefaultGOType"))
-        result.append(("Tpetra::Details::DefaultTypes::node_type",
-                       "DefaultNodeType"))
+        # result.append(("Tpetra::Details::DefaultTypes::node_type",
+        #                "DefaultNodeType"))
 
     return result
 
@@ -237,23 +249,12 @@ def form_class_filename(parsed_class):
     """
 
     # Determine the extension
-    if parsed_class["name"].startswith("Epetra_"):
-        ext = ".h"
-    elif parsed_class["name"].startswith("Amesos_"):
-        ext = ".h"
-    elif parsed_class["name"].startswith("AztecOO_"):
-        ext = ".h"
-    elif parsed_class["name"].startswith("Ifpack_"):
-        ext = ".h"
-    elif parsed_class["name"].startswith("Komplex_"):
+    if parsed_class["name"].startswith(("Epetra_", "Amesos_" , "AztecOO_",
+                                        "Ifpack_", "Komplex_", "Trilinos_Util_")):
         ext = ".h"
     elif parsed_class["name"] == "Pliris":
         ext = ".h"
-    elif parsed_class["name"].startswith("Trilinos_Util_"):
-        ext = ".h"
-    elif parsed_class["namespaces"][0] == "EpetraExt":
-        ext = ".h"
-    elif parsed_class["namespaces"][0] == "MLAPI":
+    elif parsed_class["namespaces"][0] in ("EpetraExt", "MLAPI"):
         ext = ".h"
     elif parsed_class["namespaces"][0] in ("NOX", "LOCA"):
         ext = ".H"
@@ -307,10 +308,12 @@ def get_ignores():
 def get_rcp_classes(swig_filenames):
     """
     Return a list of strings that represent the C++ classes that are stored
-    using a Teucho::RCP in PyTrilinos. The input argument, swig_filenames, is a
+    using a Teuchos::RCP in PyTrilinos. The input argument, swig_filenames, is a
     list of SWIG interface files to search.
     """
-    match_excludes = ("##", "CLASS", "%shared_ptr", "ostream", "std::vector")
+    match_excludes = ["##", "CLASS", "%shared_ptr", "ostream", "std::vector"]
+    if not WITH_EPETRAEXT_ME:
+        match_excludes.append("EpetraExt::ModelEvaluator")
     regexes = [re.compile(r"%teuchos_rcp\((.+)\)"       , re.MULTILINE),
                re.compile(r"%teuchos_rcp_dap\(.+,(.+)\)", re.MULTILINE)]
     result = set()
@@ -333,19 +336,19 @@ def get_rcp_classes(swig_filenames):
                         result.add(match)
     # Hack for Tpetra
     if "Tpetra.i" in swig_filenames:
-        result.add("Tpetra::Map<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
-        result.add("Tpetra::Details::Transfer<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
-        result.add("Tpetra::Export<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
-        result.add("Tpetra::Import<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>")
+        result.add("Tpetra::Map<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
+        result.add("Tpetra::Details::Transfer<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
+        result.add("Tpetra::Export<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
+        result.add("Tpetra::Import<PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >")
         regex = re.compile(r"%tpetra_scalars\((.+),.+\)", re.MULTILINE)
         text = open("Tpetra.i",'r').read()
         matches = regex.findall(text)
         for scalar in matches:
             if "SCALAR" not in scalar:
                 scalar = scalar.strip()
-                result.add("Tpetra::DistObject<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
-                result.add("Tpetra::MultiVector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
-                result.add("Tpetra::Vector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD, DefaultNodeType>" % scalar)
+                result.add("Tpetra::DistObject<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >" % scalar)
+                result.add("Tpetra::MultiVector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >" % scalar)
+                result.add("Tpetra::Vector<%s, PYTRILINOS_LOCAL_ORD, PYTRILINOS_GLOBAL_ORD >" % scalar)
     # End hack for Tpetra
 
     result = list(result)
@@ -427,6 +430,9 @@ def reorder_classnames(classnames):
 ################################################################################
 
 def get_import_directives(teuchos_rcps):
+    """
+
+    """
     result = []
     for classname in teuchos_rcps:
         filename = form_class_filename(parse_class(classname))
@@ -441,7 +447,7 @@ def get_import_directives(teuchos_rcps):
     #     result.insert(index+1, "%ignore Tpetra::Map::getGlobalNumElements;")
     #     result.insert(index+2, "%ignore Tpetra::Map::getRemoteIndexList;")
     #     result.insert(index+3, "%ignore Tpetra::Map::getMyGlobalIndices;")
-    #     result.insert(index+5, "%template(Map_default) Tpetra::Map<PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD,DefaultNodeType>;")
+    #     result.insert(index+5, "%template(Map_default) Tpetra::Map<PYTRILINOS_LOCAL_ORD,PYTRILINOS_GLOBAL_ORD>;")
 
     if (WITH_ANASAZI):
         # Find the first Anasazi import and insert AnasaziTypes.hpp before it

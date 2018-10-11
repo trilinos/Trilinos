@@ -42,7 +42,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -372,6 +372,8 @@ template <class INTERPOLATE>  void GeometricTransfer<INTERPOLATE>::coarse_search
     range_to_domain.insert(range_to_domain.end(), rng_to_dom.begin(), rng_to_dom.end());
 
     delete_range_points_found(range_vector, rng_to_dom);
+
+    if (expansion_factor<1.0) break;
 
     for (typename std::vector<BoundingBoxB>::iterator i=range_vector.begin(); i!=range_vector.end(); ++i) {
       // If points were missed, increase search radius.

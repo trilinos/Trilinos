@@ -80,7 +80,7 @@ void rebalance_m_to_n(ParsedOptions &parsedOptions, MPI_Comm comm)
     stk::mesh::BulkData bulk(meta, comm);
 
     stk::mesh::Field<double> &field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
-    stk::mesh::put_field(field, meta.universal_part());
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), nullptr);
 
     stk::io::fill_mesh(parsedOptions.inFile, bulk);
 

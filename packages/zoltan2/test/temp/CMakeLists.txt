@@ -2,7 +2,7 @@
 # This test compares Zoltan with Tpetra and Epetra.  Thus, it should run
 # only Tpetra and Zoltan with LO=GO=int, as Epetra does.
 IF (${PROJECT_NAME}_ENABLE_Epetra)
-  IF (Tpetra_INST_INT_INT)
+  IF (Tpetra_INST_INT_INT AND Tpetra_INST_DOUBLE)
     IF (NOT Zoltan_ENABLE_ULONG_IDS AND NOT Zoltan_ENABLE_ULLONG_IDS)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         multivectorTest
@@ -77,15 +77,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES teuchosCommTest.cpp
   ARGS
   "4000"
-  NUM_MPI_PROCS 4
-  COMM mpi
-)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  teuchosSubcommTest
-  SOURCES teuchosSubcommTest.cpp
-  ARGS
-  "4"
   NUM_MPI_PROCS 4
   COMM mpi
 )

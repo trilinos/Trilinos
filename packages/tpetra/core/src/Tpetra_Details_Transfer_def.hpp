@@ -42,7 +42,6 @@
 #ifndef TPETRA_DETAILS_TRANSFER_DEF_HPP
 #define TPETRA_DETAILS_TRANSFER_DEF_HPP
 
-#include "Tpetra_Details_Transfer_decl.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
@@ -190,7 +189,7 @@ globalDescribe (Teuchos::FancyOStream& out,
   }
 
   const std::string myStr = localDescribeToString (vl);
-  Tpetra::Details::gathervPrint (out, myStr, *comm);
+  ::Tpetra::Details::gathervPrint (out, myStr, *comm);
 }
 
 template<class LO, class GO, class NT>
@@ -243,32 +242,32 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
       Teuchos::Array<GO>  RemoteGIDs(getRemoteLIDs().size());
       Teuchos::Array<int> RemotePIDs(getRemoteLIDs().size());
       for(size_t i=0; i<(size_t)getRemoteLIDs().size(); i++)
-	RemoteGIDs[i] = tmap->getGlobalElement(getRemoteLIDs()[i]);
+        RemoteGIDs[i] = tmap->getGlobalElement(getRemoteLIDs()[i]);
 
       Teuchos::Array<int> ExportGIDs(getExportLIDs().size());
       for(size_t i=0; i<(size_t)getExportLIDs().size(); i++)
-	ExportGIDs[i] = smap->getGlobalElement(getExportLIDs()[i]);      
-      
+        ExportGIDs[i] = smap->getGlobalElement(getExportLIDs()[i]);
+
       // Build RemotePIDs (taken from Tpetra_Import_Util.hpp)
       const Tpetra::Distributor & D=getDistributor();
       size_t NumReceives                           = D.getNumReceives();
       Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
       Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
       for (size_t i = 0, j = 0; i < NumReceives; ++i) {
-	const int pid = ProcsFrom[i];
-	for (size_t k = 0; k < LengthsFrom[i]; ++k) {
-	  RemotePIDs[j] = pid;
-	  j++;
-	}
+        const int pid = ProcsFrom[i];
+        for (size_t k = 0; k < LengthsFrom[i]; ++k) {
+          RemotePIDs[j] = pid;
+          j++;
+        }
       }
 
-      out << "distor.NumRecvs   : "<<NumReceives<<endl 
-	  << "distor.ProcsFrom  : "<<toString(ProcsFrom)<<endl
-	  << "distor.LengthsFrom: "<<toString(LengthsFrom)<<endl;
+      out << "distor.NumRecvs   : "<<NumReceives<<endl
+          << "distor.ProcsFrom  : "<<toString(ProcsFrom)<<endl
+          << "distor.LengthsFrom: "<<toString(LengthsFrom)<<endl;
 
-      out << "distor.NumSends   : "<<D.getNumSends()<<endl 
-	  << "distor.ProcsTo    : "<<toString(D.getProcsTo())<<endl
-	  << "distor.LengthsTo  : "<<toString(D.getLengthsTo())<<endl;
+      out << "distor.NumSends   : "<<D.getNumSends()<<endl
+          << "distor.ProcsTo    : "<<toString(D.getProcsTo())<<endl
+          << "distor.LengthsTo  : "<<toString(D.getLengthsTo())<<endl;
 
       out << "distor.hasSelfMsg : "<<D.hasSelfMessage()<<endl;
 

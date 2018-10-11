@@ -86,6 +86,11 @@
       non-Dirichlet nodes that have no on-rank neighbors.  This only
       works for Uncoupled Aggregation.}
         
+\cbb{aggregation: phase3 avoid singletons}{bool}{false}{Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.}
+        
 \cbb{aggregation: allow empty prolongator columns}{bool}{false}{Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.}
         
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
@@ -154,6 +159,10 @@
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         
+\cbb{gmg: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
+        
+\cbb{gmg: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
+        
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
         
 \cbb{pcoarsen: element}{string}{""}{Element class for IntrepidPCoarsening}
@@ -212,7 +221,14 @@
         
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
         
+\cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
+        
 \cbb{rap: shift}{double}{0.0}{Shift to use in the RAPShiftFactory}
+        
+\cbb{rap: shift diagonal M}{bool}{false}{Shift for the RAPShiftFactory is stored as a
+      vector (representing the matrix diagonal)}
+        
+\cbb{rap: shift low storage}{bool}{false}{Use the low-storage version of the rap: shift}
         
 \cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         

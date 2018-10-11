@@ -46,8 +46,9 @@
 #ifndef MUELU_UNCOUPLEDINDEXMANAGER_DEF_HPP_
 #define MUELU_UNCOUPLEDINDEXMANAGER_DEF_HPP_
 
-#include <MueLu_UncoupledIndexManager_decl.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <MueLu_UncoupledIndexManager_decl.hpp>
 
 namespace MueLu {
 
@@ -60,9 +61,6 @@ namespace MueLu {
                                  const Array<LO> CoarseRate) :
   IndexManager(comm, coupled, NumDimensions, interpolationOrder, GFineNodesPerDir, LFineNodesPerDir),
   myRank(MyRank), numRanks(NumRanks) {
-
-    // RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    // out->setShowAllFrontMatter(false).setShowProcRank(true);
 
     // Load coarse rate, being careful about formating
     for(int dim = 0; dim < 3; ++dim) {
@@ -78,22 +76,24 @@ namespace MueLu {
     }
 
     this->computeMeshParameters();
-    // *out << "UncoupledIndexManager has been constructed!" << std::endl;
+    this->gNumCoarseNodes10 = Teuchos::OrdinalTraits<GO>::invalid();
+    this->gNumCoarseNodes   = Teuchos::OrdinalTraits<GO>::invalid();
   } // Constructor
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   computeGlobalCoarseParameters() {
-    this->gNumCoarseNodes10 = -1;
     GO input[1] = {as<GO>(this->lNumCoarseNodes)}, output[1] = {0};
     Teuchos::reduceAll(*(this->comm_), Teuchos::REDUCE_SUM, 1, input, output);
     this->gNumCoarseNodes = output[0];
-  }
+  } // computeGlobalCoarseParameters
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getGhostedNodesData(const RCP<const Map>fineMap,
-                      Array<LO>& ghostedNodeCoarseLIDs, Array<int>& ghostedNodeCoarsePIDs, Array<GO>& ghostedNodeCoarseGIDs) const {
+                      Array<LO>&  ghostedNodeCoarseLIDs,
+                      Array<int>& ghostedNodeCoarsePIDs,
+                      Array<GO>&  ghostedNodeCoarseGIDs) const {
 
     // First we allocate memory for the outputs
     ghostedNodeCoarseLIDs.resize(this->getNumLocalGhostedNodes());
@@ -103,7 +103,44 @@ namespace MueLu {
       ghostedNodeCoarseLIDs[idx] = idx;
       ghostedNodeCoarsePIDs[idx] = myRank;
     }
-  }
+  } // getGhostedNodesData
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
+  getCoarseNodesData(const RCP<const Map> fineCoordinatesMap,
+                     Array<GO>& coarseNodeCoarseGIDs,
+                     Array<GO>& coarseNodeFineGIDs) const {
+
+    // Allocate sufficient amount of storage in output arrays
+    coarseNodeCoarseGIDs.resize(this->getNumLocalCoarseNodes());
+    coarseNodeFineGIDs.resize(this->getNumLocalCoarseNodes());
+
+    // Load all the GIDs on the fine mesh
+    ArrayView<const GO> fineNodeGIDs = fineCoordinatesMap->getNodeElementList();
+
+    // Extract the fine LIDs of the coarse nodes and store the corresponding GIDs
+    LO fineLID;
+    for(LO coarseLID = 0; coarseLID < this->getNumLocalCoarseNodes(); ++coarseLID) {
+      Array<LO> coarseIndices(3), fineIndices(3);
+      this->getCoarseNodeLocalTuple(coarseLID,
+                                    coarseIndices[0],
+                                    coarseIndices[1],
+                                    coarseIndices[2]);
+      for(int dim = 0; dim < 3; ++dim) {
+        if(coarseIndices[dim] == this->lCoarseNodesPerDir[dim] - 1) {
+          fineIndices[dim] = this->lFineNodesPerDir[dim] - 1;
+        } else {
+          fineIndices[dim] = coarseIndices[dim]*this->coarseRate[dim];
+        }
+      }
+
+      fineLID = fineIndices[2]*this->lNumFineNodes10
+        + fineIndices[1]*this->lFineNodesPerDir[0]
+        + fineIndices[0];
+      coarseNodeFineGIDs[coarseLID] = fineNodeGIDs[fineLID];
+
+    }
+  } // getCoarseNodesData
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   std::vector<std::vector<GlobalOrdinal> > UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
@@ -125,7 +162,7 @@ namespace MueLu {
     tmp = myLID % this->lNumFineNodes10;
     j   = tmp   / this->lFineNodesPerDir[0];
     i   = tmp   % this->lFineNodesPerDir[0];
-  }
+  } // getFineNodeLocalTuple
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
@@ -139,7 +176,7 @@ namespace MueLu {
     k += this->offsets[2];
     j += this->offsets[1];
     i += this->offsets[0];
-  }
+  } // getFineNodeGhostedTuple
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
@@ -159,7 +196,12 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeLocalTuple(const LO myLID, LO& i, LO& j, LO& k) const {
-  }
+    LO tmp;
+    k   = myLID / this->lNumCoarseNodes10;
+    tmp = myLID % this->lNumCoarseNodes10;
+    j   = tmp   / this->lCoarseNodesPerDir[0];
+    i   = tmp   % this->lCoarseNodesPerDir[0];
+  } // getCoarseNodeLocalTuple
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
@@ -175,7 +217,7 @@ namespace MueLu {
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const {
     myLID = k*this->numGhostedNodes10 + j*this->ghostedNodesPerDir[0] + i;
-  }
+  } // getCoarseNodeGhostedLID
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void UncoupledIndexManager<LocalOrdinal, GlobalOrdinal, Node>::

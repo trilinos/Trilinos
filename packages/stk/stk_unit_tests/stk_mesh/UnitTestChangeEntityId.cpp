@@ -130,7 +130,8 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   Field<int> & simple_nodal_field = hf.m_meta.declare_field<Field<int> >(stk::topology::NODE_RANK, "simple_nodal_field");
 
-  put_field( simple_nodal_field, *hf.m_elem_parts[0]);
+  put_field_on_mesh( simple_nodal_field, *hf.m_elem_parts[0],
+                     (stk::mesh::FieldTraits<Field<int> >::data_type*) nullptr);
 
   //create nodal field on hex topo
 

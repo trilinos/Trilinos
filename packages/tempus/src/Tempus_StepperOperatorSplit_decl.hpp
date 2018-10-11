@@ -166,7 +166,6 @@ protected:
   std::vector<Teuchos::RCP<Stepper<Scalar> > >        subStepperList_;
   Teuchos::RCP<SolutionHistory<Scalar> >              OpSpSolnHistory_;
   Teuchos::RCP<SolutionState<Scalar> >                tempState_;
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 

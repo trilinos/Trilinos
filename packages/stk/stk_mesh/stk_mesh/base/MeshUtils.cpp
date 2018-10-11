@@ -36,6 +36,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_topology/topology.hpp>
 
 namespace stk {
@@ -73,9 +74,7 @@ void find_ghosted_nodes_that_need_to_be_shared(const stk::mesh::BulkData & bulk,
         }
     }
 
-    std::sort(ghosted_nodes_that_are_now_shared.begin(), ghosted_nodes_that_are_now_shared.end());
-    stk::mesh::EntityVector::iterator iter = std::unique(ghosted_nodes_that_are_now_shared.begin(), ghosted_nodes_that_are_now_shared.end());
-    ghosted_nodes_that_are_now_shared.erase(iter, ghosted_nodes_that_are_now_shared.end());
+    stk::util::sort_and_unique(ghosted_nodes_that_are_now_shared);
 }
 
 //----------------------------------------------------------------------

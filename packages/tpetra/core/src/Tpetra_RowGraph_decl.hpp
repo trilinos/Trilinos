@@ -42,15 +42,12 @@
 #ifndef TPETRA_ROWGRAPH_DECL_HPP
 #define TPETRA_ROWGRAPH_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Packable.hpp"
-
+#include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
 
@@ -66,9 +63,9 @@ namespace Tpetra {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
-  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class RowGraph :
     virtual public Teuchos::Describable,
     public Packable<GlobalOrdinal, LocalOrdinal> {

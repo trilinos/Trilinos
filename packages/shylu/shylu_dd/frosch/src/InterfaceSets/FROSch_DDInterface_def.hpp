@@ -546,7 +546,143 @@ namespace FROSch {
     {
         return NodesMap_.getConst();
     }
-    
+
+    // Issue with OpenMP and offset maps: When starting with OffsetMap (GID not starting at 0) in constructor of an Xpetra::Matrix with underlyinglib=tpetra that is not square (fillComplete called with this OffsetMap as RangeMap and a continuous DomainMap starting at GID 0). Interface will be identified with offset removed if "FROSCH_OFFSET_MAPS" is defined. Otherwise the previous (standard) communicateLocalComponents method will be used.
+#ifdef FROSCH_OFFSET_MAPS
+    template <class SC,class LO,class GO,class NO>
+    int DDInterface<SC,LO,GO,NO>::communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
+                                                             GOVecVec &componentsSubdomainsUnique,
+                                                             UN priorDofsPerNode)
+    {
+        
+
+        if (UniqueNodesMap_->getMinAllGlobalIndex() > 0 || priorDofsPerNode > 0) {
+            GO minGID = UniqueNodesMap_->getMinAllGlobalIndex();
+            ConstGOVecView ElementList;
+            MapPtr tmpUniqueNodesMap;
+            {
+                GOVec indices(UniqueNodesMap_->getNodeNumElements());
+                ElementList = UniqueNodesMap_->getNodeElementList();
+                for (UN i=0; i<indices.size(); i++) {
+                    indices[i] = ElementList[i] - minGID - (GO) i*priorDofsPerNode;
+                }
+                tmpUniqueNodesMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueNodesMap_->lib(),-1,indices(),0,UniqueNodesMap_->getComm());
+            }
+
+            MapPtr tmpNodesMap;
+            {
+                GOVec indices(NodesMap_->getNodeNumElements());
+                ElementList = NodesMap_->getNodeElementList();
+                for (UN i=0; i<indices.size(); i++) {
+                    indices[i] = ElementList[i] - minGID - (GO) i*priorDofsPerNode;
+                }
+                tmpNodesMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,indices(),0,NodesMap_->getComm());
+            }
+
+            Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(tmpNodesMap,10);
+            Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(tmpUniqueNodesMap,10);
+#ifdef Tpetra_issue_1752
+            // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
+            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(tmpUniqueNodesMap,tmpNodesMap);
+            Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(tmpNodesMap,tmpUniqueNodesMap);
+#else
+            Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(tmpNodesMap,tmpUniqueNodesMap);
+#endif
+
+            Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
+            Teuchos::Array<GO> myPID(1,tmpUniqueNodesMap->getComm()->getRank());
+            for (int i=0; i<NumMyNodes_; i++) {
+                commMat->insertGlobalValues(tmpNodesMap->getGlobalElement(i),myPID(),one());
+            }
+
+            Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(tmpNodesMap->lib(),-1,myPID(),0,tmpNodesMap->getComm());
+            
+            commMat->fillComplete(tmpNodesMap,rangeMap);
+            
+            commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
+            
+            commMatTmp->fillComplete(tmpUniqueNodesMap,rangeMap);
+
+            
+            commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(tmpNodesMap,10);
+#ifdef Tpetra_issue_1752
+            commMat->doImport(*commMatTmp,*commImporter,Xpetra::INSERT);
+#else
+            commMat->doImport(*commMatTmp,*commExporter,Xpetra::INSERT);
+#endif
+            
+            componentsSubdomains = GOVecVecPtr(NumMyNodes_);
+            componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
+            Teuchos::ArrayView<const GO> indices2;
+            Teuchos::ArrayView<const SC> values2;
+            for (LO i=0; i<NumMyNodes_; i++) {
+                commMat->getGlobalRowView(tmpNodesMap->getGlobalElement(i),indices2,values2);
+                componentsSubdomains[i].resize(indices2.size());
+                componentsSubdomainsUnique[i].resize(indices2.size());
+                for (LO j=0; j<indices2.size(); j++) {
+                    componentsSubdomains[i][j] = indices2[j];
+                    componentsSubdomainsUnique[i][j] = indices2[j];
+                }
+                sortunique(componentsSubdomains[i]);
+                sortunique(componentsSubdomainsUnique[i]);
+            }
+            
+            sortunique(componentsSubdomainsUnique);
+
+
+        } else {
+            Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
+            Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(UniqueNodesMap_,10);
+    #ifdef Tpetra_issue_1752
+            // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
+            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(UniqueNodesMap_,NodesMap_);
+            Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
+    #else
+            Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
+    #endif
+            
+            Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
+            Teuchos::Array<GO> myPID(1,UniqueNodesMap_->getComm()->getRank());
+            for (int i=0; i<NumMyNodes_; i++) {
+                commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
+            }
+            Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+            
+            commMat->fillComplete(NodesMap_,rangeMap);
+            
+            commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
+            
+            commMatTmp->fillComplete(UniqueNodesMap_,rangeMap);
+            
+            commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
+    #ifdef Tpetra_issue_1752
+            commMat->doImport(*commMatTmp,*commImporter,Xpetra::INSERT);
+    #else
+            commMat->doImport(*commMatTmp,*commExporter,Xpetra::INSERT);
+    #endif
+            
+            componentsSubdomains = GOVecVecPtr(NumMyNodes_);
+            componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
+            
+            Teuchos::ArrayView<const GO> indices2;
+            Teuchos::ArrayView<const SC> values2;
+            for (LO i=0; i<NumMyNodes_; i++) {
+                commMat->getGlobalRowView(NodesMap_->getGlobalElement(i),indices2,values2);
+                componentsSubdomains[i].resize(indices2.size());
+                componentsSubdomainsUnique[i].resize(indices2.size());
+                for (LO j=0; j<indices2.size(); j++) {
+                    componentsSubdomains[i][j] = indices2[j];
+                    componentsSubdomainsUnique[i][j] = indices2[j];
+                }
+                sortunique(componentsSubdomains[i]);
+                sortunique(componentsSubdomainsUnique[i]);
+            }
+            
+            sortunique(componentsSubdomainsUnique);
+        }
+        return 0;
+    }
+#else
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::communicateLocalComponents(GOVecVecPtr &componentsSubdomains,
                                                              GOVecVec &componentsSubdomainsUnique)
@@ -560,27 +696,30 @@ namespace FROSch {
 #else
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(NodesMap_,UniqueNodesMap_);
 #endif
-        
+
         Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
         Teuchos::Array<GO> myPID(1,UniqueNodesMap_->getComm()->getRank());
         for (int i=0; i<NumMyNodes_; i++) {
             commMat->insertGlobalValues(NodesMap_->getGlobalElement(i),myPID(),one());
         }
-        commMat->fillComplete();
-        
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rangeMap = Xpetra::MapFactory<LO,GO,NO>::Build(NodesMap_->lib(),-1,myPID(),0,NodesMap_->getComm());
+
+        commMat->fillComplete(NodesMap_,rangeMap);
+
         commMatTmp->doExport(*commMat,*commExporter,Xpetra::INSERT);
-        commMatTmp->fillComplete();
-        
+
+        commMatTmp->fillComplete(UniqueNodesMap_,rangeMap);
+
         commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(NodesMap_,10);
 #ifdef Tpetra_issue_1752
         commMat->doImport(*commMatTmp,*commImporter,Xpetra::INSERT);
 #else
         commMat->doImport(*commMatTmp,*commExporter,Xpetra::INSERT);
 #endif
-        
+
         componentsSubdomains = GOVecVecPtr(NumMyNodes_);
         componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
-        
+
         Teuchos::ArrayView<const GO> indices2;
         Teuchos::ArrayView<const SC> values2;
         for (LO i=0; i<NumMyNodes_; i++) {
@@ -599,6 +738,8 @@ namespace FROSch {
         
         return 0;
     }
+#endif
+
     
     template <class SC,class LO,class GO,class NO>
     int DDInterface<SC,LO,GO,NO>::identifyLocalComponents(GOVecVecPtr &componentsSubdomains,
@@ -775,7 +916,7 @@ namespace FROSch {
             Edges_->resetEntityType(EdgeType);
             Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
         }
-        
+
         return 0;
     }
     

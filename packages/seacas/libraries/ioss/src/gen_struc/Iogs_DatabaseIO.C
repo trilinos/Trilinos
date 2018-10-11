@@ -75,15 +75,6 @@ namespace Ioss {
 } // namespace Ioss
 
 namespace {
-  bool is_cell_field(const Ioss::Field &field)
-  {
-    return !(field.get_name() == "mesh_model_coordinates" ||
-             field.get_name() == "mesh_model_coordinates_x" ||
-             field.get_name() == "mesh_model_coordinates_y" ||
-             field.get_name() == "mesh_model_coordinates_z" ||
-             field.get_name() == "cell_node_ids"); // Default to cell field...
-  }
-
   template <typename INT>
   void map_global_to_local(const Ioss::Map &map, size_t count, size_t stride, INT *data)
   {
@@ -292,40 +283,7 @@ namespace Iogs {
     int                   zone = sb->get_property("zone").get_int();
 
     int64_t num_to_get = field.verify(data_size);
-
-    int64_t rmin[3] = {0, 0, 0};
-    int64_t rmax[3] = {0, 0, 0};
-
-    bool cell_field = is_cell_field(field);
-    if (cell_field) {
-      assert(num_to_get == sb->get_property("cell_count").get_int());
-      if (num_to_get > 0) {
-        rmin[0] = sb->get_property("offset_i").get_int() + 1;
-        rmin[1] = sb->get_property("offset_j").get_int() + 1;
-        rmin[2] = sb->get_property("offset_k").get_int() + 1;
-
-        rmax[0] = rmin[0] + sb->get_property("ni").get_int() - 1;
-        rmax[1] = rmin[1] + sb->get_property("nj").get_int() - 1;
-        rmax[2] = rmin[2] + sb->get_property("nk").get_int() - 1;
-      }
-    }
-    else {
-      // cell nodal field.
-      assert(num_to_get == sb->get_property("node_count").get_int());
-      if (num_to_get > 0) {
-        rmin[0] = sb->get_property("offset_i").get_int() + 1;
-        rmin[1] = sb->get_property("offset_j").get_int() + 1;
-        rmin[2] = sb->get_property("offset_k").get_int() + 1;
-
-        rmax[0] = rmin[0] + sb->get_property("ni").get_int();
-        rmax[1] = rmin[1] + sb->get_property("nj").get_int();
-        rmax[2] = rmin[2] + sb->get_property("nk").get_int();
-      }
-    }
-
-    assert(num_to_get ==
-           (rmax[0] - rmin[0] + 1) * (rmax[1] - rmin[1] + 1) * (rmax[2] - rmin[2] + 1));
-    double *rdata = static_cast<double *>(data);
+    double *rdata      = static_cast<double *>(data);
 
     if (role == Ioss::Field::MESH) {
       if (field.get_name() == "mesh_model_coordinates_x") {

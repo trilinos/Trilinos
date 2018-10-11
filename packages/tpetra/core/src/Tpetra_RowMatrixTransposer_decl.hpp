@@ -47,7 +47,18 @@
 ///
 /// Declaration of Tpetra::RowMatrixTransposer.
 
-#include <Tpetra_CrsMatrix_decl.hpp>
+#include "Tpetra_RowMatrixTransposer_fwd.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_Map_fwd.hpp"
+#include "Teuchos_RCP.hpp"
+#include <string>
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // Forward declaration of ParameterList
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -61,10 +72,10 @@ namespace Tpetra {
 /// "unique", i.e., a row is wholly owned by one process.
 ///
 /// This class takes the same template parameters as CrsMatrix.
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
 class RowMatrixTransposer {
 public:
   //! @name Typedefs
@@ -109,7 +120,6 @@ private:
   std::string label_;
 };
 
-
-}
+} // namespace Tpetra
 
 #endif /* TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP */

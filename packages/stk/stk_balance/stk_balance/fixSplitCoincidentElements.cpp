@@ -3,7 +3,7 @@
 #include "balanceUtils.hpp"               // for BalanceSettings, etc
 #include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include "stk_mesh/base/MeshDiagnostics.hpp"
 
@@ -48,6 +48,7 @@ stk::mesh::EntityIdProcMap rebalance_mesh_to_avoid_split_coincident_elements(stk
 
 stk::mesh::EntityIdProcMap make_mesh_consistent_with_parallel_mesh_rule1(stk::mesh::BulkData& bulkData)
 {
+    internal::logMessage(bulkData.parallel(), "Fixing split coincident elements");
     stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
     bool allOkThisProc = splitCoincidentElements.empty();
     bool allOkEverywhere = stk::is_true_on_all_procs(bulkData.parallel(), allOkThisProc);

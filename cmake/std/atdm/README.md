@@ -14,6 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
 * <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
@@ -144,7 +145,8 @@ Some examples of `<job-name>` keyword sets used on various platforms include:
 
 The script `cmake/std/atdm/load-env.sh` when sourced sets some bash
 environment variables that are prefixed with `ATDM_CONFIG_` and other standard
-variables.
+variables.  This includes setting the var `ATDM_CONFIG_JOB_NAME` which stores
+the input `<job-name>` which is used in other parts of the system.
 
 The file `ATDMDevEnv.cmake` pulls bash environment variables set by the
 sourced `atdm/load-env.sh` script and sets up a number of CMake cache
@@ -169,6 +171,43 @@ When `ATDMDevEnv.cmake` is being processed, if there is a "tweaks" file
 defined for a build, then it will be picked up in the CMake cache var <a
 href="#ATDM_TWEAKS_FILES">ATDM_TWEAKS_FILES</a> and that file will be read in
 using `INCLUDE()` to process the extra options contained within it.
+
+
+## Installation and usage
+
+When including the `ATDMDevEnv.cmake` file (or `ATDMDevEnvSettings.cmake`) at
+configure time as described above, the cmake configure automatically sets up
+to install an environment script:
+
+```
+  <install-prefix>/<load-matching-env-sh>
+```
+
+where `<install-prefix>` and `<load-matching-env-sh>` are set at
+configure-time using:
+
+```
+  -D CMAKE_INSTALL_PREFIX=<install-prefix> \
+  -D ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME=<load-matching-env-sh> \
+  -D ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME=<trilinos-install-prefix-var-name> \
+```
+
+* If `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not specified then it is given the
+name `load_matching_env.sh` by default.
+
+* If `ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME` is not specified then it is
+given the name `ATDM_TRILINOS_INSTALL_PREFIX` by default.
+
+After installation with `make install`, a client can load the environment to
+use this ATDM configuration of Trilinos by running:
+
+```
+$ source <install-prefix>/<load-matching-env-sh>
+```
+
+Sourcing this file sets all of the various `ATDM_CONG_` environment variables
+described above and also sets the environment variable
+`<trilinos-install-prefix-var-name>` to `<install-prefix>`.
 
 
 ## checkin-test-atdm.sh
@@ -247,7 +286,8 @@ $ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
 ```
 
 However, a default `local-checkin-test-defaults.py` is created the first time
-the `checkin-test-atdm.sh` script is run (after which can be modified).
+the `checkin-test-atdm.sh` script is run and will set these as the defaults
+(after which can be modified).
 
 
 ## Specific instructions for each system
@@ -257,6 +297,7 @@ the `checkin-test-atdm.sh` script is run (after which can be modified).
 * <a href="#chamaserrano">chama/serrano</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
+* <a href="#waterman">waterman</a>
 
 
 ### ride/white
@@ -285,8 +326,13 @@ $ bsub -x -Is -q rhel7F -n 16 ctest -j16
 ```
 
 The ATDM configuration of Trilinos is set up to run on the Firestone nodes
-(Dual-Socket POWER8, 8 cores per socket, K80 GPUs).  This confiugration will
+(Dual-Socket POWER8, 8 cores per socket, K80 GPUs).  This configuration will
 not work on the other GPU nodes currently.
+
+**NOTE:** While the above example shows loading the environment, configuring
+and building on the login node, one can also do these on the compute nodes as
+well.  In fact, that is what the CTest -S drivers do in automated testing on
+'white' and 'ride'.
 
 Note that one can also run the same build a tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
@@ -296,7 +342,6 @@ $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 $ bsub -x -I -q rhel7F -n 16 \
   ./checkin-test-atdm.sh cuda-debug \
-  --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
 ```
@@ -328,6 +373,11 @@ $ make NP=16
 $ srun ctest -j16
 ```
 
+**NOTE:** While the above example shows loading the environment, configuring
+and building on the login node, one can also do these on the compute nodes as
+well.  In fact, that is what the CTest -S drivers do in automated testing on
+'hansen' and 'shiller'.
+
 Note that one can also run the same build a tests using the <a
 href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 
@@ -335,7 +385,6 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
 $ srun ./checkin-test-atdm.sh intel-opt-openmp \
-  --enable-all-packages=off --no-enable-fwd-packages \
   --enable-packages=MueLu \
   --local-do-all
 ```
@@ -369,6 +418,11 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> ctest -j16
 To get information on <YOUR_WCID> used above, there is a WC tool tab on
 computing.sandia.gov
 
+**NOTE:** Unlike some of the other machines, one must load the environment,
+configure and build on the login node and then run the test suite on a compute
+node on this system.  This is what the CTest -S driver on 'chama' and
+'serrano' does in order to drive jobs and submit to CDash.
+
 To use the checkin-test-atdm.sh script, you must split running the tests from
 the configure and build as with:
 
@@ -381,6 +435,7 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
   ./checkin-test-atdm.sh intel-opt-openmp \
   --enable-packages=MueLu --test
 ```
+
 
 ### mutrino
 
@@ -403,8 +458,14 @@ $ cmake \
 
 $ make -j16
 
-$ salloc -N 1 -p standard -J $JOB_NAME ctest -j16
+$ salloc -N 1 -p standard -J $ATDM_CONFIG_JOB_NAME ctest -j16
 ```
+
+**NOTE:** Unlike some of the other machines, one must load the environment,
+configure and build on the login node and then run the test suite on a compute
+node on this system.  This is what the CTest -S driver on 'mutrino' does in
+order to drive jobs and submit to CDash.
+
 
 ### SEMS rhel6 environment
 
@@ -429,6 +490,48 @@ $ make NP=16
 
 $ ctest -j16 \
 ```
+
+
+### waterman
+
+Once logged on to `waterman` (SRN), one can directly configure and build on
+the login node (being careful not to overload the node).  But to run the
+tests, one must run on the compute nodes using the `bsub` command to run if
+using a CUDA build.  For example, to configure, build and run the tests for
+the default `cuda-debug` build for say `MueLu` (after cloning Trilinos on the
+`develop` branch) one would do:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=20
+
+$ bsub -x -Is -n 20 ctest -j20
+```
+
+**NOTE:** While the above example shows loading the environment, configuring
+and building on the login node, one can also do these on the compute nodes as
+well.  In fact, that is what the CTest -S drivers do in automated testing on
+'waterman'.
+
+Note that one can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ bsub -x -Is -n 20 \
+  ./checkin-test-atdm.sh cuda-debug --enable-packages=MueLu --local-do-all
+```
+
 
 ## Troubleshooting configuration problems
 
@@ -491,11 +594,11 @@ contents:
 
 ```
   <system-name>/
-    environment.sh  # Load env for the given system based on $JOB_NAME keys
+    environment.sh  # Load env for the given system based on $ATDM_CONFIG_JOB_NAME keys
     all_supported_builds.sh  # [Optional] List of all supported builds
     tweaks/
-       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>.cmake  # [Optional]
-       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>.cmake  # [Optional]
+       <COMPILER0>-<BUILD_TYPE0>-<NODE_TYPE0>-<KOKKOS_ARCH0>.cmake  # [Optional]
+       <COMPILER1>-<BUILD_TYPE1>-<NODE_TYPE1>-<KOKKOS_ARCH0>.cmake  # [Optional]
        ...
 ```
 
@@ -514,17 +617,25 @@ a system with `checkin-test-atdm.sh all [other options]`.
 The files in the `cmake/std/atdm/<system-name>/tweaks/` directory contain
 special settings for specific builds for a specific system.  Typically, this
 file contains (temporary) disables for tests for that given build.  When a
-configure is performed, the variable `ATDM_JOB_NAME_KEYS_STR` set to
-`<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT) is
-used to define a default file name:
+configure is performed, the internal CMake variable `ATDM_JOB_NAME_KEYS_STR`
+set to `<COMPILER>-<BUILD_TYPE>-<NODE_TYPE>-<KOKKOS_ARCH>` (printed to STDOUT)
+is used to define a default file name:
 
 ```
-  Trilinos/cmake/std/atdm/<system-name>/tweaks/$ATDM_JOB_NAME_KEYS_STR.cmake
+  Trilinos/cmake/std/atdm/<system-name>/tweaks/${ATDM_JOB_NAME_KEYS_STR}.cmake
 ```
 
 If that file exists, then it is set as the default for the cmake cache
 variable `ATDM_TWEAKS_FILES` (prints to STDOUT) and that file is included and
-its options are read.
+its options are read.  For example, this is what the output looks like on
+'waterman':
+
+```
+-- Reading in configuration options from cmake/std/atdm/ATDMDevEnv.cmake ...
+-- ATDM_JOB_NAME_KEYS_STR='GNU-RELEASE-OPENMP-POWER9'
+-- ATDM_TWEAKS_FILES='<...>/Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake'
+-- Including ATDM build tweaks file <...>//Trilinos/cmake/std/atdm/waterman/tweaks/GNU-RELEASE-OPENMP-POWER9.cmake ...
+```
 
 
 ## Disabling failing tests
@@ -728,3 +839,5 @@ they support are:
 
 * `shiller/`: Supports GNU, Intel, and CUDA builds on both the SRN machine
   `shiller` and the mirror SON machine `hansen`.
+
+* `waterman/`: Supports GNU and CUDA builds on the SRN machine `waterman`.

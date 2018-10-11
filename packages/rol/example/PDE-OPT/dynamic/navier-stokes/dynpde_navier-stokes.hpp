@@ -74,7 +74,10 @@ private:
   ROL::Ptr<PDE_NavierStokes<Real>> pde_;
   Real theta_;   // Time integration factor
   Real cx_, cy_; // Cylinder center
+  Real r_;       // Cylinder radius
   bool useParametricControl_;
+  bool useParabolicInflow_;
+  bool useNonPenetratingWalls_;
 
   ROL::Ptr<FieldHelper<Real> > fieldHelper_;
 
@@ -83,9 +86,12 @@ public:
     pde_ = ROL::makePtr<PDE_NavierStokes<Real>>(parlist);
     // Problem data
     theta_ = parlist.sublist("Time Discretization").get("Theta", 1.0);
-    useParametricControl_ = parlist.sublist("Problem").get("Use Parametric Control", false);
-    cx_ = static_cast<Real>(-4);
-    cy_ = static_cast<Real>(0);
+    useParametricControl_   = parlist.sublist("Problem").get("Use Parametric Control", false);
+    useParabolicInflow_     = parlist.sublist("Problem").get("Use Parabolic Inflow", true);
+    useNonPenetratingWalls_ = parlist.sublist("Problem").get("Use Non-Penetrating Walls", false);
+    cx_                     = parlist.sublist("Problem").get("Cylinder Center X", 0.0);
+    cy_                     = parlist.sublist("Problem").get("Cylinder Center Y", 0.0);
+    r_                      = parlist.sublist("Problem").get("Cylinder Radius",   0.5);
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -159,7 +165,7 @@ public:
     if (numSideSets > 0) {
       // APPLY DIRICHLET CONDITIONS
       for (int i = 0; i < numSideSets; ++i) {
-        // Apply no-slip conditions on top and bottom wall
+        // Apply dirichlet conditions on inflow, top and bottom wall
         if (i==0 || i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
@@ -168,14 +174,20 @@ public:
             for (int k = 0; k < numCellsSide; ++k) {
               int cidx = bdryCellLocIds_[i][j][k];
               for (int l = 0; l < numBdryDofs; ++l) {
-                for (int m=0; m < d; ++m) {
-                  (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]);
+                if (useNonPenetratingWalls_) {
+                  (*R[1])(cidx,fvidx_[j][l]) = (*U[1])(cidx,fvidx_[j][l]);
+                }
+                else {
+                  for (int m=0; m < d; ++m) {
+                    bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                    (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - bv;
+                  }
                 }
               }
             }
           }
         }
-        // Apply in-flow condition on left wall
+        // Apply dirichlet conditions on inflow, top and bottom wall
         if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
@@ -210,7 +222,7 @@ public:
                     (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*Z[m])(cidx,fvidx_[j][l]);
                   }
                   else {
-                    bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
+                    bv  = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
                     (*R[m])(cidx,fvidx_[j][l]) = (*U[m])(cidx,fvidx_[j][l]) - (*z_param)[0] * bv;
                   }
                 }
@@ -264,7 +276,43 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if (i==0 || i==2 || i==3 || i==4) {
+        if (i==0 || i==2) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                for (int m=0; m < fv; ++m) {
+                  if (useNonPenetratingWalls_) {
+                    for (int p=0; p < d; ++p) {
+                      (*J[1][p])(cidx,fvidx_[j][l],m) = zero;
+                    }
+                  }
+                  else {
+                    for (int n=0; n < d; ++n) {
+                      for (int p=0; p < d; ++p) {
+                        (*J[n][p])(cidx,fvidx_[j][l],m) = zero;
+                      }
+                    }
+                  }
+                }
+                for (int m=0; m < fp; ++m) {
+                  if (useNonPenetratingWalls_) {
+                    (*J[1][2])(cidx,fvidx_[j][l],m) = zero;
+                  }
+                  else {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][2])(cidx,fvidx_[j][l],m) = zero;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (i==3 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -334,7 +382,45 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if (i==0 || i==2 || i==3 || i==4) {
+        if (i==0 || i==2) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                for (int m=0; m < fv; ++m) {
+                  if (useNonPenetratingWalls_) {
+                    for (int p=0; p < d; ++p) {
+                      (*J[1][p])(cidx,fvidx_[j][l],m) = zero;
+                    }
+                    (*J[1][1])(cidx,fvidx_[j][l],fvidx_[j][l]) = one;
+                  }
+                  else {
+                    for (int n=0; n < d; ++n) {
+                      for (int p=0; p < d; ++p) {
+                        (*J[n][p])(cidx,fvidx_[j][l],m) = zero;
+                      }
+                      (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = one;
+                    }
+                  }
+                }
+                for (int m=0; m < fp; ++m) {
+                  if (useNonPenetratingWalls_) {
+                    (*J[1][2])(cidx,fvidx_[j][l],m) = zero;
+                  }
+                  else {
+                    for (int n=0; n < d; ++n) {
+                      (*J[n][2])(cidx,fvidx_[j][l],m) = zero;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (i==3 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -446,7 +532,7 @@ public:
                 for (int l = 0; l < numBdryDofs; ++l) {
                   for (int m=0; m < d; ++m) {
                     bv = (*bdryCellDofValues_[i][j])(k,fvidx_[j][l],m);
-                    (*J[m])(cidx,fvidx_[j][l]) = - bv;
+                    (*J[m])(cidx,fvidx_[j][l]) = -bv;
                   }
                 }
               }
@@ -482,7 +568,27 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if (i==0 || i==2 || i==3 || i==4) {
+        if (i==0 || i==2) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                if (useNonPenetratingWalls_) {
+                  (*L[1])(cidx,fvidx_[j][l]) = zero;
+                }
+                else {
+                  for (int m=0; m < d; ++m) {
+                    (*L[m])(cidx,fvidx_[j][l]) = zero;
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (i==3 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -566,7 +672,27 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if (i==0 || i==2 || i==3 || i==4) {
+        if (i==0 || i==2) {
+          int numLocalSideIds = bdryCellLocIds_[i].size();
+          for (int j = 0; j < numLocalSideIds; ++j) {
+            int numCellsSide = bdryCellLocIds_[i][j].size();
+            int numBdryDofs = fvidx_[j].size();
+            for (int k = 0; k < numCellsSide; ++k) {
+              int cidx = bdryCellLocIds_[i][j][k];
+              for (int l = 0; l < numBdryDofs; ++l) {
+                if (useNonPenetratingWalls_) {
+                  (*L[1])(cidx,fvidx_[j][l]) = zero;
+                }
+                else {
+                  for (int m=0; m < d; ++m) {
+                    (*L[m])(cidx,fvidx_[j][l]) = zero;
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (i==3 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -730,15 +856,16 @@ public:
     return fePrs_;
   }
 
-  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(void) const {
-    return pde_->getVelocityBdryFE();
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > getCellNodes(void) const {
+    return pde_->getCellNodes();
+  }
+
+  const std::vector<ROL::Ptr<FE<Real>>> getVelocityBdryFE(const int sideset = -1) const {
+    return pde_->getVelocityBdryFE(sideset);
   }
 
   const std::vector<std::vector<int>> getBdryCellLocIds(const int sideset = -1) const {
-    int side = sideset;
-    if ( sideset < 0 ) {
-      side = 4;
-    }
+    int side = (sideset < 0 ? 4 : sideset);
     return bdryCellLocIds_[side];
   }
 
@@ -748,13 +875,15 @@ public:
 
 private:
   Real DirichletFunc(const std::vector<Real> & coords, int sideset, int locSideId, int dir) const {
-    const Real one(1);
+    const Real one(1), two(2);
+    const Real x = coords[0], y = coords[1];
     Real val(0);
-    if ((sideset==3) && (dir==0)) {
-      val = (one + coords[1]) * (one - coords[1]);
+    if ((sideset!=4) && (dir==0)) {
+      val = (useParabolicInflow_ ? (two + y) * (two - y) : one);
     }
     if (sideset==4) {
-      val = (dir==0 ? -(coords[1]-cy_) : (coords[0]-cx_));
+      Real tx = y-cy_, ty = cx_-x;
+      val = (dir==0 ? tx : ty)/r_;
     }
     return val;
   }

@@ -49,6 +49,14 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_ThresholdAFilterFactory_fwd.hpp"
+
+#include "MueLu_CoalesceDropFactory_fwd.hpp"
+#include "MueLu_CoarseMapFactory_fwd.hpp"
+#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
+#include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
+#include "MueLu_Utilities_fwd.hpp"
+
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_CoarseMapFactory_kokkos_fwd.hpp"
@@ -56,14 +64,8 @@
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_Utilities_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
-#else
-#include "MueLu_CoalesceDropFactory_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
-#include "MueLu_CoordinatesTransferFactory_fwd.hpp"
-#include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_UncoupledAggregationFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 #endif
+
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_Hierarchy.hpp"
@@ -98,6 +100,7 @@ namespace MueLu {
                                   Allowed values are: "additive" (default), "121", "212"
     - <tt>refmaxwell: disable addon</tt> - <tt>bool</tt> specifing whether the addon should be built for stabilization.
                                            Default: "true"
+    - <tt>refmaxwell: use as preconditioner</tt> - <tt>bool</tt> specifing whether RefMaxwell is used as a preconditioner or as a solver.
     - <tt>refmaxwell: dump matrices</tt> - <tt>bool</tt> specifing whether the matrices should be dumped.
                                            Default: "false"
     - <tt>refmaxwell: prolongator compute algorithm</tt> - a <tt>string</tt> specifying the algorithm to build the prolongator.
@@ -118,6 +121,7 @@ namespace MueLu {
   public:
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+    typedef typename Xpetra::MultiVector<magnitudeType,LO,GO,NO> RealValuedMultiVector;
 
     //! Constructor
     RefMaxwell() :
@@ -338,7 +342,7 @@ namespace MueLu {
 
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
-    Teuchos::RCP<SmootherBase> Smoother_;
+    Teuchos::RCP<SmootherBase> PreSmoother_, PostSmoother_;
 #if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
@@ -348,12 +352,11 @@ namespace MueLu {
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    Kokkos::View<const bool*, typename Node::device_type> BCrows_;
-    Kokkos::View<const bool*, typename Node::device_type> BCcols_;
-#else
+    Kokkos::View<const bool*, typename Node::device_type> BCrowsKokkos_;
+    Kokkos::View<const bool*, typename Node::device_type> BCcolsKokkos_;
+#endif
     Teuchos::ArrayRCP<const bool> BCrows_;
     Teuchos::ArrayRCP<const bool> BCcols_;
-#endif
     //! Nullspace
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates
@@ -361,7 +364,7 @@ namespace MueLu {
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
-    bool disable_addon_, dump_matrices_;
+    bool disable_addon_, dump_matrices_,useKokkos_,use_as_preconditioner_;
     std::string mode_;
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_;

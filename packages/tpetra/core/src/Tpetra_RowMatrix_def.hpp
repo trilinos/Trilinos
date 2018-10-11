@@ -42,9 +42,9 @@
 #ifndef TPETRA_ROWMATRIX_DEF_HPP
 #define TPETRA_ROWMATRIX_DEF_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Map.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_RowGraph.hpp"
 
 namespace Tpetra {
 
@@ -628,7 +628,6 @@ namespace Tpetra {
 //
 
 #define TPETRA_ROWMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
-  \
   template class RowMatrix< SCALAR , LO , GO , NODE >;
 
 

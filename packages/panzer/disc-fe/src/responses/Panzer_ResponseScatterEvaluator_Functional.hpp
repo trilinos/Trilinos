@@ -120,9 +120,6 @@ public:
   ResponseScatterEvaluator_Functional(const std::string & integrandName,const std::string & responseName,const CellData & cd,
                                       const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
-
   void evaluateFields(typename Traits::EvalData d);
 
   void preEvaluate(typename Traits::PreEvalData d);

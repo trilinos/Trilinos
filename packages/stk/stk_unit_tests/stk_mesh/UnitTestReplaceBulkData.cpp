@@ -68,7 +68,7 @@ void verify_mesh_is_empty(const stk::mesh::BulkData& mesh)
 //void create_coord_field(stk::mesh::MetaData& meta)
 //{
 //  stk::mesh::Field<double,stk::mesh::Cartesian>& coord_field = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
-//  stk::mesh::put_field(coord_field, meta.universal_part(), 3);
+//  stk::mesh::put_field_on_mesh(coord_field, meta.universal_part(), 3);
 //  meta.set_coordinate_field(&coord_field);
 //}
 //

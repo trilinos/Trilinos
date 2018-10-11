@@ -86,7 +86,7 @@ DirichletResidual_FaceBasis(
   value    = PHX::MDField<const ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues = PointValues2<double> (pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -111,12 +111,7 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>& fm)
 {
   orientations = sd.orientations_;
-
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
-
   faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.extent(0),dof.extent(1),dof.extent(2));
 }
 

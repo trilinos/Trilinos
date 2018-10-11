@@ -66,6 +66,7 @@ using RealT = double;
 using size_type = std::vector<RealT>::size_type;
 
 void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
 int main( int argc, char* argv[] ) 
 {
@@ -76,15 +77,14 @@ int main( int argc, char* argv[] )
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
   int myRank = Teuchos::GlobalMPISession::getRank();
 
-//  int iprint     = argc - 1;
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
 
   try {
 
-    // because of the splitting this actually runs two jobs at once
     run_test(MPI_COMM_WORLD, outStream);
+    run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
   catch (std::logic_error err) {
@@ -110,7 +110,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
-//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
   using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
   using State             = Tanks::StateVector<RealT>;
@@ -138,7 +137,11 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
   auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
   auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
-  auto  T       = pl.get("Total Time", 20.0);
+  auto  T      = pl.get("Total Time", 20.0);
+
+  auto  maxlvs = pl.get("MGRIT Levels", 5);
+  auto  sweeps = pl.get("MGRIT Sweeps", 1);
+  auto  omega  = pl.get("MGRIT Relax", 2.0/3.0);
 
   RealT dt = T/Nt;
 
@@ -191,6 +194,9 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(con,initial_cond,timeStamp);
+  pint_con->applyMultigrid(maxlvs);
+  pint_con->setSweeps(sweeps);
+  pint_con->setRelaxation(omega);
 
   // check the pint constraint
   {
@@ -330,3 +336,215 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     }
   }
 }
+
+void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
+{
+  using ROL::Ptr;
+  using ROL::makePtr;
+  using ROL::makePtrFromRef;
+
+  using RealT             = double;
+  using size_type         = std::vector<RealT>::size_type;
+  using Bounds            = ROL::Bounds<RealT>;
+  using PartitionedVector = ROL::PartitionedVector<RealT>;
+  using State             = Tanks::StateVector<RealT>;
+  using Control           = Tanks::ControlVector<RealT>;
+
+  int numRanks = -1;
+  int myRank = -1;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+
+  ROL::Ptr< ROL::PinTVector<RealT>> state;
+  ROL::Ptr< ROL::PinTVector<RealT>> control;
+
+  auto  pl_ptr = ROL::getParametersFromXmlFile("tank-parameters.xml");
+  auto& pl     = *pl_ptr;
+  auto  con    = Tanks::DynamicConstraint<RealT>::create(pl);
+  auto  height = pl.get("Height of Tank",              10.0  );
+  auto  Qin00  = pl.get("Corner Inflow",               100.0 );
+  auto  h_init = pl.get("Initial Fluid Level",         2.0   );
+  auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
+  auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
+  auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
+  auto  T      = pl.get("Total Time", 20.0);
+
+  auto  maxlvs = pl.get("MGRIT Levels",           5);
+  auto  sweeps = pl.get("MGRIT Sweeps",           3);
+  auto  omega  = pl.get("MGRIT Relaxation", 2.0/3.0);
+  auto  globalScale  = pl.get("Constraint Scale", 1.0e3);
+
+  RealT dt = T/Nt;
+
+  ROL::Ptr<ROL::Vector<RealT>> initial_cond;
+  {
+    // control
+    auto  z      = Control::create( pl, "Control (z)"     );    
+    auto  vz     = z->clone( "Control direction (vz)"     );
+    auto  z_lo   = z->clone( "Control Lower Bound (z_lo)" );
+    auto  z_bnd  = makePtr<Bounds>( *z_lo );
+    z_lo->zero();
+
+    // State
+    auto u_new     = State::create( pl, "New state (u_new)"   );
+    auto u_old     = u_new->clone( "Old state (u_old)"        );
+    auto u_initial = u_new->clone( "Initial conditions"       );
+    auto u_new_lo  = u_new->clone( "State lower bound (u_lo)" );
+    auto u_new_up  = u_new->clone( "State upper bound (u_up)" );
+    auto u         = PartitionedVector::create( { u_old,    u_new    } );
+    auto u_lo      = PartitionedVector::create( { u_new_lo, u_new_lo } );
+    auto u_up      = PartitionedVector::create( { u_new_up, u_new_up } );
+  
+    u_lo->zero();
+    u_up->setScalar( height );
+    auto u_bnd = makePtr<Bounds>(u_new_lo,u_new_up);
+
+    (*z)(0,0) = Qin00;
+
+    for( size_type i=0; i<nrows; ++i ) {
+      for( size_type j=0; j<ncols; ++j ) {
+        u_old->h(i,j) = h_init;
+        u_initial->h(i,j) = h_init;
+      }
+    }
+
+    state        = ROL::buildStatePinTVector<RealT>(   communicators, Nt,     u_old);
+    control      = ROL::buildControlPinTVector<RealT>( communicators, Nt,         z);
+
+    initial_cond = u_initial;
+    state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
+  }
+
+  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+  for( size_type k=0; k<timeStamp->size(); ++k ) {
+    timeStamp->at(k).t.resize(2);
+    timeStamp->at(k).t.at(0) = k*dt;
+    timeStamp->at(k).t.at(1) = (k+1)*dt;
+  }
+
+
+  // build the parallel in time constraint from the user constraint
+  Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(con,initial_cond,timeStamp);
+  pint_con->applyMultigrid(maxlvs);
+  pint_con->setSweeps(sweeps);
+  pint_con->setRelaxation(omega);
+  pint_con->setGlobalScale(globalScale);
+
+  double tol = 1e-12;
+
+  // make sure we are globally consistent
+  state->boundaryExchange();
+  control->boundaryExchange();
+
+  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),control->clone(),state->clone()});
+  auto kkt_x_in  = kkt_vector->clone();
+  auto kkt_b     = kkt_vector->clone();
+
+  ROL::RandomizeVector(*kkt_x_in);
+  kkt_b->zero();
+  pint_con->applyAugmentedKKT(*kkt_b,*kkt_x_in,*state,*control,tol);
+
+  // check exact
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    // apply_invkkt(*kkt_x_out,*kkt_b,*state,*control);
+    pint_con->applyAugmentedInverseKKT(*kkt_x_out,*kkt_b,*state,*control,tol);
+
+    kkt_x_out->axpy(-1.0,*kkt_x_in);
+
+    RealT norm = kkt_x_out->norm();
+    if(myRank==0)
+      (*outStream) << "NORM EXACT= " << norm << std::endl;
+  }
+
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  // check jacobi
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    auto kkt_diff = kkt_vector->clone();
+    auto kkt_err = kkt_vector->clone();
+    auto kkt_res = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    for(int i=0;i<sweeps;i++) {
+      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      kkt_res->scale(-1.0);
+      kkt_res->axpy(1.0,*kkt_b);
+    
+      pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true);
+
+      kkt_x_out->axpy(omega,*kkt_diff);
+
+      kkt_err->set(*kkt_x_out);
+      kkt_err->axpy(-1.0,*kkt_x_in);
+      RealT norm = kkt_err->norm() / kkt_b->norm();
+      if(myRank==0)
+        (*outStream) << "NORM JACOBI= " << norm << std::endl;
+    }
+  }
+
+  if(myRank==0)
+    (*outStream) << std::endl;
+
+  // check MG
+  MPI_Barrier(MPI_COMM_WORLD);
+  double t0 = MPI_Wtime();
+  {
+    auto kkt_x_out = kkt_vector->clone();
+    auto kkt_diff = kkt_vector->clone();
+    auto kkt_err = kkt_vector->clone();
+    auto kkt_res = kkt_vector->clone();
+    kkt_x_out->zero();
+
+    pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+    kkt_res->scale(-1.0);
+    kkt_res->axpy(1.0,*kkt_b);
+
+    RealT res0 = kkt_res->norm();
+
+    if(myRank==0)
+      (*outStream) << "Multigrid initial res = " << res0 << std::endl;
+
+    for(int i=0;i<100;i++) {
+      pint_con->applyMultigridAugmentedKKT(*kkt_diff,*kkt_res,*state,*control,tol);
+
+      kkt_x_out->axpy(omega,*kkt_diff);
+
+      kkt_err->set(*kkt_x_out);
+      kkt_err->axpy(-1.0,*kkt_x_in);
+   
+      pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
+      kkt_res->scale(-1.0);
+      kkt_res->axpy(1.0,*kkt_b);
+
+      RealT res = kkt_res->norm();
+      if(myRank==0)
+        (*outStream) << " " << i+1 << ". " << res/res0 << std::endl;
+
+      // check the residual
+      if(res/res0 < 1e-9) {
+        // how many iterations
+        if(myRank==0)
+          (*outStream) << "\nIterations = " << i+1 << std::endl;
+        
+        break;
+      }
+    }
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+  double tf = MPI_Wtime();
+
+  if(myRank==0)
+    (*outStream) << "\nMG Time = " << tf-t0 << std::endl;
+}
+
+

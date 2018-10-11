@@ -486,7 +486,7 @@ namespace SEAMS {
     class Aprepro &aprepro;
   };
 
-} // SEAMS
+} // namespace SEAMS
 #line 516 "aprepro_parser.h" // lalr1.cc:377
 
 #endif // !YY_SEAMS_APREPRO_PARSER_H_INCLUDED

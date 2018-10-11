@@ -541,14 +541,14 @@ namespace Tpetra {
           os << *verboseHeader << "- Some input GIDs are already in the source Map: ";
           printArray (os, badGIDs.data (), badGIDs.size ());
           os << endl;
-          Tpetra::Details::gathervPrint (*out, os.str (), comm);
+          ::Tpetra::Details::gathervPrint (*out, os.str (), comm);
         }
         if (verbose && gblStatus[0] != 1) {
           std::ostringstream os;
           os << *verboseHeader << "- Some input PIDs are invalid: ";
           printArray (os, badPIDs.data (), badPIDs.size ());
           os << endl;
-          Tpetra::Details::gathervPrint (*out, os.str (), comm);
+          ::Tpetra::Details::gathervPrint (*out, os.str (), comm);
         }
 
         if (! good) {
@@ -755,9 +755,9 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Node NT;
 
-    const bool verbose = Details::Behavior::verbose ("Tpetra::Import") ||
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ("Tpetra::Import") ||
       this->debug_;
-    const bool debug = Details::Behavior::debug ("Tpetra::Import") || this->debug_;
+    const bool debug = ::Tpetra::Details::Behavior::debug ("Tpetra::Import") || this->debug_;
 
     RCP<FancyOStream> outPtr = debugOutput.is_null () ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) : debugOutput;
@@ -1162,7 +1162,9 @@ namespace Tpetra {
 
       const size_type numInvalidRemote =
         std::count_if (remoteProcIDs.begin (), remoteProcIDs.end (),
-                       std::bind1st (std::equal_to<int> (), -1));
+                       [] (const int processor_id) {
+                         return processor_id == -1;
+                       });
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numInvalidRemote == 0, std::logic_error, "Calling getRemoteIndexList "
          "on the source Map returned IDNotPresent, but none of the returned "
@@ -1401,17 +1403,19 @@ namespace Tpetra {
     RCP<const map_type> tgtMap2 = rhs.getTargetMap ();
     RCP<const Comm<int> > comm = srcMap->getComm ();
 
-    const bool debug = Details::Behavior::debug("Tpetra::Import::setUnion");
+    const bool debug = ::Tpetra::Details::Behavior::debug("Tpetra::Import::setUnion");
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION(
           ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
           "Tpetra::Import::setUnion: The source Map of the input Import must be the "
           "same as (in the sense of Map::isSameAs) the source Map of this Import.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          ! Details::congruent (* (tgtMap1->getComm ()), * (tgtMap2->getComm ())),
-          std::invalid_argument, "Tpetra::Import::setUnion: "
-          "The target Maps must have congruent communicators.");
+      const Comm<int>& comm1 = * (tgtMap1->getComm ());
+      const Comm<int>& comm2 = * (tgtMap2->getComm ());
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ::Tpetra::Details::congruent (comm1, comm2),
+         std::invalid_argument, "Tpetra::Import::setUnion: "
+         "The target Maps must have congruent communicators.");
     }
 
     // It's probably worth the one all-reduce to check whether the two
@@ -1739,7 +1743,6 @@ namespace Tpetra {
 } // namespace Tpetra
 
 #define TPETRA_IMPORT_CLASS_INSTANT(LO, GO, NODE) \
-  \
   template class Import< LO , GO , NODE >;
 
 // Explicit instantiation macro.

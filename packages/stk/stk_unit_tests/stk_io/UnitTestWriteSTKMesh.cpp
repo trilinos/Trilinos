@@ -21,6 +21,7 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/Field.hpp"
+#include <stk_unit_test_utils/MeshFixture.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/memory_util.hpp>
@@ -33,6 +34,7 @@
 #include <iostream>
 #include <unistd.h>                     // for unlink
 
+#include "stk_util/environment/Env.hpp"
 namespace
 {
 
@@ -92,7 +94,6 @@ TEST(StkIo, write_stk_mesh_to_file)
             {
                 if(part->primary_entity_rank() == stk::topology::NODE_RANK)
                 {
-                    //
                 }
                 else if(part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
                 {
@@ -113,10 +114,10 @@ TEST(StkIo, write_stk_mesh_to_file)
                 {
                     //
                 }
-                else if(part->primary_entity_rank() == stk::topology::EDGE_RANK)
-                {
-                    //
-                }
+                //else if(part->primary_entity_rank() == stk::topology::EDGE_RANK)
+                //{
+                //    //
+                //}
             }
         }
 
@@ -262,4 +263,48 @@ TEST(StkIo, check_memory)
     }
 }
 
+class StkIoResultsOutput : public stk::unit_test_util::MeshFixture
+{
+protected:
+    void setup_mesh(const std::string & meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        setup_empty_mesh(auraOption);
+
+        stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
+        const int initValue = 0;
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &initValue);
+
+        stk::io::fill_mesh(meshSpec, get_bulk());
+    }
+};
+
+TEST_F(StkIoResultsOutput, write_nodal_face_variable_multiple_procs)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+    //if (sierra::Env::parallel_size() != 2) return;
+
+    std::string meshSpec = stk::unit_test_util::get_option("--mesh-spec", "generated:1x1x2|sideset:z");
+
+    setup_mesh(meshSpec, stk::mesh::BulkData::NO_AUTO_AURA);
+
+    const std::string fileName = "nodal_field_as_face_variable.e";
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.set_bulk_data(get_bulk());
+    size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
+    stkIo.use_nodeset_for_sideset_nodes_fields(outputFileIndex, true);
+    stkIo.check_field_existence_when_creating_nodesets(outputFileIndex, false);
+
+    stk::mesh::FieldBase * nodalField = get_meta().get_field(stk::topology::NODE_RANK, "nodal_field");
+    ASSERT_TRUE(nodalField != nullptr);
+    stkIo.add_field(outputFileIndex, *nodalField, stk::topology::FACE_RANK, "nodal_field");
+    stkIo.write_output_mesh(outputFileIndex);
+    stkIo.begin_output_step(outputFileIndex, 0.0);
+    stkIo.write_defined_output_fields(outputFileIndex);
+    stkIo.end_output_step(outputFileIndex);
+
+    stk::mesh::MetaData meta(3);
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+    EXPECT_NO_THROW(stk::io::fill_mesh(fileName, bulk));
+    unlink(fileName.c_str());
+}
 }

@@ -1076,6 +1076,14 @@ namespace MueLu {
         curNorm  = rn[0];
         rate_ = as<MagnitudeType>(curNorm / prevNorm);
 
+        if (IsPrint(Statistics1))
+          GetOStream(Statistics1) << "iter:    "
+                                     << std::setiosflags(std::ios::left)
+                                     << std::setprecision(3) << i
+                                     << "           residual = "
+                                     << std::setprecision(10) << rn
+                                     << std::endl;
+
         if (tol > 0) {
           bool passed = true;
           for (LO k = 0; k < rn.size(); k++)
@@ -1085,14 +1093,6 @@ namespace MueLu {
           if (passed)
             return Converged;
         }
-
-        if (IsPrint(Statistics1))
-          GetOStream(Statistics1) << "iter:    "
-                                     << std::setiosflags(std::ios::left)
-                                     << std::setprecision(3) << i
-                                     << "           residual = "
-                                     << std::setprecision(10) << rn
-                                     << std::endl;
       }
     }
     return (tol > 0 ? Unconverged : Undefined);
@@ -1224,10 +1224,12 @@ namespace MueLu {
       }
 
       if (!aborted) {
+        std::string label = Levels_[0]->getObjectLabel();
         std::ostringstream oss;
-        oss << "\n--------------------------------------------------------------------------------\n" <<
-            "---                            Multigrid Summary                             ---\n"
-            "--------------------------------------------------------------------------------" << std::endl;
+        oss << std::setfill(' ');
+        oss << "\n--------------------------------------------------------------------------------\n";
+        oss << "---                            Multigrid Summary "  << std::setw(28) << std::left << label << "---\n";
+        oss << "--------------------------------------------------------------------------------" << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;

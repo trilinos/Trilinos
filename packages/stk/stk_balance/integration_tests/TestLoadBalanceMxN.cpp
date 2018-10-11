@@ -1,23 +1,11 @@
 #include <test_utils/OptionsForTesting.hpp>
 #include <test_utils/MeshFixtureMxNRebalance.hpp>
-#include <Ioss_IOFactory.h>
 #include <Ioss_DatabaseIO.h>
-#include <Ioss_Region.h>
 #include <Ioss_CommSet.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_NodeBlock.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_Field.h>
-#include <stk_io/IossBridge.hpp>
-
-#include <Ioss_IOFactory.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_Region.h>
-#include <Ioss_CommSet.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_Field.h>
-#include <Ioss_NodeBlock.h>
-
 #include <stk_io/IossBridge.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_balance/internal/MxNutils.hpp>
@@ -143,6 +131,7 @@ TEST_F(TestBalanceMxNRebalanceUsingInputFiles, read4procswrite4procsFilesUsingIo
         stk::mesh::comm_mesh_counts(get_bulk(), counts);
         int global_num_nodes = counts[stk::topology::NODE_RANK];
         int global_num_elems = counts[stk::topology::ELEM_RANK];
+
         stk::io::write_file_for_subdomain(get_output_filename(),
                                           get_bulk().parallel_rank(),
                                           get_bulk().parallel_size(),
@@ -152,6 +141,7 @@ TEST_F(TestBalanceMxNRebalanceUsingInputFiles, read4procswrite4procsFilesUsingIo
                                           nodeSharingInfo,
                                           numSteps,
                                           maxTime);
+
         verify_node_sharing_info(nodeSharingInfo, get_output_filename());
     }
 }

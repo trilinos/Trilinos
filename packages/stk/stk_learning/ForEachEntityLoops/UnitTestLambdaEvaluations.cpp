@@ -140,7 +140,7 @@ TEST(LambdaEvaluation, capture_sum_with_macro)
 
     std::vector<int> vec(10, 2);
     transformOverVector(vec,
-        STK_LAMBDA_USING(extra, &sum)(int x)
+        STK_LAMBDA_USING(&sum)(int x)
         {
             sum += x + extra;
         }

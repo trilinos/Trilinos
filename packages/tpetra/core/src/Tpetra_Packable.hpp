@@ -43,21 +43,23 @@
 #define TPETRA_PACKABLE_DECL_HPP
 
 /// \file Tpetra_Packable.hpp
-/// \brief Abstract base class for sources of an Import or Export,
-///   that also know how to pack themselves.
+/// \brief Declaration of Tpetra::Packable
 
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
+#include "Tpetra_Packable_fwd.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // Forward declarations
+  template <class T> class Array;
+  template <class T> class ArrayView;
+} // namespace Teuchos
 
 namespace Tpetra {
+  class Distributor; // forward declaration
+} // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  // Forward declaration of Distributor.  We don't actually need to
-  // include Distributor here, since we only refer to it by reference
-  // in this file and don't call any of its methods or refer to any of
-  // its fields.  Subclasses should be sure to include
-  // Tpetra_Distributor.hpp.
-  class Distributor;
-
+namespace Tpetra {
   /// \class Packable
   /// \brief Abstract base class for objects that can be the source of
   ///   an Import or Export operation, and that also know how to pack
@@ -92,7 +94,8 @@ namespace Tpetra {
   /// an Import or Export.  Packable exists mainly for syntactic
   /// enforcement of the interface needed for an object to know how to
   /// pack itself for an Import or Export.
-  template<class Packet, class LocalOrdinal>
+  template<class Packet,
+           class LocalOrdinal>
   class Packable {
   public:
     /// \brief Pack the object's data for an Import or Export.
@@ -126,10 +129,9 @@ namespace Tpetra {
           size_t& constantNumPackets,
           Distributor &distor) const = 0;
 
-    //! Destructor (declared virtual for memory safety of derived classes).
+    //! Destructor (virtual for memory safety of derived classes).
     virtual ~Packable () {}
   };
-
 } // namespace Tpetra
 
 #endif /* TPETRA_PACKABLE_DECL_HPP */

@@ -380,10 +380,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     Z2_THROW_NOT_IMPLEMENTED
   }
 
+  double *dcoords = new double [num_nodes_ * dimension_];
   coords_ = new scalar_t [num_nodes_ * dimension_];
 
-  error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
-			   coords_ + 2 * num_nodes_);
+  error += im_ex_get_coord(exoid, dcoords, dcoords + num_nodes_,
+			   dcoords + 2 * num_nodes_);
+
+  size_t dlen = num_nodes_ * dimension_;
+  for (size_t i = 0; i < dlen; i++) coords_[i] = as<scalar_t>(dcoords[i]);
+  delete [] dcoords;
   
   element_num_map_ = new gno_t[num_elem_];
   std::vector<int> tmp;

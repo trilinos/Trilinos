@@ -4,7 +4,7 @@
 #include "balanceTypes.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include "stk_balance/internal/privateDeclarations.hpp"
@@ -27,7 +27,7 @@ std::vector<int> get_components_to_move(const stk::mesh::BulkData& bulk, const s
 
 bool detectAndFixMechanisms(const stk::balance::BalanceSettings& graphSettings, stk::mesh::BulkData &bulk)
 {
-    stk::mesh::Ghosting * customAura = internal::create_custom_ghosting(bulk);
+    stk::mesh::Ghosting * customAura = internal::create_custom_ghosting(bulk, graphSettings);
     stk::mesh::impl::LocalIdMapper localIds(bulk, stk::topology::ELEM_RANK);
 
     Zoltan2ParallelGraph zoltan2Graph;

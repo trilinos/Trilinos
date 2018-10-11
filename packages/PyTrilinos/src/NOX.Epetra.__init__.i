@@ -92,7 +92,7 @@ from . import ___init__
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // EpetraExt include files
-#ifdef HAVE_NOX_EPETRAEXT
+#ifdef HAVE_PYTRILINOS_NOX_EPETRAEXT
 #include "PyTrilinos_EpetraExt_Headers.hpp"
 #endif
 
@@ -176,7 +176,7 @@ del sys, op
 %#if PY_VERSION_HEX >= 0x03000000
 
 // EpetraExt import
-#ifdef HAVE_NOX_EPETRAEXT
+#ifdef HAVE_PYTRILINOS_NOX_EPETRAEXT
 %ignore EpetraExt::Add;
 %import "EpetraExt.i"
 #endif
@@ -240,7 +240,7 @@ del sys, op
 /////////////////////////////////////////////////
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
-#ifdef HAVE_NOX_EPETRAEXT
+#ifdef HAVE_PYTRILINOS_NOX_EPETRAEXT
 %teuchos_rcp(NOX::Epetra::FiniteDifferenceColoring)
 namespace NOX
 {
@@ -316,7 +316,7 @@ namespace Epetra
 ////////////////////////////////////////////////
 // NOX.Epetra.ModelEvaluatorInterface support //
 ////////////////////////////////////////////////
-#ifdef HAVE_NOX_EPETRAEXT
+#ifdef HAVE_PYTRILINOS_NOX_EPETRAEXT
 %teuchos_rcp(NOX::Epetra::ModelEvaluatorInterface)
 %import "EpetraExt.i"
 namespace NOX

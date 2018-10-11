@@ -135,24 +135,6 @@ void BucketRepository::internal_custom_sort_bucket_entities(const EntitySorterBa
             partition->sort(sorter);
 }
 
-
-
-
-void BucketRepository::optimize_buckets()
-{
-  for (std::vector<std::vector<Partition *> >::const_iterator
-         i = m_partitions.begin() ; i != m_partitions.end() ; ++i  )
-  {
-    const std::vector<Partition *> & pset = *i ;
-    for ( std::vector<Partition*>::const_iterator
-            ip = pset.begin() ; ip != pset.end() ; ++ip )
-    {
-      (*ip)->compress();
-    }
-  }
-}
-
-
 void BucketRepository::add_entity_with_part_memberships(const stk::mesh::Entity entity,
                                                         const EntityRank arg_entity_rank,
                                                         const OrdinalVector &parts)

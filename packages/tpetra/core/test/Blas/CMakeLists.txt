@@ -8,12 +8,46 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   gemm
   SOURCES
     gemm
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  gemm
+  NAME gemm_m_eq_1
+  ARGS "--M=1"
+  COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  )
+)
+
+TRIBITS_ADD_TEST(
+  gemm
+  NAME gemm_m_eq_2
+  ARGS "--M=2"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  gemm
+  NAME gemm_m_eq_5
+  ARGS "--M=5"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  gemm
+  NAME gemm_m_eq_13
+  ARGS "--M=13"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)

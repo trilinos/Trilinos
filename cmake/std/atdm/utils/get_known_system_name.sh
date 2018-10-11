@@ -38,6 +38,9 @@ elif [[ $THIS_HOSTNAME == "serrano"* ]] ; then
 elif [[ $THIS_HOSTNAME == "mutrino"* ]] ; then
   ATDM_HOSTNAME=mutrino
   ATDM_SYSTEM_NAME=mutrino
+elif [[ $THIS_HOSTNAME == "waterman"* ]] ; then
+  ATDM_HOSTNAME=waterman
+  ATDM_SYSTEM_NAME=waterman
 elif [[ -f /projects/sparc/modules/cee-rhel6/sparc/master ]] ; then
   ATDM_SYSTEM_NAME=cee-rhel6
   ATDM_HOSTNAME=cee-rhel6

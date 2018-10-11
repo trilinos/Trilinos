@@ -484,6 +484,17 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: phase3 avoid singletons</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
     <parameter>
       <name>aggregation: allow empty prolongator columns</name>
@@ -782,6 +793,24 @@
     </parameter>
 
     <parameter>
+      <name>gmg: interpolation order</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.</description>
+      <visible></visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>gmg: build coarse coordinates</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>If false, skip the calculation of coarse coordinates.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>transfer: params</name>
       <type>\parameterlist</type>
       <visible>false</visible>
@@ -796,7 +825,6 @@
       <description>Element class for IntrepidPCoarsening</description>
       <visible>false</visible>
     </parameter>
-
 
     <parameter>
       <name>pcoarsen: schedule</name>
@@ -1043,10 +1071,38 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals threshold</name>
+      <type>double</type>
+      <default>0.</default>
+      <description>Threshold at which diagonal entry is considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
       <description>Shift to use in the RAPShiftFactory</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift diagonal M</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Shift for the RAPShiftFactory is stored as a
+      vector (representing the matrix diagonal)</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift low storage</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Use the low-storage version of the rap: shift</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>

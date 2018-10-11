@@ -125,7 +125,9 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    typedef typename RealValuedMultiVector::scalar_type coord_type;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
@@ -187,8 +189,8 @@ namespace MueLu {
 
       // Fill in coarse coordinates
       for (int dim = 0; dim < numDimensions; ++dim) {
-        ArrayRCP<const coord_type> fineCoordsData = ghostedCoords->getData(dim);
-        ArrayRCP<coord_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
+        ArrayRCP<const real_type> fineCoordsData = ghostedCoords->getData(dim);
+        ArrayRCP<real_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
 
         for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
           if (procWinner[lnode] == myPID &&

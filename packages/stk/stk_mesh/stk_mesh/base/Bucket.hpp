@@ -42,7 +42,7 @@
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
 #include <stk_mesh/base/Types.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssert, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert, etc
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
@@ -137,16 +137,8 @@ private:
   std::vector<unsigned>  m_key ;         // REFACTOR
   const size_t           m_capacity ;    // Capacity for entities
   size_type              m_size ;        // Number of entities
-  Bucket               * m_bucket ;      // Pointer to head of partition, but head points to tail
   unsigned               m_bucket_id;    // Index into its BucketRepository's m_bucket[entity_rank()], these are NOT unique
   PartVector             m_parts;
-
-  //m_nodes_per_entity is how many connected-nodes (downward relations) exist
-  //for each entity in this bucket.
-  //If this is a node bucket or a bucket without a valid topology, then
-  //m_nodes_per_entity will be 0.
-  //TODO: This can go away once BucketConnectivity is fully live
-  unsigned               m_nodes_per_entity;
 
   // Entity data
   std::vector<Entity>    m_entities;    // Array of entity handles; will be removed soon
@@ -248,12 +240,6 @@ public:
   {
     return std::pair<const unsigned *, const unsigned *>
       ( key() + 1 , key() + key()[0] );
-  }
-
-  /** \brief Equivalent buckets have the same parts
-   */
-  bool in_same_partition( const Bucket& b ) const {
-    return first_bucket_in_partition() == b.first_bucket_in_partition();
   }
 
 #ifndef DOXYGEN_COMPILE
@@ -449,22 +435,9 @@ private:
   //  Optional fields argument, only copy listed fields
   void reset_entity_location(Entity entity, size_type to_ordinal, const std::vector<FieldBase*>* fields = NULL);
 
-  // BucketKey key = ( part-count , { part-ordinals } , counter )
-  //  key[ key[0] ] == counter
-  unsigned bucket_counter() const { return m_key[ m_key[0] ]; }
-
   size_type get_others_begin_index(size_type bucket_ordinal, EntityRank rank) const;
   size_type get_others_end_index(size_type bucket_ordinal, EntityRank rank) const;
   size_type get_others_index_count(size_type bucket_ordinal, EntityRank rank) const;
-
-  Bucket * last_bucket_in_partition() const;
-  Bucket * first_bucket_in_partition() const;
-  void set_last_bucket_in_partition( Bucket * last_bucket );
-  void set_first_bucket_in_partition( Bucket * first_bucket );
-  void set_partition_pointer( Bucket * bucket ) { m_bucket = bucket; }
-  const Bucket * get_partition_pointer() const { return m_bucket; }
-
-  Bucket * last_bucket_in_partition_impl() const;
 
   template <typename T>
   void modify_connectivity(T& callable, EntityRank rank);
@@ -472,10 +445,14 @@ private:
   template <typename T>
   void modify_all_connectivity(T& callable, Bucket* other_bucket=NULL);
 
-#ifdef NDEBUG
-inline
+  void check_for_invalid_connectivity_request(ConnectivityType const* type) const
+  {
+#ifndef NDEBUG
+    debug_check_for_invalid_connectivity_request(type);
 #endif
-  void check_for_invalid_connectivity_request(ConnectivityType const* type) const;
+  }
+
+  void debug_check_for_invalid_connectivity_request(ConnectivityType const* type) const;
 };
 #undef CONNECTIVITY_TYPE_SWITCH
 #undef RANK_SWITCH
@@ -683,12 +660,6 @@ void Bucket::modify_connectivity(T& callable, EntityRank rank)
     break;
   }
 }
-
-#ifdef NDEBUG
-inline
-void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type) const
-{}
-#endif
 
 typedef Bucket::iterator BucketIterator;
 

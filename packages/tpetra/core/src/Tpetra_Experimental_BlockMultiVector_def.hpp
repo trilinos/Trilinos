@@ -919,6 +919,8 @@ blockJacobiUpdate (const Scalar& alpha,
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
-  template class Experimental::BlockMultiVector< S, LO, GO, NODE >;
+  namespace Experimental { \
+    template class BlockMultiVector< S, LO, GO, NODE >; \
+  }
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP

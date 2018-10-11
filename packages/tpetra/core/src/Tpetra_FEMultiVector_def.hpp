@@ -44,13 +44,12 @@
 
 /// \file Tpetra_MultiVector_def.hpp
 /// \brief Definition of the Tpetra::MultiVector class
-///
-#include "Tpetra_FEMultiVector_decl.hpp"
-#include "Tpetra_MultiVector_def.hpp"  // This might be a very bad idea
+
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Import.hpp"
 
 namespace Tpetra {
-
-
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -62,16 +61,16 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
   importer_(importer) {
 
   activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_TARGET));
-    
+
   // Sanity check the importer
   if(!importer_.is_null() && !importer_->getSourceMap()->isSameAs(*map)) {
     throw std::runtime_error("FEMultiVector: 'map' must match 'importer->getSourceMap()' if importer is provided");
   }
 
   if(!importer_.is_null()) {
-    // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements()) 
+    // Check maps to see if we can reuse memory (aka do numSames == domainMap->getNodeNumElements())
     if(importer_->getNumSameIDs() == importer->getSourceMap()->getNodeNumElements()) {
-      //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView      
+      //   1) If so, we then build the inactiveMultiVector_ (w/ source map) using a restricted DualView
       inactiveMultiVector_ = Teuchos::rcp(new base_type(importer_->getSourceMap(),Kokkos::subview(this->view_,Kokkos::pair<size_t,size_t>(0,map->getNodeNumElements()),Kokkos::ALL)));
     }
     else {
@@ -106,9 +105,9 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doSourceToTarget(
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
-  if(*activeMultiVector_ == FE_ACTIVE_TARGET) 
+  if(*activeMultiVector_ == FE_ACTIVE_TARGET)
     *activeMultiVector_ = FE_ACTIVE_SOURCE;
-  else 
+  else
     *activeMultiVector_ = FE_ACTIVE_TARGET;
 
   if(importer_.is_null()) return;
@@ -117,8 +116,6 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
   this->swap(*inactiveMultiVector_);
 
 }//end switchActiveMultiVector
-
-
 
 } // namespace Tpetra
 

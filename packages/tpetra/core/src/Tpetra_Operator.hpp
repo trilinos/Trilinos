@@ -42,12 +42,15 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#include <Tpetra_MultiVector_decl.hpp>
+#include <Tpetra_Operator_fwd.hpp>
+#include <Tpetra_MultiVector_fwd.hpp>
+#include <Tpetra_Map_fwd.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 namespace Tpetra {
+
   /// \class Operator
   /// \brief Abstract interface for operators (e.g., matrices and
   ///   preconditioners).
@@ -76,10 +79,10 @@ namespace Tpetra {
   /// different classes implement this interface, including sparse
   /// matrices, direct solvers, iterative solvers, and
   /// preconditioners.
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class Operator : virtual public Teuchos::Describable {
   public:
     /** \name Typedefs that give access to the template parameters. */
@@ -136,6 +139,6 @@ namespace Tpetra {
     return false;
   }
 
-} // Tpetra namespace
+} // namespace Tpetra
 
 #endif // TPETRA_OPERATOR_HPP

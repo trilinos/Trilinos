@@ -102,16 +102,8 @@ void
 WeakDirichletResidual<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(normal_dot_flux_plus_pen,fm);
-  this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(normal,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
-  this->utils.setFieldData(sigma,fm);
-
   num_ip = flux.extent(1);
   num_dim = flux.extent(2);
 
