@@ -40,6 +40,8 @@ if [ "$2" != "" ] ; then
   return
 fi
 
+export ATDM_CONFIG_JOB_NAME=$1
+
 #
 # B) Get the system name from the hostname
 #
@@ -54,8 +56,6 @@ fi
 #
 # C) Set ATDM_CONFIG_JOB_NAME and Trilinos base directory
 #
-
-export ATDM_CONFIG_JOB_NAME=$1
 
 # Get the Trilins base dir
 export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path $ATDM_SCRIPT_DIR/../../..`

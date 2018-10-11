@@ -11,11 +11,19 @@ if [ "$called" == "$0" ] ; then
   exit 1
 fi
 
+# Assert that ATDM_CONFIG_JOB_NAME is set!
+if [ -z "$ATDM_CONFIG_JOB_NAME" ] ; then
+  echo "Error, must set ATDM_CONFIG_JOB_NAME in env!"
+  return
+fi
+
 THIS_HOSTNAME=`hostname`
 #echo "Hostname = '$THIS_HOSTNAME'"
 
 ATDM_HOSTNAME=
 ATDM_SYSTEM_NAME=
+
+ATDM_IS_CEE_RHEL6_MACHINE=
 
 if [[ $THIS_HOSTNAME == "hansen"* ]] ; then
   ATDM_HOSTNAME=hansen
@@ -41,21 +49,50 @@ elif [[ $THIS_HOSTNAME == "mutrino"* ]] ; then
 elif [[ $THIS_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
-elif [[ -f /projects/sparc/modules/cee-rhel6/sparc/master ]] ; then
-  ATDM_SYSTEM_NAME=cee-rhel6
-  ATDM_HOSTNAME=cee-rhel6
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
+  # This machine has the SEMS modules!
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
   if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
-    ATDM_HOSTNAME=sems-rhel6
-    ATDM_SYSTEM_NAME=rhel6
+    # This is a RHEL6 platform that has the SEMS modules.  But is this also a
+    # CEE LAN mahcine?
+    if [[ -f /projects/sparc/modules/cee-rhel6/sparc/master ]] ; then
+      ATDM_IS_CEE_RHEL6_MACHINE=1
+    fi
+    # Now select the env based on the above logic
+    if [[ $ATDM_CONFIG_JOB_NAME == *"sems-rhel6"* ]] ; then
+      ATDM_HOSTNAME=sems-rhel6
+      ATDM_SYSTEM_NAME=sems-rhel6
+    elif [[ $ATDM_CONFIG_JOB_NAME == *"cee-rhel6"* ]] ; then
+      if [[ $ATDM_IS_CEE_RHEL6_MACHINE == "1" ]] ; then
+        # This is a CEE RHEL6 machine and 'cee-rhel6' was given in build name,
+        # so select the system name 'sem-rhel6'
+        ATDM_SYSTEM_NAME=cee-rhel6
+        ATDM_HOSTNAME=cee-rhel6
+      else
+        echo
+        echo "***"
+        echo "*** Error, hostname='$THIS_HOSTNAME' is a 'sems-rhel6' machine but is"
+        echo "*** is *not* a 'cee-rhel6' machine but 'cee-rhel6' was given in the"
+        echo "*** build name string '$ATDM_CONFIG_JOB_NAME'!  Please remove 'cee-rhel6'"
+	echo "*** from the build name or provide 'sems-rhel6' and then the 'sems-rhel6'"
+	echo "*** env will be used."
+        echo "***"
+        return
+      fi
+    else
+      # 'cee-rhel6' nor 'sems-rhel6' was set in the build name, so the default
+      # is to sue the 'sems-rhel6' env!
+      ATDM_HOSTNAME=sems-rhel6
+      ATDM_SYSTEM_NAME=sems-rhel6
+    fi
   fi
 fi
 
-# ToDo: Add more known hosts as you add them!
-
 if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
-  echo "Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
+  echo
+  echo "***"
+  echo "*** Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
+  echo "***"
   return
 else
   echo "Hostname '$THIS_HOSTNAME' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"

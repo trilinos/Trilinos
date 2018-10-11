@@ -263,12 +263,12 @@ The following `<system_name>` sub-directories exist (in alphabetical order):
 * `chama/`: Contains files to drive builds on the SRN HPC machine `chama`.
 
 * `mutrino/`: Contains files to drive builds on SNL machine mutrino.
- 
-* `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
-  environment.
 
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
+ 
+* `sems-rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
+  environment.
 
 * `sems_gcc-7.2.0/`: Contains driver scripts for an on-off GCC 7.2.0 build
   based on the SEMS system.  This build really does not fit into the system

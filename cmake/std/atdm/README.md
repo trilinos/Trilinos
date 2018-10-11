@@ -61,9 +61,21 @@ The `<job-name>` argument is a single string of the form
 `XXX-<keyword0>-<keyword1>-...`.  The standard order and format of this string
 is:
 
-    <compiler>-<debug_or_opt>-<kokkos_threading>-<kokkos_arch>
+    <system-name>-<compiler>-<debug_or_opt>-<kokkos_threading>-<kokkos_arch>
 
 Each of these keywords are described below.
+
+**`<system-name>`**: Typically, the system name is determined automatically by
+examining the `hostname` on the system and matching it to known hosts.
+Therefore, it is typically not necessary to specify `<system-name>` in the
+`<job-name>` keys.  But there are some cases where more then one
+`<system-name>` env are supported on the same machine.  For example, on CEE
+LAN RHEL6 machines, both the <a href="#sems-rhel6-environment">SEMS RHEL6
+env</a> and <a href="#cee-rhel6-environment">CEE RHEL6 env</a> are supported.
+On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in the build job
+name, then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is
+included in the job name or non system name is given, then the `sems-rhel6`
+env will be selected by default.
 
 **`<compiler>`:** The following **lower case** `<job-name>` keywords specify
 the `<COMPILER>` variable include:
@@ -136,6 +148,10 @@ Some examples of `<job-name>` keyword sets used on various platforms include:
 * `gnu-opt-openmp`
 * `intel-debug-openmp`
 * `intel-opt-openmp`
+* `sems-rhel6-gnu-debug-openmp`
+* `cee-rhel6-gnu-debug-openmp`
+* `sems-rhel6-intel-opt-openmp`
+* `cee-rhel6-intel-opt-openmp`
 * `intel-debug-openmp-KNL`
 * `intel-opt-openmp-HSW`
 * `cuda-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
@@ -297,6 +313,7 @@ the `checkin-test-atdm.sh` script is run and will set these as the defaults
 * <a href="#chamaserrano">chama/serrano</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
+* <a href="#cee-rhel6-environment">CEE rhel6 environment</a>
 * <a href="#waterman">waterman</a>
 
 
@@ -469,16 +486,16 @@ order to drive jobs and submit to CDash.
 
 ### SEMS rhel6 environment
 
-Once logged on to a rhel6 machine with the sems NFS, one can directly
+Once logged on to a rhel6 machine with the sems NFS env, one can directly
 configure, build, and run tests.  For example, to configure, build and run the
-tests for `MueLu` one would clone Trilinos on the `develop` branch and then
-do the following:
+tests for `MueLu` one would clone Trilinos on the `develop` branch and then do
+the following:
 
 
 ```
 $ cd <some_build_dir>/
 
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh sems-rhel6-intel-opt-openmp
 
 $ cmake \
   -GNinja \
@@ -490,6 +507,68 @@ $ make NP=16
 
 $ ctest -j16 \
 ```
+
+NOTE: Above including `sems-rhel6` in the job build name
+`sems-rhel6-intel-opt-openmp` is not necessary but is recommended when on a
+CEE LAN RHEL6 machine to be explicit that the SEMS env is being used and not
+the <a href="#cee-rhel6-environment">CEE RHEL6 env</a>.
+
+One can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ ./checkin-test-atdm.sh sems-rhel6-clang-opt-openmp \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+
+### CEE RHEL6 environment
+
+Once logged into any CEE LAN RHEL6 SRN machine, one can configure, build, and
+run tests for any ATDM Trilinos package.  For example, to configure, build and
+run the tests for the `cee-rhel6-clang-opt-openmp` build for say `MueLu` on a
+CEE LAN machine, (after cloning Trilinos on the `develop` branch) one would
+do:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel6-clang-opt-openmp
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=16
+
+$ ctest -j16
+```
+
+NOTE: Above one must include `cee-rhel6` in the build job name
+`cee-rhel6-clang-opt-openmp` in order to select the `cee-rhel6` env on a CEE
+LAN RHEL6 machine or the <a href="#sems-rhel6-environment">sems-rhel6</a> env
+will be used by default.
+
+One can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ env ATDM_CHT_DEFAULT_ENV=cee-rhel6-default \
+  ./checkin-test-atdm.sh cee-rhel6-clang-opt-openmp \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=cee-rhel6-default` in the env
+when passing in `all` in order for it to select the correct set of supported
+builds for the `cee-rhel6` env.
 
 
 ### waterman
@@ -826,14 +905,17 @@ after the test was fixed.)
 
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
+
+* `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
+
 * `chama/`: Supports SNL HPC machine `chama`.
 
 * `mutrino/`: Supports SNL HPC machine `mutrino`.
 
-* `rhel6/`: RHEL6 systems with the SEMS NFS environment
-
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
   mirror SON machine `white`.
+
+* `sems-rhel6/`: RHEL6 systems with the SEMS NFS environment
 
 * `serrano/`: Supports SNL HPC machine `serrano`.
 
