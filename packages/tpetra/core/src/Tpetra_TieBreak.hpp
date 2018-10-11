@@ -50,7 +50,6 @@
 
 namespace Tpetra {
 namespace Details {
-namespace Classes {
 
   /// \class TieBreak
   /// \brief Interface for breaking ties in ownership.
@@ -128,7 +127,6 @@ namespace Classes {
                    const std::vector<std::pair<int, LocalOrdinal> >& pid_and_lid) const = 0;
   };
 
-} // namespace Classes
 } // namespace Details
 } // namespace Tpetra
 

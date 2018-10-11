@@ -47,31 +47,15 @@
 /// \file Tpetra_Details_LocalMap_fwd.hpp
 /// \brief Forward declaration of Tpetra::Details::LocalMap
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
 namespace Details {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of LocalMap.
-template <class LO, class GO, class DT> class LocalMap;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Details::Classes::LocalMap.
 template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class DeviceType = ::Tpetra::Details::DefaultTypes::node_type::device_type>
-using LocalMap = ::Tpetra::Details::Classes::LocalMap<LocalOrdinal, GlobalOrdinal, DeviceType>;
-
+class LocalMap;
 } // namespace Details
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_DETAILS_LOCALMAP_FWD_HPP

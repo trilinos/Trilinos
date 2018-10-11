@@ -175,51 +175,29 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
 ENDIF()
 
-# Remove input xml files and results.
-# This is so we don't run any old files when we reconfigure with a different instantiation.
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/EasyParameterListInterpreter)
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/EasyParameterListInterpreter-heavy)
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/FactoryParameterListInterpreter)
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/FactoryParameterListInterpreter-heavy)
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/MLParameterListInterpreter)
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/MLParameterListInterpreter2)
-FILE(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/Output)
 
 # Select appropriate set of input and gold files, add make target for rebase.
+
+ADD_SUBDIRECTORY(default)
+
 IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
-  IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default)
+  ADD_SUBDIRECTORY(complex)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  ADD_SUBDIRECTORY(kokkos)
+
+  IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT OR ${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG)
     ADD_SUBDIRECTORY(kokkos-complex)
-
-    ADD_CUSTOM_TARGET(
-      rebase
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/kokkos-complex/Output/rebase.sh
-      )
-  ELSE()
-    ADD_SUBDIRECTORY(complex)
-
-    ADD_CUSTOM_TARGET(
-      rebase
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/complex/Output/rebase.sh
-      )
-  ENDIF()
-ELSE()
-  IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor_Use_By_Default)
-    ADD_SUBDIRECTORY(kokkos)
-
-    ADD_CUSTOM_TARGET(
-      rebase
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Output/rebase.sh
-      )
-  ELSE()
-    ADD_SUBDIRECTORY(default)
-
-    ADD_CUSTOM_TARGET(
-      rebase
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Output
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/default/Output/rebase.sh
-      )
   ENDIF()
 ENDIF()
+
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(rebase_cp
+  SOURCE_FILES rebase.sh
+  )
+
+ADD_CUSTOM_TARGET(
+  rebase
+  COMMAND ./rebase.sh "${CMAKE_CURRENT_SOURCE_DIR}"
+  )

@@ -51,7 +51,8 @@
 
 #include <Xpetra_EpetraComm.hpp>
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
+#include "Tpetra_Core.hpp"
 
 // This driver simply tests Teuchos2Epetra_Comm
 
@@ -60,36 +61,21 @@ int main(int argc, char** argv)
   typedef int                                                       Ordinal;
   typedef double                                                    Scalar;
 
-  typedef Tpetra::MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType> MpiPlatform;
-  typedef Tpetra::SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> SerialPlatform;
-
-  typedef MpiPlatform::NodeType                                     MpiNodeType;
-  typedef SerialPlatform::NodeType                                  SerialNodeType;
-
   using namespace Teuchos;
 
   oblackholestream blackhole;
   GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  ParameterList pl;
-
-  Ordinal numThreads=1;
-  pl.set("Num Threads",numThreads);
-  RCP<MpiNodeType> mpiNode = rcp(new MpiNodeType(pl));
-  RCP<SerialNodeType> serialNode = rcp(new SerialNodeType(pl));
-
-  MpiPlatform    myMpiPlat(mpiNode);
-  SerialPlatform mySerialPlat(serialNode);
-
   {
-    RCP<const Comm<int> > teuchosComm = mySerialPlat.getComm();
+    RCP<const Comm<int> > serialTeuchosComm = rcp (new SerialComm<int>);
+    RCP<const Comm<int> > teuchosComm = rcp_implicit_cast<const SerialComm<int> > (serialTeuchosComm);
     RCP<const Epetra_Comm> epetraComm = Teuchos2Epetra_Comm(teuchosComm);
 
     assert(epetraComm != Teuchos::null);
   }
 
   {
-    RCP<const Comm<int> > teuchosComm = myMpiPlat.getComm();
+    RCP<const Comm<int> > teuchosComm = Tpetra::getDefaultComm();
     RCP<const Epetra_Comm> epetraComm = Teuchos2Epetra_Comm(teuchosComm);
 
     assert(epetraComm != Teuchos::null);

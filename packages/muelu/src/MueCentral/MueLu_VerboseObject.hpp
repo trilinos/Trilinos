@@ -113,9 +113,9 @@ namespace MueLu {
 
     Teuchos::FancyOStream & GetBlackHole() const;
 
-    static void SetDefaultOStream(const Teuchos::RCP<Teuchos::FancyOStream> &defaultOStream);
+    static void SetMueLuOStream(const Teuchos::RCP<Teuchos::FancyOStream> &mueluOStream);
 
-    static Teuchos::RCP<Teuchos::FancyOStream> GetDefaultOStream();
+    static Teuchos::RCP<Teuchos::FancyOStream> GetMueLuOStream();
 
     //! @name Public static member functions
     //@{

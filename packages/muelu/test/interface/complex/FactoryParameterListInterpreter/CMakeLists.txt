@@ -5,7 +5,7 @@
 # FILE TO FORCE THE RECONFIGURE ON OTHER PEOPLE'S BUILDS.
 FILE(GLOB xmlFiles RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.xml)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_FactoryParameterListInterpreter_cp
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_complex_FactoryParameterListInterpreter_cp
   SOURCE_FILES ${xmlFiles}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/../../FactoryParameterListInterpreter/
+  
   )
