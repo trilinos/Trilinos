@@ -259,6 +259,9 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
+ 
+* `cee-rhel6/`: Contains files to drive builds on CEE LAnL RHEL6 machines with
+  a SEMS environment.
 
 * `chama/`: Contains files to drive builds on the SRN HPC machine `chama`.
 
