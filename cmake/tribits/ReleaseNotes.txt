@@ -1,19 +1,25 @@
 ----------------------------------------
 Release Notes for TriBITS
 ----------------------------------------
+
+2108/10/10:
+
+(*) MAJOR: TriBITS Core: Changed minimum CMake version from 2.8.11 to 3.10.0.
+
 2017/09/25:
 
-(*) MINOR: Added cache and enve vars CTEST_SUBMIT_RETRY_COUNT and
-    CTEST_SUBMIT_RETRY_DELAY to allow the number of ctest_submit() submit
-    attemtps to retry and how how log to pause between retries.  Before, these
-    were hard-coded to 25 and 120 respectively, which means that something
-    like a MySQL insertion error could consume as much as 50 minutes befor
-    moving on!  The new defalts are set at 5 retries with a 3 sec delay (which
-    appear to be the CTest defaults).
+(*) MINOR: TriBITS CTest Driver: Added cache and enve vars
+    CTEST_SUBMIT_RETRY_COUNT and CTEST_SUBMIT_RETRY_DELAY to allow the number
+    of ctest_submit() submit attemtps to retry and how how log to pause
+    between retries.  Before, these were hard-coded to 25 and 120
+    respectively, which means that something like a MySQL insertion error
+    could consume as much as 50 minutes befor moving on!  The new defalts are
+    set at 5 retries with a 3 sec delay (which appear to be the CTest
+    defaults).
 
 2017/09/30:
 
-(*) MINOR: Added TEST_<IDX> COPY_FILES_TO_TEST_DIR block for
+(*) MINOR: TriBITS Core: Added TEST_<IDX> COPY_FILES_TO_TEST_DIR block for
     TRIBITS_ADD_ADVANCED_TEST().  This was added in such a way so to avoid
     clashing with existing usages of the script (since the new arguments
     SOURCE_DIR and DEST_DIR are only parsed if COPY_FILES_TO_TEST_DIR is
@@ -21,8 +27,8 @@ Release Notes for TriBITS
 
 2017/09/05:
 
-(*) MINOR: Unparsed and otherwise ignored arguments are now flagged (see
-    developers guide documentation for
+(*) MINOR: TriBITS Core: Unparsed and otherwise ignored arguments are now
+    flagged (see developers guide documentation for
     ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS).  The default value is
     'WARNING' which results in simply printing a warning but allow configure
     to complete.  This allows one to see the warnings but for the project to
@@ -31,8 +37,8 @@ Release Notes for TriBITS
 
 2017/06/24:
 
-(*) MINOR: Add new all-at-once more for CTest -S driver scripts using
-    TRIBITS_CTEST_DRIVER() by setting the variable
+(*) MINOR: TriBITS CTest Driver: Add new all-at-once more for CTest -S driver
+    scripts using TRIBITS_CTEST_DRIVER() by setting the variable
     ${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE=TRUE.  This works with older versions
     of CMake/CTest and CDash but, by default, will just return a single glob
     of results, not breaking results out package-by-package.  Therefore, this
@@ -50,27 +56,27 @@ Release Notes for TriBITS
 
 2017/05/25:
 
-(*) MINOR: PARSE_ARGUMENTS() has been deprecated and replaced by
+(*) MINOR: TriBITS Core: PARSE_ARGUMENTS() has been deprecated and replaced by
     CMAKE_PARSE_ARGUMENTS() everywhere in TriBITS. Any call to
     PARSE_ARGUMENTS() will warn users and tell them to use
     CMAKE_PARSE_ARGUMENTS() instead.
 
 2017/05/17:
 
-(*) MAJOR: TriBITS now unconditionally sets
+(*) MAJOR: TriBITS Core: TriBITS now unconditionally sets
     ${PROJECT_NAME}_ENABLE_Fortran_DEFAULT to ON.  Projects will now need to
     put in special logic to set to OFF or ON for certain platforms.
 
 2017/01/11:
 
-(*) MINOR: TriBITS now correctly sets the default value for
+(*) MINOR: TriBITS Core: TriBITS now correctly sets the default value for
     DART_TESTING_TIMEOUT to 1500 seconds and will scale it by
     <Project>_SCALE_TEST_TIMEOUT even if DART_TESTING_TIMEOUT is not
     explicitly set.
 
 2016/12/07:
 
-(*) MAJOR: The long deprecated variable
+(*) MAJOR: TriBITS Core: The long deprecated variable
     ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE has been removed.  Upgrading
     existing TriBITS projects just requires a simple string replacement of
     _ENABLE_SECONDARY_STABLE_CODE with _ENABLE_SECONDARY_TESTED_CODE in all
@@ -80,11 +86,12 @@ Release Notes for TriBITS
 
 2016/11/02:
 
-(*) MAJOR: gitdist now accepts --dist-repos and --dist-not-repos arguments and
-    requires that the base repo '.' be explicitly listed in the
-    .gitdist[.default] files and in --dist-repos.  The arguments
-    --dist-extra-repos, --dist-not-extra-repos and --dist-not-base-repo are
-    not longer supported.  See gitdist --help for more details.
+(*) MAJOR: TriBITS Python Utils: gitdist now accepts --dist-repos and
+    --dist-not-repos arguments and requires that the base repo '.' be
+    explicitly listed in the .gitdist[.default] files and in --dist-repos.
+    The arguments --dist-extra-repos, --dist-not-extra-repos and
+    --dist-not-base-repo are not longer supported.  See gitdist --help for
+    more details.
 
 (*) MINOR: TriBITS projects now install with full RPATH set by default (see
     "Setting install RPATH" in build reference guide).

@@ -66,9 +66,12 @@ namespace MueLu {
   void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
+    bool makeNonAdjAggs = false;
     bool error_on_isolated = false;
     if(params.isParameter("aggregation: error on nodes with no on-rank neighbors"))
-      params.get<bool>("aggregation: error on nodes with no on-rank neighbors");
+      error_on_isolated = params.get<bool>("aggregation: error on nodes with no on-rank neighbors");
+    if(params.isParameter("aggregation: phase3 avoid singletons"))
+      makeNonAdjAggs = params.get<bool>("aggregation: phase3 avoid singletons");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -87,6 +90,7 @@ namespace MueLu {
        // We don't want a singleton. So lets see if there is an unaggregated
        // neighbor that we can also put with this point.
        bool isNewAggregate = false;
+       bool failedToAggregate = true;
        for (int j = 0; j < neighOfINode.size(); j++) {
          LO neigh = neighOfINode[j];
 
@@ -103,9 +107,13 @@ namespace MueLu {
 
        if (isNewAggregate) {
          // Create new aggregate (not singleton)
+         aggStat     [i] = AGGREGATED;
+         procWinner  [i] = myRank;
+         numNonAggregatedNodes--;
          aggregates.SetIsRoot(i);
          vertex2AggId[i] = numLocalAggregates++;
 
+         failedToAggregate = false;
        } else {
          // We do not want a singleton, but there are no non-aggregated
          // neighbors. Lets see if we can connect to any other aggregates
@@ -123,7 +131,45 @@ namespace MueLu {
          if (j < neighOfINode.size()) {
            // Assign to an adjacent aggregate
            vertex2AggId[i] = vertex2AggId[neighOfINode[j]];
-         } else if (error_on_isolated) {
+           numNonAggregatedNodes--;   
+           failedToAggregate = false;
+         } 
+       }
+
+       if (failedToAggregate && makeNonAdjAggs) {
+         //  it we are still didn't find an aggregate home for i (i.e., we have
+         //  a potential singleton), we are desperate. Basically, we seek to 
+         //  group i with any other local point to form an aggregate (even if
+         //  it is not a neighbor of i. Either we find a vertex that is already
+         //  aggregated or not aggregated.
+         //    1) if found vertex is aggregated, then assign i to this aggregate
+         //    2) if found vertex is not aggregated, create new aggregate
+         
+            
+         for (LO ii = 0; ii < numRows; ii++) { // look for anyone else
+           if ( (ii != i) && (aggStat[ii] != IGNORED) ) {
+             failedToAggregate = false;       // found someone so start
+             aggStat[i]   = AGGREGATED;  // marking i as aggregated
+             procWinner[i]= myRank;
+
+             if (aggStat[ii] == AGGREGATED)
+               vertex2AggId[i] = vertex2AggId[ii];
+             else {
+               vertex2AggId[i]  = numLocalAggregates;
+               vertex2AggId[ii] = numLocalAggregates;
+               aggStat     [ii] = AGGREGATED;
+               procWinner  [ii] = myRank;
+               numNonAggregatedNodes--;   // acounts for ii now being aggregated
+               aggregates.SetIsRoot(i);
+               numLocalAggregates++;
+             }
+             numNonAggregatedNodes--;   // accounts for i now being aggregated
+             break;
+           } //if ( (ii != i) && (aggStat[ii] != IGNORED ...
+         } //for (LO ii = 0; ...
+       }
+       if (failedToAggregate) {
+         if (error_on_isolated) {
            // Error on this isolated node, as the user has requested
            std::ostringstream oss;
            oss<<"MueLu::AggregationPhase3Algorithm::BuildAggregates: MueLu has detected a non-Dirichlet node that has no on-rank neighbors and is terminating (by user request). "<<std::endl;
@@ -136,13 +182,13 @@ namespace MueLu {
 
            aggregates.SetIsRoot(i);
            vertex2AggId[i] = numLocalAggregates++;
+           numNonAggregatedNodes--;
          }
        }
 
        // One way or another, the node is aggregated (possibly into a singleton)
        aggStat   [i] = AGGREGATED;
        procWinner[i] = myRank;
-       numNonAggregatedNodes--;
 
      }
 

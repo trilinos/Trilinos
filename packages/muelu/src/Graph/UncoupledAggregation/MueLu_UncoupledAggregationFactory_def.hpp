@@ -103,6 +103,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: use interface aggregation");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in AggregationFactory

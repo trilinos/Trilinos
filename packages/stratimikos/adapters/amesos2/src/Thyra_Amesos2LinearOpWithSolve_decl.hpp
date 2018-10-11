@@ -46,7 +46,6 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>

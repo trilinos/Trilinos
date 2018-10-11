@@ -21,9 +21,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  SET(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK YES)
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
+  SET(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK YES)
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
-IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR
-    (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
+IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_EXECUTABLE(
     Driver
@@ -60,7 +67,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   TRIBITS_ADD_EXECUTABLE(
     Reuse
     SOURCES Reuse.cpp
@@ -81,6 +88,24 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+
+  # The option TARGET_DEFINES calls cmake's target_compile_definitions under the hood.
+  # This defines the preprocessor macro MueLu_UNDEFINE_Tpetra solely for
+  # the target "ImportPerformanceEpetra".  This effectively allows compilation of the test with only
+  # Epetra defined.
+  # Here is the equivalent cmake call:
+  #   target_compile_definitions(MueLu_ImportPerformanceEpetra PUBLIC ${PACKAGE_NAME}_UNDEFINE_Tpetra=1)
+
+  TRIBITS_ADD_EXECUTABLE(
+    ImportPerformanceEpetra
+    SOURCES ImportPerformance
+    COMM mpi
+    TARGET_DEFINES ${PACKAGE_NAME}_UNDEFINE_Tpetra=1
+    )
+
+ENDIF()
+
 ENDIF() # Galeri
 
 #
@@ -89,7 +114,7 @@ ENDIF() # Galeri
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos AND (NOT Xpetra_INT_LONG_LONG))
+IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     TRIBITS_ADD_TEST(
@@ -139,14 +164,6 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
   ENDIF()
 
   TRIBITS_ADD_TEST(
-    ImportPerformance
-    NAME "ImportPerformance_Epetra"
-    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
-    NUM_MPI_PROCS 4
-    COMM mpi # HAVE_MPI required
-  )
-
-  TRIBITS_ADD_TEST(
     Driver
     NAME "RAPScalingTestEpetra"
     ARGS "--linAlgebra=Epetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
@@ -172,7 +189,31 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+
+  TRIBITS_ADD_TEST(
+    ImportPerformanceEpetra
+    NAME "ImportPerformance_Epetra"
+    ARGS "--linAlgebra=Epetra --nx=30 --ny=30"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+
+  TRIBITS_ADD_TEST(
+    ImportPerformance
+    NAME "ImportPerformance_Tpetra"
+    ARGS "--linAlgebra=Tpetra --nx=30 --ny=30"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)

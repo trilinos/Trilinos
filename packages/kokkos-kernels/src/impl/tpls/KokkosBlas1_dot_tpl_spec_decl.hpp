@@ -51,11 +51,12 @@ extern "C" double               ddot_( const int* N, const double* x, const int*
                                        const double* y, const int* y_inc);
 extern "C" float                sdot_( const int* N, const float* x, const int* x_inc,
                                        const float* y, const int* y_inc);
+/*
 extern "C" std::complex<double> zdotu_( const int* N, const std::complex<double>* x, const int* x_inc,
                                        const std::complex<double>* y, const int* y_inc);
 extern "C" std::complex<float>  cdotu_( const int* N, const std::complex<float>* x, const int* x_inc,
                                        const std::complex<float>* y, const int* y_inc);
-
+*/				    
 namespace KokkosBlas {
 namespace Impl {
 
@@ -131,6 +132,8 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   } \
 };
 
+#if 0
+
 #define KOKKOSBLAS1_ZDOT_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct Dot< \
@@ -195,17 +198,23 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   } \
 };
 
+#endif // 0
+
 KOKKOSBLAS1_DDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS1_DDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
 KOKKOSBLAS1_SDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS1_SDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
+#if 0
+
 KOKKOSBLAS1_ZDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS1_ZDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 
 KOKKOSBLAS1_CDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, true)
 KOKKOSBLAS1_CDOT_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
+
+#endif // 0
 
 }
 }
