@@ -51,7 +51,7 @@
 #   May be the same as cmake_version_min.
 #
 # cmake_version_rc:
-#   Latest available release candidate for vdir "v2.8" -- detected automatically
+#   Latest available release candidate for vdir "v3.10" -- detected automatically
 #   May be the same as the latest official release if there are no release
 #   candidates currently available.
 #
@@ -59,10 +59,10 @@
 #   Latest available build for vdir "vCVS" -- detected automatically
 #
 
-cmake_version_min = "2.8.11" # manual_update
+cmake_version_min = "3.10.0" # manual_update
 
-cmake_version_release = "2.8.11" # manual_update
+cmake_version_release = "3.10.0" # manual_update
 
-cmake_version_rc = "2.8.12.2" # auto_update v2.8
+cmake_version_rc = "3.12.0" # auto_update v2.8
 
-cmake_version_dev = "3.0.20140910-g9c6cf" # auto_update vCVS
+cmake_version_dev = "3.12.0" # auto_update vCVS

@@ -55,12 +55,11 @@
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class FEMultiVector :
     public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -199,7 +198,6 @@ namespace Classes {
     //@}
   }; // class FEMultiVector
 
-} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_FEMULTIVECTOR_DECL_HPP

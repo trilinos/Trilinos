@@ -81,10 +81,8 @@ fi
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ] ; then
 
   # Load the modules and set up env
-  module load devpack/20180521/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88
-  module swap openmpi openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
+  module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
   module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
-  module swap netcdf-exo/4.6.1/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88 netcdf/4.6.1/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
@@ -96,10 +94,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
     export ATDM_CONFIG_COMPILER=CUDA-9.2  # The default CUDA version currently
   fi
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
-    module load devpack/20180521/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88   
-    module swap openmpi openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
+    module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
     module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
-    module swap netcdf-exo/4.6.1/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88 netcdf/4.6.1/openmpi/3.1.0/gcc/7.2.0/cuda/9.2.88
   else
     echo
     echo "***"

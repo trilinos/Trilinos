@@ -91,7 +91,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -120,7 +120,7 @@ example subdirectory of the PyTrilinos package:
 %ignore *::operator<< ;
 
 // Epetra interface include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 
@@ -164,7 +164,7 @@ __version__ = TriUtils_Version().split()[3]
 ///////////////////////////
 // Trilinos_Util support //
 ///////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Trilinos_Util_read_hb;
 %ignore Trilinos_Util_read_coo;
 %rename (ReadHB) Trilinos_Util_ReadHb2Epetra;

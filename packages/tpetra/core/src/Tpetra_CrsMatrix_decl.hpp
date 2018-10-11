@@ -302,8 +302,6 @@ namespace Tpetra {
                                                                typename CrsMatrixType::node_type> >& rangeMap,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-namespace Classes {
-
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
   ///   lets users read or modify entries.
@@ -417,10 +415,10 @@ namespace Classes {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
@@ -4892,7 +4890,6 @@ namespace Classes {
       }
     };
   }; // class CrsMatrix
-} // namespace Classes
 
   /** \brief Non-member function to create an empty CrsMatrix given a
         row map and a non-zero profile.
@@ -4921,10 +4918,10 @@ namespace Classes {
                                                typename CrsMatrixType::node_type>& importer,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-				                               typename CrsMatrixType::node_type> >& domainMap,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-				                               typename CrsMatrixType::node_type> >& rangeMap,
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
@@ -4962,7 +4959,7 @@ namespace Classes {
                                                typename CrsMatrixType::node_type>& exporter,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-				                               typename CrsMatrixType::node_type> >& domainMap,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
                                                                typename CrsMatrixType::node_type> >& rangeMap,
