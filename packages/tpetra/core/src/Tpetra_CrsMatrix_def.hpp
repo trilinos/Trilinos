@@ -8193,7 +8193,6 @@ namespace Tpetra {
 	bool source_vals = ! getGraph ()->getImporter ().is_null();
 	bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 || rowTransfer.getRemoteLIDs ().size() == 0);
 	bool mismatch = source_vals != target_vals;
-
 	immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
     }
 
