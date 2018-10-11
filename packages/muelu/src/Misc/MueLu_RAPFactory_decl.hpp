@@ -115,9 +115,6 @@ namespace MueLu {
 
   private:
 
-    //! @name internal plausibility check methods
-    void CheckRepairMainDiagonal(RCP<Matrix>& Ac) const;
-
     //@{
 
 

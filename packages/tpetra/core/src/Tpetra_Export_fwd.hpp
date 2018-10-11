@@ -47,29 +47,13 @@
 /// \file Tpetra_Export_fwd.hpp
 /// \brief Forward declaration of Tpetra::Export
 
-namespace Tpetra {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Export.
-template <class LO, class GO, class N> class Export;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Classes::Export.
+namespace Tpetra {
 template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node = ::Tpetra::Details::DefaultTypes::node_type>
-using Export = Classes::Export<LocalOrdinal, GlobalOrdinal, Node>;
-
+class Export;
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_EXPORT_FWD_HPP

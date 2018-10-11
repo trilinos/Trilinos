@@ -50,7 +50,6 @@
 #include "Tpetra_Import.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -118,7 +117,6 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
 
 }//end switchActiveMultiVector
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -128,9 +126,7 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMulti
 //
 
 #define TPETRA_FEMULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  namespace Classes { \
-    template class FEMultiVector< SCALAR , LO , GO , NODE >; \
-  }
+  template class FEMultiVector< SCALAR , LO , GO , NODE >;
 
 #endif // TPETRA_FEMULTIVECTOR_DEF_HPP
 

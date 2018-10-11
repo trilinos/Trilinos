@@ -8,7 +8,6 @@ FILE(GLOB xmlFiles RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.xml)
 # disabling a test
 #LIST(REMOVE_ITEM xmlFiles default_e2d.xml)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_EasyParameterListInterpreter-heavy_cp
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_complex_EasyParameterListInterpreter-heavy_cp
   SOURCE_FILES ${xmlFiles}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/../../EasyParameterListInterpreter-heavy/
   )

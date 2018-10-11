@@ -200,14 +200,20 @@ namespace RBGen {
 
       std::vector<int> ret;
       if (LARGEST == which_) {
-        int num = find(svals.begin(),svals.end(),bind2nd(std::less<ScalarType>(),tval)) - svals.begin();
+        const int num = find(svals.begin(),svals.end(),
+                             [=] (const ScalarType sval) {
+                               return sval < tval;
+                             }) - svals.begin();
         ret.resize(num);
         for (int i=0; i<num; ++i) {
           ret.push_back(i);
         }
       }
       else if (SMALLEST == which_) {
-        int num = svals.end() - find(svals.begin(),svals.end(),bind2nd(std::less<ScalarType>(),tval)) + 1;
+        const int num = svals.end() - find(svals.begin(),svals.end(),
+                                           [=] (const ScalarType sval) {
+                                             return sval < tval;
+                                           }) + 1;
         ret.resize(num);
         for (int i=last-num+1; i<last; ++i) {
           ret.push_back(i);

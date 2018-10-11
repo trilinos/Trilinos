@@ -86,7 +86,7 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 
-#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 
 #include "Example_BCStrategy_Factory.hpp"
@@ -169,7 +169,7 @@ int main(int argc,char * argv[])
    // Build command line processor
    ////////////////////////////////////////////////////
 
-   bool useTpetra = false;
+   bool useTpetra = true;
    bool threeD = false;
    int x_elements=20,y_elements=20,z_elements=20;
    std::string celltype = "Quad"; // or "Tri" (2d), Hex or Tet (3d)
@@ -638,11 +638,10 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
   TEUCHOS_ASSERT(problem->setProblem());
 
-  typedef Belos::BlockGmresSolMgr<double,MV,OP> SolverType;
+  typedef Belos::PseudoBlockGmresSolMgr<double,MV,OP> SolverType;
 
   Teuchos::ParameterList belosList;
-  belosList.set( "Flexible Gmres", false );               // Flexible Gmres will be used to solve this problem
-  belosList.set( "Num Blocks", 1000 );            // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Blocks", 3000 );            // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", 1 );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", 5000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed

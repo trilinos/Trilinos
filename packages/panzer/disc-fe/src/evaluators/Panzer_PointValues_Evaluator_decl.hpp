@@ -77,7 +77,7 @@ class PointValues_Evaluator
     using ScalarT = typename EvalT::ScalarT;
 
   // is anything other than ScalarT really needed here?
-  PointValues2<ScalarT> pointValues;
+  PointValues2<double> pointValues;
  
   PHX::MDField<double,NODE,Dim> refPointArray;
 

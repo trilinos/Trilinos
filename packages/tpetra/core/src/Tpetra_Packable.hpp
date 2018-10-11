@@ -60,7 +60,6 @@ namespace Tpetra {
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
-namespace Classes {
   /// \class Packable
   /// \brief Abstract base class for objects that can be the source of
   ///   an Import or Export operation, and that also know how to pack
@@ -96,8 +95,7 @@ namespace Classes {
   /// enforcement of the interface needed for an object to know how to
   /// pack itself for an Import or Export.
   template<class Packet,
-           class LocalOrdinal =
-             ::Tpetra::Details::DefaultTypes::local_ordinal_type>
+           class LocalOrdinal>
   class Packable {
   public:
     /// \brief Pack the object's data for an Import or Export.
@@ -134,7 +132,6 @@ namespace Classes {
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~Packable () {}
   };
-} // namespace Classes
 } // namespace Tpetra
 
 #endif /* TPETRA_PACKABLE_DECL_HPP */

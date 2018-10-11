@@ -56,7 +56,6 @@
 #include <memory>
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1636,8 +1635,6 @@ namespace Classes {
   releaseViews () const
   {}
 
-} // namespace Classes
-
   template<class DistObjectType>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
@@ -1667,12 +1664,12 @@ namespace Classes {
 
 // Explicit instantiation macro for general DistObject.
 #define TPETRA_DISTOBJECT_INSTANT(SCALAR, LO, GO, NODE) \
-  namespace Classes { template class DistObject< SCALAR , LO , GO , NODE >; }
+  template class DistObject< SCALAR , LO , GO , NODE >;
 
 // Explicit instantiation macro for DistObject<char, ...>.
 // The "SLGN" stuff above doesn't work for Packet=char.
 #define TPETRA_DISTOBJECT_INSTANT_CHAR(LO, GO, NODE) \
-  namespace Classes { template class DistObject< char , LO , GO , NODE >; }
+  template class DistObject< char , LO , GO , NODE >;
 
 } // namespace Tpetra
 
