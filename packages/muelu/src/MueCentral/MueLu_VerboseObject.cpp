@@ -77,17 +77,7 @@ namespace MueLu {
       MPI_Comm_size(MPI_COMM_WORLD, &numProcs_);
     }
 #endif
-
-    // When Teuchos::VerboseObject is constructed, its default OStream is set to output only to processor 0.
-    // We have another machinery in place to decide when to output, so by default we want to always print.
-    static RCP<Teuchos::FancyOStream> defaultOStream;
-    if (defaultOStream.get() == NULL) {
-      defaultOStream = Teuchos::fancyOStream(rcpFromRef(std::cout));
-      defaultOStream->setOutputToRootOnly(-1);
-
-      setDefaultOStream(defaultOStream);
     }
-  }
 
   VerboseObject::~VerboseObject() { }
 
@@ -106,8 +96,6 @@ namespace MueLu {
   int VerboseObject::SetProcRankVerbose(int procRank) const {
     int oldRank = procRank_;
     procRank_ = procRank;
-    getOStream()->setProcRankAndSize(procRank_, numProcs_);
-
     return oldRank;
   }
 
@@ -119,7 +107,7 @@ namespace MueLu {
     if (!IsPrint(type, thisProcRankOnly))
       return *blackHole_;
 
-    Teuchos::FancyOStream& os = *getOStream();
+    Teuchos::FancyOStream& os = *GetMueLuOStream();
     if (!(type & ((Extreme | Test) ^ Warnings)))
       os << "\n******* WARNING *******" << std::endl;
 
@@ -140,13 +128,18 @@ namespace MueLu {
     return globalVerbLevel_;
   }
 
-  void VerboseObject::SetDefaultOStream(const Teuchos::RCP<Teuchos::FancyOStream>& defaultOStream) {
-    defaultOStream->setOutputToRootOnly(-1);
-    setDefaultOStream(defaultOStream);
+  void VerboseObject::SetMueLuOStream(const Teuchos::RCP<Teuchos::FancyOStream>& mueluOStream) {
+    mueluOStream->setOutputToRootOnly(-1);
+    GetMueLuOStream() = mueluOStream;
   }
 
-  Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::GetDefaultOStream() {
-    return getDefaultOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::GetMueLuOStream() {
+    static Teuchos::RCP<Teuchos::FancyOStream> mueluOutputStream;
+    if (mueluOutputStream.get()==NULL) {
+      mueluOutputStream = fancyOStream(rcpFromRef(std::cout));
+      mueluOutputStream->setOutputToRootOnly(-1);
+    }
+    return mueluOutputStream;
   }
 
   VerbLevel VerboseObject::globalVerbLevel_ = High; // Default global verbose level.

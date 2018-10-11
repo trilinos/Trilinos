@@ -52,17 +52,17 @@ if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
 fi
 
 #
-# C) Set JOB_NAME and Trilinos base directory
+# C) Set ATDM_CONFIG_JOB_NAME and Trilinos base directory
 #
 
-export JOB_NAME=$1
+export ATDM_CONFIG_JOB_NAME=$1
 
 # Get the Trilins base dir
 export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path $ATDM_SCRIPT_DIR/../../..`
 echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
 
 #
-# D) Parse $JOB_NAME for consumption by the system-specific environoment.sh
+# D) Parse $ATDM_CONFIG_JOB_NAME for consumption by the system-specific environoment.sh
 # script
 #
 

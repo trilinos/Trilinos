@@ -221,8 +221,6 @@ namespace Tpetra {
 
   } // namespace Details
 
-namespace Classes {
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
@@ -7006,7 +7004,6 @@ namespace Classes {
     transferAndFillComplete(destGraph, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -7015,7 +7012,7 @@ namespace Classes {
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) \
-  namespace Classes { template class CrsGraph< LO , GO , NODE >; }
+  template class CrsGraph< LO , GO , NODE >;
 
 #define TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   template<>                                                                        \

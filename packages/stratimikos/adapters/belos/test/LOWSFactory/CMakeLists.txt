@@ -19,14 +19,6 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  test_belos_nan_handler
-  SOURCES
-    test_stratimikos_belos_nan_handler.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  NUM_MPI_PROCS 1
-  )
-
 # FIXME (mfh 12 Dec 2011) The tests that use preconditioners will fail
 # if Trilinos was built without IFPACK support.  See e.g., line 101 of
 # test_single_belos_thyra_solver.cpp.  Fix this by making execution of

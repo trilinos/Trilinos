@@ -53,7 +53,6 @@
 
 namespace Tpetra {
 namespace Details {
-namespace Classes {
 
 /// \class LocalMap
 /// \brief "Local" part of Map suitable for Kokkos kernels.
@@ -211,7 +210,6 @@ private:
   bool contiguous_;
 };
 
-} // namespace Classes
 } // namespace Details
 } // namespace Tpetra
 

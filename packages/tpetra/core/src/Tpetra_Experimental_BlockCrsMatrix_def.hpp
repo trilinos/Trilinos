@@ -87,7 +87,6 @@
 
 namespace Tpetra {
 namespace Experimental {
-namespace Classes {
 
 namespace Impl {
 
@@ -1870,7 +1869,7 @@ public:
                           const Scalar alpha,
                           const Scalar beta)
   {
-    using ::Tpetra::Experimental::Classes::Impl::bcrsLocalApplyNoTrans;
+    using ::Tpetra::Experimental::Impl::bcrsLocalApplyNoTrans;
 
     const impl_scalar_type alpha_impl = alpha;
     const auto graph = this->graph_.getLocalGraph ();
@@ -3819,7 +3818,6 @@ public:
       "not implemented.");
   }
 
-} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 
@@ -3830,9 +3828,7 @@ public:
 //
 #define TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT(S,LO,GO,NODE) \
   namespace Experimental { \
-    namespace Classes { \
-      template class BlockCrsMatrix< S, LO, GO, NODE >; \
-    } \
+    template class BlockCrsMatrix< S, LO, GO, NODE >; \
   }
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_DEF_HPP

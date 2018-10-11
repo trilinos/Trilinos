@@ -79,7 +79,7 @@ bool   verbose    = false;
 
 ////////////////////////////////////////////////////////////////////////
 
-size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
+size_type convertLocalIndexToResult(const Domi::MDMap mdMap,
                                     int i)
 {
   size_type result;
@@ -117,7 +117,7 @@ size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
 
 ////////////////////////////////////////////////////////////////////////
 
-size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
+size_type convertLocalIndexToResult(const Domi::MDMap mdMap,
                                  int i,
                                  int j)
 {
@@ -159,7 +159,7 @@ size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
 
 ////////////////////////////////////////////////////////////////////////
 
-size_type convertLocalIndexToResult(const Domi::MDMap<> mdMap,
+size_type convertLocalIndexToResult(const Domi::MDMap mdMap,
                                  int i,
                                  int j,
                                  int k)
@@ -297,7 +297,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, mdVectorComm, Sca )
   // Construct the MDVector and extract the MDArrayView and MDMap
   Domi::MDVector< Sca >    mdVector(comm, plist);
   Domi::MDArrayView< Sca > mdArray = mdVector.getDataNonConst();
-  Teuchos::RCP< const Domi::MDMap<> > mdMap = mdVector.getMDMap();
+  Teuchos::RCP< const Domi::MDMap > mdMap = mdVector.getMDMap();
 
   // Reconstruct the periodicity flags so that we can legally check
   // periodicity along each axis

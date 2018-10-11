@@ -41,44 +41,47 @@
 # ***********************************************************************
 # @HEADER
 
-
 #
-# Package-specific configuration options
-IF(PyTrilinos_ENABLE_Epetra)
-  SET(HAVE_EPETRA ON)
-ENDIF()
-
-IF(PyTrilinos_ENABLE_Tpetra)
-  SET(HAVE_TPETRA ON)
-ENDIF()
-
-IF(PyTrilinos_ENABLE_Domi)
-  SET(HAVE_DOMI ON)
-ENDIF()
-
-IF(PyTrilinos_ENABLE_STK)
-  SET(HAVE_STK ON)
-ENDIF()
-
-IF(NOX_ENABLE_Epetra)
-  SET(HAVE_NOX_EPETRA ON)
-ENDIF(NOX_ENABLE_Epetra)
-
-IF(NOX_ENABLE_EpetraExt)
-  SET(HAVE_NOX_EPETRAEXT ON)
-ENDIF(NOX_ENABLE_EpetraExt)
-
-IF(NOX_ENABLE_PETSC)
-  SET(HAVE_NOX_PETSC ON)
-ENDIF(NOX_ENABLE_PETSC)
-
+# Global configure options
 IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
   IF(Mpi4Py_FOUND)
     SET(HAVE_MPI4PY ON)
-  ENDIF(Mpi4Py_FOUND)
-ENDIF(TPL_ENABLE_MPI)
+  ENDIF()
+ENDIF()
 
+#
+# Package-specific configuration options
+IF(PyTrilinos_ENABLE_AztecOO)
+  IF(AztecOO_ENABLE_Teuchos)
+    SET(HAVE_PYTRILINOS_AZTECOO_TEUCHOS ON)
+  ENDIF()
+ENDIF()
+
+IF(EpetraExt_BUILD_MODEL_EVALUATOR)
+  SET(HAVE_PYTRILINOS_EPETRAEXT_MODEL_EVALUATOR ON)
+ENDIF()
+
+IF(PyTrilinos_ENABLE_NOX)
+  IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
+    SET(HAVE_PYTRILINOS_NOX_EPETRA ON)
+  ENDIF()
+
+  IF(NOX_ENABLE_EpetraExt)
+    SET(HAVE_PYTRILINOS_NOX_EPETRAEXT ON)
+  ENDIF()
+
+  IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC)
+    SET(HAVE_PYTRILINOS_NOX_PETSC ON)
+  ENDIF()
+
+  IF(NOX_ENABLE_LOCA)
+    SET(HAVE_PYTRILINOS_LOCA ON)
+  ENDIF()
+ENDIF()
+
+#
+# Build the PyTrilinos configuration file
 TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 
 #
@@ -90,7 +93,7 @@ IF(APPLE)
      (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
-ENDIF(APPLE)
+ENDIF()
 
 #
 # Add the current binary and source directories, the python include
@@ -335,7 +338,17 @@ SWIG_LINK_LIBRARIES(${TEUCHOS_RCP_TARGET} ${Trilinos_LIBRARIES})
 SET_TARGET_PROPERTIES(${TEUCHOS_RCP_TARGET} PROPERTIES
   LINK_FLAGS "${EXTRA_LINK_ARGS}"
   )
+ADD_CUSTOM_COMMAND(TARGET ${TEUCHOS_RCP_TARGET} POST_BUILD
+  COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/Teuchos/RCP.py', 'PyTrilinos/Teuchos/RCP.pyc')"
+  COMMENT "Byte compiling Teuchos/RCP.py"
+  VERBATIM)
 LIST(APPEND ADDITIONAL_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/${TEUCHOS_RCP})
+INSTALL(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/RCP.py
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/RCP.pyc
+  DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
+INSTALL(TARGETS ${TEUCHOS_RCP_TARGET}
+  DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
 
 #
 # Loop over the PyTrilinos-enabled Trilinos modules and define the
@@ -358,7 +371,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       python
       "${MODULE}.i"
       "${MODULE_OUTDIR}/${MODULE_NAME}"
-      "__init__")
+      "${MODULE_NAME}")
   ELSE("${MODULE_NAME}" MATCHES "Teuchos")
     SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
       python
@@ -411,6 +424,17 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # PyTrilinos.NOX.Epetra
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py', 'PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc')"
+      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX.PETSc
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/PETSc")

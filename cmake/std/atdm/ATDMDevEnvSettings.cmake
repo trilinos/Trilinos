@@ -17,6 +17,8 @@ IF (NOT "$ENV{ATDM_CONFIG_COMPLETED_ENV_SETUP}" STREQUAL "TRUE")
 ENDIF()
 
 
+ASSERT_DEFINED(ENV{ATDM_CONFIG_JOB_NAME})
+
 ASSERT_DEFINED(ENV{ATDM_CONFIG_BUILD_COUNT})
 ASSERT_DEFINED(ENV{ATDM_CONFIG_CTEST_PARALLEL_LEVEL})
 
@@ -102,10 +104,10 @@ ADVANCED_SET(ATDM_TWEAKS_FILES "${ATDM_TWEAKS_FILES_DEFAULT}"
   )
 PRINT_VAR(ATDM_TWEAKS_FILES)
 
-FOREACH(ATDM_TREAKS_FILE ${ATDM_TWEAKS_FILES})
-  MESSAGE("-- " "Including ATDM build treaks file ${ATDM_TREAKS_FILE} ...")
-  TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE "${ATDM_TREAKS_FILE}")
-  INCLUDE("${ATDM_TREAKS_FILE}")
+FOREACH(ATDM_TWEAKS_FILE ${ATDM_TWEAKS_FILES})
+  MESSAGE("-- " "Including ATDM build tweaks file ${ATDM_TWEAKS_FILE} ...")
+  TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE "${ATDM_TWEAKS_FILE}")
+  INCLUDE("${ATDM_TWEAKS_FILE}")
 ENDFOREACH()
 
 #
@@ -249,10 +251,52 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
 
 #
-# E) Test Disables
+# G) Test Disables
 #
 # There are some tests that have to be disabled for a braod set of builds
 # for example, if all openmp builds are failing a certain test then it 
 # makes more sense to disbale it once in this file instead of in every openmp
 # buid's tweaks file
 #
+
+
+#
+# H) ATDM env config install hooks
+#
+# Install just enough to allow loading the exact matching env and nothing
+# else!
+#
+
+IF (COMMAND INSTALL)
+
+SET(ATDM_CONFIG_SCRIPTS_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/atdm-trilinos)
+
+  INSTALL( FILES ${CMAKE_CURRENT_LIST_DIR}/load-env.sh
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR} )
+  
+  INSTALL( DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/utils
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}
+    PATTERN "*.cmake" EXCLUDE )
+  
+  INSTALL( DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/$ENV{ATDM_CONFIG_KNOWN_SYSTEM_NAME}
+    DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR}
+    PATTERN "*.cmake" EXCLUDE )
+  
+  SET( ATDM_JOB_NAME $ENV{ATDM_CONFIG_JOB_NAME} )
+  
+  SET( ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME load_matching_env.sh
+    CACHE STRING
+    "Name of script installed in <CMAKE_INSTALL_PREFIX> to source to load matching env." )
+  
+  SET( ATDM_TRILINOS_INSTALL_PREFIX_ENV_VAR_NAME  ATDM_TRILINOS_INSTALL_PREFIX
+    CACHE STRING
+    "Name of env var set to <CMAKE_INSTALL_PREFIX> set in installed script <ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME>." )
+  
+  CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/load_matching_env.sh.in
+    ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh @ONLY )
+  
+  INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/load_matching_env.sh
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    RENAME ${ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME} )
+
+ENDIF()
