@@ -78,6 +78,9 @@
 #include <EpetraExt_RowMatrixOut.h>
 #endif
 
+#ifdef MueLu_UNDEFINE_Tpetra
+#undef HAVE_MUELU_TPETRA
+#endif
 
 #ifdef HAVE_MUELU_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>

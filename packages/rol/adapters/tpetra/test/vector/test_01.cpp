@@ -54,7 +54,7 @@
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 typedef double RealT;
 typedef double ElementT;
@@ -72,10 +72,9 @@ int main(int argc, char *argv[]) {
     typedef ROL::Ptr<MV> MVP;
 
     Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
- 
+
+    ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
 
     int iprint = argc - 1;
     ROL::nullstream bhs; // outputs nothing

@@ -45,7 +45,6 @@
 #include "Tpetra_Distributor.hpp" // avoid error C2027: use of undefined type 'Tpetra::Distributor' at (void) distor below
 
 namespace Tpetra {
-namespace Classes {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   RowGraph<LocalOrdinal,GlobalOrdinal,Node>::
@@ -145,7 +144,6 @@ namespace Classes {
        prefix << "This object claims to support row views, "
        "but this method is not implemented.");
   }
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -155,6 +153,6 @@ namespace Classes {
 //
 
 #define TPETRA_ROWGRAPH_INSTANT(LO,GO,NODE) \
-  namespace Classes { template class RowGraph< LO , GO , NODE >; }
+  template class RowGraph< LO , GO , NODE >;
 
 #endif // TPETRA_ROWGRAPH_DEF_HPP

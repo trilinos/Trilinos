@@ -68,7 +68,7 @@ following class:
 #include "PyTrilinos_config.h"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -109,7 +109,7 @@ using std::string;
 #endif
 
 // External Trilinos modules
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
 #endif
