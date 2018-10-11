@@ -104,39 +104,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     MESSAGE("Found 'panzer' in JOB_NAME, enabling only Panzer tests")
     SET(Trilinos_PACKAGES Panzer)
   ELSE()
-    # Explictly test an important subset of Trilinos packages used by the ATDM
-    # APP codes that are under active development.
-    SET(Trilinos_PACKAGES
-      Kokkos
-      Teuchos
-      KokkosKernels
-      Sacado
-      Tpetra
-      TrilinosSS
-      Thyra
-      Xpetra
-      Zoltan2
-      Belos
-      Amesos2
-      SEACAS
-      Anasazi
-      Ifpack2
-      Stratimikos
-      Teko
-      Intrepid2
-      STK
-      Phalanx
-      NOX
-      MueLu
-      Rythmos
-      Tempus
-      Piro
-      Panzer
-      )
-    # NOTE: Above, we explicilty list out the packages that we want to be tested
-    # which is *not* the full set of packages used by the ATDM APP codes.  The
-    # other packages are not actively developed and are at less of a risk to be
-    # broken.
+    MESSAGE("Enabling all packages not otherwise disabled!")
+    SET(Trilinos_PACKAGES)
+    # Implicitly allow the enable of all packages that are not otherwise
+    # disabled by the (indirect) include of ATDMDisables.cmake.
   ENDIF()
 
   # Point to the ATDM Trilinos configuration
