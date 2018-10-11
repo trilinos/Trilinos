@@ -2862,7 +2862,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 //  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
   Teuchos::ArrayView<const zgno_t> rowMapElementList = 
                                         rowMap->getNodeElementList();
-  for (size_t ii = 0; ii < rowMapElementList.size(); ii++)
+  for (Teuchos_Ordinal ii = 0; ii < rowMapElementList.size(); ii++)
   {
     zgno_t gid = rowMapElementList[ii];
     size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
