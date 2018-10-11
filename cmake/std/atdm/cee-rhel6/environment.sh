@@ -45,6 +45,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
+  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
   module load sparc-dev/intel-17.0.1_intelmpi-5.1.2
   export OMPI_CXX=`which icpc`
@@ -58,6 +60,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist.a
 elif [ "$ATDM_CONFIG_COMPILER" == "CLANG" ]; then
   module load sparc-dev/clang-5.0.1_openmpi-1.10.2
   #export OMPI_CXX=`which icpc`
@@ -66,6 +70,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CLANG" ]; then
   export MPICC=`which mpicc`
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
+  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 else
   echo
   echo "***"
@@ -103,8 +109,5 @@ export ATDM_CONFIG_LAPACK_LIB=${ATDM_CONFIG_BLAS_LIB}
 
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
-
-export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
-export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
