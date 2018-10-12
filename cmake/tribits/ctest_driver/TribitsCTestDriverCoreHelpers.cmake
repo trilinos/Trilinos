@@ -1306,14 +1306,23 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   TRIBITS_FWD_CMAKE_CONFIG_ARGS_0()
   IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     LIST(APPEND CONFIGURE_OPTIONS
-      "-D${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON"
-      )
+      "-D${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON" )
+    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=OFF" )
+    ENDFOREACH()
+    # NOTE: Above we have to explicitly set disables for the excluded pacakges
+    # since we are pssing in ${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON.  This is
+    # effectively the "black-listing" approach.
   ELSE()
     FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
       LIST(APPEND CONFIGURE_OPTIONS
-         "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=ON"
-        )
+         "-D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=ON" )
     ENDFOREACH()
+    # NOTE: Above we don't have to consider the packages excluded in
+    # ${PROJECT_NAME}_EXCLUDE_PACKAGES because they are not enabled ad this
+    # point and therefore no in ${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST.
+    # This is effectively the "white-listing" approach.
   ENDIF()
   LIST(APPEND CONFIGURE_OPTIONS
     "-D${PROJECT_NAME}_ENABLE_TESTS:BOOL=ON")
