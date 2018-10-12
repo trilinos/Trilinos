@@ -108,18 +108,6 @@ TRIBITS_ADD_EXECUTABLE(
 #  COMM serial mpi
 #  )
 
-# Panzer has no direct dependency on ThreadPool, however the search
-# portion of the stk library will be disabled if ThreadPool is
-# disabled.  This test will fail to compile without the missing stk
-# files.  So for now we will check to see if ThreadPool is
-# enabled. STK will eventually remove this dependency.
-IF(STK_ENABLE_ThreadPool)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    tPointLocationSearch
-    SOURCES tPointLocationSearch.cpp ${UNIT_TEST_DRIVER}
-    NUM_MPI_PROCS 2
-    )
-ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   SOURCE_FILES basic.gen basic.gen.2.0 basic.gen.2.1

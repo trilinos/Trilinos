@@ -12,7 +12,6 @@ ATDM_SET_CACHE(TPL_ENABLE_yaml-cpp OFF CACHE BOOL)
 
 # Packages and sub-packages disables.
 SET(ATDM_SE_PACKAGE_DISABLES
-  ThreadPool
   MiniTensor
   GlobiPack
   OptiPack
