@@ -284,8 +284,11 @@ namespace Teuchos {
           "assigned to a new timer. To disable this warning, either fix the\n"
           "ordering of timer creation and destuction or disable the StackedTimer\n"
           "support in the TimeMonitor by setting the StackedTimer to null\n"
-          "with:\n"
-          "Teuchos::TimeMonitor::setStackedTimer(Teuchos::null)\n"
+          "Example:\n"
+          " RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(\"Junk\"))));\n"
+	  "///code to time \n"
+	  "MM = Teuchos::null;\n"
+	  "MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(\"SecondJunk\"))));\n"
           "*********************************************************************\n";
         std::cout << warning.str() << std::endl;
         Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
