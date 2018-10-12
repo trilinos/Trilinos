@@ -12,10 +12,10 @@
 #
 # For example, to build up a set of libs for MLK, one would use something like:
 # 
-#   atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIB ${CBLAS_ROOT}/mkl/lib/intel64 .so \
+#   atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/mkl/lib/intel64 .so \
 #      mkl_intel_lp64 mkl_intel_thread mkl_core
 #
-#   atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIB ${CBLAS_ROOT}/lib/intel64 .so \
+#   atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/lib/intel64 .so \
 #      iomp5
 #
 

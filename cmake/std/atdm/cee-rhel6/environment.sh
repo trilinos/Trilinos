@@ -92,20 +92,20 @@ export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 # libbdf.a because the former works and the latter does not and TriBITS is set
 # up to only find static libs by default!
 
-#export ATDM_CONFIG_BLAS_LIB="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/lib/intel64;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
-#export ATDM_CONFIG_LAPACK_LIB="-L${CBLAS_ROOT}/mkl/lib/intel64"
+#export ATDM_CONFIG_BLAS_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/lib/intel64;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
+#export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64"
 
 # NOTE: The above does not work.  For some reason, the library 'iomp5' can't
 # be found at runtime.  Instead, you have to explicitly list out the library
 # files in order as shown below.  Very sad.
 
-atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIB ${CBLAS_ROOT}/mkl/lib/intel64 .so \
+atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/mkl/lib/intel64 .so \
   mkl_intel_lp64 mkl_intel_thread mkl_core
 
-atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIB ${CBLAS_ROOT}/lib/intel64 .so \
+atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/lib/intel64 .so \
   iomp5
 
-export ATDM_CONFIG_LAPACK_LIB=${ATDM_CONFIG_BLAS_LIB}
+export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
