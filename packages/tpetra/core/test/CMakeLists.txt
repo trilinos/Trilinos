@@ -14,6 +14,7 @@ ADD_SUBDIRECTORIES(
   CrsMatrix
   Directory
   Distributor
+  FECrsMatrix
   FEMultiVector
   HashTable
   ImportExport
