@@ -259,7 +259,7 @@ script.  These values can be overridden by setting the env vars
 $ env \
   ATDM_CONFIG_BUILD_COUNT_OVERRIDE=8 \
   ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE=12 \
-  ./checkin-test-atdm.sh ...
+  ./checkin-test-atdm.sh [options]
 ```
 
 A value of `ATDM_CONFIG_BUILD_COUNT_OVERRIDE=0` or less than `0` is allowed
@@ -267,9 +267,22 @@ when using Ninja (i.e. `ATDM_CONFIG_USE_NINJA=ON`) in which case `ninja` will
 be run with non `-j<N>` argument, and therefore all of the non-loaded cores
 will be used.
 
-Note that to run tests for a CUDA build or to run tests on platforms that must
-run on a compute node one will need to run these on a compute node on the
-system that has a GPU.  On such a system one would run:
+Alternatively, one can override the parallel build and test running levels and
+set other make/ninja and ctest options using the checkin-test arguments
+`--make-options` and `--ctest-options`.  For example, to use 20 processes to
+build with Nina, have Ninja keep going even if there are build errors, and run
+ctest with 10 proceses, one can use:
+
+```
+$ ./checkin-test-atdm.sh \
+  --make-options="-j20 -k 99999999" \
+  --ctest-options=-j10 \
+  [other options]
+```
+
+To run tests for a CUDA build or to run tests on platforms that must run on a
+compute node one will need to run these on a compute node on the system that
+has a GPU.  On such a system one would run:
 
 ```
 $ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
