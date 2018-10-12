@@ -345,6 +345,10 @@ int main (int argc, char** argv) {
       break;
     }
     try {
+      if (comm->getRank() == 0) {
+        const bool detail = false;
+        Kokkos::print_configuration(std::cout, detail);
+      }
       if (in->teuchos_test) {
         Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
       }

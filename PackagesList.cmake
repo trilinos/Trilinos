@@ -68,6 +68,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT
   Epetra                packages/epetra                   PT
+  SCOREClion            SCOREC/lion                       ST
   SCORECpcu             SCOREC/pcu                        ST
   SCORECgmi             SCOREC/gmi                        ST
   SCORECgmi_sim         SCOREC/gmi_sim                    ST
@@ -146,6 +147,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 # Allow builds even if some packages are missing
 
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREC)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREClion)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi_sim)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpcu)
