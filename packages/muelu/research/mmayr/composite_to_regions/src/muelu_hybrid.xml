@@ -55,9 +55,10 @@
 
     <ParameterList name="myCoordTransferFact">
       <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
-      <Parameter name="structured aggregation"              type="bool"   value="true"/>
+      <Parameter name="hybrid aggregation"                  type="bool"   value="true"/>
       <Parameter name="gCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
       <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+      <Parameter name="aggregationRegionTypeCoarse"         type="string" value="myAggregationFact"/>
     </ParameterList>
 
     <ParameterList name="myRAPFact">
@@ -110,9 +111,10 @@
       <Parameter name="R"                                   type="string"   value="myRestrictorFact"/>
       <Parameter name="A"                                   type="string"   value="myRAPFact"/>
       <Parameter name="CoarseSolver"                        type="string"   value="myJacobi"/>
-      <!--Parameter name="Coordinates"                         type="string"   value="myCoordTransferFact"/-->
+      <Parameter name="Coordinates"                         type="string"   value="myCoordTransferFact"/>
       <Parameter name="gNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
       <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
+      <Parameter name="aggregationRegionType"               type="string"   value="myCoordTransferFact"/>
       <!--Parameter name="CoarseNumZLayers"                    type="string"   value="myLineDetectionFact"/-->
       <!--Parameter name="LineDetection_Layers"                type="string"   value="myLineDetectionFact"/-->
       <!--Parameter name="LineDetection_VertLineIds"           type="string"   value="myLineDetectionFact"/-->
