@@ -86,6 +86,7 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: print partition distribution");
     SET_VALID_ENTRY("repartition: remap parts");
     SET_VALID_ENTRY("repartition: remap num values");
+    SET_VALID_ENTRY("repartition: remap accept partition");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                    Teuchos::null, "Factory of the matrix A");
@@ -197,7 +198,24 @@ namespace MueLu {
     if (remapPartitions) {
       SubFactoryMonitor m1(*this, "DeterminePartitionPlacement", currentLevel);
 
-      DeterminePartitionPlacement(*A, *decomposition, numPartitions);
+      bool acceptPartition = pL.get<bool>("repartition: remap accept partition");
+      bool allSubdomainsAcceptPartitions;
+      int localNumAcceptPartition = acceptPartition;
+      int globalNumAcceptPartition;
+      MueLu_sumAll(comm, localNumAcceptPartition, globalNumAcceptPartition);
+      GetOStream(Statistics2) << "Number of ranks that accept partitions: " << globalNumAcceptPartition << std::endl;
+      if (globalNumAcceptPartition < numPartitions) {
+        GetOStream(Warnings0) << "Not enough ranks are willing to accept a partition, allowing partitions on all ranks." << std::endl;
+        acceptPartition = true;
+        allSubdomainsAcceptPartitions = true;
+      } else if (numPartitions > numProcs) {
+        // We are trying to repartition to a larger communicator.
+        allSubdomainsAcceptPartitions = true;
+      } else {
+        allSubdomainsAcceptPartitions = false;
+      }
+
+      DeterminePartitionPlacement(*A, *decomposition, numPartitions, acceptPartition, allSubdomainsAcceptPartitions);
     }
 
     // ======================================================================================================
@@ -399,7 +417,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions) const {
+  DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions, bool willAcceptPartition, bool allSubdomainsAcceptPartitions) const {
     RCP<const Map> rowMap = A.getRowMap();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm()->duplicate();
@@ -433,8 +451,9 @@ namespace MueLu {
     // We use two maps, original which maps a partition id of an edge to the corresponding weight,
     // and a reverse one, which is necessary to sort by edges.
     std::map<GO,GO> lEdges;
-    for (LO i = 0; i < decompEntries.size(); i++)
-      lEdges[decompEntries[i]] += A.getNumEntriesInLocalRow(i);
+    if (willAcceptPartition)
+      for (LO i = 0; i < decompEntries.size(); i++)
+        lEdges[decompEntries[i]] += A.getNumEntriesInLocalRow(i);
 
     // Reverse map, so that edges are sorted by weight.
     // This results in multimap, as we may have edges with the same weight
@@ -462,14 +481,17 @@ namespace MueLu {
 
     // Construct the set of triplets
     std::vector<Triplet<int,int> > gEdges(numProcs * maxLocal);
+    std::vector<bool> procWillAcceptPartition(numProcs, allSubdomainsAcceptPartitions);
     size_t k = 0;
     for (LO i = 0; i < gData.size(); i += 2) {
+      int procNo = i/dataSize;              // determine the processor by its offset (since every processor sends the same amount)
       GO part   = gData[i+0];
       GO weight = gData[i+1];
       if (part != -1) {                     // skip nonexistent edges
-        gEdges[k].i = i/dataSize;           // determine the processor by its offset (since every processor sends the same amount)
+        gEdges[k].i = procNo;
         gEdges[k].j = part;
         gEdges[k].v = weight;
+        procWillAcceptPartition[procNo] = true;
         k++;
       }
     }
@@ -503,8 +525,8 @@ namespace MueLu {
     if (numPartitions - numMatched > 0) {
       for (int part = 0, matcher = 0; part < numProcs; part++) {
         if (match.count(part) == 0) {
-          // Find first non-matched rank
-          while (matchedRanks[matcher])
+          // Find first non-matched rank that accepts partitions
+          while (matchedRanks[matcher] || !procWillAcceptPartition[matcher])
             matcher++;
 
           match[part] = matcher++;

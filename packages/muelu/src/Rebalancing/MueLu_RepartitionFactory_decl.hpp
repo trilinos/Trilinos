@@ -154,9 +154,11 @@ namespace MueLu {
       @brief Determine which process should own each partition.
 
       Partitions are assigned to processes in order to minimize data movement.  The basic idea is that a good choice for partition
-      owner is to choose the pid that already has the greatest number of nonzeros for a particular partition.
+      owner is to choose the pid that already has the greatest number of nonzeros for a particular partition. If willAcceptPartition=false
+      is set on a rank, no partition will be placed there.
+
     */
-    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions) const;
+    void DeterminePartitionPlacement(const Matrix& A, GOVector& decomposition, GO numPartitions, bool willAcceptPartition=true, bool allSubdomainsAcceptPartitions=true) const;
 
   }; // class RepartitionFactory
 
