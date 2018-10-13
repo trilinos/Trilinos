@@ -250,6 +250,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: remap accept partition\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
@@ -648,6 +649,8 @@ namespace MueLu {
          ("repartition: print partition distribution","repartition: print partition distribution")
       
          ("repartition: rebalance P and R","repartition: rebalance P and R")
+      
+         ("repartition: rebalance Nullspace","repartition: rebalance Nullspace")
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       

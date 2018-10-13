@@ -1058,6 +1058,15 @@
     </parameter>
 
     <parameter>
+      <name>repartition: rebalance Nullspace</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Rebalancing of Nullspace during the setup.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>repartition: use subcommunicators</name>
       <type>bool</type>
       <default>true</default>
