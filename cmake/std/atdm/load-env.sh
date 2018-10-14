@@ -46,6 +46,10 @@ export ATDM_CONFIG_JOB_NAME=$1
 # B) Get the system name from the hostname
 #
 
+unset ATDM_CONFIG_KNOWN_HOSTNAME
+unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
+unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
+
 source $ATDM_SCRIPT_DIR/utils/get_known_system_name.sh
 
 if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then

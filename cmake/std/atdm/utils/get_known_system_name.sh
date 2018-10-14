@@ -4,6 +4,12 @@
 #
 ################################################################################
 
+# Clean out vars in case this crashes before finishing
+
+unset ATDM_CONFIG_REAL_HOSTNAME
+unset ATDM_CONFIG_KNOWN_HOSTNAME
+unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
+
 # Assert this script is sourced, not run!
 called=$_
 if [ "$called" == "$0" ] ; then
@@ -17,36 +23,36 @@ if [ -z "$ATDM_CONFIG_JOB_NAME" ] ; then
   return
 fi
 
-THIS_HOSTNAME=`hostname`
-#echo "Hostname = '$THIS_HOSTNAME'"
+export ATDM_CONFIG_REAL_HOSTNAME=`hostname`
+#echo "Hostname = '$ATDM_CONFIG_REAL_HOSTNAME'"
 
 ATDM_HOSTNAME=
 ATDM_SYSTEM_NAME=
 
 ATDM_IS_CEE_RHEL6_MACHINE=
 
-if [[ $THIS_HOSTNAME == "hansen"* ]] ; then
+if [[ $ATDM_CONFIG_REAL_HOSTNAME == "hansen"* ]] ; then
   ATDM_HOSTNAME=hansen
   ATDM_SYSTEM_NAME=shiller
-elif [[ $THIS_HOSTNAME == "shiller"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "shiller"* ]] ; then
   ATDM_HOSTNAME=shiller
   ATDM_SYSTEM_NAME=shiller
-elif [[ $THIS_HOSTNAME == "white"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "white"* ]] ; then
   ATDM_HOSTNAME=white
   ATDM_SYSTEM_NAME=ride
-elif [[ $THIS_HOSTNAME == "ride"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ride"* ]] ; then
   ATDM_HOSTNAME=ride
   ATDM_SYSTEM_NAME=ride
-elif [[ $THIS_HOSTNAME == "chama"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "chama"* ]] ; then
   ATDM_HOSTNAME=chama
   ATDM_SYSTEM_NAME=chama
-elif [[ $THIS_HOSTNAME == "serrano"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] ; then
   ATDM_HOSTNAME=serrano
   ATDM_SYSTEM_NAME=serrano
-elif [[ $THIS_HOSTNAME == "mutrino"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
   ATDM_HOSTNAME=mutrino
   ATDM_SYSTEM_NAME=mutrino
-elif [[ $THIS_HOSTNAME == "waterman"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
   ATDM_HOSTNAME=waterman
   ATDM_SYSTEM_NAME=waterman
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
@@ -71,7 +77,7 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
       else
         echo
         echo "***"
-        echo "*** Error, hostname='$THIS_HOSTNAME' is a 'sems-rhel6' machine but is"
+        echo "*** Error, hostname='$ATDM_CONFIG_REAL_HOSTNAME' is a 'sems-rhel6' machine but is"
         echo "*** is *not* a 'cee-rhel6' machine but 'cee-rhel6' was given in the"
         echo "*** build name string '$ATDM_CONFIG_JOB_NAME'!  Please remove 'cee-rhel6'"
 	echo "*** from the build name or provide 'sems-rhel6' and then the 'sems-rhel6'"
@@ -91,11 +97,11 @@ fi
 if [[ $ATDM_SYSTEM_NAME == "" ]] ; then
   echo
   echo "***"
-  echo "*** Error, hostname = '$THIS_HOSTNAME' not recognized as a known ATDM system name!"
+  echo "*** Error, hostname = '$ATDM_CONFIG_REAL_HOSTNAME' not recognized as a known ATDM system name!"
   echo "***"
   return
 else
-  echo "Hostname '$THIS_HOSTNAME' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
+  echo "Hostname '$ATDM_CONFIG_REAL_HOSTNAME' matches known ATDM host '$ATDM_HOSTNAME' and system '$ATDM_SYSTEM_NAME'"
 fi
 
 export ATDM_CONFIG_KNOWN_HOSTNAME=$ATDM_HOSTNAME

@@ -334,7 +334,11 @@ Note that more than one `hostname` machine may map to the same
 The variable `ATDM_HOSTNAME` (set to exported variable
 `ATDM_CONFIG_KNOWN_HOSTNAME`) is used for the CDash site name.  This makes it
 so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
-is important for the CDash 'next' and 'previous' relationships to work.
+is important for the CDash 'next' and 'previous' relationships to work.  (But
+for `CTEST_TEST_TYPE=Experimental` builds, the real `hostname` is used which
+is stored in the exported env variable `ATDM_CONFIG_REAL_HOSTNAME`.  This
+ensures that queries with `cdash/queryTests.php` don't accidentally pick up
+tests from "Experimental" builds.)
 
 The variable `ATDM_SYSTEM_NAME` (set to the exported variable
 `ATDM_CONFIG_KNOWN_SYSTEM_NAME`) must be set to `<new_system_name>` which is
