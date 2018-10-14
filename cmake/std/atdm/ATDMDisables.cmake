@@ -41,10 +41,22 @@ SET(ATDM_SE_PACKAGE_DISABLES
   TrilinosCouplings
   Pike
   )
-# NOTE: The above list came from the "Final set of non-enabled SE packages"
-# from the output for using the
-# em-plasma/BuildScripts/ALL/configure-trilinos.sh script (see TRIL-171).
-# This list can be easily maintained going forward.
+
+IF (NOT ATDM_ENABLE_SPARC_SETTINGS)
+  # Extra disables for the non-SPARC (EMPIRE) build.
+  SET(ATDM_SE_PACKAGE_DISABLES
+    ${ATDM_SE_PACKAGE_DISABLES}
+    ShyLU_Node
+    ROL
+    )
+  # NOTE: For now, we will disable these packages not being used by EMPIRE for
+  # now so that we don't introduce any new failing tests in the existing ATDM
+  # Trilinos builds.  But as we get the SPARC ATDM Trilinos configuration
+  # building on more machines and we test SPARC and EMPIRE against the fuller
+  # SPARC configuration, then ShyLU_Node and ROL will get enabled one machine
+  # at a time in an orderly fashion.
+ENDIF()
+
 
 #
 # Set of ATDM Trilinos packages for wich we don't want to run the test suite.
