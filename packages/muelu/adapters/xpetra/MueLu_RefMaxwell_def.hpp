@@ -1410,10 +1410,13 @@ namespace MueLu {
 
     // iterate on coarse (1, 1) block
     if (!ImporterH_.is_null()) {
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import coarse (1,1)"));
       P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
       P11res_.swap(P11resTmp_);
     }
     if (!AH_.is_null()) {
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve coarse (1,1)"));
+
       RCP<const Map> origXMap = P11x_->getMap();
       RCP<const Map> origRhsMap = P11res_->getMap();
 
@@ -1425,6 +1428,7 @@ namespace MueLu {
       P11res_->replaceMap(origRhsMap);
     }
     if (!ImporterH_.is_null()) {
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export coarse (1,1)"));
       P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
       P11x_.swap(P11xTmp_);
     }
@@ -1435,10 +1439,13 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solve22() const {
     // iterate on (2, 2) block
     if (!Importer22_.is_null()) {
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import (2,2)"));
       D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
       D0res_.swap(D0resTmp_);
     }
     if (!A22_.is_null()) {
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve (2,2)"));
+
       RCP<const Map> origXMap = D0x_->getMap();
       RCP<const Map> origRhsMap = D0res_->getMap();
 
@@ -1450,6 +1457,7 @@ namespace MueLu {
       D0res_->replaceMap(origRhsMap);
     }
     if (!Importer22_.is_null()) {
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export (2,2)"));
       D0xTmp_->doExport(*D0x_, *Importer22_, Xpetra::INSERT);
       D0x_.swap(D0xTmp_);
     }
@@ -1459,26 +1467,34 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const {
 
-    // compute residuals
     Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
-    R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
-    D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
+
+    { // compute residuals
+
+      Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
+      SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
+      residual_->update(one, RHS, negone);
+      R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
+      D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
+    }
 
     // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
 
     if (!ImporterH_.is_null()) {
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import coarse (1,1)"));
       P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
       P11res_.swap(P11resTmp_);
     }
     if (!Importer22_.is_null()) {
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: import (2,2)"));
       D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
       D0res_.swap(D0resTmp_);
     }
 
     // iterate on coarse (1, 1) block
     if (!AH_.is_null()) {
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve coarse (1,1)"));
+
       RCP<const Map> origXMap = P11x_->getMap();
       RCP<const Map> origRhsMap = P11res_->getMap();
 
@@ -1492,6 +1508,8 @@ namespace MueLu {
 
     // iterate on (2, 2) block
     if (!A22_.is_null()) {
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve (2,2)"));
+
       RCP<const Map> origXMap = D0x_->getMap();
       RCP<const Map> origRhsMap = D0res_->getMap();
 
@@ -1503,29 +1521,34 @@ namespace MueLu {
       D0res_->replaceMap(origRhsMap);
     }
 
-    if (!ImporterH_.is_null()) {
-      P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
-      P11x_.swap(P11xTmp_);
-    }
     if (!Importer22_.is_null()) {
+      Teuchos::TimeMonitor tm22(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export (2,2)"));
       D0xTmp_->doExport(*D0x_, *Importer22_, Xpetra::INSERT);
       D0x_.swap(D0xTmp_);
     }
 
-    // update current solution
-    P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
-    D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS,one,one);
-    X.update(one, *residual_, one);
-
     if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
+      Teuchos::TimeMonitor tmH(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: export coarse (1,1)"));
+      P11xTmp_->doExport(*P11x_, *ImporterH_, Xpetra::INSERT);
       P11x_.swap(P11xTmp_);
     }
-    if (!Importer22_.is_null()) {
-      D0res_.swap(D0resTmp_);
-      D0x_.swap(D0xTmp_);
-    }
 
+    { // update current solution
+      Teuchos::TimeMonitor tmUp(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: update"));
+      P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
+      D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS,one,one);
+      X.update(one, *residual_, one);
+
+      if (!ImporterH_.is_null()) {
+        P11res_.swap(P11resTmp_);
+        P11x_.swap(P11xTmp_);
+      }
+      if (!Importer22_.is_null()) {
+        D0res_.swap(D0resTmp_);
+        D0x_.swap(D0xTmp_);
+      }
+
+    }
   }
 
 
@@ -1643,7 +1666,7 @@ namespace MueLu {
                                                                   Scalar alpha,
                                                                   Scalar beta) const {
 
-    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLuRefmaxwell: Solve"));
+    Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: solve"));
 
     // make sure that we have enough temporary memory
     if (X.getNumVectors() != P11res_->getNumVectors()) {
@@ -1664,16 +1687,20 @@ namespace MueLu {
 
     }
 
-    // apply pre-smoothing
+    { // apply pre-smoothing
+
+      Teuchos::TimeMonitor tmSm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: smoothing"));
+
 #if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
-    if (useHiptmairSmoothing_) {
-      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
-      Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
-      hiptmairPreSmoother_->apply(tRHS, tX);
-    }
-    else
+      if (useHiptmairSmoothing_) {
+        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
+        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
+        hiptmairPreSmoother_->apply(tRHS, tX);
+      }
+      else
 #endif
-      PreSmoother_->Apply(X, RHS, use_as_preconditioner_);
+        PreSmoother_->Apply(X, RHS, use_as_preconditioner_);
+    }
 
     // do solve for the 2x2 block system
     if(mode_=="additive")
@@ -1690,17 +1717,21 @@ namespace MueLu {
     else
       applyInverseAdditive(RHS,X);
 
-    // apply post-smoothing
+    { // apply post-smoothing
+
+      Teuchos::TimeMonitor tmSm(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: smoothing"));
+
 #if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA) || defined(HAVE_MUELU_INST_DOUBLE_INT_INT))
-    if (useHiptmairSmoothing_)
-      {
-        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
-        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
-        hiptmairPostSmoother_->apply(tRHS, tX);
-      }
-    else
+      if (useHiptmairSmoothing_)
+        {
+          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
+          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
+          hiptmairPostSmoother_->apply(tRHS, tX);
+        }
+      else
 #endif
-      PostSmoother_->Apply(X, RHS, false);
+        PostSmoother_->Apply(X, RHS, false);
+    }
 
   }
 
@@ -1769,6 +1800,8 @@ namespace MueLu {
 
     GlobalOrdinal numRows;
     GlobalOrdinal nnz;
+
+    SM_Matrix_->getRowMap()->getComm()->barrier();
 
     numRows = SM_Matrix_->getGlobalNumRows();
     nnz = SM_Matrix_->getGlobalNumEntries();
