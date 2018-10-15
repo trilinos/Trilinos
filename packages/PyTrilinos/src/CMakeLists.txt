@@ -260,6 +260,14 @@ EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
 )
 
 #
+# Temporary Isorropia issue
+IF(PyTrilinos_ENABLE_Isorropia)
+  IF(NOT ${PYTHON_VERSION} VERSION_LESS "3.0")
+    MESSAGE(FATAL_ERROR "Isorropia must be disabled when PyTrilinos is built with Python 3 due to an import error. Please set Trilinos_ENABLE_Isorropia or PyTrilinos_ENABLE_Isorropia to OFF. Alternatively, you can use Python 2.")
+  ENDIF()
+ENDIF()
+
+#
 # Define the PyTrilinos swig setup
 SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
