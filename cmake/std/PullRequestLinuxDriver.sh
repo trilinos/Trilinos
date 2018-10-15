@@ -222,7 +222,9 @@ cmake --version
 
 module list
 
-echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+if [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" != "${JOB_BASE_NAME:?}" ]; then
+  echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+fi
 
 CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"
