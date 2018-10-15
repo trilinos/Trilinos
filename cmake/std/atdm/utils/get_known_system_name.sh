@@ -91,6 +91,9 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
       ATDM_HOSTNAME=sems-rhel6
       ATDM_SYSTEM_NAME=sems-rhel6
     fi
+  elif [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
+    ATDM_HOSTNAME=sems-rhel7
+    ATDM_SYSTEM_NAME=sems-rhel7
   fi
 fi
 
