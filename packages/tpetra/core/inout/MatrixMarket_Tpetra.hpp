@@ -1859,6 +1859,7 @@ namespace Tpetra {
           try {
             in.open (filename.c_str ());
             opened = 1;
+	    std::cout<<filename.c_str()<<std::endl;
           }
           catch (...) {
             opened = 0;
