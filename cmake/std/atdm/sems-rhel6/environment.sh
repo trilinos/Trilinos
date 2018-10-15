@@ -53,8 +53,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     export LAPACK_ROOT=/usr/lib64/atlas
     export OMPI_CC=`which gcc`
     export OMPI_FC=`which gfortran`
-    export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT};-llapack"
-    export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas"
+    export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT};-llapack"
+    export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas"
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load sems-gcc/4.9.3
     module load sems-intel/17.0.1
@@ -62,8 +62,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
     export OMPI_FC=`which ifort`
-    export ATDM_CONFIG_LAPACK_LIB="-mkl"
-    export ATDM_CONFIG_BLAS_LIB="-mkl"
+    export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+    export ATDM_CONFIG_BLAS_LIBS="-mkl"
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
     echo

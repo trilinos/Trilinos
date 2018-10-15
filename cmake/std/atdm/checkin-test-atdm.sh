@@ -23,8 +23,17 @@ if [ "$ATDM_TRILINOS_DIR" == "" ] ; then
   exit 1
 fi
 
+if [ "$ATDM_CHT_DEFAULT_ENV" == "" ] ; then
+  ATDM_CHT_DEFAULT_ENV=default
+fi
+#echo "ATDM_CHT_DEFAULT_ENV = ${ATDM_CHT_DEFAULT_ENV}"
+
 echo
-source $STD_ATDM_DIR/utils/get_known_system_name.sh
+echo "Load some env to get python, cmake, etc ..."
+echo
+source $STD_ATDM_DIR/load-env.sh ${ATDM_CHT_DEFAULT_ENV}
+# NOTE: Above, it does not matter which env you load.  Any of them will
+# provide the right python, cmake, etc.
 
 ATDM_CHT_HELP_STR="
 usage: ./checkin-test-atdm.sh \\
@@ -187,13 +196,6 @@ fi
 #
 # E) Loop over individual builds and run them
 #
-
-echo
-echo "Load some env to get python, cmake, etc ..."
-echo
-source $STD_ATDM_DIR/load-env.sh default
-# NOTE: Above, it does not matter which env you load.  Any of them will
-# provide the right python, cmake, etc.
 
 echo
 echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_JOB_NAME_KEYS_LIST"
