@@ -1,3 +1,25 @@
+Release Notes for PyTrilinos for Trilinos 12.14
+===============================================
+
+General
+  * Better logic for finding mpi.h and parsing MPI_VERSION
+  * Fix instal logic
+  * Use moduleimport SWIG directive and require SWIG 3.0.11
+  * Clean up the src directory
+  * Add PyTrilinos_*_Headers.hpp files
+  * Update Developers Guide
+
+Teuchos
+  * Fix Teuchos.MpiComm constructor with Mpi4Py Comm object
+  * Add RCP sub-module with RCP accessor functions
+
+Ifpack
+  * Proper include of Ifpack_ConfigDef.h
+
+Isorropia
+  * Disable Isorropia under Python 3 due to import problem that will
+    require a refactor
+
 Release Notes for PyTrilinos for Trilinos 12.12
 ===============================================
 
