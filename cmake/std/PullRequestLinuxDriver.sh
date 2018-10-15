@@ -222,6 +222,7 @@ cmake --version
 
 module list
 
+# This crashes for the serial case since MPI variables are not set
 if [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" != "${JOB_BASE_NAME:?}" ]; then
   echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
