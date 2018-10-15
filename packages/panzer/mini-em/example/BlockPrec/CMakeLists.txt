@@ -13,6 +13,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   SOURCE_FILES
   maxwell.xml maxwell2D.xml
   solverAugmentation.xml solverAugmentationEpetra.xml
+  solverCG.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
   solverMueLuRefMaxwellOpenMP.xml solverMueLuRefMaxwellCuda.xml
   solverAugmentationUseILU.xml
