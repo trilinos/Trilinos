@@ -75,6 +75,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -382,6 +383,11 @@ namespace MueLu {
     // ======================================================================================================
     // Print some data
     // ======================================================================================================
+    if (!rowMapImporter.is_null() && IsPrint(Statistics2)) {
+      // int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
+      GetOStream(Statistics2) << PerfUtils::PrintImporterInfo(rowMapImporter, "Importer for rebalancing");
+      // SetProcRankVerbose(oldRank);
+    }
     if (pL.get<bool>("repartition: print partition distribution") && IsPrint(Statistics2)) {
       // Print the grid of processors
       GetOStream(Statistics2) << "Partition distribution over cores (ownership is indicated by '+')" << std::endl;
