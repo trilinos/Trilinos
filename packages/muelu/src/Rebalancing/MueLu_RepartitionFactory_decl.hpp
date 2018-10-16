@@ -65,6 +65,7 @@
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_CloneRepartitionInterface_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
 
 namespace MueLu {
 
