@@ -9,6 +9,7 @@
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldManager.hpp"
 
+#include "Panzer_String_Utilities.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 
@@ -44,8 +45,7 @@ AuxiliaryEquationSet_MassMatrix(
     valid_parameters.set("Model ID","","Closure model id associated with this equation set");
     valid_parameters.set("DOF Name","","Name of DOF to construct time derivative for");
     valid_parameters.set("Multiplier",1.0,"Scale the operator");
-    Teuchos::RCP<const std::vector<std::string> > fieldMultiplier;
-    valid_parameters.set("Field Multipliers",fieldMultiplier,"Scale the operator");
+    valid_parameters.set("Field Multipliers","","Scale the operator");
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",default_integration_order,"Order of the integration rule");
@@ -55,7 +55,13 @@ AuxiliaryEquationSet_MassMatrix(
   std::string model_id = params->get<std::string>("Model ID");
   dof_name = params->get<std::string>("DOF Name");
   multiplier = params->get<double>("Multiplier");
-  fieldMultipliers = params->get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers");
+  std::stringstream ss(params->get<std::string>("Field Multipliers"));
+  std::string item;
+  Teuchos::RCP<std::vector<std::string> > fieldMultipliersNonConst = Teuchos::rcp(new std::vector<std::string>);
+  panzer::StringTokenizer(*fieldMultipliersNonConst,params->get<std::string>("Field Multipliers"),",",true);
+  // while (std::getline(ss, item, ','))
+  //   fieldMultipliersNonConst->push_back(item);
+  fieldMultipliers = fieldMultipliersNonConst.getConst();
   std::string basis_type = params->get<std::string>("Basis Type");
   int basis_order = params->get<int>("Basis Order");
   int integration_order = params->get<int>("Integration Order");
@@ -111,16 +117,6 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Multiplier", multiplier);
       if (fieldMultipliers != Teuchos::null)
         p.set("Field Multipliers", fieldMultipliers);
-      // string resName("AUX_MASS_RESIDUAL_" + dof_name), valName(dof_name);
-      // RCP<Evaluator<Traits>> op;
-      // if (fieldMultipliers != Teuchos::null)
-      //   op = rcp(new
-      //            Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
-      //                                                       resName, valName, *basis, *ir, multiplier, *fieldMultipliers));
-      // else
-      //   op = rcp(new
-      //            Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
-      //                                                       resName, valName, *basis, *ir, multiplier));
       RCP<Evaluator<Traits>> op = rcp(new
         Integrator_BasisTimesScalar<EvalT, Traits>(p));
       fm.template registerEvaluator<EvalT>(op);

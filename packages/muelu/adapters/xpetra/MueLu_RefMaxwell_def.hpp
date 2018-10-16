@@ -147,6 +147,23 @@ namespace MueLu {
 
     Teuchos::TimeMonitor tmCompute(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute"));
 
+    VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
+    {
+      std::map<std::string, MsgType> verbMap;
+      verbMap["none"]    = None;
+      verbMap["low"]     = Low;
+      verbMap["medium"]  = Medium;
+      verbMap["high"]    = High;
+      verbMap["extreme"] = Extreme;
+      verbMap["test"]    = Test;
+
+      std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
+                                 "Invalid verbosity level: \"" << verbosityLevel << "\"");
+      VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
+    }
+
     bool defaultFilter = false;
 
     // Remove zero entries from D0 if necessary.
@@ -552,6 +569,8 @@ namespace MueLu {
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
+
+    VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }
 
 
