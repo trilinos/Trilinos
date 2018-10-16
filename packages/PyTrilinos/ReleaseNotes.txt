@@ -14,7 +14,7 @@ Teuchos
   * Add RCP sub-module with RCP accessor functions
 
 Ifpack
-  * Proper include of Ifpack_ConfigDef.h
+  * Proper include of Ifpack_ConfigDefs.h
 
 Isorropia
   * Disable Isorropia under Python 3 due to import problem that will
