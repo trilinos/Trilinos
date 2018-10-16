@@ -3,7 +3,7 @@ Release Notes for PyTrilinos for Trilinos 12.14
 
 General
   * Better logic for finding mpi.h and parsing MPI_VERSION
-  * Fix instal logic
+  * Fix install logic
   * Use moduleimport SWIG directive and require SWIG 3.0.11
   * Clean up the src directory
   * Add PyTrilinos_*_Headers.hpp files
