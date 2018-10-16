@@ -183,13 +183,13 @@ namespace MueLu {
 
           aggregates.SetIsRoot(i);
           vertex2AggId[i] = numLocalAggregates++;
+          numNonAggregatedNodes--;
         }
       }
 
       // One way or another, the node is aggregated (possibly into a singleton)
       aggStat   [i] = AGGREGATED;
       procWinner[i] = myRank;
-      numNonAggregatedNodes--;
 
     }
 
