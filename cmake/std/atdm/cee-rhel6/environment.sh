@@ -110,4 +110,6 @@ export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
 
+export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
