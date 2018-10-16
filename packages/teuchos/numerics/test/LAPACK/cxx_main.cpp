@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
 
 #endif
  
-  if (verbose) std::cout << "PTEQR test ... ";
+  if (verbose) std::cout << "STEQR test ... ";
 
   const int n_steqr = 10;
   std::vector<MagnitudeType> diagonal(n_steqr);
@@ -227,20 +227,20 @@ int main(int argc, char* argv[])
   std::vector<double> scalar_dummy(1,0.0);
   std::vector<MagnitudeType> mag_dummy(4*n_steqr,0.0);
 
-  L.PTEQR (char_N, n_steqr, &diagonal[0], &subdiagonal[0],
+  L.STEQR (char_N, n_steqr, &diagonal[0], &subdiagonal[0],
            &scalar_dummy[0], n_steqr, &mag_dummy[0], &info);
 
   if (info != 0)
   {
-    if (verbose)  std::cout << "PTEQR: compute symmetric tridiagonal eigenvalues: "
-		  << "LAPACK's _PTEQR failed with info = "
+    if (verbose)  std::cout << "STEQR: compute symmetric tridiagonal eigenvalues: "
+		  << "LAPACK's _STEQR failed with info = "
 		  << info;
 
       numberFailedTests++;
   }
 
-  MagnitudeType lambda_min = diagonal[n_steqr-1];
-  MagnitudeType lambda_max = diagonal[0];
+  MagnitudeType lambda_min = diagonal[0];
+  MagnitudeType lambda_max = diagonal[n_steqr-1];
   MagnitudeType exp_lambda_min = STM::one();
   MagnitudeType exp_lambda_max = STM::one()*n_steqr;
 
