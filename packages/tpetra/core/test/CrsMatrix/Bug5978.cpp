@@ -79,7 +79,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <TpetraCore_ETIHelperMacros.h>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_TestingUtilities.hpp>
@@ -100,14 +100,13 @@ using Teuchos::ArrayRCP;
 using Teuchos::OrdinalTraits;
 using Tpetra::Map;
 using Tpetra::CrsMatrix;
-using Tpetra::DefaultPlatform;
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug5978, SC, LO, GO, NT)
 {
   typedef Map<LO,GO,NT> MapType;
   typedef CrsMatrix<SC, LO, GO, NT> MatrixType;
 
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   const int numProc = comm->getSize ();
   const int myRank = comm->getRank ();
 

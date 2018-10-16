@@ -62,8 +62,8 @@ void evaluateDiv_withSens(int numCells,
   if(numCells>0) {
     // evaluate at quadrature points
 
-    int numFields = div_basis.dimension(1);
-    int numPoints = div_basis.dimension(2);
+    int numFields = div_basis.extent(1);
+    int numPoints = div_basis.extent(2);
 
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {

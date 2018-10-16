@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -51,7 +51,7 @@ void rec_median_1(struct vtx_data **graph,        /* data structure with vertex 
                   int               using_vwgts,  /* are vertex weights being used? */
                   int *             assign,       /* set each vertex gets assigned to */
                   int               top           /* is this the top call in the recursion? */
-                  )
+)
 {
   struct vtx_data **sub_graph;                /* subgraph data structure with vertex weights */
   double *          sub_vals;                 /* subgraph entries in vals vector */
@@ -192,7 +192,7 @@ void rec_median_k(struct vtx_data **graph,        /* data structure with vertex 
                   double *          goal,         /* desired sizes for sets */
                   int               using_vwgts,  /* are vertex weights being used? */
                   int *             assign        /* set each vertex gets assigned to */
-                  )
+)
 {
   struct vtx_data **sub_graph;                /* subgraph data structure with vertex weights */
   double *          sub_vals[MAXDIMS];        /* subgraph entries in vals vectors */

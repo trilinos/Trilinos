@@ -83,15 +83,15 @@ update (const typename XMV::non_const_value_type& alpha, const XMV& X,
                  "XMV, YMV, and ZMV must either have rank 1 or rank 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.dimension_0 () != Y.dimension_0 () ||
-      X.dimension_1 () != Y.dimension_1 () ||
-      X.dimension_0 () != Z.dimension_0 () ||
-      X.dimension_1 () != Z.dimension_1 ()) {
+  if (X.extent(0) != Y.extent(0) ||
+      X.extent(1) != Y.extent(1) ||
+      X.extent(0) != Z.extent(0) ||
+      X.extent(1) != Z.extent(1)) {
     std::ostringstream os;
     os << "KokkosBlas::update (MV): Dimensions of X, Y, and Z do not match: "
-       << "Z: " << Z.dimension_0 () << " x " << Z.dimension_1 ()
-       << ", X: " << X.dimension_0 () << " x " << X.dimension_1 ()
-       << ", Y: " << Y.dimension_0 () << " x " << Y.dimension_1 ();
+       << "Z: " << Z.extent(0) << " x " << Z.extent(1)
+       << ", X: " << X.extent(0) << " x " << X.extent(1)
+       << ", Y: " << Y.extent(0) << " x " << Y.extent(1);
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 

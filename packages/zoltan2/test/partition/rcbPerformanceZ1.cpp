@@ -66,11 +66,8 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <GeometricGenerator.hpp>
 #include <Zoltan2_EvaluatePartition.hpp>
-using namespace std;
+
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::bad_alloc;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -88,30 +85,30 @@ static RCP<tMVector_t> coordinates;
 
 const char param_comment = '#';
 
-string trim_right_copy(
-    const string& s,
-    const string& delimiters = " \f\n\r\t\v" )
+std::string trim_right_copy(
+    const std::string& s,
+    const std::string& delimiters = " \f\n\r\t\v" )
 {
   return s.substr( 0, s.find_last_not_of( delimiters ) + 1 );
 }
 
-string trim_left_copy(
-    const string& s,
-    const string& delimiters = " \f\n\r\t\v" )
+std::string trim_left_copy(
+    const std::string& s,
+    const std::string& delimiters = " \f\n\r\t\v" )
 {
   return s.substr( s.find_first_not_of( delimiters ) );
 }
 
-string trim_copy(
-    const string& s,
-    const string& delimiters = " \f\n\r\t\v" )
+std::string trim_copy(
+    const std::string& s,
+    const std::string& delimiters = " \f\n\r\t\v" )
 {
   return trim_left_copy( trim_right_copy( s, delimiters ), delimiters );
 }
 
 // Zoltan1 query functions
-bool getArgumentValue(string &argumentid, double &argumentValue, string argumentline){
-  stringstream stream(stringstream::in | stringstream::out);
+bool getArgumentValue(std::string &argumentid, double &argumentValue, std::string argumentline){
+  std::stringstream stream(std::stringstream::in | std::stringstream::out);
   stream << argumentline;
   getline(stream, argumentid, '=');
   if (stream.eof()){
@@ -121,8 +118,8 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
   return true;
 }
 
-string convert_to_string(char *args){
-  string tmp = "";
+std::string convert_to_string(char *args){
+  std::string tmp = "";
   for(int i = 0; args[i] != 0; i++)
     tmp += args[i];
   return tmp;
@@ -277,9 +274,9 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   if (rank == 0){
     if (diff > .01)
-      cout << "Warning: Difference " << diff*100 << " percent" << endl;
-    cout << "Mesh size: " << xdim << "x" << ydim << "x" <<
-      zdim << ", " << num << " vertices." << endl;
+      std::cout << "Warning: Difference " << diff*100 << " percent" << std::endl;
+    std::cout << "Mesh size: " << xdim << "x" << ydim << "x" <<
+      zdim << ", " << num << " vertices." << std::endl;
   }
 
   // Divide coordinates.
@@ -363,12 +360,12 @@ const RCP<tMVector_t> getMeshCoordinates(
 }
 
 
-void getArgVals(int argc, char **argv,   int &numParts,
+void getArgVals(int narg, char **arg,   int &numParts,
     std::string &paramFile){
 
-  for(int i = 0; i < argc; ++i){
-    string tmp = convert_to_string(argv[i]);
-    string identifier = "";
+  for(int i = 0; i < narg; ++i){
+    std::string tmp = convert_to_string(arg[i]);
+    std::string identifier = "";
     long long int value = -1; double fval = -1;
     if(!getArgumentValue(identifier, fval, tmp)) continue;
     value = (long long int) (fval);
@@ -380,7 +377,7 @@ void getArgVals(int argc, char **argv,   int &numParts,
       }
     }
     else if(identifier == "PF"){
-      stringstream stream(stringstream::in | stringstream::out);
+      std::stringstream stream(std::stringstream::in | std::stringstream::out);
       stream << tmp;
       getline(stream, paramFile, '=');
       stream >> paramFile;
@@ -393,14 +390,14 @@ void getArgVals(int argc, char **argv,   int &numParts,
 
 }
 
-void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
+void readGeoGenParams(std::string paramFileName, Teuchos::ParameterList &geoparams, const RCP<const Teuchos::Comm<int> > & comm){
   std::string input = "";
   char inp[25000];
   for(int i = 0; i < 25000; ++i){
     inp[i] = 0;
   }
   if(comm->getRank() == 0){
-    fstream inParam(paramFileName.c_str());
+    std::fstream inParam(paramFileName.c_str());
 
     std::string tmp = "";
     getline (inParam,tmp);
@@ -428,49 +425,49 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
 
   comm->broadcast(0, sizeof(int), (char*) &size);
   comm->broadcast(0, size, inp);
-  //Teuchos::broadcast<int,string>(comm,0, &input);
-  istringstream inParam(inp);
-  string str;
+  //Teuchos::broadcast<int,std::string>(comm,0, &input);
+  std::istringstream inParam(inp);
+  std::string str;
   getline (inParam,str);
   while (!inParam.eof()){
     if(str[0] != param_comment){
       size_t pos = str.find('=');
-      if(pos == string::npos){
+      if(pos == std::string::npos){
         throw  "Invalid Line:" + str  + " in parameter file";
       }
-      string paramname = trim_copy(str.substr(0,pos));
-      string paramvalue = trim_copy(str.substr(pos + 1));
+      std::string paramname = trim_copy(str.substr(0,pos));
+      std::string paramvalue = trim_copy(str.substr(pos + 1));
       geoparams.set(paramname, paramvalue);
     }
     getline (inParam,str);
   }
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
   // MEMORY_CHECK(true, "Before initializing MPI");
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
 
   MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
   if (rank==0)
-    cout << "Number of processes: " << nprocs << endl;
+    std::cout << "Number of processes: " << nprocs << std::endl;
 
   // Default values
   //double numGlobalCoords = 1000;
   //int nWeights = 0;
   int debugLevel=2;          // for timing
-  string memoryOn("memoryOn");
-  string memoryOff("memoryOff");
+  std::string memoryOn("memoryOn");
+  std::string memoryOff("memoryOff");
   bool doMemory=false;
 
   int numGlobalParts = 512 * 512;
-  string paramFile = "p2.txt";
-  //getArgVals(argc, argv,   numGlobalParts, paramFile);
+  std::string paramFile = "p2.txt";
+  //getArgVals(narg, arg,   numGlobalParts, paramFile);
 
   int dummyTimer=0;
 
@@ -485,7 +482,7 @@ int main(int argc, char *argv[])
   GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg = new GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>(geoparams,comm);
 #ifdef HAVE_ZOLTAN2_OMP
   double end = omp_get_wtime();
-  cout << "GeometricGen Time:" << end - begin << endl;
+  std::cout << "GeometricGen Time:" << end - begin << std::endl;
 #endif
   int coord_dim = gg->getCoordinateDimension();
   int nWeights = gg->getNumWeights();
@@ -508,7 +505,7 @@ int main(int argc, char *argv[])
   zgno_t globalSize = static_cast<zgno_t>(numGlobalPoints);
   delete gg;
 
-  cout << "coord_dim:" << coord_dim << " nWeights:" << nWeights << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << endl;
+  std::cout << "coord_dim:" << coord_dim << " nWeights:" << nWeights << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << std::endl;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalPoints,
@@ -522,15 +519,15 @@ int main(int argc, char *argv[])
   commandLine.setOption(memoryOn.c_str(), memoryOff.c_str(), &doMemory,
     "do memory profiling");
 
-  string balanceCount("balance_object_count");
-  string balanceWeight("balance_object_weight");
-  string mcnorm1("multicriteria_minimize_total_weight");
-  string mcnorm2("multicriteria_balance_total_maximum");
-  string mcnorm3("multicriteria_minimize_maximum_weight");
+  std::string balanceCount("balance_object_count");
+  std::string balanceWeight("balance_object_weight");
+  std::string mcnorm1("multicriteria_minimize_total_weight");
+  std::string mcnorm2("multicriteria_balance_total_maximum");
+  std::string mcnorm3("multicriteria_minimize_maximum_weight");
 
-  string objective(balanceWeight);   // default
+  std::string objective(balanceWeight);   // default
 
-  string doc(balanceCount);
+  std::string doc(balanceCount);
   doc.append(": ignore weights\n");
 
   doc.append(balanceWeight);
@@ -548,17 +545,17 @@ int main(int argc, char *argv[])
   commandLine.setOption("objective", &objective,  doc.c_str());
 
   CommandLineProcessor::EParseCommandLineReturn rc = 
-    commandLine.parse(argc, argv);
+    commandLine.parse(narg, arg);
 
   if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL){
     if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED){
       if (rank==0)
-        cout << "PASS" << endl;
+        std::cout << "PASS" << std::endl;
       return 1;
     }
     else{
       if (rank==0)
-        cout << "FAIL" << endl;
+        std::cout << "FAIL" << std::endl;
       return 0;
     }
   }
@@ -598,14 +595,14 @@ int main(int argc, char *argv[])
   comm->barrier();
   for (int p=0; p < nprocs; p++){
     if (p==rank){
-      cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
+      std::cout << "Rank " << rank << ", " << numLocalCoords << "coords" << std::endl;
       const zscalar_t *x = coordinates->getData(0).getRawPtr();
       const zscalar_t *y = coordinates->getData(1).getRawPtr();
       const zscalar_t *z = coordinates->getData(2).getRawPtr();
       for (zlno_t i=0; i < numLocalCoords; i++)
-        cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
+        std::cout << " " << x[i] << " " << y[i] << " " << z[i] << std::endl;
     }
-    cout.flush();
+    std::cout.flush();
     comm->barrier();
   }
 #endif
@@ -624,7 +621,7 @@ int main(int argc, char *argv[])
   // Now call Zoltan to partition the problem.
 
   float ver;
-  int aok = Zoltan_Initialize(argc, argv, &ver);
+  int aok = Zoltan_Initialize(narg, arg, &ver);
 
   if (aok != 0){
     printf("sorry...\n");

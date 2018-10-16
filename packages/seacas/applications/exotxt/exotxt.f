@@ -1,4 +1,4 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -82,8 +82,8 @@ C     C(1) dynamic memory base array for character data
 C     Program Information
 C.
       QAINFO(1) = 'exotxt                          '
-      QAINFO(2) = '2013/08/07                      '
-      QAINFO(3) = ' 1.23                           '
+      QAINFO(2) = '2018/08/14                      '
+      QAINFO(3) = ' 2.00                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '

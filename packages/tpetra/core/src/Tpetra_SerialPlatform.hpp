@@ -52,34 +52,18 @@ namespace Tpetra {
 
   /// \brief Implementation of the Platform concept for non-MPI platforms.
   ///
-  /// \warning This class will be DEPRECATED, in favor of the
-  ///   initialize() functions in Tpetra_Core.hpp.  Please use those
-  ///   functions for safe, consistent initialization Kokkos, on which
-  ///   Tpetra depends.  If you must use this class, please prefer the
-  ///   constructors that take \c argc and \c argv.  Those
-  ///   constructors will call initialize() for you.
-  ///
-  /// SerialPlatform is an implementation of Tpetra's Platform
-  /// concept.  Classes implementing the Platform concept are
-  /// templated on the Kokkos Node type.  They have at least the
-  /// following public interface:
-  /// \code
-  /// // This is not a real class; it just illustrates the concept.
-  /// template<class Node>
-  /// class Platform {
-  /// public:
-  ///   typedef Node NodeType;
-  ///   explicit Platform (const RCP<Node>& node);
-  ///   RCP<const Comm<int> > getComm() const;
-  ///   RCP<Node> getNode() const;
-  /// };
-  /// \endcode
-  /// SerialPlatform uses a "communicator" containing one process.  It
-  /// is available whether or not Trilinos was built with MPI (the
-  /// Message-Passing Interface which provides a distributed-memory
-  /// parallel programming model).
+  ///  \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+  ///    not use <tt>*Platform</tt> classes any more.  To initialize
+  ///    Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+  ///    Tpetra::ScopeGuard, or Tpetra::initialize and
+  ///    Tpetra::finalize.  To get Tpetra's default Comm instance,
+  ///    include <tt>Tpetra_Core.hpp</tt> and call
+  ///    <tt>Tpetra::getDefaultComm()</tt>.  For the default Node
+  ///    type, use <tt>Tpetra::Map<>::node_type</tt>.  Do not create
+  ///    Node instances yourself.  It is OK for Node instances to be
+  ///    null.
   template <class Node>
-  class SerialPlatform : public Teuchos::Describable {
+  class TPETRA_DEPRECATED SerialPlatform : public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
@@ -97,34 +81,20 @@ namespace Tpetra {
     /// \param argc [in/out] First argument of Tpetra::initialize().
     /// \param argv [in/out] Second argument of Tpetra::initialize().
     explicit SerialPlatform (int* argc, char*** argv) :
-      comm_ (Teuchos::null),
-      node_ (Teuchos::null)
+      comm_ (Teuchos::null)
     {
       initialize (argc, argv);
       comm_ = getDefaultComm ();
-
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  This ensures
-      // that (new) Kokkos won't get initialized with the wrong
-      // command-line arguments, at least not until getNode() is
-      // called.  Initializing Kokkos with the wrong command-line
-      // arguments may result in poor performance due to the wrong
-      // assignment of software threads to hardware execution units.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<NodeType> ();
-      // }
     }
 
-    /// Constructor that accepts a Kokkos Node.
+    /// \brief Constructor that accepts a Kokkos Node instance.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
-    explicit SerialPlatform (const Teuchos::RCP<NodeType>& node) :
-      comm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ())),
-      node_ (node)
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
+    explicit SerialPlatform (const Teuchos::RCP<NodeType>& /* node */) :
+      comm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
     {
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
     }
 
     /// \brief Constructor that accepts the same arguments as
@@ -132,17 +102,17 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of Tpetra::initialize().
     /// \param argv [in/out] Second argument of Tpetra::initialize().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     explicit SerialPlatform (int* argc, char*** argv,
-                             const Teuchos::RCP<NodeType>& node) :
-      comm_ (Teuchos::null),
-      node_ (node)
+                             const Teuchos::RCP<NodeType>& /* node */) :
+      comm_ (Teuchos::null)
     {
       initialize (argc, argv);
       comm_ = getDefaultComm ();
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
     }
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -157,39 +127,18 @@ namespace Tpetra {
       return comm_;
     }
 
-    //! The Kokkos Node instance with which this object was created.
+    /// \brief The Kokkos Node instance.
+    ///
+    /// Since Node will be deprecated and removed in favor of
+    /// Kokkos::Device, this method may return Teuchos::null.
     Teuchos::RCP<Node> getNode () const {
-      typedef SerialPlatform<NodeType> this_type;
-      if (node_.is_null ()) {
-        // NOTE (mfh 29 Jun 2014): Creating an instance of one of the
-        // new Kokkos wrapper Nodes _must_ call Kokkos::initialize.
-        // If Kokkos has not been initialized yet, this may result in
-        // Kokkos being initialized correctly, since we have no way to
-        // pass it the command-line arguments at this point.  This is
-        // why we should prefer the *Platform constructors that take
-        // argc and argv, since they can (and do) call
-        // Kokkos::initialize (by calling Tpetra::initialize).
-        //
-        // mfh 29 Jun 2014: We're only keeping the *Platform classes
-        // for backwards compatibility anyway, so I don't feel bad
-        // about the const_cast here.
-        const_cast<this_type*> (this)->node_ =
-          KokkosClassic::Details::getNode<NodeType> ();
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          node_.is_null (), std::logic_error, "Tpetra::MpiPlatform::getNode: "
-          "KokkosClassic::Details::getNode<NodeType>() returned null.  "
-          "This should never happen.  "
-          "Please report this bug to the Tpetra developers.");
-      }
-      return node_;
+      return Teuchos::rcp (new Node);
     }
 
     //@}
   protected:
     //! Teuchos::Comm object instantiated for the platform.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    //! Kokkos Node object instantiated for the platform.
-    Teuchos::RCP<NodeType> node_;
 
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
@@ -204,16 +153,8 @@ namespace Tpetra {
   /// \note Tpetra::Details::DefaultTypes::node_type is a typedef, and
   ///   may have a different type, depending on Trilinos' build
   ///   options.
-  ///
-  /// \note In the past (up to and including the 10.8 Trilinos
-  ///   release), the specialization of SerialPlatform for the default
-  ///   Node type delayed instantiation of the default Node instance
-  ///   until getNode() was called.  We have changed this behavior to
-  ///   simplify the code and make the specialization of
-  ///   SerialPlatform conform more closely to the generic version of
-  ///   SerialPlatform.
   template <>
-  class SerialPlatform<Tpetra::Details::DefaultTypes::node_type> :
+  class TPETRA_DEPRECATED SerialPlatform<Tpetra::Details::DefaultTypes::node_type> :
     public Teuchos::Describable {
   public:
     //! @name Typedefs
@@ -229,20 +170,10 @@ namespace Tpetra {
     /// \brief Default constructor: uses Kokkos default node.
     ///
     /// The specialization of SerialPlatform for the default Node type
-    /// includes a default constructor.  At some point before the
-    /// first call to getNode() returns, this class will create a Node
-    /// with default parameters.
+    /// includes a default constructor.
     SerialPlatform () :
-      comm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ())),
-      node_ (Teuchos::null)
-    {
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  This ensures
-      // that (new) Kokkos won't get initialized with the wrong
-      // command-line arguments, at least not until getNode() is
-      // called.  Initializing Kokkos with the wrong command-line
-      // arguments may result in poor performance due to the wrong
-      // assignment of software threads to hardware execution units.
-    }
+      comm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
+    {}
 
     /// \brief Constructor that accepts the same arguments as
     ///   Tpetra::initialize().
@@ -250,12 +181,10 @@ namespace Tpetra {
     /// \param argc [in/out] First argument of Tpetra::initialize().
     /// \param argv [in/out] Second argument of Tpetra::initialize().
     explicit SerialPlatform (int* argc, char*** argv) :
-      comm_ (Teuchos::null),
-      node_ (Teuchos::null)
+      comm_ (Teuchos::null)
     {
       initialize (argc, argv);
       comm_ = getDefaultComm ();
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
     }
 
     /// \brief Constructor that accepts a Kokkos Node.
@@ -267,14 +196,12 @@ namespace Tpetra {
     /// input type to the constructor's class's type.)  The "explicit"
     /// declaration does not affect typical use of this constructor.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
-    explicit SerialPlatform (const Teuchos::RCP<NodeType>& node) :
-      comm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ())),
-      node_ (node)
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
+    explicit SerialPlatform (const Teuchos::RCP<NodeType>& /* node */) :
+      comm_ (Teuchos::rcp (new Teuchos::SerialComm<int> ()))
     {
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
     }
 
     /// \brief Constructor that accepts the same arguments as
@@ -282,17 +209,17 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of Tpetra::initialize().
     /// \param argv [in/out] Second argument of Tpetra::initialize().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     explicit SerialPlatform (int* argc, char*** argv,
-                             const Teuchos::RCP<NodeType>& node) :
-      comm_ (Teuchos::null),
-      node_ (node)
+                             const Teuchos::RCP<NodeType>& /* node */) :
+      comm_ (Teuchos::null)
     {
       initialize (argc, argv);
       comm_ = getDefaultComm ();
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
     }
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -307,31 +234,15 @@ namespace Tpetra {
       return comm_;
     }
 
-    //! The Kokkos Node instance with which this object was created.
-    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> getNode () const {
-      typedef SerialPlatform<NodeType> this_type;
-      if (node_.is_null ()) {
-        // NOTE (mfh 29 Jun 2014): Creating an instance of one of the
-        // new Kokkos wrapper Nodes _must_ call Kokkos::initialize.
-        // If Kokkos has not been initialized yet, this may result in
-        // Kokkos being initialized correctly, since we have no way to
-        // pass it the command-line arguments at this point.  This is
-        // why we should prefer the *Platform constructors that take
-        // argc and argv, since they can (and do) call
-        // Kokkos::initialize (by calling Tpetra::initialize).
-        //
-        // mfh 29 Jun 2014: We're only keeping the *Platform classes
-        // for backwards compatibility anyway, so I don't feel bad
-        // about the const_cast here.
-        const_cast<this_type*> (this)->node_ =
-          KokkosClassic::Details::getNode<NodeType> ();
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          node_.is_null (), std::logic_error, "Tpetra::MpiPlatform::getNode: "
-          "KokkosClassic::Details::getNode<NodeType>() returned null.  "
-          "This should never happen.  "
-          "Please report this bug to the Tpetra developers.");
-      }
-      return node_;
+    /// \brief The Kokkos Node instance.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
+    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type>
+    getNode () const
+    {
+      return Teuchos::rcp (new Tpetra::Details::DefaultTypes::node_type);
     }
 
     //@}
@@ -345,9 +256,6 @@ namespace Tpetra {
   protected:
     //! Teuchos::Comm object instantiated for the platform.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
-    //! Node object instantiated for the platform.
-    Teuchos::RCP<NodeType> node_;
   };
 
 } // namespace Tpetra

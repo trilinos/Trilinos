@@ -46,8 +46,6 @@
 
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_LAPACK.hpp"
-#include "ROL_LinearAlgebra.hpp"
 #include <iostream>
 
 /** @ingroup func_group

@@ -139,7 +139,7 @@ struct Sum<RMV, XMV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       printf("KokkosBlas1::sum<> non-ETI specialization for < %s , %s >\n",typeid(RMV).name(),typeid(XMV).name());
     }
     #endif
-    const size_type numRows = X.dimension_0 ();
+    const size_type numRows = X.extent(0);
 
     if (numRows < static_cast<size_type> (INT_MAX) ) {
       V_Sum_Invoke<RMV, XMV, int> (R, X);
@@ -175,8 +175,8 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     }
     #endif
 
-    const size_type numRows = X.dimension_0 ();
-    const size_type numCols = X.dimension_1 ();
+    const size_type numRows = X.extent(0);
+    const size_type numCols = X.extent(1);
     if (numRows < static_cast<size_type> (INT_MAX) &&
         numRows * numCols < static_cast<size_type> (INT_MAX)) {
       MV_Sum_Invoke<RV, XMV, int> (R, X);

@@ -59,7 +59,6 @@
 #include <Teuchos_Tuple.hpp>
 
 //Tpetra includes
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Map.hpp"
 
 // Intrepid2 includes

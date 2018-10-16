@@ -70,7 +70,6 @@ namespace { // (anonymous)
     using std::endl;
     typedef Tpetra::MultiVector<S, LO, GO, NODE> MV;
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::execution_space execution_space;
     typedef typename dual_view_type::size_type size_type;
 
     Teuchos::OSTab tab0 (out);
@@ -84,8 +83,8 @@ namespace { // (anonymous)
     // finalization automatically.
     Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
 
-    TEST_ASSERT( execution_space::is_initialized () );
-    if (! execution_space::is_initialized ()) {
+    TEST_ASSERT( Kokkos::is_initialized () );
+    if (! Kokkos::is_initialized ()) {
       return; // avoid crashes if initialization failed
     }
     out << "Successfully initialized execution space, if necessary" << endl;

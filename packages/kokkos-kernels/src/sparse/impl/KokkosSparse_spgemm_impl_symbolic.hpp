@@ -190,23 +190,31 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -770,21 +778,29 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
@@ -1233,11 +1249,16 @@ struct KokkosSPGEMM
 
     Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, num_compressed_elements),
         [&] (const nnz_lno_t ii, nnz_lno_t &num_nnz_in_row) {
+
       nnz_lno_t c_rows = hm.values[ii];
+      nnz_lno_t num_el = KokkosKernels::Impl::pop_count(c_rows);
+
+      /*
       nnz_lno_t num_el = 0;
       for (; c_rows; num_el++) {
         c_rows &= c_rows - 1; // clear the least significant bit set
       }
+      */
       num_nnz_in_row += num_el;
     }, num_elements);
 
@@ -1506,8 +1527,8 @@ void KokkosSPGEMM
 	typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
 
 	//get the number of rows and nonzeroes of B.
-	nnz_lno_t brows = b_rowmap_end.dimension_0() - 1;
-	size_type bnnz =  entriesb_.dimension_0();
+	nnz_lno_t brows = b_rowmap_end.extent(0) - 1;
+	size_type bnnz =  entriesb_.extent(0);
 
 
 	int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
@@ -1642,7 +1663,7 @@ void KokkosSPGEMM
 	}
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 	if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 		size_t free_byte ;
 		size_t total_byte ;
@@ -1795,8 +1816,8 @@ void KokkosSPGEMM
   }
 
   //get the number of rows and nonzeroes of B.
-  nnz_lno_t brows = row_mapB_.dimension_0() - 1;
-  size_type bnnz =  entriesSetIndex.dimension_0();
+  nnz_lno_t brows = row_mapB_.extent(0) - 1;
+  size_type bnnz =  entriesSetIndex.extent(0);
   size_type compressed_b_size = bnnz;
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
 	  KokkosKernels::Impl::kk_reduce_diff_view <b_original_row_view_t,
@@ -2151,9 +2172,9 @@ void KokkosSPGEMM
 			  << std::endl;
 	  std::cout << " AR AC ANNZ BR BC BNNZ original_flops compressed_flops FLOP_REDUCTION original_max_flops compressd_max_flops MEM_REDUCTION riginal_B_SIZE Compressed_b_size B_SIZE_REDUCTION" <<  std::endl;
 	  std::cout << " " << a_row_cnt << " " << b_row_cnt << " "
-			  	  	   << entriesA.dimension_0() << " "
+			  	  	   << entriesA.extent(0) << " "
 					   << b_row_cnt << " " << b_col_cnt << " "
-					   << entriesB.dimension_0() << " "
+					   << entriesB.extent(0) << " "
 					   <<  original_flops << " "
 					   << compressed_flops << " "
 					   << double(compressed_flops) / original_flops
@@ -2285,7 +2306,7 @@ size_t KokkosSPGEMM
 	{
 	//get the execution space type.
 	//KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
-	int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA_.dimension_0());
+	int suggested_vector_size = this->handle->get_suggested_vector_size(m, entriesA_.extent(0));
 	int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
 	nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , m);
 
@@ -2559,21 +2580,29 @@ struct KokkosSPGEMM
     switch (my_exec_space){
     default:
       return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
+#if defined( KOKKOS_ENABLE_SERIAL )
     case KokkosKernels::Impl::Exec_SERIAL:
       return 0;
 #endif
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::OpenMP::hardware_thread_id();
+  #else
+      return Kokkos::OpenMP::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
+  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       return Kokkos::Threads::hardware_thread_id();
+  #else
+      return Kokkos::Threads::impl_hardware_thread_id();
+  #endif
 #endif
-#if defined( KOKKOS_HAVE_QTHREAD)
+#if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
-      return Kokkos::Qthread::hardware_thread_id();
+      return 0; // Kokkos does not have a thread_id API for Qthreads
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:

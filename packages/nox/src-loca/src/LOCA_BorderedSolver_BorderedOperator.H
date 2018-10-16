@@ -79,31 +79,31 @@ namespace LOCA {
 
       //! Apply the operator
       virtual NOX::Abstract::Group::ReturnType
-      apply(const NOX::Abstract::MultiVector& X,
-        NOX::Abstract::MultiVector& Y) const {
+      apply(const NOX::Abstract::MultiVector& /* X */,
+        NOX::Abstract::MultiVector& /* Y */) const {
     return NOX::Abstract::Group::NotDefined;
       }
 
       //! Apply transpose of the operator
       virtual NOX::Abstract::Group::ReturnType
-      applyTranspose(const NOX::Abstract::MultiVector& X,
-             NOX::Abstract::MultiVector& Y) const {
+      applyTranspose(const NOX::Abstract::MultiVector& /* X */,
+             NOX::Abstract::MultiVector& /* Y */) const {
     return NOX::Abstract::Group::NotDefined;
       }
 
       //! Apply inverse of the operator
       virtual NOX::Abstract::Group::ReturnType
-      applyInverse(Teuchos::ParameterList& params,
-           const NOX::Abstract::MultiVector& B,
-           NOX::Abstract::MultiVector& X) const {
+      applyInverse(Teuchos::ParameterList& /* params */,
+           const NOX::Abstract::MultiVector& /* B */,
+           NOX::Abstract::MultiVector& /* X */) const {
     return NOX::Abstract::Group::NotDefined;
       }
 
       //! Apply inverse transpose of the operator
       virtual NOX::Abstract::Group::ReturnType
-      applyInverseTranspose(Teuchos::ParameterList& params,
-                const NOX::Abstract::MultiVector& B,
-                NOX::Abstract::MultiVector& X) const {
+      applyInverseTranspose(Teuchos::ParameterList& /* params */,
+                const NOX::Abstract::MultiVector& /* B */,
+                NOX::Abstract::MultiVector& /* X */) const {
     return NOX::Abstract::Group::NotDefined;
       }
 

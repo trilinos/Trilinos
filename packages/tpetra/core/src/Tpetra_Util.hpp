@@ -51,10 +51,13 @@
   here so that they can be updated and maintained in a single spot.
 */
 
-#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
+#include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_DualView.hpp"
-#include "Teuchos_Utils.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_Utils.hpp"
 #include <algorithm>
 #include <iterator>
 #include <sstream>

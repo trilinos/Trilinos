@@ -78,20 +78,20 @@ namespace Intrepid2 {
 
         if (_hasField) 
           unrollIndex( cl, bf, pt, 
-                             _output.dimension(0),
-                             _output.dimension(1), 
-                             _output.dimension(2), 
+                             _output.extent(0),
+                             _output.extent(1), 
+                             _output.extent(2), 
                              iter );
         else          
           unrollIndex( cl, pt,
-                             _output.dimension(0),
-                             _output.dimension(1),
+                             _output.extent(0),
+                             _output.extent(1),
                              iter);
         
         auto result = ( _hasField ? Kokkos::subview(_output, cl, bf, pt) :
                                     Kokkos::subview(_output, cl,     pt));
         
-        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subview(_leftInput, cl, 0, Kokkos::ALL(), Kokkos::ALL()) :
+        const auto left = (_leftInput.extent(1) == 1) ? Kokkos::subview(_leftInput, cl, 0, Kokkos::ALL(), Kokkos::ALL()) :
                                                            Kokkos::subview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
 
         
@@ -101,8 +101,8 @@ namespace Intrepid2 {
                              ( _hasField ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
                                            Kokkos::subview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
         
-        const ordinal_type iend  = left.dimension(0);
-        const ordinal_type jend  = left.dimension(1);
+        const ordinal_type iend  = left.extent(0);
+        const ordinal_type jend  = left.extent(1);
 
         value_type tmp(0);
         for(ordinal_type i = 0; i < iend; ++i)
@@ -130,8 +130,8 @@ namespace Intrepid2 {
     typedef FunctorArrayTools::F_dotMultiply<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
-    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
-                                            output.dimension(0)*output.dimension(1) );
+    const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :
+                                            output.extent(0)*output.extent(1) );
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField) );
   }
@@ -157,17 +157,17 @@ namespace Intrepid2 {
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Input fields container must have rank one larger than the rank of the input data container.");
         INTREPID2_TEST_FOR_EXCEPTION( outputFields.rank() != 3, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(0) != inputData.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(0) != inputData.extent(0), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(1) != inputFields.dimension(2) &&
-                                        inputData.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(1) != inputFields.extent(2) &&
+                                        inputData.extent(1) != 1, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
         for (size_type i=2;i<inputData.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i+1), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(i) != inputFields.extent(i+1), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i+1) of inputFields");
         }
         for (size_type i=0;i<outputFields.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(i) != outputFields.dimension(i), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(i) != outputFields.extent(i), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataField): inputFields dimension (i) does not match to the dimension (i+1) of outputFields");
         }
       } else {
@@ -177,17 +177,17 @@ namespace Intrepid2 {
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): The rank of fields input container must equal the rank of data input container.");
         INTREPID2_TEST_FOR_EXCEPTION( outputFields.rank() != 3, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Output fields container must have rank 3.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(1) != inputFields.dimension(1) &&
-                                        inputData.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(1) != inputFields.extent(1) &&
+                                        inputData.extent(1) != 1, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimensions of the fields and data input containers (number of integration points) must agree or first data dimension must be 1!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(0) != outputFields.dimension(1), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(0) != outputFields.extent(1), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimension of the fields input container and first dimension of the fields output container (number of fields) must agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(1) != outputFields.dimension(2), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(1) != outputFields.extent(2), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): First dimension of the fields input container and second dimension of the fields output container (number of integration points) must agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(0) != inputData.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( outputFields.extent(0) != inputData.extent(0), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
         for (size_type i=2;i<inputData.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(i) != inputFields.extent(i), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i) of inputFields");
         }
       }
@@ -221,17 +221,17 @@ namespace Intrepid2 {
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): The rank of the right data input container must equal the rank of the left data input container.");
         INTREPID2_TEST_FOR_EXCEPTION( outputData.rank() != 2, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(1) != inputDataRight.dimension(1) &&
-                                        inputDataLeft.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(1) != inputDataRight.extent(1) &&
+                                        inputDataLeft.extent(1) != 1, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): First dimensions of the left and right data input containers (number of integration points) must agree or first left data dimension must be 1!");
         for (size_type i=0;i<inputDataLeft.rank();++i) {
           if (i != 1) {
-            INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(i) != inputDataRight.dimension(i), std::invalid_argument,
+            INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(i) != inputDataRight.extent(i), std::invalid_argument,
                                             ">>> ERROR (ArrayTools::dotMultiplyDataData): inputDataLeft dimension (i) does not match to the dimension (i) of inputDataRight");
           }
         }
         for (size_type i=0;i<outputData.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.dimension(i) != outputData.dimension(i), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.extent(i) != outputData.extent(i), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataData): inputDataRight dimension (i) does not match to the dimension (i) of outputData");
         }
       } else {
@@ -241,15 +241,15 @@ namespace Intrepid2 {
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Right data input container must have rank one less than the rank of left data input container.");
         INTREPID2_TEST_FOR_EXCEPTION( outputData.rank() != 2, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(1) != inputDataRight.dimension(0) &&
-                                        inputDataLeft.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(1) != inputDataRight.extent(0) &&
+                                        inputDataLeft.extent(1) != 1, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Zeroth dimension of the right data input container and first dimension of left data input container (number of integration points) must agree or first left data dimension must be 1!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.dimension(0) != outputData.dimension(1), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.extent(0) != outputData.extent(1), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Zeroth dimension of the right data input container and first dimension of output data container (number of integration points) must agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(0) != outputData.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(0) != outputData.extent(0), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Zeroth dimensions of the left data input and data output containers (number of integration domains) must agree!");
         for (size_type i=1;i<inputDataRight.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(i+1) != inputDataRight.dimension(i), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(i+1) != inputDataRight.extent(i), std::invalid_argument,
                                           ">>> ERROR (ArrayTools::dotMultiplyDataData): inputDataLeft dimension (i+1) does not match to the dimension (i) of inputDataRight");
         }
       }

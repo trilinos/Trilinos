@@ -82,7 +82,7 @@ struct Axpby_MV_Functor
   BV m_b;
 
   Axpby_MV_Functor (const XMV& X, const YMV& Y, const AV& a, const BV& b) :
-    numCols (X.dimension_1 ()), m_x (X), m_y (Y), m_a (a), m_b (b)
+    numCols (X.extent(1)), m_x (X), m_y (Y), m_a (a), m_b (b)
   {
     // XMV and YMV must be Kokkos::View specializations.
     static_assert (Kokkos::Impl::is_view<AV>::value, "KokkosBlas::Impl::"
@@ -116,10 +116,10 @@ struct Axpby_MV_Functor
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
     if (scalar_x == 0 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -127,10 +127,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 0 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -141,10 +141,10 @@ struct Axpby_MV_Functor
       return; // Y(i,j) := Y(i,j)
     }
     if (scalar_x == 0 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -152,10 +152,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -163,10 +163,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -174,10 +174,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -185,10 +185,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -196,10 +196,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -207,10 +207,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -218,10 +218,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -229,10 +229,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -240,10 +240,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -251,10 +251,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -262,10 +262,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -273,10 +273,10 @@ struct Axpby_MV_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -322,7 +322,7 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
   Axpby_MV_Functor (const XMV& X, const YMV& Y,
                     const typename XMV::non_const_value_type& a,
                     const typename YMV::non_const_value_type& b) :
-    numCols (X.dimension_1 ()), m_x (X), m_y (Y), m_a (a), m_b (b)
+    numCols (X.extent(1)), m_x (X), m_y (Y), m_a (a), m_b (b)
   {
     static_assert (Kokkos::Impl::is_view<XMV>::value, "KokkosBlas::Impl::"
                    "Axpby_MV_Functor: X is not a Kokkos::View.");
@@ -346,10 +346,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
     if (scalar_x == 0 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -357,10 +357,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 0 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -371,10 +371,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       return; // Y(i,j) := Y(i,j)
     }
     if (scalar_x == 0 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -382,10 +382,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -393,10 +393,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -404,10 +404,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -415,10 +415,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -426,10 +426,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -437,10 +437,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -448,10 +448,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -459,10 +459,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -470,10 +470,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -481,10 +481,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -492,10 +492,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -503,10 +503,10 @@ struct Axpby_MV_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -561,8 +561,8 @@ struct Axpby_MV_Unroll_Functor
                    "BV must have rank 1.");
 
     if (startingColumn != 0) {
-      m_a = Kokkos::subview (a, std::make_pair (startingColumn, SizeType(a.dimension_0 ())));
-      m_b = Kokkos::subview (b, std::make_pair (startingColumn, SizeType(b.dimension_0 ())));
+      m_a = Kokkos::subview (a, std::make_pair (startingColumn, SizeType(a.extent(0))));
+      m_b = Kokkos::subview (b, std::make_pair (startingColumn, SizeType(b.extent(0))));
     }
   }
 
@@ -576,7 +576,7 @@ struct Axpby_MV_Unroll_Functor
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
     if (scalar_x == 0 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -584,7 +584,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 0 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -592,7 +592,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -600,7 +600,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -611,7 +611,7 @@ struct Axpby_MV_Unroll_Functor
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL >= 3
 
     if (scalar_x == 0 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -619,7 +619,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 0 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -630,7 +630,7 @@ struct Axpby_MV_Unroll_Functor
       return; // Y(i,j) := Y(i,j)
     }
     if (scalar_x == 0 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -638,7 +638,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -646,7 +646,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -654,7 +654,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -662,7 +662,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == -1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -670,7 +670,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -678,7 +678,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -686,7 +686,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -694,7 +694,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -702,7 +702,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -710,7 +710,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -718,7 +718,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -726,7 +726,7 @@ struct Axpby_MV_Unroll_Functor
       }
     }
     if (scalar_x == 2 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -787,7 +787,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
     if (scalar_x == 0 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -795,7 +795,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 0 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -803,7 +803,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -811,7 +811,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -822,7 +822,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2
 
     if (scalar_x == 0 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -830,7 +830,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 0 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -841,7 +841,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       return; // Y(i,j) := Y(i,j)
     }
     if (scalar_x == 0 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -849,7 +849,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -857,7 +857,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -865,7 +865,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -873,7 +873,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == -1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -881,7 +881,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -889,7 +889,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -897,7 +897,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -905,7 +905,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 1 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -913,7 +913,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -921,7 +921,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -929,7 +929,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -937,7 +937,7 @@ struct Axpby_MV_Unroll_Functor<typename XMV::non_const_value_type, XMV,
       }
     }
     if (scalar_x == 2 && scalar_y == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -991,7 +991,7 @@ Axpby_MV_Unrolled (const AV& av, const XMV& x,
                  "XMV and YMV must have rank 2.");
 
   typedef typename YMV::execution_space execution_space;
-  const SizeType numRows = x.dimension_0 ();
+  const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0 && b == 0) {
@@ -1129,7 +1129,7 @@ Axpby_MV_Generic (const AV& av, const XMV& x,
                  "XMV and YMV must have rank 2.");
 
   typedef typename YMV::execution_space execution_space;
-  const SizeType numRows = x.dimension_0 ();
+  const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0 && b == 0) {
@@ -1268,7 +1268,7 @@ Axpby_MV_Invoke_Left {
   static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby_MV_Invoke_Left: "
                  "X and Y must have rank 2.");
 
-  const SizeType numCols = x.dimension_1 ();
+  const SizeType numCols = x.extent(1);
 
   // Strip-mine by 8, then 4.  After that, do one column at a time.
   // We limit the number of strip-mine values in order to keep down
@@ -1347,7 +1347,7 @@ static void run(const AV& av, const XMV& x,
   static_assert (YMV::Rank == 2, "KokkosBlas::Impl::Axpby_MV_Invoke_Right: "
                  "X and Y must have rank 2.");
 
-  const SizeType numCols = x.dimension_1 ();
+  const SizeType numCols = x.extent(1);
   if (numCols == 1) {
     auto x_0 = Kokkos::subview (x, Kokkos::ALL (), 0);
     auto y_0 = Kokkos::subview (y, Kokkos::ALL (), 0);

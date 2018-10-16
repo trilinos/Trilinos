@@ -37,9 +37,9 @@ namespace Tacho {
                       "A, B and C do not have the same value type.");
 
         const ordinal_type 
-          m = C.dimension_0(),
-          n = C.dimension_1(),
-          k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
+          m = C.extent(0),
+          n = C.extent(1),
+          k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.extent(0) : B.extent(1));
         
         if (m > 0 && n > 0 && k > 0) {
           Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param,

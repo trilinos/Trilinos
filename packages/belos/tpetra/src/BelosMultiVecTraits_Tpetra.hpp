@@ -358,7 +358,7 @@ namespace Belos {
       Teuchos::SerialComm<int> serialComm;
       map_type LocalMap (B.numRows (), A.getMap ()->getIndexBase (),
                          rcpFromRef<const Comm<int> > (serialComm),
-                         ::Tpetra::LocallyReplicated, A.getMap ()->getNode ());
+                         ::Tpetra::LocallyReplicated);
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       ArrayView<const Scalar> Bvalues (B.values (), B.stride () * B.numCols ());
       // create locally replicated MultiVector with a copy of this data
@@ -450,8 +450,8 @@ namespace Belos {
 
       // create local map with comm
       RCP<const map_type> LocalMap =
-        rcp (new map_type (numRowsC, 0, pcomm, LocallyReplicated,
-                           A.getMap ()->getNode ()));
+        rcp (new map_type (numRowsC, 0, pcomm, LocallyReplicated));
+
       // create local multivector to hold the result
       const bool INIT_TO_ZERO = true;
       MV C_mv (LocalMap, numColsC, INIT_TO_ZERO);

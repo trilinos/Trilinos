@@ -417,42 +417,6 @@ TEST( UnitTestPartition, Partition_testInitialize )
   check_bucket_ids_testset_A(bucket_repository);
 }
 
-/// Test of Partition::compress()
-TEST( UnitTestPartition, Partition_testCompress)
-{
-  SelectorFixture fix;
-
-  if (fix.m_bulk_data.parallel_size() > 1)
-  {
-    return;
-  }
-  initializeFivePartitionsWithSixBucketsEach(fix);
-  setFieldDataUsingEntityIDs(fix);
-
-  stk::mesh::impl::BucketRepository &bucket_repository = fix.m_bulk_data.my_get_bucket_repository();
-  bucket_repository.sync_from_partitions();
-
-  std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
-  size_t num_partitions = partitions.size();
-  size_t expectedNumPartitions = 5u;
-  EXPECT_EQ(expectedNumPartitions, num_partitions);
-
-  for (size_t i = 0; i < num_partitions; ++i)
-  {
-    stk::mesh::impl::Partition &partition = *partitions[i];
-    size_t numEntitiesPerPartition = 3000;
-    size_t bucketCapacity = bucket_repository.default_bucket_capacity;
-    size_t numBucketsPerPartition = (numEntitiesPerPartition + (bucketCapacity - 1u)) / bucketCapacity;
-    EXPECT_EQ(numBucketsPerPartition, partition.num_buckets());
-    partition.compress(true);
-    size_t numCompressedBucketsPerPartition = (numEntitiesPerPartition + (bucket_repository.max_bucket_capacity - 1u)) / bucket_repository.max_bucket_capacity;
-    EXPECT_EQ(numCompressedBucketsPerPartition, partition.num_buckets());
-    check_test_partition_invariant(fix, partition);
-  }
-
-  check_bucket_ids_testset_A(bucket_repository);
-}
-
 /// Test Partition::sort()
 TEST( UnitTestPartition, Partition_testSort)
 {

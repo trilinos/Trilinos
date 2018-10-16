@@ -5,7 +5,6 @@
 ###############################################################################
 
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/utils/ATDMDevEnvUtils.cmake")
-
 #
 # A) Assert the right env vars are set and set local defaults
 #
@@ -64,8 +63,22 @@ iF (ATDM_USE_HWLOC AND "$ENV{ATDM_CONFIG_HWLOC_LIBS}" STREQUAL "")
     " HWLOC_LIBS is not set!")
 ENDIF()
 
+# If ATDM_CONFIG_KOKKOS_ARCH is set to empty, don't append the KOKKOS_ARCH
+# name.  This makes sense for platforms like 'rhel'" that may involve
+# different CPU architectures where it would not make sense to try to set a
+# specific KOKKOS_ARCH value.
+SET(ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS $ENV{ATDM_CONFIG_KOKKOS_ARCH})
+IF(ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS)
+  STRING(TOUPPER ${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS}
+    ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS)
+  STRING(REPLACE , - ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS
+    ${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS})
+  SET(ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS
+    -${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS})
+ENDIF()
+
 SET(ATDM_JOB_NAME_KEYS_STR
-  "$ENV{ATDM_CONFIG_COMPILER}-$ENV{ATDM_CONFIG_BUILD_TYPE}-${ATDM_NODE_TYPE}")
+  "$ENV{ATDM_CONFIG_COMPILER}-$ENV{ATDM_CONFIG_BUILD_TYPE}-${ATDM_NODE_TYPE}${ATDM_CONFIG_KOKKOS_ARCH_JOB_NAME_KEYS}")
 PRINT_VAR(ATDM_JOB_NAME_KEYS_STR)
 
 ATDM_SET_ATDM_VAR_FROM_ENV_AND_DEFAULT(MPI_EXEC mpiexec)
@@ -234,3 +247,12 @@ ATDM_SET_CACHE(TPL_Netcdf_LIBRARIES "$ENV{ATDM_CONFIG_NETCDF_LIBS}" CACHE FILEPA
 ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # NOTE: Not clear why you need this since the TPL DLlib is not explicilty
 # enabled anywhere in the EM-Plasma/BuildScripts files.xsxs
+
+#
+# E) Test Disables
+#
+# There are some tests that have to be disabled for a braod set of builds
+# for example, if all openmp builds are failing a certain test then it 
+# makes more sense to disbale it once in this file instead of in every openmp
+# buid's tweaks file
+#

@@ -74,6 +74,9 @@ endif()
 if(${KOKKOS_ENABLE_PROFILING_LOAD_PRINT})
       list(APPEND KOKKOS_OPTIONSl enable_profile_load_print)
 endif()
+if(${KOKKOS_ENABLE_EXPLICIT_INSTANTIATION})
+      list(APPEND KOKKOS_OPTIONSl enable_eti)
+endif()
 # List needs to be comma-delimitted
 string(REPLACE ";" "," KOKKOS_GMAKE_OPTIONS "${KOKKOS_OPTIONSl}")
 
@@ -127,7 +130,8 @@ string(REPLACE ";" ":" KOKKOS_INTERNAL_ADDTOPATH "${addpathl}")
 # Set the KOKKOS_SETTINGS String -- this is the primary communication with the
 # makefile configuration.  See Makefile.kokkos
 
-set(KOKKOS_SETTINGS KOKKOS_SRC_PATH=${KOKKOS_SRC_PATH})
+set(KOKKOS_SETTINGS KOKKOS_CMAKE=yes)
+set(KOKKOS_SETTINGS ${KOKKOS_SETTINGS} KOKKOS_SRC_PATH=${KOKKOS_SRC_PATH})
 set(KOKKOS_SETTINGS ${KOKKOS_SETTINGS} KOKKOS_PATH=${KOKKOS_PATH})
 set(KOKKOS_SETTINGS ${KOKKOS_SETTINGS} KOKKOS_INSTALL_PATH=${CMAKE_INSTALL_PREFIX})
 
@@ -156,6 +160,19 @@ if (NOT "${KOKKOS_INTERNAL_PATHS}" STREQUAL "")
 endif()
 if (NOT "${KOKKOS_INTERNAL_ADDTOPATH}" STREQUAL "")
   set(KOKKOS_SETTINGS ${KOKKOS_SETTINGS} "PATH=\"${KOKKOS_INTERNAL_ADDTOPATH}:$ENV{PATH}\"")
+endif()
+
+if (CMAKE_CXX_STANDARD)
+  if (CMAKE_CXX_STANDARD STREQUAL "98")
+    message(FATAL_ERROR "Kokkos requires C++11 or newer!")
+  endif()
+  set(KOKKOS_CXX_STANDARD "c++${CMAKE_CXX_STANDARD}")
+  if (CMAKE_CXX_EXTENSIONS)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(KOKKOS_CXX_STANDARD "gnu++${CMAKE_CXX_STANDARD}")
+    endif()
+  endif()
+  set(KOKKOS_SETTINGS ${KOKKOS_SETTINGS} "KOKKOS_CXX_STANDARD=\"${KOKKOS_CXX_STANDARD}\"")
 endif()
 
 # Final form that gets passed to make

@@ -46,7 +46,7 @@
 
 #include <fenl_functors.hpp>
 #include "Kokkos_Parallel_MP_Vector.hpp"
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 #include "Stokhos_Cuda_WarpShuffle.hpp"
 #endif
 
@@ -407,7 +407,7 @@ struct AssembleRightPCE {
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA ) && defined( __CUDACC__ )
+#if defined( KOKKOS_ENABLE_CUDA ) && defined( __CUDACC__ )
 template < typename pce_view_type,
            typename scalar_view_type,
            typename quad_values_type,

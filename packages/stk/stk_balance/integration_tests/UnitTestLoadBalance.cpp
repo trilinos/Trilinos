@@ -1,3 +1,4 @@
+#include <cmath>
 #include <gtest/gtest.h>
 #include <test_utils/OptionsForTesting.hpp>
 #include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
@@ -582,6 +583,7 @@ TEST(LoadBalance, zoltan2coloring)
         StkMeshZoltanAdapter stkMeshAdapter(zoltan2Graph);
 
         Zoltan2::ColoringProblem<StkMeshZoltanAdapter> problem(&stkMeshAdapter, &params);
+        std::srand(stkMeshBulkData.parallel_rank()); // KHP: Temporary until an API is added to Zoltan2 for random seeds.
         problem.solve();
 
         if(options.debugZoltan())
@@ -1107,7 +1109,7 @@ TEST(LoadBalance, doSearch)
         }
 
         stk::balance::internal::StkSearchResults searchResults;
-        kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
+        do_kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
 
         stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());
@@ -1417,7 +1419,7 @@ void create2DisconnectedHex8sStkMesh(stk::mesh::MetaData &meta, stk::mesh::BulkD
 
     OurCartesianField::VectorField &coordField = meta.declare_field<OurCartesianField::VectorField>(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field(coordField, meta.universal_part(), meta.spatial_dimension());
+    stk::mesh::put_field_on_mesh(coordField, meta.universal_part(), meta.spatial_dimension(), nullptr);
 
     meta.commit();
 
@@ -1470,7 +1472,7 @@ void create2ParticlesStkMesh(stk::mesh::MetaData &meta, stk::mesh::BulkData &mes
 
     OurCartesianField::VectorField &coordField = meta.declare_field<OurCartesianField::VectorField>(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field(coordField, meta.universal_part(), meta.spatial_dimension());
+    stk::mesh::put_field_on_mesh(coordField, meta.universal_part(), meta.spatial_dimension(), nullptr);
 
     meta.commit();
 
@@ -1503,7 +1505,7 @@ void create2Particles2HexStkMesh(stk::mesh::MetaData &meta, stk::mesh::BulkData 
 
     OurCartesianField::VectorField &coordField = meta.declare_field<OurCartesianField::VectorField>(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field(coordField, meta.universal_part(), meta.spatial_dimension());
+    stk::mesh::put_field_on_mesh(coordField, meta.universal_part(), meta.spatial_dimension(), nullptr);
 
     meta.commit();
 
@@ -1610,7 +1612,7 @@ void fillIoBroker(MPI_Comm communicator, const std::string &generatedMeshSpec, s
         stk::mesh::Field<double> &field =
                 ioBroker.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK,
                         fieldName, 1);
-        stk::mesh::put_field(field, ioBroker.meta_data().universal_part());
+        stk::mesh::put_field_on_mesh(field, ioBroker.meta_data().universal_part(), nullptr);
     }
 
     {
@@ -1618,7 +1620,7 @@ void fillIoBroker(MPI_Comm communicator, const std::string &generatedMeshSpec, s
         stk::mesh::Field<double> &field =
                 ioBroker.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK,
                         fieldName, 1);
-        stk::mesh::put_field(field, ioBroker.meta_data().universal_part());
+        stk::mesh::put_field_on_mesh(field, ioBroker.meta_data().universal_part(), nullptr);
     }
 
     ioBroker.populate_bulk_data();

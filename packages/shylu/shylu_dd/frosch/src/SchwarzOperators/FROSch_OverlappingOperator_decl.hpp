@@ -51,7 +51,7 @@ namespace FROSch {
     class GO = typename Xpetra::Operator<SC,LO>::global_ordinal_type,
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class OverlappingOperator : public SchwarzOperator<SC,LO,GO,NO> {
-        
+    
     public:
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
@@ -64,12 +64,16 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVectorPtr MultiVectorPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ImporterPtr ImporterPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtr ExporterPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr ConstSCVecPtr;
         
+
         OverlappingOperator(CrsMatrixPtr k,
                             ParameterListPtr parameterList);
         
@@ -88,17 +92,26 @@ namespace FROSch {
         
     protected:
         
+        enum CombinationType {Averaging,Full,Restricted};
+        
         virtual int initializeOverlappingOperator();
         
         virtual int computeOverlappingOperator();
         
         CrsMatrixPtr OverlappingMatrix_;
         
-        MapPtr OverlappingMap_;
+        MapPtr OverlappingMap_;            
         
         ImporterPtr Scatter_;
         
         SubdomainSolverPtr SubdomainSolver_;
+        
+        MultiVectorPtr Multiplicity_;
+        
+        CombinationType Combine_;
+        
+        int LevelID_;
+        
     };
     
 }

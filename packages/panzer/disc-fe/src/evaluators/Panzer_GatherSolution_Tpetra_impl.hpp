@@ -120,8 +120,8 @@ GatherSolution_Tpetra(
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData  d ,
-                      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -135,8 +135,6 @@ postRegistrationSetup(typename TRAITS::SetupData  d ,
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
     scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
@@ -144,13 +142,7 @@ postRegistrationSetup(typename TRAITS::SetupData  d ,
       scratch_offsets_[fd](i) = offsets[i];
   }
 
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
-  }
-
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].dimension_0(),
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -208,7 +200,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      Kokkos::parallel_for(localCellIds.size(), KOKKOS_LAMBDA (std::size_t worksetCellIndex) {
        // loop over basis functions and fill the fields
-       for(std::size_t basis=0;basis<offsets.dimension_0();basis++) {
+       for(std::size_t basis=0;basis<offsets.extent(0);basis++) {
          int offset = offsets(basis);
          LO lid    = lids(worksetCellIndex,offset);
 
@@ -281,7 +273,7 @@ GatherSolution_Tpetra(
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -290,15 +282,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-  }
-
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_.clear();  // Don't need this anymore
@@ -455,7 +438,7 @@ GatherSolution_Tpetra(
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -469,9 +452,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
     scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
@@ -479,7 +459,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
       scratch_offsets_[fd](i) = offsets[i];
   }
 
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].dimension_0(),
+  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -625,7 +605,7 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 operator()(const int worksetCellIndex) const
 {
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
     int offset = functor_data.offsets(basis);
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
@@ -642,7 +622,7 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 operator()(const NoSeed,const int worksetCellIndex) const
 {
   // loop over basis functions and fill the fields
-  for(std::size_t basis=0;basis<functor_data.offsets.dimension_0();basis++) {
+  for(std::size_t basis=0;basis<functor_data.offsets.extent(0);basis++) {
     int offset = functor_data.offsets(basis);
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 

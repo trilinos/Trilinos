@@ -61,7 +61,9 @@ namespace KokkosBatched {
           ValueType t(0);
           const ValueType *__restrict__ tA = (A + i*as0);
 
-              
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif               
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif

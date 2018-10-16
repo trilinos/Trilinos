@@ -601,6 +601,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntMultiVector: public Epetra_DistObject, pub
   */
   int MaxValue  (int * Result) const;
 
+  //@}
+
   //! @name Overloaded operators
   //@{
 
@@ -646,10 +648,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntMultiVector: public Epetra_DistObject, pub
   //@{
 
   //! Returns the number of vectors in the multi-vector.
-  int NumVectors() const {return(NumVectors_);};
+  int NumVectors() const {return(NumVectors_);}
 
   //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-  int MyLength() const {return(MyLength_);};
+  int MyLength() const {return(MyLength_);}
 
   //! Returns the global vector length of vectors in the multi-vector.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -659,13 +661,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntMultiVector: public Epetra_DistObject, pub
     throw "Epetra_MultiVector::GlobalLength: GlobalIndices not int.";
   }
 #endif
-  long long GlobalLength64() const {return(GlobalLength_);};
+  long long GlobalLength64() const {return(GlobalLength_);}
 
   //! Returns the stride between  vectors in the multi-vector (only meaningful if ConstantStride() is true).
-  int Stride() const {return(Stride_);};
+  int Stride() const {return(Stride_);}
 
   //! Returns true if this multi-vector has constant stride between vectors.
-  bool ConstantStride() const {return(ConstantStride_);};
+  bool ConstantStride() const {return(ConstantStride_);}
   //@}
 
   /** Replace map, only if new map has same point-structure as current map.
@@ -706,13 +708,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_IntMultiVector: public Epetra_DistObject, pub
   int ResetView(int ** ArrayOfPointers);
 
   //! Get pointer to MultiVector values
-  int* Values() const {return Values_;};
+  int* Values() const {return Values_;}
 
   //! Get pointer to individual vector pointers
-  int** Pointers() const {return Pointers_;};
+  int** Pointers() const {return Pointers_;}
   //@}
 
   // Expert-only function
+  //  SuperLU defines Reduce to be a macro in util.h
+#undef Reduce
   int Reduce();
 
  protected:

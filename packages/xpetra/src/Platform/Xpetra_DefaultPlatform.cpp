@@ -54,10 +54,12 @@ namespace Xpetra {
     XPETRA_MONITOR("DefaultPlatform::getDefaultPlatform");
 
     if (!platform_.get()) {
+      using node_type = KokkosClassic::DefaultNode::DefaultNodeType;
+      Teuchos::RCP<node_type> node; // null
 #ifdef HAVE_MPI
-      platform_ = Teuchos::rcp(new MpiPlatform<KokkosClassic::DefaultNode::DefaultNodeType>(KokkosClassic::DefaultNode::getDefaultNode()));
+      platform_ = Teuchos::rcp(new MpiPlatform<node_type>(node));
 #else
-      platform_ = Teuchos::rcp(new SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType>(KokkosClassic::DefaultNode::getDefaultNode()));
+      platform_ = Teuchos::rcp(new SerialPlatform<node_type>(node));
 #endif
     }
     return *platform_;

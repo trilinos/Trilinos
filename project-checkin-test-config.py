@@ -31,8 +31,8 @@ configuration = {
         # developers prefer one case to fail earlier than another).
         'default-builds': [
 
-            ('MPI_RELEASE_DEBUG_SHARED_PT', [
-                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/MpiReleaseDebugSharedPtSerial.cmake',
+            ('MPI_RELEASE_DEBUG_SHARED_PT_OPENMP', [
+                '-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/GCC-4.8.4-OpenMPI-1.10.1-MpiReleaseDebugSharedPtOpenMP.cmake',
                 ]),
 
             ], # default-builds

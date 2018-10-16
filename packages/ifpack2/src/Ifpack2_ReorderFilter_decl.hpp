@@ -44,7 +44,7 @@
 #define IFPACK2_REORDERFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_RowMatrix.hpp"
+#include "Ifpack2_Details_RowMatrix.hpp"
 #include <type_traits>
 
 namespace Ifpack2 {
@@ -67,10 +67,7 @@ whether the reordered matrix is lower/upper triangular or not).
 */
 template<class MatrixType>
 class ReorderFilter :
-    virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                     typename MatrixType::local_ordinal_type,
-                                     typename MatrixType::global_ordinal_type,
-                                     typename MatrixType::node_type> {
+    virtual public Ifpack2::Details::RowMatrix<MatrixType> {
 public:
   typedef typename MatrixType::scalar_type scalar_type;
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
@@ -177,12 +174,6 @@ public:
   ///   is not owned by the calling process.
   virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
 
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-  virtual global_size_t getGlobalNumDiags() const;
-
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-  virtual size_t getNodeNumDiags() const;
-
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
 
@@ -191,12 +182,6 @@ public:
 
   //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
-
-  //! \brief Indicates whether this matrix is lower triangular.
-  virtual bool isLowerTriangular() const;
-
-  //! \brief Indicates whether this matrix is upper triangular.
-  virtual bool isUpperTriangular() const;
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   virtual bool isLocallyIndexed() const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* expenm - ex_put_partial_id_map
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       ex_entity_type obj_type
-*       int*    elem_map                element numbering map array
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expenm - ex_put_partial_id_map
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       ex_entity_type obj_type
+ *       int*    elem_map                element numbering map array
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
@@ -70,16 +70,16 @@
 int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_entity_num,
                           int64_t num_entities, const void_int *map)
 {
-  int         dimid, mapid, status, dims[1];
+  int         dimid = 0, mapid = 0, status, dims[1];
   int         map_int_type;
   size_t      start[1], count[1];
   char        errmsg[MAX_ERR_LENGTH];
-  const char *tname;
-  const char *dnumentries;
-  const char *vmap;
+  const char *tname       = NULL;
+  const char *dnumentries = NULL;
+  const char *vmap        = NULL;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   if (num_entities == 0 && !ex_is_parallel(exoid)) {
     EX_FUNC_LEAVE(EX_NOERR);
@@ -109,7 +109,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
              exoid);
-    ex_err("ex_put_partial_id_map", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -123,26 +123,26 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
      * parallel run that there is no error; otherwise if in serial and
      * num_entities != 0, there is an error.
      */
-    if (num_entities == 0) { /* Parallel run with no entities OK */
-      EX_FUNC_LEAVE(EX_NOERR);
+    if (num_entities != 0) {
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: The %s count is %" PRId64
+               ", but the %s dimension is not defined on file id %d.",
+               tname, num_entities, dnumentries, exoid);
+      ex_err(__func__, errmsg, EX_BADPARAM);
+      EX_FUNC_LEAVE(EX_FATAL);
     }
-
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: The %s count is %" PRId64
-                                     ", but the %s dimension is not defined on file id %d.",
-             tname, num_entities, dnumentries, exoid);
-    ex_err("ex_put_partial_id_map", errmsg, EX_BADPARAM);
-    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* define the map if it doesn't already exist... */
   if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
     if ((status = nc_redef(exoid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
-      ex_err("ex_put_partial_id_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* create a variable array in which to store the id map  */
+
     dims[0] = dimid;
 
     /* Check type to be used for maps... */
@@ -155,12 +155,12 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
       if (status == NC_ENAMEINUSE) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s numbering map already exists in file id %d",
                  tname, exoid);
-        ex_err("ex_put_partial_id_map", errmsg, status);
+        ex_err(__func__, errmsg, status);
       }
       else {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to create %s id map in file id %d", tname,
                  exoid);
-        ex_err("ex_put_partial_id_map", errmsg, status);
+        ex_err(__func__, errmsg, status);
       }
       goto error_ret; /* exit define mode and return */
     }
@@ -169,7 +169,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     /* leave define mode  */
     if ((status = nc_enddef(exoid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-      ex_err("ex_put_partial_id_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -192,7 +192,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s numbering map in file id %d", tname,
              exoid);
-    ex_err("ex_put_partial_id_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -203,7 +203,7 @@ error_ret:
   if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
   {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err("ex_put_partial_id_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
   }
   EX_FUNC_LEAVE(EX_FATAL);
 }

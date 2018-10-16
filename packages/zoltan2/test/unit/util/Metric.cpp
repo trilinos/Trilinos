@@ -62,18 +62,15 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::arcp;
 
-using namespace std;
-using std::endl;
-using std::cout;
-
 
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int nWeights, int numLocalParts, bool givePartSizes);
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
 
   doTest(comm, 10, 0, -1, false);
@@ -90,7 +87,7 @@ int main(int argc, char *argv[])
   doTest(comm, 10, 2, -1, false);
 
   if (rank==0)
-    cout << "PASS" << endl;
+    std::cout << "PASS" << std::endl;
 }
 
 // Assumes numLocalObj is the same on every process.
@@ -124,15 +121,15 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   }
 
   if (rank == 0){
-    cout << endl;
-    cout << "Test: number of weights " << nWeights;
-    cout << ", desired number of parts " << numGlobalParts;
+    std::cout << std::endl;
+    std::cout << "Test: number of weights " << nWeights;
+    std::cout << ", desired number of parts " << numGlobalParts;
     if (givePartSizes)
-      cout << ", with differing part sizes." << endl;
+      std::cout << ", with differing part sizes." << std::endl;
     else
-      cout << ", with uniform part sizes." << endl;
-    cout << "Number of procs " << nprocs;
-    cout << ", each with " << numLocalObj << " objects, part = rank." << endl;
+      std::cout << ", with uniform part sizes." << std::endl;
+    std::cout << "Number of procs " << nprocs;
+    std::cout << ", each with " << numLocalObj << " objects, part = rank." << std::endl;
   }
 
   // An environment.  This is usually created by the problem.
@@ -254,7 +251,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     ;
     try{
       zscalar_t imb = metricObject->getObjectCountImbalance();
-      cout << "Object imbalance: " << imb << endl;
+      std::cout << "Object imbalance: " << imb << std::endl;
     }
     catch (std::exception &e){
       fail=1;
@@ -267,7 +264,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     try{
       for (int i=0; i < nWeights; i++){
     	zscalar_t imb = metricObject->getWeightImbalance(i);
-        cout << "Weight " << i << " imbalance: " << imb << endl;
+        std::cout << "Weight " << i << " imbalance: " << imb << std::endl;
       }
     }
     catch (std::exception &e){
@@ -276,7 +273,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     if (!fail && nWeights > 1){
       try{
     	zscalar_t imb = metricObject->getNormedImbalance();
-        cout << "Normed weight imbalance: " << imb << endl;
+        std::cout << "Normed weight imbalance: " << imb << std::endl;
       }
       catch (std::exception &e){
         fail=11;
@@ -288,7 +285,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   
   if (rank==0){
     try{
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
     }
     catch (std::exception &e){
       fail=1;

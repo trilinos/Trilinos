@@ -38,7 +38,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <Ioss_GroupingEntity.h>        // for GroupingEntity
 #include <Ioss_VariableType.h>          // for VariableType
@@ -133,7 +133,7 @@ void MeshField::add_part(const stk::mesh::EntityRank rank,
 			 const stk::mesh::Part &part,
 			 Ioss::GroupingEntity *io_entity)
 {
-  m_fieldParts.push_back(MeshFieldPart(rank, &part, io_entity, m_dbName));
+  m_fieldParts.emplace_back(rank, &part, io_entity, m_dbName);
 }
 
 bool MeshField::operator==(const MeshField &other) const
@@ -146,8 +146,11 @@ bool MeshField::operator==(const MeshField &other) const
          m_subsetParts == other.m_subsetParts;
 }
 
-double MeshField::restore_field_data_at_step(Ioss::Region *region, stk::mesh::BulkData &bulk,
-                                             int step, bool ignore_missing_fields)
+double MeshField::restore_field_data_at_step(Ioss::Region *region,
+                                             stk::mesh::BulkData &bulk,
+                                             int step,
+                                             bool ignore_missing_fields,
+                                             std::vector<std::string>* multiStateSuffixes)
 {
     STKIORequire(step > 0);
     
@@ -186,11 +189,11 @@ double MeshField::restore_field_data_at_step(Ioss::Region *region, stk::mesh::Bu
         if (subsetted) {
           stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
                                                              io_entity, stk_part, m_dbName, state_count,
-                                                             ignore_missing_fields);
+                                                             ignore_missing_fields, multiStateSuffixes);
         } else {
           stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
                                                    io_entity, m_dbName, state_count,
-                                                   ignore_missing_fields);
+                                                   ignore_missing_fields, multiStateSuffixes);
         }
       }
 
@@ -205,8 +208,9 @@ double MeshField::restore_field_data_at_step(Ioss::Region *region, stk::mesh::Bu
 }
 
 double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
-				   const stk::io::DBStepTimeInterval &sti,
-				   bool ignore_missing_fields)
+                                     const stk::io::DBStepTimeInterval &sti,
+                                     bool ignore_missing_fields,
+                                     std::vector<std::string>* multiStateSuffixes)
 {
   double time_read = -1.0;
   if (!is_active())
@@ -222,7 +226,7 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       step = sti2.get_closest_step();
     }
 
-    time_read = restore_field_data_at_step(sti.region, bulk, step, ignore_missing_fields);
+    time_read = restore_field_data_at_step(sti.region, bulk, step, ignore_missing_fields, multiStateSuffixes);
   }
   else if (m_timeMatch == LINEAR_INTERPOLATION) {
     // Interpolation only handles single-state fields with state StateNew
@@ -246,7 +250,7 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       for (size_t i=0; i < entity_list.size(); ++i) {
 	if (bulk.is_valid(entity_list[i])) {
 	  double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));
-	  if (fld_data !=NULL) {
+	  if (fld_data != nullptr) {
 	    for(size_t j=0; j<field_component_count; ++j) {
 	      fld_data[j] = values[i*field_component_count+j];
 	    }
@@ -304,7 +308,7 @@ void MeshFieldPart::load_field_data(const DBStepTimeInterval &sti)
     if (m_preStep == m_postStep) {
       m_postData.resize(0);
       m_postData.reserve(m_preData.size());
-      std::copy(m_preData.begin(), m_preData.end(), std::back_inserter(m_postData));
+      m_postData.insert(m_postData.end(), m_preData.begin(), m_preData.end());
     }
     else {
       sti.region->begin_state(m_postStep);
@@ -322,16 +326,16 @@ void MeshFieldPart::get_interpolated_field_data(const DBStepTimeInterval &sti, s
   values.reserve(values_size);
 
   if (sti.exists_before && !sti.exists_after) {
-    std::copy(m_preData.begin(), m_preData.end(), std::back_inserter(values));
+    values.insert(values.end(), m_preData.begin(), m_preData.end()); 
   }
   else if (!sti.exists_before && sti.exists_after) {
-    std::copy(m_postData.begin(), m_postData.end(), std::back_inserter(values));
+    values.insert(values.end(), m_postData.begin(), m_postData.end()); 
   }
   else {
     assert(sti.exists_before && sti.exists_after);
     if (sti.s_after == sti.s_before) {
       // No interpolation. preData and postData contain the same step.
-      std::copy(m_preData.begin(), m_preData.end(), std::back_inserter(values));
+      values.insert(values.end(), m_preData.begin(), m_preData.end()); 
     }
     else {
       // Interpolate

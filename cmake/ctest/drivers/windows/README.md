@@ -69,7 +69,7 @@ C:\path\to\DebugPackageDir
    - trilinos-setup-12.3.zip   (Resulting ZIP package)
 ```
 
-[8]: https://testing.sandia.gov/cdash
+[8]: https://testing-vm.sandia.gov/cdash
 
 
 # Script File Summary

@@ -44,7 +44,7 @@
 #define IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 
@@ -85,6 +85,7 @@ public:
   }
 
   void setParameters (const Teuchos::ParameterList& pl) {
+    (void)pl;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const char* block_size_s = "trisolver: block size";
     if (pl.isParameter(block_size_s)) {
@@ -109,6 +110,8 @@ public:
   }
 
   void compute (const crs_matrix_type& T_in, const Teuchos::RCP<Teuchos::FancyOStream>& out) {
+    (void)T_in;
+    (void)out;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     using Teuchos::ArrayRCP;
 
@@ -179,8 +182,12 @@ public:
 
   // Y := beta * Y + alpha * (M * X)
   void localApply (const MV& X, MV& Y,
-                   const Teuchos::ETransp mode,
+                   const Teuchos::ETransp /* mode */,
                    const scalar_type& alpha, const scalar_type& beta) const {
+    (void)X;
+    (void)Y;
+    (void)alpha;
+    (void)beta;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
     const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();
@@ -383,7 +390,14 @@ initialize ()
     (! G->isFillComplete (), std::runtime_error, "If you call this method, "
      "the matrix's graph must be fill complete.  It is not.");
 
-  if (reverseStorage_ && A_crs_->isUpperTriangular() && htsImpl_.is_null()) {
+  // FIXME (mfh 01,02 Jun 2018) isUpperTriangular has been DEPRECATED.
+  // See GitHub Issue #2630.  I'm using isUpperTriangularImpl ONLY to
+  // avoid deprecated warnings.  Users may NOT call this method.
+  //
+  // FIXME (mfh 02 Jun 2018) Move the
+  // determineLocalTriangularStructure call above this test, so we can
+  // use that result, rather than the deprecated method.
+  if (reverseStorage_ && A_crs_->isUpperTriangularImpl() && htsImpl_.is_null()) {
     // Reverse the storage for an upper triangular matrix
     auto Alocal = A_crs_->getLocalMatrix();
     auto ptr    = Alocal.graph.row_map;
@@ -837,7 +851,7 @@ describe (Teuchos::FancyOStream& out,
     // somewhere, so we ask Tpetra for its default communicator.  If
     // MPI is enabled, this wraps MPI_COMM_WORLD or a clone thereof.
     auto comm = A_.is_null () ?
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm () :
+      Tpetra::getDefaultComm () :
       A_->getComm ();
 
     // Users aren't supposed to do anything with the matrix on

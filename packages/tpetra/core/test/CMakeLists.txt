@@ -26,7 +26,6 @@ ADD_SUBDIRECTORIES(
   MultiVectorFiller
   Node
   PerformanceCGSolve
-  Platform
   Sort
   Utils
   RowMatrixTransposer

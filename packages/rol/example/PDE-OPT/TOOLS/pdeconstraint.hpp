@@ -1045,10 +1045,12 @@ public:
 
   void outputTpetraVector(const ROL::Ptr<const Tpetra::MultiVector<> > &vec,
                           const std::string &filename) const {
-    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
-    vecWriter.writeDenseFile(filename, vec);
-    std::string mapfile = "map_" + filename;
-    vecWriter.writeMapFile(mapfile, *(vec->getMap()));
+    assembler_->outputTpetraVector(vec, filename);
+  }
+
+  void inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
+                         const std::string &filename) const {
+    assembler_->inputTpetraVector(vec, filename);
   }
   /***************************************************************************/
   /* End of output routines.                                                 */

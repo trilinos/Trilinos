@@ -3547,7 +3547,7 @@ SEACAS
      - exotxt:     convert exodus database to text format
      - gjoin:      join 2 or more exodus databases into a single database.
                    Will combine nodes, blocks, nodesets, sidesets
-     - grope:      query an exodus database.
+     - explore:    query an exodus database.
      - mapvar:     transfer solution results from one database to another.
      - mapvar-kd:  same as mapvar with a kd-based internal search; minor other
                    differences.

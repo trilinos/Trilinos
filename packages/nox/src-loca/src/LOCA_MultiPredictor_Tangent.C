@@ -60,7 +60,7 @@
 
 LOCA::MultiPredictor::Tangent::Tangent(
           const Teuchos::RCP<LOCA::GlobalData>& global_data,
-          const Teuchos::RCP<Teuchos::ParameterList>& predParams,
+          const Teuchos::RCP<Teuchos::ParameterList>& /* predParams */,
           const Teuchos::RCP<Teuchos::ParameterList>& solverParams) :
   globalData(global_data),
   linSolverParams(solverParams),

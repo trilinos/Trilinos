@@ -352,10 +352,16 @@ typedef Sacado::Fad::SFad<InnerFadType,global_outer_fad_size> SFadType;
 // These tests are only relevant when we have the experimental view
 // specialization
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#if SACADO_TEST_DFAD
 #define VIEW_FAD_TESTS_D( D )                            \
   VIEW_FAD_TESTS_FD( SFadType, D )                       \
   VIEW_FAD_TESTS_FD( SLFadType, D )                      \
   VIEW_FAD_TESTS_FD( DFadType, D )
+#else
+#define VIEW_FAD_TESTS_D( D )                            \
+  VIEW_FAD_TESTS_FD( SFadType, D )                       \
+  VIEW_FAD_TESTS_FD( SLFadType, D )
+#endif
 #else
 #define VIEW_FAD_TESTS_D( D ) /* */
 #endif

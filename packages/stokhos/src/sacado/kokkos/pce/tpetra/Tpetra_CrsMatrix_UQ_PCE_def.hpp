@@ -46,7 +46,9 @@
 
 #include "Tpetra_CrsMatrix_def.hpp"
 
-namespace Tpetra {
+// These are macros; the code isn't compiled here, so we don't need to
+// say here what namespace the code is in.  We _do_ need to put the
+// code in the correct namespace when we use the macro.
 
 #define TPETRA_CRSMATRIX_UQ_PCE_SPEC(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
   template<>                                                            \
@@ -126,7 +128,5 @@ namespace Tpetra {
     }                                                                   \
     return Y_rowMap;                                                    \
   }
-
-} // namespace Tpetra
 
 #endif // STOKHOS_TPETRA_UQ_PCE_DEF_HPP

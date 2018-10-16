@@ -463,8 +463,8 @@ namespace Intrepid2 {
     ordinal_type
     getDofCount( const ordinal_type subcDim,
                  const ordinal_type subcOrd ) const {
-      if ( subcDim >= 0   &&   subcDim < static_cast<ordinal_type>(tagToOrdinal_.dimension(0)) &&
-           subcOrd >= 0   &&   subcOrd < static_cast<ordinal_type>(tagToOrdinal_.dimension(1)) )
+      if ( subcDim >= 0   &&   subcDim < static_cast<ordinal_type>(tagToOrdinal_.extent(0)) &&
+           subcOrd >= 0   &&   subcOrd < static_cast<ordinal_type>(tagToOrdinal_.extent(1)) )
       {
         int firstDofOrdinal = tagToOrdinal_(subcDim, subcOrd, 0); // will be -1 if no dofs for subcell
         if (firstDofOrdinal == -1) return static_cast<ordinal_type>(0);
@@ -492,17 +492,17 @@ namespace Intrepid2 {
                    const ordinal_type subcDofOrd ) const {
       // this should be abort and able to be called as a device function
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= static_cast<ordinal_type>(tagToOrdinal_.dimension(0)), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= static_cast<ordinal_type>(tagToOrdinal_.extent(0)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDim is out of range");
-      INTREPID2_TEST_FOR_EXCEPTION( subcOrd < 0 || subcOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(1)), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( subcOrd < 0 || subcOrd >= static_cast<ordinal_type>(tagToOrdinal_.extent(1)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcOrd is out of range");
-      INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(2)), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= static_cast<ordinal_type>(tagToOrdinal_.extent(2)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
 #endif
       ordinal_type r_val = -1;
-      if ( subcDim    < static_cast<ordinal_type>(tagToOrdinal_.dimension(0)) &&
-           subcOrd    < static_cast<ordinal_type>(tagToOrdinal_.dimension(1)) &&
-           subcDofOrd < static_cast<ordinal_type>(tagToOrdinal_.dimension(2)) )
+      if ( subcDim    < static_cast<ordinal_type>(tagToOrdinal_.extent(0)) &&
+           subcOrd    < static_cast<ordinal_type>(tagToOrdinal_.extent(1)) &&
+           subcDofOrd < static_cast<ordinal_type>(tagToOrdinal_.extent(2)) )
         r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( r_val == -1, std::runtime_error,
@@ -531,7 +531,7 @@ namespace Intrepid2 {
     const ordinal_type_array_stride_1d_host
     getDofTag( const ordinal_type dofOrd ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.dimension(0)), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.extent(0)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofTag): dofOrd is out of range");
 #endif
       return Kokkos::subview(ordinalToTag_, dofOrd, Kokkos::ALL());

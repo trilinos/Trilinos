@@ -35,5 +35,9 @@ cd $TEST_DIR/
 
 export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
 
+if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
+  export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
+fi
+
 env CTEST_DASHBOARD_ROOT=$PWD \
   ctest -V -S $DRIVER_SCRIPT_DIR/ctest_linux_mpi_sems_atdm_7.2.0.cmake

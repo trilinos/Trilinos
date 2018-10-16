@@ -52,13 +52,31 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 #include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_Meta.hpp"
+
+namespace TestTraitsNS {
+  template <typename Scalar>
+  struct test_traits {
+    static const char* test_mat;
+  };
+
+  template <typename Scalar>
+  const char* test_traits<Scalar>::test_mat = "../matrices/amesos2_test_mat0.mtx";
+
+  template <typename Mag>
+  struct test_traits<std::complex<Mag> > {
+    static const char* test_mat;
+  };
+
+  template <typename Mag>
+  const char* test_traits<std::complex<Mag> >::test_mat = "../matrices/amesos2_test_mat0_complex.mtx";
+} // namespace TestTraitsNS
 
 namespace {
 
@@ -93,29 +111,13 @@ namespace {
   using Amesos2::GLOBALLY_REPLICATED;
 
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-  typedef Platform::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = true;
 
   // Where to look for input files
   string filedir;
 
-  template <typename Scalar>
-  struct test_traits {
-    static const char* test_mat;
-  };
-
-  template <typename Scalar>
-  const char* test_traits<Scalar>::test_mat = "../matrices/amesos2_test_mat0.mtx";
-
-  template <typename Mag>
-  struct test_traits<std::complex<Mag> > {
-    static const char* test_mat;
-  };
-
-  template <typename Mag>
-  const char* test_traits<std::complex<Mag> >::test_mat = "../matrices/amesos2_test_mat0_complex.mtx";
 
 
   TEUCHOS_STATIC_SETUP()
@@ -132,7 +134,7 @@ namespace {
   {
     RCP<const Comm<int> > ret;
     if( testMpi ){
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     } else {
       ret = rcp(new Teuchos::SerialComm<int>());
     }
@@ -249,9 +251,7 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t rank          = comm->getRank();
 
     /* We will be using the following matrix for this test (amesos2_test_mat0[_complex].mtx:
@@ -264,8 +264,8 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-                                                        comm, node, true, true);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
+                                                        comm, true, true);
     RCP<const Map<LO,GO,Node> > map = mat->getRowMap();
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
@@ -332,9 +332,7 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
     typedef std::pair<Scalar,GO> my_pair_t;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     // create a Map for our matrix
     global_size_t nrows = 6;
     RCP<const Map<LO,GO,Node> > map = createUniformContigMap<LO,GO>(nrows,comm);
@@ -349,8 +347,8 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-                                                        comm, node, true, true);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
+                                                        comm, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -413,9 +411,7 @@ namespace {
      */
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numprocs = comm->getSize();
     const size_t rank     = comm->getRank();
     // create a Map for our matrix
@@ -432,8 +428,8 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-                                                        comm, node, true, true);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
+                                                        comm, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -494,9 +490,7 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MatrixAdapter<MAT> ADAPT;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t rank          = comm->getRank();
 
     /* We will be using the following matrix for this test:
@@ -509,8 +503,8 @@ namespace {
      *   [ 0,  0,  0,  -2, 0,  6 ] ]
      */
     RCP<MAT> mat =
-      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-                                                        comm, node, true, true);
+      Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(TestTraitsNS::test_traits<Scalar>::test_mat,
+                                                        comm, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 

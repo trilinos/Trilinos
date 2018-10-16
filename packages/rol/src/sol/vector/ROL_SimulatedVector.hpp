@@ -252,6 +252,12 @@ public:
     }
   }
 
+  void randomize(const Real l=0.0, const Real u=1.0) {
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      vecs_[i]->randomize(l,u);
+    }
+  }
+
   // Methods that do not exist in the base class
 
   // In distributed batching mode, these are understood to take local indices.

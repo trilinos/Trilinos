@@ -8,6 +8,7 @@ BlockedCoarseMapFactory
 BlockedCoordinatesTransferFactory
 BlockedDirectSolver
 BlockedGaussSeidelSmoother
+BlockedJacobiSmoother
 BlockedPFactory
 BlockedRAPFactory
 BrickAggregationFactory
@@ -35,6 +36,7 @@ FilteredAFactory
 FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory
+GeometricInterpolationPFactory
 GMRESSolver
 Hierarchy
 HierarchyManager

@@ -89,8 +89,6 @@ public:
                             const UniqueGlobalIndexerBase & indexerSrc,
                             const UniqueGlobalIndexerBase & indexerDest);
 
-  void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm);
-
   void evaluateFields(typename TRAITS::EvalData d);
 
 private:
@@ -134,9 +132,6 @@ public:
                             const UniqueGlobalIndexerBase & indexerSrc,
                             const UniqueGlobalIndexerBase & indexerDest);
   
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
-
   void evaluateFields(typename TRAITS::EvalData workset);
   
 private:

@@ -1,4 +1,4 @@
-// Copyright(C) 2010 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -35,6 +35,7 @@
 #include "EJ_CodeTypes.h" // for StringIdVector, Omissions, etc
 #include "EJ_vector3d.h"  // for vector3d
 #include "GetLongOpt.h"   // for GetLongOption
+#include <climits>        // for INT_MAX
 #include <string>         // for string
 #include <vector>         // for vector
 
@@ -54,10 +55,13 @@ public:
   bool   match_elem_ids() const { return matchElemIds_; }
   bool   omit_nodesets() const { return omitNodesets_; }
   bool   omit_sidesets() const { return omitSidesets_; }
-  bool convert_nodes_to_nodesets(int part_number) const;
-  bool disable_field_recognition() const { return disableFieldRecognition_; }
-  bool ints64bit() const { return ints64bit_; }
+  bool   convert_nodes_to_nodesets(int part_number) const;
+  bool   disable_field_recognition() const { return disableFieldRecognition_; }
+  bool   ints64bit() const { return ints64bit_; }
+  bool   use_netcdf4() const { return useNetcdf4_; }
+  bool   ignore_element_ids() const { return ignoreElementIds_; }
 
+  int compression_level() const { return compressionLevel_; }
   int step_min() const { return stepMin_; }
   int step_max() const { return stepMax_; }
   int step_interval() const { return stepInterval_; }
@@ -70,6 +74,7 @@ public:
   const StringIdVector &  nset_var_names() const { return nsetVarNames_; }
   const StringIdVector &  sset_var_names() const { return ssetVarNames_; }
 
+  const Omissions &block_inclusions() const { return blockInclusions_; }
   const Omissions &block_omissions() const { return blockOmissions_; }
   const Omissions &nset_omissions() const { return nsetOmissions_; }
   const Omissions &sset_omissions() const { return ssetOmissions_; }
@@ -99,24 +104,28 @@ private:
 
   GetLongOption options_; //!< Options parsing
 
-  int  debugLevel_;
-  int  stepMin_;
-  int  stepMax_;
-  int  stepInterval_;
-  bool omitNodesets_;
-  bool omitSidesets_;
-  bool matchNodeIds_;
-  bool matchNodeXYZ_;
-  bool matchElemIds_;
-  bool disableFieldRecognition_;
-  bool ints64bit_;
+  int  debugLevel_{0};
+  int  stepMin_{1};
+  int  stepMax_{INT_MAX};
+  int  stepInterval_{1};
+  int  compressionLevel_{0};
+  bool omitNodesets_{false};
+  bool omitSidesets_{false};
+  bool matchNodeIds_{false};
+  bool matchNodeXYZ_{false};
+  bool matchElemIds_{false};
+  bool disableFieldRecognition_{false};
+  bool ints64bit_{false};
+  bool useNetcdf4_{false};
+  bool ignoreElementIds_{false};
 
   std::string elementStatusVariable_;
   std::string nodalStatusVariable_;
 
   vector3d offset_;
-  double   tolerance_;
+  double   tolerance_{0.0};
 
+  Omissions blockInclusions_;
   Omissions blockOmissions_;
   Omissions nsetOmissions_;
   Omissions ssetOmissions_;

@@ -44,7 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -208,12 +208,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   B->setAllToScalar(static_cast<SC>(0.));
   B->fillComplete();
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef typename device_type::execution_space ES;
   const bool atomic_updates = ! std::is_same<ES, Kokkos::Serial>::value;
 #else
   const bool atomic_updates = true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   out << "Calling unpackCrsMatrixAndCombine with "
       << "CombineMode=Tpetra::REPLACE" << endl;
@@ -571,12 +571,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
   B->setAllToScalar(static_cast<SC>(0.));
   B->fillComplete();
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   typedef typename device_type::execution_space ES;
   const bool atomic_updates = ! std::is_same<ES, Kokkos::Serial>::value;
 #else
   const bool atomic_updates = true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   out << "Calling unpackCrsMatrixAndCombine with "
       << "CombineMode=Tpetra::REPLACE" << endl;

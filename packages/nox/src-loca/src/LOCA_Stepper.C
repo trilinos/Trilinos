@@ -581,7 +581,7 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   NOX::StatusTest::StatusType solverStatus;
 
@@ -676,7 +676,7 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   // FIXME Remove this.
   LOCA::StatusTest::CheckType checkType = LOCA::StatusTest::Complete;

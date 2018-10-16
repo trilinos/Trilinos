@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,9 @@
 #define SEACAS_Version_h
 
 static char const *qainfo[] = {
-    "epu --  E Pluribus Unum", "2017/04/25", "4.22",
+    "epu --  E Pluribus Unum",
+    "2018/07/26",
+    "4.28",
 };
 
 #endif // SEACAS_Version_h

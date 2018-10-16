@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -80,7 +80,7 @@ static double cgrad[3]; /* grad of constraint equation */
 
 double func3d(double coeffs[15],                      /* five different 4-way products */
               double theta, double phi, double gamma2 /* angular parameters */
-              )
+)
 
 /* Returns value of penalty function at given angle. */
 {
@@ -149,7 +149,7 @@ static double grad0(), grad1(), grad2();
 void grad3d(double coeffs[15],                      /* five different 4-way products */
             double grad[3],                         /* gradient returned */
             double theta, double phi, double gamma2 /* angular parameters */
-            )
+)
 
 /* Returns 1st derivative of penalty function at given angle. */
 {
@@ -369,7 +369,7 @@ static double hess00(), hess11(), hess22(), hess01(), hess02(), hess12();
 
 void hess3d(double coeffs[15], /* five different 4-way products */
             double hess[3][3]  /* Hessian returned */
-            )
+)
 
 /* Returns 2nd derivative of penalty function at given angle. */
 {
@@ -1037,7 +1037,7 @@ static double hess12(double *coeffs)
 }
 
 double constraint(double *coeffs2 /* coefficients for constraint eqn */
-                  )
+)
 {
   double val; /* value of constraint (should be zero) */
 
@@ -1060,7 +1060,7 @@ static double gradcon0(), gradcon1(), gradcon2();
 
 void gradcon(double *coeffs2, /* coefficients for constraint eqn */
              double  grad[3]  /* gradient returned */
-             )
+)
 {
   int i; /* loop counter */
 
@@ -1190,7 +1190,7 @@ static double hesscon01(), hesscon02(), hesscon12();
 
 void hesscon(double *coeffs2,   /* coefficients for constraint eqn */
              double  hess[3][3] /* hessian returned */
-             )
+)
 {
   int i, j; /* loop variables */
 

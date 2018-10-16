@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,20 +44,20 @@
 /* Function prototypes */
 extern int token_compare(char *      token, /* The input character string */
                          const char *key    /* The key to compare with token */
-                         );
+);
 
 extern void strip_string(char        inp_str[], /* The string to strip */
                          const char *tokens     /* The tokens to strip from the beginning and
                                                  * end of the input string */
-                         );
+);
 
 extern void clean_string(char        inp_str[], /* The string to clean */
                          const char *tokens     /* The tokens to strip multiple copies of */
-                         );
+);
 
 extern void string_to_lower(char in_string[], /* The string to convert to lower case */
                             char cval         /* Character where to stop */
-                            );
+);
 
 template <typename INT> void gds_qsort(INT v[], size_t N);
 
@@ -80,7 +80,7 @@ template <typename INT> ssize_t in_list(INT value, size_t count, INT *vector);
 template <typename INT> ssize_t in_list(INT value, std::vector<INT> vector);
 
 extern int roundfloat(float value /* the value to be rounded */
-                      );
+);
 
 template <typename INT>
 size_t find_inter(const INT set1[],     /* the first set of integers */
@@ -88,7 +88,7 @@ size_t find_inter(const INT set1[],     /* the first set of integers */
                   size_t    length1,    /* the length of the first set */
                   size_t    length2,    /* the length of the second set */
                   INT       inter_ptr[] /* the values in the intersection */
-                  );
+);
 
 template <typename INT> ssize_t bin_search2(INT value, size_t num, INT List[]);
 

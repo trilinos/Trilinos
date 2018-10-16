@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ int klv_init(struct bilist ***lbucket_ptr, /* space for left bucket sorts */
              int **           rdvals,      /* change in separator for right moves */
              int              nvtxs,       /* number of vertices in the graph */
              int              maxchange    /* maximum change by moving a vertex */
-             )
+)
 {
   int sizeb; /* size of set of buckets */
   int sizel; /* size of set of pointers for all vertices */

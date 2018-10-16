@@ -552,16 +552,20 @@ setupExodusFile(
   meshData_->set_bulk_data(bulkData_);
   meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
   const FieldVector& fields = metaData_->get_fields();
-  for (size_t i(0); i < fields.size(); ++i)
-  {
-    try
-    {
+  for (size_t i(0); i < fields.size(); ++i) {
+    // Do NOT add MESH type stk fields to exodus io, but do add everything
+    // else. This allows us to avoid having to catch a throw for
+    // re-registering coordinates, sidesets, etc... Note that some
+    // fields like LOAD_BAL don't always have a role assigned, so for
+    // roles that point to null, we need to register them as well.
+    auto role = stk::io::get_field_role(*fields[i]);
+    if (role != nullptr) {
+      if (*role != Ioss::Field::MESH)
+        meshData_->add_field(meshIndex_, *fields[i]);
+    } else {
       meshData_->add_field(meshIndex_, *fields[i]);
     }
-    catch (const runtime_error&)
-    {
-    }
-  } // end loop over fields
+  }
 #else
   TEUCHOS_ASSERT(false)
 #endif

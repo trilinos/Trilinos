@@ -43,15 +43,16 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBlas1_nrminf_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE)
+#include "KokkosBlas1_nrminf_spec.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
  KOKKOSBLAS1_NRMINF_MV_ETI_SPEC_INST(Kokkos::complex<float>, Kokkos::LayoutRight, Kokkos::Threads, Kokkos::Experimental::HBWSpace)
-#endif
 } // Impl
 } // KokkosBlas
+#endif

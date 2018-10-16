@@ -69,7 +69,7 @@ LOCA::Abstract::Group::Group(
 }
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source,
-                 NOX::CopyType type) :
+                 NOX::CopyType /* type */) :
   globalData(source.globalData)
 {
   // We use copy here instead of copy constructors to avoid issues with
@@ -83,13 +83,13 @@ LOCA::Abstract::Group::~Group()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::augmentJacobianForHomotopy(double a, double b)
+LOCA::Abstract::Group::augmentJacobianForHomotopy(double /* a */, double /* b */)
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::computeShiftedMatrix(double alpha, double beta)
+LOCA::Abstract::Group::computeShiftedMatrix(double /* alpha */, double /* beta */)
 {
   globalData->locaErrorCheck->throwError(
                "LOCA::Abstract::Group::computeShiftedMatrix",
@@ -98,8 +98,8 @@ LOCA::Abstract::Group::computeShiftedMatrix(double alpha, double beta)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
-                      NOX::Abstract::Vector& result) const
+LOCA::Abstract::Group::applyShiftedMatrix(const NOX::Abstract::Vector& /* input */,
+                      NOX::Abstract::Vector& /* result */) const
 {
   globalData->locaErrorCheck->throwError(
                "LOCA::Abstract::Group::applyShiftedMatrix",
@@ -109,8 +109,8 @@ LOCA::Abstract::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyShiftedMatrixMultiVector(
-                const NOX::Abstract::MultiVector& input,
-                NOX::Abstract::MultiVector& result) const
+                const NOX::Abstract::MultiVector& /* input */,
+                NOX::Abstract::MultiVector& /* result */) const
 {
   globalData->locaErrorCheck->throwError(
             "LOCA::Abstract::Group::applyShiftedMatrixMultiVector",
@@ -120,9 +120,9 @@ LOCA::Abstract::Group::applyShiftedMatrixMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyShiftedMatrixInverseMultiVector(
-                    Teuchos::ParameterList& params,
-                const NOX::Abstract::MultiVector& input,
-                NOX::Abstract::MultiVector& result) const
+                    Teuchos::ParameterList& /* params */,
+                const NOX::Abstract::MultiVector& /* input */,
+                NOX::Abstract::MultiVector& /* result */) const
 {
   globalData->locaErrorCheck->throwError(
         "LOCA::Abstract::Group::applyShiftedMatrixInverseMultiVector",
@@ -131,7 +131,7 @@ LOCA::Abstract::Group::applyShiftedMatrixInverseMultiVector(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::computeSecondShiftedMatrix(double alpha, double beta)
+LOCA::Abstract::Group::computeSecondShiftedMatrix(double /* alpha */, double /* beta */)
 {
   globalData->locaErrorCheck->throwError(
                "LOCA::Abstract::Group::computeSecondShiftedMatrix",
@@ -140,8 +140,8 @@ LOCA::Abstract::Group::computeSecondShiftedMatrix(double alpha, double beta)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applySecondShiftedMatrix(const NOX::Abstract::Vector& input,
-                      NOX::Abstract::Vector& result) const
+LOCA::Abstract::Group::applySecondShiftedMatrix(const NOX::Abstract::Vector& /* input */,
+                      NOX::Abstract::Vector& /* result */) const
 {
   globalData->locaErrorCheck->throwError(
                "LOCA::Abstract::Group::applySecondShiftedMatrix",
@@ -151,8 +151,8 @@ LOCA::Abstract::Group::applySecondShiftedMatrix(const NOX::Abstract::Vector& inp
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applySecondShiftedMatrixMultiVector(
-                const NOX::Abstract::MultiVector& input,
-                NOX::Abstract::MultiVector& result) const
+                const NOX::Abstract::MultiVector& /* input */,
+                NOX::Abstract::MultiVector& /* result */) const
 {
   globalData->locaErrorCheck->throwError(
             "LOCA::Abstract::Group::applySecondShiftedMatrixMultiVector",
@@ -167,7 +167,7 @@ LOCA::Abstract::Group::isComplex() const
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::computeComplex(double frequency)
+LOCA::Abstract::Group::computeComplex(double /* frequency */)
 {
   globalData->locaErrorCheck->throwError(
                    "LOCA::Abstract::Group::computeComplex",
@@ -176,10 +176,10 @@ LOCA::Abstract::Group::computeComplex(double frequency)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyComplex(const NOX::Abstract::Vector& input_real,
-                    const NOX::Abstract::Vector& input_imag,
-                    NOX::Abstract::Vector& result_real,
-                    NOX::Abstract::Vector& result_imag) const
+LOCA::Abstract::Group::applyComplex(const NOX::Abstract::Vector& /* input_real */,
+                    const NOX::Abstract::Vector& /* input_imag */,
+                    NOX::Abstract::Vector& /* result_real */,
+                    NOX::Abstract::Vector& /* result_imag */) const
 {
   globalData->locaErrorCheck->throwError("LOCA::Abstract::Group::applyComplex",
                      "Method not defined for group");
@@ -188,10 +188,10 @@ LOCA::Abstract::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyComplexMultiVector(
-                  const NOX::Abstract::MultiVector& input_real,
-                  const NOX::Abstract::MultiVector& input_imag,
-                  NOX::Abstract::MultiVector& result_real,
-                  NOX::Abstract::MultiVector& result_imag) const
+                  const NOX::Abstract::MultiVector& /* input_real */,
+                  const NOX::Abstract::MultiVector& /* input_imag */,
+                  NOX::Abstract::MultiVector& /* result_real */,
+                  NOX::Abstract::MultiVector& /* result_imag */) const
 {
   globalData->locaErrorCheck->throwError(
                  "LOCA::Abstract::Group::applyComplexMultiVector",
@@ -201,11 +201,11 @@ LOCA::Abstract::Group::applyComplexMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyComplexInverseMultiVector(
-                   Teuchos::ParameterList& params,
-                   const NOX::Abstract::MultiVector& input_real,
-                   const NOX::Abstract::MultiVector& input_imag,
-                   NOX::Abstract::MultiVector& result_real,
-                   NOX::Abstract::MultiVector& result_imag) const
+                   Teuchos::ParameterList& /* params */,
+                   const NOX::Abstract::MultiVector& /* input_real */,
+                   const NOX::Abstract::MultiVector& /* input_imag */,
+                   NOX::Abstract::MultiVector& /* result_real */,
+                   NOX::Abstract::MultiVector& /* result_imag */) const
 {
   globalData->locaErrorCheck->throwError(
                    "LOCA::Abstract::Group::applyComplexInverse",
@@ -215,10 +215,10 @@ LOCA::Abstract::Group::applyComplexInverseMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyComplexTranspose(
-                      const NOX::Abstract::Vector& input_real,
-                      const NOX::Abstract::Vector& input_imag,
-                      NOX::Abstract::Vector& result_real,
-                      NOX::Abstract::Vector& result_imag) const
+                      const NOX::Abstract::Vector& /* input_real */,
+                      const NOX::Abstract::Vector& /* input_imag */,
+                      NOX::Abstract::Vector& /* result_real */,
+                      NOX::Abstract::Vector& /* result_imag */) const
 {
   globalData->locaErrorCheck->throwError(
                  "LOCA::Abstract::Group::applyComplexTranspose",
@@ -228,10 +228,10 @@ LOCA::Abstract::Group::applyComplexTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyComplexTransposeMultiVector(
-                const NOX::Abstract::MultiVector& input_real,
-                const NOX::Abstract::MultiVector& input_imag,
-                NOX::Abstract::MultiVector& result_real,
-                NOX::Abstract::MultiVector& result_imag) const
+                const NOX::Abstract::MultiVector& /* input_real */,
+                const NOX::Abstract::MultiVector& /* input_imag */,
+                NOX::Abstract::MultiVector& /* result_real */,
+                NOX::Abstract::MultiVector& /* result_imag */) const
 {
   globalData->locaErrorCheck->throwError(
             "LOCA::Abstract::Group::applyComplexTransposeMultiVector",
@@ -241,11 +241,11 @@ LOCA::Abstract::Group::applyComplexTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyComplexTransposeInverseMultiVector(
-                Teuchos::ParameterList& params,
-                const NOX::Abstract::MultiVector& input_real,
-                const NOX::Abstract::MultiVector& input_imag,
-                NOX::Abstract::MultiVector& result_real,
-                NOX::Abstract::MultiVector& result_imag) const
+                Teuchos::ParameterList& /* params */,
+                const NOX::Abstract::MultiVector& /* input_real */,
+                const NOX::Abstract::MultiVector& /* input_imag */,
+                NOX::Abstract::MultiVector& /* result_real */,
+                NOX::Abstract::MultiVector& /* result_imag */) const
 {
   globalData->locaErrorCheck->throwError(
           "LOCA::Abstract::Group::applyComplexTransposeInverseMultiVector",

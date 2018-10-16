@@ -113,7 +113,7 @@ template <typename MatrixType>
 void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   const Teuchos::RCP<const LinearOpSourceBase<scalar_type> > &fwdOpSrc,
   PreconditionerBase<scalar_type> *prec,
-  const ESupportSolveUse supportSolveUse
+  const ESupportSolveUse /* supportSolveUse */
   ) const
 {
   // Check precondition

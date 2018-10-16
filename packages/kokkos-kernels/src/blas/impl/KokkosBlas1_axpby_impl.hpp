@@ -108,8 +108,8 @@ struct Axpby_Functor {
                    "XV and YV must have rank 1.");
 
     if (startingColumn != 0) {
-      m_a = Kokkos::subview (a, std::make_pair (startingColumn, SizeType(a.dimension_0 ())));
-      m_b = Kokkos::subview (b, std::make_pair (startingColumn, SizeType(b.dimension_0 ())));
+      m_a = Kokkos::subview (a, std::make_pair (startingColumn, SizeType(a.extent(0))));
+      m_b = Kokkos::subview (b, std::make_pair (startingColumn, SizeType(b.extent(0))));
     }
   }
 
@@ -347,7 +347,7 @@ Axpby_Generic (const AV& av, const XV& x,
                  "XV and YV must have rank 1.");
 
   typedef typename YV::execution_space execution_space;
-  const SizeType numRows = x.dimension_0 ();
+  const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0 && b == 0) {

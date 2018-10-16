@@ -3,7 +3,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#define __KOKKOSBATCHED_PROMOTION__ 1
+//#define __KOKKOSBATCHED_PROMOTION__ 1
 
 #include <iomanip>
 #include <random>

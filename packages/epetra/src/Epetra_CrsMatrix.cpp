@@ -2450,7 +2450,7 @@ int Epetra_CrsMatrix::TCopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
                 int * PermuteToLIDs,
                 int *PermuteFromLIDs,
                 const Epetra_OffsetIndex * Indexor,
-                Epetra_CombineMode CombineMode) {
+                Epetra_CombineMode /* CombineMode */) {
   int i, j, ierr;
 
   int_type Row, ToRow;

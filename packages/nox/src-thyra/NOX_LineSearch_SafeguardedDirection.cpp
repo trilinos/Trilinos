@@ -51,6 +51,7 @@
 #include "NOX_LineSearch_SafeguardedDirection.hpp"
 
 #include "NOX_LineSearch_Utils_Printing.H"
+#include "NOX_LineSearch_Utils_Counters.H"
 #include "NOX_LineSearch_Utils_Slope.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -60,6 +61,7 @@
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_GlobalData.H"
+#include "NOX_SolverStats.hpp"
 #include "NOX_TOpEleWiseMinSwap.hpp"
 #include "NOX_Thyra_Vector.H"
 #include "Thyra_VectorBase.hpp"
@@ -70,7 +72,8 @@ SafeguardedDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
              Teuchos::ParameterList& params) :
   paramsPtr_(NULL),
   globalDataPtr_(gd),
-  print_(gd->getUtils())
+  print_(gd->getUtils()),
+  counter_(&gd->getNonConstSolverStatistics()->lineSearch)
 {
   reset(gd, params);
 }
@@ -81,6 +84,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 {
   globalDataPtr_ = gd;
   print_.reset(gd->getUtils());
+  counter_ = &gd->getNonConstSolverStatistics()->lineSearch;
   paramsPtr_ = &params;
 
   Teuchos::ParameterList& p = params.sublist("Safeguarded Direction");
@@ -100,7 +104,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   // Set up counter
   if (useCounter_)
-    counter_.reset();
+    counter_->reset();
 
   return true;
 }
@@ -108,13 +112,13 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp,
                             double& step,
                             const Abstract::Vector& dir,
-                            const Solver::Generic& s)
+                            const Solver::Generic& /* s */)
 {
   printOpeningRemarks();
 
   if (useCounter_) {
-    counter_.incrementNumLineSearches();
-    counter_.incrementNumNonTrivialLineSearches();
+    counter_->incrementNumLineSearches();
+    counter_->incrementNumNonTrivialLineSearches();
   }
 
   // Limit individual entries
@@ -157,7 +161,7 @@ bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp,
   }
 
   if (useCounter_)
-    counter_.setValues(*paramsPtr_);
+    counter_->setValues(*paramsPtr_);
 
   return true;
 }

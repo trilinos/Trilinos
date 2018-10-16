@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,7 @@ int divide_procs(int              architecture, /* 0 => hypercube, d => d-dimens
                  int *            cut_dirs,     /* direction of each cut if mesh */
                  int *            mesh_dims,    /* size of full mesh */
                  int              hops_special[][MAXSETS] /* hop matrix for nonstandard cases */
-                 )
+)
 {
   int nsets_real = -1; /* number of sets to divide into */
   int ndims_real = -1; /* number of eigenvectors to use */

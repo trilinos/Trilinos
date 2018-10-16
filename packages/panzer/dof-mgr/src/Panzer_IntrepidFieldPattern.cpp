@@ -55,8 +55,8 @@ namespace panzer {
     const auto dofTag = intrepidBasis_->getAllDofTags(); // rank 2 view
     
     const int 
-      iend = dofOrd.dimension(0),
-      jend = dofOrd.dimension(1);
+      iend = dofOrd.extent(0),
+      jend = dofOrd.extent(1);
     
     subcellIndicies_.resize(iend);
     for (int i=0;i<iend;++i) {
@@ -246,19 +246,23 @@ namespace panzer {
   {
     TEUCHOS_ASSERT(cellVertices.rank()==3);
 
-    int numCells = cellVertices.dimension(0);
+    int numCells = cellVertices.extent(0);
 
     // grab the local coordinates
     Kokkos::DynRankView<double,PHX::Device> localCoords;
     getInterpolatoryCoordinates(localCoords);
 
     // resize the coordinates field container
-    coords = Kokkos::DynRankView<double,PHX::Device>("coords",numCells,localCoords.dimension(0),getDimension());
+    coords = Kokkos::DynRankView<double,PHX::Device>("coords",numCells,localCoords.extent(0),getDimension());
 
     if(numCells>0) {
       Intrepid2::CellTools<PHX::Device> cellTools;
       cellTools.mapToPhysicalFrame(coords,localCoords,cellVertices,intrepidBasis_->getBaseCellTopology());
     }
   }
+
+  Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> >
+  Intrepid2FieldPattern::getIntrepidBasis() const
+  { return intrepidBasis_; }
   
 }

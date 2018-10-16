@@ -164,7 +164,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
   const std::string blockId = this->wda(workset_0).block_id;
@@ -222,7 +222,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // sized big enough to hold the largest elementBlockGIDCount in the
   // ProductVector.
   worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
-                                                scatterFields_[0].dimension_0(),
+                                                scatterFields_[0].extent(0),
                                                 maxElementBlockGIDCount);
 }
 
@@ -379,7 +379,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
   const std::string blockId = this->wda(workset_0).block_id;
@@ -423,7 +423,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     elementBlockGIDCount += blockDOFMgr->getElementBlockGIDCount(blockId);
 
   worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterDirichletResidual_BlockedTpetra(Jacobian):worksetLIDs",
-                                                scatterFields_[0].dimension_0(),
+                                                scatterFields_[0].extent(0),
                                                 elementBlockGIDCount);
 
   // Compute the block offsets

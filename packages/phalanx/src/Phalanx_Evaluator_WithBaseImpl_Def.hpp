@@ -102,7 +102,7 @@ namespace PHX {
     DummyMemoryBinder& operator=(const DummyMemoryBinder& ) = default;
     DummyMemoryBinder(DummyMemoryBinder&& ) = default;
     DummyMemoryBinder& operator=(DummyMemoryBinder&& ) = default;
-    void operator()(const PHX::any& f) { /* DO NOTHING! */ }
+    void operator()(const PHX::any& /* f */) { /* DO NOTHING! */ }
   };
 
 } // namespace PHX
@@ -341,8 +341,8 @@ setName(const std::string& name)
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
-                      PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData /* d */,
+                      PHX::FieldManager<Traits>& /* vm */)
 {}
 
 //**********************************************************************
@@ -392,13 +392,13 @@ taskSize() const
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-preEvaluate(typename Traits::PreEvalData d)
+preEvaluate(typename Traits::PreEvalData /* d */)
 { }
 
 //**********************************************************************
 template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-postEvaluate(typename Traits::PostEvalData d)
+postEvaluate(typename Traits::PostEvalData /* d */)
 { }
 
 //**********************************************************************
@@ -425,7 +425,7 @@ createDeviceEvaluator() const
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createDeviceEvalautor() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evalautor.");
   // Suppress cuda warning for unreachable code
-#ifndef KOKKOS_HAVE_CUDA
+#ifndef KOKKOS_ENABLE_CUDA
   return nullptr;
 #endif
 }
@@ -433,7 +433,7 @@ createDeviceEvaluator() const
 //**********************************************************************
 template<typename Traits>
 void
-PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const
+PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvalautor() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evalautor.");
@@ -442,7 +442,7 @@ PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<
 //**********************************************************************
 template<typename Traits>
 void
-PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const
+PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* /* e */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvalautor() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evalautor.");

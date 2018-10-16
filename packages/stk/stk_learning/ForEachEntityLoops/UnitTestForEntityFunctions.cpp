@@ -41,11 +41,11 @@ public:
     {
     }
 
-    inline void for_each_entity_run(stk::topology::rank_t rank, AlgorithmPerEntity &functor)
+    void for_each_entity_run(stk::topology::rank_t rank, AlgorithmPerEntity &functor)
     {
         for_each_selected_entity_run(rank, mesh_meta_data().universal_part(), functor);
     }
-    inline void for_each_selected_entity_run(stk::topology::rank_t rank, const stk::mesh::Selector &selector, AlgorithmPerEntity &functor)
+    void for_each_selected_entity_run(stk::topology::rank_t rank, const stk::mesh::Selector &selector, AlgorithmPerEntity &functor)
     {
         const stk::mesh::BucketVector & buckets = this->get_buckets(rank, selector);
         for(stk::mesh::Bucket *bucket : buckets)
@@ -57,22 +57,22 @@ public:
         }
     }
 
-    inline void for_each_node_run(AlgorithmPerEntity &functor)
+    void for_each_node_run(AlgorithmPerEntity &functor)
     {
         for_each_entity_run(stk::topology::NODE_RANK, functor);
     }
 
-    inline void for_each_element_run(AlgorithmPerEntity &functor)
+    void for_each_element_run(AlgorithmPerEntity &functor)
     {
         for_each_entity_run(stk::topology::ELEMENT_RANK, functor);
     }
 
-    inline void for_each_selected_element_run(const stk::mesh::Selector &selector, AlgorithmPerEntity &functor)
+    void for_each_selected_element_run(const stk::mesh::Selector &selector, AlgorithmPerEntity &functor)
     {
         for_each_selected_entity_run(stk::topology::ELEMENT_RANK, selector, functor);
     }
 
-    inline void for_communicated_entities_run(AlgorithmPerCommunicatedEntity &algorithm) const
+    void for_communicated_entities_run(AlgorithmPerCommunicatedEntity &algorithm) const
     {
         std::vector<int> comm_procs;
         stk::mesh::EntityCommListInfoVector::const_iterator iter = internal_comm_list().begin(),
@@ -106,13 +106,13 @@ public:
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_entity_run(stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+    void for_each_entity_run(stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
     {
         for_each_selected_entity_run(rank, mesh_meta_data().universal_part(), functor);
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_selected_entity_run(stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+    void for_each_selected_entity_run(stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
     {
         const stk::mesh::BucketVector & buckets = this->get_buckets(rank, selector);
         const size_t numBuckets = buckets.size();
@@ -134,25 +134,25 @@ public:
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_node_run(const ALGORITHM_PER_ENTITY &functor)
+    void for_each_node_run(const ALGORITHM_PER_ENTITY &functor)
     {
         for_each_entity_run(stk::topology::NODE_RANK, functor);
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_element_run(const ALGORITHM_PER_ENTITY &functor)
+    void for_each_element_run(const ALGORITHM_PER_ENTITY &functor)
     {
         for_each_entity_run(stk::topology::ELEMENT_RANK, functor);
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_selected_element_run(const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+    void for_each_selected_element_run(const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
     {
         for_each_selected_entity_run(stk::topology::ELEMENT_RANK, selector, functor);
     }
 
     template <typename ALGORITHM_PER_ENTITY, typename REDUCTION_VAR>
-    inline void for_each_node_run_and_sum(REDUCTION_VAR &reductionVar, const ALGORITHM_PER_ENTITY &functor)
+    void for_each_node_run_and_sum(REDUCTION_VAR &reductionVar, const ALGORITHM_PER_ENTITY &functor)
     {
         REDUCTION_VAR localVarToReduceInto = reductionVar;
         const stk::mesh::BucketVector & buckets = this->buckets(stk::topology::NODE_RANK);
@@ -176,7 +176,7 @@ public:
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_entity_run_non_threadsafe(stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+    void for_each_entity_run_non_threadsafe(stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
     {
         //BEGIN_TEMPLATED_FOR_EACH_ENTITY
         const stk::mesh::BucketVector & buckets = this->buckets(rank);
@@ -196,18 +196,18 @@ public:
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_node_run_non_threadsafe(const ALGORITHM_PER_ENTITY &functor)
+    void for_each_node_run_non_threadsafe(const ALGORITHM_PER_ENTITY &functor)
     {
         for_each_entity_run_non_threadsafe(stk::topology::NODE_RANK, functor);
     }
 
     template <typename ALGORITHM_PER_ENTITY>
-    inline void for_each_element_run_non_threadsafe(const ALGORITHM_PER_ENTITY &functor)
+    void for_each_element_run_non_threadsafe(const ALGORITHM_PER_ENTITY &functor)
     {
         for_each_entity_run_non_threadsafe(stk::topology::ELEMENT_RANK, functor);
     }
 
-    inline void initialize_fast_entity_access()
+    void initialize_fast_entity_access()
     {
         mFastNumNodes.resize(m_entity_keys.size());
         mFastBeginNodes.resize(m_entity_keys.size());
@@ -222,12 +222,12 @@ public:
         );
     }
 
-    inline unsigned fast_num_nodes(stk::mesh::Entity entity) const
+    unsigned fast_num_nodes(stk::mesh::Entity entity) const
     {
         return mFastNumNodes[entity.local_offset()];
     }
 
-    inline const stk::mesh::Entity * fast_begin_nodes(stk::mesh::Entity entity) const
+    const stk::mesh::Entity * fast_begin_nodes(stk::mesh::Entity entity) const
     {
         return mFastBeginNodes[entity.local_offset()];
     }
@@ -432,7 +432,7 @@ TEST(ForEntityFunction, test_for_communicated_entities_run)
 struct CountNumNodesAlgorithmFunctor
 {
     CountNumNodesAlgorithmFunctor(unsigned &numNodes) : mNumNodes(numNodes) {}
-    inline void operator()(const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...) const
+    void operator()(const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...) const
     {
         if(mesh.is_valid(node))
         {
@@ -444,7 +444,7 @@ struct CountNumNodesAlgorithmFunctor
 
 struct CountNumNodesAlgorithmFunctorWithSum
 {
-    inline void operator()(unsigned &numNodes, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...) const
+    void operator()(unsigned &numNodes, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...) const
     {
         if(mesh.is_valid(node))
         {
@@ -572,7 +572,7 @@ TEST(ForEntityFunction, test_element_death_using_inheritance)
         stk::mesh::Part &activePart = metaData.declare_part("active", stk::topology::ELEMENT_RANK);
         auto &deathCriterionField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "deathCriterion");
         double initialDeathValue = 0.0;
-        stk::mesh::put_field(deathCriterionField, metaData.universal_part(), &initialDeathValue);
+        stk::mesh::put_field_on_mesh(deathCriterionField, metaData.universal_part(), &initialDeathValue);
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:2x2x2";
@@ -613,7 +613,7 @@ TEST(ForEntityFunction, test_element_death_using_lambdas)
         stk::mesh::Part &activePart = metaData.declare_part("active", stk::topology::ELEMENT_RANK);
         auto &deathCriterionField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "deathCriterion");
         double initialDeathValue = 0.0;
-        stk::mesh::put_field(deathCriterionField, metaData.universal_part(), &initialDeathValue);
+        stk::mesh::put_field_on_mesh(deathCriterionField, metaData.universal_part(), &initialDeathValue);
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:2x2x2";
@@ -1109,8 +1109,6 @@ TEST(ForEntityFunction, performance_test_getting_per_bucket_values_per_entity)
         std::string generatedMeshSpec = countNodesMeshSpec;
         stk::io::fill_mesh(generatedMeshSpec, bulkData);
 
-
-
         double startTime = 0.0;
         unsigned numNodes = 0;
         unsigned numElementsInMesh = stk::mesh::count_selected_entities(metaData.universal_part(), bulkData.buckets(stk::topology::ELEMENT_RANK));
@@ -1237,6 +1235,7 @@ double access_field_data_using_lambda_for_entity_loops(BulkDataForEntityTemplate
     }
     return sum;
 }
+
 TEST(ForEntityFunction, performance_test_getting_field_values_per_entity)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -1246,7 +1245,7 @@ TEST(ForEntityFunction, performance_test_getting_field_values_per_entity)
         stk::mesh::MetaData metaData(spatialDim);
         auto &nodeField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodeField");
         const double initValue = 1.0;
-        stk::mesh::put_field(nodeField, metaData.universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(nodeField, metaData.universal_part(), &initValue);
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
@@ -1395,6 +1394,7 @@ void checkAccelerationAndZeroOut(BulkDataForEntityTemplatedTester &bulkData,
         }
     );
 }
+
 TEST(ForEntityFunction, performance_test_calculate_acceleration)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -1404,13 +1404,13 @@ TEST(ForEntityFunction, performance_test_calculate_acceleration)
         stk::mesh::MetaData metaData(spatialDim);
         auto &massField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "massField");
         const double initMass = 2.0;
-        stk::mesh::put_field(massField, metaData.universal_part(), &initMass);
+        stk::mesh::put_field_on_mesh(massField, metaData.universal_part(), &initMass);
         auto &forceField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "forceField");
         const double initForce[3] = {8.0, 8.0, 8.0};
-        stk::mesh::put_field(forceField, metaData.universal_part(), 3, initForce);
+        stk::mesh::put_field_on_mesh(forceField, metaData.universal_part(), 3, initForce);
         auto &accelerationField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "accelerationField");
         const double initAcceleration[3] = {0.0, 0.0, 0.0};
-        stk::mesh::put_field(accelerationField, metaData.universal_part(), 3, initAcceleration);
+        stk::mesh::put_field_on_mesh(accelerationField, metaData.universal_part(), 3, initAcceleration);
 
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
@@ -1585,6 +1585,7 @@ void checkCentroidAndZeroOut(BulkDataForEntityTemplatedTester &bulkData,
         }
     );
 }
+
 TEST(ForEntityFunction, performance_test_centroid_calculation_using_bucket_accessors_vs_bulk_data_accessors)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -1594,7 +1595,7 @@ TEST(ForEntityFunction, performance_test_centroid_calculation_using_bucket_acces
         stk::mesh::MetaData metaData(spatialDim);
         auto &centroidField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEMENT_RANK, "centroidField");
         const double initValue[3] = {0.0, 0.0, 0.0};
-        stk::mesh::put_field(centroidField, metaData.universal_part(), 3, initValue);
+        stk::mesh::put_field_on_mesh(centroidField, metaData.universal_part(), 3, initValue);
 
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
@@ -1909,7 +1910,7 @@ TEST(ForEntityFunction, performance_test_node_to_element_connectivity_bucket_acc
 
 
 template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-inline void for_each_selected_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+void for_each_selected_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
 {
     const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
     const size_t numBuckets = buckets.size();
@@ -1926,13 +1927,13 @@ inline void for_each_selected_entity_run(BULK_DATA &mesh, stk::topology::rank_t 
 }
 
 template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-inline void for_each_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+void for_each_entity_run(BULK_DATA &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
 {
     for_each_selected_entity_run(mesh, rank, mesh.mesh_meta_data().universal_part(), functor);
 }
 
 template <typename BULK_DATA, typename ALGORITHM_PER_ENTITY>
-inline void for_each_node_run(BULK_DATA &mesh, const ALGORITHM_PER_ENTITY &functor)
+void for_each_node_run(BULK_DATA &mesh, const ALGORITHM_PER_ENTITY &functor)
 {
     for_each_entity_run(mesh, stk::topology::NODE_RANK, functor);
 }
@@ -1963,10 +1964,5 @@ TEST(ForEntityFunction, test_free_function_versions_of_for_each_entity_abstracti
     }
 }
 
-
-
-
-
-
-
 }
+

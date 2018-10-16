@@ -78,6 +78,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
 
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
@@ -172,7 +175,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         found = baseFile.find("_np");
         jumpOut = true;
       }
-      
+
       if (numProc == 1 && found != std::string::npos) {
 #ifdef HAVE_MPI
         baseFile = baseFile.substr(0, found);
@@ -182,7 +185,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
       }
       std::cout << "Testing: "<< xmlFile << std::endl;
-      
+
       baseFile = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());
@@ -376,6 +379,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
+  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
   return Automatic_Test_ETI(argc,argv);
 }
 

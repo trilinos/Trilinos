@@ -42,6 +42,8 @@
 #ifndef STOKHOS_CRSPRODUCTTENSOR_HPP
 #define STOKHOS_CRSPRODUCTTENSOR_HPP
 
+//#include "Kokkos_View.hpp"
+//#include "Kokkos_Layout.hpp"
 #include "Kokkos_Core.hpp"
 
 #include "Stokhos_Multiply.hpp"
@@ -102,7 +104,7 @@ public:
 #endif
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value;
 #else
     false ;

@@ -58,15 +58,15 @@ Constant<EvalT, Traits>::Constant(Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Constant<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData /* d */,
+		      PHX::FieldManager<Traits>& /* vm */)
 {
   constant.deep_copy(value);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
-void Constant<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
+void Constant<EvalT, Traits>::evaluateFields(typename Traits::EvalData /* d */)
 { }
 
 //**********************************************************************

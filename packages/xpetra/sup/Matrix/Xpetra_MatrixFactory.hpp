@@ -256,6 +256,17 @@ namespace Xpetra {
       XPETRA_MONITOR("MatrixFactory::Build");
       return rcp(new CrsMatrixWrap(rowMap, colMap, lclMatrix, params));
     }
+    //! Constructor providing a local Kokkos::CrsMatrix together with all maps
+    static RCP<Matrix> Build (
+        const typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type& lclMatrix,
+        const Teuchos::RCP<const Map>& rowMap,
+        const Teuchos::RCP<const Map>& colMap,
+        const Teuchos::RCP<const Map>& domainMap = Teuchos::null,
+        const Teuchos::RCP<const Map>& rangeMap = Teuchos::null,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null)  {
+      XPETRA_MONITOR("MatrixFactory::Build");
+      return rcp(new CrsMatrixWrap(lclMatrix, rowMap, colMap, domainMap, rangeMap, params));
+    }
 #endif
 
     //! Constructor specifying (possibly different) number of entries in each row.

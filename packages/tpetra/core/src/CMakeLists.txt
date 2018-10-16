@@ -365,6 +365,18 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(DISTOBJECT_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "DistObject" "DISTOBJECT" "${DistObject_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${DISTOBJECT_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::leftAndOrRightScaleCrsMatrix.
+  # Do this only for non-integer Scalar types, since we really only
+  # need this function for linear solvers.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LEFTANDORRIGHTSCALECRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "leftAndOrRightScaleCrsMatrix" "LEFTANDORRIGHTSCALECRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${LEFTANDORRIGHTSCALECRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::computeRowAndColumnOneNorms.
+  # Do this only for non-integer Scalar types, since we really only
+  # need this function for linear solvers.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "computeRowAndColumnOneNorms" "COMPUTEROWANDCOLUMNONENORMS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  LIST(APPEND SOURCES ${COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES})
+
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
 
@@ -389,5 +401,5 @@ SET_PROPERTY(
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory, or to / from the 'impl'
 # subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.  Here's another change.
+# CMake in order to regenerate Makefiles.
 #

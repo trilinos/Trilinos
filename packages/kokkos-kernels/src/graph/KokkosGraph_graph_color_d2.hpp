@@ -86,7 +86,7 @@ void graph_color_d2(KernelHandle *handle,
     case COLORING_D2_MATRIX_SQUARED:
     {
       Impl::GraphColorD2_MatrixSquared <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
+          gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph_d2_matrix_squared();
       break;
     }
@@ -94,7 +94,7 @@ void graph_color_d2(KernelHandle *handle,
     case COLORING_D2:
     {
       Impl::GraphColorD2 <KernelHandle, lno_row_view_t_,lno_nnz_view_t_, lno_col_view_t_, lno_colnnz_view_t_>
-          gc(num_rows, num_cols, row_entries.dimension_0(), row_map, row_entries, col_map, col_entries, handle);
+          gc(num_rows, num_cols, row_entries.extent(0), row_map, row_entries, col_map, col_entries, handle);
       gc.color_graph_d2();
       break;
     }

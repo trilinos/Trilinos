@@ -94,15 +94,11 @@ template<typename EvalT, typename Traits>
 void
 ScatterCellQuantity<EvalT, Traits>::
 postRegistrationSetup(
-  typename Traits::SetupData  /* d */,
-  PHX::FieldManager<Traits>&  fm)
+  typename Traits::SetupData /* d */,
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
+  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd)
     std::string fieldName = scatterFields_[fd].fieldTag().name();
-
-    // setup the field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-  }
 }
 
 template<typename EvalT, typename Traits>
@@ -119,11 +115,11 @@ evaluateFields(
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
       PHX::MDField<const ScalarT,panzer::Cell> & field = scatterFields_[fieldIndex];
-      // std::vector<double> value(field.dimension(0),0.0);
-      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
+      // std::vector<double> value(field.extent(0),0.0);
+      PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1);
 
       // write to double field
-      for(unsigned i=0; i<field.dimension(0);i++)
+      for(unsigned i=0; i<field.extent(0);i++)
          value(i,0) = Sacado::ScalarValue<ScalarT>::eval(field(i));
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value);

@@ -75,7 +75,7 @@ postRegistrationSetup(
   using namespace PHX;
   this->utils.setFieldData(flux,fm);
 
-  TEUCHOS_ASSERT(static_cast<std::size_t>(flux.dimension(2)) == values.size());
+  TEUCHOS_ASSERT(static_cast<std::size_t>(flux.extent(2)) == values.size());
 
   for (int cell = 0; cell < flux.extent_int(0); ++cell)
     for (int ip = 0; ip < flux.extent_int(1); ++ip)

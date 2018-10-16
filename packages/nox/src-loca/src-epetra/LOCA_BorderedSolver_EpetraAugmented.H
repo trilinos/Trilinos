@@ -234,11 +234,11 @@ namespace LOCA {
        * The \em params argument is the linear solver parameters.
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyInverseTranspose(Teuchos::ParameterList& params,
-                const NOX::Abstract::MultiVector* F,
-                const NOX::Abstract::MultiVector::DenseMatrix* G,
-                NOX::Abstract::MultiVector& X,
-                NOX::Abstract::MultiVector::DenseMatrix& Y) const {
+      applyInverseTranspose(Teuchos::ParameterList& /* params */,
+                const NOX::Abstract::MultiVector* /* F */,
+                const NOX::Abstract::MultiVector::DenseMatrix* /* G */,
+                NOX::Abstract::MultiVector& /* X */,
+                NOX::Abstract::MultiVector::DenseMatrix& /* Y */) const {
     return NOX::Abstract::Group::NotDefined;
       }
 

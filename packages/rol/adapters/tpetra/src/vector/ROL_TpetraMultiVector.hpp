@@ -76,7 +76,7 @@ namespace TPMultiVector {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i) const {
-      const int M = X_.dimension_1();
+      const int M = X_.extent(1);
       for(int j=0;j<M;++j) {
         X_(i,j) = f_->apply(X_(i,j));
       } 
@@ -100,7 +100,7 @@ namespace TPMultiVector {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i) const {
-      const int M = X_.dimension_1();
+      const int M = X_.extent(1);
       for(int j=0;j<M;++j) {
         X_(i,j) = f_->apply(X_(i,j),Y_(i,j));
       }
@@ -123,7 +123,7 @@ namespace TPMultiVector {
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i, Real &rval) const {
-      const int M = X_.dimension_1();
+      const int M = X_.extent(1);
 
       for(int j=0;j<M;++j) {
         r_->reduce(X_(i,j),rval);
@@ -246,6 +246,10 @@ public:
 
   void setScalar(const Real C) {
     tpetra_vec_->putScalar(static_cast<double>(C));
+  }
+
+  void randomize(const Real l=0.0, const Real u = 1.0) {
+    tpetra_vec_->randomize(static_cast<double>(l),static_cast<double>(u));
   }
 
   Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > getVector() const {

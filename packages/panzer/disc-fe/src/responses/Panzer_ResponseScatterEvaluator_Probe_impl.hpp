@@ -127,14 +127,6 @@ preEvaluate(typename Traits::PreEvalData d)
 
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
-void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData /* d */,
-                      PHX::FieldManager<Traits>& fm)
-{
-  this->utils.setFieldData(field_,fm);
-}
-
-template<typename EvalT, typename Traits, typename LO, typename GO>
 bool ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 computeBasisValues(typename Traits::EvalData d)
 {
@@ -178,7 +170,7 @@ computeBasisValues(typename Traits::EvalData d)
   }
 
   // Map point to reference frame
-  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.dimension_1();
+  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.extent(1);
   Kokkos::DynRankView<double,PHX::Device> cell_coords(
     "cell_coords", 1, num_vertex, num_dim); // Cell, Basis, Dim
   for (size_t i=0; i<num_vertex; ++i) {

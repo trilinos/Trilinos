@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@ int refine_mesh(struct vtx_data **comm_graph,   /* graph for communication requi
                 double            maxdesire,    /* largest possible desire to flip an edge */
                 int *             vtx2node,     /* mapping from comm_graph vtxs to mesh nodes */
                 int *             node2vtx      /* mapping from mesh nodes to comm_graph vtxs */
-                )
+)
 {
   struct refine_vdata * vdata = NULL;      /* desire data for all vertices */
   struct refine_vdata * vptr;              /* loops through vdata */

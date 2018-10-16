@@ -331,7 +331,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
         Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<memory_space,
         typename CountsViewType::memory_space>::value;
       if (countsAccessibleFromOffsets) {
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         // If 'counts' is a UVM allocation, then conservatively fence
         // first, in case it was last accessed on host.  We're about
         // to access it on device.
@@ -340,7 +340,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
           using counts_exec_space = typename counts_memory_space::execution_space;
           counts_exec_space::fence (); // for UVM's sake.
         }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
         typedef ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
           SizeType> functor_type;
         // offsets' execution space can access counts

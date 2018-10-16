@@ -65,14 +65,14 @@ LOCAInterface::
 
 bool LOCAInterface::
 computeF(const Epetra_Vector& x, Epetra_Vector& f,
-     const NOX::Epetra::Interface::Required::FillType F)
+     const NOX::Epetra::Interface::Required::FillType /* F */)
 {
   problem->ComputeF(x,f);
   return true;
 }
 
 bool LOCAInterface::
-computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+computeJacobian(const Epetra_Vector& x, Epetra_Operator& /* Jac */)
 {
   problem->ComputeJacF(x);
   return true;
@@ -90,7 +90,7 @@ setParameters(const LOCA::ParameterVector& params)
 }
 
 void LOCAInterface::
-printSolution (const Epetra_Vector &x, const double conParam)
+printSolution (const Epetra_Vector &x, const double /* conParam */)
 {
 
   // Printing a Solution file ****************************************
@@ -133,8 +133,8 @@ printSolution (const Epetra_Vector &x, const double conParam)
 }
 
 bool LOCAInterface::
-computeShiftedMatrix (double alpha, double beta,
-                           const Epetra_Vector &x, Epetra_Operator &A)
+computeShiftedMatrix (double alpha, double /* beta */,
+                           const Epetra_Vector &x, Epetra_Operator &/* A */)
 {
 
 std::cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!!! " << std::endl;
@@ -147,7 +147,7 @@ std::cout << " AGS HACK -- LOCAInterface::computeShiftedMatrix RETURNS JACOBIAN!
   return true;
 }
 
-void LOCAInterface::setXdot(const Epetra_Vector& xdot, const double time) {
+void LOCAInterface::setXdot(const Epetra_Vector& /* xdot */, const double time) {
   // current problem does not depend on xdot or t
   t = time;
 }

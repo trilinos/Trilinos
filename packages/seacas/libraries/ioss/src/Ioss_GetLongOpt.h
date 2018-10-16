@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -87,8 +87,8 @@ namespace Ioss {
     int parse(int argc, char *const *argv);
     int parse(char *str, char *p);
 
-    int enroll(const char *opt, OptType t, const char *desc, const char *val,
-               const char *optval = nullptr);
+    int         enroll(const char *opt, OptType t, const char *desc, const char *val,
+                       const char *optval = nullptr);
     const char *retrieve(const char *opt) const;
 
     void usage(std::ostream &outfile = std::cout) const;

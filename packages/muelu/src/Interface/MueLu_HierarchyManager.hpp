@@ -378,11 +378,11 @@ namespace MueLu {
       typedef Node NO;
       typedef Xpetra::MultiVector<GO,LO,GO,NO> GOMultiVector;
 
-      size_t num_els = (size_t) fcont.dimension(0);
-      size_t num_vecs =(size_t) fcont.dimension(1);
+      size_t num_els = (size_t) fcont.extent(0);
+      size_t num_vecs =(size_t) fcont.extent(1);
 
       // Generate rowMap
-      Teuchos::RCP<const Map> rowMap = Xpetra::MapFactory<LO,GO,NO>::Build(colMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),fcont.dimension(0),colMap.getIndexBase(),colMap.getComm());
+      Teuchos::RCP<const Map> rowMap = Xpetra::MapFactory<LO,GO,NO>::Build(colMap.lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),fcont.extent(0),colMap.getIndexBase(),colMap.getComm());
 
       // Fill multivector to use *petra dump routines
       RCP<GOMultiVector> vec = Xpetra::MultiVectorFactory<GO, LO, GO, NO>::Build(rowMap,num_vecs);

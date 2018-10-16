@@ -44,9 +44,9 @@
 
 #ifdef HAVE_TPETRA_INST_OPENMP
 namespace Tpetra {
-namespace MMdetails { 
+namespace MMdetails {
 
-/*********************************************************************************************************/  
+/*********************************************************************************************************/
 // MMM KernelWrappers for Partial Specialization to OpenMP
 template<class Scalar,
          class LocalOrdinal,
@@ -113,14 +113,14 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosO
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal, 
+         class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType>::mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
                                                                                                const LocalOrdinalViewType & Acol2Brow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -137,8 +137,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -168,12 +167,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 #endif
     // KokkosKernelsHandle
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-       typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+       typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
        typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
     // Grab the  Kokkos::SparseCrsMatrices
     const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-    const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+    // const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
 
     // Get the algorithm mode
     std::string alg = nodename+std::string(" algorithm");
@@ -264,14 +263,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal, 
+         class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType>::mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
                                                                                                const LocalOrdinalViewType & Acol2Brow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -313,7 +312,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal, 
+         class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
@@ -322,7 +321,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
                                                                                                const LocalOrdinalViewType & Acol2Brow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -341,8 +340,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
   std::string myalg("LTG");
   if(!params.is_null()) {
-    if(params->isParameter("openmp: algorithm"))
-      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: jacobi algorithm"))
+      myalg = params->get("openmp: jacobi algorithm",myalg);
     if(params->isParameter("openmp: team work size"))
       team_work_size = params->get("openmp: team work size",team_work_size);
   }
@@ -350,7 +349,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   if(myalg == "LTG") {
     // Use the LTG kernel if requested
     ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_LowThreadGustavsonKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
-  } 
+  }
   else if(myalg == "MSAK") {
     ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_MultiplyScaleAddKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
   }
@@ -380,7 +379,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal, 
+         class GlobalOrdinal,
          class LocalOrdinalViewType>
 void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
@@ -389,7 +388,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
                                                                                                const LocalOrdinalViewType & Acol2Brow,
                                                                                                const LocalOrdinalViewType & Acol2Irow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,                                                       
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -408,8 +407,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
   std::string myalg("LTG");
   if(!params.is_null()) {
-    if(params->isParameter("openmp: algorithm"))
-      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: jacobi algorithm"))
+      myalg = params->get("openmp: jacobi algorithm",myalg);
     if(params->isParameter("openmp: team work size"))
       team_work_size = params->get("openmp: team work size",team_work_size);
   }

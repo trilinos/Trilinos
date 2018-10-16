@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,7 +39,7 @@ void merge_assignments(int *assignment, /* assignment list for graph */
                        int *subsets,    /* mapping from local to global sets */
                        int  subnvtxs,   /* number of vtxs in subgraph */
                        int *loc2glob    /* subgraph -> graph numbering map */
-                       )
+)
 {
   int i; /* loop counter */
 

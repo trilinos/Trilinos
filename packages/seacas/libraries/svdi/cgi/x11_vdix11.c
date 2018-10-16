@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -530,7 +530,7 @@ static float ndc_ymax = 1.;
 static float color_table[MAX_COLORS][3];
 static float default_color_table[8][3] = {{0., 0., 0.}, {1., 0., 0.}, {0., 1., 0.}, {1., 1., 0.},
                                           {0., 0., 1.}, {1., 0., 1.}, {0., 1., 1.}, {1., 1., 1.}};
-static int x_colors[MAX_COLORS];
+static int   x_colors[MAX_COLORS];
 static enum CT { MONO, PSEUDO, FULL } color_type;
 static int def_bc_index, def_fc_index;
 static int svdicolors_base;
@@ -1211,7 +1211,7 @@ float args[];
     window_stat = 0; /* reset window change indicator */
     break;
   case 3502: /* turn on buffer picture mode (draw off-screen & copy) */ buf_pic = 1; break;
-  case 3503: /* allow access to full color map */ all_colors                    = 1; break;
+  case 3503: /* allow access to full color map */ all_colors = 1; break;
   default: break;
   }
 }
@@ -1223,7 +1223,7 @@ void vdiqes(escape_code, support) int *escape_code, *support;
   case 3501: *support = 1; break;
   case 3502: *support = 1; break;
   case 3503: *support = 1; break;
-  default: *support   = 0; break;
+  default: *support = 0; break;
   }
 }
 
@@ -1321,8 +1321,8 @@ void vitext(length, char_array) int *length, char_array[];
       }
       switch (char_array[i]) /* process special character */
       {
-      case 8: /* backspace */ xcp        = xcp - vector[6]; break;
-      case 10: /* line feed */ ycp       = ycp - vector[5]; break;
+      case 8: /* backspace */ xcp = xcp - vector[6]; break;
+      case 10: /* line feed */ ycp = ycp - vector[5]; break;
       case 13: /* carriage return */ xcp = 0.; break;
       default: /* other */
         fprintf(stderr, " SVDI Error Number %d, Severity Code %d\n", 208, 5);

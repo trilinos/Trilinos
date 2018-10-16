@@ -126,7 +126,7 @@ class TestSimdMathFunction : public ::testing::Test
   void verify_arrays_equal(const DoubleVector& scalarVec, const SimdDoubleVector& simdVec) const {
     const double* simdSol = reinterpret_cast<const double*>(simdVec.data());
     for (int i=0; i < size(); ++i) {
-      EXPECT_EQ(scalarVec[i], simdSol[i]) << "input values = " + get_input_vals(i);
+      EXPECT_DOUBLE_EQ(scalarVec[i], simdSol[i]) << "input values = " + get_input_vals(i);
     }
   }
 };

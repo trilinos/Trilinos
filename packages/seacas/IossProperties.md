@@ -5,6 +5,9 @@
  LOGGING   | on/[off] | enable/disable logging of field input/output
  LOWER_CASE_VARIABLE_NAMES | [on]/off | Convert all variable names on database to lowercase; replace ' ' with '_'
  USE_GENERIC_CANONICAL_NAMES | on/[off]  | use `block_{id}` as canonical name of an element block instead of the name (if any) stored on the database. The database name will be an alias.
+ ENABLE_FIELD_RECOGNITION | [on]/off | try to combine scalar fields with common basename and recognized suffix into vector, tensor, ...
+ FIELD_SUFFIX_SEPARATOR  | character ['_'] | use this suffix as separtor between field basename and suffices when recognizing fields
+ MINIMIZE_OPEN_FILES | on/[off] | If on, then close file after each timestep and then reopen on next output
 
 ## Auto-Decomposition-Related Properties
  
@@ -15,6 +18,7 @@ RESTART_DECOMPOSITION_METHOD | {method} | Decompose a DB with type `RESTART_IN` 
 DECOMPOSITION_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL_CONSISTENCY | [on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
 RETAIN_FREE_NODES | [on]/off | In auto-decomp, will nodes not connected to any elements be retained. 
+LOAD_BALANCE_THRESHOLD | {real} [1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
 
 ### Valid values for Decomposition Method
 
@@ -64,6 +68,7 @@ PARALLEL_IO_MODE | mpiio, pnetcdf |
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
   FLUSH_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
+  FLUSH_INTERVAL       | int   | For non-heartbeat, the number of output steps between flushing data to disk; if 0, then no flush
   TIME_STAMP_FORMAT    | [%H:%M:%S] | Format used to format time stamp.  See strftime man page
   SHOW_TIME_STAMP      | on/off | Should the output lines be preceded by the timestamp
   PRECISION            | 0..16 [5] | Precision used for floating point output.
@@ -89,3 +94,4 @@ ENABLE_FILE_GROUPS | on/[off]   | experimental
  DECOMP_SHOW_PROGRESS | on/[off] | show memory and elapsed time during autodecomp.
  DECOMP_SHOW_HWM      | on/[off] | show high-water memory during autodecomp
  IOSS_TIME_FILE_OPEN_CLOSE | on/[off] | show elapsed time during parallel-io file open/close/create
+ CHECK_PARALLEL_CONSISTENCY | ignored | check Ioss::GroupingEntity parallel consistency

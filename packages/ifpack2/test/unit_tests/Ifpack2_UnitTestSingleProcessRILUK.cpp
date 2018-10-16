@@ -53,7 +53,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include <iostream>
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
@@ -297,8 +297,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
 
   out << "Ifpack2::RILUK: FillLevel" << endl;
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   if (comm->getSize() > 1) {
     out << endl << "This test is only meaningful in serial." << endl;
@@ -399,9 +398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
 
   out << "Ifpack2::RILUK: IgnoreRowMapGIDs" << endl;
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform =
-    Tpetra::DefaultPlatform::getDefaultPlatform ();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   if (comm->getSize() > 1) {
     out << endl << "This test is only meaningful in serial." << endl;
@@ -552,8 +549,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   out << "Ifpack2::RILUK: TestGIDConsistency" << endl;
 
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   if (comm->getSize () > 1) {
     out << endl << "This test only runs in serial." << endl;

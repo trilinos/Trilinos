@@ -80,6 +80,10 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
+  
+  /// Pass initial guess to Newton solver  
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -133,6 +137,9 @@ private:
 
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 
 };
 } // namespace Tempus

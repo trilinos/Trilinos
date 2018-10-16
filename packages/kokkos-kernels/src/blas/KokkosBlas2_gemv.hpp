@@ -96,22 +96,22 @@ gemv (const char trans[],
 
   // Check compatibility of dimensions at run time.
   if (trans[0] == 'N' || trans[0] == 'n') {
-    if (A.dimension_0 () != y.dimension_0 () || A.dimension_1 () != x.dimension_0 ()) {
+    if (A.extent(0) != y.extent(0) || A.extent(1) != x.extent(0)) {
       std::ostringstream os;
       os << "KokkosBlas::gemv: Dimensions of A, x, and y do not match: "
-         << "A: " << A.dimension_0 () << " x " << A.dimension_1 ()
-         << ", x: " << x.dimension_0 () << ", y: " << y.dimension_0 ();
+         << "A: " << A.extent(0) << " x " << A.extent(1)
+         << ", x: " << x.extent(0) << ", y: " << y.extent(0);
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
   }
   else if (trans[0] == 'T' || trans[0] == 't' ||
            trans[0] == 'C' || trans[0] == 'c' ||
            trans[0] == 'H' || trans[0] == 'h') {
-    if (A.dimension_1 () != y.dimension_0 () || A.dimension_0 () != x.dimension_0 ()) {
+    if (A.extent(1) != y.extent(0) || A.extent(0) != x.extent(0)) {
       std::ostringstream os;
       os << "KokkosBlas::dot: Dimensions of A, x, and y do not match: "
-         << "A: " << A.dimension_0 () << " x " << A.dimension_1 ()
-         << ", x: " << x.dimension_0 () << ", y: " << y.dimension_0 ();
+         << "A: " << A.extent(0) << " x " << A.extent(1)
+         << ", x: " << x.extent(0) << ", y: " << y.extent(0);
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
   }

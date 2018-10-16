@@ -249,10 +249,6 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
 
       ${DASHBOARD_TARGET_POST_CTEST_DRIVER_CMNDS}
 
-      COMMAND echo
-      COMMAND echo "See the results at http://${CTEST_DROP_SITE}${CTEST_DROP_LOCATION}&display=project\#Experimental"
-      COMMAND echo
-
       )
 
   ENDIF()

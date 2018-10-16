@@ -50,7 +50,7 @@
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.tcc"    // for topology::num_nodes, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
 namespace stk { namespace mesh { class Part; } }
 
 

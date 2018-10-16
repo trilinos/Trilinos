@@ -59,12 +59,12 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
   typedef typename crsGraph_t::entries_type::non_const_type   lno_nnz_view_t;
   //typedef typename crsGraph_t::values_type::non_const_type scalar_view_t;
 
-  size_t nrows1 = output_mat1.row_map.dimension_0();
-  size_t nentries1 = output_mat1.entries.dimension_0() ;
+  size_t nrows1 = output_mat1.row_map.extent(0);
+  size_t nentries1 = output_mat1.entries.extent(0) ;
 
-  size_t nrows2 = output_mat2.row_map.dimension_0();
-  size_t nentries2 = output_mat2.entries.dimension_0() ;
-  //size_t nvals2 = output_mat2.values.dimension_0();
+  size_t nrows2 = output_mat2.row_map.extent(0);
+  size_t nentries2 = output_mat2.entries.extent(0) ;
+  //size_t nvals2 = output_mat2.values.extent(0);
 
 
   lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
@@ -239,7 +239,7 @@ void run_experiment(
 
 
   for (int i = 0; i < repeat; ++i){
-    size_type rowmap_size = crsGraph.entries.dimension_0() ;
+    size_type rowmap_size = crsGraph.entries.extent(0) ;
     switch (algorithm){
     case 16:
       kh.create_spgemm_handle(SPGEMM_KK_TRIANGLE_AI);

@@ -51,6 +51,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Complex.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -63,6 +64,30 @@ namespace Details {
 // Users should skip over this anonymous namespace.
 //
 namespace { // (anonymous)
+
+  template<class OutputValueType,
+           class InputValueType>
+  struct ConvertValue {
+    static KOKKOS_INLINE_FUNCTION void
+    convert (OutputValueType& dst, const InputValueType& src) {
+      // This looks trivial, but it actually invokes OutputValueType's
+      // constructor, so that needs to be marked as a __host__
+      // __device__ function (e.g., via the KOKKOS_FUNCTION or
+      // KOKKOS_INLINE_FUNCTION macros).
+      dst = OutputValueType (src);
+    }
+  };
+
+  template<class RealType>
+  struct ConvertValue<RealType, Kokkos::complex<RealType> > {
+    static KOKKOS_INLINE_FUNCTION void
+    convert (RealType& dst, const Kokkos::complex<RealType>& src) {
+      // RealType's constructor needs to be marked as a __host__
+      // __device__ function (e.g., via the KOKKOS_FUNCTION or
+      // KOKKOS_INLINE_FUNCTION macros).
+      dst = RealType (src.real ());
+    }
+  };
 
   /// \brief Functor that helps implement copyConvert (see below).
   ///
@@ -100,11 +125,8 @@ namespace { // (anonymous)
 
     KOKKOS_INLINE_FUNCTION void
     operator () (const index_type& i) const {
-      // This looks trivial, but it actually invokes output_type's
-      // constructor, so that needs to be marked as a __host__
-      // __device__ function (e.g., via the KOKKOS_FUNCTION or
-      // KOKKOS_INLINE_FUNCTION macros).
-      dst_(i) = output_type (src_(i));
+      using input_type = typename std::decay<decltype (src_[i])>::type;
+      ConvertValue<output_type, input_type>::convert (dst_(i), src_(i));
     }
   };
 
@@ -187,11 +209,14 @@ namespace { // (anonymous)
                          false,
                          true> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (! std::is_same<typename OutputViewType::non_const_value_type,
-                       typename InputViewType::non_const_value_type>::value,
+      static_assert (! std::is_same<typename OutputViewType::array_layout,
+                         typename InputViewType::array_layout>::value ||
+                     ! std::is_same<typename OutputViewType::non_const_value_type,
+                         typename InputViewType::non_const_value_type>::value,
                      "CopyConvertImpl (implementation of copyConvert): We "
-                     "should not be calling this specialization if the entries "
-                     "of OutputViewType and InputViewType have the same type.");
+                     "should not be calling this specialization if "
+                     "OutputViewType and InputViewType have the same entry "
+                     "and layout types.");
       static_assert (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
                      "CopyConvertImpl (implementation of copyConvert): "
                      "OutputViewType and InputViewType must both be rank-1 "

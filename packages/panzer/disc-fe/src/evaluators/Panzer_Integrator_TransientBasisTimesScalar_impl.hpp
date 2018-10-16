@@ -110,16 +110,12 @@ postRegistrationSetup(
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
   
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
-  num_nodes = residual.dimension(1);
-  num_qp = scalar.dimension(1);
+  num_nodes = residual.extent(1);
+  num_qp = scalar.extent(1);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.extent(0), num_qp); 
 }
 
 //**********************************************************************

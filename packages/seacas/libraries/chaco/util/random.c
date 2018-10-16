@@ -6,7 +6,7 @@
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43
- *  Copyright (c) 2005 National Technology & Engineering Solutions
+ *  Copyright (c) 2005-2017 National Technology & Engineering Solutions
  *  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  *  NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -153,13 +153,13 @@ long rand_port(void)
   to get [0,1], use (double)(rand_port()-1)/(double)(MAX_VALUE-1) */
 double rand_rect_port(void) { return (double)rand_port() / (double)(MAX_VALUE + 1); }
 
-/* skip ahead in recursion
-  residue = (a^skip * init) mod modulus
-  Use Russian peasant algorithm  */
+  /* skip ahead in recursion
+    residue = (a^skip * init) mod modulus
+    Use Russian peasant algorithm  */
 
-/* calculate residue = (a * x) mod modulus for arbitrary a and x
-  without overflow assume 0 < a < modulus and 0 < x < modulus
-  use Russian peasant algorithm followed by approximate factoring */
+  /* calculate residue = (a * x) mod modulus for arbitrary a and x
+    without overflow assume 0 < a < modulus and 0 < x < modulus
+    use Russian peasant algorithm followed by approximate factoring */
 
 #if defined(TESTING)
 /* Test the generator */

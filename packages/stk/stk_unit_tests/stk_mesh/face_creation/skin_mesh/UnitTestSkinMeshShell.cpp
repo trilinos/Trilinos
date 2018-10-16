@@ -19,7 +19,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
             stk::mesh::MetaData meta_data(3);
             stk::mesh::fixtures::VectorFieldType & node_coord =
                     meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-            stk::mesh::put_field(node_coord, meta_data.universal_part(), 3);
+            stk::mesh::put_field_on_mesh(node_coord, meta_data.universal_part(), 3, nullptr);
 
             stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("wedges", stk::topology::WEDGE_6));
             stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("quad_shells", stk::topology::SHELL_QUAD_4));

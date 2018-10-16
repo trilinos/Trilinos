@@ -64,7 +64,6 @@ packages/stk stk-checkins@software.sandia.gov
 packages/trios trios-checkins@software.sandia.gov
 packages/seacas seacas-checkins@software.sandia.gov
 packages/teko teko-checkins@software.sandia.gov
-packages/meshinggenie Geofracturemeshingcodes@software.sandia.gov
 packages/muelu muelu-checkins@software.sandia.gov
 packages/xpetra xpetra-checkins@software.sandia.gov
 packages/panzer panzer-checkins@software.sandia.gov

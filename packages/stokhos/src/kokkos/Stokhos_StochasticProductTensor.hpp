@@ -45,6 +45,7 @@
 #include <ostream>
 
 #include "Kokkos_Core.hpp"
+//#include "Kokkos_View.hpp"
 
 #include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -131,7 +132,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   size_type aligned_dimension() const {
     const bool is_cuda =
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
       Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value;
 #else
       false ;

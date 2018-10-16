@@ -237,7 +237,7 @@ namespace Teuchos
         // out of memory for storing callbacks).  We could throw an
         // exception here in that case, but I think it's better just
         // to let the minor memory leak happen.
-        (void) atexit (freeTableFormat);
+        static_cast<void>( atexit(freeTableFormat) );
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
         format_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"
@@ -320,7 +320,7 @@ namespace Teuchos
         // out of memory for storing callbacks).  We could throw an
         // exception here in that case, but I think it's better just
         // to let the minor memory leak happen.
-        (void) atexit (freeCounters);
+        static_cast<void>( atexit(freeCounters) );
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
         counters_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"

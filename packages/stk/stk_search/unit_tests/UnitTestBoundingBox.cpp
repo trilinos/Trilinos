@@ -34,9 +34,11 @@
 #include <gtest/gtest.h>
 
 #include <stk_search/BoundingBox.hpp>
+#include <stk_math/stk_math/StkVector.hpp>
 
 #include <string>
 #include <iostream>
+#include <limits>
 
 namespace {
 
@@ -86,6 +88,134 @@ TEST( stk_search_bounding_box, Sphere)
   EXPECT_NE(s, Sphere());
 }
 
+typedef stk::search::Sphere<double> Sphere;
+typedef stk::search::Box<double> Box;
+typedef stk::search::Point<double> Point;
+typedef stk::math::Vector3d Vec;
+
+bool is_coplanar(const Point& point, const std::vector<Point>& tri)
+{
+    Vec p = Vec(point[0], point[1], point[2]);
+    Vec a = Vec(tri[0][0], tri[0][1], tri[0][2]);
+    Vec b = Vec(tri[1][0], tri[1][1], tri[1][2]);
+    Vec c = Vec(tri[2][0], tri[2][1], tri[2][2]);
+
+    Vec normal = Cross(b - a, c - a);
+    return (Dot(a - p, normal) <= std::numeric_limits<double>::epsilon());
+}
+
+double det(const Vec& a, const Vec& b)
+{
+    Vec c = Cross(a,b);
+    return c.length();
+}
+
+bool is_interior_point(const Point& point, const std::vector<Point>& tri)
+{
+    Vec p = Vec(point[0], point[1], point[2]);
+    Vec a = Vec(tri[0][0], tri[0][1], tri[0][2]);
+    Vec b = Vec(tri[1][0], tri[1][1], tri[1][2]);
+    Vec c = Vec(tri[2][0], tri[2][1], tri[2][2]);
+
+    Vec v0 = a;
+    Vec v1 = c - a;
+    Vec v2 = b - a;
+
+    double denom = det(v1, v2);
+    ThrowRequireMsg(denom > 0, "denominator cannot be zero");
+    double alpha =  (det(p, v2) - det(v0, v2)) / denom;
+    double beta  = -(det(p, v1) - det(v0, v1)) / denom;
+    return (alpha >= 0 && beta >= 0 && alpha + beta <= 1);
+}
+
+size_t compute_num_equidistant_points(const Point& point, const std::vector<Point>& tri)
+{
+    Vec p = Vec(point[0], point[1], point[2]);
+    Vec a = Vec(tri[0][0], tri[0][1], tri[0][2]);
+    Vec b = Vec(tri[1][0], tri[1][1], tri[1][2]);
+    Vec c = Vec(tri[2][0], tri[2][1], tri[2][2]);
+
+    Vec PA = a - p;
+    Vec PB = b - p;
+    Vec PC = c - p;
+
+    double lengthPA = PA.length();
+    double lengthPB = PB.length();
+    double lengthPC = PC.length();
+
+    size_t numEquidistantPoints = 0;
+    if (lengthPA == lengthPB && lengthPA == lengthPC)
+        numEquidistantPoints = 3;
+    else if(lengthPA == lengthPB || lengthPA == lengthPC || lengthPB == lengthPC)
+        numEquidistantPoints = 2;
+    return numEquidistantPoints ;
+}
+
+TEST( stk_search_bounding_box, minimumSphereEnclosingEquilateralTriangle)
+{
+  using stk::search::is_valid;
+
+  std::vector<Point> tri = {Point(-1,0,0),
+                            Point(1,0,0),
+                            Point(0,std::sqrt(3),0)};
+
+  Sphere s = minimumBoundingSphere(tri[0], tri[1], tri[2]);
+  EXPECT_TRUE(is_valid(s));
+  EXPECT_TRUE(is_coplanar(s.center(), tri));
+  EXPECT_TRUE(is_interior_point(s.center(), tri));
+
+  size_t goldEquidistantPoints = 3;
+  EXPECT_EQ(goldEquidistantPoints, compute_num_equidistant_points(s.center(), tri));
+}
+
+TEST( stk_search_bounding_box, minimumSphereEnclosingRightIsoscelesTriangle)
+{
+  using stk::search::is_valid;
+
+  std::vector<Point> tri = {Point(1,0,0),
+                            Point(0,1,0),
+                            Point(0,0,0)};
+
+  Sphere s = minimumBoundingSphere(tri[0], tri[1], tri[2]);
+  EXPECT_TRUE(is_valid(s));
+  EXPECT_TRUE(is_coplanar(s.center(), tri));
+
+  size_t goldEquidistantPoints = 3;
+  EXPECT_EQ(goldEquidistantPoints, compute_num_equidistant_points(s.center(), tri));
+}
+
+TEST( stk_search_bounding_box, minimumSphereEnclosingObtuseIsoscelesTriangle)
+{
+  using stk::search::is_valid;
+
+  std::vector<Point> tri = {Point(-1,0,0),
+                            Point(1,0,0),
+                            Point(0,0.1,0)};
+
+  Sphere s = minimumBoundingSphere(tri[0], tri[1], tri[2]);
+  EXPECT_TRUE(is_valid(s));
+  EXPECT_TRUE(is_coplanar(s.center(), tri));
+  EXPECT_TRUE(is_interior_point(s.center(), tri));
+
+  size_t goldEquidistantPoints = 2;
+  EXPECT_EQ(goldEquidistantPoints, compute_num_equidistant_points(s.center(), tri));
+}
+
+TEST( stk_search_bounding_box, minimumSphereEnclosingLine)
+{
+  using stk::search::is_valid;
+
+  std::vector<Point> tri = {Point(0,0,0),
+                            Point(1,1,1),
+                            Point(3,3,3)};
+
+  Sphere s = minimumBoundingSphere(tri[0], tri[1], tri[2]);
+  EXPECT_TRUE(is_valid(s));
+  EXPECT_TRUE(is_coplanar(s.center(), tri));
+
+  size_t goldEquidistantPoints = 2;
+  EXPECT_EQ(goldEquidistantPoints, compute_num_equidistant_points(s.center(), tri));
+}
 
 TEST( stk_search_bounding_box, Box)
 {

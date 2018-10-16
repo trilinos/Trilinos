@@ -76,6 +76,9 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
     validParamList->set<int>                    ("write start",                  -1, "first level at which coordinates should be written to file");
     validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
+    validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
+    validParamList->set<bool>                   ("hybrid aggregation",           false, "Flag specifying that hybrid aggregation data is transfered for HybridAggregationFactory");
+
 
     return validParamList;
   }
@@ -104,6 +107,10 @@ namespace MueLu {
         Input(fineLevel, "CoarseMap");
       }
     }
+    if(pL.get<bool>("hybrid aggregation") == true) {
+      Input(fineLevel,"aggregationRegionTypeCoarse");
+      Input(fineLevel, "lCoarseNodesPerDim");
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -120,6 +127,14 @@ namespace MueLu {
     Array<LO> lCoarseNodesPerDir;
 
     const ParameterList& pL = GetParameterList();
+
+    if(pL.get<bool>("hybrid aggregation") == true) {
+      std::string regionType = Get<std::string>(fineLevel,"aggregationRegionTypeCoarse");
+      lCoarseNodesPerDir     = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
+      Set<std::string>(coarseLevel, "aggregationRegionType", regionType);
+      Set< Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
+    }
+
     if(pL.get<bool>("structured aggregation") == true) {
       if(pL.get<bool>("aggregation coupled") == true) {
         gCoarseNodesPerDir = Get<Array<GO> >(fineLevel, "gCoarseNodesPerDim");

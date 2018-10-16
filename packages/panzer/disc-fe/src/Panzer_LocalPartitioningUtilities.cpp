@@ -92,7 +92,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
 
   // Just as a precaution, make sure the parent_info is setup properly
   TEUCHOS_ASSERT(static_cast<int>(parent_info.cell_to_faces.extent(0)) == num_parent_total_cells);
-  const int num_faces_per_cell = parent_info.cell_to_faces.dimension_1();
+  const int num_faces_per_cell = parent_info.cell_to_faces.extent(1);
 
   // The first thing to do is construct a vector containing the parent cell indexes of all
   // owned, ghstd, and virtual cells
@@ -179,8 +179,8 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   TEUCHOS_ASSERT(static_cast<int>(parent_info.local_cells.extent(0)) == num_parent_total_cells);
   TEUCHOS_ASSERT(static_cast<int>(parent_info.global_cells.extent(0)) == num_parent_total_cells);
 
-  const int num_vertices_per_cell = parent_info.cell_vertices.dimension_1();
-  const int num_dims = parent_info.cell_vertices.dimension_2();
+  const int num_vertices_per_cell = parent_info.cell_vertices.extent(1);
+  const int num_dims = parent_info.cell_vertices.extent(2);
 
   // Fill owned, ghstd, and virtual cells: global indexes, local indexes and vertices
   sub_info.global_cells = Kokkos::View<GO*>("global_cells", num_total_cells);

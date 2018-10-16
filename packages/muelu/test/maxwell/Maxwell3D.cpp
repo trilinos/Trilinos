@@ -129,7 +129,10 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
                                                                      "to use for solving the linear system. "
                                                                      "(\"Belos\")");
-    std::string xml = "";                              clp.setOption("xml",                   &solverName, "xml file with solver parameters");
+    std::string xml = "";                              clp.setOption("xml",                   &xml, "xml file with solver parameters");
+    
+    int nedges  = 3630;  clp.setOption("nedges",               &nedges,           "number of edges");
+    int nnodes  = 1331;  clp.setOption("nnodes",               &nnodes,           "number of nodes");
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -144,7 +147,6 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
 
     // Read matrices in from files
-    Xpetra::global_size_t nedges=3630, nnodes=1331;
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
@@ -338,7 +340,10 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
                                                                      "to use for solving the linear system. "
                                                                      "(\"Belos\" or \"Stratimikos\")");
-    std::string xml = "";                              clp.setOption("xml",                   &solverName, "xml file with solver parameters");
+    std::string xml = "";                              clp.setOption("xml",                   &xml, "xml file with solver parameters");
+
+    int nedges  = 3630;  clp.setOption("nedges",               &nedges,           "number of edges");
+    int nnodes  = 1331;  clp.setOption("nnodes",               &nnodes,           "number of nodes");
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -353,7 +358,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
 
     // Read matrices in from files
-    Xpetra::global_size_t nedges=3630, nnodes=1331;
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);

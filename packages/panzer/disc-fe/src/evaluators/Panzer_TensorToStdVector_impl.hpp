@@ -84,20 +84,6 @@ TensorToStdVector(
 template<typename EvalT, typename Traits>
 void
 TensorToStdVector<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  for (std::size_t i=0; i < vector_fields.size(); ++i)
-    this->utils.setFieldData(vector_fields[i], fm);
-
-  this->utils.setFieldData(tensor_field, fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-TensorToStdVector<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  workset)
 { 
@@ -108,13 +94,13 @@ evaluateFields(
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
     // Loop over points
-    for (size_type pt = 0; pt < tensor_field.dimension(1); ++pt) {
+    for (size_type pt = 0; pt < tensor_field.extent(1); ++pt) {
       
       // Loop over vectors
       for (std::size_t vec = 0; vec < vector_fields.size(); ++vec) {
 
         // Loop over spatial dimensions
-        for (std::size_t dim = 0; dim < tensor_field.dimension(2); ++dim) {
+        for (std::size_t dim = 0; dim < tensor_field.extent(2); ++dim) {
       
           vector_fields[vec](cell,pt,dim) = tensor_field(cell,pt,vec,dim);
 

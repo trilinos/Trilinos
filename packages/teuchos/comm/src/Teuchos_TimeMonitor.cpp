@@ -273,7 +273,7 @@ namespace Teuchos {
         if (nonnull(stackedTimer_))
           stackedTimer_->stop(counter().name());
       }
-      catch (std::runtime_error) {
+      catch (std::runtime_error&) {
         std::ostringstream warning;
         warning <<
           "\n*********************************************************************\n"

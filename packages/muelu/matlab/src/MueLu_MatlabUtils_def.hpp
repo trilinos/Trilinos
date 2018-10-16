@@ -269,7 +269,7 @@ RCP<Tpetra_MultiVector_double> loadDataFromMatlab<RCP<Tpetra_MultiVector_double>
     int nr = mxGetM(mxa);
     int nc = mxGetN(mxa);
     double* pr = mxGetPr(mxa);
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     //numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
     RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
     //Allocate a new array of complex values to use with the multivector
@@ -294,7 +294,7 @@ RCP<Tpetra_MultiVector_complex> loadDataFromMatlab<RCP<Tpetra_MultiVector_comple
     int nc = mxGetN(mxa);
     double* pr = mxGetPr(mxa);
     double* pi = mxGetPi(mxa);
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     //numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
     RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
     //Allocate a new array of complex values to use with the multivector
@@ -391,7 +391,7 @@ RCP<Tpetra_CrsMatrix_complex> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex>>(
   //Create a map in order to create the matrix (taken from muelu basic example - complex)
   try
   {
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
     const mm_GlobalOrd indexBase = 0;
     RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
@@ -1311,11 +1311,11 @@ mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data)
 
   int nr = data->dimension(0);
   int nc = data->dimension(1);
-  
+
   mwSize dims[]={(mwSize)nr,(mwSize)nc};
   mxArray* mxa = mxCreateNumericArray(2,dims, mxINT32_CLASS, mxREAL);
   int *array = (int*) mxGetData(mxa);
-  
+
   for(int col = 0; col < nc; col++)
   {
     for(int row = 0; row < nr; row++)

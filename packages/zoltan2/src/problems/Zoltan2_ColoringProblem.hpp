@@ -126,7 +126,7 @@ public:
   /*! \brief Constructor that uses a default communicator
    */
   ColoringProblem(Adapter *A, ParameterList *p) :
-  ColoringProblem(A, p, Teuchos::DefaultComm<int>::getComm()) 
+  ColoringProblem(A, p, Tpetra::getDefaultComm())
   {}
 
   /*! \brief Set up validators specific to this Problem

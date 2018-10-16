@@ -58,9 +58,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize()
+    int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::initialize(bool useDefaultParameters)
     {
-        return FirstLevelOperator_->initialize();
+        return initialize(1,Teuchos::null);
     }
     
     template <class SC,class LO,class GO,class NO>

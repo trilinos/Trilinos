@@ -54,15 +54,15 @@
 #include "NOX_LineSearch_Generic.H" // base class
 
 #include "NOX_LineSearch_Utils_Printing.H"  // data class member
-#include "NOX_LineSearch_Utils_Counters.H"  // data class member
 #include "NOX_LineSearch_Utils_Slope.H"     // data class member
-#include "Teuchos_RCP.hpp"          // data class member
+#include "Teuchos_RCP.hpp"                  // data class member
 
 // Forward Declarations
 namespace NOX {
   namespace MeritFunction {
     class Generic;
   }
+  class LineSearchCounters;
 }
 
 namespace NOX {
@@ -470,7 +470,7 @@ private:
   NOX::LineSearch::Utils::Printing print;
 
   //! Common common counters for line searches.
-  NOX::LineSearch::Utils::Counters counter;
+  NOX::LineSearchCounters* counter;
 
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slope;

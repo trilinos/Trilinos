@@ -69,7 +69,6 @@ namespace {
   {
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::device_type device_type;
-    typedef typename device_type::execution_space execution_space;
     typedef typename BMV::impl_scalar_type IST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
@@ -105,7 +104,7 @@ namespace {
     map_type meshMap (INVALID, static_cast<size_t> (numLocalMeshPoints),
                       indexBase, comm);
     // Make sure that the execution space actually got initialized.
-    TEST_ASSERT( execution_space::is_initialized () );
+    TEST_ASSERT( Kokkos::is_initialized () );
 
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
@@ -379,7 +378,6 @@ namespace {
   {
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef typename BMV::device_type device_type;
-    typedef typename device_type::execution_space execution_space;
     typedef typename BMV::impl_scalar_type IST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
@@ -415,7 +413,7 @@ namespace {
     map_type meshMap (INVALID, static_cast<size_t> (numLocalMeshPoints),
                       indexBase, comm);
     // Make sure that the execution space actually got initialized.
-    TEST_ASSERT( execution_space::is_initialized () );
+    TEST_ASSERT( Kokkos::is_initialized () );
 
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;

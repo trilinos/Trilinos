@@ -56,6 +56,7 @@
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 
 #include "MueLu_AggregationAlgorithmBase.hpp"
+#include "MueLu_InterfaceAggregationAlgorithm_fwd.hpp"
 #include "MueLu_OnePtAggregationAlgorithm_fwd.hpp"
 #include "MueLu_PreserveDirichletAggregationAlgorithm_fwd.hpp"
 #include "MueLu_IsolatedNodeAggregationAlgorithm_fwd.hpp"

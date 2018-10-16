@@ -910,7 +910,7 @@ void printGraphMetricsHeader(std::ostream &os, part_t targetNumParts, part_t num
 /*! \brief Print out list of graph metrics.
  */
 template <typename scalar_t, typename part_t>
-void printGraphMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, const ArrayView<RCP<BaseClassMetrics<scalar_t>>> &infoList)
+void printGraphMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, const ArrayView<RCP<BaseClassMetrics<scalar_t> > > &infoList)
 {
   printGraphMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts);
   for (int i=0; i < infoList.size(); i++) {

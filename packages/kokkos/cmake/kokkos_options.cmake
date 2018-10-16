@@ -31,6 +31,7 @@ list(APPEND KOKKOS_INTERNAL_ENABLE_OPTIONS_LIST
      Profiling_Load_Print
      Aggressive_Vectorization
      Deprecated_Code
+     Explicit_Instantiation
      )
 
 #-------------------------------------------------------------------------------
@@ -61,14 +62,11 @@ foreach(opt ${KOKKOS_INTERNAL_ENABLE_OPTIONS_LIST})
   ENDIF()
 endforeach()
 
+IF(DEFINED Kokkos_ARCH)
+  MESSAGE(FATAL_ERROR "Defined Kokkos_ARCH, use KOKKOS_ARCH instead!")
+ENDIF()
 IF(DEFINED Kokkos_Arch)
-  IF(DEFINED KOKKOS_ARCH)
-    IF(NOT (${KOKKOS_ARCH} STREQUAL "${Kokkos_Arch}"))
-      MESSAGE(FATAL_ERROR "Defined both Kokkos_Arch and KOKKOS_ARCH and they differ!")
-    ENDIF()
-  ELSE()
-    SET(KOKKOS_ARCH ${Kokkos_Arch})
-  ENDIF()
+  MESSAGE(FATAL_ERROR "Defined Kokkos_Arch, use KOKKOS_ARCH instead!")
 ENDIF()
   
 #-------------------------------------------------------------------------------
@@ -269,6 +267,8 @@ set(KOKKOS_ENABLE_PROFILING_LOAD_PRINT ${KOKKOS_INTERNAL_ENABLE_PROFILING_LOAD_P
 set_kokkos_default_default(DEPRECATED_CODE ON)
 set(KOKKOS_ENABLE_DEPRECATED_CODE ${KOKKOS_INTERNAL_ENABLE_DEPRECATED_CODE_DEFAULT} CACHE BOOL "Enable deprecated code.")
 
+set_kokkos_default_default(EXPLICIT_INSTANTIATION OFF)
+set(KOKKOS_ENABLE_EXPLICIT_INSTANTIATION ${KOKKOS_INTERNAL_ENABLE_EXPLICIT_INSTANTIATION_DEFAULT} CACHE BOOL "Enable explicit template instantiation.")
 
 #-------------------------------------------------------------------------------
 #------------------------------- KOKKOS_USE_TPLS -------------------------------

@@ -320,7 +320,7 @@ Traceback::printCoverage(
   sorted_list.reserve(s_coverage.size());
 
   for (Coverage::const_iterator it = s_coverage.begin(); it != s_coverage.end(); ++it)
-    sorted_list.push_back(std::pair<const char *, int>((*it).first, (*it).second));
+    sorted_list.emplace_back((*it).first, (*it).second);
 
   std::sort(sorted_list.begin(), sorted_list.end(), CoverageValueSort());
 

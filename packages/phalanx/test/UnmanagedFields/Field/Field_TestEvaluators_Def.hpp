@@ -51,7 +51,7 @@ struct BASIS;
 
 namespace PHX {
 
-  PHX_EVALUATOR_CTOR(EvalUnmanaged,plist)
+  PHX_EVALUATOR_CTOR(EvalUnmanaged,/* plist */)
 
   {
     using Teuchos::RCP;
@@ -74,7 +74,7 @@ namespace PHX {
     this->addDependentField(d);
   }
 
-  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,data,fm)
+  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,/* data */,fm)
   {
     this->utils.setFieldData(a,fm);
     this->utils.setFieldData(b,fm);
@@ -82,13 +82,13 @@ namespace PHX {
     this->utils.setFieldData(d,fm);
   }
 
-  PHX_EVALUATE_FIELDS(EvalUnmanaged,data)
+  PHX_EVALUATE_FIELDS(EvalUnmanaged,/* data */)
   {
     a.deep_copy(b);
     c.deep_copy(d);
   }
 
-  PHX_EVALUATOR_CTOR(EvalDummy,plist)
+  PHX_EVALUATOR_CTOR(EvalDummy,/* plist */)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -106,13 +106,13 @@ namespace PHX {
     this->addEvaluatedField(d);
   }
 
-  PHX_POST_REGISTRATION_SETUP(EvalDummy,data,fm)
+  PHX_POST_REGISTRATION_SETUP(EvalDummy,/* data */,fm)
   {
     this->utils.setFieldData(b,fm);
     this->utils.setFieldData(d,fm);
   }
 
-  PHX_EVALUATE_FIELDS(EvalDummy,data)
+  PHX_EVALUATE_FIELDS(EvalDummy,/* data */)
   {
     // do nothing - they are unmanaged - data values are set by user
   }

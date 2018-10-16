@@ -55,8 +55,7 @@
 ///
 /// @def SIERRA_USE_PLATFORM_DEMANGLER
 /// SIERRA_USE_PLATFORM_DEMANGLER -- The platform type_info::name() function returns a
-///   mangled name which needs to be demangled.  Implement the platform specific function
-///   in Slib_EnvPlatform.C
+///   mangled name which needs to be demangled.
 ///
 /// Features:
 ///
@@ -81,11 +80,6 @@
 /// @def SIERRA_SHUTDOWN_SIGNAL
 /// SIERRA_SHUTDOWN_SIGNAL -- The platform sends this signal to tell the application to
 ///   exit gracefully at it earliest convenience.
-///
-/// @def SIERRA_INCLUDE_LIBPAPI
-/// SIERRA_INCLUDE_LIBPAPI -- The Performance API can be utilized for timing and operation
-///   counting.  Define this macro if you wish to enable the high accuracy timing and
-///   operation counting.  (NOT IMPLEMENTED)
 ///
 
 // Platform/operating system based features and bugs

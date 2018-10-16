@@ -68,6 +68,10 @@ public:
 
     void set_proc_rank(int proc) { m_other_proc = proc; }
 
+    bool operator!=(const RemoteElementData& rhs) const {
+        return m_other_proc != rhs.m_other_proc;
+    }
+
 private:
     int m_other_proc;
 };
@@ -110,6 +114,11 @@ public:
     int m_permutation;
     stk::topology m_remote_element_toplogy;
 
+    bool operator!=(const ParallelInfo& rhs) const {
+        return m_permutation != rhs.m_permutation ||
+                m_remote_element_toplogy != rhs.m_remote_element_toplogy ||
+                remoteElementData != rhs.remoteElementData;
+    }
 private:
     RemoteElementData remoteElementData;
 };

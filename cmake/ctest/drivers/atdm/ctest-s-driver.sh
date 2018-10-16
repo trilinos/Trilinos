@@ -12,12 +12,7 @@ echo "Loading env and running ctest -S comamnd to configure, build, and test ...
 
 source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
 
-source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
-echo
-module list
-set | grep ATDM_CONFIG_
-
-export Trilinos_REPOSITORY_LOCATION=https://github.com/trilinos/Trilinos.git
+source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/setup_env.sh
 
 echo
 echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."

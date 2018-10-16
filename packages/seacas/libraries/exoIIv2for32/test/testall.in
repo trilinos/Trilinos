@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright (c) 2005 National Technology & Engineering Solutions
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -37,8 +37,16 @@
 # To run the tests with valgrind checking, uncomment the next line and comment the
 # following line. Can also define other prefixes if wanted.
 
+if [ "$1" == "" ]; then
+    mkdir -p nc3; cd nc3
+fi
 if [ "$1" == "netcdf4" ]; then
    export EXODUS_NETCDF4=quiet
+    mkdir -p nc4; cd nc4
+fi
+if [ "$1" == "netcdf5" ]; then
+   export EXODUS_NETCDF5=quiet
+    mkdir -p nc5; cd nc5
 fi
 
 #PREFIX = "valgrind --tool=memcheck"

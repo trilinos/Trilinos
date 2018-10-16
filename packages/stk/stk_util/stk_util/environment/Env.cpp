@@ -54,7 +54,7 @@
 #include "boost/program_options/detail/parsers.hpp"
 #include "boost/program_options/errors.hpp"  // for program_options
 #include "boost/program_options/variables_map.hpp"  // for variables_map, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 #if defined(__GNUC__)
 #include <cstdlib>
@@ -368,6 +368,17 @@ set_param(
   opt::notify(vm);
 
   delete [] s;
+}
+
+void set_mpi_communicator(MPI_Comm communicator)
+{
+  stk::EnvData &env_data = stk::EnvData::instance();
+  if (communicator != MPI_COMM_NULL) {
+    env_data.m_parallelComm = communicator;
+
+    MPI_Comm_size(env_data.m_parallelComm, &env_data.m_parallelSize);
+    MPI_Comm_rank(env_data.m_parallelComm, &env_data.m_parallelRank);
+  }
 }
 
 } // namespace Env

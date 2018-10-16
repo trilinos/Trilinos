@@ -45,12 +45,12 @@
 // Devices
 #include "Kokkos_Core.hpp"
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 using Kokkos::Threads;
 INST_PERF_DRIVER(double, int, Threads)
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 using Kokkos::OpenMP;
 INST_PERF_DRIVER(double, int, OpenMP)
 #endif

@@ -41,9 +41,8 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_BlockMultiVector.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_BlockMultiVector.hpp"
 
 namespace {
 
@@ -109,22 +108,18 @@ namespace {
   // Test BlockMultiVector's constructors.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, ctor, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getNode;
-    using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::RCP;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     const size_t numLocalMeshPoints = 12;
     const GO indexBase = 0;
-    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm, node);
-    //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
+    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm);
 
     const LO blockSize = 4;
     const LO numVecs = 3;
@@ -160,9 +155,6 @@ namespace {
     typename BMV::mv_type X_mv;
     TEST_NOTHROW( X_mv = X.getMultiVectorView () );
     TEST_ASSERT( ! X_mv.getMap ().is_null () );
-    if (X_mv.getMap ().is_null ()) {
-      TEST_ASSERT( ! X_mv.getMap ()->getNode ().is_null () );
-    }
     // Make sure X_mv has view semantics, before we give it to W's ctor.
     TEST_ASSERT( X_mv.getCopyOrView () == Teuchos::View );
     BMV W (X_mv, meshMap, blockSize);
@@ -176,8 +168,6 @@ namespace {
   // that the BlockMultiVector view.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, MVView, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getNode;
-    using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::RCP;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
@@ -185,8 +175,7 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     const size_t numLocalMeshPoints = 12;
@@ -194,7 +183,7 @@ namespace {
     const LO numVecs = 3;
 
     const GO indexBase = 0;
-    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm, node);
+    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm);
     //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
 
     BMV X (meshMap, blockSize, numVecs);
@@ -309,8 +298,6 @@ namespace {
   // Make sure that Import works with BlockMultiVector.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, Import, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getNode;
-    using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
@@ -323,17 +310,16 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     // const int myRank = comm->getRank ();
     // const int numProcs = comm->getSize ();
-    RCP<Node> node = getNode<Node> ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     const size_t numLocalMeshPoints = 2;
     const LO blockSize = 5;
     const LO numVecs = 3;
     const GO indexBase = 0;
-    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm, node);
+    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm);
     //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
 
     Teuchos::Array<GO> overlappingGIDs (numLocalMeshPoints + 1);
@@ -347,7 +333,7 @@ namespace {
     overlappingGIDs[numLocalMeshPoints] =
       overlappingGIDs[numLocalMeshPoints-1] %
       static_cast<GO> (meshMap.getGlobalNumElements ());
-    map_type overlappingMeshMap (INVALID, overlappingGIDs (), indexBase, comm, node);
+    map_type overlappingMeshMap (INVALID, overlappingGIDs (), indexBase, comm);
 
     BMV X (meshMap, blockSize, numVecs);
     BMV Y (overlappingMeshMap, blockSize, numVecs);
@@ -428,7 +414,6 @@ namespace {
   //
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockMultiVector, OffsetView, Scalar, LO, GO, Node )
   {
-    using Tpetra::TestingUtilities::getDefaultComm;
     using Teuchos::Comm;
     using Teuchos::RCP;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
@@ -439,7 +424,7 @@ namespace {
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef typename MV::mag_type MT;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int numProcs = comm->getSize ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t numLocalMeshPoints = 20;

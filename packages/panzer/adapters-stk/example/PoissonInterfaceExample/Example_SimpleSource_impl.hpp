@@ -72,11 +72,8 @@ SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& fm)
+                                                       PHX::FieldManager<Traits>& /* fm */)
 {
-
-  this->utils.setFieldData(source,fm);
-
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 
@@ -90,7 +87,7 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      if (this->wda(workset).int_rules[ir_index]->ip_coordinates.dimension(2) == 2) {
+      if (this->wda(workset).int_rules[ir_index]->ip_coordinates.extent(2) == 2) {
         source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y);
       } else {
         const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);

@@ -72,6 +72,13 @@
 #endif
 #endif
 
+/* Suppress unused-variable warnings by "using" E.  */
+#if !defined lint || defined __GNUC__
+#define YYUSE(E) ((void)(E))
+#else
+#define YYUSE(E) /* empty */
+#endif
+
 #if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
 /* Suppress an incorrect diagnostic about yylval being uninitialized.  */
 #define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                                                        \
@@ -104,7 +111,7 @@ namespace SEAMS {
 #ifndef YYSTYPE
     /// Symbol semantic values.
     union semantic_type {
-#line 90 "aprepro.yy" // lalr1.cc:377
+#line 90 "/scratch/gdsjaar/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:377
 
       double         val;    /* For returning numbers.		*/
       struct symrec *tptr;   /* For returning symbol-table pointers	*/
@@ -120,7 +127,7 @@ namespace SEAMS {
     /// Syntax errors thrown from user actions.
     struct syntax_error : std::runtime_error
     {
-      explicit syntax_error(const std::string &m);
+      syntax_error(const std::string &m);
     };
 
     /// Tokens.
@@ -207,7 +214,7 @@ namespace SEAMS {
       basic_symbol(const basic_symbol &other);
 
       /// Constructor for valueless symbols.
-      explicit basic_symbol(typename Base::kind_type t);
+      basic_symbol(typename Base::kind_type t);
 
       /// Constructor for symbols with semantic value.
       basic_symbol(typename Base::kind_type t, const semantic_type &v);
@@ -245,7 +252,7 @@ namespace SEAMS {
       typedef token_type kind_type;
 
       /// Constructor from (external) token numbers.
-      explicit by_type(kind_type t);
+      by_type(kind_type t);
 
       /// Record that this symbol is empty.
       void clear();
@@ -263,14 +270,14 @@ namespace SEAMS {
       /// The symbol type.
       /// \a empty_symbol when empty.
       /// An int, not token_number_type, to be able to store empty_symbol.
-      int type{};
+      int type;
     };
 
     /// "External" symbols: returned by the scanner.
     typedef basic_symbol<by_type> symbol_type;
 
     /// Build a parser object.
-    explicit Parser(class Aprepro &aprepro_yyarg);
+    Parser(class Aprepro &aprepro_yyarg);
     virtual ~Parser();
 
     /// Parse.
@@ -281,7 +288,7 @@ namespace SEAMS {
     /// The current debugging stream.
     std::ostream &debug_stream() const YY_ATTRIBUTE_PURE;
     /// Set the current debugging stream.
-    void set_debug_stream(std::ostream & /*o*/);
+    void set_debug_stream(std::ostream &);
 
     /// Type for debugging levels.
     typedef int debug_level_type;
@@ -293,10 +300,10 @@ namespace SEAMS {
 
     /// Report a syntax error.
     /// \param msg    a description of the syntax error.
-    virtual void error(const std::string &m);
+    virtual void error(const std::string &msg);
 
     /// Report a syntax error.
-    void error(const syntax_error &yyexc);
+    void error(const syntax_error &err);
 
   private:
     /// This class is not copyable.
@@ -364,7 +371,7 @@ namespace SEAMS {
     static const unsigned char yyr2_[];
 
     /// Convert the symbol name \a n to a form suitable for a diagnostic.
-    static std::string yytnamerr_(const char *yystr);
+    static std::string yytnamerr_(const char *n);
 
     /// For a symbol, its name in clear.
     static const char *const yytname_[];
@@ -372,7 +379,7 @@ namespace SEAMS {
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
     static const unsigned short int yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
-    virtual void yy_reduce_print_(int yyrule);
+    virtual void yy_reduce_print_(int r);
     /// Print the state stack on the debug stream.
     virtual void yystack_print_();
 
@@ -404,7 +411,7 @@ namespace SEAMS {
       typedef state_type kind_type;
 
       /// Constructor.
-      explicit by_state(kind_type s);
+      by_state(kind_type s);
 
       /// Copy constructor.
       by_state(const by_state &other);
@@ -424,7 +431,7 @@ namespace SEAMS {
 
       /// The state.
       /// \a empty when empty.
-      state_type state{};
+      state_type state;
     };
 
     /// "Internal" symbol: element of the stack.
@@ -435,7 +442,7 @@ namespace SEAMS {
       /// Construct an empty symbol.
       stack_symbol_type();
       /// Steal the contents from \a sym to build this.
-      stack_symbol_type(state_type s, symbol_type &that);
+      stack_symbol_type(state_type s, symbol_type &sym);
       /// Assignment, needed by push_back.
       stack_symbol_type &operator=(const stack_symbol_type &that);
     };
@@ -467,7 +474,7 @@ namespace SEAMS {
     /// Constants.
     enum {
       yyeof_     = 0,
-      yylast_    = 1208, ///< Last index in yytable_.
+      yylast_    = 1237, ///< Last index in yytable_.
       yynnts_    = 7,    ///< Number of nonterminal symbols.
       yyfinal_   = 2,    ///< Termination state number.
       yyterror_  = 1,

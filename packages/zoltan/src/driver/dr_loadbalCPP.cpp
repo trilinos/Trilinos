@@ -66,6 +66,7 @@ using namespace std;
 #endif
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_eval_const.h"

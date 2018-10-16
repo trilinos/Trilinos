@@ -63,7 +63,7 @@ Integrator_Scalar(
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
   quad_order = ir->cubature_degree;
 
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   integral = PHX::MDField<ScalarT>( p.get<std::string>("Integral Name"), dl_cell);
   scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Integrand Name"), ir->dl_scalar);
 
@@ -100,19 +100,10 @@ void
 Integrator_Scalar<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(integral,fm);
-  this->utils.setFieldData(scalar,fm);
-  
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
-  num_qp = scalar.dimension(1);
-
-  tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.dimension(0), num_qp);
-
+  num_qp = scalar.extent(1);
+  tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.extent(0), num_qp);
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
@@ -156,7 +147,7 @@ evaluateFields(
   // const Kokkos::DynRankView<double,PHX::Device>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
 
-  int numPoints       = tmp.dimension(1);
+  int numPoints       = tmp.extent(1);
  
   for(index_t cl = 0; cl < workset.num_cells; cl++) {
     integral(cl) = tmp(cl, 0)*iv.weighted_measure(cl, 0);

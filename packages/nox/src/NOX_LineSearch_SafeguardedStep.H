@@ -54,7 +54,6 @@
 #include "NOX_LineSearch_Generic.H" // base class
 
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
-#include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "Teuchos_RCP.hpp"          // class data member
 
 // Forward Declarations
@@ -62,6 +61,7 @@ namespace NOX {
   namespace MeritFunction {
     class Generic;
   }
+  class LineSearchCounters;
 }
 
 namespace NOX {
@@ -107,7 +107,7 @@ private:
   bool useCounter_;
   Teuchos::RCP<NOX::GlobalData> globalDataPtr_;
   NOX::LineSearch::Utils::Printing print_;
-  NOX::LineSearch::Utils::Counters counter_;
+  NOX::LineSearchCounters* counter_;
 
 };
 } // namespace LineSearch

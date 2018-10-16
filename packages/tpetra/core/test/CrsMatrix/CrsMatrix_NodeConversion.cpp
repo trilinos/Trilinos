@@ -41,13 +41,10 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
   using std::endl;
 
   using Teuchos::as;
@@ -83,7 +80,6 @@ namespace {
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -117,19 +113,22 @@ namespace {
     typedef Map1::node_type N1;
     typedef CrsMatrix<SCALAR,LO,GO,N1> Mat1;
     typedef CrsMatrix<SCALAR,LO,GO,N2> Mat2;
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    //const int myImageID = comm->getRank();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    const int numProcs = comm->getSize();
     const size_t        numLocal  = 10;
-    const global_size_t numGlobal = numImages*numLocal;
+    const global_size_t numGlobal = numProcs*numLocal;
 
-    RCP<N1> n1 = getNode<N1>();
-    RCP<N2> n2 = getNode<N2>();
+    // These variables exist only to help clone's type deduction.
+    // It's OK for them to be null.
+    RCP<N1> n1;
+    RCP<N2> n2;
 
-    // create a contiguous uniform distributed map with numLocal entries per node
-    RCP<const Map1> map1 = createUniformContigMapWithNode<LO,GO>(numGlobal,comm,n1);
-    RCP<Mat1>       A1 = createCrsMatrix<SCALAR>(map1,3);
+    // Create a uniform contiguous distributed Map with numLocal
+    // indices on each MPI process.
+    RCP<const Map1> map1 =
+      createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm, n1);
+    RCP<Mat1> A1 = createCrsMatrix<SCALAR> (map1, 3);
 
     // empty source, not filled
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
                     double *          goal,        /* desired set sizes */
                     int               nsets_tot,   /* total number of sets */
                     int               npasses_max  /* number of passes to make */
-                    )
+)
 {
   extern int     DEBUG_TRACE;          /* trace main execution path? */
   extern int     DEBUG_INTERNAL;       /* turn on debugging code here? */

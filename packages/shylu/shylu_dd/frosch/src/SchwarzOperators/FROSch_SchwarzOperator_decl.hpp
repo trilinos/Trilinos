@@ -45,6 +45,7 @@
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Export.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
@@ -52,11 +53,15 @@
 #include <FROSch_DDInterface_def.hpp>
 #include <FROSch_EntitySet_def.hpp>
 
+#include <FROSch_CoarseSpace_def.hpp>
+#include <FROSch_InterfacePartitionOfUnity_def.hpp>
+#include <FROSch_LocalPartitionOfUnityBasis_def.hpp>
+
 #include <FROSch_SubdomainSolver_def.hpp>
 
-// TODO
-// -> Auf const überprüfen
-// -> #ifndef überprüfen
+// TODO: Auf const überprüfen
+// TODO: #ifndef überprüfen ??????
+
 
 namespace FROSch {
     
@@ -91,14 +96,21 @@ namespace FROSch {
         typedef Xpetra::Export<LO,GO,NO> Exporter;
         typedef Teuchos::RCP<Exporter> ExporterPtr;
         typedef Teuchos::ArrayRCP<ExporterPtr> ExporterPtrVecPtr;
-        
+
+        typedef Teuchos::ParameterList ParameterList;
         typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
         typedef Teuchos::RCP<DDInterface<SC,LO,GO,NO> > DDInterfacePtr;
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
+        typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
+        
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
+        
+        typedef Teuchos::RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> > InterfacePartitionOfUnityPtr;
+        
+        typedef Teuchos::RCP<LocalPartitionOfUnityBasis<SC,LO,GO,NO> > LocalPartitionOfUnityBasisPtr;
         
         typedef Teuchos::RCP<SchwarzOperator<SC,LO,GO,NO> > SchwarzOperatorPtr;
         typedef Teuchos::Array<SchwarzOperatorPtr> SchwarzOperatorPtrVec;
@@ -112,19 +124,22 @@ namespace FROSch {
         typedef Teuchos::Array<LO> LOVec;
         typedef Teuchos::ArrayRCP<LO> LOVecPtr;
         typedef Teuchos::ArrayView<LO> LOVecView;
-        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;
+        typedef Teuchos::ArrayView<const LO> ConstLOVecView;
+        typedef Teuchos::ArrayRCP<LOVecPtr> LOVecPtr2D;        
         
         typedef Teuchos::Array<GO> GOVec;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         typedef Teuchos::ArrayView<GO> GOVecView;
         typedef Teuchos::ArrayView<const GO> ConstGOVecView;
+        typedef Teuchos::Array<GOVec> GOVec2D;
         typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
         
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
+        typedef Teuchos::ArrayRCP<const SC> ConstSCVecPtr;
         typedef Teuchos::ArrayView<const SC> ConstSCVecView;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
+        typedef Teuchos::Array<bool> BoolVec;
         typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
         
         
@@ -166,6 +181,7 @@ namespace FROSch {
         
         bool isComputed() const;
         
+        int resetMatrix(CrsMatrixPtr &k);
         
     protected:
         

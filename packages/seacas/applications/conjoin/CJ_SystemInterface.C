@@ -14,12 +14,7 @@ namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
 } // namespace
 
-Excn::SystemInterface::SystemInterface()
-    : outputName_(), debugLevel_(0), screenWidth_(0), omitNodesets_(false), omitSidesets_(false),
-      ints64Bit_(false), aliveValue_(-1.0), interpartMinimumTimeDelta_(0.0)
-{
-  enroll_options();
-}
+Excn::SystemInterface::SystemInterface() { enroll_options(); }
 
 Excn::SystemInterface::~SystemInterface() = default;
 
@@ -46,7 +41,7 @@ void Excn::SystemInterface::enroll_options()
                   "\t\tUse the 'alive_value' option to set conjoin's alive value",
                   "");
   options_.enroll("element_status_variable", GetLongOption::MandatoryValue,
-                  "Name to use as element existance status variable;\n"
+                  "Name to use as element existence status variable;\n"
                   "\t\tmust not exist on input files. If NONE, then not created.\n"
                   "\t\tDefault = elem_status",
                   "elem_status");
@@ -56,8 +51,25 @@ void Excn::SystemInterface::enroll_options()
                   "\t\tIf NONE, then not created. Default = node_status",
                   "node_status");
 
+  options_.enroll("netcdf4", GetLongOption::NoValue,
+                  "Create output database using the HDF5-based "
+                  "netcdf which allows for up to 2.1 GB "
+                  "nodes and elements",
+                  nullptr);
+
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
+
+  options_.enroll(
+      "compress", GetLongOption::MandatoryValue,
+      "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.",
+      nullptr);
+
+  options_.enroll("ignore_coordinate_check", GetLongOption::NoValue,
+                  "Do not use nodal coordinates to determine if node in part 1 same as node in "
+                  "other parts; use ids only.\n"
+                  "\t\tUse only if you know that the ids are consistent for all parts",
+                  nullptr);
 
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
                   "Don't transfer nodesets to output file.", nullptr);
@@ -139,79 +151,120 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("debug");
-    debugLevel_      = strtol(temp, nullptr, 10);
-  }
-
-  {
-    const char *temp  = options_.retrieve("alive_value");
-    int         value = strtol(temp, nullptr, 10);
-    if (value == 1 || value == 0) {
-      aliveValue_ = value;
-    }
-    else {
-      std::cerr << "\nInvalid value specified for node and element status."
-                << "\nValid values are '1' or '0'.  Found '" << value << "'\n";
-      exit(EXIT_FAILURE);
+    if (temp != nullptr) {
+      debugLevel_ = strtol(temp, nullptr, 10);
     }
   }
 
   {
-    const char *temp           = options_.retrieve("interpart_minimum_time_delta");
-    interpartMinimumTimeDelta_ = strtod(temp, nullptr);
+    const char *temp = options_.retrieve("alive_value");
+    if (temp != nullptr) {
+      int value = strtol(temp, nullptr, 10);
+      if (value == 1 || value == 0) {
+        aliveValue_ = value;
+      }
+      else {
+        std::cerr << "\nInvalid value specified for node and element status."
+                  << "\nValid values are '1' or '0'.  Found '" << value << "'\n";
+        exit(EXIT_FAILURE);
+      }
+    }
   }
 
   {
-    const char *temp       = options_.retrieve("element_status_variable");
-    elementStatusVariable_ = temp;
+    const char *temp = options_.retrieve("interpart_minimum_time_delta");
+    if (temp != nullptr) {
+      interpartMinimumTimeDelta_ = strtod(temp, nullptr);
+    }
   }
 
   {
-    const char *temp     = options_.retrieve("nodal_status_variable");
-    nodalStatusVariable_ = temp;
+    const char *temp = options_.retrieve("element_status_variable");
+    if (temp != nullptr) {
+      elementStatusVariable_ = temp;
+    }
   }
 
   {
-    const char *temp           = options_.retrieve("combine_status_variables");
-    meshCombineStatusVariable_ = temp;
+    const char *temp = options_.retrieve("nodal_status_variable");
+    if (temp != nullptr) {
+      nodalStatusVariable_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("combine_status_variables");
+    if (temp != nullptr) {
+      meshCombineStatusVariable_ = temp;
+    }
   }
 
   {
     const char *temp = options_.retrieve("width");
-    screenWidth_     = strtol(temp, nullptr, 10);
+    if (temp != nullptr) {
+      screenWidth_ = strtol(temp, nullptr, 10);
+    }
   }
 
   {
     const char *temp = options_.retrieve("output");
-    outputName_      = temp;
+    if (temp != nullptr) {
+      outputName_ = temp;
+    }
   }
 
   {
     const char *temp = options_.retrieve("gvar");
-    parse_variable_names(temp, &globalVarNames_);
+    if (temp != nullptr) {
+      parse_variable_names(temp, &globalVarNames_);
+    }
   }
 
   {
     const char *temp = options_.retrieve("nvar");
-    parse_variable_names(temp, &nodeVarNames_);
+    if (temp != nullptr) {
+      parse_variable_names(temp, &nodeVarNames_);
+    }
   }
 
   {
     const char *temp = options_.retrieve("evar");
-    parse_variable_names(temp, &elemVarNames_);
+    if (temp != nullptr) {
+      parse_variable_names(temp, &elemVarNames_);
+    }
   }
 
   {
     const char *temp = options_.retrieve("nsetvar");
-    parse_variable_names(temp, &nsetVarNames_);
+    if (temp != nullptr) {
+      parse_variable_names(temp, &nsetVarNames_);
+    }
   }
 
   {
     const char *temp = options_.retrieve("ssetvar");
-    parse_variable_names(temp, &ssetVarNames_);
+    if (temp != nullptr) {
+      parse_variable_names(temp, &ssetVarNames_);
+    }
+  }
+
+  if (options_.retrieve("netcdf4") != nullptr) {
+    useNetcdf4_ = true;
   }
 
   if (options_.retrieve("64-bit") != nullptr) {
     ints64Bit_ = true;
+  }
+
+  {
+    const char *temp = options_.retrieve("compress");
+    if (temp != nullptr) {
+      compressionLevel_ = std::strtol(temp, nullptr, 10);
+    }
+  }
+
+  if (options_.retrieve("ignore_coordinate_check") != nullptr) {
+    ignoreCoordinates_ = true;
   }
 
   if (options_.retrieve("omit_nodesets") != nullptr) {
@@ -230,7 +283,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2009-2010 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -282,7 +335,7 @@ void Excn::SystemInterface::show_version()
 {
   std::cout
       << qainfo[0] << "\n"
-      << "\t(A code for sequentially appending Exodus II databases. Supercedes conex and conex2.)\n"
+      << "\t(A code for sequentially appending Exodus II databases. Supersedes conex and conex2.)\n"
       << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
 }
 
@@ -325,7 +378,7 @@ namespace {
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
-            int id = strtoul(name_id[i].c_str(), nullptr, 0);
+            int id = std::stoi(name_id[i]);
             (*variable_list).push_back(std::make_pair(var_name, id));
           }
         }

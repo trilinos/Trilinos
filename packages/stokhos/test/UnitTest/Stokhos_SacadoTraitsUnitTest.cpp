@@ -51,9 +51,9 @@
 
 #include <Kokkos_Core.hpp>
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 typedef Kokkos::OpenMP node_type;
-#elif defined( KOKKOS_HAVE_PTHREAD )
+#elif defined( KOKKOS_ENABLE_THREADS )
 typedef Kokkos::Threads node_type;
 #else
 typedef Kokkos::Serial node_type;

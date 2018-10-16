@@ -55,7 +55,6 @@
 
 #include <Tpetra_MultiVector.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
@@ -241,8 +240,8 @@ int run(
   }
   catch(std::exception &e){
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: UserInputForTests "
-           << e.what() << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: UserInputForTests "
+           << e.what() << std::endl;
     return 1;
   }
 
@@ -252,8 +251,8 @@ int run(
   }
   catch(std::exception &e){
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: get matrix "
-           << e.what() << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get matrix "
+           << e.what() << std::endl;
     return 1;
   }
 
@@ -265,8 +264,8 @@ int run(
   }
   catch(std::exception &e){
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: get coordinates "
-           << e.what() << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get coordinates "
+           << e.what() << std::endl;
     return 1;
   }
 
@@ -276,32 +275,32 @@ int run(
   }
   catch(std::exception &e){
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: get weights "
-           << e.what() << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: get weights "
+           << e.what() << std::endl;
     return 1;
   }
   int nWeights = atoi(thisTest[TESTOBJWGTOFFSET].c_str());
 
   if (me == 0) {
-    cout << "Test " << testCnt << " filename            = "
-         << thisTest[TESTNAMEOFFSET] << endl;
-    cout << "Test " << testCnt << " num processors      = "
-         << np << endl;
-    cout << "Test " << testCnt << " zoltan method       = "
-         << thisTest[TESTMETHODOFFSET] << endl;
-    cout << "Test " << testCnt << " num_global_parts    = "
-         << numGlobalParts << endl;
-    cout << "Test " << testCnt << " imbalance_tolerance = "
-         << tolerance << endl;
-    cout << "Test " << testCnt << " num weights per ID  = "
-         << nWeights << endl;
+    std::cout << "Test " << testCnt << " filename            = "
+         << thisTest[TESTNAMEOFFSET] << std::endl;
+    std::cout << "Test " << testCnt << " num processors      = "
+         << np << std::endl;
+    std::cout << "Test " << testCnt << " zoltan method       = "
+         << thisTest[TESTMETHODOFFSET] << std::endl;
+    std::cout << "Test " << testCnt << " num_global_parts    = "
+         << numGlobalParts << std::endl;
+    std::cout << "Test " << testCnt << " imbalance_tolerance = "
+         << tolerance << std::endl;
+    std::cout << "Test " << testCnt << " num weights per ID  = "
+         << nWeights << std::endl;
   }
 
   /////////////////////////////////////////
   // PARTITION USING ZOLTAN DIRECTLY
   /////////////////////////////////////////
 
-  if (me == 0) cout << "Calling Zoltan directly" << endl;
+  if (me == 0) std::cout << "Calling Zoltan directly" << std::endl;
 
 # ifdef HAVE_ZOLTAN2_MPI
     Zoltan zz(mpiComm);
@@ -343,7 +342,7 @@ int run(
                              nump, pgid, plid, pproc, ppart);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: direct Zoltan call" << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: direct Zoltan call" << std::endl;
     zz.LB_Free_Part(&pgid, &plid, &pproc, &ppart);
     return 1;
   }
@@ -356,7 +355,7 @@ for(int i = 0; i < nump; i++) {
   // PARTITION USING ZOLTAN THROUGH ZOLTAN2
   /////////////////////////////////////////
 
-  if (me == 0) cout << "Calling Zoltan through Zoltan2" << endl;
+  if (me == 0) std::cout << "Calling Zoltan through Zoltan2" << std::endl;
 
   matrixAdapter_t *ia;
   try{
@@ -364,8 +363,8 @@ for(int i = 0; i < nump; i++) {
   }
   catch(std::exception &e){
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: matrix adapter "
-           << e.what() << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: matrix adapter "
+           << e.what() << std::endl;
     return 1;
   }
   for (int idx=0; idx < nWeights; idx++)
@@ -377,8 +376,8 @@ for(int i = 0; i < nump; i++) {
   }
   catch(std::exception &e){
     if (me == 0)
-      cout << "Test " << testCnt << ":  FAIL: vector adapter "
-           << e.what() << endl;
+      std::cout << "Test " << testCnt << ":  FAIL: vector adapter "
+           << e.what() << std::endl;
     return 1;
   }
   ia->setCoordinateInput(ca);
@@ -411,7 +410,7 @@ for(int i = 0; i < nump; i++) {
     }
 # endif
   catch(std::exception &e){
-    cout << "Test " << testCnt << " FAIL: problem " << e.what() << endl;
+    std::cout << "Test " << testCnt << " FAIL: problem " << e.what() << std::endl;
     return 1;
   }
 
@@ -419,7 +418,7 @@ for(int i = 0; i < nump; i++) {
     problem->solve();
   }
   catch(std::exception &e){
-    cout << "Test " << testCnt << " FAIL: solve " << e.what() << endl;
+    std::cout << "Test " << testCnt << " FAIL: solve " << e.what() << std::endl;
     return 1;
   }
 
@@ -432,7 +431,7 @@ for(int i = 0; i < nump; i++) {
  RCP<quality_t>metricObject = rcp(new quality_t(ia,&params,problem->getComm(),
 						&problem->getSolution()));
   if (me == 0){
-    metricObject->printMetrics(cout);
+    metricObject->printMetrics(std::cout);
   }
   problem->printTimers();
 
@@ -445,9 +444,9 @@ for(int i = 0; i < nump; i++) {
   for (size_t i = 0; i < nObj; i++) {
     if (z2parts[plid[i]] != ppart[i]) {
       diffcnt++;
-      cout << me << " DIFF for " << i << " (" 
+      std::cout << me << " DIFF for " << i << " (" 
            << coords->getMap()->getGlobalElement(i) << "):  "
-           << "Z2 = " << z2parts[i] << "; Z1 = " << ppart[plid[i]] << endl;
+           << "Z2 = " << z2parts[i] << "; Z1 = " << ppart[plid[i]] << std::endl;
     }
   }
 
@@ -463,11 +462,11 @@ for(int i = 0; i < nump; i++) {
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &diffcnt, &gdiffcnt);
   if (gdiffcnt > 0) {
     if (me == 0) 
-      cout << "Test " << testCnt << " "
+      std::cout << "Test " << testCnt << " "
            << thisTest[TESTNAMEOFFSET] << " "
            << thisTest[TESTMETHODOFFSET] << " "
            << thisTest[TESTOBJWGTOFFSET] << " "
-           << " FAIL: comparison " << endl;
+           << " FAIL: comparison " << std::endl;
     return 1;
   }
 
@@ -476,10 +475,10 @@ for(int i = 0; i < nump; i++) {
   
 ////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int me = comm->getRank();
   int np = comm->getSize();
@@ -494,10 +493,10 @@ int main(int argc, char *argv[])
     int nTestProcs = atoi(thisTest[TESTNUMPROCS].c_str());
     if (nTestProcs > np) {
       if (me == 0) {
-        cout << "Skipping test " << i << " on "
+        std::cout << "Skipping test " << i << " on "
              << thisTest[TESTNAMEOFFSET]
              << "; required number of procs " << nTestProcs 
-             << " is greater than available procs " << np << endl;
+             << " is greater than available procs " << np << std::endl;
       }
       continue;
     }
@@ -516,7 +515,7 @@ int main(int argc, char *argv[])
   }
   
   if (me == 0 && !fail)
-    cout << "PASS" << endl;
+    std::cout << "PASS" << std::endl;
   
   return 0;
 }

@@ -33,6 +33,8 @@
 #ifndef stk_util_util_SortAndUnique_hpp
 #define stk_util_util_SortAndUnique_hpp
 
+#include<algorithm>
+
 namespace stk
 {
 namespace util

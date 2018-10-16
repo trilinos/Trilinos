@@ -81,10 +81,11 @@ void makeArrays(int wdim, int *lens, zzpart_t **ids, zscalar_t **sizes,
   sizeList = arcp(sizeArrays, 0, wdim, true);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int nprocs = comm->getSize();
   int rank = comm->getRank();
   int fail=0, gfail=0;

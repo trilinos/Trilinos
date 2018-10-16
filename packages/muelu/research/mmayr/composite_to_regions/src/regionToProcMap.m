@@ -1,5 +1,4 @@
-function [RegionToProc] = regionToProcMap(myNodes,myRank,filename)
-
+% regionToProcMap.m
 %
 % This function fills
 %
@@ -13,7 +12,17 @@ function [RegionToProc] = regionToProcMap(myNodes,myRank,filename)
 % Normally, this calculation might be a bit involved in parallel with some
 % communication or fancy Trilinos calls. In this case, we just compute it
 % from the file.
-
+%
+% Input
+%   mynodes   list of nodes owned by this processor
+%   myRank    rank of this processor
+%   filename  name of file with region-to-proc mapping data
+%   inputDir  path to directory with input data
+%
+% Output
+%   RegionToProc  mapping of regions to processors
+%
+function [RegionToProc] = regionToProcMap(myNodes,myRank,filename,inputDir)
 
 %
 % figure out the number of regions that I at least partially own
@@ -49,12 +58,12 @@ regionList = sort(regionList);
 % Trilinos function to compute. Here, we just read it from the file and 
 % figure things out in a slow clumsy way.
 
-fp = fopen(filename,'r');
-if fp == -1, fprintf('Cannot read %s \n',filename); keyboard; end;
+fp = fopen(sprintf('%s/%s', inputDir, filename), 'r');
+if (fp == -1)
+  error('Cannot read %s \n',filename);
+end
 
-%
 % read header information 
-%
 fgetl(fp);   % read heading line
 temp = fscanf(fp,'%d');
 nNodes   = temp(1);

@@ -5,7 +5,7 @@ C  is included in all copies of any software which is or includes a copy
 C  or modification of this software and in all copies of the supporting
 C  documentation for such software.
 
-C  Copyright(C) 2009 National Technology & Engineering Solutions of
+C  Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C  Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C  NTESS, the U.S. Government retains certain rights in this software.
 C  

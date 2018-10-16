@@ -41,15 +41,10 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
-
-// mfh 08 Mar 2013: This include isn't being used here, so I'm
-// commenting it out to speed up compilation time.
-//#include <Tpetra_CrsMatrixMultiplyOp.hpp>
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -153,12 +148,8 @@ namespace {
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-  // mfh 08 Mar 2013: This isn't being used here, so I'm commenting it
-  // out to save compilation time.
-  //using Tpetra::createCrsMatrixMultiplyOp;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -167,7 +158,6 @@ namespace {
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
-
 
   double errorTolSlack = 1e+1;
   string filedir;

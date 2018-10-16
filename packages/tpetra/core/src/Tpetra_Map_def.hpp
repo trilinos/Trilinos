@@ -55,17 +55,20 @@
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp" // teuchosCommIsAnMpiComm
+#include "Tpetra_Details_initializeKokkos.hpp"
 #include <stdexcept>
 #include <typeinfo>
 
 namespace Tpetra {
+namespace Classes {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
     comm_ (new Teuchos::SerialComm<int> ()),
-    node_ (defaultArgNode<Node> ()),
     indexBase_ (0),
     numGlobalElements_ (0),
     numLocalElements_ (0),
@@ -79,7 +82,9 @@ namespace Tpetra {
     contiguous_ (false),
     distributed_ (false), // no communicator yet
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
-  {}
+  {
+    Tpetra::Details::initializeKokkos ();
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -89,7 +94,6 @@ namespace Tpetra {
        LocalGlobal lOrG,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (true),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -104,13 +108,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    Tpetra::Details::initializeKokkos ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
@@ -249,7 +247,6 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
        const Teuchos::RCP<Node> &node) :
     comm_ (comm),
-    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -265,13 +262,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    Tpetra::Details::initializeKokkos ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // Global sum of numLocalElements over all processes.
@@ -461,7 +452,7 @@ namespace Tpetra {
 
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
+      (! Kokkos::is_initialized (), std::runtime_error,
        "Tpetra::Map constructor: The Kokkos execution space "
        << Teuchos::TypeNameTraits<execution_space>::name ()
        << " has not been initialized.  "
@@ -717,17 +708,10 @@ namespace Tpetra {
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
-    node_ (defaultArgNode<Node> ()),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    Tpetra::Details::initializeKokkos ();
 
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
@@ -748,17 +732,10 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<Node>& node) :
     comm_ (comm),
-    node_ (node.is_null () ? defaultArgNode<Node> () : node),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    Tpetra::Details::initializeKokkos ();
 
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
 
@@ -781,7 +758,6 @@ namespace Tpetra {
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
     comm_ (comm),
-    node_ (defaultArgNode<Node> ()),
     uniform_ (false),
     directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
   {
@@ -804,13 +780,7 @@ namespace Tpetra {
     typedef global_size_t GST;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // Make sure that Kokkos has been initialized (Github Issue #513).
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space "
-       << Teuchos::TypeNameTraits<execution_space>::name ()
-       << " has not been initialized.  "
-       "Please initialize it before creating a Map.")
+    Tpetra::Details::initializeKokkos ();
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -1356,7 +1326,7 @@ namespace Tpetra {
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  isLocallyFitted (const Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
   {
     if (this == &map)
       return true;
@@ -1453,7 +1423,7 @@ namespace Tpetra {
     // execution does not require interprocess communication."
     // However, just to be sure, I'll put this call after the above
     // tests that don't communicate.
-    if (! Details::congruent (*comm_, * (map.getComm ()))) {
+    if (! ::Tpetra::Details::congruent (*comm_, * (map.getComm ()))) {
       return false;
     }
 
@@ -1740,7 +1710,6 @@ namespace Tpetra {
       RCP<map_type> newMap (new map_type ());
 
       newMap->comm_ = newComm;
-      newMap->node_ = this->node_;
       // mfh 07 Oct 2016: Preserve original behavior, even though the
       // original index base may no longer be the globally min global
       // index.  See #616 for why this doesn't matter so much anymore.
@@ -1899,7 +1868,6 @@ namespace Tpetra {
       map->lgMap_ = lgMap_;
       map->lgMapHost_ = lgMapHost_;
       map->glMap_ = glMap_;
-      map->node_ = node_;
 
       // Map's default constructor creates an uninitialized Directory.
       // The Directory will be initialized on demand in
@@ -2003,7 +1971,9 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNode () const {
-    return node_;
+    // Node instances don't do anything any more, but sometimes it
+    // helps for them to be nonnull.
+    return Teuchos::rcp (new Node);
   }
 
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
@@ -2043,6 +2013,7 @@ namespace Tpetra {
     return global;
   }
 
+} // namespace Classes
 } // namespace Tpetra
 
 template <class LocalOrdinal, class GlobalOrdinal>
@@ -2110,13 +2081,13 @@ Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createContigMapWithNode (const Tpetra::global_size_t numElements,
                                  const size_t localNumElements,
                                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                 const Teuchos::RCP<Node>& node)
+                                 const Teuchos::RCP<Node>& /* node */)
 {
   using Teuchos::rcp;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
   const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
 
-  return rcp (new map_type (numElements, localNumElements, indexBase, comm, node));
+  return rcp (new map_type (numElements, localNumElements, indexBase, comm));
 }
 
 template <class LocalOrdinal, class GlobalOrdinal>
@@ -2150,23 +2121,18 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createNonContigMapWithNode (const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
                                     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                    const Teuchos::RCP<Node>& node)
+                                    const Teuchos::RCP<Node>& /* node */)
 {
   using Teuchos::rcp;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  typedef Tpetra::global_size_t GST;
+  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+  using GST = Tpetra::global_size_t;
   const GST INV = Tpetra::Details::OrdinalTraits<GST>::invalid ();
   // FIXME (mfh 22 Jul 2016) This is what I found here, but maybe this
   // shouldn't be zero, given that the index base is supposed to equal
   // the globally min global index?
   const GlobalOrdinal indexBase = 0;
 
-  if (node.is_null ()) {
-    return rcp (new map_type (INV, elementList, indexBase, comm));
-  }
-  else {
-    return rcp (new map_type (INV, elementList, indexBase, comm, node));
-  }
+  return rcp (new map_type (INV, elementList, indexBase, comm));
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2174,7 +2140,7 @@ Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createWeightedContigMapWithNode (const int myWeight,
                                          const Tpetra::global_size_t numElements,
                                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                         const Teuchos::RCP<Node>& node)
+                                         const Teuchos::RCP<Node>& /* node */)
 {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
   int sumOfWeights, elemsLeft, localNumElements;
@@ -2198,7 +2164,7 @@ Tpetra::createWeightedContigMapWithNode (const int myWeight,
     if (myImageID < elemsLeft) ++localNumElements;
   }
   // std::cout << "(after) localNumElements: " << localNumElements << std::endl;
-  return createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,comm,node);
+  return createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,comm);
 }
 
 
@@ -2231,15 +2197,13 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
       const size_t numLocalEntries =
         (myRank == 0) ? as<size_t> (numGlobalEntries) : static_cast<size_t> (0);
       return rcp (new map_type (numGlobalEntries, numLocalEntries,
-                                M->getIndexBase (), M->getComm (),
-                                M->getNode ()));
+                                M->getIndexBase (), M->getComm ()));
     }
     else {
       ArrayView<const GO> myGids =
         (myRank == 0) ? M->getNodeElementList () : Teuchos::null;
       return rcp (new map_type (GINV, myGids (), M->getIndexBase (),
-                                M->getComm (), M->getNode ()));
-
+                                M->getComm ()));
     }
   }
   else if (M->isContiguous ()) {
@@ -2268,7 +2232,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
     myOwned_vec.resize (numMyOwnedElems);
 
     return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                              M->getComm (), M->getNode ()));
+                              M->getComm ()));
   }
 }
 
@@ -2315,7 +2279,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   const global_size_t GINV =
     Tpetra::Details::OrdinalTraits<global_size_t>::invalid ();
   return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
-                            M->getComm (), M->getNode ()));
+                            M->getComm ()));
 }
 
 //
@@ -2327,7 +2291,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 //! Explicit instantiation macro supporting the Map class. Instantiates the class and the non-member constructors.
 #define TPETRA_MAP_INSTANT(LO,GO,NODE) \
   \
-  template class Map< LO , GO , NODE >; \
+  namespace Classes { template class Map< LO , GO , NODE >; } \
   \
   template Teuchos::RCP< const Map<LO,GO,NODE> > \
   createLocalMapWithNode<LO,GO,NODE> (const size_t numElements, \

@@ -75,8 +75,8 @@ TEST_F( KokkosThreads, SerialInitialize)
 
   Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);
 
-  for (size_t i=0; i < a.dimension_0(); ++i) {
-    for (size_t x=0; x < a.dimension_1(); ++x) {
+  for (size_t i=0; i < a.extent(0); ++i) {
+    for (size_t x=0; x < a.extent(1); ++x) {
       a(i,x) = i;
     }
   }
@@ -85,8 +85,8 @@ TEST_F( KokkosThreads, SerialInitialize)
   // this view shares the same memory as a, but cannot modify the values
   Kokkos::View<const unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> b = a;
 
-  for (size_t i=0; i < b.dimension_0(); ++i) {
-    for (size_t x=0; x < b.dimension_1(); ++x) {
+  for (size_t i=0; i < b.extent(0); ++i) {
+    for (size_t x=0; x < b.extent(1); ++x) {
       EXPECT_EQ(i, b(i,x));
     }
   }
@@ -99,9 +99,9 @@ TEST_F( KokkosThreads, LambdaInitialize)
   Kokkos::View<unsigned*[COMPILE_TIME_DIMENSION], KOKKOS_THREAD_DEVICE> a( Kokkos::ViewAllocateWithoutInitializing("node views"), RUN_TIME_DIMENSION);
 
   Kokkos::parallel_for<KOKKOS_THREAD_DEVICE>(
-    a.dimension_0() ,
+    a.extent(0) ,
     [=](size_t i) {
-      for (size_t x=0; x < a.dimension_1(); ++x) {
+      for (size_t x=0; x < a.extent(1); ++x) {
         a(i,x) = i;
       }
     }
@@ -113,11 +113,11 @@ TEST_F( KokkosThreads, LambdaInitialize)
   // Cannot portably call a GTEST macro in parallel
   // count the errors and test that they are equal to zero
   Kokkos::parallel_reduce<KOKKOS_THREAD_DEVICE, int /*reduction value type */>(
-    b.dimension_0() ,
+    b.extent(0) ,
     [](int & local_errors)                                    // init lambda
     { local_errors = 0; } ,
     [=](size_t i, int & local_errors) {                       // operator() lambda
-      for (size_t x=0; x < b.dimension_1(); ++x)
+      for (size_t x=0; x < b.extent(1); ++x)
         local_errors += i == b(i,x) ? 0 : 1;
     } ,
     [](volatile int & dst_err, volatile int const& src_err)   // join lambda
@@ -151,14 +151,14 @@ struct InitializeView
   void apply()
   {
     // call parallel_for on this functor
-    Kokkos::parallel_for( a.dimension_0(), *this);
+    Kokkos::parallel_for( a.extent(0), *this);
   }
 
   // initialize the a
   KOKKOS_INLINE_FUNCTION
   void operator()(size_t i) const
   {
-    for (size_t x=0; x < a.dimension_1(); ++x) {
+    for (size_t x=0; x < a.extent(1); ++x) {
       a(i,x) = i;
     }
   }
@@ -186,7 +186,7 @@ struct CheckView
   {
     int num_errors = 0;
     // call a parallel_reduce to count the errors
-    Kokkos::parallel_reduce( a.dimension_0(), *this, num_errors);
+    Kokkos::parallel_reduce( a.extent(0), *this, num_errors);
     return num_errors;
   }
 
@@ -201,7 +201,7 @@ struct CheckView
   KOKKOS_INLINE_FUNCTION
   void operator()(size_t i, value_type & error) const
   {
-    for (size_t x=0; x < a.dimension_1(); ++x) {
+    for (size_t x=0; x < a.extent(1); ++x) {
       error += i == a(i,x) ? 0 : 1;
     }
   }

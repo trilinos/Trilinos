@@ -37,7 +37,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetBuckets.hpp>  // for get_involved_parts
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_unit_tests/stk_mesh_fixtures/BoxFixture.hpp>  // for BoxFixture
 
@@ -69,7 +69,7 @@ using stk::mesh::BucketIterator;
 using stk::mesh::Selector;
 using stk::mesh::Field;
 using stk::mesh::FieldBase;
-using stk::mesh::put_field;
+using stk::mesh::put_field_on_mesh;
 using stk::mesh::BucketVector;
 
 typedef Field<double> ScalarFieldType;
@@ -108,8 +108,8 @@ TEST(UnitTestingOfBucket, testBucket)
 
     meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "volume" , number_of_states );
   Part & universal     = meta.universal_part ();
-  put_field ( temperature , universal );
-  put_field ( volume , universal );
+  put_field_on_mesh ( temperature , universal , (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
+  put_field_on_mesh ( volume , universal , (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
   meta.commit();
 
   // Generate the mesh
@@ -162,11 +162,11 @@ TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
   }
   stk::mesh::EntityId nodeID=1;
   bulk.modification_begin();
-  bulk.declare_node(nodeID, {&part});
+  bulk.declare_node(nodeID, stk::mesh::ConstPartVector{&part});
   nodeID=3;
-  bulk.declare_node(nodeID, {&part});
+  bulk.declare_node(nodeID, stk::mesh::ConstPartVector{&part});
   nodeID=5;
-  bulk.declare_node(nodeID, {&part});
+  bulk.declare_node(nodeID, stk::mesh::ConstPartVector{&part});
   bulk.modification_end();
 
   const stk::mesh::BucketVector& node_buckets_1 = bulk.get_buckets(stk::topology::NODE_RANK, meta.universal_part());

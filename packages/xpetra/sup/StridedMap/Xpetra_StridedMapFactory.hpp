@@ -75,20 +75,11 @@ namespace Xpetra {
 
   public:
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0, LocalGlobal lg = Xpetra::GloballyDistributed,
-        const Teuchos::RCP<Node> &node = defaultArgNode()) {
+        const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node)) {
 
       return rcp(new StridedMap(lib, numGlobalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, lg, node));
     }
@@ -97,7 +88,7 @@ namespace Xpetra {
     static RCP<StridedMap> Build(UnderlyingLib lib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase,
         std::vector<size_t>& stridingInfo, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
         LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0,
-        const Teuchos::RCP<Node> &node = defaultArgNode()) {
+        const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node)) {
 
       return rcp(new StridedMap(lib, numGlobalElements, numLocalElements, indexBase, stridingInfo, comm, stridedBlockId, offset, node));
     }
@@ -163,7 +154,7 @@ namespace Xpetra {
            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
            LocalOrdinal stridedBlockId = -1, // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
            GlobalOrdinal offset = 0,
-           const Teuchos::RCP<Node> &node = defaultArgNode())
+           const Teuchos::RCP<Node> &node = Teuchos::rcp(new Node))
     {
       return rcp (new StridedMap (lib, numGlobalElements, elementList,
                                   indexBase, stridingInfo, comm,

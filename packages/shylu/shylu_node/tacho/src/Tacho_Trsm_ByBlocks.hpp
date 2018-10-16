@@ -59,8 +59,8 @@ namespace Tacho {
                      /**/BB,
                      0, Partition::Top);
         
-            while (ATL.dimension_0() < A.dimension_0()) {
-              const auto alpha_select = (ATL.dimension_0() > 0 ? ScalarType(1.0) : alpha);
+            while (ATL.extent(0) < A.extent(0)) {
+              const auto alpha_select = (ATL.extent(0) > 0 ? ScalarType(1.0) : alpha);
 
               Part_2x2_to_3x3(ATL, ATR, /**/ A00, A01, A02,
                               /*******/ /**/ A10, A11, A12,
@@ -74,7 +74,7 @@ namespace Tacho {
           
               //------------------------------------------------------------
               auto &aa = A11(0, 0);
-              const auto n = B1.dimension_1();
+              const auto n = B1.extent(1);
               for (auto j=0;j<n;++j) {
                 auto &bb = B1(0, j);
 
@@ -150,8 +150,8 @@ namespace Tacho {
                      /**/BB,
                      0, Partition::Bottom);
         
-            while (ABR.dimension_0() < A.dimension_0()) {
-              const auto alpha_select = (ABR.dimension_0() > 0 ? ScalarType(1.0) : alpha);
+            while (ABR.extent(0) < A.extent(0)) {
+              const auto alpha_select = (ABR.extent(0) > 0 ? ScalarType(1.0) : alpha);
 
               Part_2x2_to_3x3(ATL, ATR, /**/ A00, A01, A02,
                               /*******/ /**/ A10, A11, A12,
@@ -168,7 +168,7 @@ namespace Tacho {
                 ::invoke(sched, member, -1.0, A12, B2, alpha_select, B1);
           
               auto &aa = A11(0, 0);
-              const auto n = B1.dimension_1();
+              const auto n = B1.extent(1);
               for (auto j=0;j<n;++j) {
                 auto &bb = B1(0, j);
 

@@ -86,7 +86,8 @@ namespace {
       stk::mesh::Field<double> &field =
 	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,
 								   fieldName, 3);
-      stk::mesh::put_field(field, stkIo.meta_data().universal_part());
+      stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
+                                   (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
       stkIo.populate_bulk_data();
 

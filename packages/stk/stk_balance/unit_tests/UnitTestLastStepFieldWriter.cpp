@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <unistd.h>                     // for unlink
+#include <limits>                       // for std::numeric_limits<double>::epsilon
 
 #include "../stk_balance/internal/LastStepFieldWriter.hpp"
 
@@ -31,7 +32,7 @@ void read_and_write_mesh_with_added_field_data(const std::string& inputFilename,
     stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
 
     stk::mesh::Field<double>& nodalTestData = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, fieldName);
-    stk::mesh::put_field(nodalTestData, meta.universal_part(), &initialVal);
+    stk::mesh::put_field_on_mesh(nodalTestData, meta.universal_part(), &initialVal);
     stk::io::set_field_role(nodalTestData, Ioss::Field::TRANSIENT);
 
     stk::balance::internal::AllStepFieldWriterAutoDecomp ioHelper(bulkData, inputFilename);
@@ -71,7 +72,7 @@ void read_mesh_and_verify_field_data_added_correctly(const std::string &outputFi
     stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
 
     stk::balance::internal::LastStepFieldWriter ioHelper(bulkData, outputFilename);
-    EXPECT_NEAR(timeForStep1, ioHelper.get_max_time(), 1.0e-14);
+    EXPECT_NEAR(timeForStep1, ioHelper.get_max_time(), std::numeric_limits<double>::epsilon());
     verify_field_data_is_same_for_all_nodes(bulkData, fieldName, initialVal);
 }
 

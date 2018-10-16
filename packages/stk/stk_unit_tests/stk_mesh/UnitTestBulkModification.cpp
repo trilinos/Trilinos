@@ -31,31 +31,33 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, TEST, etc
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for sort, unique
-#include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/BulkModification.hpp>  // for find_closure
-#include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_mesh/base/Selector.hpp>   // for operator|, Selector
-#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>  // for RingFixture
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <vector>                       // for vector, vector<>::iterator, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, BucketIterator
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/EntityLess.hpp"  // for EntityLess
-#include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
-#include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
-#include "stk_util/parallel/ParallelComm.hpp"  // for CommBroadcast, etc
-#include "stk_util/util/SortAndUnique.hpp"
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <gtest/gtest.h>
+#include <stddef.h>                                          // for size_t
+#include <stdexcept>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/BulkModification.hpp>
+#include <stk_mesh/base/Entity.hpp>                          // for Entity
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Selector.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/RingFixture.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <vector>                                            // for vector, etc
+#include "mpi.h"
+#include "stk_mesh/base/Bucket.hpp"                          // for Bucket, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/EntityKey.hpp"
+#include "stk_mesh/base/EntityLess.hpp"
+#include "stk_mesh/base/Part.hpp"                            // for Part
+#include "stk_mesh/base/Types.hpp"
+#include "stk_topology/topology.hpp"
+#include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"
+#include "stk_util/util/SortAndUnique.hpp"
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 
 

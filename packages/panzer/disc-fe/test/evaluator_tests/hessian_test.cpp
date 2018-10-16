@@ -107,11 +107,6 @@ class InputConditionsEvaluator
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -159,21 +154,6 @@ InputConditionsEvaluator(
 }
 
 //**********************************************************************
-
-template<typename EvalT, typename Traits>
-void
-InputConditionsEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(x,fm);
-  this->utils.setFieldData(y,fm);
-  this->utils.setFieldData(dx,fm);
-  this->utils.setFieldData(dy,fm);
-}
-
-//**********************************************************************
 template<typename EvalT, typename Traits>
 void
 InputConditionsEvaluator<EvalT, Traits>::
@@ -204,11 +184,6 @@ class HessianTestEvaluator
 
     HessianTestEvaluator(
       const Teuchos::ParameterList& p);
-
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
 
     void
     evaluateFields(
@@ -256,20 +231,6 @@ HessianTestEvaluator(
 }
 
 //**********************************************************************
-
-template<typename EvalT, typename Traits>
-void
-HessianTestEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(x,fm);
-  this->utils.setFieldData(y,fm);
-  this->utils.setFieldData(result,fm);
-}
-
-//**********************************************************************
 template<typename EvalT, typename Traits>
 void
 HessianTestEvaluator<EvalT, Traits>::
@@ -282,7 +243,7 @@ evaluateFields(
   // Hess*v = dy * std::cos(x*y) - y * ( dx * sin(x*y) + dy * sin(x*y))
   //        = dx * std::cos(x*y) - x * ( dx * sin(x*y) + dy * sin(x*y)) - 0.25 * dy * std::cos(y)
   //
-  for(int ip=0;ip<Teuchos::as<int>(result.dimension_0());++ip)
+  for(int ip=0;ip<Teuchos::as<int>(result.extent(0));++ip)
     result(ip) = std::sin(x(ip)*y(ip))+0.25*std::cos(y(ip));
 }
 

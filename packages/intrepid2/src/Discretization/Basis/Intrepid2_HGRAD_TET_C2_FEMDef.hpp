@@ -70,17 +70,17 @@ namespace Intrepid2 {
         const auto z = input(2);
         
         // output is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output(0) = (-1. + x + y + z)*(-1. + 2.*x + 2.*y + 2.*z);
-        output(1) = x*(-1. + 2.*x);
-        output(2) = y*(-1. + 2.*y);
-        output(3) = z*(-1. + 2.*z);
+        output.access(0) = (-1. + x + y + z)*(-1. + 2.*x + 2.*y + 2.*z);
+        output.access(1) = x*(-1. + 2.*x);
+        output.access(2) = y*(-1. + 2.*y);
+        output.access(3) = z*(-1. + 2.*z);
 
-        output(4) = -4.*x*(-1. + x + y + z);
-        output(5) =  4.*x*y;
-        output(6) = -4.*y*(-1. + x + y + z);
-        output(7) = -4.*z*(-1. + x + y + z);
-        output(8) =  4.*x*z;
-        output(9) =  4.*y*z;
+        output.access(4) = -4.*x*(-1. + x + y + z);
+        output.access(5) =  4.*x*y;
+        output.access(6) = -4.*y*(-1. + x + y + z);
+        output.access(7) = -4.*z*(-1. + x + y + z);
+        output.access(8) =  4.*x*z;
+        output.access(9) =  4.*y*z;
         break;
       }
       case OPERATOR_D1:
@@ -89,128 +89,128 @@ namespace Intrepid2 {
         const auto y = input(1);
         const auto z = input(2);
         
-        // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output(0, 0) = -3.+ 4.*x + 4.*y + 4.*z;
-        output(0, 1) = -3.+ 4.*x + 4.*y + 4.*z;
-        output(0, 2) = -3.+ 4.*x + 4.*y + 4.*z; 
+        // output.access is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+        output.access(0, 0) = -3.+ 4.*x + 4.*y + 4.*z;
+        output.access(0, 1) = -3.+ 4.*x + 4.*y + 4.*z;
+        output.access(0, 2) = -3.+ 4.*x + 4.*y + 4.*z; 
       
-        output(1, 0) = -1.+ 4.*x; 
-        output(1, 1) =  0.;
-        output(1, 2) =  0.;
+        output.access(1, 0) = -1.+ 4.*x; 
+        output.access(1, 1) =  0.;
+        output.access(1, 2) =  0.;
       
-        output(2, 0) =  0.;        
-        output(2, 1) = -1.+ 4.*y;
-        output(2, 2) =  0.;
+        output.access(2, 0) =  0.;        
+        output.access(2, 1) = -1.+ 4.*y;
+        output.access(2, 2) =  0.;
 
-        output(3, 0) =  0.;         
-        output(3, 1) =  0.;
-        output(3, 2) = -1.+ 4.*z;
+        output.access(3, 0) =  0.;         
+        output.access(3, 1) =  0.;
+        output.access(3, 2) = -1.+ 4.*z;
  
       
-        output(4, 0) = -4.*(-1.+ 2*x + y + z);         
-        output(4, 1) = -4.*x;
-        output(4, 2) = -4.*x;
+        output.access(4, 0) = -4.*(-1.+ 2*x + y + z);         
+        output.access(4, 1) = -4.*x;
+        output.access(4, 2) = -4.*x;
       
-        output(5, 0) =  4.*y;       
-        output(5, 1) =  4.*x; 
-        output(5, 2) =  0.;
+        output.access(5, 0) =  4.*y;       
+        output.access(5, 1) =  4.*x; 
+        output.access(5, 2) =  0.;
 
-        output(6, 0) = -4.*y;          
-        output(6, 1) = -4.*(-1.+ x + 2*y + z);
-        output(6, 2) = -4.*y; 
+        output.access(6, 0) = -4.*y;          
+        output.access(6, 1) = -4.*(-1.+ x + 2*y + z);
+        output.access(6, 2) = -4.*y; 
 
-        output(7, 0) = -4.*z;          
-        output(7, 1) = -4.*z;
-        output(7, 2) = -4.*(-1.+ x + y + 2*z);
+        output.access(7, 0) = -4.*z;          
+        output.access(7, 1) = -4.*z;
+        output.access(7, 2) = -4.*(-1.+ x + y + 2*z);
 
-        output(8, 0) =  4.*z;     
-        output(8, 1) =  0.;
-        output(8, 2) =  4.*x;
+        output.access(8, 0) =  4.*z;     
+        output.access(8, 1) =  0.;
+        output.access(8, 2) =  4.*x;
 
-        output(9, 0) =  0.;         
-        output(9, 1) =  4.*z;
-        output(9, 2) =  4.*y;
+        output.access(9, 0) =  0.;         
+        output.access(9, 1) =  4.*z;
+        output.access(9, 2) =  4.*y;
         break;
       }
       case OPERATOR_D2: {
-        output(0, 0) =  4.;
-        output(0, 1) =  4.;
-        output(0, 2) =  4.;
-        output(0, 3) =  4.;
-        output(0, 4) =  4.;
-        output(0, 5) =  4.;
+        output.access(0, 0) =  4.;
+        output.access(0, 1) =  4.;
+        output.access(0, 2) =  4.;
+        output.access(0, 3) =  4.;
+        output.access(0, 4) =  4.;
+        output.access(0, 5) =  4.;
       
-        output(1, 0) =  4.;
-        output(1, 1) =  0.;
-        output(1, 2) =  0.;
-        output(1, 3) =  0.;
-        output(1, 4) =  0.;
-        output(1, 5) =  0.;
+        output.access(1, 0) =  4.;
+        output.access(1, 1) =  0.;
+        output.access(1, 2) =  0.;
+        output.access(1, 3) =  0.;
+        output.access(1, 4) =  0.;
+        output.access(1, 5) =  0.;
 
-        output(2, 0) =  0.;
-        output(2, 1) =  0.;
-        output(2, 2) =  0.;
-        output(2, 3) =  4.;
-        output(2, 4) =  0.;
-        output(2, 5) =  0.;
+        output.access(2, 0) =  0.;
+        output.access(2, 1) =  0.;
+        output.access(2, 2) =  0.;
+        output.access(2, 3) =  4.;
+        output.access(2, 4) =  0.;
+        output.access(2, 5) =  0.;
 
-        output(3, 0) =  0.;
-        output(3, 1) =  0.;
-        output(3, 2) =  0.;
-        output(3, 3) =  0.;
-        output(3, 4) =  0.;
-        output(3, 5) =  4.;
+        output.access(3, 0) =  0.;
+        output.access(3, 1) =  0.;
+        output.access(3, 2) =  0.;
+        output.access(3, 3) =  0.;
+        output.access(3, 4) =  0.;
+        output.access(3, 5) =  4.;
 
-        output(4, 0) = -8.;
-        output(4, 1) = -4.;
-        output(4, 2) = -4.;
-        output(4, 3) =  0.;
-        output(4, 4) =  0.;
-        output(4, 5) =  0.;
+        output.access(4, 0) = -8.;
+        output.access(4, 1) = -4.;
+        output.access(4, 2) = -4.;
+        output.access(4, 3) =  0.;
+        output.access(4, 4) =  0.;
+        output.access(4, 5) =  0.;
 
-        output(5, 0) =  0.;
-        output(5, 1) =  4.;
-        output(5, 2) =  0.;
-        output(5, 3) =  0.;
-        output(5, 4) =  0.;
-        output(5, 5) =  0.;
+        output.access(5, 0) =  0.;
+        output.access(5, 1) =  4.;
+        output.access(5, 2) =  0.;
+        output.access(5, 3) =  0.;
+        output.access(5, 4) =  0.;
+        output.access(5, 5) =  0.;
 
-        output(6, 0) =  0.;
-        output(6, 1) = -4.;
-        output(6, 2) =  0.;
-        output(6, 3) = -8.;
-        output(6, 4) = -4.;
-        output(6, 5) =  0;
+        output.access(6, 0) =  0.;
+        output.access(6, 1) = -4.;
+        output.access(6, 2) =  0.;
+        output.access(6, 3) = -8.;
+        output.access(6, 4) = -4.;
+        output.access(6, 5) =  0;
 
-        output(7, 0) =  0.;
-        output(7, 1) =  0.;
-        output(7, 2) = -4.;
-        output(7, 3) =  0.;
-        output(7, 4) = -4.;
-        output(7, 5) = -8.;
+        output.access(7, 0) =  0.;
+        output.access(7, 1) =  0.;
+        output.access(7, 2) = -4.;
+        output.access(7, 3) =  0.;
+        output.access(7, 4) = -4.;
+        output.access(7, 5) = -8.;
 
-        output(8, 0) =  0.;
-        output(8, 1) =  0.;
-        output(8, 2) =  4.;
-        output(8, 3) =  0.;
-        output(8, 4) =  0.;
-        output(8, 5) =  0.;
+        output.access(8, 0) =  0.;
+        output.access(8, 1) =  0.;
+        output.access(8, 2) =  4.;
+        output.access(8, 3) =  0.;
+        output.access(8, 4) =  0.;
+        output.access(8, 5) =  0.;
 
-        output(9, 0) =  0.;
-        output(9, 1) =  0.;
-        output(9, 2) =  0.;
-        output(9, 3) =  0.;
-        output(9, 4) =  4.;
-        output(9, 5) =  0.;
+        output.access(9, 0) =  0.;
+        output.access(9, 1) =  0.;
+        output.access(9, 2) =  0.;
+        output.access(9, 3) =  0.;
+        output.access(9, 4) =  4.;
+        output.access(9, 5) =  0.;
         break;
       }
       case OPERATOR_MAX: {
-        const ordinal_type jend = output.dimension(1);
-        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.extent(1);
+        const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output(i, j) = 0.0;
+            output.access(i, j) = 0.0;
         break;
       }
       default: {
@@ -237,7 +237,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

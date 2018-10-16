@@ -46,7 +46,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
 namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class MetaData; } }
@@ -155,6 +155,10 @@ class FieldBase
     return m_impl.field_state(fstate);
   }
 
+  bool is_state_valid(FieldState fstate) const {
+    return field_state(fstate) != nullptr;
+  }
+
   const void* get_initial_value() const { return m_impl.get_initial_value(); }
 
   void* get_initial_value() { return m_impl.get_initial_value(); }
@@ -177,6 +181,11 @@ class FieldBase
   inline FieldMetaDataVector& get_meta_data_for_field() {
     return m_field_meta_data;
   }
+
+  unsigned length(const stk::mesh::Part& part) const;
+
+  bool defined_on_any(const stk::mesh::ConstPartVector& parts) const;
+  bool defined_on(const stk::mesh::Part& part) const;
 
 private:
 

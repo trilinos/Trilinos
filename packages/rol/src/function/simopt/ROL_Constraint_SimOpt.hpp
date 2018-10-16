@@ -258,7 +258,7 @@ public:
         // Update iterate
         cnorm = tmp;
         u.set(*unew_);
-        if (cnorm < ctol) {
+        if (cnorm <= ctol) { // = covers the case of identically zero residual
           break;
         }
         update(u,z,true);

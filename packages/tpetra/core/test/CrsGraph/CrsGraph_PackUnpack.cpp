@@ -44,7 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsGraph.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -199,11 +199,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   out << "Building second graph" << endl;
   RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getNodeNumEntries()));
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   const bool atomic_updates = ! std::is_same<execution_space, Kokkos::Serial>::value;
 #else
   const bool atomic_updates = true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   out << "Calling unpackCrsGraphAndCombine with "
       << "CombineMode=Tpetra::REPLACE" << endl;

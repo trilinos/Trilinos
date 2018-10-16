@@ -519,7 +519,7 @@ public:
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
     ROL::Ptr<const std::vector<Real> > ex =
-      dynamic_cast<ROL::StdVector<Real> >(x).getVector();
+      dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
     ROL::Ptr<std::vector<Real> > ev =

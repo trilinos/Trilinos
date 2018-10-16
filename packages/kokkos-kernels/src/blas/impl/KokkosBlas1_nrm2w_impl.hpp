@@ -146,7 +146,7 @@ struct MV_Nrm2w_Right_FunctorVector
   bool m_take_sqrt;
 
   MV_Nrm2w_Right_FunctorVector (const XMV& x, const XMV& w, const bool& take_sqrt) :
-    value_count (x.dimension_1 ()), m_x (x), m_w (x), m_take_sqrt(take_sqrt)
+    value_count (x.extent(1)), m_x (x), m_w (x), m_take_sqrt(take_sqrt)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value,
                    "KokkosBlas::Impl::MV_Nrm2w_Right_FunctorVector: "
@@ -168,10 +168,10 @@ struct MV_Nrm2w_Right_FunctorVector
   operator() (const size_type i, value_type sum) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -184,10 +184,10 @@ struct MV_Nrm2w_Right_FunctorVector
   init (value_type update) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -200,10 +200,10 @@ struct MV_Nrm2w_Right_FunctorVector
         const volatile value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -216,10 +216,10 @@ struct MV_Nrm2w_Right_FunctorVector
         const value_type source) const
   {
     const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
@@ -231,10 +231,10 @@ struct MV_Nrm2w_Right_FunctorVector
   final (value_type update) const {
     if(m_take_sqrt) {
       const size_type numVecs = value_count;
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type j = 0; j < numVecs; ++j) {
@@ -252,7 +252,7 @@ void
 V_Nrm2w_Invoke (const RV& r, const XV& X, const XV& W, const bool& take_sqrt)
 {
   typedef typename XV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   typedef V_Nrm2w_Functor<RV, XV, SizeType> functor_type;
@@ -268,12 +268,12 @@ void
 MV_Nrm2w_Invoke (const RV& r, const XMV& X, const XMV& W, const bool& take_sqrt)
 {
   typedef typename XMV::execution_space execution_space;
-  const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+  const SizeType numRows = static_cast<SizeType> (X.extent(0));
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   // If the input multivector (2-D View) has only one column, invoke
   // the single-vector version of the kernel.
-  if (X.dimension_1 () == 1) {
+  if (X.extent(1) == 1) {
     auto r_0 = Kokkos::subview (r, 0);
     auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
     auto W_0 = Kokkos::subview (W, Kokkos::ALL (), 0);

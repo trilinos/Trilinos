@@ -88,6 +88,7 @@
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Solver_SolverUtils.H"
+#include "NOX_Observer.hpp"
 
 #include "stdio.h"  // for printf()
 
@@ -104,9 +105,10 @@ TensorBasedTest(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
   testptr(t),
   paramsPtr(p),
   lineSearch(globalDataPtr, paramsPtr->sublist("Line Search")),
-  direction(globalDataPtr, paramsPtr->sublist("Direction")),
-  prePostOperator(utilsPtr, paramsPtr->sublist("Solver Options"))
+  direction(globalDataPtr, paramsPtr->sublist("Direction"))
 {
+  NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   init();
 }
 
@@ -136,14 +138,26 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnptr->setX(initialGuess);;
   testptr = t;
-  init();
+  stepSize = 0;
+  niter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 void NOX::Solver::TensorBasedTest::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnptr->setX(initialGuess);
-  init();
+  stepSize = 0;
+  niter = 0;
+  status = NOX::StatusTest::Unconverged;
+}
+
+void NOX::Solver::TensorBasedTest::
+reset()
+{
+  stepSize = 0;
+  niter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 NOX::Solver::TensorBasedTest::~TensorBasedTest()
@@ -152,14 +166,15 @@ NOX::Solver::TensorBasedTest::~TensorBasedTest()
 }
 
 
-NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::getStatus()
+NOX::StatusTest::StatusType
+NOX::Solver::TensorBasedTest::getStatus() const
 {
   return status;
 }
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // First time thru, perform some initilizations
   if (niter == 0) {
@@ -189,7 +204,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
 
   // First check status
   if (status != NOX::StatusTest::Unconverged) {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     return status;
   }
 
@@ -206,7 +221,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - "
      << "unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     return status;
   }
 
@@ -223,7 +238,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     if (stepSize == 0) {
       utilsPtr->out() << "NOX::Solver::TensorBasedTest::iterate - line search failed" << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       return status;
     }
     else if (utilsPtr->isPrintType(NOX::Utils::Warning))
@@ -238,7 +253,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - "
      << "unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     return status;
   }
 
@@ -246,7 +261,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
   // Evaluate the current status.
   status = test.checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   // Return status.
   return status;
@@ -255,7 +270,9 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
 
 NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged) {
@@ -267,7 +284,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::solve()
   outputParams.set("Nonlinear Iterations", niter);
   outputParams.set("2-Norm of Residual", solnptr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }
@@ -311,6 +328,12 @@ Teuchos::RCP< const Teuchos::ParameterList >
 NOX::Solver::TensorBasedTest::getListPtr() const
 {
   return paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::TensorBasedTest::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 const NOX::Direction::Tensor&

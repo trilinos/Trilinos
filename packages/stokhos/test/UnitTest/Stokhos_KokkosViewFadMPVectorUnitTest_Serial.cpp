@@ -55,13 +55,13 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize serial
-  Kokkos::Serial::initialize();
+  Kokkos::initialize();
 
   // Run tests
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Serial::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

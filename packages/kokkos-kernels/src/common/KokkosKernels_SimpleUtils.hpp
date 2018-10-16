@@ -240,11 +240,11 @@ struct IsIdenticalFunctor{
 template <typename view_type1, typename view_type2, typename eps_type, typename MyExecSpace>
 bool kk_is_identical_view(view_type1 view1, view_type2 view2, eps_type eps){
 
-  if (view1.dimension_0() != view2.dimension_0()){
+  if (view1.extent(0) != view2.extent(0)){
     return false;
   }
 
-  size_t num_elements = view1.dimension_0();
+  size_t num_elements = view1.extent(0);
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   size_t issame = 0;

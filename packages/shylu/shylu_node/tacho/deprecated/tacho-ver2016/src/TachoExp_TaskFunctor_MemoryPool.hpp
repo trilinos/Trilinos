@@ -205,8 +205,8 @@ namespace Tacho {
         if (get_team_rank(member) == 0) {
           const auto A = _A.get();
 
-          const ordinal_type m = A.dimension_0();
-          const ordinal_type n = A.dimension_1();
+          const ordinal_type m = A.extent(0);
+          const ordinal_type n = A.extent(1);
 
           printf("A in TestViewSee\n");
           for (ordinal_type i=0;i<m;++i) {

@@ -37,7 +37,7 @@
 #include "Sacado_Traits.hpp"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 #include "Kokkos_Core.hpp"
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 #include "Cuda/Kokkos_Cuda_Vectorization.hpp"
 #endif
 #if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS)
@@ -58,7 +58,7 @@ namespace Sacado {
   template <typename ExecSpace>
   void destroyGlobalMemoryPool(const ExecSpace& space) {}
 
-#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+#if 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
   namespace Impl {
     extern const Kokkos::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool;
   }
@@ -142,7 +142,7 @@ namespace Sacado {
 
 #endif
 
-#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_HAVE_CUDA) && defined(__CUDACC__)
+#if !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 
   namespace Impl {
 
@@ -204,7 +204,7 @@ namespace Sacado {
       }
       m = warpBcast(m,0);
       m += warpScan(sz);
-#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_HAVE_OPENMP)
+#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
       T* m = 0;
       if (sz > 0) {
         if (global_sacado_openmp_memory_pool != 0) {
@@ -237,7 +237,7 @@ namespace Sacado {
       if (total_sz > 0 && lane == 0) {
         global_sacado_cuda_memory_pool_on_device->deallocate((void*) m, total_sz*sizeof(T));
       }
-#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_HAVE_OPENMP)
+#elif 0 && defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && defined(KOKKOS_ENABLE_OPENMP)
       if (sz > 0) {
         if (global_sacado_openmp_memory_pool != 0)
           global_sacado_openmp_memory_pool->deallocate((void*) m, sz*sizeof(T));

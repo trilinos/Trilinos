@@ -58,14 +58,14 @@ int main( int argc, char* argv[] ) {
   Kokkos::global_sacado_mp_vector_size = VectorSize;
 
   // Initialize serial
-  Kokkos::Serial::initialize();
+  Kokkos::initialize();
 
   // Run tests
   Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::Serial::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

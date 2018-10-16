@@ -53,25 +53,30 @@ namespace Tpetra {
 
 /** \brief Returns a default platform appropriate for the enviroment.
 
-  The DefaultPlatform mechanism is useful for easily accessing default
-  Comm and Node types on a particular system.
-
-  If HAVE_MPI is defined, then an instance of <tt>MpiPlatform</tt> will be
-  created.  Otherwise, a <tt>SerialPlatform</tt> is returned.
+    \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+      not use <tt>*Platform</tt> classes any more.  To initialize
+      Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+      Tpetra::ScopeGuard, or Tpetra::initialize and Tpetra::finalize.
+      To get Tpetra's default Comm instance, include
+      <tt>Tpetra_Core.hpp</tt> and call
+      <tt>Tpetra::getDefaultComm()</tt>.  For the default Node type,
+      use <tt>Tpetra::Map<>::node_type</tt>.  Do not create Node
+      instances yourself.  It is OK for Node instances to be null.
  */
-class DefaultPlatform {
+class TPETRA_DEPRECATED DefaultPlatform {
 public:
   /// \brief The default platform type specified at compile time.
   ///
-  /// For a serial build, this will be SerialPlatform. Otherwise, it
-  /// will be MpiPlatform.
+  /// \warning This typedef is DEPRECATED and will be removed soon!
 #ifdef HAVE_TPETRA_MPI
   typedef MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> DefaultPlatformType;
 #else
   typedef SerialPlatform< ::Tpetra::Details::DefaultTypes::node_type> DefaultPlatformType;
 #endif
 
-  //! Return a reference to the default platform singleton.
+  /// \brief Return a reference to the default platform singleton.
+  ///
+  /// \warning This method is DEPRECATED and will be removed soon!
   static DefaultPlatformType& getDefaultPlatform ();
 
 private:

@@ -81,8 +81,8 @@ namespace panzer {
 
       auto hex_pts = gen_a.getPoints(myHex);
 
-      TEST_EQUALITY(Teuchos::as<int>(hex_pts.dimension_0()),intrepid_basis->getCardinality());
-      TEST_EQUALITY(Teuchos::as<int>(hex_pts.dimension_1()),3);
+      TEST_EQUALITY(Teuchos::as<int>(hex_pts.extent(0)),intrepid_basis->getCardinality());
+      TEST_EQUALITY(Teuchos::as<int>(hex_pts.extent(1)),3);
     }
 
     // check gen_b
@@ -95,11 +95,11 @@ namespace panzer {
       auto tet_pts = gen_b.getPoints(myTet);
       auto hex_pts = gen_b.getPoints(myHex);
 
-      TEST_EQUALITY(Teuchos::as<int>(hex_pts.dimension_0()),intrepid_basis_hex->getCardinality());
-      TEST_EQUALITY(hex_pts.dimension_1(),3);
+      TEST_EQUALITY(Teuchos::as<int>(hex_pts.extent(0)),intrepid_basis_hex->getCardinality());
+      TEST_EQUALITY(hex_pts.extent(1),3);
 
-      TEST_EQUALITY(Teuchos::as<int>(tet_pts.dimension_0()),intrepid_basis_tet->getCardinality());
-      TEST_EQUALITY(tet_pts.dimension_1(),3);
+      TEST_EQUALITY(Teuchos::as<int>(tet_pts.extent(0)),intrepid_basis_tet->getCardinality());
+      TEST_EQUALITY(tet_pts.extent(1),3);
     }
 
   }

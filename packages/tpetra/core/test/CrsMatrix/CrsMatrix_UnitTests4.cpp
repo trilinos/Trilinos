@@ -41,20 +41,11 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
-
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
 #include <type_traits> // std::is_same
-
-// mfh 08 Mar 2013: This include isn't being used here, so I'm
-// commenting it out to speed up compilation time.
-//#include <Tpetra_CrsMatrixMultiplyOp.hpp>
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -103,13 +94,7 @@ namespace {
       testingTol();
   }
 
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
-
   using std::endl;
-  using std::swap;
-
-  using std::string;
 
   using Teuchos::as;
   using Teuchos::FancyOStream;
@@ -118,8 +103,6 @@ namespace {
   using Teuchos::rcp;
   using Teuchos::arcp;
   using Teuchos::outArg;
-  using Teuchos::arcpClone;
-  using Teuchos::arrayView;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
@@ -159,12 +142,7 @@ namespace {
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-  // mfh 08 Mar 2013: This isn't being used here, so I'm commenting it
-  // out to save compilation time.
-  //using Tpetra::createCrsMatrixMultiplyOp;
-  using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -176,7 +154,7 @@ namespace {
 
 
   double errorTolSlack = 1e+1;
-  string filedir;
+  std::string filedir;
 
 template <class tuple, class T>
 inline void tupleToArray(Array<T> &arr, const tuple &tup)
@@ -227,26 +205,25 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   // UNIT TESTS
   //
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numImages = comm->getSize();
     const size_t myImageID = comm->getRank();
-    // create a Map
+
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
+    
     // create the identity matrix
     RCP<RowMatrix<Scalar,LO,GO,Node> > eye;
     {
@@ -289,7 +266,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, AlphaBetaMultiply, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef  Operator<Scalar,LO,GO,Node> OP;
     typedef ScalarTraits<Scalar> ST;
@@ -297,11 +273,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename ST::magnitudeType Mag;
     const size_t THREE = 3;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t myImageID = comm->getRank();
-    // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,THREE,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,THREE,comm);
 
     /* Create the identity matrix, three rows per proc */
     RCP<OP> AOp;
@@ -333,59 +307,9 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
   }
 
-  // mfh 08 Mar 2013: The MixedMultiplyOp test wasn't being
-  // instantiated (at the end of this file) anyway, so I'm commenting
-  // it out for now to speed up compilation of this file.
-#if 0
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MixedMultiplyOp, LO, GO, Scalar, Node )
-  {
-    RCP<Node> node = getNode<Node>();
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef CrsMatrix<int,LO,GO,Node> IntMAT;
-    typedef  Operator<Scalar,LO,GO,Node> OP;
-    typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
-    const size_t THREE = 3;
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t myImageID = comm->getRank();
-    // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,THREE,comm,node);
-
-    /* Create the integer identity matrix, three rows per proc, wrapped in a Op<Scalar>  */
-    RCP<OP> AOp;
-    {
-      RCP<IntMAT> A = rcp(new IntMAT(map,1));
-      A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<int>(1) );
-      A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<int>(1) );
-      A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<int>(1) );
-      A->fillComplete();
-      AOp = createCrsMatrixMultiplyOp<Scalar>(A.getConst());
-    }
-    MV X(map,1), Y(map,1), Z(map,1);
-    X.randomize();
-    Y.randomize();
-    // Z = X + Y
-    Z.update(ST::one(),X,ST::one(),Y,ST::zero());
-    // test the action: Y = I*X + Y = X + Y == Z
-    AOp->apply(X,Y,NO_TRANS,ST::one(),ST::one());
-    // Z -= Y  -> zero
-    Z.update(-ST::one(),Y,ST::one());
-    Array<Mag> norms(1), zeros(1,MT::zero());
-    Z.norm1(norms());
-    if (ST::isOrdinal) {
-      TEST_COMPARE_ARRAYS(norms,zeros);
-    } else {
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
-    }
-  }
-#endif // 0
-
-  ////
+  // Make sure that CrsMatrix and RowMatrix have the correct typedefs,
+  // and that the typedefs match up with their corresponding template
+  // parameters.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Typedefs, LO, GO, Scalar, Node )
   {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -393,31 +317,37 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename MAT::local_ordinal_type  local_ordinal_type;
     typedef typename MAT::global_ordinal_type global_ordinal_type;
     typedef typename MAT::node_type           node_type;
-    TEST_EQUALITY_CONST( (std::is_same< scalar_type         , Scalar >::value) == true, true );
-    TEST_EQUALITY_CONST( (std::is_same< local_ordinal_type  , LO     >::value) == true, true );
-    TEST_EQUALITY_CONST( (std::is_same< global_ordinal_type , GO     >::value) == true, true );
-    TEST_EQUALITY_CONST( (std::is_same< node_type           , Node   >::value) == true, true );
+    static_assert (std::is_same<scalar_type, Scalar>::value,
+		   "CrsMatrix<Scalar, ...>::scalar_type != Scalar");
+    static_assert (std::is_same<local_ordinal_type, LO>::value,
+		   "CrsMatrix<Scalar, LO, ...>::local_ordinal_type != LO");
+    static_assert (std::is_same<global_ordinal_type, GO>::value,
+		   "CrsMatrix<Scalar, LO, GO, ...>::global_ordinal_type != GO");
+    static_assert (std::is_same<node_type, Node>::value,
+		   "CrsMatrix<Scalar, LO, GO, Node>::node_type != Node");
+
     typedef RowMatrix<Scalar,LO,GO,Node> RMAT;
     typedef typename RMAT::scalar_type         rmat_scalar_type;
     typedef typename RMAT::local_ordinal_type  rmat_local_ordinal_type;
     typedef typename RMAT::global_ordinal_type rmat_global_ordinal_type;
     typedef typename RMAT::node_type           rmat_node_type;
-    TEST_EQUALITY_CONST( (std::is_same< rmat_scalar_type         , Scalar >::value) == true, true );
-    TEST_EQUALITY_CONST( (std::is_same< rmat_local_ordinal_type  , LO     >::value) == true, true );
-    TEST_EQUALITY_CONST( (std::is_same< rmat_global_ordinal_type , GO     >::value) == true, true );
-    TEST_EQUALITY_CONST( (std::is_same< rmat_node_type           , Node   >::value) == true, true );
+    static_assert (std::is_same<rmat_scalar_type, Scalar>::value,
+		   "RowMatrix<Scalar, ...>::scalar_type != Scalar");
+    static_assert (std::is_same<rmat_local_ordinal_type, LO>::value,
+		   "RowMatrix<Scalar, LO, ...>::local_ordinal_type != LO");
+    static_assert (std::is_same<rmat_global_ordinal_type, GO>::value,
+		   "RowMatrix<Scalar, LO, GO, ...>::global_ordinal_type != GO");
+    static_assert (std::is_same<rmat_node_type, Node>::value,
+		   "RowMatrix<Scalar, LO, GO, Node>::node_type != Node");
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ActiveFill, LO, GO, Scalar, Node )
   {
-    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    // create Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,1,comm,node);
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
       MAT matrix(map,map,0,DynamicProfile);
@@ -440,15 +370,12 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // numValid = matrix.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
       // TEST_EQUALITY( numValid, 0 );
 
-      //TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       numValid = matrix.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
       TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
 
-      //TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       numValid = matrix.replaceLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
       TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
 
-      //TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
       numValid = matrix.sumIntoLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
       TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
 
@@ -462,13 +389,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
-      //
+
       RCP<ParameterList> params = parameterList();
       params->set("Optimize Storage",false);
       matrix.fillComplete(params);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
-      //
+
       matrix.resumeFill();
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
@@ -478,37 +405,30 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_NOTHROW( matrix.setAllToScalar(SZERO)                                   );
       TEST_NOTHROW( matrix.scale(SZERO)                                            );
       TEST_NOTHROW( matrix.globalAssemble()                                        );
-      //
+
       TEST_NOTHROW( matrix.fillComplete()                        );
       TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
     }
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ThreeArraysESFC, LO, GO, Scalar, Node )
   {
-
-    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numImages = comm->getSize();
-    // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
+    
     // create the identity matrix, via three arrays constructor
-
-
     ArrayRCP<size_t> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
     ArrayRCP<Scalar> values(numLocal); // one unknown per row
@@ -541,6 +461,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getRangeMap()) , true);
+
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
@@ -558,26 +479,23 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, SetAllValues, LO, GO, Scalar, Node )
   {
-
-    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numImages = comm->getSize();
-    // create a Map
+
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
+    
     // create the identity matrix, via three arrays constructor
-
-
     ArrayRCP<size_t> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
     ArrayRCP<Scalar> values(numLocal); // one unknown per row
@@ -672,13 +590,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef Teuchos::ScalarTraits<Scalar> STS;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
-    // get a Kokkos node and a comm
-    RCP<Node> node = getNode<Node> ();
-    RCP<const Comm<int> > comm = getDefaultComm ();
-
-    // create Map
-    RCP<const Map<LO,GO,Node> > map =
-      createContigMapWithNode<LO,GO> (INVALID, 1, comm, node);
+    auto comm = Tpetra::getDefaultComm ();
+    auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
     CrsMatrix<Scalar,LO,GO,Node> A (map, map, 0, DynamicProfile);

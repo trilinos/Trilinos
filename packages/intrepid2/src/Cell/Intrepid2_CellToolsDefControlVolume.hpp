@@ -73,8 +73,8 @@ namespace Intrepid2 {
     void getBaryCenter(       centerViewType center,
                         const vertViewType verts) {
       // the enumeration already assumes the ordering of vertices (circling around the polygon)
-      const ordinal_type nvert = verts.dimension(0);
-      const ordinal_type dim   = verts.dimension(1);
+      const ordinal_type nvert = verts.extent(0);
+      const ordinal_type dim   = verts.extent(1);
       
       switch (dim) {
       case 2: {
@@ -112,8 +112,8 @@ namespace Intrepid2 {
     void getMidPoints(       midPointViewType midpts,
                        const nodeMapViewType map,
                        const vertViewType verts) {
-      const ordinal_type npts = map.dimension(0);
-      const ordinal_type dim  = verts.dimension(1);
+      const ordinal_type npts = map.extent(0);
+      const ordinal_type dim  = verts.extent(1);
       
       for (ordinal_type i=0;i<npts;++i) {
         // first entry is the number of subcell vertices
@@ -149,8 +149,8 @@ namespace Intrepid2 {
         // vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        const ordinal_type nvert = verts.dimension(0);
-        const ordinal_type dim   = verts.dimension(1);
+        const ordinal_type nvert = verts.extent(0);
+        const ordinal_type dim   = verts.extent(1);
 
         // control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
@@ -200,8 +200,8 @@ namespace Intrepid2 {
         // vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        // const ordinal_type nvert = verts.dimension(0);
-        const ordinal_type dim   = verts.dimension(1);
+        // const ordinal_type nvert = verts.extent(0);
+        const ordinal_type dim   = verts.extent(1);
 
         // control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
@@ -290,8 +290,8 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        //const ordinal_type nvert = verts.dimension(0);
-        const ordinal_type dim   = verts.dimension(1);
+        //const ordinal_type nvert = verts.extent(0);
+        const ordinal_type dim   = verts.extent(1);
 
         //  control volume coords (N,P,D), here N corresponds to cell vertices
         auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
@@ -380,17 +380,17 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(primaryCell), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): the primary cell must have a reference cell." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.dimension(1) != primaryCell.getVertexCount(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.extent(1) != primaryCell.getVertexCount(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(1) does not match to # of vertices of the cell." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.dimension(2) != primaryCell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.extent(2) != primaryCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(2) does not match to the dimension of the cell." );
 #endif
 
     // get array dimensions
-    const ordinal_type numCells = cellCoords.dimension(0);
-    //const ordinal_type numVerts = cellCoords.dimension(1);
-    const ordinal_type spaceDim = cellCoords.dimension(2);
+    const ordinal_type numCells = cellCoords.extent(0);
+    //const ordinal_type numVerts = cellCoords.extent(1);
+    const ordinal_type spaceDim = cellCoords.extent(2);
 
     // construct edge and face map for the cell type
     const ordinal_type numEdge = primaryCell.getSubcellCount(1);

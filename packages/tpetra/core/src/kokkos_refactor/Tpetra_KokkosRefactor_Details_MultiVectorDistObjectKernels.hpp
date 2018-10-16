@@ -705,7 +705,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct InsertOp< ::Kokkos::Serial > {
     template <typename Scalar>
@@ -714,7 +714,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dest = src; // no need for an atomic operation here
     }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   template<class ExecutionSpace>
   struct AddOp {
@@ -725,7 +725,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct AddOp< ::Kokkos::Serial > {
     template <typename Scalar>
@@ -734,7 +734,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dest += src; // no need for an atomic operation here
     }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   template<class ExecutionSpace>
   struct AbsMaxOp {
@@ -756,7 +756,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
     }
   };
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
   template<>
   struct AbsMaxOp< ::Kokkos::Serial > {
     // ETP:  Is this really what we want?  This seems very odd if
@@ -777,7 +777,7 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
       dest = static_cast<Scalar> (max (SCT::abs (dest), SCT::abs (src)));
     }
   };
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   template <typename ExecutionSpace,
             typename DstView,

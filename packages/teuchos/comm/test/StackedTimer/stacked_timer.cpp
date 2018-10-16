@@ -71,17 +71,17 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   timer.start("Total Time");
   {
     for (int i=0; i < 10; ++i) {
-    
+
       timer.start("Assembly");
-      std::this_thread::sleep_for(std::chrono::milliseconds{100});   
+      std::this_thread::sleep_for(std::chrono::milliseconds{100});
       timer.stop("Assembly");
-      
+
       timer.start("Solve");
       {
         timer.start("Prec");
-        std::this_thread::sleep_for(std::chrono::milliseconds{50});   
+        std::this_thread::sleep_for(std::chrono::milliseconds{50});
         timer.stop("Prec");
-        
+
         // Test different timers on different mpi processes
         if (myRank == 0 ) {
           const std::string label = "Rank 0 ONLY";
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
         }
       }
       timer.stop("Solve");
-      
+
     }
   }
   timer.stop("Total Time");
@@ -124,6 +124,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   Teuchos::StackedTimer::OutputOptions options;
   options.output_histogram=true;
   options.num_histogram=3;
+  options.print_warnings=false;
 
   // Get the report
   std::stringstream sout1;
@@ -148,7 +149,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   //
   // * NOTE: The report only combines values to a single MPI process, so
   //         only check on that process.
-  // * NOTE: regex not supported in gcc until 4.9. Can drop this check 
+  // * NOTE: regex not supported in gcc until 4.9. Can drop this check
   //         when Trilinos drops support for gcc 4.8.
 #if !defined(__GNUC__) \
     || ( defined(__GNUC__) && (__GNUC__ > 4) ) \
@@ -158,18 +159,18 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
     const double timerTolerance = 0.25; // +- 0.25 seconds
     std::istringstream is(sout1.str());
     for (const auto& check : lineChecks) {
-      
+
       std::string line;
       std::getline(is,line);
       std::smatch regexSMatch;
       std::regex timerName(std::get<0>(check));
       std::regex_search(line,regexSMatch,timerName);
       TEST_ASSERT(not regexSMatch.empty());
-      
+
       // Split string to get time and count
       std::regex delimiter(":\\s|\\s\\[|\\]\\s");
       std::sregex_token_iterator tok(line.begin(), line.end(),delimiter,-1);
-      
+
       const std::string timeAsString = (++tok)->str();
       const double time = std::stod(timeAsString);
       TEST_FLOATING_EQUALITY(time,std::get<1>(check),timerTolerance);
@@ -190,6 +191,8 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 {
   const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
+  const auto diffTimer = Teuchos::TimeMonitor::getNewTimer("Diffusion Term");
+  const auto rxnTimer = Teuchos::TimeMonitor::getNewTimer("Reaction Term");
   const auto precTimer = Teuchos::TimeMonitor::getNewTimer("Prec");
   const auto gmresTimer = Teuchos::TimeMonitor::getNewTimer("GMRES");
 
@@ -205,11 +208,21 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   timer->start("Total Time");
   {
     for (int i=0; i < 10; ++i) {
-    
+
       timer->start("Assembly");
-      std::this_thread::sleep_for(std::chrono::milliseconds{100});   
+      {
+        {
+          Teuchos::TimeMonitor tm(*diffTimer);
+          std::this_thread::sleep_for(std::chrono::milliseconds{25});
+        }
+        {
+          Teuchos::TimeMonitor tm(*rxnTimer);
+          std::this_thread::sleep_for(std::chrono::milliseconds{75});
+        }
+        // Remainder
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});
+      }
       timer->stop("Assembly");
-      
       timer->start("Solve");
       {
         {
@@ -220,13 +233,15 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
           Teuchos::TimeMonitor tm(*gmresTimer);
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
         }
+        // Remainder
+        std::this_thread::sleep_for(std::chrono::milliseconds{100});
       }
       timer->stop("Solve");
-      
+      std::this_thread::sleep_for(std::chrono::milliseconds{100});
     }
   }
   timer->stop("Total Time");
-  
+
   assert(size(*comm)>0);
 
   TEST_EQUALITY((timer->findTimer("Total Time")).count, 1);
@@ -238,7 +253,11 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   TEST_EQUALITY((timer->findTimer("Total Time@Solve@GMRES")).count, 10);
 #endif
 
-  timer->report(out, comm);
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_histogram=true;
+  options.num_histogram=3;
+  options.output_fraction=true;
+  timer->report(out, comm, options);
 }
 
 // Overlapping timers are not allowed in a StackedTimer, but are in

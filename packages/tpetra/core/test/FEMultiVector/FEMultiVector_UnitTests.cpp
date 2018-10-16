@@ -51,7 +51,7 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
@@ -133,7 +133,6 @@ namespace {
   using Tpetra::Map;
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
   using Tpetra::GloballyDistributed;
   typedef Tpetra::global_size_t GST;
 
@@ -570,15 +569,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
-      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X1_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X1_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X2_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -623,15 +622,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
-      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X1_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X1_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X2_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -677,15 +676,15 @@ namespace {
       auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
-      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X2_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X1_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X2_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -730,15 +729,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
-      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X2_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X1_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X2_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {

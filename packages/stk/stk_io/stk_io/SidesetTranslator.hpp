@@ -37,25 +37,33 @@
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
-#include "StkIoUtils.hpp"
+#include "stk_io/StkIoUtils.hpp"
+#include "stk_io/OutputParams.hpp"
 
 namespace stk {
 namespace io {
 
-inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
-                                          int sideset_id,
+inline size_t get_number_sides_in_sideset(OutputParams &params,
+                                          const stk::mesh::Part &ssPart,
                                           stk::mesh::Selector selector,
-                                          const stk::mesh::Selector *subset_selector,
                                           stk::topology stk_element_topology,
-                                          const stk::mesh::BucketVector& buckets)
+                                          const stk::mesh::BucketVector& buckets,
+                                          const stk::mesh::Part *parentElementBlock = nullptr)
 {
-    if (bulk.does_sideset_exist(sideset_id))
+    const mesh::BulkData &bulk = params.bulk_data();
+    const stk::mesh::Selector *subset_selector = params.get_subset_selector();
+    const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+
+    const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(ssPart);
+
+    if (bulk.does_sideset_exist(parentPart))
     {
         selector &= ( bulk.mesh_meta_data().locally_owned_part() | bulk.mesh_meta_data().globally_shared_part());
+        stk::mesh::Selector parentElementSelector =  (parentElementBlock == nullptr) ? stk::mesh::Selector() : *parentElementBlock;
 
         size_t num_sides = 0;
 
-        const stk::mesh::SideSet& sset = bulk.get_sideset(sideset_id);
+        const stk::mesh::SideSet& sset = bulk.get_sideset(parentPart);
 
         for(const stk::mesh::SideSetEntry& elem_and_side : sset)
         {
@@ -65,10 +73,16 @@ inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
             {
                 if(selector(bulk.bucket(side)))
                 {
+                    stk::mesh::Bucket &elementBucket = bulk.bucket(element);
+
                     if(stk_element_topology == stk::topology::INVALID_TOPOLOGY ||
-                       stk_element_topology == bulk.bucket(element).topology())
+                       stk_element_topology == elementBucket.topology())
                     {
-                        if(subset_selector==nullptr || (*subset_selector)(bulk.bucket(element)))
+                        bool selectedByParent = (parentElementBlock == nullptr) ? true : parentElementSelector(elementBucket);
+                        bool selectedByBucket = (   subset_selector == nullptr) ? true :    (*subset_selector)(elementBucket);
+                        bool selectedByOutput = (   output_selector == nullptr) ? true :    (*output_selector)(elementBucket);
+
+                        if(selectedByBucket && selectedByParent && selectedByOutput)
                         {
                             ++num_sides;
                         }
@@ -87,43 +101,53 @@ inline size_t get_number_sides_in_sideset(const stk::mesh::BulkData& bulk,
 }
 
 template<typename INT>
-void fill_element_and_side_ids(Ioss::GroupingEntity & io,
+void fill_element_and_side_ids(stk::io::OutputParams &params,
+                               Ioss::GroupingEntity & io,
                                stk::mesh::Part * const part,
-                               const stk::mesh::BulkData & bulk_data,
+                               const stk::mesh::Part *parentElementBlock,
                                stk::topology stk_element_topology,
-                               const stk::mesh::Selector *subset_selector,
                                stk::mesh::EntityVector &sides,
                                std::vector<INT>& elem_side_ids)
 {
-    int sset_id = -1;
-    if(io.property_exists("id"))
-    {
-        sset_id = io.get_property("id").get_int();
-    }
+    const mesh::BulkData &bulk_data = params.bulk_data();
+    const stk::mesh::Selector *subset_selector = params.get_subset_selector();
+    const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
 
-    if (bulk_data.does_sideset_exist(sset_id))
+    const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(*part);
+
+    if (bulk_data.does_sideset_exist(parentPart))
     {
-        const stk::mesh::SideSet& sset = bulk_data.get_sideset(sset_id);
+        const stk::mesh::SideSet& sset = bulk_data.get_sideset(parentPart);
         size_t num_sides = sset.size();
         elem_side_ids.reserve(num_sides*2);
 
         stk::mesh::Selector selector = *part & ( bulk_data.mesh_meta_data().locally_owned_part() | bulk_data.mesh_meta_data().globally_shared_part() );
         if(subset_selector)
             selector &= *subset_selector;
+        if(output_selector)
+            selector &= *output_selector;
+
+        stk::mesh::Selector parentElementSelector =  (parentElementBlock == nullptr) ? stk::mesh::Selector() : *parentElementBlock;
 
         for(size_t i=0;i<sset.size();++i)
         {
             stk::mesh::Entity element = sset[i].element;
             stk::mesh::EntityId elemId = bulk_data.identifier(element);
             int zero_based_side_ord = sset[i].side;
-            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk_data, elemId, zero_based_side_ord, bulk_data.mesh_meta_data().side_rank());
+            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulk_data, element, zero_based_side_ord);
             if(bulk_data.is_valid(side))
             {
                 if(selector(bulk_data.bucket(side)))
                 {
-                    if(stk_element_topology == stk::topology::INVALID_TOPOLOGY || bulk_data.bucket(element).topology() == stk_element_topology)
+                    stk::mesh::Bucket &elementBucket = bulk_data.bucket(element);
+                    if(stk_element_topology == stk::topology::INVALID_TOPOLOGY ||
+                       stk_element_topology == elementBucket.topology())
                     {
-                        if(subset_selector==nullptr || (*subset_selector)(bulk_data.bucket(element)))
+                        bool selectedByParent = (parentElementBlock == nullptr) ? true : parentElementSelector(elementBucket);
+                        bool selectedByBucket = (   subset_selector == nullptr) ? true :    (*subset_selector)(elementBucket);
+                        bool selectedByOutput = (   output_selector == nullptr) ? true :    (*output_selector)(elementBucket);
+
+                        if(selectedByBucket && selectedByParent && selectedByOutput)
                         {
                             elem_side_ids.push_back(elemId);
                             elem_side_ids.push_back(zero_based_side_ord+1);
@@ -138,8 +162,8 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
     {
         const stk::mesh::MetaData & meta_data = stk::mesh::MetaData::get(*part);
 
-        stk::mesh::EntityRank type = part_primary_entity_rank(*part);
-        size_t num_sides = get_entities(*part, type, bulk_data, sides, false, subset_selector);
+        stk::mesh::EntityRank type = stk::io::part_primary_entity_rank(*part);
+        size_t num_sides = stk::io::get_entities(params, *part, type, sides, false);
         elem_side_ids.reserve(num_sides * 2);
 
         stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -158,18 +182,26 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
 
             stk::mesh::Entity suitable_elem = stk::mesh::Entity();
             stk::mesh::ConnectivityOrdinal suitable_ordinal = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+
+            stk::mesh::Entity suitable_elem_with_correct_polarity = stk::mesh::Entity();
+            stk::mesh::ConnectivityOrdinal suitable_ordinal_with_correct_polarity = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+
+            bool foundElementWithCorrectPolarity = false;
+
             for(size_t j = 0; j < num_side_elem; ++j)
             {
                 const stk::mesh::Entity elem = side_elements[j];
                 const stk::mesh::Bucket &elemBucket = bulk_data.bucket(elem);
-                const bool isSelectingEverything = subset_selector == NULL;
+                const bool isSelectingEverything = subset_selector == nullptr;
                 const bool isElementBeingOutput = (isSelectingEverything || (*subset_selector)(elemBucket))
                                                   && elemBucket.member(meta_data.locally_owned_part());
+
                 if(isElementBeingOutput)
                 {
                     const stk::mesh::Entity * elem_sides = bulk_data.begin(elem, type);
                     stk::mesh::ConnectivityOrdinal const * side_ordinal = bulk_data.begin_ordinals(elem, type);
                     const size_t num_elem_sides = bulk_data.num_connectivity(elem, type);
+
                     for(size_t k = 0; k < num_elem_sides; ++k)
                     {
                         if(elem_sides[k] == side[0])
@@ -179,7 +211,28 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
                             break;
                         }
                     }
+
+                    for(size_t k = 0; k < num_elem_sides; ++k)
+                    {
+                        if(elem_sides[k] == side[0])
+                        {
+                            stk::mesh::EquivAndPositive result = stk::mesh::is_side_equivalent_and_positive(bulk_data, elem, side_ordinal[k], side_nodes);
+
+                            bool hasCorrectPolarity = result.is_equiv && result.is_positive;
+                            if (hasCorrectPolarity) {
+                                foundElementWithCorrectPolarity = true;
+                                suitable_elem_with_correct_polarity = elem;
+                                suitable_ordinal_with_correct_polarity = side_ordinal[k];
+                                break;
+                            }
+                        }
+                    }
                 }
+            }
+
+            if(foundElementWithCorrectPolarity) {
+                suitable_elem = suitable_elem_with_correct_polarity;
+                suitable_ordinal = suitable_ordinal_with_correct_polarity;
             }
 
             ThrowRequireMsg( bulk_data.is_valid(suitable_elem), __FILE__ << ", " << __FUNCTION__ << ", ERROR, no suitable element found");

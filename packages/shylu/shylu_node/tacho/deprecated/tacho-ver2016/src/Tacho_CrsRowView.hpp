@@ -60,7 +60,7 @@ namespace Tacho {
       const auto cols = A.BaseObject().ColsInRow(ii);
       const auto vals = A.BaseObject().ValuesInRow(ii);
       
-      ordinal_type begin = 0, end = cols.dimension_0();
+      ordinal_type begin = 0, end = cols.extent(0);
 
       begin = Util::getLowerBound(cols, begin, end, _offn);
       end   = Util::getLowerBound(cols, begin, end, _offn+_n);
@@ -78,7 +78,7 @@ namespace Tacho {
     ordinal_type NumCols() const { return _n; }
 
     KOKKOS_INLINE_FUNCTION
-    ordinal_type NumNonZeros() const { return _aj.dimension_0(); } 
+    ordinal_type NumNonZeros() const { return _aj.extent(0); } 
 
     KOKKOS_INLINE_FUNCTION
     ordinal_type Col(const ordinal_type j) const { return _aj[j] - _offn; }
@@ -96,11 +96,11 @@ namespace Tacho {
 
       // linear search from previous value
       ordinal_type j = prev;
-      for (;j<_aj.dimension_0() && _aj[j]<loc; ++j); 
+      for (;j<_aj.extent(0) && _aj[j]<loc; ++j); 
 
       // if found, return index for the location, 
       // otherwise return -1 (not found), -2 (end of array)
-      return (j < _aj.dimension_0() ? (_aj[j] == loc ? j : -1) : -2);
+      return (j < _aj.extent(0) ? (_aj[j] == loc ? j : -1) : -2);
     }
 
     // this operation is expensive and should be avoided.

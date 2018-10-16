@@ -227,7 +227,7 @@ namespace Tacho {
                          /* */ size_type_array &sid_super_panel_ptr,
                          /* */ ordinal_type_array &sid_super_panel_colidx,
                          /* */ ordinal_type_array &blk_super_panel_colidx) {
-        const ordinal_type numSupernodes = supernodes.dimension_0() - 1;
+        const ordinal_type numSupernodes = supernodes.extent(0) - 1;
           
         // for each supernode
         auto clear_flag = [](const ordinal_type cnt,
@@ -314,7 +314,7 @@ namespace Tacho {
         /// super_panel_ptr, colidx_super_panel
         ///
 
-        const ordinal_type_array null_ordinal_type_array("null_ordinal_type_array");
+        const ordinal_type_array null_ordinal_type_array;
 
         /// count the # of associated columns to all supernodes
         gid_super_panel_ptr = size_type_array("gid_super_panel_ptr", numSupernodes+1);
@@ -389,7 +389,7 @@ namespace Tacho {
                                     /* */ ordinal_type_array &stree_children,
                                     /* */ ordinal_type_array &stree_roots,
                                     const ordinal_type_array &work) {
-        const ordinal_type numSupernodes = supernodes.dimension_0() - 1;
+        const ordinal_type numSupernodes = supernodes.extent(0) - 1;
         const ordinal_type m = supernodes(numSupernodes);
 
         stree_parent = ordinal_type_array("stree_parent", m);
@@ -521,7 +521,7 @@ namespace Tacho {
       }
 
       inline
-      ordinal_type NumSupernodes() const { return _supernodes.dimension_0() - 1; }
+      ordinal_type NumSupernodes() const { return _supernodes.extent(0) - 1; }
       
       inline
       ordinal_type_array Supernodes() const { return _supernodes; }
@@ -663,7 +663,7 @@ namespace Tacho {
         track_free(parent.span()*sizeof(ordinal_type));
 
         stat.nnz_u = ap(_m);
-        stat.nsupernodes = _supernodes.dimension_0() - 1;
+        stat.nsupernodes = _supernodes.extent(0) - 1;
         stat.max_nchildren = 0;
         stat.largest_supernode = 0;
         stat.largest_schur = 0;
@@ -677,7 +677,7 @@ namespace Tacho {
           stat.largest_supernode = max(stat.largest_supernode, m);
           stat.largest_schur     = max(stat.largest_schur,     n-m);
         }
-        stat.nroots = _stree_roots.dimension_0();
+        stat.nroots = _stree_roots.extent(0);
         
         if (verbose) {
           printf("Summary: SymbolicTools\n");

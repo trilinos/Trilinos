@@ -46,7 +46,6 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -55,7 +54,7 @@
 
 
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 
 #include <Tpetra_MatrixIO.hpp>
 #include <Tpetra_RTI.hpp>

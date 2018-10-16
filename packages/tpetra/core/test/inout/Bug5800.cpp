@@ -44,7 +44,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -57,8 +57,8 @@ namespace {
   template<class MapType>
   class Test {
   public:
-    typedef double ST;
-    typedef Teuchos::ScalarTraits<double>::magnitudeType MT;
+    typedef Tpetra::MultiVector<>::scalar_type ST;
+    typedef Teuchos::ScalarTraits<ST>::magnitudeType MT;
 
     typedef typename MapType::local_ordinal_type LO;
     typedef typename MapType::global_ordinal_type GO;
@@ -68,8 +68,7 @@ namespace {
     typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
 
     static Teuchos::RCP<const MapType>
-    createTestMap (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                   const Teuchos::RCP<NT>& node)
+    createTestMap (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     {
       using Tpetra::createNonContigMapWithNode;
       using Teuchos::ArrayView;
@@ -94,7 +93,7 @@ namespace {
       else  {
         eltList = ArrayView<const GO> (NULL, 0);
       }
-      return createNonContigMapWithNode<LO, GO, NT> (eltList, comm, node);
+      return createNonContigMapWithNode<LO, GO, NT> (eltList, comm);
     }
 
     static Teuchos::RCP<const MV>
@@ -245,8 +244,7 @@ namespace {
 
     static void
     testPermutedMultiVectorOutput (Teuchos::FancyOStream& out,
-                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                                   const Teuchos::RCP<NT>& node)
+                                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     {
       using Teuchos::getFancyOStream;
       using Teuchos::FancyOStream;
@@ -256,7 +254,7 @@ namespace {
 
       //RCP<FancyOStream> out = getFancyOStream (rcpFromRef (std::cerr));
 
-      RCP<const MapType> map = createTestMap (comm, node);
+      RCP<const MapType> map = createTestMap (comm);
       RCP<const MV> X_orig = createTestVector (map);
 
       // Test that writing out the multivector and reading it back in
@@ -284,11 +282,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
   using Teuchos::RCP;
   using Teuchos::TypeNameTraits;
   using std::endl;
-  typedef Tpetra::Map<>::node_type NT;
-  typedef Tpetra::Map<LO, GO, NT> map_type;
+  typedef Tpetra::Map<LO, GO> map_type;
 
   // Get the default communicator.
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int numProcs = comm->getSize ();
 
   out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
@@ -300,14 +297,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Tpetra_MatrixMarket, MultiVector_Output_Perm,
     return;
   }
 
-  // Get a Kokkos Node instance.  It would be nice if we could pass in
-  // parameters here, but threads don't matter for this test; it's a
-  // test for distributed-memory capabilities.
-  out << "Creating Kokkos Node of type " << TypeNameTraits<NT>::name () << endl;
-  RCP<NT> node = KokkosClassic::DefaultNode::getDefaultNode ();
-  // Run the actual test.
-  //RCP<const map_type> map = Test<map_type>::createTestMap (comm, node);
-  Test<map_type>::testPermutedMultiVectorOutput (out, comm, node);
+  Test<map_type>::testPermutedMultiVectorOutput (out, comm);
 }
 
 //////////////////////////////////////////////////////////////////////

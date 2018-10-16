@@ -1,0 +1,17 @@
+===================
+ FROSch TODO List
+===================
+
+08.08.2018 Christian Hochmuth:
+	- Determine overlap only based on the graph of the matrix
+	- forward declaration
+	- Assert for ScalarType not being float or double
+	- check on Tpetra deprecating DynamicProfile in FY19
+	
+21.08.2018 Alexander Heinlein:
+	- Use a graph instead of a matrix to do communicateLocalComponents in FROSch_DDInterface
+	
+21.08.2018 Christian Hochmuth:
+	- General MultiplicativeOperator for more than 2 operators
+	- New class "CombinationOperator" and derive MultiplicativeOperator and SumOperator from this class 
+	- Get rid of resetMatrix() methods

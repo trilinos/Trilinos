@@ -98,7 +98,7 @@ struct V_Scal_Functor {
                    "V_Scal_Functor: XV is not rank 1.");
 
     if (startingColumn != 0) {
-      m_a = Kokkos::subview (a, std::make_pair (startingColumn, static_cast<SizeType> (a.dimension_0 ())));
+      m_a = Kokkos::subview (a, std::make_pair (startingColumn, static_cast<SizeType> (a.extent(0))));
     }
   }
 
@@ -183,7 +183,7 @@ V_Scal_Generic (const RV& r, const AV& av, const XV& x,
                  "V_Scal_Generic: XV is not rank 1.");
 
   typedef typename RV::execution_space execution_space;
-  const SizeType numRows = x.dimension_0 ();
+  const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0) {

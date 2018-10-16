@@ -1,5 +1,5 @@
 #include "DestroyElements.hpp"
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 

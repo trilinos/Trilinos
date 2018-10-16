@@ -99,26 +99,29 @@ namespace { // (anonymous)
       ::Tpetra::Details::ProfilingRegion region ("Tpetra Update Loop");
       for(size_t i=0; i<num_repeats; i++) {
         X.update(ONE,Y,ONE);
+        Kokkos::fence();
       }
     }
 
     X.putScalar(ZERO);
     auto X_lcl = X.template getLocalView<cur_memory_space> ();
     auto Y_lcl = Y.template getLocalView<cur_memory_space> ();
-    Kokkos::fence();
+
 
     // Run KokkosBlas Update Loop
     {
       ::Tpetra::Details::ProfilingRegion region ("KokkosBlas Update Loop");
       for(size_t i=0; i<num_repeats; i++) {
         KokkosBlas::axpby(ONE, X_lcl, ONE, Y_lcl);
+        Kokkos::fence();
       }
     }
 
     X.putScalar(ZERO);
     Kokkos::fence();
-    Kokkos::RangePolicy<cur_exec_space> policy (0, vector_size);
+
     // Run raw lambda loop
+    Kokkos::RangePolicy<cur_exec_space> policy (0, vector_size);
     {
       ::Tpetra::Details::ProfilingRegion region ("Raw Lambda Update Loop");
       for(size_t i=0; i<num_repeats; i++) {
@@ -128,10 +131,9 @@ namespace { // (anonymous)
             // This is the special case code that actually executes inside KokkosKernels for alpha=1
             X_lcl(i,0) += ONE * Y_lcl(i,0);
           });
+        Kokkos::fence();
       }
     }
-    Kokkos::fence();
-  
   }
 
 //

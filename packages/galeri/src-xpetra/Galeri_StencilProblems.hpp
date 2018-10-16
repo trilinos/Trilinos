@@ -51,6 +51,7 @@
 
 #include "Galeri_Problem.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
+#include "Galeri_XpetraUtils.hpp"
 
 namespace Galeri {
 
@@ -60,8 +61,11 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class Laplace1DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
+
       Laplace1DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
     };
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
@@ -74,6 +78,22 @@ namespace Galeri {
       this->A_ = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector> Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
+
+      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
+
+      if (nx == -1) {
+        nx = this->Map_->getGlobalNumElements();
+      }
+
+      Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("1D", this->Map_, this->list_);
+
+      return this->Coords_;
+
     }
 
     // =============================================  Laplace2D  =============================================

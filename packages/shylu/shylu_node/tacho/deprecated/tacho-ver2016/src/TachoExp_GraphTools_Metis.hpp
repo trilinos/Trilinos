@@ -105,7 +105,7 @@ namespace Tacho {
           os << " -- Not Ordered -- " << std::endl;
 
         if (detail) {
-          const ordinal_type w = 6, m = _perm.dimension_0();
+          const ordinal_type w = 6, m = _perm.extent(0);
           for (ordinal_type i=0;i<m;++i)
             os << std::setw(w) << _perm[i] << "   "
                << std::setw(w) << _peri[i] << "   "

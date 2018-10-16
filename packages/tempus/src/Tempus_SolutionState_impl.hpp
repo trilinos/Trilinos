@@ -366,13 +366,13 @@ void SolutionState<Scalar>::
 copy(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
 {
   metaData_nc_->copy(ss->metaData_);
-  this->copySolutionStepperState(ss);
+  this->copySolutionData(ss);
 }
 
 
 template<class Scalar>
 void SolutionState<Scalar>::
-copySolutionStepperState(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
+copySolutionData(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
 {
   Thyra::V_V(x_nc_.ptr(),       *(ss->x_));
   if (ss->xdot_ == Teuchos::null) xdot_nc_ = Teuchos::null;
@@ -381,6 +381,53 @@ copySolutionStepperState(const Teuchos::RCP<const SolutionState<Scalar> >& ss)
   else Thyra::V_V(xdotdot_nc_.ptr(), *(ss->xdotdot_));
   stepperState_nc_->copy(ss->stepperState_);
   physicsState_nc_->copy(ss->physicsState_);
+}
+
+template<class Scalar>
+void SolutionState<Scalar>::
+swapSolutionData(const Teuchos::RCP<SolutionState<Scalar> >& ss)
+{
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > temp;
+  temp = x_;
+  x_ = ss->x_;
+  ss->x_ = temp;
+
+  temp = xdot_;
+  xdot_ = ss->xdot_;
+  ss->xdot_ = temp;
+
+  temp = xdotdot_;
+  xdotdot_ = ss->xdotdot_;
+  ss->xdotdot_ = temp;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > temp_nc;
+  temp_nc = x_nc_;
+  x_nc_ = ss->x_nc_;
+  ss->x_nc_ = temp_nc;
+
+  temp_nc = xdot_nc_;
+  xdot_nc_ = ss->xdot_nc_;
+  ss->xdot_nc_ = temp_nc;
+
+  temp_nc = xdotdot_nc_;
+  xdotdot_nc_ = ss->xdotdot_nc_;
+  ss->xdotdot_nc_ = temp_nc;
+
+  Teuchos::RCP<const StepperState< Scalar > > ssTemp = stepperState_;
+  stepperState_ = ss->stepperState_;
+  ss->stepperState_ = ssTemp;
+
+  Teuchos::RCP<StepperState< Scalar > > ssTemp_nc = stepperState_nc_;
+  stepperState_nc_ = ss->stepperState_nc_;
+  ss->stepperState_nc_ = ssTemp_nc;
+
+  Teuchos::RCP<const PhysicsState< Scalar > > psTemp = physicsState_;
+  physicsState_ = ss->physicsState_;
+  ss->physicsState_ = psTemp;
+
+  Teuchos::RCP<PhysicsState< Scalar > > psTemp_nc = physicsState_nc_;
+  physicsState_nc_ = ss->physicsState_nc_;
+  ss->physicsState_nc_ = psTemp_nc;
 }
 
 

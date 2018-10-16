@@ -159,18 +159,89 @@ C++11 and OpenMP are selected by the Kokkos system and the values of the cache
 vars ``Trilinos_CXX11_FLAGS`` and ``OpenMP_CXX_FLAGS`` set by the user will be
 ignored.
 
-``KOKKOS_ARCH`` can be set to a list of entries using semi-colons as::
+``KOKKOS_ARCH`` can be set to a list of entries with different values for the
+host code and the device code using semi-colons as::
 
   -DKOKKOS_ARCH="<arch0>;<arch1>"
 
-or as a list of etries using comas as::
+or as a list of entries separated using comas as::
 
   -DKOKKOS_ARCH=<arch0>,<arch1>
 
-Using commas is more robust since it will not get accidentally interepreted as
-a shell command sperator or with differnet CMake logic that is trying to
-handle an array of entries which include one being `${KOKKOS_ARCH}`.
+(Using commas is more robust since it will not get accidentally interpreted as
+a shell command separator or with CMake code that is trying to handle an array
+of entries which include one being ``${KOKKOS_ARCH}`` (which itself is an
+array of values).)
+
+The order of the ``<archi>>`` values is not significant.  Each ``<archi>>``
+value is interpreted on its own as the list is read.  Some of these
+``<archi>>`` values apply to host code (e.g. ``HSW``, ``BDW``, and ``Power9``)
+and other values apply to device code (like for a specific GPU like
+``Kepler35`` or ``Kepler37``).  If multiple ``<archi>>`` values conflict
+(e.g. ``-DKOKKOS_ARCH=BDW,Power8``) then the behavior is undefined (so be
+careful not to do that).  Error-checking for conflicting values may be added
+in the future.
 
 To see more documentation for each of these options, run a configure with
-``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the CMakeCache.txt file (as
-raw text or using the CMake QT GUI or ``ccmake``).
+``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the ``CMakeCache.txt`` file
+(as raw text or using the CMake QT GUI or ``ccmake``).
+
+
+Addressing problems with large builds of Trilinos
+-------------------------------------------------
+
+Trilinos is a large collection of complex software.  Depending on what gets
+enbaled when building Trlinos, one can experience build and installation
+problems due to this large size.
+
+When running into problems like these, the first thing that should be tried is
+to **upgrade to and use the newest supported version of CMake!** In some
+cases, newer versions of CMake may automatically fix problems with building
+and installing Trilinos.  Typically, Trilinos is kept current with new CMake
+releases as they come out.
+
+Otherwise, some problems that can arise when and solutions to those problems
+are mentioned below.
+
+**Command-line too long errors:**
+
+When turning on some options and enabling some set of package's one may
+encounter command-lines that are too long for the OS shell or the tool being
+called.  For example, on some systems, enabling CUDA and COMPLEX variable
+types (e.g. ``-D TPL_ENABLE_CUDA=ON -D Trilinos_ENABLE_COMPLEX=ON``) can
+result in "File 127" errors when trying to create libraries due to large
+numbers of ``*.o`` object files getting passed to create some libraries.
+
+Also, on some systems, the list of include directories may become so long that
+one gets "Command-line too long" errors during compilation.
+
+These and other cases can be addressed by explicitly enabling built-in CMake
+support for ``*.rsp`` resource files as described in the section `Enabling the
+usage of resource files to reduce length of build lines`_.
+
+**Large Object file errors:**
+
+Depending on settings and which packages are enabled, some of the ``*.o``
+files can become very large, so large that it overwhelms the system tools to
+create libraries.  One known case is older versions of the ``ar`` tool used to
+create static libraries (i.e. ``-D BUILD_SHARED_LIBS=OFF``) on some systems.
+Versions of ``ar`` that come with the BinUtils package **before** version 2.27
+may generate "File Truncated" failures when trying to create static libraries
+involving these large object files.
+
+The solution to that problem is to use a newer version of BinUtils 2.27+ for
+which ``ar`` can handle these large object files to create static libraries.
+Just put that newer version of ``ar`` in the default path and CMake will use
+it or configure with::
+
+  -D CMAKE_AR=<path-to-updated-binutils>/bin/ar
+
+**Long make logic times:**
+
+On some systems with slower disk operations (e.g. NFS mounted disks), the time
+that the ``make`` program with the ``Unix Makefiles`` generator to do
+dependency analysis can be excessively long (e.g. cases of more than 2 minutes
+to do dependency analysis have been reported to determine if a single target
+needs to be rebuilt).  The solution is to switch from the default ``Unix
+Makefiles`` generator to the ``Ninja`` generator (see `Enabling support for
+Ninja`_).

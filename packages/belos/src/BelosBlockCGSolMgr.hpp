@@ -213,34 +213,39 @@ namespace Belos {
      *                                         relative residual norm is printed if convergence
      *                                         information is printed. Default: false
      *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
-     *		\param pl [in] ParameterList with construction information
-     *			\htmlonly
-     *			<iframe src="belos_BlockCG.xml" width=100% scrolling="no" frameborder="0">
-     *			</iframe>
-     *			<hr />
-     *			\endhtmlonly
+     *          \param pl [in] ParameterList with construction information
+     *                  \htmlonly
+     *                  <iframe src="belos_BlockCG.xml" width=100% scrolling="no" frameborder="0">
+     *                  </iframe>
+     *                  <hr />
+     *                  \endhtmlonly
      */
     BlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                    const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
     virtual ~BlockCGSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new BlockCGSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
     //@{
 
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
     /*! \brief Return the timers for this object.
      *
@@ -256,18 +261,18 @@ namespace Belos {
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
 
     /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
      */
-    bool isLOADetected() const { return false; }
+    bool isLOADetected() const override { return false; }
 
     //@}
 
@@ -275,10 +280,10 @@ namespace Belos {
     //@{
 
     //! Set the linear problem that needs to be solved.
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
 
     //! Set the parameters the solver manager should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
     //@}
 
@@ -288,7 +293,7 @@ namespace Belos {
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) override { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
     //@}
 
     //! @name Solver application methods
@@ -311,7 +316,7 @@ namespace Belos {
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
-    ReturnType solve();
+    ReturnType solve() override;
 
     //@}
 
@@ -319,7 +324,7 @@ namespace Belos {
     //@{
 
     /** \brief Method to return description of the block CG solver manager */
-    std::string description() const;
+    std::string description() const override;
 
     //@}
 
@@ -357,8 +362,6 @@ namespace Belos {
     //
     // Default solver parameters.
     //
-    static constexpr MagnitudeType convTol_default_ = 1e-8;
-    static constexpr MagnitudeType orthoKappa_default_ = -1.0;
     static constexpr int maxIters_default_ = 1000;
     static constexpr bool adaptiveBlockSize_default_ = true;
     static constexpr bool showMaxResNormOnly_default_ = false;
@@ -415,8 +418,8 @@ namespace Belos {
 template<class ScalarType, class MV, class OP>
 BlockCGSolMgr<ScalarType,MV,OP,true>::BlockCGSolMgr() :
   outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
-  orthoKappa_(orthoKappa_default_),
+  convtol_(DefaultSolverParameters::convTol),
+  orthoKappa_(DefaultSolverParameters::orthoKappa),
   achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -441,8 +444,8 @@ BlockCGSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
               const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
     outputStream_(Teuchos::rcp(outputStream_default_,false)),
-  convtol_(convTol_default_),
-  orthoKappa_(orthoKappa_default_),
+  convtol_(DefaultSolverParameters::convTol),
+  orthoKappa_(DefaultSolverParameters::orthoKappa),
   achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -563,7 +566,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Check which orthogonalization constant to use.
   if (params->isParameter("Orthogonalization Constant")) {
-    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
 
     // Update parameter in our list.
     params_->set("Orthogonalization Constant",orthoKappa_);
@@ -634,7 +644,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convTol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
@@ -754,7 +770,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
   // Set all the valid parameters and their default values.
   if(is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(convTol_default_),
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
     pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
@@ -788,7 +804,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
       "The string to use as a prefix for the timer labels.");
     pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
-    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(orthoKappa_default_),
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
     validPL = pl;

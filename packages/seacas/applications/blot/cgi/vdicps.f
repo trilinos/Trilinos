@@ -795,7 +795,7 @@ C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C C
 C
       SAVE
       CHARACTER*(*) NAME
-      CHARACTER*132 PSTNAM
+      CHARACTER*2048 PSTNAM
       INTEGER LENGTH,ISTART,IEND,I
       integer*4 koutff, koutfl
  

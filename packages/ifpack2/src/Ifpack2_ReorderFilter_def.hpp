@@ -249,20 +249,6 @@ getNumEntriesInLocalRow (local_ordinal_type localRow) const
 
 
 template<class MatrixType>
-global_size_t ReorderFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-
-template<class MatrixType>
-size_t ReorderFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
-}
-
-
-template<class MatrixType>
 size_t ReorderFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 {
   return A_->getGlobalMaxNumRowEntries();
@@ -280,20 +266,6 @@ template<class MatrixType>
 bool ReorderFilter<MatrixType>::hasColMap() const
 {
   return true;
-}
-
-
-template<class MatrixType>
-bool ReorderFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-
-template<class MatrixType>
-bool ReorderFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
 }
 
 
@@ -407,9 +379,9 @@ getLocalRowCopy (local_ordinal_type LocalRow,
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type GlobalRow,
-                  Teuchos::ArrayView<const global_ordinal_type> &indices,
-                  Teuchos::ArrayView<const scalar_type> &values) const
+getGlobalRowView (global_ordinal_type /* GlobalRow */,
+                  Teuchos::ArrayView<const global_ordinal_type> &/* indices */,
+                  Teuchos::ArrayView<const scalar_type> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
 }
@@ -417,9 +389,9 @@ getGlobalRowView (global_ordinal_type GlobalRow,
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
-getLocalRowView (local_ordinal_type LocalRow,
-                 Teuchos::ArrayView<const local_ordinal_type> &indices,
-                 Teuchos::ArrayView<const scalar_type> &values) const
+getLocalRowView (local_ordinal_type /* LocalRow */,
+                 Teuchos::ArrayView<const local_ordinal_type> &/* indices */,
+                 Teuchos::ArrayView<const scalar_type> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
 }
@@ -435,14 +407,14 @@ getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_t
 
 
 template<class MatrixType>
-void ReorderFilter<MatrixType>::leftScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+void ReorderFilter<MatrixType>::leftScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /* x */)
 {
   throw std::runtime_error("Ifpack2::ReorderFilter does not support leftScale.");
 }
 
 
 template<class MatrixType>
-void ReorderFilter<MatrixType>::rightScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+void ReorderFilter<MatrixType>::rightScale(const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /* x */)
 {
   throw std::runtime_error("Ifpack2::ReorderFilter does not support rightScale.");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,24 +33,24 @@
  *
  */
 /*****************************************************************************
-*
-* exgsetp - ex_get_set_param
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     set_type                the type of set
-*       int     set_id                  set id
-*
-* exit conditions -
-*       int*    num_entries_in_set      number of entries in the set
-*       int*    num_dist_fact_in_set    number of distribution factors in the
-*                                       set
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgsetp - ex_get_set_param
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     set_type                the type of set
+ *       int     set_id                  set id
+ *
+ * exit conditions -
+ *       int*    num_entries_in_set      number of entries in the set
+ *       int*    num_dist_fact_in_set    number of distribution factors in the
+ *                                       set
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
@@ -77,7 +77,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   char * numdfptr    = NULL;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     if (num_entry_in_set) {
@@ -99,7 +99,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss stored in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_get_set_param", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -115,7 +115,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s id %" PRId64 " in id array in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set_param", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -144,8 +144,8 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   }
 
   /* inquire values of dimension for number of entities in set */
-  if (ex_get_dimension(exoid, numentryptr, "entries", &lnum_entry_in_set, &dimid,
-                       "ex_get_set_param") != NC_NOERR) {
+  if (ex_get_dimension(exoid, numentryptr, "entries", &lnum_entry_in_set, &dimid, __func__) !=
+      NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -175,7 +175,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate the dist factors for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set_param", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -198,7 +198,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of dist factors in %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set_param", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -206,7 +206,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of dist factors in %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_set_param", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {

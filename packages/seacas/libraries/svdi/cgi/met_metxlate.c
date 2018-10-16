@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -447,18 +447,18 @@ static void xcqcte(anything **params, anything **surf_list);
 static void xcili(anything **params, anything **surf_list);
 static void xcrqlc(anything **params, anything **surf_list);
 /* utility routines */
-static void init_state(surf_statelist *surf_state);
-static void set_dev_descrip(void);
-static void reset_vdi(surf_statelist *surf_state);
-static void set_mapping(surf_statelist *surf_state);
-static void set_clipping(surf_statelist *cur_state);
-static void set_foreground_color(surf_statelist *surf_state, int *colors);
-static void set_background_color(surf_statelist *surf_state, int *colors);
-static void report_error(surf_statelist *surf_state, int e_class, int e_num, int f_id);
-static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, char *outtoken_p);
-static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, float *xout,
-                     float *yout, int *lenout);
-static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
+static void  init_state(surf_statelist *surf_state);
+static void  set_dev_descrip(void);
+static void  reset_vdi(surf_statelist *surf_state);
+static void  set_mapping(surf_statelist *surf_state);
+static void  set_clipping(surf_statelist *cur_state);
+static void  set_foreground_color(surf_statelist *surf_state, int *colors);
+static void  set_background_color(surf_statelist *surf_state, int *colors);
+static void  report_error(surf_statelist *surf_state, int e_class, int e_num, int f_id);
+static void  gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, char *outtoken_p);
+static int   poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, float *xout,
+                       float *yout, int *lenout);
+static int   inside_bnd(point *v, point *bmin, point *bmax, int bound_num);
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num);
 /* cdr routines */
 /* -- not used with interactive devices */
@@ -1028,7 +1028,7 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 {
   int   i;          /* index for loop on surfaces */
   int   j;          /* loop index */
-  int   first;      /* logical; TRUE = first time thru */
+  int   first;      /* logical; TRUE = first time through */
   char  data[80];   /* temp for parsing data record */
   char  c;          /* single character */
   int   vdi_esc;    /* used for SVDI escape call */
@@ -1280,34 +1280,34 @@ static void xclf(anything **params, anything **surf_list)
   for (i = 0; i < *(int *)params[1]; i++) {
 
     switch (*(short *)params[0]) {
-    case ACTIVATE_FN: ((int *)params[5])[i]   = CSYES; break;
+    case ACTIVATE_FN: ((int *)params[5])[i] = CSYES; break;
     case DEACTIVATE_FN: ((int *)params[5])[i] = CSYES; break;
-    case CI_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CT_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CXDFAC_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CPDS_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CENDPG_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CBC_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CVDCX_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CV_FN: ((int *)params[5])[i]         = CSYES; break;
-    case CCL_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CDSCL_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CDQERR_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CERHCT_FN: ((int *)params[5])[i]     = CSYES; break;
-    case CCIXP_FN: ((int *)params[5])[i]      = CSNO; break;
-    case CESC_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQID_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQD_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CLF_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CLPR_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CQSP_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CLESC_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CQP_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CQCL_FN: ((int *)params[5])[i]       = CSYES; break;
-    case CPL_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CDJPL_FN: ((int *)params[5])[i]      = CSYES; break;
-    case CPM_FN: ((int *)params[5])[i]        = CSYES; break;
-    case CTX_FN: ((int *)params[5])[i]        = CSYES; break;
+    case CI_FN: ((int *)params[5])[i] = CSYES; break;
+    case CT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CXDFAC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPDS_FN: ((int *)params[5])[i] = CSYES; break;
+    case CENDPG_FN: ((int *)params[5])[i] = CSYES; break;
+    case CBC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CVDCX_FN: ((int *)params[5])[i] = CSYES; break;
+    case CV_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDSCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDQERR_FN: ((int *)params[5])[i] = CSYES; break;
+    case CERHCT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCIXP_FN: ((int *)params[5])[i] = CSNO; break;
+    case CESC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQID_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQD_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLF_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLPR_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQSP_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLESC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQP_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQCL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CDJPL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPM_FN: ((int *)params[5])[i] = CSYES; break;
+    case CTX_FN: ((int *)params[5])[i] = CSYES; break;
     case CPG_FN:
       if (poly_support == -1.) {
         vdiqdc(&qdc_index, &poly_support);
@@ -1319,41 +1319,41 @@ static void xclf(anything **params, anything **surf_list)
         ((int *)params[5])[i] = CSYES;
       }
       break;
-    case CCA_FN: ((int *)params[5])[i]   = CSYES; break;
-    case CPXA_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNT_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNW_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CLNC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CMKT_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CMKS_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CMKC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CTXP_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CTXC_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CCHH_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCHO_FN: ((int *)params[5])[i]  = CSNO; break;
-    case CIS_FN: ((int *)params[5])[i]   = CSYES; break;
-    case CFLC_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCSM_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CCT_FN: ((int *)params[5])[i]   = CSYES; break;
+    case CCA_FN: ((int *)params[5])[i] = CSYES; break;
+    case CPXA_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNW_FN: ((int *)params[5])[i] = CSYES; break;
+    case CLNC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CMKT_FN: ((int *)params[5])[i] = CSYES; break;
+    case CMKS_FN: ((int *)params[5])[i] = CSNO; break;
+    case CMKC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CTXP_FN: ((int *)params[5])[i] = CSNO; break;
+    case CTXC_FN: ((int *)params[5])[i] = CSNO; break;
+    case CCHH_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCHO_FN: ((int *)params[5])[i] = CSNO; break;
+    case CIS_FN: ((int *)params[5])[i] = CSYES; break;
+    case CFLC_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCSM_FN: ((int *)params[5])[i] = CSYES; break;
+    case CCT_FN: ((int *)params[5])[i] = CSYES; break;
     case CGTXX_FN: ((int *)params[5])[i] = CSYES; break;
     case CQPRL_FN: ((int *)params[5])[i] = CSYES; break;
-    case CQLN_FN: ((int *)params[5])[i]  = CSYES; break;
+    case CQLN_FN: ((int *)params[5])[i] = CSYES; break;
     case CQLNT_FN: ((int *)params[5])[i] = CSYES; break;
     case CQSLW_FN: ((int *)params[5])[i] = CSNO; break;
-    case CQMK_FN: ((int *)params[5])[i]  = CSNO; break;
+    case CQMK_FN: ((int *)params[5])[i] = CSNO; break;
     case CQMKT_FN: ((int *)params[5])[i] = CSYES; break;
     case CQSMS_FN: ((int *)params[5])[i] = CSNO; break;
     case CQCHH_FN: ((int *)params[5])[i] = CSYES; break;
-    case CQFL_FN: ((int *)params[5])[i]  = CSYES; break;
-    case CQC_FN: ((int *)params[5])[i]   = CSYES; break;
+    case CQFL_FN: ((int *)params[5])[i] = CSYES; break;
+    case CQC_FN: ((int *)params[5])[i] = CSYES; break;
     case CQLNA_FN: ((int *)params[5])[i] = CSYES; break;
     case CQMKA_FN: ((int *)params[5])[i] = CSNO; break;
     case CQTXA_FN: ((int *)params[5])[i] = CSYES; break;
     case CQFLA_FN: ((int *)params[5])[i] = CSNO; break;
     case CQCTE_FN: ((int *)params[5])[i] = CSYES; break;
-    case CILI_FN: ((int *)params[5])[i]  = CSYES; break;
+    case CILI_FN: ((int *)params[5])[i] = CSYES; break;
     case CRQLC_FN: ((int *)params[5])[i] = CSYES; break;
-    default: ((int *)params[5])[i]       = CSNO; break;
+    default: ((int *)params[5])[i] = CSNO; break;
     } /* end switch */
   }
 
@@ -1657,7 +1657,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
             }
 
             switch (mode) {
-            case 1: /* not looping thru, draw it */
+            case 1: /* not looping through, draw it */
               vdmova(&prev_x, &prev_y);
               vdlina(&cur_x, &cur_y);
               prev_x    = cur_x;
@@ -1690,7 +1690,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
               }
               else { /* prev is in */
                 vdmova(&prev_x, &prev_y);
-                mode = 3; /* cur is still out, go thru again */
+                mode = 3; /* cur is still out, go through again */
               }
               break;
             } /* end inner switch */
@@ -1881,7 +1881,7 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
             }
 
             switch (mode) {
-            case 1: /* not looping thru, draw it */
+            case 1: /* not looping through, draw it */
               vdmova(&x1, &y1);
               vdlina(&x2, &y2);
               done = TRUE;
@@ -2442,7 +2442,7 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
             yinc = 1;
           }
 
-          /* This special case is for effiency, since is will probably
+          /* This special case is for efficiency, since is will probably
            * be most of the cases: If no clipping is on and [0,0] is at
            * the top left (like SVDI+raster) draw the whole cell array.
            */
@@ -2822,7 +2822,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
             yinc = 1;
           }
 
-          /* This special case is for effiency, since is will probably
+          /* This special case is for efficiency, since is will probably
            * be most of the cases: If no clipping is on and [0,0] is at
            * the top left (like SVDI+raster) draw the whole pixel array.
            */
@@ -3019,9 +3019,7 @@ static void xclnt(anything **params, int num_surfaces, anything **surf_list)
       case 2: vdi_style = 5; break;
       case 3: vdi_style = 1; break;
       case 4: vdi_style = 2; break;
-      case 5:
-        vdi_style = 0;
-        break; /* not supported, set to solid */
+      case 5: vdi_style = 0; break; /* not supported, set to solid */
       default: vdi_style = cur_state->line_type; break;
       } /* end switch */
 
@@ -3376,7 +3374,7 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
   int   maxindex;            /* max color index to set */
   int   indx_ptr;            /* for keeping track of color indices */
   int   index1, index2;      /* defines a range of indices to set */
-  int   first;               /* marks first time thru loop */
+  int   first;               /* marks first time through loop */
   int   one = 1;
 
   first = TRUE;
@@ -3703,7 +3701,7 @@ static void xcqln(anything **params, anything **surf_list)
 /* INQUIRE LIST OF AVAILABLE LINE TYPES */
 static void xcqlnt(anything **params, anything **surf_list)
 {
-  int        i, j;          /* loop indicies */
+  int        i, j;          /* loop indices */
   int        qdc_index = 6; /* index for inquiries to vdiqdc  */
   float      value;         /* value returned by vdiqdc */
   static int set = FALSE;   /* flag whether values have been set */
@@ -3744,9 +3742,7 @@ static void xcqlnt(anything **params, anything **surf_list)
       switch (dev_descrip.line_types[i]) {
       case 0: dev_descrip.line_types[i] = 1; break;
       case 1: dev_descrip.line_types[i] = 3; break;
-      case 2:
-        dev_descrip.line_types[i] = 4;
-        break;
+      case 2: dev_descrip.line_types[i] = 4; break;
       /* ...all SVDI dashes map to cgi dash */
       case 3: dev_descrip.line_types[i] = 2; break;
       case 4: dev_descrip.line_types[i] = 2; break;
@@ -4388,7 +4384,7 @@ static void xcrqlc(anything **params, anything **surf_list)
            dev_descrip.dev_class == COUTIN) { /* device does input */
 
     /* for now only allow limited timeout */
-    /* postive and negative values = wait forever, 0 = no wait */
+    /* positive and negative values = wait forever, 0 = no wait */
     if (*(int *)params[2] == 0) {
       *(int *)params[3] = CINVAL;
       return;
@@ -5163,23 +5159,23 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
     return (FALSE);
   }
 
-  for (bnd = 0; bnd < 4; bnd++) { /* loop thru all boundries */
+  for (bnd = 0; bnd < 4; bnd++) { /* loop through all boundaries */
 
     /* start with last vertex */
-    if (bnd == 0) { /* 1st time thru use original vertex list */
+    if (bnd == 0) { /* 1st time through use original vertex list */
       curlen  = vlen;
       *lenout = 0;
       s.x     = vx[curlen - 1];
       s.y     = vy[curlen - 1];
     }
-    else { /* after 1st time thru, use new vertex list */
+    else { /* after 1st time through, use new vertex list */
       curlen  = *lenout;
       *lenout = 0;
       s.x     = xout[curlen - 1];
       s.y     = yout[curlen - 1];
     }
 
-    for (i = 0; i < curlen; i++) { /* loop thru all vertices */
+    for (i = 0; i < curlen; i++) { /* loop through all vertices */
 
       if (bnd == 0) {
         p.x = vx[i];
@@ -5190,10 +5186,10 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
         p.y = yout[i];
       }
 
-      /* is vertex p 'inside' current boundry */
+      /* is vertex p 'inside' current boundary */
       if (inside_bnd(&p, cmin, cmax, bnd)) {
 
-        /* is vertex s 'inside' current boundry */
+        /* is vertex s 'inside' current boundary */
         if (inside_bnd(&s, cmin, cmax, bnd)) {
 
           /* both p and s are inside, add p to vertex list */
@@ -5246,33 +5242,25 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
 
 /* inside_bnd */
 /* Used by poly_clip and returns true if the vertex is within the
- * boundry. ( where the boundries are numbered 1-4,corresponding to
+ * boundary. ( where the boundaries are numbered 1-4,corresponding to
  * top, right, bottom, left )
  */
 static int inside_bnd(point *v, point *bmin, point *bmax, int bound_num)
 {
-  /* this routine assumes a rectangular boundry */
+  /* this routine assumes a rectangular boundary */
   switch (bound_num) {
-  case 0:
-    return (v->y <= bmax->y);
-    break; /* top */
-  case 1:
-    return (v->x <= bmax->x);
-    break; /* right */
-  case 2:
-    return (v->y >= bmin->y);
-    break; /* bottom */
-  case 3:
-    return (v->x >= bmin->x);
-    break; /* left */
+  case 0: return (v->y <= bmax->y); break; /* top */
+  case 1: return (v->x <= bmax->x); break; /* right */
+  case 2: return (v->y >= bmin->y); break; /* bottom */
+  case 3: return (v->x >= bmin->x); break; /* left */
   default: return (FALSE); break;
   } /* end switch */
 } /* end inside_bnd */
 
 /* intersect_bnd */
 /* Used by poly_clip. Returns the the intersection point of a polygon
- * edge with a clip boundry.  The clip boundry is coded 1-4, corresponding
- * to top, right, bottom, and left boundry edges, repectively.
+ * edge with a clip boundary.  The clip boundary is coded 1-4, corresponding
+ * to top, right, bottom, and left boundary edges, respectively.
  */
 static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int bound_num)
 {
@@ -5319,7 +5307,7 @@ static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int b
   File descriptor which is returned from open is stored in current
   statelist
 */
-void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatability */
+void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatibility */
 {
   int        errnum, errsev;
   char       symbol[1024];

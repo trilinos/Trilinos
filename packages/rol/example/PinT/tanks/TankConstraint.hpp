@@ -106,7 +106,6 @@ public:
     auto& uo_state = to_state(u_old);
     auto& un_state = to_state(u_new);
     auto& z_ctrl   = to_control(z);
-    c.zero();
     tankState_->value( c_state, uo_state, un_state, z_ctrl ) ;
   }
 

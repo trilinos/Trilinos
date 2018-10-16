@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
 
 
   try {
-#ifdef KOKKOS_HAVE_CUDA //to reduce test time for CUDA
+#ifdef KOKKOS_ENABLE_CUDA //to reduce test time for CUDA
     int max_order=1;
 #else
     int max_order = 7;                                                                  // max total order of polynomial solution

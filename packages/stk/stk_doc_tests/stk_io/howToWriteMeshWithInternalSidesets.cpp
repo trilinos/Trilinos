@@ -6,6 +6,7 @@
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include "stk_unit_test_utils/FaceTestingUtils.hpp"
 
 namespace
 {
@@ -24,7 +25,8 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
     for(;iter!=goldSideset.end();++iter)
     {
         int id = iter->first;
-        stk::mesh::SideSet &sset = bulkData.get_sideset(id);
+        stk::mesh::Part *part = stk::unit_test_util::get_surface_part_with_id(bulkData.mesh_meta_data(), id);
+        stk::mesh::SideSet &sset = bulkData.get_sideset(*part);
         ElementSidePairs goldSet = iter->second;
         ASSERT_EQ(goldSet.size(), sset.size());
         for(size_t j=0;j<goldSet.size();++j)
@@ -33,8 +35,6 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
             EXPECT_EQ(goldSet[j].first, bulkData.identifier(sset[j].element));
         }
     }
-
-    bulkData.clear_sidesets();
 }
 
 struct TestData

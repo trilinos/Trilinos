@@ -459,7 +459,7 @@ void triangle_generic(
       <KernelHandle,
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
-      kspgemm (handle,m,m,incidence_entries.dimension_0() / 2,
+      kspgemm (handle,m,m,incidence_entries.extent(0) / 2,
           lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
           false, //transpose ignore.
           incidence_rowmap, incidence_entries,
@@ -471,7 +471,7 @@ void triangle_generic(
       <KernelHandle,
       alno_row_view_t_, alno_nnz_view_t_, nnz_lno_persistent_work_view_t,
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
-      kspgemm (handle,m,m,incidence_entries.dimension_0() / 2,
+      kspgemm (handle,m,m,incidence_entries.extent(0) / 2,
           row_mapA, entriesA,
           false, //transpose ignore.
           incidence_rowmap, incidence_entries,
@@ -490,7 +490,7 @@ void triangle_generic(
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t>
       kspgemm (handle,
-          incidence_transpose_rowmap.dimension_0() - 1,m,m,
+          incidence_transpose_rowmap.extent(0) - 1,m,m,
           incidence_transpose_rowmap, incidence_transpose_entries,
           false, //transpose ignore.
           lower_triangular_matrix_rowmap, lower_triangular_matrix_entries,
@@ -503,7 +503,7 @@ void triangle_generic(
       row_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t, nnz_lno_persistent_work_view_t,
       alno_row_view_t_, alno_nnz_view_t_, nnz_lno_persistent_work_view_t>
       kspgemm (handle,
-          incidence_transpose_rowmap.dimension_0() - 1,m,m,
+          incidence_transpose_rowmap.extent(0) - 1,m,m,
           incidence_transpose_rowmap, incidence_transpose_entries,
           false, //transpose ignore.
           row_mapA, entriesA,

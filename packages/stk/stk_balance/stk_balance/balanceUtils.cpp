@@ -1,11 +1,12 @@
 #include "balanceUtils.hpp"
 #include "mpi.h"
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
-#include "FaceSearchTolerance.hpp"
+#include "search_tolerance/FaceSearchTolerance.hpp"
 
 namespace stk
 {
@@ -44,7 +45,10 @@ bool BalanceSettings::includeSearchResultsInGraph() const
     return false;
 }
 
-double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const
+double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                                  const stk::mesh::FieldBase & coordField,
+                                                  const stk::mesh::Entity * faceNodes,
+                                                  const unsigned numFaceNodes) const
 {
     return 0.0;
 }
@@ -152,6 +156,20 @@ bool BalanceSettings::shouldFixMechanisms() const
     return false;
 }
 
+bool BalanceSettings::shouldFixSpiders() const
+{
+    return false;
+}
+
+std::string BalanceSettings::getSpiderConnectivityCountFieldName() const
+{
+    return "beam_connectivity_count";
+}
+
+const stk::mesh::Field<int> * BalanceSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    return nullptr;
+}
 
 //////////////////////////////////////
 
@@ -218,6 +236,7 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
         case stk::topology::PARTICLE:
         case stk::topology::LINE_2:
         case stk::topology::BEAM_2:
+        case stk::topology::BEAM_3:
             return 1;
             break;
         case stk::topology::SHELL_TRIANGLE_3:
@@ -282,13 +301,16 @@ void GraphCreationSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<st
     m_UseConstantToleranceForFaceSearch = false;
 }
 
-double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const
+double GraphCreationSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                                        const stk::mesh::FieldBase & coordField,
+                                                        const stk::mesh::Entity * faceNodes,
+                                                        const unsigned numFaceNodes) const
 {
     if (m_UseConstantToleranceForFaceSearch) {
         return mToleranceForFaceSearch;
     }
     else {
-        return m_faceSearchToleranceFunction->compute(mesh, coordField, faceNodes);
+        return m_faceSearchToleranceFunction->compute(mesh, coordField, faceNodes, numFaceNodes);
     }
 }
 
@@ -318,6 +340,14 @@ void GraphCreationSettings::setToleranceForFaceSearch(double tol)
 void GraphCreationSettings::setToleranceForParticleSearch(double tol)
 {
     mToleranceForParticleSearch = tol;
+}
+void GraphCreationSettings::setEdgeWeightForSearch(double w)
+{
+    edgeWeightForSearch = w;
+}
+void GraphCreationSettings::setVertexWeightMultiplierForVertexInSearch(double w)
+{
+    vertexWeightMultiplierForVertexInSearch = w;
 }
 
 int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology) const
@@ -385,11 +415,30 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
     return tableIndex;
 }
 
+void GraphCreationSettings::setShouldFixSpiders(bool fixSpiders)
+{
+    m_shouldFixSpiders = fixSpiders;
+}
+
 bool GraphCreationSettings::shouldFixMechanisms() const
 {
     return true;
 }
 
+bool GraphCreationSettings::shouldFixSpiders() const
+{
+    return m_shouldFixSpiders;
+}
+
+const stk::mesh::Field<int> * GraphCreationSettings::getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+    if (m_spiderConnectivityCountField == nullptr) {
+        m_spiderConnectivityCountField = reinterpret_cast<stk::mesh::Field<int>*>(stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK,
+                                                                                                                             getSpiderConnectivityCountFieldName()));
+        ThrowRequireMsg(m_spiderConnectivityCountField != nullptr, "Must create spider connectivity field when stomping spiders.");
+    }
+    return m_spiderConnectivityCountField;
+}
 
 }
 }

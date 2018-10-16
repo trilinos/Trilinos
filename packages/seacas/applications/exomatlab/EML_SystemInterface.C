@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2011 National Technology & Engineering Solutions
+ * Copyright(C) 2011-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -149,13 +149,15 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("field_suffix");
-    if (strcmp("none", temp) == 0) {
-      // This is ASCII 1 which means it won't be found so
-      // vector/tensor won't be recognized by default.
-      fieldSuffix_ = 1;
-    }
-    else {
-      fieldSuffix_ = temp[0];
+    if (temp != nullptr) {
+      if (strcmp("none", temp) == 0) {
+        // This is ASCII 1 which means it won't be found so
+        // vector/tensor won't be recognized by default.
+        fieldSuffix_ = 1;
+      }
+      else {
+        fieldSuffix_ = temp[0];
+      }
     }
   }
 
@@ -210,7 +212,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2011 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2011-2017 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -309,7 +311,7 @@ namespace {
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
-            int id = strtoul(name_id[i].c_str(), nullptr, 0);
+            int id = std::stoi(name_id[i]);
             (*variable_list).push_back(std::make_pair(var_name, id));
           }
         }
@@ -319,4 +321,4 @@ namespace {
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
-}
+} // namespace

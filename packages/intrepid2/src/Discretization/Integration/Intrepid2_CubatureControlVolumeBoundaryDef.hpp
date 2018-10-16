@@ -187,21 +187,21 @@ namespace Intrepid2{
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeBoundary): cellCoords must have rank 3 of (C,P,D).");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0) != cellCoords.dimension(0) ||
-                                  cubPoints.dimension(0) != cubWeights.dimension(0), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(0) != cellCoords.extent(0) ||
+                                  cubPoints.extent(0) != cubWeights.extent(0), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(0) are not consistent, numCells");
 
     {
-      const ordinal_type spaceDim = cellCoords.dimension(2);
+      const ordinal_type spaceDim = cellCoords.extent(2);
       const ordinal_type sideDim = spaceDim - 1;
       const size_type numPrimarySideNodes = primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
       
-      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(1) != numPrimarySideNodes || 
-                                    cubWeights.dimension(1) != numPrimarySideNodes, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(1) != numPrimarySideNodes || 
+                                    cubWeights.extent(1) != numPrimarySideNodes, std::invalid_argument,
                                     ">>> ERROR (CubatureControlVolume): cubPoints and cubWeights dimension(1) are not consistent, numPrimarySideNodes");
     }
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
-                                  static_cast<ordinal_type>(cubPoints.dimension(2)) != getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(2) != cellCoords.extent(2) ||
+                                  static_cast<ordinal_type>(cubPoints.extent(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     
@@ -209,9 +209,9 @@ namespace Intrepid2{
     typedef Kokkos::DynRankView<PT,Kokkos::LayoutStride,SpT> tempPointStrideViewType;
 
     // get array dimensions
-    const ordinal_type numCells = cellCoords.dimension(0);
-    const ordinal_type numNodesPerCell = cellCoords.dimension(1);
-    const ordinal_type spaceDim = cellCoords.dimension(2);
+    const ordinal_type numCells = cellCoords.extent(0);
+    const ordinal_type numNodesPerCell = cellCoords.extent(1);
+    const ordinal_type spaceDim = cellCoords.extent(2);
     const ordinal_type sideDim = spaceDim - 1;
 
     const ordinal_type numNodesPerSubcv = subcvCellTopo_.getNodeCount();

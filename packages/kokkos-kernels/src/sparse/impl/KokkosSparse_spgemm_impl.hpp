@@ -449,7 +449,7 @@ private:
         c_lno_nnz_view_t entriesC_,
         c_scalar_nnz_view_t valuesC_,
         KokkosKernels::Impl::ExecSpaceType my_exec_space);
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #ifdef KOKKOSKERNELS_HAVE_OUTER
 public:
   //OUTER PRODUCT CODES

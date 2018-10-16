@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     RealT tol(1.e-8);
     up->setScalar(RealT(1));
-    RandomizeVector(*zp);//->setScalar(RealT(1));
+    zp->randomize();//->setScalar(RealT(1));
     con->solve(*rp,*up,*zp,tol);    
     ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), bnd, con, pp);
     ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);

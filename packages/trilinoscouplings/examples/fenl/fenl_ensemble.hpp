@@ -97,7 +97,7 @@ struct EnsembleTraits< Sacado::MP::Vector<S> > {
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 
 template <typename ViewType>
 struct LocalViewTraits<

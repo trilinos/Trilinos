@@ -336,9 +336,9 @@ public:
   //
   // This is the first performance-portable implementation of a block
   // relaxation, and it is supported currently only by BlockTriDiContainer.
-  virtual void applyInverseJacobi (const mv_type& X, mv_type& Y,
-                                   bool zeroStartingSolution = false,
-                                   int numSweeps = 1) const
+  virtual void applyInverseJacobi (const mv_type& /* X */, mv_type& /* Y */,
+                                   bool /* zeroStartingSolution = false */,
+                                   int /* numSweeps = 1 */) const
   { TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented."); }
 
   //! Wrapper for apply with MVs, used in unit tests (never called by BlockRelaxation)

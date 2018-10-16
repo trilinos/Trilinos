@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,7 +39,7 @@ void sorthog(double *          vec,    /* vector to be orthogonalized */
              int               n,      /* length of the columns of orth */
              struct orthlink **solist, /* set of vecs to orth. against */
              int               ngood   /* number of vecs in solist */
-             )
+)
 {
   double  alpha;
   double *dir;
@@ -58,7 +58,7 @@ void sorthog_float(float *                 vec,    /* vector to be orthogonalize
                    int                     n,      /* length of the columns of orth */
                    struct orthlink_float **solist, /* set of vecs to orth. against */
                    int                     ngood   /* number of vecs in solist */
-                   )
+)
 {
   float  alpha;
   float *dir;

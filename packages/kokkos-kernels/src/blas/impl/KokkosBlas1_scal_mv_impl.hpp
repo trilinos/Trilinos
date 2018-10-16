@@ -84,10 +84,10 @@ struct MV_Scal_Functor
 
   MV_Scal_Functor (const RMV& R, const XMV& X, const aVector& a,
                    const SizeType startingColumn) :
-    numCols (X.dimension_1 ()), R_ (R), X_ (X), a_ (a)
+    numCols (X.extent(1)), R_ (R), X_ (X), a_ (a)
   {
     if (startingColumn != 0) {
-      auto rng = std::make_pair (startingColumn, static_cast<SizeType> (a.dimension_0 ()));
+      auto rng = std::make_pair (startingColumn, static_cast<SizeType> (a.extent(0)));
       a_ = Kokkos::subview (a, rng);
     }
   }
@@ -99,10 +99,10 @@ struct MV_Scal_Functor
     // parameter), so the compiler should evaluate these branches at
     // compile time.
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -110,10 +110,10 @@ struct MV_Scal_Functor
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -121,10 +121,10 @@ struct MV_Scal_Functor
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -132,10 +132,10 @@ struct MV_Scal_Functor
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -169,7 +169,7 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
   MV_Scal_Functor (const RMV& r, const XMV& x,
                    const typename XMV::non_const_value_type& a,
                    const SizeType /* startingColumn */) :
-    numCols (x.dimension_1 ()), m_r (r), m_x (x), m_a (a)
+    numCols (x.extent(1)), m_r (r), m_x (x), m_a (a)
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -179,10 +179,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
     // are template parameters), so the compiler should evaluate these
     // branches at compile time.
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -190,10 +190,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -201,10 +201,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -212,10 +212,10 @@ struct MV_Scal_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
-#ifdef KOKKOS_HAVE_PRAGMA_VECTOR
+#ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
 #pragma vector always
 #endif
       for (size_type k = 0; k < numCols; ++k) {
@@ -244,7 +244,7 @@ struct MV_Scal_Unroll_Functor
     m_r (r), m_x (x), m_a (a)
   {
     if (startingColumn != 0) {
-      auto rng = std::make_pair (startingColumn, static_cast<SizeType> (a.dimension_0 ()));
+      auto rng = std::make_pair (startingColumn, static_cast<SizeType> (a.extent(0)));
       m_a = Kokkos::subview (a, rng);
     }
   }
@@ -253,7 +253,7 @@ struct MV_Scal_Unroll_Functor
   void operator() (const size_type& i) const
   {
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -261,7 +261,7 @@ struct MV_Scal_Unroll_Functor
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -269,7 +269,7 @@ struct MV_Scal_Unroll_Functor
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -277,7 +277,7 @@ struct MV_Scal_Unroll_Functor
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -312,7 +312,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
   void operator() (const size_type& i) const
   {
     if (scalar_x == 0) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -320,7 +320,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == -1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -328,7 +328,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 1) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -336,7 +336,7 @@ struct MV_Scal_Unroll_Functor<RMV, typename XMV::non_const_value_type,
       }
     }
     if (scalar_x == 2) {
-#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
 #pragma unroll
 #endif
       for (int k = 0; k < UNROLL; ++k) {
@@ -369,21 +369,21 @@ MV_Scal_Unrolled (const RMV& r, const aVector& av, const XMV& x,
 
   if (a == 0) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 0, UNROLL, SizeType> op (r, x, av, startingColumn);
-    const SizeType numRows = x.dimension_0 ();
+    const SizeType numRows = x.extent(0);
     Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
     Kokkos::parallel_for (policy, op);
     return;
   }
   if (a == -1) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, -1, UNROLL, SizeType> op (r, x, av, startingColumn);
-    const SizeType numRows = x.dimension_0 ();
+    const SizeType numRows = x.extent(0);
     Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
     Kokkos::parallel_for (policy, op);
     return;
   }
   if (a == 1) {
     MV_Scal_Unroll_Functor<RMV, aVector, XMV, 1, UNROLL, SizeType> op (r, x, av, startingColumn);
-    const SizeType numRows = x.dimension_0 ();
+    const SizeType numRows = x.extent(0);
     Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
     Kokkos::parallel_for (policy, op);
     return;
@@ -391,7 +391,7 @@ MV_Scal_Unrolled (const RMV& r, const aVector& av, const XMV& x,
 
   // a arbitrary (not -1, 0, or 1)
   MV_Scal_Unroll_Functor<RMV, aVector, XMV, 2, UNROLL, SizeType> op (r, x, av, startingColumn);
-  const SizeType numRows = x.dimension_0 ();
+  const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
   Kokkos::parallel_for (policy, op);
 }
@@ -419,7 +419,7 @@ MV_Scal_Generic (const RVector& r,
                  int a = 2)
 {
   typedef typename XVector::execution_space execution_space;
-  const SizeType numRows = x.dimension_0 ();
+  const SizeType numRows = x.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   if (a == 0) {
@@ -462,7 +462,7 @@ template<class RMV, class AV, class XMV, class SizeType>
 void
 MV_Scal_Invoke_Left (const RMV& r, const AV& av, const XMV& x, int a = 2)
 {
-  const SizeType numCols = x.dimension_1 ();
+  const SizeType numCols = x.extent(1);
 
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_SCAL <= 2
 
@@ -581,7 +581,7 @@ template<class RMV, class aVector, class XMV, class SizeType>
 void
 MV_Scal_Invoke_Right (const RMV& r, const aVector& av, const XMV& x, int a = 2)
 {
-  const SizeType numCols = x.dimension_1 ();
+  const SizeType numCols = x.extent(1);
 
   if (numCols == 1) {
     typedef Kokkos::View<typename RMV::value_type*, typename RMV::array_layout,

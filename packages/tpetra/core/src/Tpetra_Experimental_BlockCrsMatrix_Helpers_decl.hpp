@@ -44,10 +44,18 @@
 
 /// \file Tpetra_Experimental_BlockCrsMatrix_Helpers_decl.hpp
 
-#include <ctime>
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp>
+#include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_Map_fwd.hpp"
+#include "Teuchos_RCP.hpp"
+#include <string>
+#include <ostream>
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  class ParameterList; // forward declaration
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 namespace Experimental {

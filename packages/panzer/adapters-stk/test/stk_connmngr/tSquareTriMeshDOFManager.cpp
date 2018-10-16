@@ -500,11 +500,11 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager,getDofCoords)
    TEST_EQUALITY(localIds_00.size(),block00.size());
    TEST_EQUALITY(localIds_01.size(),block01.size());
 
-   TEST_EQUALITY(coords00.dimension(0),int(localIds_00.size()));
-   TEST_EQUALITY(coords01.dimension(0),int(localIds_01.size()));
+   TEST_EQUALITY(coords00.extent(0),int(localIds_00.size()));
+   TEST_EQUALITY(coords01.extent(0),int(localIds_01.size()));
 
-   TEST_EQUALITY(coords00.dimension(1),4); TEST_EQUALITY(coords00.dimension(2),2);
-   TEST_EQUALITY(coords01.dimension(1),9); TEST_EQUALITY(coords01.dimension(2),2);
+   TEST_EQUALITY(coords00.extent(1),4); TEST_EQUALITY(coords00.extent(2),2);
+   TEST_EQUALITY(coords01.extent(1),9); TEST_EQUALITY(coords01.extent(2),2);
 
    for(std::size_t i=0;i<block00.size();i++) 
       TEST_EQUALITY(localIds_00[i],meshDB->elementLocalId(block00[i]));

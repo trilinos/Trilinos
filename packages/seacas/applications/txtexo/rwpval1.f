@@ -1,4 +1,4 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -73,5 +73,6 @@ C ... Write the property (unless it is 'ID')
 
  120  continue
  130  continue
+      CALL PRTERR('FATAL', 'Problem reading property')
       return 1
       end

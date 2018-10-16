@@ -125,8 +125,8 @@ LOCA::Epetra::CompactWYOp::Apply(const Epetra_MultiVector& Input,
 }
 
 int
-LOCA::Epetra::CompactWYOp::ApplyInverse(const Epetra_MultiVector& cInput,
-                    Epetra_MultiVector& Result) const
+LOCA::Epetra::CompactWYOp::ApplyInverse(const Epetra_MultiVector& /* cInput */,
+                    Epetra_MultiVector& /* Result */) const
 {
   globalData->locaErrorCheck->throwError(
       "LOCA::Epetra::CompactWYOp::ApplyInverse",

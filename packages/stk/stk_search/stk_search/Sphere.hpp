@@ -51,6 +51,11 @@ public:
     , m_radius(x_radius)
   {}
 
+  void set_box(const Sphere &val) {
+    m_center = val.m_center;
+    m_radius = val.m_radius;
+  }
+
   point_type const& center() const { return m_center; }
   point_type      & center()       { return m_center; }
 

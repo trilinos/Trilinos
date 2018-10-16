@@ -385,7 +385,7 @@ namespace Tacho {
                                                                  _sid_super_panel_colidx, _blk_super_panel_colidx);
           _super_panel_work = value_type_array_host("spanel_serial_work", workspace);
           
-          const ordinal_type numRoots = _stree_roots.dimension_0();
+          const ordinal_type numRoots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<numRoots;++i) 
             recursiveSerialChol(_stree_roots(i), -1);
           
@@ -445,8 +445,8 @@ namespace Tacho {
           const size_type max_functor_size = ( sizeof(supernode_info_type) + 
                                                sizeof(sched_type) + 
                                                sizeof(memory_pool_type) + 128 );
-          const size_type estimate_max_numtasks = _blk_super_panel_colidx.dimension_0();
-          const size_type task_queue_capacity = max(estimate_max_numtasks*max_functor_size,
+          const size_type estimate_max_numtasks = _blk_super_panel_colidx.extent(0);
+          const size_type task_queue_span = max(estimate_max_numtasks*max_functor_size,
                                                     2048*400);
 
           const ordinal_type 
@@ -456,13 +456,13 @@ namespace Tacho {
 
 #if defined (__KK__)          
           sched_type sched(memory_space(),
-                           task_queue_capacity,
+                           task_queue_span,
                            min_block_alloc_size,
                            max_block_alloc_size,
                            min_superblock_size);
 #else
           sched_type sched(memory_space(),
-                           task_queue_capacity);
+                           task_queue_span);
 #endif
           
           // workspace estimate
@@ -485,7 +485,7 @@ namespace Tacho {
                                 min_total_alloc_size);
 #endif 
           // host task generation for roots
-          const ordinal_type nroots = _stree_roots.dimension_0();
+          const ordinal_type nroots = _stree_roots.extent(0);
           for (ordinal_type i=0;i<nroots;++i) 
             future_type f = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
                                                functor_type(sched, pool, info, _stree_roots(i), -1));

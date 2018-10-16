@@ -1,5 +1,5 @@
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Ifpack2_Factory.hpp"
@@ -196,8 +196,7 @@ namespace {
     return;
 #endif // NOT TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
     const size_t numVecs = 3;
 

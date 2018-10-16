@@ -107,9 +107,9 @@ namespace panzer {
   {
     // copy cell node coordinates
     {
-      size_type num_cells = in_node_coords.dimension(0);
-      size_type num_nodes = in_node_coords.dimension(1);
-      size_type num_dims = in_node_coords.dimension(2);
+      size_type num_cells = in_node_coords.extent(0);
+      size_type num_nodes = in_node_coords.extent(1);
+      size_type num_dims = in_node_coords.extent(2);
      
       for (size_type cell = 0; cell < num_cells;  ++cell)
 	for (size_type node = 0; node < num_nodes; ++node)
@@ -125,8 +125,8 @@ namespace panzer {
   {
     // copy reference point values
     {
-      size_type num_points = in_point_coords.dimension(0);
-      size_type num_dims = in_point_coords.dimension(1);
+      size_type num_points = in_point_coords.extent(0);
+      size_type num_dims = in_point_coords.extent(1);
      
       for (size_type point = 0; point < num_points; ++point)
         for (size_type dim = 0; dim < num_dims; ++dim)

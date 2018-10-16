@@ -54,31 +54,18 @@
 #include "Tpetra_Import_Util.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::outArg;
   using std::endl;
 
-  bool testMpi = true;
+  // bool testMpi = true;
 
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption(
-        "test-mpi", "test-serial", &testMpi,
-        "Test MPI (if available) or force test of serial.  In a serial build,"
-        " this option is ignored and a serial comm is always used." );
-  }
-
-  RCP<const Comm<int> > getDefaultComm()
-  {
-    if (testMpi) {
-      return Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-    }
-    return rcp(new Teuchos::SerialComm<int>());
   }
 
   //
@@ -90,8 +77,8 @@ namespace {
     using Teuchos::rcp;
     using std::endl;
     typedef Teuchos::Array<int>::size_type size_type;
-    typedef Tpetra::BlockCrsMatrix<double,LO,GO,NT> matrix_type;
-    typedef typename matrix_type::impl_scalar_type Scalar;
+    typedef Tpetra::BlockCrsMatrix<>::scalar_type Scalar;
+    typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,NT> matrix_type;
     typedef Tpetra::Map<LO,GO,NT> map_type;
     typedef Tpetra::CrsGraph<LO,GO,NT>  graph_type;
     typedef Tpetra::global_size_t GST;
@@ -101,7 +88,7 @@ namespace {
     Teuchos::OSTab tab0 (out);
     Teuchos::OSTab tab1 (out);
 
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
     //    int rank = comm->getRank();
 

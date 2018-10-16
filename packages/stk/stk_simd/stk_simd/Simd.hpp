@@ -8,24 +8,20 @@
 
 #include <stk_math/StkMath.hpp>
 
-// IWYU pragma: begin_exports
+#define STK_HAVE_SIMD
+
 #if defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
-#define STK_HAVE_SIMD
 #elif defined ( STK_SIMD_AVX )
 #include "avx/Avx.hpp"
-#define STK_HAVE_SIMD
 #elif defined ( STK_SIMD_SSE )
 #include "sse/Sse.hpp"
-#define STK_HAVE_SIMD
 #else
 #include "no_simd/NoSimd.hpp"
-#define STK_HAVE_NO_SIMD
 #endif // Check SIMD version
 
 #include "AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
-// IWYU pragma: end_exports
 
 #include <Kokkos_Macros.hpp>
 #include <sys/time.h>
@@ -42,8 +38,6 @@ inline double get_time_in_seconds() {
 
 namespace simd {
 
-#if defined(STK_SIMD)
-
 //
 //  These are helper functions for processing remainder loops.  The end pieces of SIMD loops
 //  that do not have a full 'stk::ndoubles' entries.  'numValid' are the number of actual
@@ -52,7 +46,6 @@ namespace simd {
 //
 
 // double versions
-
 
 STK_MATH_FORCE_INLINE void store_part(double* x, const Double& z, const int numValid) {
   assert(numValid <= ndoubles);
@@ -119,13 +112,11 @@ STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum) {
 //  May be a faster way to do this with actual SIMD intrinsic masks, but just
 //  putting in a placeholder for now.
 //
+
 STK_MATH_FORCE_INLINE void plus_equal_part(Double& value, const Double& increment, const int numValid) {
   assert(numValid <= ndoubles);
   for(int n=0; n<numValid; ++n) value[n] += increment[n];
 }
-
-
-
 
 STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
   assert(sumNum <= ndoubles);
@@ -210,9 +201,6 @@ STK_MATH_FORCE_INLINE float reduce_sum(const Float& x, const int sumNum ) {
 
 STK_MATH_FORCE_INLINE bool are_all(const Boolf& a, const int sumNum=nfloats) {
   assert(sumNum <= nfloats);
-#ifdef __CUDA_ARCH__
-  static_assert(std::is_same<Boolf, bool>::value, "Not the right type");
-#endif
   const Float oneornone = stk::math::if_then_else_zero(a, Float(1.0f));
   bool all_true = true;
   for (int i=0; i < sumNum; ++i) {
@@ -242,46 +230,6 @@ STK_MATH_FORCE_INLINE int count_true(const Boolf& a, const int sumNum=nfloats) {
   Float oneornone = stk::math::if_then_else_zero(a, Float(1.0f));
   return static_cast<int>(reduce_sum(oneornone, sumNum));
 }
-
-#else
-
-// doubles
-
-STK_MATH_FORCE_INLINE void store_part(double* x, const Double& z,const int numValid) {
-  x[0] = z;
-}
-
-STK_MATH_FORCE_INLINE void store_part(double* x, const Double& z, const int offset, const int numValid) {
-  x[0] = z;
-}
-
-STK_MATH_FORCE_INLINE Double load_part(const double* x, const int numValid) {
-  return *x;
-}
-
-STK_MATH_FORCE_INLINE Double load_part(const double* x, const int offset, const int numValid) {
-  return *x;
-}
-
-// floats
-
-STK_MATH_FORCE_INLINE void store_part(float* x, const Float& z,const int numValid) {
-  x[0] = z;
-}
-
-STK_MATH_FORCE_INLINE void store_part(float* x, const Float& z, const int offset, const int numValid) {
-  x[0] = z;
-}
-
-STK_MATH_FORCE_INLINE Float load_part(const float* x, const int numValid) {
-  return *x;
-}
-
-STK_MATH_FORCE_INLINE Float load_part(const float* x, const int offset, const int numValid) {
-  return *x;
-}
-
-#endif
 
 STK_MATH_FORCE_INLINE const double& get_data(const double& z, int index) {
   assert(index==0);
@@ -453,7 +401,6 @@ void store_array(float* const to, const Float* const from, const int numValid) {
 }
 
 } // namespace simd
-
 } // namespace stk
 
 #endif // #ifndef SIMD_H__

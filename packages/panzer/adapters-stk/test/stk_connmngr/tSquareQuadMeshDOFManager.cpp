@@ -496,8 +496,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
    TEST_EQUALITY(static_cast<int>(coords01.extent(0)),
      static_cast<int>(localIds_01.size()))
 
-   TEST_EQUALITY(coords00.dimension(1),4); TEST_EQUALITY(coords00.dimension(2),2);
-   TEST_EQUALITY(coords01.dimension(1),9); TEST_EQUALITY(coords01.dimension(2),2);
+   TEST_EQUALITY(coords00.extent(1),4); TEST_EQUALITY(coords00.extent(2),2);
+   TEST_EQUALITY(coords01.extent(1),9); TEST_EQUALITY(coords01.extent(2),2);
 
    for(std::size_t i=0;i<block00.size();i++) 
       TEST_EQUALITY(localIds_00[i],meshDB->elementLocalId(block00[i]));

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -41,7 +41,11 @@
 #include <cassert>
 #include <numeric>
 
-#if !defined(NO_CGNS_SUPPORT)
+#if !defined(NO_ZOLTAN_SUPPORT)
+extern "C" int Zoltan_get_global_id_type(char **name);
+#endif
+
+#if defined(SEACAS_HAVE_CGNS)
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
@@ -98,7 +102,7 @@ namespace {
         && method != "KWAY" && method != "GEOM_KWAY" && method != "KWAY_GEOM" &&
         method != "METIS_SFC"
 #endif
-        ) {
+    ) {
       if (my_processor == 0) {
         std::ostringstream errmsg;
         errmsg << "ERROR: Invalid decomposition method specified: '" << method << "'\n"
@@ -172,10 +176,7 @@ namespace Ioss {
 
   template <typename INT>
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
-      : m_comm(comm), m_spatialDimension(3), m_globalElementCount(0), m_elementCount(0),
-        m_elementOffset(0), m_importPreLocalElemIndex(0), m_globalNodeCount(0), m_nodeCount(0),
-        m_nodeOffset(0), m_importPreLocalNodeIndex(0), m_retainFreeNodes(true),
-        m_showProgress(false), m_showHWM(false)
+      : m_comm(comm)
   {
     MPI_Comm_rank(m_comm, &m_processor);
     MPI_Comm_size(m_comm, &m_processorCount);
@@ -209,7 +210,7 @@ namespace Ioss {
 
     m_elementDist = get_entity_dist<INT>(m_processorCount, m_processor, m_globalElementCount,
                                          &m_elementOffset, &m_elementCount);
-    m_nodeDist = get_entity_dist<INT>(m_processorCount, m_processor, m_globalNodeCount,
+    m_nodeDist    = get_entity_dist<INT>(m_processorCount, m_processor, m_globalNodeCount,
                                       &m_nodeOffset, &m_nodeCount);
   }
 
@@ -360,14 +361,10 @@ namespace Ioss {
     show_progress("\tprior to releasing some temporary decomposition memory");
 
     // Release some memory...
-    m_adjacency.resize(0);
-    m_adjacency.shrink_to_fit();
-    m_pointer.resize(0);
-    m_pointer.shrink_to_fit();
-    m_elementDist.resize(0);
-    m_elementDist.shrink_to_fit();
-    m_nodeDist.resize(0);
-    m_nodeDist.shrink_to_fit();
+    Ioss::Utils::clear(m_adjacency);
+    Ioss::Utils::clear(m_pointer);
+    Ioss::Utils::clear(m_elementDist);
+    Ioss::Utils::clear(m_nodeDist);
     show_progress("\tIoss::decompose model finished");
   }
 
@@ -449,8 +446,7 @@ namespace Ioss {
     Ioss::MY_Alltoallv(node_comm_recv, recv_count, recv_disp, node_comm_send, send_count, send_disp,
                        m_comm);
 
-    node_comm_recv.resize(0);
-    node_comm_recv.shrink_to_fit();
+    Ioss::Utils::clear(node_comm_recv);
 
 // At this point, 'node_comm_send' contains the list of nodes that I
 // need to provide coordinate data for.
@@ -491,7 +487,7 @@ namespace Ioss {
                        m_comm);
 
     // Don't need coord_send data anymore ... clean out the vector.
-    std::vector<double>().swap(coord_send);
+    Ioss::Utils::clear(coord_send);
 
     // Should have all needed coordinate data at this time.
     // Some in x,y,z vectors and some in coord_recv vector.
@@ -699,7 +695,7 @@ namespace Ioss {
         }
       }
     }
-    std::vector<idx_t>().swap(elem_partition);
+    Ioss::Utils::clear(elem_partition);
 
     size_t imp_size = std::accumulate(importElementCount.begin(), importElementCount.end(), 0);
     importElementMap.resize(imp_size);
@@ -822,7 +818,19 @@ namespace Ioss {
     zz.Set_Param("DEBUG_LEVEL", "0");
     zz.Set_Param("NUM_GLOBAL_PARTS", num_proc);
 
-    int num_global = sizeof(INT) / sizeof(int);
+    int num_global = sizeof(INT) / sizeof(ZOLTAN_ID_TYPE);
+    num_global     = num_global < 1 ? 1 : num_global;
+
+    int lib_global_id_type_size = Zoltan_get_global_id_type(nullptr);
+    if (lib_global_id_type_size != sizeof(ZOLTAN_ID_TYPE)) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: The compile-time ZOLTAN_ID_TYPE size (" << sizeof(ZOLTAN_ID_TYPE)
+             << ") does not match the run-time ZOLTAN_ID_TYPE size (" << lib_global_id_type_size
+             << "). There is an error in the build/link procedure for this application.\n";
+      std::cerr << errmsg.str();
+      exit(EXIT_FAILURE);
+    }
+
     zz.Set_Param("NUM_GID_ENTRIES", std::to_string(num_global));
     zz.Set_Param("NUM_LID_ENTRIES", "0");
     zz.Set_Param("LB_METHOD", m_method);
@@ -862,7 +870,7 @@ namespace Ioss {
 #endif
 
     // Don't need centroid data anymore... Free up space
-    std::vector<double>().swap(m_centroids);
+    Ioss::Utils::clear(m_centroids);
 
     // Find all elements that remain locally owned...
     get_local_element_list(export_global_ids, num_export);
@@ -1068,7 +1076,7 @@ namespace Ioss {
       show_progress("\tCommunication 2 finished");
 
       // Done with export_conn...
-      std::vector<INT>().swap(export_conn);
+      Ioss::Utils::clear(export_conn);
 
       // Find list of unique nodes used by the elements on this
       // processor... adjacency list contains connectivity for local
@@ -1150,8 +1158,7 @@ namespace Ioss {
 
     Ioss::MY_Alltoallv(import_nodes, importNodeCount, importNodeIndex, exportNodeMap,
                        exportNodeCount, exportNodeIndex, m_comm);
-    import_nodes.resize(0);
-    import_nodes.shrink_to_fit();
+    Ioss::Utils::clear(import_nodes);
     show_progress("\tCommunication 4 finished");
 
     if (m_retainFreeNodes) {
@@ -1320,8 +1327,7 @@ namespace Ioss {
                          recv_comm_map_count[m_processorCount - 1]);
     Ioss::MY_Alltoallv(send_comm_map, send_comm_map_count, send_comm_map_disp, m_nodeCommMap,
                        recv_comm_map_count, recv_comm_map_disp, m_comm);
-    send_comm_map.resize(0);
-    send_comm_map.shrink_to_fit();
+    Ioss::Utils::clear(send_comm_map);
     show_progress("\tCommuniation 2 finished");
 
     // Map global 0-based index to local 1-based index.
@@ -1465,37 +1471,21 @@ namespace Ioss {
                                                 size_t                      comp_count) const
   {
     show_progress(__func__);
-    MPI_Status status;
-
     std::vector<T> recv_data;
-    int            result = MPI_SUCCESS;
 
     size_t size = set.file_count() * comp_count;
-    // NOTE That a processor either sends or receives, but never both,
-    // so this will not cause a deadlock...
-    if (m_processor != set.root_ && set.hasEntities[m_processor]) {
+    if (size == 0)
+      return;
+
+    if (set.setComm_ != MPI_COMM_NULL) {
       recv_data.resize(size);
-      result =
-          MPI_Recv(TOPTR(recv_data), size, Ioss::mpi_type(T(0)), set.root_, 111, m_comm, &status);
-
-      if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: MPI_Recv error on processor " << m_processor
-               << " in Iopx::Decomposition<INT>::communicate_set_data";
-        std::cerr << errmsg.str();
+      if (m_processor == set.root_) {
+        std::copy(file_data, file_data + size, recv_data.begin());
       }
+      // NOTE: This broadcast uses a split communicator, so possibly
+      // not all processors participating.
+      MPI_Bcast(recv_data.data(), size, Ioss::mpi_type(T(0)), 0, set.setComm_);
     }
-
-    if (set.root_ == m_processor) {
-      // Sending data to other processors...
-      for (int i = m_processor + 1; i < m_processorCount; i++) {
-        if (set.hasEntities[i]) {
-          // Send same data to all active processors...
-          MPI_Send(file_data, size, Ioss::mpi_type(T(0)), i, 111, m_comm);
-        }
-      }
-    }
-
     if (comp_count == 1) {
       if (set.root_ == m_processor) {
         for (size_t i = 0; i < set.ioss_count(); i++) {
@@ -1532,6 +1522,13 @@ namespace Ioss {
     }
   }
 
+  template void Decomposition<int64_t>::communicate_block_data(long *     file_data,
+                                                               long long *ioss_data,
+                                                               const BlockDecompositionData &block,
+                                                               size_t comp_count) const;
+  template void Decomposition<int64_t>::communicate_block_data(long *file_data, int *ioss_data,
+                                                               const BlockDecompositionData &block,
+                                                               size_t comp_count) const;
   template void Decomposition<int64_t>::communicate_block_data(int *file_data, int64_t *ioss_data,
                                                                const BlockDecompositionData &block,
                                                                size_t comp_count) const;
@@ -1539,6 +1536,12 @@ namespace Ioss {
                                                                int64_t *ioss_data,
                                                                const BlockDecompositionData &block,
                                                                size_t comp_count) const;
+  template void Decomposition<int>::communicate_block_data(long *file_data, long long *ioss_data,
+                                                           const BlockDecompositionData &block,
+                                                           size_t comp_count) const;
+  template void Decomposition<int>::communicate_block_data(long *file_data, int *ioss_data,
+                                                           const BlockDecompositionData &block,
+                                                           size_t comp_count) const;
   template void Decomposition<int>::communicate_block_data(int *file_data, int *ioss_data,
                                                            const BlockDecompositionData &block,
                                                            size_t comp_count) const;

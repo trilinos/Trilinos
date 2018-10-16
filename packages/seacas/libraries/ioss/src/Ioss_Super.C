@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -72,7 +72,7 @@ void Ioss::Super::make_super(const std::string &type)
   size_t digits = type.find_last_not_of("0123456789");
   if (digits != std::string::npos) {
     std::string node_count_str = type.substr(digits + 1);
-    int         node_count     = std::atoi(node_count_str.c_str());
+    int         node_count     = std::stoi(node_count_str);
     new Ioss::Super(type, node_count);
   }
 }

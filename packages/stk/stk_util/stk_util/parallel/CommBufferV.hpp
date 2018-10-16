@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_util_parallel_CommBufferV_hpp
-#define stk_util_parallel_CommBufferV_hpp
+#ifndef CommBufferV_hpp
+#define CommBufferV_hpp
 
 #include <cstddef>
 #include <cstring>
@@ -49,6 +49,7 @@ public:
     ~CommBufferV(){}
 
     size_t size_in_bytes() const { return data_buffer.end() - unpack_iterator; }
+    size_t capacity_in_bytes() const { return data_buffer.capacity(); }
 
     void reserve(size_t num_bytes) {
         data_buffer.reserve(num_bytes);
@@ -61,6 +62,7 @@ public:
     }
 
     unsigned char* raw_buffer() { return data_buffer.data(); }
+    const unsigned char* raw_buffer() const { return data_buffer.data(); }
 
     template<typename T>
     void pack(const T& item) {
@@ -95,12 +97,12 @@ private:
     template<typename T>
     void pack_internal(const T* items, size_t num_items) {
         enum { item_size_in_bytes = sizeof(T) };
-        const int num_bytes = item_size_in_bytes*num_items;
-        data_buffer.reserve(data_buffer.size() + num_bytes);
-        //std::cerr<<"new capacity of data_buffer: "<<data_buffer.capacity()<<std::endl;
+        const size_t num_bytes = item_size_in_bytes*num_items;
+        if (num_bytes > (data_buffer.capacity() - data_buffer.size())) {
+            data_buffer.reserve(std::max(num_bytes, data_buffer.capacity()*2));
+        }
         const unsigned char* item_chars = reinterpret_cast<const unsigned char*>(items);
         data_buffer.insert(data_buffer.end(), item_chars, item_chars+num_bytes);
-        //std::cerr<<"new size of data_buffer: "<<data_buffer.size()<<std::endl;
         unpack_iterator = data_buffer.begin();
     }
 

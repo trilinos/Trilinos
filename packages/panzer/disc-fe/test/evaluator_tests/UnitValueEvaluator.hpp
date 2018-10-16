@@ -62,11 +62,6 @@ class UnitValueEvaluator
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -97,17 +92,6 @@ UnitValueEvaluator(
   
   std::string n = "UnitValueEvaluator: " + name;
   this->setName(n);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-UnitValueEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(unitValue,fm);
 }
 
 //**********************************************************************

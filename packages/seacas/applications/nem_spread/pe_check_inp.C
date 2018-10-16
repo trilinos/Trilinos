@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,7 +60,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
     return 0;
   }
 
-  /* check for the existance of a readable FEM file */
+  /* check for the existence of a readable FEM file */
   int mode = EX_READ | int64api;
   if ((exid = ex_open(ExoFile, mode, &icpu_ws, &iio_ws, &vers)) < 0) {
     fprintf(stderr, "%s: fatal - unable to open input FEM file, %s.\n", yo, ExoFile);
@@ -74,7 +74,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
     return 0;
   }
 
-  /* check for the existance of a readable load balance file */
+  /* check for the existence of a readable load balance file */
   icpu_ws = 0;
   iio_ws  = 0;
   if ((exid = ex_open(Exo_LB_File, mode, &icpu_ws, &iio_ws, &vers)) < 0) {
@@ -94,7 +94,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
     Restart_Info.Num_Times = -1; /* -1 means spread all results */
   }
 
-  /* check to see if there is a seperate restart file */
+  /* check to see if there is a separate restart file */
   if (Restart_Info.Flag > 0) {
     if (strlen(Exo_Res_File) <= 0) {
       strcpy(Exo_Res_File, ExoFile); /* if not use the input FEM file */
@@ -122,7 +122,7 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
   /*                 Check the parallel IO specifications                      */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-  /* default is not to have preceeding 0's in the disk names */
+  /* default is not to have preceding 0's in the disk names */
   if (PIO_Info.Zeros < 0) {
     PIO_Info.Zeros = 0;
   }
@@ -133,8 +133,9 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
 
   /* check that there is a list of disks, or a number of raids */
   if ((PIO_Info.Dsk_List_Cnt <= 0) && (PIO_Info.Num_Dsk_Ctrlrs <= 0)) {
-    fprintf(stderr, "%s: fatal - must specify a number of raids, or a disk"
-                    " list.\n",
+    fprintf(stderr,
+            "%s: fatal - must specify a number of raids, or a disk"
+            " list.\n",
             yo);
     return 0;
   }
@@ -145,15 +146,17 @@ template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
   }
 
   if (strlen(PIO_Info.Par_Dsk_Root) <= 0) {
-    fprintf(stderr, "%s: Error - Root directory for parallel files must"
-                    " be specified.\n",
+    fprintf(stderr,
+            "%s: Error - Root directory for parallel files must"
+            " be specified.\n",
             yo);
     return 0;
   }
 
   if (strlen(PIO_Info.Par_Dsk_SubDirec) <= 0) {
-    fprintf(stderr, "%s: Error - Subdirectory for parallel files must"
-                    " be specified.\n",
+    fprintf(stderr,
+            "%s: Error - Subdirectory for parallel files must"
+            " be specified.\n",
             yo);
     return 0;
   }

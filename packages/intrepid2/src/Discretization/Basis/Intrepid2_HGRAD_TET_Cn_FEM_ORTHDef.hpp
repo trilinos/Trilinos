@@ -73,7 +73,7 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
   auto output0 = (hasDeriv) ? Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL(),0) : Kokkos::subview(output,  Kokkos::ALL(), Kokkos::ALL());
 
   const ordinal_type
-  npts = input.dimension(0);
+  npts = input.extent(0);
 
   const auto z = input;
 
@@ -87,9 +87,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
     for (ordinal_type i=0;i<npts;++i) {
       output0(loc, i) = 1.0;
       if(hasDeriv) {
-        output(loc,i,1) = 0;
-        output(loc,i,2) = 0;
-        output(loc,i,3) = 0;
+        output.access(loc,i,1) = 0;
+        output.access(loc,i,2) = 0;
+        output.access(loc,i,3) = 0;
       }
     }
   }
@@ -125,9 +125,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
       for (ordinal_type i=0;i<npts;++i) {
         output0(loc, i) = f1[i];
         if(hasDeriv) {
-          output(loc,i,1) = df1_0;
-          output(loc,i,2) = df1_1;
-          output(loc,i,3) = df1_2;
+          output.access(loc,i,1) = df1_0;
+          output.access(loc,i,2) = df1_1;
+          output.access(loc,i,3) = df1_2;
         }
       }
         }
@@ -148,12 +148,12 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
             output0(loc_p1,i) = ( a * f1[i] * output0(loc,i) -
                 b * f2[i] * output0(loc_m1,i) );
             if(hasDeriv) {
-              output(loc_p1,i,1) =  a * (f1[i] * output(loc,i,1) + df1_0 * output0(loc,i))  -
-                  b * f2[i] * output(loc_m1,i,1) ;
-              output(loc_p1,i,2) =  a * (f1[i] * output(loc,i,2) + df1_1 * output0(loc,i))  -
-                  b * (df2_1[i] * output0(loc_m1,i) + f2[i] * output(loc_m1,i,2)) ;
-              output(loc_p1,i,3) =  a * (f1[i] * output(loc,i,3) + df1_2 * output0(loc,i))  -
-                  b * (df2_2[i] * output0(loc_m1,i) + f2[i] * output(loc_m1,i,3)) ;
+              output.access(loc_p1,i,1) =  a * (f1[i] * output.access(loc,i,1) + df1_0 * output0(loc,i))  -
+                  b * f2[i] * output.access(loc_m1,i,1) ;
+              output.access(loc_p1,i,2) =  a * (f1[i] * output.access(loc,i,2) + df1_1 * output0(loc,i))  -
+                  b * (df2_1[i] * output0(loc_m1,i) + f2[i] * output.access(loc_m1,i,2)) ;
+              output.access(loc_p1,i,3) =  a * (f1[i] * output.access(loc,i,3) + df1_2 * output0(loc,i))  -
+                  b * (df2_2[i] * output0(loc_m1,i) + f2[i] * output.access(loc_m1,i,3)) ;
             }
           }
         }
@@ -168,9 +168,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
             const value_type coeff = (2.0 * p + 3.0) * z(i,1) + z(i,2)-1.0;
             output0(loc_p_1,i) = output0(loc_p_0,i)*coeff;
             if(hasDeriv) {
-              output(loc_p_1,i,1) = output(loc_p_0,i,1)*coeff;
-              output(loc_p_1,i,2) = output(loc_p_0,i,2)*coeff + output0(loc_p_0,i)*(2.0 * p + 3.0);
-              output(loc_p_1,i,3) = output(loc_p_0,i,3)*coeff + output0(loc_p_0,i);
+              output.access(loc_p_1,i,1) = output.access(loc_p_0,i,1)*coeff;
+              output.access(loc_p_1,i,2) = output.access(loc_p_0,i,2)*coeff + output0(loc_p_0,i)*(2.0 * p + 3.0);
+              output.access(loc_p_1,i,3) = output.access(loc_p_0,i,3)*coeff + output0(loc_p_0,i);
             }
           }
         }
@@ -194,12 +194,12 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
               output0(loc_p_qp1,i) =  coeff * output0(loc_p_q,i)
               - c* f5[i] * output0(loc_p_qm1,i) ;
               if(hasDeriv) {
-                output(loc_p_qp1,i,1) =  coeff * output(loc_p_q,i,1) +
-                    - c * f5[i] * output(loc_p_qm1,i,1) ;
-                output(loc_p_qp1,i,2) =  coeff * output(loc_p_q,i,2)  + dcoeff_1 * output0(loc_p_q,i)
-                - c * f5[i] * output(loc_p_qm1,i,2) ;
-                output(loc_p_qp1,i,3) =  coeff * output(loc_p_q,i,3)  + dcoeff_2 * output0(loc_p_q,i)
-                - c * f5[i] * output(loc_p_qm1,i,3) - c * df5_2[i] * output0(loc_p_qm1,i);
+                output.access(loc_p_qp1,i,1) =  coeff * output.access(loc_p_q,i,1) +
+                    - c * f5[i] * output.access(loc_p_qm1,i,1) ;
+                output.access(loc_p_qp1,i,2) =  coeff * output.access(loc_p_q,i,2)  + dcoeff_1 * output0(loc_p_q,i)
+                - c * f5[i] * output.access(loc_p_qm1,i,2) ;
+                output.access(loc_p_qp1,i,3) =  coeff * output.access(loc_p_q,i,3)  + dcoeff_2 * output0(loc_p_q,i)
+                - c * f5[i] * output.access(loc_p_qm1,i,3) - c * df5_2[i] * output0(loc_p_qm1,i);
               }
             }
           }
@@ -217,9 +217,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
               const value_type coeff =  2.0 * ( 2.0 + q + p ) * z(i,2) - 1.0;
               output0(loc_p_q_1,i) = output0(loc_p_q_0,i) * coeff;
               if(hasDeriv) {
-                output(loc_p_q_1,i,1) = output(loc_p_q_0,i,1) * coeff;
-                output(loc_p_q_1,i,2) = output(loc_p_q_0,i,2) * coeff;
-                output(loc_p_q_1,i,3) = output(loc_p_q_0,i,3) * coeff + 2.0 * ( 2.0 + q + p ) * output0(loc_p_q_0,i);
+                output.access(loc_p_q_1,i,1) = output.access(loc_p_q_0,i,1) * coeff;
+                output.access(loc_p_q_1,i,2) = output.access(loc_p_q_0,i,2) * coeff;
+                output.access(loc_p_q_1,i,3) = output.access(loc_p_q_0,i,3) * coeff + 2.0 * ( 2.0 + q + p ) * output0(loc_p_q_0,i);
               }
             }
           }
@@ -240,9 +240,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
                 coeff = 2.0 * a * z(i,2) - a + b;
                 output0(loc_p_q_rp1,i) =  coeff * output0(loc_p_q_r,i) - c * output0(loc_p_q_rm1,i) ;
                 if(hasDeriv) {
-                  output(loc_p_q_rp1,i,1) =  coeff * output(loc_p_q_r,i,1) - c * output(loc_p_q_rm1,i,1);
-                  output(loc_p_q_rp1,i,2) =  coeff * output(loc_p_q_r,i,2) - c * output(loc_p_q_rm1,i,2);
-                  output(loc_p_q_rp1,i,3) =  coeff * output(loc_p_q_r,i,3) + 2 * a * output0(loc_p_q_r,i) - c * output(loc_p_q_rm1,i,3);
+                  output.access(loc_p_q_rp1,i,1) =  coeff * output.access(loc_p_q_r,i,1) - c * output.access(loc_p_q_rm1,i,1);
+                  output.access(loc_p_q_rp1,i,2) =  coeff * output.access(loc_p_q_r,i,2) - c * output.access(loc_p_q_rm1,i,2);
+                  output.access(loc_p_q_rp1,i,3) =  coeff * output.access(loc_p_q_r,i,3) + 2 * a * output0(loc_p_q_r,i) - c * output.access(loc_p_q_rm1,i,3);
                 }
               }
             }
@@ -258,9 +258,9 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::ge
         for (ordinal_type i=0;i<npts;++i) {
           output0(loc_p_q_r,i) *= scal;
           if(hasDeriv) {
-            output(loc_p_q_r,i,1) *= scal;
-            output(loc_p_q_r,i,2) *= scal;
-            output(loc_p_q_r,i,3) *= scal;
+            output.access(loc_p_q_r,i,1) *= scal;
+            output.access(loc_p_q_r,i,2) *= scal;
+            output.access(loc_p_q_r,i,3) *= scal;
           }
         }
       }
@@ -278,15 +278,15 @@ void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,1>::ge
     const ordinal_type   order ) {
   constexpr ordinal_type spaceDim = 3;
   const ordinal_type
-  npts = input.dimension(0),
-  card = output.dimension(0);
+  npts = input.extent(0),
+  card = output.extent(0);
 
   workViewType dummyView;
   OrthPolynomialTet<workViewType,inputViewType,workViewType,hasDeriv,0>::generate(work, input, dummyView, order);
   for (ordinal_type i=0;i<card;++i)
     for (ordinal_type j=0;j<npts;++j)
       for (ordinal_type k=0;k<spaceDim;++k)
-        output(i,j,k) = work(i,j,k+1);
+        output.access(i,j,k) = work(i,j,k+1);
 }
 
 
@@ -311,8 +311,8 @@ typedef typename outputViewType::value_type value_type;
 typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
 
 const ordinal_type
-npts = input.dimension(0),
-card = output.dimension(0);
+npts = input.extent(0),
+card = output.extent(0);
 
 // use stack buffer
 fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim];
@@ -353,19 +353,19 @@ for (ordinal_type i=0;i<card;++i)
           //n=2:  (f_x)_x, (f_y)_x, (f_z)_x
           //n=3:  (f_xx)_x, (f_xy)_x, (f_xz)_x, (f_yy)_x, (f_yz)_x, (f_zz)_x
           ordinal_type i_Dnm1 = Intrepid2::getDkEnumeration<spaceDim>(i_dx-1, i_dy, i_dz);
-          output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
+          output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
         }
         else if (i_dy > 0) {
           //n=2:  (f_y)_y, (f_z)_y
           //n=3:  (f_yy)_y, (f_yz)_y, (f_zz)_y
           ordinal_type i_Dnm1 = Intrepid2::getDkEnumeration<spaceDim>(i_dx, i_dy-1, i_dz);
-          output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
+          output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
         }
         else  {
           //n=2: (f_z)_z;
           //n=3: (f_zz)_z
           ordinal_type i_Dnm1 = Intrepid2::getDkEnumeration<spaceDim>(i_dx, i_dy, i_dz-1);
-          output(i,j,i_Dn) = out(i,j,i_Dnm1).dx(2);
+          output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(2);
         }
       }
   }
@@ -424,13 +424,13 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
   // loopSize corresponds to the # of points
-  const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
-  const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+  const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
+  const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
   Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
   typedef typename inputPointViewType::value_type inputPointType;
-  const ordinal_type cardinality = outputValues.dimension(0);
+  const ordinal_type cardinality = outputValues.extent(0);
   const ordinal_type spaceDim = 3;
 
   auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
@@ -445,7 +445,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.dimension(0), spaceDim+1);
+    workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;

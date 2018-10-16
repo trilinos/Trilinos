@@ -41,7 +41,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Util.hpp> // sort2, merge2
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -384,8 +384,7 @@ testCrsGraph (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
       << indexBase << endl;
   OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
   out << "Original sparse graph:" << endl;
   out << graph_symRealSmall << endl;
@@ -431,6 +430,39 @@ testCrsGraph (Teuchos::FancyOStream& out, const GlobalOrdinalType indexBase)
   TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
   success = success && local_success;
 
+  // mfh 01 Jul 2018: We just need this to compile for now.  Later, we
+  // should go back and add a real test.  Note that this interface
+  // doesn't necessarily promise the same Maps as the interface above.
+  out << "Test fix for #3043" << endl;
+  {
+    Teuchos::RCP<Teuchos::ParameterList> fakeParams;
+    {
+      std::istringstream istr3 (outStr.str ());
+      RCP<crs_graph_type> A_orig3 =
+        reader_type::readSparseGraph (istr3,
+                                      rowMap->getComm (),
+                                      callFillComplete, tolerant, debug);
+      // result = compareCrsGraph<crs_graph_type> (*A_orig, *A_orig3, out);
+      // local_success = true;
+      local_success = A_orig3.get () != nullptr;
+      TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
+      success = success && local_success;
+    }
+    {
+      std::istringstream istr4 (outStr.str ());
+      RCP<crs_graph_type> A_orig4 =
+        reader_type::readSparseGraph (istr4,
+                                      rowMap->getComm (),
+                                      fakeParams,
+                                      fakeParams,
+                                      tolerant, debug);
+      // result = compareCrsGraph<crs_graph_type> (*A_orig, *A_orig4, out);
+      // local_success = true;
+      local_success = A_orig4.get () != nullptr;
+      TEUCHOS_TEST_EQUALITY( result, true, out, local_success );
+      success = success && local_success;
+    }
+  }
   return success;
 }
 

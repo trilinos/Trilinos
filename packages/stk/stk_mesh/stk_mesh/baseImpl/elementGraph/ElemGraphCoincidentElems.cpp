@@ -15,7 +15,7 @@
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
 namespace stk
@@ -25,12 +25,39 @@ namespace mesh
 namespace impl
 {
 
+bool are_2_side_nodes_degenerate(const stk::mesh::EntityVector& sideNodes)
+{
+    return sideNodes[0] == sideNodes[1];
+}
+
+bool are_3_side_nodes_degenerate(const stk::mesh::EntityVector& sideNodes)
+{
+    return sideNodes[0] == sideNodes[1] || sideNodes[0] == sideNodes[2] || sideNodes[1] == sideNodes[2];
+}
+
+bool are_4_side_nodes_degenerate(const stk::mesh::EntityVector& sideNodes)
+{
+    return sideNodes[0] == sideNodes[1] || sideNodes[0] == sideNodes[2] ||
+           sideNodes[0] == sideNodes[3] || sideNodes[1] == sideNodes[2] ||
+           sideNodes[1] == sideNodes[3] || sideNodes[2] == sideNodes[3];
+}
+
 bool are_side_nodes_degenerate(const stk::mesh::EntityVector &sideNodes)
 {
-    stk::mesh::EntityVector sortedNodes = sideNodes;
-    stk::util::sort_and_unique(sortedNodes);
+    size_t numSideNodes = sideNodes.size();
+    bool returnVal = false;
+    switch(numSideNodes) {
+    case 2: returnVal = are_2_side_nodes_degenerate(sideNodes); break;
+    case 3: returnVal = are_3_side_nodes_degenerate(sideNodes); break;
+    case 4: returnVal = are_4_side_nodes_degenerate(sideNodes); break;
+    default:
+      stk::mesh::EntityVector sortedNodes = sideNodes;
+      stk::util::sort_and_unique(sortedNodes);
+      returnVal = sortedNodes.size() != sideNodes.size();
+      break;
+    }
 
-    return sortedNodes.size() != sideNodes.size();
+    return returnVal;
 }
 
 struct TopologyChecker
@@ -51,7 +78,7 @@ struct TopologyChecker
 
 bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, const stk::mesh::EntityVector& localElemSideNodes, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
 {
-    EquivAndPositive result = stk::mesh::is_side_equivalent_and_positive(bulkData, localElem, sideIndex, otherElemSideNodes.data());
+    EquivAndPositive result = stk::mesh::is_side_equivalent_and_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
     return result.is_equiv && result.is_positive;
 }
 

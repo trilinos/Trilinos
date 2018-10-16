@@ -125,9 +125,9 @@ struct KokkosSPGEMM
 
         rowmapC(rowmapC_),
         entriesC(entriesC_),
-        valuesC(valuesC_), pEntriesC(entriesC_.ptr_on_device()), pVals(valuesC.ptr_on_device()),
-        denseAccumulator (denseAccumulator_), pdenseAccumulator(denseAccumulator_.ptr_on_device()),
-        //denseAccumulatorFlags (denseAccumulatorFlags_), pdenseAccumulatorFlags(denseAccumulatorFlags_.ptr_on_device()),
+        valuesC(valuesC_), pEntriesC(entriesC_.data()), pVals(valuesC.data()),
+        denseAccumulator (denseAccumulator_), pdenseAccumulator(denseAccumulator_.data()),
+        //denseAccumulatorFlags (denseAccumulatorFlags_), pdenseAccumulatorFlags(denseAccumulatorFlags_.data()),
         team_work_size(team_row_work_size_),
         color_begin(0),
         color_end(0),
@@ -313,14 +313,14 @@ void
 
   KokkosKernels::Impl::kk_copy_vector
     <nnz_lno_temp_work_view_t, c_lno_nnz_view_t, MyExecSpace>
-      (entryIndicesC_.dimension_0(), entryIndicesC_, entriesC_);
+      (entryIndicesC_.extent(0), entryIndicesC_, entriesC_);
 
   //KokkosKernels::Impl::ExecSpaceType my_exec_space =
   //    KokkosKernels::Impl::get_exec_space_type<MyExecSpace>();
 
 
-  nnz_lno_t brows = row_mapB.dimension_0() - 1;
-  size_type bnnz =  valsB.dimension_0();
+  nnz_lno_t brows = row_mapB.extent(0) - 1;
+  size_type bnnz =  valsB.extent(0);
   //get vector size, team size.
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
@@ -471,7 +471,7 @@ void
 
 
   //KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
-  int suggested_vector_size = this->handle->get_suggested_vector_size(rowmapC.dimension_0() - 1, c_nnz_size);
+  int suggested_vector_size = this->handle->get_suggested_vector_size(rowmapC.extent(0) - 1, c_nnz_size);
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, concurrency,a_row_cnt);
 

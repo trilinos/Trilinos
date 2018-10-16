@@ -76,8 +76,94 @@ struct ViewDataAnalysis ;
 template< class , class ... >
 class ViewMapping { public: enum { is_assignable = false }; };
 
+
+
+template <typename IntType>
+KOKKOS_INLINE_FUNCTION
+std::size_t count_valid_integers(const IntType i0,
+                            const IntType i1,
+                            const IntType i2,
+                            const IntType i3,
+                            const IntType i4,
+                            const IntType i5,
+                            const IntType i6,
+                            const IntType i7 ){
+  static_assert(std::is_integral<IntType>::value, "count_valid_integers() must have integer arguments.");
+
+  return ( i0 !=KOKKOS_INVALID_INDEX ) + ( i1 !=KOKKOS_INVALID_INDEX ) + ( i2 !=KOKKOS_INVALID_INDEX ) +
+      ( i3 !=KOKKOS_INVALID_INDEX ) + ( i4 !=KOKKOS_INVALID_INDEX ) + ( i5 !=KOKKOS_INVALID_INDEX ) +
+      ( i6 !=KOKKOS_INVALID_INDEX ) + ( i7 !=KOKKOS_INVALID_INDEX );
+
+
+}
+
+KOKKOS_INLINE_FUNCTION
+void runtime_check_rank_device(const size_t dyn_rank,
+                        const bool is_void_spec,
+                        const size_t i0,
+                        const size_t i1,
+                        const size_t i2,
+                        const size_t i3,
+                        const size_t i4,
+                        const size_t i5,
+                        const size_t i6,
+                        const size_t i7 ){
+
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE
+
+  if ( is_void_spec ) {
+    const size_t num_passed_args = count_valid_integers(i0, i1, i2, i3,
+        i4, i5, i6, i7);
+
+    if ( num_passed_args != dyn_rank && is_void_spec ) {
+
+      Kokkos::abort("Number of arguments passed to Kokkos::View() constructor must match the dynamic rank of the view.") ;
+
+    }
+  }
+#endif
+}
+
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+KOKKOS_INLINE_FUNCTION
+void runtime_check_rank_host(const size_t dyn_rank,
+                        const bool is_void_spec,
+                        const size_t i0,
+                        const size_t i1,
+                        const size_t i2,
+                        const size_t i3,
+                        const size_t i4,
+                        const size_t i5,
+                        const size_t i6,
+                        const size_t i7, const std::string & label ){
+
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE
+
+  if ( is_void_spec ) {
+    const size_t num_passed_args = count_valid_integers(i0, i1, i2, i3,
+        i4, i5, i6, i7);
+
+    if ( num_passed_args != dyn_rank ) {
+
+      const std::string message = "Constructor for Kokkos View '" + label + "' has mismatched number of arguments. Number of arguments = "
+        + std::to_string(num_passed_args) + " but dynamic rank = " + std::to_string(dyn_rank) + " \n";
+      Kokkos::abort(message.c_str()) ;
+    }
+  }
+#endif
+}
+#endif
+
 } /* namespace Impl */
 } /* namespace Kokkos */
+
+// Class to provide a uniform type
+namespace Kokkos {
+namespace Impl {
+  template< class ViewType , int Traits = 0 >
+  struct ViewUniformType;
+}
+}
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -491,6 +577,22 @@ public:
                 typename traits::array_layout ,
                 typename traits::host_mirror_space >
     HostMirror ;
+
+  /** \brief  Compatible HostMirror view */
+  typedef View< typename traits::non_const_data_type ,
+                typename traits::array_layout ,
+                typename traits::host_mirror_space >
+    host_mirror_type ;
+
+  /** \brief Unified types */
+  typedef typename Impl::ViewUniformType<View,0>::type uniform_type;
+  typedef typename Impl::ViewUniformType<View,0>::const_type uniform_const_type;
+  typedef typename Impl::ViewUniformType<View,0>::runtime_type uniform_runtime_type;
+  typedef typename Impl::ViewUniformType<View,0>::runtime_const_type uniform_runtime_const_type;
+  typedef typename Impl::ViewUniformType<View,0>::nomemspace_type uniform_nomemspace_type;
+  typedef typename Impl::ViewUniformType<View,0>::const_nomemspace_type uniform_const_nomemspace_type;
+  typedef typename Impl::ViewUniformType<View,0>::runtime_nomemspace_type uniform_runtime_nomemspace_type;
+  typedef typename Impl::ViewUniformType<View,0>::runtime_const_nomemspace_type uniform_runtime_const_nomemspace_type;
 
   //----------------------------------------
   // Domain rank and extents
@@ -1942,7 +2044,12 @@ public:
                    , "View allocation constructor requires managed memory" );
 
       if ( alloc_prop::initialize &&
-           ! alloc_prop::execution_space::is_initialized() ) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+           ! alloc_prop::execution_space::is_initialized()
+#else
+           ! alloc_prop::execution_space::impl_is_initialized()
+#endif
+           ) {
         // If initializing view data then
         // the execution space must be initialized.
         Kokkos::Impl::throw_runtime_exception("Constructing View and initializing data with uninitialized execution space");
@@ -2010,42 +2117,62 @@ public:
   View( const Impl::ViewCtorProp< P ... > & arg_prop
       , typename std::enable_if< ! Impl::ViewCtorProp< P... >::has_pointer
                                , size_t
-                               >::type const arg_N0 = 0
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0
+                               >::type const arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
       )
     : View( arg_prop
           , typename traits::array_layout
               ( arg_N0 , arg_N1 , arg_N2 , arg_N3
               , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
           )
-    {}
+    {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    Impl::runtime_check_rank_host(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7, label());
+#else
+    Impl::runtime_check_rank_device(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7);
+
+#endif
+
+    }
 
   template< class ... P >
   explicit KOKKOS_INLINE_FUNCTION
   View( const Impl::ViewCtorProp< P ... > & arg_prop
       , typename std::enable_if< Impl::ViewCtorProp< P... >::has_pointer
                                , size_t
-                               >::type const arg_N0 = 0
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0
+                               >::type const arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
       )
     : View( arg_prop
           , typename traits::array_layout
               ( arg_N0 , arg_N1 , arg_N2 , arg_N3
               , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
           )
-    {}
+    {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    Impl::runtime_check_rank_host(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7, label());
+#else
+    Impl::runtime_check_rank_device(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7);
+
+#endif
+
+    }
 
   // Allocate with label and layout
   template< typename Label >
@@ -2064,21 +2191,34 @@ public:
   View( const Label & arg_label
       , typename std::enable_if<
           Kokkos::Impl::is_view_label<Label>::value ,
-        const size_t >::type arg_N0 = 0
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0
+        const size_t >::type arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
       )
     : View( Impl::ViewCtorProp< std::string >( arg_label )
           , typename traits::array_layout
               ( arg_N0 , arg_N1 , arg_N2 , arg_N3
               , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
           )
-    {}
+    {
+
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    Impl::runtime_check_rank_host(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7, label());
+#else
+    Impl::runtime_check_rank_device(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7);
+
+#endif
+
+
+
+    }
 
   // For backward compatibility
   explicit inline
@@ -2092,21 +2232,31 @@ public:
 
   explicit inline
   View( const ViewAllocateWithoutInitializing & arg_prop
-      , const size_t arg_N0 = 0
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0
+      , const size_t arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
       )
     : View( Impl::ViewCtorProp< std::string , Kokkos::Impl::WithoutInitializing_t >( arg_prop.label , Kokkos::WithoutInitializing )
           , typename traits::array_layout
               ( arg_N0 , arg_N1 , arg_N2 , arg_N3
               , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
           )
-    {}
+    {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    Impl::runtime_check_rank_host(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7, label());
+#else
+    Impl::runtime_check_rank_device(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7);
+
+#endif
+
+    }
 
   //----------------------------------------
   // Memory span required to wrap these dimensions.
@@ -2129,50 +2279,59 @@ public:
 
   explicit KOKKOS_INLINE_FUNCTION
   View( pointer_type arg_ptr
-      , const size_t arg_N0 = 0
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0
+      , const size_t arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
       )
     : View( Impl::ViewCtorProp<pointer_type>(arg_ptr)
           , typename traits::array_layout
              ( arg_N0 , arg_N1 , arg_N2 , arg_N3
              , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
           )
-    {}
+    {
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    Impl::runtime_check_rank_host(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7, label());
+#else
+    Impl::runtime_check_rank_device(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7);
+
+#endif
+    }
 
   explicit KOKKOS_INLINE_FUNCTION
   View( pointer_type arg_ptr
       , const typename traits::array_layout & arg_layout
       )
     : View( Impl::ViewCtorProp<pointer_type>(arg_ptr) , arg_layout )
-    {}
+    {
+
+    }
 
   //----------------------------------------
   // Shared scratch memory constructor
 
   static inline
   size_t
-  shmem_size( const size_t arg_N0 = ~size_t(0) ,
-              const size_t arg_N1 = ~size_t(0) ,
-              const size_t arg_N2 = ~size_t(0) ,
-              const size_t arg_N3 = ~size_t(0) ,
-              const size_t arg_N4 = ~size_t(0) ,
-              const size_t arg_N5 = ~size_t(0) ,
-              const size_t arg_N6 = ~size_t(0) ,
-              const size_t arg_N7 = ~size_t(0) )
+  shmem_size( const size_t arg_N0 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N1 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N2 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N3 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N4 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N5 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N6 = KOKKOS_INVALID_INDEX,
+              const size_t arg_N7 = KOKKOS_INVALID_INDEX )
   {
     if ( is_layout_stride ) {
       Kokkos::abort( "Kokkos::View::shmem_size(extents...) doesn't work with LayoutStride. Pass a LayoutStride object instead" );
     }
-    const size_t num_passed_args =
-      ( arg_N0 != ~size_t(0) ) + ( arg_N1 != ~size_t(0) ) + ( arg_N2 != ~size_t(0) ) +
-      ( arg_N3 != ~size_t(0) ) + ( arg_N4 != ~size_t(0) ) + ( arg_N5 != ~size_t(0) ) +
-      ( arg_N6 != ~size_t(0) ) + ( arg_N7 != ~size_t(0) );
+    const size_t num_passed_args = Impl::count_valid_integers(arg_N0, arg_N1, arg_N2, arg_N3,
+                                                              arg_N4, arg_N5, arg_N6, arg_N7);
 
     if ( std::is_same<typename traits::specialize,void>::value && num_passed_args != traits::rank_dynamic ) {
       Kokkos::abort( "Kokkos::View::shmem_size() rank_dynamic != number of arguments.\n" );
@@ -2201,14 +2360,14 @@ public:
 
   explicit KOKKOS_INLINE_FUNCTION
   View( const typename traits::execution_space::scratch_memory_space & arg_space
-      , const size_t arg_N0 = 0
-      , const size_t arg_N1 = 0
-      , const size_t arg_N2 = 0
-      , const size_t arg_N3 = 0
-      , const size_t arg_N4 = 0
-      , const size_t arg_N5 = 0
-      , const size_t arg_N6 = 0
-      , const size_t arg_N7 = 0 )
+      , const size_t arg_N0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG
+      , const size_t arg_N7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG )
     : View( Impl::ViewCtorProp<pointer_type>(
               reinterpret_cast<pointer_type>(
                 arg_space.get_shmem(
@@ -2220,7 +2379,17 @@ public:
              ( arg_N0 , arg_N1 , arg_N2 , arg_N3
              , arg_N4 , arg_N5 , arg_N6 , arg_N7 )
        )
-    {}
+    {
+
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    Impl::runtime_check_rank_host(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7, label());
+#else
+    Impl::runtime_check_rank_device(traits::rank_dynamic, std::is_same<typename traits::specialize,void>::value, arg_N0, arg_N1, arg_N2, arg_N3,
+                             arg_N4, arg_N5, arg_N6, arg_N7);
+
+#endif
+    }
 };
 
 
@@ -2349,198 +2518,6 @@ void shared_allocation_tracking_enable()
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-
-// Deduce Mirror Types
-template<class Space, class T, class ... P>
-struct MirrorViewType {
-  // The incoming view_type
-  typedef typename Kokkos::View<T,P...> src_view_type;
-  // The memory space for the mirror view
-  typedef typename Space::memory_space memory_space;
-  // Check whether it is the same memory space
-  enum { is_same_memspace = std::is_same<memory_space,typename src_view_type::memory_space>::value };
-  // The array_layout
-  typedef typename src_view_type::array_layout array_layout;
-  // The data type (we probably want it non-const since otherwise we can't even deep_copy to it.
-  typedef typename src_view_type::non_const_data_type data_type;
-  // The destination view type if it is not the same memory space
-  typedef Kokkos::View<data_type,array_layout,Space> dest_view_type;
-  // If it is the same memory_space return the existsing view_type
-  // This will also keep the unmanaged trait if necessary
-  typedef typename std::conditional<is_same_memspace,src_view_type,dest_view_type>::type view_type;
-};
-
-template<class Space, class T, class ... P>
-struct MirrorType {
-  // The incoming view_type
-  typedef typename Kokkos::View<T,P...> src_view_type;
-  // The memory space for the mirror view
-  typedef typename Space::memory_space memory_space;
-  // Check whether it is the same memory space
-  enum { is_same_memspace = std::is_same<memory_space,typename src_view_type::memory_space>::value };
-  // The array_layout
-  typedef typename src_view_type::array_layout array_layout;
-  // The data type (we probably want it non-const since otherwise we can't even deep_copy to it.
-  typedef typename src_view_type::non_const_data_type data_type;
-  // The destination view type if it is not the same memory space
-  typedef Kokkos::View<data_type,array_layout,Space> view_type;
-};
-
-}
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror( const Kokkos::View<T,P...> & src
-             , typename std::enable_if<
-                 ! std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
-                               , Kokkos::LayoutStride >::value
-               >::type * = 0
-             )
-{
-  typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
-
-  return dst_type( std::string( src.label() ).append("_mirror")
-                 , src.extent(0)
-                 , src.extent(1)
-                 , src.extent(2)
-                 , src.extent(3)
-                 , src.extent(4)
-                 , src.extent(5)
-                 , src.extent(6)
-                 , src.extent(7) );
-}
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror( const Kokkos::View<T,P...> & src
-             , typename std::enable_if<
-                 std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
-                             , Kokkos::LayoutStride >::value
-               >::type * = 0
-             )
-{
-  typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
-
-  Kokkos::LayoutStride layout ;
-
-  layout.dimension[0] = src.extent(0);
-  layout.dimension[1] = src.extent(1);
-  layout.dimension[2] = src.extent(2);
-  layout.dimension[3] = src.extent(3);
-  layout.dimension[4] = src.extent(4);
-  layout.dimension[5] = src.extent(5);
-  layout.dimension[6] = src.extent(6);
-  layout.dimension[7] = src.extent(7);
-
-  layout.stride[0] = src.stride_0();
-  layout.stride[1] = src.stride_1();
-  layout.stride[2] = src.stride_2();
-  layout.stride[3] = src.stride_3();
-  layout.stride[4] = src.stride_4();
-  layout.stride[5] = src.stride_5();
-  layout.stride[6] = src.stride_6();
-  layout.stride[7] = src.stride_7();
-
-  return dst_type( std::string( src.label() ).append("_mirror") , layout );
-}
-
-
-// Create a mirror in a new space (specialization for different space)
-template<class Space, class T, class ... P>
-typename Impl::MirrorType<Space,T,P ...>::view_type create_mirror(const Space& , const Kokkos::View<T,P...> & src) {
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),src.layout());
-}
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror_view( const Kokkos::View<T,P...> & src
-                  , typename std::enable_if<(
-                      std::is_same< typename Kokkos::View<T,P...>::memory_space
-                                  , typename Kokkos::View<T,P...>::HostMirror::memory_space
-                                  >::value
-                      &&
-                      std::is_same< typename Kokkos::View<T,P...>::data_type
-                                  , typename Kokkos::View<T,P...>::HostMirror::data_type
-                                  >::value
-                    )>::type * = 0
-                  )
-{
-  return src ;
-}
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror_view( const Kokkos::View<T,P...> & src
-                  , typename std::enable_if< ! (
-                      std::is_same< typename Kokkos::View<T,P...>::memory_space
-                                  , typename Kokkos::View<T,P...>::HostMirror::memory_space
-                                  >::value
-                      &&
-                      std::is_same< typename Kokkos::View<T,P...>::data_type
-                                  , typename Kokkos::View<T,P...>::HostMirror::data_type
-                                  >::value
-                    )>::type * = 0
-                  )
-{
-  return Kokkos::create_mirror( src );
-}
-
-// Create a mirror view in a new space (specialization for same space)
-template<class Space, class T, class ... P>
-typename Impl::MirrorViewType<Space,T,P ...>::view_type
-create_mirror_view(const Space& , const Kokkos::View<T,P...> & src
-  , typename std::enable_if<Impl::MirrorViewType<Space,T,P ...>::is_same_memspace>::type* = 0 ) {
-  return src;
-}
-
-// Create a mirror view in a new space (specialization for different space)
-template<class Space, class T, class ... P>
-typename Impl::MirrorViewType<Space,T,P ...>::view_type
-create_mirror_view(const Space& , const Kokkos::View<T,P...> & src
-  , typename std::enable_if<!Impl::MirrorViewType<Space,T,P ...>::is_same_memspace>::type* = 0 ) {
-  return typename Impl::MirrorViewType<Space,T,P ...>::view_type(src.label(),src.layout());
-}
-
-// Create a mirror view and deep_copy in a new space (specialization for same space)
-template<class Space, class T, class ... P>
-typename Impl::MirrorViewType<Space,T,P ...>::view_type
-create_mirror_view_and_copy(const Space& , const Kokkos::View<T,P...> & src
-  , std::string const& name = ""
-  , typename std::enable_if<Impl::MirrorViewType<Space,T,P ...>::is_same_memspace>::type* = 0 ) {
-  (void)name;
-  return src;
-}
-
-// Create a mirror view and deep_copy in a new space (specialization for different space)
-template<class Space, class T, class ... P>
-typename Impl::MirrorViewType<Space,T,P ...>::view_type
-create_mirror_view_and_copy(const Space& , const Kokkos::View<T,P...> & src
-  , std::string const& name = ""
-  , typename std::enable_if<!Impl::MirrorViewType<Space,T,P ...>::is_same_memspace>::type* = 0 ) {
-  using Mirror = typename Impl::MirrorViewType<Space,T,P ...>::view_type;
-  std::string label = name.empty() ? src.label() : name;
-  auto mirror = Mirror(ViewAllocateWithoutInitializing(label), src.layout());
-  deep_copy(mirror, src);
-  return mirror;
-}
-
-} /* namespace Kokkos */
-
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 namespace Kokkos { namespace Impl {
 
 template < class Specialize, typename A, typename B >
@@ -2649,6 +2626,7 @@ using Kokkos::is_view ;
 } /* namespace Impl */
 } /* namespace Kokkos */
 
+#include <impl/Kokkos_ViewUniformType.hpp>
 #include <impl/Kokkos_Atomic_View.hpp>
 
 //----------------------------------------------------------------------------

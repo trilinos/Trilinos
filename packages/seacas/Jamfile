@@ -1,9 +1,29 @@
 #---------------------------------------------------------------
-#    Copyright 2006, 2008 Sandia Corporation.
-#    Under the terms of Contract DE-AC04-94AL85000, there is a
-#    non-exclusive license for use of this work by or on behalf
-#    of the U.S. Government.  Export of this program may require
-#    a license from the United States Government.
+# Copyright (c) 2006--2017, National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of NTESS nor the names of its contributors may
+#       be used to endorse or promote products derived from this
+#       software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #---------------------------------------------------------------
 
 #
@@ -83,7 +103,7 @@ alias install-targets
     genshell
     grepos
     gjoin
-    grope
+    explore
     mapvar
     mapvar_kd
     nem_slice
@@ -99,7 +119,10 @@ alias install-targets
     Utst_superelement
     Utst_database_io
     Utst_sort
+    Utst_map
+    Utst_structured_decomp
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
@@ -143,7 +166,7 @@ alias install-targets
     genshell
     grepos
     gjoin
-    grope
+    explore
     mapvar
     mapvar_kd
     nem_slice
@@ -159,8 +182,11 @@ alias install-targets
     Utst_superelement
     Utst_database_io
     Utst_sort
+    Utst_map
+    Utst_structured_decomp
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     $(seacas-root)/scripts/fastq
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
@@ -272,10 +298,10 @@ install install-user-lib
     iopg
     iohb
     iogn
+    iogs
     ioinit
     ioss
     iotr
-    ioxf
     iovs
   : <target-os>bgq <location>$(install-root)/seacas/lib
   ;
@@ -303,10 +329,10 @@ install install-user-lib
     iopg
     iohb
     iogn
+    iogs
     ioinit
     ioss
     iotr
-    ioxf
     iovs
   : <location>$(install-root)/seacas/lib
   ;
@@ -333,7 +359,7 @@ install install-user-bin
     genshell
     grepos
     gjoin
-    grope
+    explore
     mapvar
     mapvar_kd
     nem_slice
@@ -347,6 +373,7 @@ install install-user-bin
     struc_to_unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     $(seacas-root)/scripts/fastq
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
@@ -389,7 +416,7 @@ install install-user-bin
     genshell
     grepos
     gjoin
-    grope
+    explore
     mapvar
     mapvar_kd
     nem_slice
@@ -403,6 +430,7 @@ install install-user-bin
     struc_to_unstruc
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
+    $(seacas-root)/scripts/grope
     $(seacas-root)/scripts/fastq
     /tpl/netcdf//nc_test
     /tpl/netcdf//ncdump
@@ -469,7 +497,6 @@ lib iopx
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/exo_par/*.C ]
     ]
-    ioss
     ioex
     /tpl/trilinos//zoltan
     /tpl/parmetis//parmetis
@@ -490,7 +517,6 @@ lib iofx
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/exo_fpp/*.C ]
     ]
-    ioss
     ioex
     exodus
     /tpl/netcdf//netcdf
@@ -512,9 +538,6 @@ lib io_info_lib
         $(seacas-root)/libraries/ioss/src/main/info_interface.C
     ]
     ioinit
-    ioss
-    iotr
-    ioxf
     iocgns
     /mpi//mpi
   : <define>USE_CGNS
@@ -596,6 +619,23 @@ lib iogn
     ]
   ;
 
+lib iogs
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/ioss/src/gen_struc/*.C ]
+    ]
+    ioss
+    /mpi//mpi
+  : 
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libiogs.a
+    ]
+  ;
+
 lib ioinit
   :
     [ ifdevbuild
@@ -611,7 +651,7 @@ lib ioinit
     iopg
     iohb
     iogn
-    ioss
+    iogs
     iotr
     iovs
     /mpi//mpi
@@ -659,26 +699,6 @@ lib iotr
         <file>$(seacas-root)/lib/libiotr.a
     ]
   ;
-
-lib ioxf
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/xdmf/*.C ]
-    ]
-    ioss
-    /tpl/libxml2//xml
-    /tpl/xdmf//xdmf
-    /mpi//mpi
-  : 
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(seacas-root)/lib/libioxf.a
-    ]
-  ;
-
 
 lib iovs
   :
@@ -739,13 +759,12 @@ lib exodus
         [ glob $(seacas-root)/libraries/exodus/src/deprecated/*.c ]
     ]
     /tpl/netcdf//netcdf
-  :
+  : <define>EXODUS_IN_SIERRA
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
         <include>$(seacas-root)/libraries/exodus/sierra
-	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -753,19 +772,17 @@ lib exodus
         <file>$(sierra-root)/seacas/lib/libexodus.a
     ]
   :
-  :
+  : <define>EXODUS_IN_SIERRA
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/exodus/include
         <include>$(seacas-root)/libraries/exodus/sierra
-	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <include>$(sierra-root)/seacas/include/exodus
-	<define>PARALLEL_AWARE_EXODUS
     ]
   ;
 
@@ -1458,9 +1475,12 @@ lib aprepro_lib
             [ glob $(seacas-root)/libraries/aprepro_lib/*.cc ] 
             [ glob $(seacas-root)/libraries/aprepro_lib/*.c ] :
             [ glob $(seacas-root)/libraries/aprepro_lib/apr_test.cc ]
+            [ glob $(seacas-root)/libraries/aprepro_lib/strings.cc ]
         ]
     ]
-  :
+    exodus
+    /tpl/netcdf//netcdf
+  : <define>EXODUS_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1472,7 +1492,7 @@ lib aprepro_lib
         <file>$(sierra-root)/seacas/lib/libaprepro_lib.a
     ]
   :
-  :
+  : <define>EXODUS_SUPPORT
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1576,7 +1596,6 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
     suplib_c
-    ioss
     ioinit
   : <include>$(seacas-root)/applications/ejoin
     <tag>@utility-exec-tag
@@ -1614,7 +1633,6 @@ exe exomatlab
   $(seacas-root)/applications/exomatlab/EML_SystemInterface.C
     suplib_cpp
     suplib_c
-    ioss
     ioinit
     exodus
   : <include>$(seacas-root)/applications/exomatlab
@@ -1762,13 +1780,13 @@ fexe grepos
     <tag>@utility-exec-tag
   ;
 
-fexe grope
+fexe explore
   :
-    [ glob $(seacas-root)/applications/grope/*.f ]
+    [ glob $(seacas-root)/applications/explore/*.f ]
     suplib
     exodus_for
     supes
-  : <include>$(seacas-root)/applications/grope
+  : <include>$(seacas-root)/applications/explore
     <tag>@utility-exec-tag
   ;
 
@@ -1818,13 +1836,9 @@ fexe txtexo
 
 exe io_shell
   :
-
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1834,10 +1848,6 @@ exe io_info
   :
     $(seacas-root)/libraries/ioss/src/main/io_info_main.C
     io_info_lib
-    ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1848,9 +1858,6 @@ exe shell_to_hex
     $(seacas-root)/libraries/ioss/src/main/shell_to_hex.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1860,9 +1867,6 @@ exe cth_pressure_map
     $(seacas-root)/libraries/ioss/src/main/cth_pressure_map.C
     $(seacas-root)/libraries/ioss/src/main/vector3d.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1871,9 +1875,6 @@ exe struc_to_unstruc
   :
     $(seacas-root)/libraries/ioss/src/main/struc_to_unstruc.C
     ioinit
-    ioss
-    iotr
-    ioxf
     /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
@@ -1894,13 +1895,26 @@ exe Utst_sort
   : <tag>@sierra-exec-tag
   ;
 
+exe Utst_map
+  :
+    $(seacas-root)/libraries/ioss/src/utest/Utst_map.C
+    ioss
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe Utst_structured_decomp
+  :
+    $(seacas-root)/libraries/ioss/src/utest/Utst_structured_decomp.C
+    iocgns
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
 exe Utst_superelement
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_superelement.C
     ioex
-    ioss
-    /mpi//mpi
-    /tpl/parmetis//parmetis
   : <tag>@sierra-exec-tag
   ;
   
@@ -1908,8 +1922,6 @@ exe Utst_superelement
 exe Utst_database_io
   :
   [ glob $(seacas-root)/libraries/ioss/src/unit_tests/*.C ]
-    iofx
-    ioss
     ioinit
     /tpl/netcdf//netcdf
     /tpl/gtest//gtest

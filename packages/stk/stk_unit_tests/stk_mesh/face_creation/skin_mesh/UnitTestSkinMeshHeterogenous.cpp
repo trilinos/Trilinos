@@ -25,7 +25,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
@@ -61,7 +61,7 @@ TEST(ElementGraph, heterogeneous_mesh)
             stk::mesh::MetaData meta_data(3);
             stk::mesh::fixtures::VectorFieldType & node_coord =
             meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-            stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+            stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3, nullptr);
 
             stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
             meta_data.commit();

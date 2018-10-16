@@ -45,7 +45,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssertMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
 
 

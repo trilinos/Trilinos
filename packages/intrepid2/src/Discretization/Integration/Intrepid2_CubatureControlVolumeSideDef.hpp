@@ -120,21 +120,21 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeSide): cellCoords must have rank 3 of (C,P,D).");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0) != cellCoords.dimension(0) ||
-                                  cubPoints.dimension(0) != cubWeights.dimension(0), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(0) != cellCoords.extent(0) ||
+                                  cubPoints.extent(0) != cubWeights.extent(0), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeSide): cubPoints, cubWeights and cellCoords dimension(0) are not consistent, numCells");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
-                                  cubPoints.dimension(2) != cubWeights.dimension(2) ||
-                                  static_cast<ordinal_type>(cubPoints.dimension(2)) != getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(2) != cellCoords.extent(2) ||
+                                  cubPoints.extent(2) != cubWeights.extent(2) ||
+                                  static_cast<ordinal_type>(cubPoints.extent(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeSide): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
 
     // get array dimensions
-    const auto numCells = cellCoords.dimension(0);
-    const auto numNodesPerCell = cellCoords.dimension(1);
-    const auto spaceDim = cellCoords.dimension(2);
+    const auto numCells = cellCoords.extent(0);
+    const auto numNodesPerCell = cellCoords.extent(1);
+    const auto spaceDim = cellCoords.extent(2);
 
     const auto numNodesPerSubcv = subcvCellTopo_.getNodeCount();
     tempPointViewType subcvCoords("CubatureControlVolumeSide::subcvCoords",

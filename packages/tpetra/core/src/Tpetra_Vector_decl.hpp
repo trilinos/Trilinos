@@ -51,9 +51,11 @@
 /// (Tpetra_Vector_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
 /// \class Vector
 /// \brief A distributed dense vector.
@@ -80,8 +82,7 @@ template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
 class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
-  friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+  using base_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
@@ -134,6 +135,9 @@ public:
   //@}
   //! \name Constructors and destructor
   //@{
+
+  //! Default constructor: makes a Vector with no rows or columns.
+  Vector ();
 
   /// \brief Basic constructor.
   ///
@@ -386,7 +390,7 @@ public:
               Teuchos::Describable::verbLevel_default) const;
   //@}
 }; // class Vector
-
+} // namespace Classes
 
 /// \brief Return a deep copy of the given Vector.
 /// \relatesalso Vector

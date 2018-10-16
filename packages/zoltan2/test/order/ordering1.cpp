@@ -53,12 +53,10 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to demonstrate use of Zoltan2 to order a TPetra matrix
@@ -129,9 +127,9 @@ int main(int narg, char** arg)
   int testReturn = 0;
 
   ////// Establish session.
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int me = comm->getRank();
 
   // Read run-time options.
@@ -143,7 +141,7 @@ int main(int narg, char** arg)
                  "Name of file to write the permutation");
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
-  cout << "Starting everything" << endl;
+  std::cout << "Starting everything" << std::endl;
 
   //////////////////////////////////
   // Even with cmdp option "true", I get errors for having these
@@ -195,9 +193,9 @@ int main(int narg, char** arg)
   RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (me == 0)
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl;
 
   ////// Create a vector to use with the matrix.
   // Currently Not Used
@@ -222,7 +220,7 @@ int main(int narg, char** arg)
   try
   {
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  cout << "Going to solve" << endl;
+  std::cout << "Going to solve" << std::endl;
   problem.solve();
 
   ////// Basic metric checking of the ordering solution
@@ -230,13 +228,13 @@ int main(int narg, char** arg)
   Zoltan2::LocalOrderingSolution<z2TestLO> *soln =
     problem.getLocalOrderingSolution();
 
-  cout << "Going to get results" << endl;
+  std::cout << "Going to get results" << std::endl;
   // Check that the solution is really a permutation
 
   z2TestLO * perm = soln->getPermutationView();
 
   if (outputFile != "") {
-    ofstream permFile;
+    std::ofstream permFile;
 
     // Write permutation (0-based) to file
     // each process writes local perm to a separate file
@@ -246,22 +244,22 @@ int main(int narg, char** arg)
     permFile.open(fname.str().c_str());
     size_t checkLength = soln->getPermutationSize();
     for (size_t i=0; i<checkLength; i++){
-      permFile << " " << perm[i] << endl;
+      permFile << " " << perm[i] << std::endl;
     }
     permFile.close();
 
   }
 
-  cout << "Going to validate the soln" << endl;
+  std::cout << "Going to validate the soln" << std::endl;
   // Verify that checkPerm is a permutation
   testReturn = soln->validatePerm();
 
-  cout << "Going to compute the bandwidth" << endl;
+  std::cout << "Going to compute the bandwidth" << std::endl;
   // Compute original bandwidth
-  cout << "Original Bandwidth: " << computeBandwidth(origMatrix, nullptr) << endl;
+  std::cout << "Original Bandwidth: " << computeBandwidth(origMatrix, nullptr) << std::endl;
   // Compute permuted bandwidth
   z2TestLO * iperm = soln->getPermutationView(true);
-  cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, iperm) << endl;
+  std::cout << "Permuted Bandwidth: " << computeBandwidth(origMatrix, iperm) << std::endl;
 
   } catch (std::exception &e){
       std::cout << "Exception caught in ordering" << std::endl;

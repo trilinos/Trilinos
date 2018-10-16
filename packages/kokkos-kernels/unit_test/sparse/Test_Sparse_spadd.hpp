@@ -97,7 +97,7 @@ void checkSumRowCorrect(ordinal_type row, crsMat_t A, crsMat_t B, crsMat_t C)
   auto Cvalues = Kokkos::create_mirror_view(C.values);
   auto Crowmap = Kokkos::create_mirror_view(C.graph.row_map);
   auto Centries = Kokkos::create_mirror_view(C.graph.entries);
-  lno_t nrows = Arowmap.dimension_0() - 1;
+  lno_t nrows = Arowmap.extent(0) - 1;
   //compute the correct row as a dense vector
   std::vector<scalar_t> correct(nrows, 0);
   std::vector<bool> nonzeros(nrows, false);

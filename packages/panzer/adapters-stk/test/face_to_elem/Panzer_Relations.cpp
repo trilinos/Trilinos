@@ -155,7 +155,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager<int,int> > conn) :
     }
 
   }
-  face_to_node_ = Kokkos::View<GlobalOrdinal**>("face_to_node", face_to_elem_.dimension(0), face_to_node[0].size());
+  face_to_node_ = Kokkos::View<GlobalOrdinal**>("face_to_node", face_to_elem_.extent(0), face_to_node[0].size());
   Kokkos::deep_copy(face_to_node_, -1);
   for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
     const GlobalOrdinal * connectivity = conn_->getConnectivity(ielem);

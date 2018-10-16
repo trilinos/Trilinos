@@ -846,7 +846,7 @@ def getCurrentDiffOutputAndLogModified(inOptions, gitRepo, baseTestDir):
 
 def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_inout,
   gitRepo, enablePackagesList_inout, verbose=True,
-  projectDependenciesLocal=None ) \
+  projectDependenciesLocal=None, projectChangeLogic=DefaultProjectCiFileChangeLogic() ) \
   :
 
   if not projectDependenciesLocal:
@@ -859,7 +859,7 @@ def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_in
 
     # Only look for global rebuild files in the master repo (not in extra repos)
     if gitRepo.repoName == '' and \
-      isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath) \
+      projectChangeLogic.isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath) \
       :
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
@@ -1326,6 +1326,8 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
   cmakePkgOptions = []
   enablePackagesList = []
   gitRepoList = tribitsGitRepos.gitRepoList()
+  projectChangeLogic=getProjectCiFileChangeLogic(inOptions.srcDir)
+
   enableAllPackages = False
 
   if inOptions.enableAllPackages == "on":
@@ -1349,8 +1351,8 @@ def getEnablesLists(inOptions, validPackageTypesList, isDefaultBuild,
       if os.path.exists(diffOutFileName):
         changedFileDiffOutputStr = open(diffOutFileName, 'r').read()
         #print("\nchangedFileDiffOutputStr:\n", changedFileDiffOutputStr)
-        extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions, gitRepo,
-          enablePackagesList, verbose)
+        extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions,
+          gitRepo, enablePackagesList, verbose, projectChangeLogic=projectChangeLogic)
       else:
         if verbose:
           print("\nThe file " + diffOutFileName + " does not exist!\n")

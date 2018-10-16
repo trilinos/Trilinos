@@ -82,7 +82,11 @@ public:
   typedef Device execution_space;
   typedef ValueType value_type;
   typedef Kokkos::View< value_type[], Layout, execution_space > values_type;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE // Don't remove this until Kokkos has removed the deprecated code path probably around September 2018
   typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , int > graph_type;
+#else
+  typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , void, int > graph_type;
+#endif
 
   typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
 

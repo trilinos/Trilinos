@@ -202,6 +202,7 @@ namespace MueLuExamples {
 
     typedef typename Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
     typedef typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+    typedef typename Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> realvaluedmultivector_type;
     typedef typename Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> matrixwrap_type;
     RCP<const map_type >   map;
     RCP<multivector_type > coordinates;
@@ -228,7 +229,7 @@ namespace MueLuExamples {
         << "========================================================" << std::endl;
 
     RCP<Galeri::Xpetra::Problem<map_type,matrixwrap_type,multivector_type> > Pr =
-        Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,map_type,matrixwrap_type,multivector_type>(matrixType, map, galeriList);
+      Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,map_type,matrixwrap_type,multivector_type>(matrixType, map, galeriList);
 
     A = Pr->BuildMatrix();
 

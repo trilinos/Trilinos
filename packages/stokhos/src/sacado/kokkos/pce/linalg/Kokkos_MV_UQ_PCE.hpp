@@ -235,7 +235,7 @@ struct MV_ElementWiseMultiplyFunctor<
     // Currently specialized for use case where A is degree-0
     typename AArray::const_value_type Ai = m_A(0,i);
     for (size_type k=0; k<m_n; ++k) {
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
       for (size_type l=0; l<m_n_pce; ++l)
@@ -290,7 +290,7 @@ struct V_ElementWiseMultiplyFunctor<
   {
     // Currently specialized for use case where A is degree-0
     typename AArray::const_value_type Ai = m_A(0,i);
-#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
 #pragma ivdep
 #endif
     for (size_type l=0; l<m_n_pce; ++l)

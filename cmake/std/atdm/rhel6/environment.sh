@@ -10,6 +10,17 @@ if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=GNU
 fi
 
+if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
+  unset ATDM_CONFIG_KOKKOS_ARCH
+else
+  echo
+  echo "***"
+  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on RHEL6 ATDM builds"
+  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
+  echo "***"
+  return
+fi
+
 echo "Using SEMS RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_USE_NINJA=ON
@@ -55,6 +66,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export ATDM_CONFIG_BLAS_LIB="-mkl"
     export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
+    echo
     echo "***"
     echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
     echo "***"

@@ -86,7 +86,7 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::buildEntityMap(MapPtr &localToGlobalNodesMap)
+    int EntitySet<SC,LO,GO,NO>::buildEntityMap(ConstMapPtr localToGlobalNodesMap)
     {
         if (!EntityMapIsUpToDate_) {
             LO localNumberEntities = getNumEntities();
@@ -132,10 +132,10 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::findParents(EntitySetPtr entitySet)
+    int EntitySet<SC,LO,GO,NO>::findAncestors(EntitySetPtr entitySet)
     {
         for (UN i=0; i<getNumEntities(); i++) {
-            getEntity(i)->findParents(entitySet);
+            getEntity(i)->findAncestors(entitySet);
         }
         return 0;
     }
@@ -192,9 +192,9 @@ namespace FROSch {
     
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr EntitySet<SC,LO,GO,NO>::sortOutStraightEdges(UN dimension,
-                                                                                                           SCVecPtr2D &localNodeList)
+                                                                                                           MultiVectorPtr &nodeList)
     {
-        FROSCH_ASSERT(dimension==localNodeList[0].size(),"Inconsistent Dimension.");
+        FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
         UN before = getNumEntities();
         Teuchos::RCP<InterfaceEntityPtrVec> straightEdges(new InterfaceEntityPtrVec(0));
         
@@ -213,17 +213,17 @@ namespace FROSch {
             if (length>2) {
                 // Anfangssteigung berechnen
                 for (UN k=0; k<dimension; k++) {
-                    pt1[k] = localNodeList[EntityVector_[i]->getLocalNodeID(0)][k];
+                    pt1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(0)];
                 }
                 
                 for (UN k=0; k<dimension; k++) {
-                    dir1[k] = localNodeList[EntityVector_[i]->getLocalNodeID(1)][k]-pt1[k];
+                    dir1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(1)]-pt1[k];
                 }
                 
                 while (j<length) {
                     // Steigung zum zweiten Punkt berechnen
                     for (UN k=0; k<dimension; k++) {
-                        dir2[k] = localNodeList[EntityVector_[i]->getLocalNodeID(j)][k]-pt1[k];
+                        dir2[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(j)]-pt1[k];
                     }
                     
                     if (!ismultiple<SC,LO>(dir1(),dir2())) {
@@ -306,9 +306,9 @@ namespace FROSch {
     
     template<class SC,class LO,class GO,class NO>
     bool EntitySet<SC,LO,GO,NO>::checkForStraightEdges(UN dimension,
-                                                       SCVecPtr2D &localNodeList)
+                                                       MultiVectorPtr &nodeList)
     {
-        FROSCH_ASSERT(dimension==localNodeList[0].size(),"Inconsistent Dimension.");
+        FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
         
         bool straight;
         LO length,j;
@@ -323,15 +323,15 @@ namespace FROSch {
             if (length>2) {
                 // Anfangssteigung berechnen
                 for (UN k=0; k<dimension; k++) {
-                    pt1[k] = localNodeList[EntityVector_[i]->getLocalNodeID(0)][k];
+                    pt1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(0)];
                 }
                 for (UN k=0; k<dimension; k++) {
-                    dir1[k] = localNodeList[EntityVector_[i]->getLocalNodeID(1)][k]-pt1[k];
+                    dir1[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(1)]-pt1[k];
                 }
                 
                 while (j<length) {
                     for (UN k=0; k<dimension; k++) {
-                        dir2[k] = localNodeList[EntityVector_[i]->getLocalNodeID(j)][k]-pt1[k];
+                        dir2[k] = nodeList->getData(k)[EntityVector_[i]->getLocalNodeID(j)]-pt1[k];
                     }
                     if (!ismultiple<SC,LO>(dir1(),dir2())) {
                         straight = false;
@@ -423,7 +423,7 @@ namespace FROSch {
     
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::SCVecPtr EntitySet<SC,LO,GO,NO>::getDirection(UN dimension,
-                                                                                         SCVecPtr2D &localNodeList,
+                                                                                         MultiVectorPtr &nodeList,
                                                                                          UN iD) const
     {
         FROSCH_ASSERT(iD<getNumEntities(),"iD>=getNumEntities().");
@@ -444,15 +444,15 @@ namespace FROSch {
             
             // Anfangssteigung berechnen
             for (UN k=0; k<dimension; k++) {
-                pt1[k] = localNodeList[EntityVector_[iD]->getLocalNodeID(0)][k];
+                pt1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(0)];
             }
             for (UN k=0; k<dimension; k++) {
-                dir1[k] = localNodeList[EntityVector_[iD]->getLocalNodeID(1)][k]-pt1[k];
+                dir1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(1)]-pt1[k];
             }
             
             while (j<length) {
                 for (UN k=0; k<dimension; k++) {
-                    dir2[k] = localNodeList[EntityVector_[iD]->getLocalNodeID(j)][k]-pt1[k];
+                    dir2[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(j)]-pt1[k];
                 }
                 
                 if (!ismultiple<SC,LO>(dir1(),dir2())) {
@@ -477,10 +477,10 @@ namespace FROSch {
             
             // Anfangssteigung berechnen
             for (UN k=0; k<dimension; k++) {
-                pt1[k] = localNodeList[EntityVector_[iD]->getLocalNodeID(0)][k];
+                pt1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(0)];
             }
             for (UN k=0; k<dimension; k++) {
-                dir1[k] = localNodeList[EntityVector_[iD]->getLocalNodeID(1)][k]-pt1[k];
+                dir1[k] = nodeList->getData(k)[EntityVector_[iD]->getLocalNodeID(1)]-pt1[k];
             }
             
             return dir1;

@@ -316,20 +316,20 @@ class General_RKButcherTableau :
       A.shape(as<int>(numStages),as<int>(numStages));
 
       // fill the rows
-      for(std::size_t r=0;r<numStages;r++) {
+      for(std::size_t row=0;row<numStages;row++) {
         // parse the row (tokenize on space)
         std::vector<std::string> tokens;
-        Tempus::StringTokenizer(tokens,A_row_tokens[r]," ",true);
+        Tempus::StringTokenizer(tokens,A_row_tokens[row]," ",true);
 
         std::vector<double> values;
         Tempus::TokensToDoubles(values,tokens);
 
         TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
-          "Error parsing A matrix, wrong number of stages in row " << r << "\n"
-           + this->description());
+          "Error parsing A matrix, wrong number of stages in row "
+          << row << "\n" + this->description());
 
-        for(std::size_t c=0;c<numStages;c++)
-          A(r,c) = values[c];
+        for(std::size_t col=0;col<numStages;col++)
+          A(row,col) = values[col];
       }
     }
 
@@ -2333,7 +2333,8 @@ class IRK1StageTheta_RKBT :
     // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      pl->get<std::string>("Stepper Type") != this->description()
+      pl->get<std::string>("Stepper Type") != this->description() and
+      pl->get<std::string>("Stepper Type") != "Implicit Midpoint"
       ,std::runtime_error,
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
@@ -3850,7 +3851,7 @@ class SDIRK21_RKBT :
     A(0,0) = one;
     A(0,1) = zero;
 
-    //A(1,0) = 
+    //A(1,0) =
     A(1,0) = -one;
     A(1,1) =  one;
 

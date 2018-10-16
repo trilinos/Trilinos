@@ -41,11 +41,10 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_ConfigDefs.hpp>
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Tpetra_Map.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 // Unit tests like to be in an anonymous namespace.
 namespace {
@@ -70,23 +69,21 @@ TEUCHOS_UNIT_TEST( Map, Bug5399 )
   using std::cerr;
   using std::endl;
 #ifdef HAVE_TPETRA_INT_LONG_LONG
-  typedef long long GO;
-  if (sizeof (long long) <= 4) {
-    out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
-        << "This test only makes sense if sizeof (long long) >= 8." << endl;
-    return;
-  }
+  // C++11 guarantees that sizeof(long long) >= 8.
+  using GO = long long;
 #else // NOT HAVE_TPETRA_INT_LONG_LONG
-  typedef long GO;
+  using GO = long;
+  // long is 32 bits on some platforms, including Windows.
   if (sizeof (long) <= 4) {
     out << "sizeof (long) = " << sizeof (long) << " <= 4.  "
         << "This test only makes sense if sizeof (long) >= 8." << endl;
     return;
   }
 #endif // HAVE_TPETRA_INT_LONG_LONG
-  typedef Tpetra::Map<int, GO> map_type;
+  using LO = Tpetra::Map<>::local_ordinal_type;
+  using map_type = Tpetra::Map<LO, GO>;
 
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 

@@ -41,7 +41,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -154,11 +154,11 @@ namespace { // (anonymous)
                                             const typename RhsViewType::const_type& expectedVectorValues,
                                             const typename SparseMatrixType::values_type::const_type& expectedMatrixValues,
                                             const bool forceAtomic =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
                                             ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::value,
-#else // NOT KOKKOS_HAVE_SERIAL
+#else // NOT KOKKOS_ENABLE_SERIAL
                                             false,
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
                                             const bool checkInputIndices = true)
   {
     static_assert (Kokkos::Impl::is_view<VectorViewType>::value,
@@ -216,10 +216,10 @@ namespace { // (anonymous)
     Teuchos::OSTab tab1 (out);
 
     out << "Create Map just to initialize Kokkos correctly" << endl;
-    auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    auto comm = Tpetra::getDefaultComm ();
     map_type mapToInitKokkos (Tpetra::global_size_t (100), 0, comm);
 
-    const bool execSpaceInitd = DT::execution_space::is_initialized ();
+    const bool execSpaceInitd = Kokkos::is_initialized ();
     TEST_ASSERT( execSpaceInitd );
     if (! execSpaceInitd) {
       out << "Tpetra::Map failed to initialize Kokkos execution space \""

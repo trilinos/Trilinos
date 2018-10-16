@@ -105,6 +105,9 @@ bool ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::handlesReq
      if(pl->isType<std::string>("Coordinates")){
        field = pl->get<std::string>("Coordinates");
      }
+     if(pl->isType<std::string>("Coordinates-Epetra")){
+       field = pl->get<std::string>("Coordinates-Epetra");
+     }
 
      return isHandled;
    }
@@ -141,8 +144,13 @@ preRequest(const Teko::RequestMesg & rm)
     block = blocked_ugi_->getFieldBlock(blocked_ugi_->getFieldNum(field));
 
   // Empty...  Nothing to do.
-  buildArrayToVector(block, field, useAux);
-  buildCoordinates(field, useAux);
+  if (rm.getParameterList()->isType<std::string>("Coordinates-Epetra")) {
+    buildArrayToVectorEpetra(block, field, useAux);
+    buildCoordinatesEpetra(field, useAux);
+  } else {
+    buildArrayToVectorTpetra(block, field, useAux);
+    buildCoordinatesTpetra(field, useAux);
+  }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
@@ -161,7 +169,10 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldBy
       double * z = const_cast<double *>(&getCoordinateByField(2,field)[0]);
       pl.set<double*>(key,z);
    } else if(key == "Coordinates") {
-      pl.set<Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > >("Coordinates",coordsVec_);
+     pl.set<Teuchos::RCP<Tpetra::MultiVector<double,LocalOrdinalT,GlobalOrdinalT,Node> > >(key,coordsVecTp_);
+   } else if(key == "Coordinates-Epetra") {
+      pl.set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates",coordsVecEp_);
+      // pl.remove("Coordinates-Epetra");
    }
    else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -169,20 +180,33 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldBy
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVector(int block,const std::string & field, const bool useAux)
+void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVectorTpetra(int block,const std::string & field, const bool useAux)
 {
-   if(arrayToVector_[field]==Teuchos::null) {
+   if(arrayToVectorTpetra_[field]==Teuchos::null) {
       Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi;
       if(useAux)
         ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
       else
         ugi = blocked_ugi_->getFieldDOFManagers()[block];
-      arrayToVector_[field] = Teuchos::rcp(new panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(ugi));
+      arrayToVectorTpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node>(ugi));
    }
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
-void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(const std::string & field, const bool useAux)
+void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux)
+{
+   if(arrayToVectorEpetra_[field]==Teuchos::null) {
+      Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > ugi;
+      if(useAux)
+        ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
+      else
+        ugi = blocked_ugi_->getFieldDOFManagers()[block];
+      arrayToVectorEpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVectorEpetra<LocalOrdinalT,GlobalOrdinalT,Node>(ugi));
+   }
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinatesTpetra(const std::string & field, const bool useAux)
 {
    std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
@@ -217,20 +241,20 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       }
    }
 
-   coordsVec_ = arrayToVector_[field]->template getDataVector<double>(field,data);
+   coordsVecTp_ = arrayToVectorTpetra_[field]->template getDataVector<double>(field,data);
 
-   switch(coordsVec_->getNumVectors()) {
+   switch(coordsVecTp_->getNumVectors()) {
    case 3:
-      zcoords_[field].resize(coordsVec_->getLocalLength()); 
-      coordsVec_->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_[field]));
+      zcoords_[field].resize(coordsVecTp_->getLocalLength());
+      coordsVecTp_->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_[field]));
       // Intentional fall-through.
    case 2:
-      ycoords_[field].resize(coordsVec_->getLocalLength()); 
-      coordsVec_->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_[field]));
+      ycoords_[field].resize(coordsVecTp_->getLocalLength());
+      coordsVecTp_->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_[field]));
       // Intentional fall-through.
    case 1:
-      xcoords_[field].resize(coordsVec_->getLocalLength()); 
-      coordsVec_->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_[field]));
+      xcoords_[field].resize(coordsVecTp_->getLocalLength());
+      coordsVecTp_->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_[field]));
       break;
    default:
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -238,6 +262,46 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       break;
    }
 }
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
+void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinatesEpetra(const std::string & field, const bool useAux)
+{
+   std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
+
+   Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field,useAux);
+
+   std::vector<std::string> elementBlocks;
+   if(useAux)
+     aux_blocked_ugi_->getElementBlockIds(elementBlocks);
+   else
+     blocked_ugi_->getElementBlockIds(elementBlocks);
+   for(std::size_t i=0;i<elementBlocks.size();++i) {
+      std::string blockId = elementBlocks[i];
+      std::vector<std::size_t> localCellIds;
+
+      // allocate block of data to store coordinates
+      Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
+      fieldData = Kokkos::DynRankView<double,PHX::Device>("fieldData",connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
+
+      if(fieldPattern->supportsInterpolatoryCoordinates()) {
+         // get degree of freedom coordiantes
+         connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
+      }
+      else {
+         Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+         out.setOutputToRootOnly(-1);
+         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid2::FieldPattern in "
+             << "block \"" << blockId << "\" does not support interpolatory coordinates. "
+             << "This may be fine if coordinates are not actually needed. However if they are then bad things "
+             << "will happen. Enjoy!" << std::endl;
+
+         return;
+      }
+   }
+
+   coordsVecEp_ = arrayToVectorEpetra_[field]->template getDataVector<double>(field,data);
+}
+
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 std::string ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::
@@ -248,8 +312,10 @@ getHandledField(const Teuchos::ParameterList & pl) const
     return pl.get<std::string>("x-coordinates");
   else if(pl.isType<std::string>("Coordinates"))
     return pl.get<std::string>("Coordinates");
+  else if(pl.isType<std::string>("Coordinates-Epetra"))
+    return pl.get<std::string>("Coordinates-Epetra");
   else
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates not Coordinates field provided.");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates nor Coordinates or Coordinates-Epetra field provided.");
     
 }
 

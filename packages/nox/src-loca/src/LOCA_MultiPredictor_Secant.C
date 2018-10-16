@@ -61,7 +61,7 @@
 LOCA::MultiPredictor::Secant::Secant(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
+    const Teuchos::RCP<Teuchos::ParameterList>& /* predParams */) :
   globalData(global_data),
   firstStepPredictor(),
   isFirstStep(true),

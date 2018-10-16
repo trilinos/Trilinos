@@ -1,4 +1,4 @@
-// Copyright (c) 2014 National Technology & Engineering Solutions
+// Copyright (c) 2014-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -60,6 +60,15 @@
 
 namespace {
   std::vector<char *> allocations;
+
+  void new_string_int(const char *from, char **to)
+  {
+    int len = strlen(from);
+    *to     = new char[len + 1];
+    std::memcpy(*to, from, len + 1);
+    allocations.push_back(*to);
+  }
+
 } // namespace
 
 namespace SEAMS {
@@ -95,13 +104,8 @@ namespace SEAMS {
     }
   }
 
-  void new_string(const char *from, char **to)
-  {
-    int len = strlen(from);
-    *to     = new char[len + 1];
-    std::memcpy(*to, from, len + 1);
-    allocations.push_back(*to);
-  }
+  void new_string(const std::string &from, char **to) { new_string_int(from.c_str(), to); }
+  void new_string(const char *from, char **to) { new_string_int(from, to); }
 
   void concat_string(const char *from1, const char *from2, char **to)
   {
@@ -149,7 +153,7 @@ namespace SEAMS {
   void undefined_error(const SEAMS::Aprepro &apr, const std::string &var)
   {
     if (!apr.inIfdefGetvar) {
-      apr.error("Undefined variable '" + var + "'");
+      apr.warning("Undefined variable '" + var + "'");
     }
     else {
       apr.inIfdefGetvar = false;

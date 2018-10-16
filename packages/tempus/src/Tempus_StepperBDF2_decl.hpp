@@ -83,6 +83,11 @@ public:
   /// Compute the first time step given the supplied startup stepper
   virtual void computeStartUp(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+    
+  /// Pass initial guess to Newton solver 
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
+
 
   /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
   virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
@@ -118,6 +123,7 @@ private:
   Scalar                                     order_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >   xDotTemp_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 /** \brief Time-derivative interface for BDF2.

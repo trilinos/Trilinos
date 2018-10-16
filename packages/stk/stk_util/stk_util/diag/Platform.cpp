@@ -114,9 +114,9 @@ startup_preparallel_platform()
 {
   std::locale loc("POSIX");
 
-  std::locale::global(loc); // std::locale::classic());
-  std::cout.imbue(loc); // std::locale::classic());
-  std::cin.imbue(loc); // std::locale::classic());
+  std::locale::global(loc);
+  std::cout.imbue(loc);
+  std::cin.imbue(loc);
 
   std::ostringstream strout;
   strout << "Don't ask why the IBM locale works if I do this " << 10000000 << std::endl;
@@ -127,7 +127,6 @@ void
 startup_preparallel_platform()
 {}
 #endif
-
 
 void
 get_heap_info(
@@ -160,8 +159,6 @@ get_heap_info(
 			      << ", uordblks " << static_cast<unsigned int>(minfo.uordblks)
 			      << ", fordblks " << static_cast<unsigned int>(minfo.fordblks)
 			      << ", keepcost " << minfo.keepcost << Diag::dendl;
-
-
 # endif
 #endif // defined(SIERRA_HEAP_INFO)
 }
@@ -199,7 +196,6 @@ get_memory_info(
 #endif // defined(SIERRA_MEMORY_INFO)
 }
 
-
 std::string
 hostname()
 {
@@ -207,7 +203,6 @@ hostname()
   ::gethostname(buf, sizeof(buf));
   return std::string(buf);
 }
-
 
 std::string
 domainname()
@@ -233,9 +228,7 @@ std::string get_env_user()
       return str_env_user;
     }
   }
-
-  std::string unknown("unknown");
-  return unknown;
+  return std::string("unknown");
 }
 
 }
@@ -264,7 +257,6 @@ username()
 #endif
 }
 
-
 std::string
 hardware()
 {
@@ -274,7 +266,6 @@ hardware()
 
   return uts_name.machine;
 }
-
 
 std::string
 osname()
@@ -286,7 +277,6 @@ osname()
   return uts_name.sysname;
 }
 
-
 std::string
 osversion()
 {
@@ -297,13 +287,11 @@ osversion()
   return uts_name.release;
 }
 
-
 int
 pid()
 {
   return ::getpid();
 }
-
 
 int
 pgrp()
@@ -311,16 +299,13 @@ pgrp()
   return ::getpgrp();
 }
 
-
 bool
 path_access(
   const std::string &	name,
   int			mode)
-
 {
   return !name.empty() && ::access(name.c_str(), mode) == 0;
 }
-
 
 bool
 path_exists(
@@ -334,55 +319,6 @@ path_read_access(
   const std::string &	name)
 {
   return path_access(name, R_OK);
-}
-
-namespace {
-
-struct flock *
-file_lock(
-  short	type,
-  short	whence)
-{
-  static struct flock ret;
-  ret.l_type = type;
-  ret.l_start = 0;
-  ret.l_whence = whence;
-  ret.l_len = 0;
-  ret.l_pid = 0; //getpid();
-  return &ret;
-}
-
-} // namespace <unnamed>
-
-bool
-write_lock(
-  int		fd)
-{
-  int i =::fcntl(fd, F_SETLK, file_lock(F_WRLCK, SEEK_SET));
-
-  return i != -1;
-}
-
-bool
-release_lock(
-  int		fd)
-{
-  int i =::fcntl(fd, F_SETLK, file_lock(F_UNLCK, SEEK_SET));
-  return i != -1;
-}
-
-bool
-read_lock(
-  int		fd)
-{
-  return ::fcntl(fd, F_SETLK, file_lock(F_RDLCK, SEEK_SET)) != -1;
-}
-
-bool
-append_lock(
-  int		fd)
-{
-  return ::fcntl(fd, F_SETLK, file_lock(F_WRLCK, SEEK_END)) != -1;
 }
 
 } // namespace Env

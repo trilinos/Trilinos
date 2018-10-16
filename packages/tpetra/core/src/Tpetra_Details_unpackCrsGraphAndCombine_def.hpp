@@ -383,7 +383,7 @@ unpackAndCombine(
       size_t num_ent = (unpack_pids) ? num_packets_this_lid/2
                                      : num_packets_this_lid;
       if (num_ent > running_max_num_ent) running_max_num_ent = num_ent;
-    }, Kokkos::Experimental::Max<size_t>(max_num_ent));
+    }, Kokkos::Max<size_t>(max_num_ent));
 
   // Now do the actual unpack!
   unpack_functor_type f(local_graph, local_map,
@@ -455,7 +455,7 @@ unpackAndCombineWithOwningPIDsCount(
         num_packets_per_lid.size(),
         KOKKOS_LAMBDA(const int& i, size_t& lsum) {
           lsum += num_packets_per_lid(i) / 2;
-        }, Kokkos::Experimental::Sum<size_t>(tot_num_ent));
+        }, Kokkos::Sum<size_t>(tot_num_ent));
     count += tot_num_ent;
   }
 

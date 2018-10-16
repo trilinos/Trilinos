@@ -56,7 +56,7 @@
 
 
 #include <Intrepid_KokkosRank.hpp>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 #include "Kokkos_Core.hpp"
 #endif
 namespace Intrepid {
@@ -243,7 +243,7 @@ class RealSpaceTools {
     template<class ArrayDet, class ArrayIn>
     static void det(ArrayDet & detArray, const ArrayIn & inMats);
     
-/*    #ifdef HAVE_INTREPID_KOKKOSCORE
+/*    #ifdef INTREPID_OLD_KOKKOS_CODE
     template<class ArrayDet, class ArrayIn>
     static void detTemp(ArrayDet & inverseMats, const ArrayIn & inMats);
     #endif

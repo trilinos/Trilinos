@@ -73,9 +73,9 @@ namespace Intrepid2 {
                          const CViewType &C) {
         //C = beta*C + alpha * A'*B
         const ordinal_type 
-          m = C.dimension_0(),
-          n = C.dimension_1(),
-          k = B.dimension_0();
+          m = C.extent(0),
+          n = C.extent(1),
+          k = B.extent(0);
         
         for (ordinal_type i=0;i<m;++i)
           for (ordinal_type j=0;j<n;++j) {
@@ -98,9 +98,9 @@ namespace Intrepid2 {
                          const CViewType &C) {
         //C = beta*C + alpha * A*B'
         const ordinal_type 
-          m = C.dimension_0(),
-          n = C.dimension_1(),
-          k = A.dimension_1();
+          m = C.extent(0),
+          n = C.extent(1),
+          k = A.extent(1);
         
         for (ordinal_type i=0;i<m;++i)
           for (ordinal_type j=0;j<n;++j) {
@@ -123,8 +123,8 @@ namespace Intrepid2 {
                  const yViewType &y) {
         //y = beta*y + alpha * A'*x
         const ordinal_type 
-          m = y.dimension_0(),
-          n = x.dimension_0();
+          m = y.extent(0),
+          n = x.extent(0);
         
         for (ordinal_type i=0;i<m;++i) {
           y(i) *= beta;
@@ -146,8 +146,8 @@ namespace Intrepid2 {
                    const yViewType &y) {
         //y = beta*y + alpha * A*x
         const ordinal_type 
-          m = y.dimension_0(),
-          n = x.dimension_0();
+          m = y.extent(0),
+          n = x.extent(0);
         
         for (ordinal_type i=0;i<m;++i) {
           y(i) *= beta;
@@ -160,11 +160,11 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       static typename matViewType::non_const_value_type
       determinant(const matViewType &mat) {
-        INTREPID2_TEST_FOR_ABORT(mat.dimension_0() != mat.dimension_1(), "mat should be a square matrix.");
-        INTREPID2_TEST_FOR_ABORT(mat.dimension_0() > 3, "Higher dimensions (> 3) are not supported.");
+        INTREPID2_TEST_FOR_ABORT(mat.extent(0) != mat.extent(1), "mat should be a square matrix.");
+        INTREPID2_TEST_FOR_ABORT(mat.extent(0) > 3, "Higher dimensions (> 3) are not supported.");
 
         typename matViewType::non_const_value_type r_val(0);
-        const int m = mat.dimension_0();
+        const int m = mat.extent(0);
         switch (m) {
         case 1: 
           r_val =  mat(0,0);
@@ -191,14 +191,14 @@ namespace Intrepid2 {
       static void
       inverse(const invViewType &inv,
               const matViewType &mat) {
-        INTREPID2_TEST_FOR_ABORT(mat.dimension_0() != mat.dimension_1(), "mat should be a square matrix.");
-        INTREPID2_TEST_FOR_ABORT(inv.dimension_0() != inv.dimension_1(), "inv should be a square matrix.");
-        INTREPID2_TEST_FOR_ABORT(mat.dimension_0() != inv.dimension_0(), "mat and inv must have the same dimension.");
-        INTREPID2_TEST_FOR_ABORT(mat.dimension_0() > 3, "Higher dimensions (> 3) are not supported.");
+        INTREPID2_TEST_FOR_ABORT(mat.extent(0) != mat.extent(1), "mat should be a square matrix.");
+        INTREPID2_TEST_FOR_ABORT(inv.extent(0) != inv.extent(1), "inv should be a square matrix.");
+        INTREPID2_TEST_FOR_ABORT(mat.extent(0) != inv.extent(0), "mat and inv must have the same dimension.");
+        INTREPID2_TEST_FOR_ABORT(mat.extent(0) > 3, "Higher dimensions (> 3) are not supported.");
         INTREPID2_TEST_FOR_ABORT(mat.data() == inv.data(), "mat and inv must have different data pointer.");
         
         const auto val = determinant(mat);
-        const int m = mat.dimension_0();
+        const int m = mat.extent(0);
         switch (m) {
         case 1: {
           inv(0,0) = 1.0/mat(0,0);
@@ -258,7 +258,7 @@ namespace Intrepid2 {
                 const yViewType &y) {
         //y = beta*y + alpha*x
         const ordinal_type 
-          m = z.dimension_0();
+          m = z.extent(0);
         
         for (ordinal_type i=0;i<m;++i) 
           z(i) = alpha*x(i) + beta*y(i);
@@ -269,7 +269,7 @@ namespace Intrepid2 {
       static double
       norm(const AViewType &A, const ENorm normType) {
         typedef typename AViewType::non_const_value_type value_type;
-        const ordinal_type m = A.dimension_0(), n = A.dimension_1();
+        const ordinal_type m = A.extent(0), n = A.extent(1);
         double r_val = 0;
         switch(normType) {
         case NORM_TWO:{
@@ -307,7 +307,7 @@ namespace Intrepid2 {
       static void
       copy(const dstViewType &dst, const srcViewType &src) { 
         if (dst.data() != src.data()) {
-          const ordinal_type m = dst.dimension_0(), n = dst.dimension_1();
+          const ordinal_type m = dst.extent(0), n = dst.extent(1);
           for (ordinal_type i=0;i<m;++i) 
             for (ordinal_type j=0;j<n;++j) 
               dst(i,j) = src(i,j);
@@ -374,7 +374,7 @@ namespace Intrepid2 {
       matvec_product( const yViewType &y,
                       const AViewType &A,
                       const xViewType &x ) {
-        switch (y.dimension_0()) {
+        switch (y.extent(0)) {
         case 2: matvec_product_d2(y, A, x); break;
         case 3: matvec_product_d3(y, A, x); break;
         default: {
@@ -420,7 +420,7 @@ namespace Intrepid2 {
     dot( const xViewType x,
          const yViewType y ) {
       typename xViewType::value_type r_val(0);
-      ordinal_type i = 0, iend = x.dimension(0);
+      ordinal_type i = 0, iend = x.extent(0);
       for (;i<iend;i+=4) 
         r_val += ( x(i  )*y(i  ) + 
                    x(i+1)*y(i+1) + 
@@ -457,8 +457,8 @@ namespace Intrepid2 {
     scale_mat(       AViewType &A,
                const alphaScalarType alpha ) {
       const ordinal_type
-        iend = A.dimension(0),
-        jend = A.dimension(1);
+        iend = A.extent(0),
+        jend = A.extent(1);
 
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
@@ -472,8 +472,8 @@ namespace Intrepid2 {
     inv_scale_mat(       AViewType &A,
                    const alphaScalarType alpha ) {
       const ordinal_type
-        iend = A.dimension(0),
-        jend = A.dimension(1);
+        iend = A.extent(0),
+        jend = A.extent(1);
       
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
@@ -489,8 +489,8 @@ namespace Intrepid2 {
                      const alphaScalarType alpha,
                      const BViewType &B ) {
       const ordinal_type
-        iend = A.dimension(0),
-        jend = A.dimension(1);
+        iend = A.extent(0),
+        jend = A.extent(1);
 
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
@@ -506,8 +506,8 @@ namespace Intrepid2 {
                          const alphaScalarType alpha,
                          const BViewType &B ) {
       const ordinal_type
-        iend = A.dimension(0),
-        jend = A.dimension(1);
+        iend = A.extent(0),
+        jend = A.extent(1);
       
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)

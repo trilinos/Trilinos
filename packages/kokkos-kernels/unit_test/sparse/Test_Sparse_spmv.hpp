@@ -65,8 +65,8 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   typename y_vector_type::HostMirror h_y = Kokkos::create_mirror_view(y);
   typename x_vector_type::HostMirror h_x = Kokkos::create_mirror_view(x);
 
-  KokkosKernels::Impl::safe_device_to_host_deep_copy (x.dimension_0(), x, h_x);
-  KokkosKernels::Impl::safe_device_to_host_deep_copy (y.dimension_0(), y, h_y);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy (x.extent(0), x, h_x);
+  KokkosKernels::Impl::safe_device_to_host_deep_copy (y.extent(0), y, h_y);
   Kokkos::fence();
 
 
@@ -82,7 +82,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
     }
     h_y(i) = beta * h_y(i) + alpha * result;
   }
-  KokkosKernels::Impl::safe_host_to_device_deep_copy (y.dimension_0(),  h_y, y);
+  KokkosKernels::Impl::safe_host_to_device_deep_copy (y.extent(0),  h_y, y);
   Kokkos::fence();
 }
 

@@ -124,16 +124,16 @@ namespace Intrepid2 {
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
-          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.extent(0));
+          const auto ptEnd   = Util<ordinal_type>::min(ptBegin+numPtsEval, _inputPoints.extent(0));
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
+          typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
           auto vcprop = Kokkos::common_view_alloc_prop(_work);
-          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
+          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {
@@ -214,10 +214,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getDofCoords) rank = 2 required for dofCoords array");
       // Verify 0th dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.dimension(0)) != this->getCardinality(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->getCardinality(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.extent(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
@@ -232,10 +232,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
         ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getDofCoeffs) rank = 2 required for dofCoeffs array");
     // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.dimension(0)) != this->getCardinality(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.extent(0)) != this->getCardinality(), std::invalid_argument,
         ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getDofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
     // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.extent(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
         ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_In_FEM::getDofCoeffs) incorrect reference cell (1st) dimension in dofCoeffs array");
 #endif
     Kokkos::deep_copy(dofCoeffs, this->dofCoeffs_);
@@ -255,7 +255,7 @@ namespace Intrepid2 {
 
   private:
 
-    /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
+    /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
     Kokkos::DynRankView<typename scalarViewType::value_type,ExecSpaceType> vinvLine_, vinvBubble_;
   };
 

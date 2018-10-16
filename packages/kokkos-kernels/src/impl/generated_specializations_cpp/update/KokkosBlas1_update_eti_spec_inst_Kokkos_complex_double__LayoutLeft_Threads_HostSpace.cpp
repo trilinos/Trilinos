@@ -43,15 +43,16 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosBlas1_update_spec.hpp"
-
-namespace KokkosBlas {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTLEFT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_THREADS) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE)
+#include "KokkosBlas1_update_spec.hpp"
+
+namespace KokkosBlas {
+namespace Impl {
  KOKKOSBLAS1_UPDATE_ETI_SPEC_INST(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::Threads, Kokkos::HostSpace)
-#endif
 } // Impl
 } // KokkosBlas
+#endif

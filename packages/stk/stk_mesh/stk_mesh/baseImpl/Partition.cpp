@@ -42,7 +42,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class FieldBase; } }
 
 
@@ -113,7 +113,6 @@ Partition::Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
   , m_rank(rank)
   , m_extPartitionKey(key)
   , m_size(0)
-  , m_updated_since_compress(false)
   , m_updated_since_sort(false)
 {
   // Nada.
@@ -155,7 +154,7 @@ bool Partition::add(Entity entity)
   bucket->add_entity(entity);
   ++m_size;
 
-  m_updated_since_compress = m_updated_since_sort = true;
+  m_updated_since_sort = true;
 
   internal_check_invariants();
 
@@ -199,12 +198,12 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
 
   overwrite_from_end(*src_bucket, src_ordinal);
 
-  dst_partition.m_updated_since_compress = dst_partition.m_updated_since_sort = true;
+  dst_partition.m_updated_since_sort = true;
   dst_partition.m_size++;
 
   remove_impl();
 
-  m_updated_since_compress = m_updated_since_sort = true;
+  m_updated_since_sort = true;
 
   internal_check_invariants();
   dst_partition.internal_check_invariants();
@@ -230,12 +229,6 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
 
 void Partition::delete_bucket(Bucket * bucket)
 {
-    if(bucket == m_buckets.back() && m_buckets.size() > 1)
-    {
-        Bucket *new_last = m_buckets[m_buckets.size() - 2];
-        m_buckets[0]->set_last_bucket_in_partition(new_last);
-    }
-
     m_size -= bucket->size();
 
     auto iter = std::find(m_buckets.begin(), m_buckets.end(), bucket);
@@ -258,10 +251,6 @@ void Partition::remove_impl()
     // Don't delete the last bucket now --- might want it later in this modification cycle.
     if (num_buckets > 1)
     {
-      // The current 'last' bucket in a partition is to be deleted.
-      // The previous 'last' bucket becomes the new 'last' bucket in the partition.
-      Bucket *new_last = m_buckets[num_buckets - 2];
-      m_buckets[0]->set_last_bucket_in_partition(new_last);
       m_repository->deallocate_bucket( m_buckets.back() );
       m_buckets.pop_back();
     }
@@ -276,77 +265,8 @@ void Partition::remove_impl()
     }
   }
 
-  m_updated_since_compress = m_updated_since_sort = true;
+  m_updated_since_sort = true;
   --m_size;
-
-  internal_check_invariants();
-}
-
-void Partition::compress(bool force)
-{
-  // An easy optimization.
-  if (!force && (empty() || !m_updated_since_compress))
-  {
-    return;
-  }
-
-  std::vector<unsigned> partition_key = get_legacy_partition_id();
-  //index of bucket in partition
-  partition_key[ partition_key[0] ] = 0;
-
-  const size_t num_entities = m_size; // m_size will change when we add new buckets
-                                      // so need to store it here
-
-  std::vector<Entity> entities(num_entities);
-
-  // Copy the entities (but not their data) into a vector, where they will be sorted.
-  //
-  size_t new_i = 0;
-  for (BucketVector::iterator b_i = begin(); b_i != end(); ++b_i)
-  {
-    Bucket &b = **b_i;
-    size_t b_size = b.size();
-    std::copy(&b.m_entities[0], &b.m_entities[b_size], &entities[new_i]);
-    new_i += b_size;
-  }
-
-  //sort entities
-  std::sort(entities.begin(),entities.end(),EntityLess(m_mesh));
-
-  m_updated_since_sort = false;
-
-  // ceiling
-  const size_t num_new_buckets = (num_entities + (m_repository->max_bucket_capacity - 1u)) / m_repository->max_bucket_capacity;
-
-  BucketVector tmp_buckets(num_new_buckets);
-
-  size_t curr_entity = 0;
-  for (size_t bi=0; bi<num_new_buckets; ++bi) {
-
-    const size_t bucket_size = ((num_entities - curr_entity) < m_repository->max_bucket_capacity) ? num_entities - curr_entity : m_repository->max_bucket_capacity;
-    tmp_buckets[bi] = m_repository->allocate_bucket( m_rank, partition_key, bucket_size );
-    Bucket & new_bucket = *tmp_buckets[bi];
-    new_bucket.set_first_bucket_in_partition(tmp_buckets[0]);
-    new_bucket.m_partition = this;
-
-    for (size_t i=0; i<bucket_size; ++i, ++curr_entity) {
-      Entity entity = entities[curr_entity];
-      new_bucket.copy_entity( entity );
-      // Don't worry about deleting from old buckets, they are being deallocated right after this loop
-    }
-  }
-
-
-  //remove old buckets
-  for (BucketVector::iterator b_i = begin(); b_i != end(); ++b_i) {
-    m_repository->deallocate_bucket(*b_i);
-  }
-
-  m_size = num_entities;
-  m_buckets.swap(tmp_buckets);
-
-  m_updated_since_compress = false;
-  m_updated_since_sort = false;
 
   internal_check_invariants();
 }
@@ -498,7 +418,6 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
                                                    m_repository->get_bucket_capacity());
     bucket->m_partition = this;
-    bucket->set_first_bucket_in_partition(bucket);
     m_buckets.push_back(bucket);
 
     return bucket;
@@ -513,8 +432,6 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
     bucket = m_repository->allocate_bucket(m_rank, partition_key,
                                            m_repository->get_bucket_capacity());
     bucket->m_partition = this;
-    bucket->set_first_bucket_in_partition(m_buckets[0]);
-    m_buckets[0]->set_last_bucket_in_partition(bucket);
     m_buckets.push_back(bucket);
   }
 

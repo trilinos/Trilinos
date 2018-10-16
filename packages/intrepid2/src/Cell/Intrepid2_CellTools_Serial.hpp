@@ -251,6 +251,24 @@ namespace Intrepid2 {
       inline
       static SubcellParamDataType& getSubcellParamData() { 
         static SubcellParamDataType subcellParamData; 
+        Kokkos::push_finalize_hook( [=] {
+            subcellParamData.dummy = NodeDataHostView();
+            subcellParamData.lineEdges = NodeDataHostView();
+            subcellParamData.triEdges = NodeDataHostView();
+            subcellParamData.quadEdges = NodeDataHostView();
+            subcellParamData.shellTriEdges = NodeDataHostView();
+            subcellParamData.shellQuadEdges = NodeDataHostView();
+            subcellParamData.tetEdges = NodeDataHostView();
+            subcellParamData.hexEdges = NodeDataHostView();
+            subcellParamData.pyrEdges = NodeDataHostView();
+            subcellParamData.wedgeEdges = NodeDataHostView();
+            subcellParamData.shellTriFaces = NodeDataHostView();
+            subcellParamData.shellQuadFaces = NodeDataHostView();
+            subcellParamData.tetFaces = NodeDataHostView();
+            subcellParamData.hexFaces = NodeDataHostView();
+            subcellParamData.pyrFaces = NodeDataHostView();
+            subcellParamData.wedgeFaces = NodeDataHostView();
+          });
         return subcellParamData;
       }
 
@@ -423,14 +441,14 @@ namespace Intrepid2 {
         computeJacobian(const jacobianViewType  &jacobian, // D,sD
                         const basisGradViewType &grads,    // N,sD
                         const nodeViewType      &nodes) {  // N,D
-          const auto N = nodes.dimension_0();
+          const auto N = nodes.extent(0);
 
-          const auto  D = jacobian.dimension_0();
-          const auto sD = jacobian.dimension_1();
+          const auto  D = jacobian.extent(0);
+          const auto sD = jacobian.extent(1);
           
-          INTREPID2_TEST_FOR_ABORT( N != grads.dimension_0(), "grad dimension_0 does not match to cardinality.");
-          INTREPID2_TEST_FOR_ABORT(sD != grads.dimension_1(), "grad dimension_1 does not match to space dim.");
-          INTREPID2_TEST_FOR_ABORT( D != nodes.dimension_1(), "node dimension_1 does not match to space dim.");
+          INTREPID2_TEST_FOR_ABORT( N != grads.extent(0), "grad dimension_0 does not match to cardinality.");
+          INTREPID2_TEST_FOR_ABORT(sD != grads.extent(1), "grad dimension_1 does not match to space dim.");
+          INTREPID2_TEST_FOR_ABORT( D != nodes.extent(1), "node dimension_1 does not match to space dim.");
 
           Kernels::Serial::gemm_trans_notrans(1.0, nodes, grads, 0.0, jacobian);
         }
@@ -448,11 +466,11 @@ namespace Intrepid2 {
         mapToPhysicalFrame(const pointViewType    &point,    // D  
                            const basisValViewType &vals,     // N  
                            const nodeViewType     &nodes) {  // N,D 
-          const auto N = vals.dimension_0();
-          const auto D = point.dimension_0();
+          const auto N = vals.extent(0);
+          const auto D = point.extent(0);
 
-          INTREPID2_TEST_FOR_ABORT(N != nodes.dimension_0(), "nodes dimension_0 does not match to vals dimension_0.");
-          INTREPID2_TEST_FOR_ABORT(D != nodes.dimension_1(), "node dimension_1 does not match to space dim.");
+          INTREPID2_TEST_FOR_ABORT(N != nodes.extent(0), "nodes dimension_0 does not match to vals dimension_0.");
+          INTREPID2_TEST_FOR_ABORT(D != nodes.extent(1), "node dimension_1 does not match to space dim.");
 
           Kernels::Serial::gemv_trans(1.0, nodes, vals, 0.0, point);
         }
@@ -473,12 +491,12 @@ namespace Intrepid2 {
         mapToReferenceFrame(const refPointViewType &xref, // sD 
                             const phyPointViewType &xphy, // D
                             const nodeViewType &nodes) {  // N,D
-          const ordinal_type sD = xref.dimension_0();
-          const ordinal_type D = xphy.dimension_0();
-          const ordinal_type N = nodes.dimension_0();
+          const ordinal_type sD = xref.extent(0);
+          const ordinal_type D = xphy.extent(0);
+          const ordinal_type N = nodes.extent(0);
 
           INTREPID2_TEST_FOR_ABORT(sD > D, "subcell dimension is greater than physical cell dimension.");
-          INTREPID2_TEST_FOR_ABORT(D != static_cast<ordinal_type>(nodes.dimension_1()), "xphy dimension_0 does not match to space dim.");
+          INTREPID2_TEST_FOR_ABORT(D != static_cast<ordinal_type>(nodes.extent(1)), "xphy dimension_0 does not match to space dim.");
           
           typedef typename refPointViewType::non_const_value_type value_type;
           

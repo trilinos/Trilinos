@@ -340,18 +340,19 @@ void ConstructData(bool is3D, const Tensor<double>& tensor, const std::string& m
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
-  typedef typename RealValuedMultiVector::scalar_type Real;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
 
   if (is3D) {
     // 3D
     map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
 
   } else {
     // 2D
     map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
   }
 
   A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,RealValuedMultiVector>(is3D, tensor, galeriList, map, coordinates);
@@ -432,14 +433,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
   if (xmlFileName != "")
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
-  typedef typename RealValuedMultiVector::scalar_type Real;
-  Tensor<Real> tensor;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+  Tensor<real_type> tensor;
   if (paramList.isParameter("sigma")) {
     std::string sigmaString = paramList.get<std::string>("sigma");
     paramList.remove("sigma");
 #ifdef HAVE_MUELU_PAMGEN
     out << "Switching to RTC" << std::endl;
-    tensor = Tensor<Real>(sigmaString, is3D);
+    tensor = Tensor<real_type>(sigmaString, is3D);
 #else
     (void)sigmaString; // fix compiler warning
 #endif

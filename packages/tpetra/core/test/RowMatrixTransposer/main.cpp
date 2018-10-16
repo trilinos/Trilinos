@@ -41,31 +41,31 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include <Teuchos_FancyOStream.hpp>
 #include <cmath>
 
-template<class CrsMatrix_t> double getNorm(CrsMatrix_t& matrix){
-  double mySum = 0;
-
+template<class CrsMatrix_t> 
+typename CrsMatrix_t::scalar_type getNorm(CrsMatrix_t& matrix){
   typedef typename CrsMatrix_t::local_ordinal_type LO;
+  typedef typename CrsMatrix_t::scalar_type Scalar;
+  Scalar mySum = 0;
 
   Teuchos::Array<LO> inds(matrix.getNodeMaxNumRowEntries());
-  Teuchos::Array<double> vals(matrix.getNodeMaxNumRowEntries());
+  Teuchos::Array<Scalar> vals(matrix.getNodeMaxNumRowEntries());
   for(int i =0; ((size_t)i)<matrix.getNodeNumRows(); ++i){
     size_t numRowEnts = matrix.getNumEntriesInLocalRow(i);
     Teuchos::ArrayView<const LO> indsView = inds();
-    Teuchos::ArrayView<const double> valsView = vals();
+    Teuchos::ArrayView<const Scalar> valsView = vals();
     matrix.getLocalRowView(i, indsView, valsView);
     for(size_t j=0; ((size_t)j)<numRowEnts; ++j){
       mySum += valsView[j]*valsView[j];
     }
   }
-  double totalSum = 0;
+  Scalar totalSum = 0;
   Teuchos::reduceAll(*(matrix.getComm()), Teuchos::REDUCE_SUM, 1, &mySum, &totalSum);
   return sqrt(totalSum);
 }
@@ -80,15 +80,12 @@ main (int argc, char* argv[])
   using Teuchos::tuple;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
-  typedef double Scalar;
-  typedef Tpetra::CrsMatrix<Scalar, LO, GO> crs_matrix_type;
-  typedef Tpetra::Map<LO, GO> map_type;
+  typedef Tpetra::CrsMatrix<> crs_matrix_type;
+  typedef typename crs_matrix_type::scalar_type Scalar;
+  typedef Tpetra::Map<> map_type;
 
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
-
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   RCP<Teuchos::FancyOStream> out =
     Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
   //out->setOutputToRootOnly(comm->getRank());
@@ -220,12 +217,14 @@ main (int argc, char* argv[])
   // I'll have to come back to this later. But RowMatrixTransposer is working right.
   // And all my other tests are telling me ADD works right too.
   // KLN 06/14/2011
-  Tpetra::MatrixMatrix::Add(AT,false,-1.0,*TestMatrix,false, 1.0,diffMatrix);
+  Tpetra::MatrixMatrix::Add(AT,false,static_cast<Scalar>(-1.0),
+                            *TestMatrix,false,static_cast<Scalar>(1.0),
+                            diffMatrix);
   diffMatrix->fillComplete();
   //diffMatrix->describe(*out, Teuchos::VERB_EXTREME);
-  double diffNorm = getNorm(*diffMatrix);
-  double realNorm = getNorm(AT);
-  double epsilon = diffNorm/realNorm;
+  Scalar diffNorm = getNorm(*diffMatrix);
+  Scalar realNorm = getNorm(AT);
+  Scalar epsilon = diffNorm/realNorm;
   if(epsilon > 1e-10){
     *out << "The calculated A transpose and the real one don't match!" << std::endl;
     *out << "Diff Norm: " << diffNorm << std::endl;

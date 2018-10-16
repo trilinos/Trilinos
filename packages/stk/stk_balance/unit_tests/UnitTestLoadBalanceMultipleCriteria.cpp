@@ -11,7 +11,7 @@
 
 namespace
 {
-void set_criteria_on_mesh(std::vector<stk::mesh::Field<double>*> critFields, const stk::mesh::BulkData& bulkData)
+void set_criteria_on_mesh(std::vector<const stk::mesh::Field<double>*> critFields, const stk::mesh::BulkData& bulkData)
 {
     const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
     for(size_t i=0;i<buckets.size();++i)
@@ -60,13 +60,13 @@ public:
             stk::mesh::Field<double> &criteria2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "criteria2");
             stk::mesh::Field<double> &procId = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "proc_id");
 
-            stk::mesh::put_field(criteria1, get_meta().universal_part());
-            stk::mesh::put_field(criteria2, get_meta().universal_part());
-            stk::mesh::put_field(procId, get_meta().universal_part());
+            stk::mesh::put_field_on_mesh(criteria1, get_meta().universal_part(), nullptr);
+            stk::mesh::put_field_on_mesh(criteria2, get_meta().universal_part(), nullptr);
+            stk::mesh::put_field_on_mesh(procId, get_meta().universal_part(), nullptr);
 
             setup_mesh("generated:4x4x4", stk::mesh::BulkData::AUTO_AURA);
 
-            std::vector<stk::mesh::Field<double>*> critFields = {&criteria1, &criteria2};
+            std::vector<const stk::mesh::Field<double>*> critFields = {&criteria1, &criteria2};
 
             set_criteria_on_mesh(critFields, get_bulk());
 

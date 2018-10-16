@@ -44,7 +44,7 @@ CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOT
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
-PRN=`grep number\": $TMPFILE | cut -f2 -d:`
+PRN=`grep number\": $TMPFILE | cut -f2 -d: | cut -f1 -d, | sed 's/ *//'`
 
 if grep Created $TMPFILE > /dev/null; then
     echo "PR $PRN created successfully"
@@ -53,5 +53,15 @@ else
     exit 1
 fi
 
+# Add the AT: AUTOMERGE tag
+CMD=$(echo curl -i -H $h -d \'[\"AT: AUTOMERGE\"]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
+eval $CMD >$TMPFILE 2> $TMPFILE
+
+if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
+    echo "PR $PRN labeled as 'AT: AUTOMERGE'"
+else
+    echo "PR $PRN label failed"; 
+    exit 1
+fi
 
 rm -f $TMPFILE

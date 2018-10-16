@@ -143,6 +143,7 @@ namespace MueLuTests {
     TentativePFactory Pfact;
     UnsmooshFactory unsmooFact;
     FactoryManager innerFactManager;
+    innerFactManager.SetKokkosRefactor(false);
     innerFactManager.SetFactory("A", Teuchos::rcpFromRef(lapFact));
     innerFactManager.SetFactory("UnAmalgamationInfo", Teuchos::rcpFromRef(amalgFact));
     innerFactManager.SetFactory("Graph", Teuchos::rcpFromRef(coalFact));

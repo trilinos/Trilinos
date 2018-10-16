@@ -1,42 +1,100 @@
+
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "StkIoUtils.hpp"
-
+#include <algorithm>
+#include <utility>
+#include "Ioss_Field.h"
 #include "Ioss_Region.h"
-#include "Ioss_SideSet.h"
 #include "Ioss_SideBlock.h"
-
-#include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/Selector.hpp"
-#include "stk_mesh/base/Types.hpp"
-#include "stk_mesh/base/MetaData.hpp"
+#include "Ioss_SideSet.h"
+#include "StkMeshIoBroker.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_RCPDecl.hpp"                                   // for RCP
+#include "stk_io/IossBridge.hpp"
+#include "stk_mesh/base/Bucket.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
-
+#include "stk_mesh/base/FieldBase.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/Part.hpp"
+#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/SideSetEntry.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
-
+#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
+#include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
+#include "stk_topology/topology.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
-#include "StkMeshIoBroker.hpp"
+#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
+#include "stk_util/util/string_case_compare.hpp"
+
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+
+
+
 
 namespace stk {
 namespace io {
 
-size_t get_entities(stk::mesh::Part &part,
-                    stk::mesh::EntityRank type,
-                    const stk::mesh::BulkData &bulk,
-                    stk::mesh::EntityVector &entities,
-                    bool include_shared,
-                    const stk::mesh::Selector *subset_selector)
+
+stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_selector,
+                                            const stk::mesh::Selector *output_selector,
+                                            const stk::mesh::Selector *shared_selector,
+                                            stk::mesh::Part &part,
+                                            bool include_shared)
 {
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
 
     stk::mesh::Selector own_share = meta.locally_owned_part();
-    if(include_shared)
-        own_share |= meta.globally_shared_part();
+    if(include_shared) {
+        own_share |= (shared_selector == nullptr) ? meta.globally_shared_part() : *shared_selector;
+    }
 
     stk::mesh::Selector selector = part & own_share;
     if(subset_selector)
         selector &= *subset_selector;
+    if(output_selector)
+        selector &= *output_selector;
 
-    get_selected_entities(selector, bulk.buckets(type), entities);
+    return selector;
+}
+
+size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
+                    stk::mesh::Part &part,
+                    stk::mesh::EntityRank type,
+                    stk::mesh::EntityVector &entities,
+                    bool include_shared)
+{
+    stk::mesh::Selector selector =  internal_build_selector(params.get_subset_selector(),
+                                                            params.get_output_selector(type),
+                                                            params.get_shared_selector(),
+                                                            part,
+                                                            include_shared);
+
+    get_selected_nodes(params.bulk_data(), params.io_region(), selector, entities);
+    return entities.size();
+}
+
+size_t get_entities(stk::io::OutputParams &params,
+                        stk::mesh::Part &part,
+                        stk::mesh::EntityRank type,
+                        stk::mesh::EntityVector &entities,
+                        bool include_shared)
+{
+    stk::mesh::Selector selector =  internal_build_selector(params.get_subset_selector(),
+                                                            params.get_output_selector(type),
+                                                            nullptr,
+                                                            part,
+                                                            include_shared);
+
+    get_selected_entities(selector, params.bulk_data().buckets(type), entities);
     return entities.size();
 }
 
@@ -91,48 +149,51 @@ stk::mesh::EntityVector get_sides(stk::mesh::BulkData &bulkData, const stk::mesh
     return sides;
 }
 
-void fill_sideset(const stk::mesh::EntityVector& sides, stk::mesh::BulkData& bulkData, stk::mesh::Selector elementSelector, int sideset_id)
+
+void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkData, stk::mesh::Selector elementSelector)
 {
-    stk::mesh::SideSet *sideSet;
-    bool sidesetExists = bulkData.does_sideset_exist(sideset_id);
-    if(sidesetExists)
-        sideSet = &bulkData.get_sideset(sideset_id);
-    else
-        sideSet = &bulkData.create_sideset(sideset_id);
+    stk::mesh::SideSet *sideSet = nullptr;
+    if(sidesetPart.subsets().empty()) {
+        const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(sidesetPart);
 
-    for(stk::mesh::Entity side : sides)
-    {
-        unsigned numElements = bulkData.num_elements(side);
-        const stk::mesh::Entity* elements = bulkData.begin_elements(side);
-        const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_element_ordinals(side);
+        bool sidesetExists = bulkData.does_sideset_exist(parentPart);
+        if(sidesetExists)
+            sideSet = &bulkData.get_sideset(parentPart);
+        else
+            sideSet = &bulkData.create_sideset(parentPart);
 
-        for(unsigned i=0;i<numElements;++i)
-            if(bulkData.bucket(elements[i]).owned() && elementSelector(bulkData.bucket(elements[i])))
-                (*sideSet).push_back(stk::mesh::SideSetEntry{elements[i], ordinals[i]});
+        stk::mesh::EntityVector sides = get_sides(bulkData, parentPart);
+        for(stk::mesh::Entity side : sides)
+        {
+            unsigned numElements = bulkData.num_elements(side);
+            const stk::mesh::Entity* elements = bulkData.begin_elements(side);
+            const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_element_ordinals(side);
+
+            for(unsigned i=0;i<numElements;++i)
+                if(bulkData.bucket(elements[i]).owned() && elementSelector(bulkData.bucket(elements[i])))
+                    (*sideSet).push_back(stk::mesh::SideSetEntry{elements[i], ordinals[i]});
+        }
+
+        if(sidesetExists)
+            stk::util::sort_and_unique(*sideSet);
     }
-
-    if(sidesetExists)
-        stk::util::sort_and_unique(*sideSet);
 }
 
 void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
 {
-    std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
-    for(size_t i=0;i<surfacesInMap.size();++i)
+    if(bulkData.was_mesh_modified_since_sideset_creation())
     {
-        std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacesInMap[i]);
+        bulkData.clear_sidesets();
 
-        stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
-        stk::mesh::EntityVector sides = get_sides(bulkData, *surfacesInMap[i]);
-        fill_sideset(sides, bulkData, elementSelector, surfacesInMap[i]->id());
+        std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
+        for(size_t i=0;i<surfacesInMap.size();++i)
+        {
+            std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacesInMap[i]);
+
+            stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
+            fill_sideset(*surfacesInMap[i], bulkData, elementSelector);
+        }
     }
-}
-
-void clear_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
-{
-    std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
-    for(size_t i=0;i<surfacesInMap.size();++i)
-        bulkData.clear_sideset(surfacesInMap[i]->id());
 }
 
 const stk::mesh::Part* getElementBlockSelectorForElement(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -267,6 +328,256 @@ stk::mesh::FieldVector get_transient_fields(stk::mesh::MetaData &meta, const stk
     }
 
     return fields;
+}
+
+
+const stk::mesh::Part& get_sideset_parent(const stk::mesh::Part& sidesetPart)
+{
+    for(stk::mesh::Part * part : sidesetPart.supersets()) {
+        bool hasSameId   = (part->id() == sidesetPart.id());
+        bool hasSameRank = (part->primary_entity_rank() == sidesetPart.primary_entity_rank());
+        bool isIoPart    = stk::io::is_part_io_part(*part);
+
+        if(hasSameId && hasSameRank && isIoPart) {
+            return *part;
+        }
+    }
+
+    return sidesetPart;
+}
+
+template<typename DATA_TYPE>
+void write_global_to_stk_io(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
+                            const std::string& externalName,
+                            size_t component_count, const void* ptr)
+{
+    const DATA_TYPE* data = reinterpret_cast<const DATA_TYPE*>(ptr);
+    std::vector<DATA_TYPE> vecData(data, data+component_count);
+    stkIo.write_global(dbIndex, externalName, vecData);
+}
+
+template
+void write_global_to_stk_io<int>(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
+                                 const std::string& externalName,
+                                 size_t component_count, const void* ptr);
+
+template
+void write_global_to_stk_io<double>(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
+                                    const std::string& externalName,
+                                    size_t component_count, const void* ptr);
+
+
+bool storage_type_is_general(const std::string &storage)
+{
+    bool value = false;
+
+    if(stk::equal_case(storage,"scalar")          ||
+       stk::equal_case(storage,"vector_2d")       ||
+       stk::equal_case(storage,"vector_3d")       ||
+       stk::equal_case(storage,"full_tensor_36")  ||
+       stk::equal_case(storage,"full_tensor_32")  ||
+       stk::equal_case(storage,"full_tensor_22")  ||
+       stk::equal_case(storage,"full_tensor_12")  ||
+       stk::equal_case(storage,"sym_tensor_33")   ||
+       stk::equal_case(storage,"sym_tensor_31")   ||
+       stk::equal_case(storage,"sym_tensor_21")   ||
+       stk::equal_case(storage,"matrix_22")       ||
+       stk::equal_case(storage,"matrix_33")) {
+        value = true;
+    }
+
+    return value;
+}
+
+bool storage_type_is_real(const std::string &storage)
+{
+    bool value = false;
+
+    if(storage_type_is_general(storage) ||
+       stk::equal_case(storage,"real")) {
+        value = true;
+    } else {
+        std::string str = storage.substr(0, 4);
+        if(stk::equal_case(str,"real")) {
+            value = true;
+        }
+    }
+
+    return value;
+}
+
+bool storage_type_is_integer(const std::string &storage)
+{
+    bool value = false;
+
+    if(storage_type_is_general(storage)   ||
+       stk::equal_case(storage,"integer") ||
+       stk::equal_case(storage,"integer64")) {
+        value = true;
+    } else {
+        std::string str = storage.substr(0, 7);
+        if(stk::equal_case(str,"integer")) {
+            value = true;
+        }
+    }
+
+    return value;
+}
+
+std::pair<size_t, stk::util::ParameterType::Type> parse_square_bracket_case(const std::string &storage,
+                                                                            stk::util::ParameterType::Type scalar,
+                                                                            stk::util::ParameterType::Type vector)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);
+
+    std::string storageType = sierra::make_lower(storage);
+
+    // Step 0:
+    // See if the type contains '[' and ']'
+    char const *typestr = storageType.c_str();
+    char const *lbrace  = std::strchr(typestr, '[');
+    char const *rbrace  = std::strrchr(typestr, ']');
+
+    if (lbrace != nullptr && rbrace != nullptr) {
+        // Step 1:
+        // First, we split off the basename (REAL/INTEGER) from the component count
+        // ([2])
+        // and see if the basename is a valid variable type and the count is a
+        // valid integer.
+
+        char *base = std::strtok(const_cast<char *>(typestr), "[]");
+        assert(base != nullptr);
+
+        if(!strcmp(base, "real") || !strcmp(base, "integer")) {
+            char *num_str = std::strtok(nullptr, "[]");
+            assert(num_str != nullptr);
+
+            std::istringstream os(num_str);
+            int n = 0;
+            os >> n;
+
+            type = std::make_pair(size_t(n), vector);
+        }
+    }
+
+    return type;
+}
+
+std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_storage(const std::string &storage,
+                                                                                  stk::util::ParameterType::Type scalar,
+                                                                                  stk::util::ParameterType::Type vector)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);
+
+    if(stk::equal_case(storage,"scalar")) {
+        type = std::make_pair(1, scalar);
+    } else if(stk::equal_case(storage,"integer")) {
+        type = std::make_pair(1, scalar);
+    } else if(stk::equal_case(storage,"real")) {
+        type = std::make_pair(1, scalar);
+    }else if(stk::equal_case(storage,"vector_2d")) {
+        type = std::make_pair(2, vector);
+    } else if(stk::equal_case(storage,"vector_3d")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"full_tensor_36")) {
+        type = std::make_pair(9, vector);
+    } else if(stk::equal_case(storage,"full_tensor_32")) {
+        type = std::make_pair(5, vector);
+    } else if(stk::equal_case(storage,"full_tensor_22")) {
+        type = std::make_pair(4, vector);
+    } else if(stk::equal_case(storage,"full_tensor_12")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_33")) {
+        type = std::make_pair(6, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_31")) {
+        type = std::make_pair(4, vector);
+    } else if(stk::equal_case(storage,"sym_tensor_21")) {
+        type = std::make_pair(3, vector);
+    } else if(stk::equal_case(storage,"matrix_33")) {
+        type = std::make_pair(9, vector);
+    } else if(stk::equal_case(storage,"matrix_22")) {
+        type = std::make_pair(4, vector);
+    } else {
+        type = parse_square_bracket_case(storage, scalar, vector);
+    }
+
+    return type;
+}
+
+std::pair<size_t, stk::util::ParameterType::Type> get_parameter_type_from_field_representation(const std::string &storage,
+                                                                                               Ioss::Field::BasicType dataType,
+                                                                                               int copies)
+{
+    std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);
+
+    stk::util::ParameterType::Type scalar = stk::util::ParameterType::INVALID;
+    stk::util::ParameterType::Type vector = stk::util::ParameterType::INVALID;
+
+    if((dataType == Ioss::Field::DOUBLE) && storage_type_is_real(storage)) {
+        scalar = stk::util::ParameterType::DOUBLE;
+        vector = stk::util::ParameterType::DOUBLEVECTOR;
+        type = get_parameter_type_from_storage(storage, scalar, vector);
+    } else if((dataType == Ioss::Field::INTEGER) && storage_type_is_integer(storage)) {
+        scalar = stk::util::ParameterType::INTEGER;
+        vector = stk::util::ParameterType::INTEGERVECTOR;
+        type = get_parameter_type_from_storage(storage, scalar, vector);
+    } else if((dataType == Ioss::Field::INT64) && storage_type_is_integer(storage)) {
+        scalar = stk::util::ParameterType::INT64;
+        vector = stk::util::ParameterType::INT64VECTOR;
+        type = get_parameter_type_from_storage(storage, scalar, vector);
+    }
+
+    if(copies > 1) {
+        type.second = vector;
+    }
+
+    type.first *= copies;
+
+    return type;
+}
+
+std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
+                                                                         const boost::any &value)
+{
+  try {
+    switch(type)  {
+    case stk::util::ParameterType::INTEGER: {
+      return std::make_pair(1, Ioss::Field::INTEGER);
+    }
+
+    case stk::util::ParameterType::INT64: {
+      return std::make_pair(1, Ioss::Field::INT64);
+    }
+
+    case stk::util::ParameterType::DOUBLE: {
+      return std::make_pair(1, Ioss::Field::REAL);
+    }
+
+    case stk::util::ParameterType::DOUBLEVECTOR: {
+      std::vector<double> vec = boost::any_cast<std::vector<double> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::REAL);
+    }
+
+    case stk::util::ParameterType::INTEGERVECTOR: {
+      std::vector<int> vec = boost::any_cast<std::vector<int> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::INTEGER);
+    }
+
+    case stk::util::ParameterType::INT64VECTOR: {
+      std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(value);
+      return std::make_pair(vec.size(), Ioss::Field::INT64);
+    }
+
+    default: {
+      return std::make_pair(0, Ioss::Field::INVALID);
+    }
+    }
+  }
+  catch(...) {
+    std::cerr << "ERROR: Actual type of parameter does not match the declared type. Something went wrong."
+              << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
+    throw;
+  }
 }
 
 }}

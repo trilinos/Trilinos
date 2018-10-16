@@ -252,7 +252,16 @@ namespace MueLuTests {
     RCP<RepartitionHeuristicFactory> RepHeuFact = Teuchos::rcp(new RepartitionHeuristicFactory);
     RepHeuFact->SetFactory("A", MueLu::NoFactory::getRCP()); // 2x2 blocked operator
     RepHeuFact->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
-    RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(200));
+    int minRowsPerRank=200;
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_HAVE_OPENMP)
+    using execution_space = typename Node::device_type::execution_space;
+    if (std::is_same<execution_space, Kokkos::OpenMP>::value)
+    {
+       //Because target value will be multiplied by the # of threads in RepartitionHeuristic
+       minRowsPerRank /= execution_space::concurrency();
+    }
+#endif
+    RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(minRowsPerRank));
 
     // define sub block factories for blocked operator "A"
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());
@@ -364,7 +373,18 @@ namespace MueLuTests {
       out << "Skip detailed tests. Matrix was not rebalanced" << std::endl;
       return;
     }
-    TEST_EQUALITY(nNumProcsReb, 2);
+    int expectedPartitions=2;
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
+    using execution_space = typename Node::device_type::execution_space;
+    if (std::is_same<execution_space, Kokkos::OpenMP>::value)
+    {
+       int thread_per_mpi_rank = execution_space::concurrency();
+       if (thread_per_mpi_rank > 1)
+          expectedPartitions=1;
+    }
+#endif
+    
+    TEST_EQUALITY(nNumProcsReb, expectedPartitions);
 
     //////////////////////////////////////////////////
     // extract partitions
@@ -785,6 +805,7 @@ namespace MueLuTests {
   RCP<TentativePFactory> P11Fact = rcp(new TentativePFactory());
   P11Fact->SetFactory("Aggregates",AggFact11);
   P11Fact->SetFactory("UnAmalgamationInfo",Amalg11);
+  P11Fact->SetParameter("tentative: build coarse coordinates", Teuchos::ParameterEntry(false));
   RCP<TransPFactory> R11Fact = rcp(new TransPFactory());
   RCP<Factory> Nullspace11 = rcp(new NullspaceFactory());
   Nullspace11->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace1")));
@@ -820,6 +841,7 @@ namespace MueLuTests {
   RCP<TentativePFactory>P22Fact = rcp(new TentativePFactory());
   P22Fact->SetFactory("Aggregates",AggFact22);
   P22Fact->SetFactory("UnAmalgamationInfo",Amalg22);
+  P22Fact->SetParameter("tentative: build coarse coordinates", Teuchos::ParameterEntry(false));
   RCP<TransPFactory> R22Fact = rcp(new TransPFactory());
   RCP<Factory> Nullspace22 = rcp(new NullspaceFactory());
   Nullspace22->SetParameter("Fine level nullspace", Teuchos::ParameterEntry(std::string("Nullspace2")));
@@ -841,7 +863,7 @@ namespace MueLuTests {
   M22->SetFactory("P", P22Fact);
   M22->SetFactory("R", R22Fact);
   M22->SetFactory("Ptent", P22Fact); //for Nullspace
-  M22->SetFactory("Coordinates", Coord22);
+  M22->SetFactory("Coordinates", P22Fact);
   M22->SetFactory("Smoother", Smoo22Fact);
   M22->SetFactory("CoarseMap",Cmap22);
   M22->SetFactory("Nullspace",Nullspace22);

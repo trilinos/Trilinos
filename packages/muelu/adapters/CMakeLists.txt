@@ -23,10 +23,6 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/belos)
 
   APPEND_SET(HEADERS
-    belos/BelosOperatorT.hpp
-    belos/BelosXpetraAdapter.hpp
-    belos/BelosXpetraAdapterMultiVector.hpp
-    belos/BelosXpetraAdapterOperator.hpp
     belos/BelosXpetraStatusTestGenResSubNorm.hpp
     belos/BelosMueLuAdapter.hpp
     )
@@ -68,7 +64,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
      tpetra/MueLu_TpetraOperator_def.hpp
    )
 
-   IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT)
+   IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
 
      APPEND_SET(HEADERS
        tpetra/MueLu_ShiftedLaplacian_decl.hpp

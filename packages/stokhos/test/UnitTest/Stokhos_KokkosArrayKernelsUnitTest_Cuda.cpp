@@ -61,7 +61,7 @@ UnitTestSetup<Kokkos::Cuda> setup;
 using Kokkos::Cuda;
 
 // The Tiled-Crs kernel seems to fail when OpenMP is the host device
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #define TILED_CRS_TEST(SCALAR, DEVICE)
 #else
 #define TILED_CRS_TEST(SCALAR, DEVICE)                                         \
@@ -92,9 +92,10 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::HostSpace::execution_space::initialize();
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-  Kokkos::Cuda::print_configuration( std::cout );
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration( std::cout );
 
   // Setup (has to happen after initialization)
   setup.setup();
@@ -103,8 +104,7 @@ int main( int argc, char* argv[] ) {
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up
-  Kokkos::HostSpace::execution_space::finalize();
-  Kokkos::Cuda::finalize();
+  Kokkos::finalize();
 
   return ret;
 }

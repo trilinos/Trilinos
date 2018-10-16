@@ -47,20 +47,17 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-using namespace std;
-using Teuchos::Comm;
-using Teuchos::RCP;
 
 int main(int narg, char **arg)
 {
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int fail=0, gfail=0;
-  Teuchos::GlobalMPISession session(&narg, &arg);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -85,7 +82,7 @@ int main(int narg, char **arg)
   if (gfail){
     if (rank==0){
       std::cout << "Memory allocation failure" << std::endl;
-      std::cout << "FAIL" << std:: endl;
+      std::cout << "FAIL" << std::endl;
     }
     return 1;
   }
@@ -103,14 +100,14 @@ int main(int narg, char **arg)
   Teuchos::gather<int, int>(&numMyIdentifiers, 1, origcnt, 1, 0, *comm);
   Teuchos::gather<int, zscalar_t>(&origsumwgts, 1, origwgts, 1, 0, *comm);
   if (rank == 0) {
-    cout << "BEFORE PART CNTS: ";
+    std::cout << "BEFORE PART CNTS: ";
     for (int i = 0; i < nprocs; i++)
-      cout << origcnt[i] << " ";
-    cout << endl;
-    cout << "BEFORE PART WGTS: ";
+      std::cout << origcnt[i] << " ";
+    std::cout << std::endl;
+    std::cout << "BEFORE PART WGTS: ";
     for (int i = 0; i < nprocs; i++)
-      cout << origwgts[i] << " ";
-    cout << endl;
+      std::cout << origwgts[i] << " ";
+    std::cout << std::endl;
   }
   delete [] origcnt;
   delete [] origwgts;
@@ -228,13 +225,13 @@ int main(int narg, char **arg)
   if (gfail){
     if (rank==0){
       std::cout << "failure in solution's imbalance data" << std::endl;
-      std::cout << "FAIL" << std:: endl;
+      std::cout << "FAIL" << std::endl;
     }
     return 1;
   }
 
   if (rank==0)
-    std::cout << "PASS" << std:: endl;
+    std::cout << "PASS" << std::endl;
 
   delete [] myWeights;
   delete [] myIds;

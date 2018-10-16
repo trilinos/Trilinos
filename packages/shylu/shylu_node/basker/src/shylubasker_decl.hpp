@@ -1,14 +1,14 @@
-#ifndef BASKER_DECL_HPP
-#define BASKER_DECL_HPP
+#ifndef SHYLUBASKER_DECL_HPP
+#define SHYLUBASKER_DECL_HPP
 
 //Basker Includes
-#include "basker_matrix_decl.hpp"
-#include "basker_matrix_view_decl.hpp"
-#include "basker_stats.hpp"
-#include "basker_types.hpp"
-#include "basker_structs.hpp"
-#include "basker_thread.hpp"
-#include "basker_scalar_traits.hpp"
+#include "shylubasker_matrix_decl.hpp"
+#include "shylubasker_matrix_view_decl.hpp"
+#include "shylubasker_stats.hpp"
+#include "shylubasker_types.hpp"
+#include "shylubasker_structs.hpp"
+#include "shylubasker_thread.hpp"
+#include "shylubasker_scalar_traits.hpp"
 
 //Kokkos Includes
 #ifdef BASKER_KOKKOS

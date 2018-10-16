@@ -57,7 +57,7 @@ namespace PHX {
   DimTag::~DimTag() {}
   
   std::string
-  DimTag::to_string(DimTag::size_type n, DimTag::size_type i) const
+  DimTag::to_string(DimTag::size_type /* n */, DimTag::size_type i) const
   {
     //array_traits::check_range( i , n );
     std::ostringstream s ;
@@ -66,7 +66,7 @@ namespace PHX {
   }
 
   DimTag::size_type
-  DimTag::to_index( DimTag::size_type n , const std::string & s ) const
+  DimTag::to_index( DimTag::size_type /* n */, const std::string & s ) const
   {
     const int i = atoi( s.c_str() );
     //array_traits::check_range( i , n );

@@ -102,6 +102,12 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
+    /// Pass initial guess to Newton solver (for implicit schemes)
+    virtual void setInitialGuess(
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess = Teuchos::null) = 0;
+
+    virtual std::string getStepperType() const = 0;
+
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
       getDefaultStepperState() = 0;
     virtual Scalar getOrder() const = 0;
@@ -209,7 +215,7 @@ public:
                             outArgs.supports(MEB::OUT_ARG_W);
 
       TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
-        model->description() << "can not support an implicit ODE with\n"
+        model->description() << " can not support an implicit ODE with\n"
         << "  IN_ARG_x                 = "
         << inArgs.supports(MEB::IN_ARG_x) << "\n"
         << "  IN_ARG_x_dot             = "
@@ -254,7 +260,7 @@ public:
                             outArgs.supports(MEB::OUT_ARG_W);
 
       TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
-        model->description() << "can not support an implicit ODE with\n"
+        model->description() << " can not support an implicit ODE with\n"
         << "  IN_ARG_x                 = "
         << inArgs.supports(MEB::IN_ARG_x) << "\n"
         << "  IN_ARG_x_dot             = "

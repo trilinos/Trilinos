@@ -63,6 +63,10 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
+    
+  /// Pass initial guess to Newton solver (only relevant for explicit schemes)  
+  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+     {initial_guess_ = initial_guess;}
 
   /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
   virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
@@ -95,6 +99,8 @@ private:
   Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperTrapezoidalObserver<Scalar> > stepperTrapObserver_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >          xDotTemp_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 /** \brief Time-derivative interface for Trapezoidal method.

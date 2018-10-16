@@ -66,8 +66,10 @@ namespace KokkosBatched {
             *__restrict__ beta1 =        b+p*bs0,
             *__restrict__ b2    = iend ? beta1+bs0 : NULL;
 
+          // with __restrict__ a compiler assumes that the pointer is not accessed by others
+          // op(/=) uses this pointer and changes the associated values, which brings a compiler problem
           if (!use_unit_diag)
-            *beta1 /= A[p*as0+p*as1];
+            *beta1 = *beta1 / A[p*as0+p*as1];
 
           for (int i=0;i<iend;++i)
             b2[i*bs0] -= a21[i*as0] * (*beta1);
@@ -171,8 +173,10 @@ namespace KokkosBatched {
           const ValueType *__restrict__ a01   = A+p*as1;
           /**/  ValueType *__restrict__ beta1 = b+p*bs0;
 
+          // with __restrict__ a compiler assumes that the pointer is not accessed by others
+          // op(/=) uses this pointer and changes the associated values, which brings a compiler problem
           if (!use_unit_diag)
-            *beta1 /= A[p*as0+p*as1];
+            *beta1 = *beta1 / A[p*as0+p*as1];
 
           for (int i=0;i<iend;++i)
             b0[i*bs0] -= a01[i*as0] * (*beta1);

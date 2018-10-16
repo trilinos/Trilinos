@@ -69,7 +69,7 @@ lowerTriSolveCsrUnitDiag (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   //const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -106,7 +106,7 @@ lowerTriSolveCsr (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   //const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -158,7 +158,7 @@ upperTriSolveCsrUnitDiag (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   //const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -220,7 +220,7 @@ upperTriSolveCsr (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   //const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -292,7 +292,7 @@ upperTriSolveCscUnitDiag (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -355,7 +355,7 @@ upperTriSolveCsc (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -441,7 +441,7 @@ lowerTriSolveCscUnitDiag (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -481,7 +481,7 @@ upperTriSolveCscUnitDiagConj (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -544,7 +544,7 @@ upperTriSolveCscConj (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -631,7 +631,7 @@ lowerTriSolveCsc (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -683,7 +683,7 @@ lowerTriSolveCscUnitDiagConj (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;
@@ -723,7 +723,7 @@ lowerTriSolveCscConj (RangeMultiVectorType X,
 
   const local_ordinal_type numRows = A.numRows ();
   const local_ordinal_type numCols = A.numCols ();
-  const local_ordinal_type numVecs = X.dimension_1 ();
+  const local_ordinal_type numVecs = X.extent(1);
   typename CrsMatrixType::row_map_type ptr = A.graph.row_map;
   typename CrsMatrixType::index_type ind = A.graph.entries;
   typename CrsMatrixType::values_type val = A.values;

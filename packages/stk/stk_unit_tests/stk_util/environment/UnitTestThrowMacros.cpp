@@ -33,7 +33,7 @@
 
 #include <iostream>                     // for ostringstream, etc
 #include <stdexcept>                    // for logic_error, runtime_error, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string
 

@@ -1,23 +1,23 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions of
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
 C met:
-C 
+C
 C     * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C 
+C
 C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.  
-C 
+C       with the distribution.
+C
 C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
-C 
+C
 C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,13 +29,13 @@ C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C 
+C
 
 C=======================================================================
       PROGRAM TXTEXO
 C=======================================================================
 
-#if defined(__INTEL_COMPILER) 
+#if defined(__INTEL_COMPILER)
 cDEC$ OPTIMIZE:0
 #endif
 C     --*** TXTEXO *** (TXTEXO) TEXT to EXODUS translator
@@ -61,14 +61,14 @@ C     --Expects the input text file on unit 20, the output database on unit 11.
       CHARACTER*1 C(1)
 C     --A - the dynamic memory base array
 
-      CHARACTER*5 STRA, STRB
+      CHARACTER*32 STRA, STRB
       CHARACTER*8 STR8
 
 C     Program Information
 C.
-      QAINFO(1) = 'txtexo2                         '
-      QAINFO(2) = '2011/09/26                      '
-      QAINFO(3) = ' 1.13                           '
+      QAINFO(1) = 'txtexo                          '
+      QAINFO(2) = '2018/08/14                      '
+      QAINFO(3) = ' 2.01                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -148,7 +148,7 @@ C     --Read the coordinates
 
       CALL RWXYZ (NTXT, NDB, NDIM, NUMNP, A(KXN), A(KYN), A(KZN),
      *  C(KNACOR), NAMLEN, *140)
-      
+
       CALL MDDEL ('XN')
       IF (NDIM .GE. 2) CALL MDDEL ('YN')
       IF (NDIM .GE. 3) CALL MDDEL ('ZN')
@@ -163,12 +163,12 @@ C     --Read the element and node maps
 C     ... Node number map
       CALL RDMAP (NTXT, NUMNP, IA(KMAP), *140)
       call expnnm (ndb, ia(kmap), ierr)
-      
+
 C     ... Element number map
       CALL RDMAP (NTXT, NUMEL, IA(KMAP), *140)
       call expenm (ndb, ia(kmap), ierr)
-      
-C     ... Element order map      
+
+C     ... Element order map
       CALL RDMAP (NTXT, NUMEL, IA(KMAP), *140)
       call expmap (ndb, ia(kmap), ierr)
 
@@ -223,7 +223,7 @@ C     --Read the node sets
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 130
 
-         CALL RDNPS (NTXT, NUMNPS, LNPSNL, LNPSDF, 
+         CALL RDNPS (NTXT, NUMNPS, LNPSNL, LNPSDF,
      &        iA(KIDNS), iA(KNNNS), iA(KNDNPS), iA(KIXNNS), iA(KIXDNS),
      &        iA(KLSTNS), A(KFACNS), *140)
          call expcns (ndb, ia(kidns), ia(knnns), ia(kndnps),
@@ -275,7 +275,7 @@ C     --Read the side sets
 C     --Read the properties
       call rwpval(ntxt, ndb, a, ia, c, nelblk, numnps, numess,
      &  ia(kidlb), ia(kidns), ia(kidss), *140)
-      
+
       if (numnps .gt. 0) CALL MDDEL ('IDNPS')
       if (numess .gt. 0) CALL MDDEL ('IDESS')
 
@@ -312,7 +312,7 @@ C     --Read the database time steps
  110  CONTINUE
       IF (.TRUE.) THEN
          NSTEPS = NSTEPS + 1
-         CALL RWSTEP (NTXT, NDB, NSTEPS, ia(kidlb), 
+         CALL RWSTEP (NTXT, NDB, NSTEPS, ia(kidlb),
      &     NVARGL, NVARNP, NUMNP, NVAREL, NELBLK, iA(KNELB), iA(KIEVOK),
      &     TIME, A(KVAR), *120)
 
@@ -326,7 +326,7 @@ C     --Read the database time steps
       call mddel('NUMELB')
       call mddel('ISEVOK')
       call mddel('VAR')
-      
+
       NSTEPS = NSTEPS-1
       CALL INTSTR (1, 0, NSTEPS, STR8, LSTR)
       WRITE (*, 10010) STR8(:LSTR)
@@ -351,7 +351,7 @@ C     --Read the database time steps
 C.
       subroutine wrcon (ndb, cornam, ierr, namlen)
       character*(namlen) cornam(*)
-      
+
       call expcon (ndb, cornam, ierr)
       return
       end

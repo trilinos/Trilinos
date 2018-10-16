@@ -57,12 +57,16 @@
 #    include <mpi.h>
 #  else
 #    include <Epetra_SerialComm.h>
+#    include <Teuchos_DefaultSerialComm.hpp>
 #  endif // EPETRA_MPI
 #endif // HAVE_TPETRACORE_EPETRA
 
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
 typedef Tpetra::global_size_t GST;
@@ -307,103 +311,105 @@ main (int argc, char* argv[])
 {
   using std::cout;
   using std::endl;
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
 
-  RCP<const Teuchos::Comm<int> > tpetraComm;
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  {
+    RCP<const Teuchos::Comm<int> > tpetraComm;
 #ifdef HAVE_TPETRACORE_EPETRA
-  #ifdef EPETRA_MPI
-  Epetra_MpiComm epetraComm (MPI_COMM_WORLD);
-  tpetraComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+#  ifdef EPETRA_MPI
+    Epetra_MpiComm epetraComm (MPI_COMM_WORLD);
+    tpetraComm = Tpetra::getDefaultComm ();
 #  else
-  Epetra_SerialComm epetraComm;
-  tpetraComm = rcp (new Teuchos::SerialComm<int>);
+    Epetra_SerialComm epetraComm;
+    tpetraComm = rcp (new Teuchos::SerialComm<int>);
 #  endif // EPETRA_MPI
 #endif // HAVE_TPETRACORE_EPETRA
 
-  //const int numProcs = tpetraComm->getSize (); // unused
-  const int myRank = tpetraComm->getRank ();
-  const int indexBase = 0;
+    //const int numProcs = tpetraComm->getSize (); // unused
+    const int myRank = tpetraComm->getRank ();
+    const int indexBase = 0;
 
-  // Benchmark parameters
-  int numIndsPerProc = 100000;
-  int numTrials = 1000;
+    // Benchmark parameters
+    int numIndsPerProc = 100000;
+    int numTrials = 1000;
 
 #ifdef HAVE_TPETRACORE_EPETRA
-  bool runEpetra = true;
+    bool runEpetra = true;
 #else
-  bool runEpetra = false;
+    bool runEpetra = false;
 #endif // HAVE_TPETRACORE_EPETRA
-  bool runTpetra = true;
+    bool runTpetra = true;
 
-  CommandLineProcessor cmdp;
-  cmdp.setOption ("numIndsPerProc", &numIndsPerProc, "Number of global indices "
-                  "owned by each process");
-  cmdp.setOption ("numTrials", &numTrials, "Number of timing loop iterations for each event to time");
-  cmdp.setOption ("runEpetra", "noEpetra", &runEpetra,
-                  "Whether to run the Epetra benchmark");
-  cmdp.setOption ("runTpetra", "noTpetra", &runTpetra,
-                  "Whether to run the Tpetra benchmark");
-  const CommandLineProcessor::EParseCommandLineReturn parseResult =
-    cmdp.parse (argc, argv);
-  if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
-    // The user specified --help at the command line to print help
-    // with command-line arguments.  We printed help already, so quit
-    // with a happy return code.
-    return EXIT_SUCCESS;
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
-      std::invalid_argument, "Failed to parse command-line arguments.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      numIndsPerProc < 0, std::invalid_argument,
-      "numIndsPerProc must be nonnegative.");
+    CommandLineProcessor cmdp;
+    cmdp.setOption ("numIndsPerProc", &numIndsPerProc, "Number of global indices "
+                    "owned by each process");
+    cmdp.setOption ("numTrials", &numTrials, "Number of timing loop iterations for each event to time");
+    cmdp.setOption ("runEpetra", "noEpetra", &runEpetra,
+                    "Whether to run the Epetra benchmark");
+    cmdp.setOption ("runTpetra", "noTpetra", &runTpetra,
+                    "Whether to run the Tpetra benchmark");
+    const CommandLineProcessor::EParseCommandLineReturn parseResult =
+      cmdp.parse (argc, argv);
+    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
+      // The user specified --help at the command line to print help
+      // with command-line arguments.  We printed help already, so quit
+      // with a happy return code.
+      return EXIT_SUCCESS;
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+         std::invalid_argument, "Failed to parse command-line arguments.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numIndsPerProc < 0, std::invalid_argument,
+         "numIndsPerProc must be nonnegative.");
 #ifndef HAVE_TPETRACORE_EPETRA
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      runEpetra, std::invalid_argument, "Tpetra was not built with Epetra "
-      "enabled, so you cannot run the Epetra benchmark." );
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (runEpetra, std::invalid_argument, "Tpetra was not built with Epetra "
+         "enabled, so you cannot run the Epetra benchmark." );
 #endif // HAVE_TPETRACORE_EPETRA
-  }
+    }
 
-  if (myRank == 0) {
-    cout << endl << "---" << endl
-         << "Command-line options:" << endl
-         << "  numIndsPerProc: " << numIndsPerProc << endl
-         << "  numTrials: " << numTrials << endl;
+    if (myRank == 0) {
+      cout << endl << "---" << endl
+           << "Command-line options:" << endl
+           << "  numIndsPerProc: " << numIndsPerProc << endl
+           << "  numTrials: " << numTrials << endl;
 #ifdef HAVE_TPETRACORE_EPETRA
-    cout << "  runEpetra: " << (runEpetra ? "true" : "false") << endl;
+      cout << "  runEpetra: " << (runEpetra ? "true" : "false") << endl;
 #else
-    cout << "  runEpetra: " << (runEpetra ? "true" : "false") << endl;
+      cout << "  runEpetra: " << (runEpetra ? "true" : "false") << endl;
 #endif // HAVE_TPETRACORE_EPETRA
-    cout << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
-         << endl;
-  }
+      cout << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
+           << endl;
+    }
 
-  const int numMapCreateTrials = numTrials;
-  const int numVecCreateTrials = numTrials;
-  const int numVecRandTrials = numTrials;
-  const int numVecNormTrials = numTrials;
-  const int numVecDotTrials = numTrials;
+    const int numMapCreateTrials = numTrials;
+    const int numVecCreateTrials = numTrials;
+    const int numVecRandTrials = numTrials;
+    const int numVecNormTrials = numTrials;
+    const int numVecDotTrials = numTrials;
 
-  // Run the benchmark
+    // Run the benchmark
 #ifdef HAVE_TPETRACORE_EPETRA
-  if (runEpetra) {
-    benchmarkEpetra (epetraComm, numIndsPerProc, indexBase,
-                     numMapCreateTrials,
-                     numVecCreateTrials,
-                     numVecRandTrials,
-                     numVecNormTrials,
-                     numVecDotTrials);
-  }
+    if (runEpetra) {
+      benchmarkEpetra (epetraComm, numIndsPerProc, indexBase,
+                       numMapCreateTrials,
+                       numVecCreateTrials,
+                       numVecRandTrials,
+                       numVecNormTrials,
+                       numVecDotTrials);
+    }
 #endif // HAVE_TPETRACORE_EPETRA
-  if (runTpetra) {
-    benchmarkTpetra (tpetraComm, numIndsPerProc, indexBase,
-                     numMapCreateTrials,
-                     numVecCreateTrials,
-                     numVecRandTrials,
-                     numVecNormTrials,
-                     numVecDotTrials);
+    if (runTpetra) {
+      benchmarkTpetra (tpetraComm, numIndsPerProc, indexBase,
+                       numMapCreateTrials,
+                       numVecCreateTrials,
+                       numVecRandTrials,
+                       numVecNormTrials,
+                       numVecDotTrials);
+    }
+    TimeMonitor::report (tpetraComm.ptr (), std::cout);
   }
-  TimeMonitor::report (tpetraComm.ptr (), std::cout);
   return EXIT_SUCCESS;
 }

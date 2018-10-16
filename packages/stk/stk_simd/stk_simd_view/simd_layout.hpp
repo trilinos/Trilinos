@@ -47,7 +47,6 @@ struct LayoutLeft;
 
 namespace Kokkos {
 
-namespace Experimental {
 namespace Impl {
 template < class Dimension , class Layout , typename Enable >
 struct ViewOffset;
@@ -55,25 +54,25 @@ template < class Dimension , typename RealType >
 struct ViewOffset<Dimension, stk::simd::LayoutRight<RealType>, void>;
 template < class Dimension , typename RealType >
 struct ViewOffset<Dimension, stk::simd::LayoutLeft<RealType>, void>;
-}}
+} // namespace Impl
 
-}
+} // namespace Kokkos
 
 #include "Kokkos_Core.hpp"
 
 constexpr int simd_double_width = stk::simd::ndoubles;
-constexpr int simd_double_width_log_2 = simd_double_width==1 ? 0 
-  : simd_double_width==2 ? 1 
+constexpr int simd_double_width_log_2 = simd_double_width==1 ? 0
+  : simd_double_width==2 ? 1
   : simd_double_width==4 ? 2
-  : simd_double_width==8 ? 3 
+  : simd_double_width==8 ? 3
   : -1;
 constexpr int simd_double_width_m_one = simd_double_width-1;
 
 constexpr int simd_float_width = stk::simd::nfloats;
-constexpr int simd_float_width_log_2 = simd_float_width==1 ? 0 
-  : simd_float_width==2 ? 1 
+constexpr int simd_float_width_log_2 = simd_float_width==1 ? 0
+  : simd_float_width==2 ? 1
   : simd_float_width==4 ? 2
-  : simd_float_width==8 ? 3 
+  : simd_float_width==8 ? 3
   : simd_float_width==16 ? 4
   : -1;
 constexpr int simd_float_width_m_one = simd_float_width-1;
@@ -102,7 +101,7 @@ struct SimdSizeTraits<float> {
 
 template <typename T>
 KOKKOS_INLINE_FUNCTION
-constexpr size_t simd_pad(const size_t i) { 
+constexpr size_t simd_pad(const size_t i) {
   return i + SimdSizeTraits<T>::simd_width_m_one - (i-1)%SimdSizeTraits<T>::simd_width;
 }
 
@@ -151,13 +150,12 @@ struct LayoutLeft {
 }}
 
 namespace Kokkos {
-namespace Experimental {
 namespace Impl {
 
 //----------------------------------------------------------------------------
 // LayoutRight AND ( 1 >= rank OR 0 == rank_dynamic ) : padding / no striding
 template < class Dimension, typename RealType >
-struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void> 
+struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
 {
   using is_mapping_plugin = std::true_type ;
   using is_regular        = std::false_type ;
@@ -171,7 +169,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
   static constexpr int simd_width_m_one = SimdSizeTraits<RealType>::simd_width_m_one;
 
   enum { has_padding = true };
-  
+
   dimension_type m_dim ;
 
   //----------------------------------------
@@ -206,6 +204,12 @@ struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
                          , m_dim.N4 , m_dim.N5 , m_dim.N6 , m_dim.N7 );
     }
 
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename std::enable_if< std::is_integral<iType>::value , size_t >::type
+  extent( const iType & r ) const
+    { return m_dim.extent(r); }
+
   KOKKOS_INLINE_FUNCTION constexpr size_type dimension_0() const { return m_dim.N0 ; }
   KOKKOS_INLINE_FUNCTION constexpr size_type dimension_1() const { return m_dim.N1 ; }
   KOKKOS_INLINE_FUNCTION constexpr size_type dimension_2() const { return m_dim.N2 ; }
@@ -219,7 +223,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
   KOKKOS_INLINE_FUNCTION
   constexpr size_type size() const
     { return m_dim.N0 * m_dim.N1 * m_dim.N2 * m_dim.N3 * m_dim.N4 * m_dim.N5 * m_dim.N6 * m_dim.N7 ; }
-  
+
   /* Span of the range space */
   KOKKOS_INLINE_FUNCTION
   constexpr size_type span() const
@@ -269,12 +273,12 @@ struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
   template< class DimRHS >
   KOKKOS_INLINE_FUNCTION
   constexpr ViewOffset( const ViewOffset< DimRHS , stk::simd::LayoutRight<RealType> , void > & rhs )
-    : m_dim( rhs.m_dim.N0 , rhs.m_dim.N1 , rhs.m_dim.N2 , rhs.m_dim.N3 
+    : m_dim( rhs.m_dim.N0 , rhs.m_dim.N1 , rhs.m_dim.N2 , rhs.m_dim.N3
            , rhs.m_dim.N4 , rhs.m_dim.N5 , rhs.m_dim.N6 , rhs.m_dim.N7 )
     {
       static_assert( int(DimRHS::rank) == int(dimension_type::rank) , "ViewOffset assignment requires equal rank" );
       // Also requires equal static dimensions ...
-    } 
+    }
 
   template< class DimRHS >
   KOKKOS_INLINE_FUNCTION
@@ -302,7 +306,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutRight<RealType> , void>
 //----------------------------------------------------------------------------
 // LayoutLeft AND ( 1 >= rank OR 0 == rank_dynamic ) : padding / no striding
 template < class Dimension, typename RealType >
-struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void> 
+struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
 {
   using is_mapping_plugin = std::true_type ;
   using is_regular        = std::false_type ;
@@ -316,11 +320,11 @@ struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
   static constexpr int simd_width_m_one = SimdSizeTraits<RealType>::simd_width_m_one;
 
   enum { has_padding = true };
-  
+
   dimension_type m_dim ;
 
   size_type S0;
-  
+
   //----------------------------------------
 
   // rank 1
@@ -352,6 +356,12 @@ struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
       return array_layout( m_dim.N0 , m_dim.N1 , m_dim.N2 , m_dim.N3
                          , m_dim.N4 , m_dim.N5 , m_dim.N6 , m_dim.N7 );
     }
+
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION constexpr
+  typename std::enable_if< std::is_integral<iType>::value , size_t >::type
+  extent( const iType & r ) const
+    { return m_dim.extent(r); }
 
   KOKKOS_INLINE_FUNCTION constexpr size_type dimension_0() const { return m_dim.N0 ; }
   KOKKOS_INLINE_FUNCTION constexpr size_type dimension_1() const { return m_dim.N1 ; }
@@ -415,7 +425,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
     : m_dim( arg_layout.dimension[0], arg_layout.dimension[1], arg_layout.dimension[2], arg_layout.dimension[3], arg_layout.dimension[4], arg_layout.dimension[5], arg_layout.dimension[6], arg_layout.dimension[7] )
     , S0( simd_pad<RealType>(arg_layout.dimension[0]) )
     {}
-  
+
   template< class DimRHS >
   KOKKOS_INLINE_FUNCTION
   constexpr ViewOffset( const ViewOffset< DimRHS , stk::simd::LayoutLeft<RealType> , void > & rhs )
@@ -425,7 +435,7 @@ struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
     {
       static_assert( int(DimRHS::rank) == int(dimension_type::rank) , "ViewOffset assignment requires equal rank" );
       // Also requires equal static dimensions ...
-    } 
+    }
 
   template< class DimRHS >
   KOKKOS_INLINE_FUNCTION
@@ -449,9 +459,10 @@ struct ViewOffset< Dimension , stk::simd::LayoutLeft<RealType> , void>
         Kokkos::abort("Kokkos::ViewOffset assignment of LayoutLeft from LayoutStride  requires stride == 1" );
       }
     }
-  
+
 };
 
-}}}
+} // namespace Impl
+} // namespace Kokkos
 
 #endif

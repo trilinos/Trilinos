@@ -58,6 +58,7 @@
 # Define the Trilinos packages
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  TrilinosFrameworkTests  commonTools/framework           PT
   Gtest                 commonTools/gtest                 PT
   ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
@@ -137,7 +138,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
   Mesquite              packages/mesquite                 ST
-  MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST

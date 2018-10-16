@@ -58,9 +58,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 int main (int argc, char *argv[])
 {
@@ -90,12 +89,9 @@ int main (int argc, char *argv[])
 
     int MyPID = 0;
 
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    typedef Tpetra::Map<>::node_type Node;
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    RCP<Node>             node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor
@@ -139,7 +135,7 @@ int main (int argc, char *argv[])
     //
     RCP<Tpetra::CrsMatrix<ST> > A;
     Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-    RCP<const Tpetra::Map<int> > map = A->getDomainMap();
+    RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
     RCP<MV> B, X;

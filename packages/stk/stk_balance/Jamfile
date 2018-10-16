@@ -109,20 +109,31 @@ install install-user-include
 explicit install-user-lib ;
 install install-user-lib
   : stk_balance_lib
+    search_tolerance_algs
   : <location>$(install-root)/stk/stk_balance/lib
   ;
 
-lib search_tolerance
+# This is currently a header-only library, so it must not use the lib rule.
+# http://www.boost.org/boost-build2/doc/html/bbv2/faq/header-only-libraries.html
+# If sources are added to this library change this target to use the lib rule instead.
+alias search_tolerance
+  : # No sources defined for header-only libraries.
+  : # No build requirements
+  : # No default build
+  : <include>$(stk_balance-root)/stk_balance/search_tolerance
+  ;
+
+lib search_tolerance_algs
   :
     [ ifdevbuild 
-      [ glob $(stk_balance-root)/stk_balance/search_tolerance/*.cpp 
+      [ glob $(stk_balance-root)/stk_balance/search_tolerance_algs/*.cpp 
       ] 
     ]
-    /sierra/stk_balance//stk_balance_lib
+    search_tolerance
     /sierra/stk_mesh//stk_mesh_base
   :
-    <include>$(stk_balance-root)/stk_balance/search_tolerance/
-    [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_search_tolerance.a ]
+    <include>$(stk_balance-root)/stk_balance/search_tolerance_algs/
+    [ ifuserbuild <file>$(stk_balance-root)/lib/libsearch_tolerance_algs.a ]
   :
   :
   ;
@@ -135,6 +146,8 @@ lib stk_balance_lib
              $(stk_balance-root)/stk_balance/internal/*.cpp 
       ] 
     ]
+    search_tolerance
+    search_tolerance_algs
     /sierra/stk_io//stk_io
     /sierra/stk_mesh//stk_mesh_base
     /tpl/trilinos//teuchos
@@ -142,7 +155,7 @@ lib stk_balance_lib
     /sierra/stk_transfer//stk_transfer_impl
     /sierra/stk_search//stk_search
     /sierra/stk_tools//stk_tools_lib
-    /mpi//mpi
+    /sierra/stk_util//stk_util_command_line
   :
     <include>$(stk_balance-root)/stk_balance
     [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a ]
@@ -156,7 +169,6 @@ lib stk_balance_test_utils
     stk_balance_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
-    /sierra/seacas//ioss
     /sierra/seacas//nemesis
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_test_utils
@@ -174,14 +186,6 @@ exe stk_balance_unit_tester
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils
-    stk_balance_lib
-    /sierra/seacas//ioss
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/geometry_toolkit//geometry_toolkit
-    /tpl/gtest//gtest
-    /mpi//mpi
-    /sierra/stk_util//stk_util_parallel
-    /sierra/stk_util//stk_util_command_line
   :
     <tag>@sierra-exec-tag
   ;
@@ -193,12 +197,6 @@ exe stk_balance_integration_tester
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_balance_test_utils
-    stk_balance_lib
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/stk_balance//search_tolerance
-    /sierra/seacas//ioss
-    /tpl/gtest//gtest
-    /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;
@@ -209,8 +207,6 @@ exe stk_balance
         $(stk_balance-root)/stk_balance/balance_main/*.cpp
     ]
     stk_balance_lib
-    /sierra/stk_util//stk_util_command_line
-    /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;
@@ -221,8 +217,6 @@ exe stk_balance_m2n
         $(stk_balance-root)/stk_balance/m2n_main/*.cpp
     ]
     stk_balance_lib
-    /sierra/stk_util//stk_util_command_line
-    /mpi//mpi
   :
     <tag>@sierra-exec-tag
   ;

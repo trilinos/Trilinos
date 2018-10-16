@@ -45,11 +45,10 @@
 #include <qd/qd_real.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <TpetraExt_TypeStack.hpp>
 
 #include <IRTRDriver.hpp>
@@ -70,8 +69,8 @@ int main (int argc, char *argv[])
   //
   RCP<Teuchos::oblackholestream> blackhole =
     rcp (new Teuchos::oblackholestream ());
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, blackhole.getRawPtr ());
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  auto comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
 
   //

@@ -58,7 +58,6 @@
 */
 
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -69,9 +68,15 @@
 
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #  include "MueLu_CreateTpetraPreconditioner.hpp"
+
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+#  include "MueLu_AvatarInterface.hpp"
+#endif //HAVE_TRILINOSCOUPLINGS_AVATAR
+
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
-#include <MatrixMarket_Tpetra.hpp>
+#include "Tpetra_Core.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 int
 main (int argc, char *argv[])
@@ -87,7 +92,6 @@ main (int argc, char *argv[])
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
   using IntrepidPoissonExample::setUpCommandLineArguments;
-  using Tpetra::DefaultPlatform;
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
@@ -116,14 +120,12 @@ main (int argc, char *argv[])
   bool success = true;
   try {
     Teuchos::oblackholestream blackHole;
-    Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-    const int myRank = mpiSession.getRank ();
-    //const int numProcs = mpiSession.getNProc ();
+    Tpetra::ScopeGuard mpiSession (&argc, &argv);
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<Node> node; // OK to be null; just needed for type deduction; eventually remove this
 
-    // Get the default communicator and Kokkos Node instance
-    RCP<const Comm<int> > comm =
-      DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+    const int myRank = comm->getRank ();
+    //const int numProcs = comm->getSize ();
 
     // Did the user specify --help at the command line to print help
     // with command-line arguments?
@@ -139,11 +141,11 @@ main (int argc, char *argv[])
     Teuchos::ParameterList problemStatistics;
 
     // Set default values of command-line arguments.
-    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile, 
+    setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
                                     solverName, verbose, debug);
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
-    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile, 
+    setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
                                solverName, tolFromCmdLine,
                                maxNumItersFromCmdLine,
                                verbose, debug);
@@ -299,7 +301,7 @@ main (int argc, char *argv[])
            << "||B||_2 = " << norms[1] << endl
            << "||A||_F = " << norms[2] << endl;
 
-   
+
       // Setup preconditioner
       std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
@@ -307,16 +309,35 @@ main (int argc, char *argv[])
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "MueLu") {
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU         
+#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
+          // If we have Avatar, then let's use it
+          if (inputList.isSublist("Avatar-MueLu")) {
+            // NOTE: User will need to make sure these are named consistently with the tree files specified
+            ParameterList problemFeatures = problemStatistics;
+            ParameterList avatarParams = inputList.sublist("Avatar-MueLu");
+            ParameterList & mueluParams = inputList.sublist("MueLu");
+
+            *out<<"*** Avatar Parameters ***\n"<<avatarParams<<std::endl;
+
+            MueLu::AvatarInterface avatar(comm,avatarParams);
+            *out<<"*** Avatar Setup ***"<<std::endl;
+            avatar.Setup();
+            avatar.SetMueLuParameters(problemFeatures,mueluParams, true);
+
+            *out<<"*** Updated MueLu Parameters ***\n"<<mueluParams<<std::endl;
+            avatar.Cleanup();
+          }
+#endif
 	  for(int i=0; i<numMueluRebuilds+1; i++) {
 	    if (inputList.isSublist("MueLu")) {
 	      ParameterList mueluParams = inputList.sublist("MueLu");
               mueluParams.sublist("user data").set("Coordinates",coords);
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
-	    } else {
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
-	    }
-	  }
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
+            } else {
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+            }
+          }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU
           TEUCHOS_TEST_FOR_EXCEPTION(
             prec_type == "MueLu", std::runtime_error, "Tpetra scaling example: "

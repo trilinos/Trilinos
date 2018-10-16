@@ -191,7 +191,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 
 Teuchos::RCP<LOCA::Extended::Vector>
 LOCA::MultiContinuation::ExtendedMultiVector::generateVector(
-                            int nVecs,
+                            int /* nVecs */,
                             int nScalarRows) const
 {
   return

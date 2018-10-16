@@ -30,7 +30,7 @@ namespace Tacho {
         static_assert(std::is_same<value_type,value_type_b>::value,
                       "A and B do not have the same value type.");
         
-        const ordinal_type m = B.dimension_0(), n = B.dimension_1();
+        const ordinal_type m = B.extent(0), n = B.extent(1);
         
         if (m > 0 && n > 0) {
           for (ordinal_type p=0,offsB=0;p<n;++p,offsB+=B.stride_1()) {  

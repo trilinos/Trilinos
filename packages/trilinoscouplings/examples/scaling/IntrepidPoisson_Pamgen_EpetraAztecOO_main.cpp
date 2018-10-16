@@ -96,7 +96,6 @@ main (int argc, char *argv[])
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
-  //using Tpetra::DefaultPlatform;
   //using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;

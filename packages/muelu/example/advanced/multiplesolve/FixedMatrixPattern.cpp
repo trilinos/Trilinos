@@ -126,6 +126,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     //
 
     FactoryManager M;
+    M.SetKokkosRefactor(false);
 
     Hierarchy H(A1);
 

@@ -61,13 +61,11 @@
 #include <Teuchos_Comm.hpp>   
 #include <Teuchos_DefaultComm.hpp>   
 
-using namespace std;
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -134,7 +132,7 @@ int main(int argc, char *argv[])
     if (nstrings > 0)
       sendStrings = new string [nstrings];
 
-    ostringstream myMessage;
+    std::ostringstream myMessage;
     myMessage << "message from process " << rank;
 
     for (int i=0; i < nstrings; i++)
@@ -165,7 +163,7 @@ int main(int argc, char *argv[])
         errcode = 5;
         break;
       }
-      ostringstream msg;
+      std::ostringstream msg;
       msg << "message from process " << i;
       for (int j=0; j < recvCounts[i]; j++){
         if (recvBuf[next++] != msg.str()){

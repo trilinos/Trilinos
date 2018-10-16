@@ -42,8 +42,6 @@
 #ifndef KOKKOS_VIEW_UQ_PCE_HPP
 #define KOKKOS_VIEW_UQ_PCE_HPP
 
-#include "Sacado_UQ_PCE.hpp"
-
 namespace Kokkos {
 
   // Get global sparse 3 tensor

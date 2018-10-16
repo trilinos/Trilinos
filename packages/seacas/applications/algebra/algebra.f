@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -33,7 +33,6 @@ C
 C=======================================================================
       PROGRAM ALGEBRA2
 C=======================================================================
-C $Id: algebra2.f,v 1.16 2009/03/25 14:42:08 gdsjaar Exp $
 C
 C   --This version of ALGEBRA will read and write EXODUSIIV2 database
 C   --format files.  Many changes have occurred since the first version
@@ -46,16 +45,6 @@ C   --select what we want to read or write at anytime.
 C
 C                         *** ALGEBRA 2.02 ***
 C   --*** ALGEBRA *** (ALGEBRA) Algebraic Database Manipulation Program
-C   --   Written by Amy Gilkey - revised 05/18/88
-C   --   Modified by Greg Sjaardema - 4/17/91
-C   --     o Initial unix version
-C   --     o Removed need for slatec library - wrote princ3.f
-C   --   Modified by Frank Mello - 4/01/92
-C   --     o Added _ as valid character in variable names
-C   --   Modified by Greg Sjaardema - 4/01/92
-C   --     o Hopefully fixed problem with deleting element blocks
-C   --   Modified by Christi Forsythe - 8/26/95
-C   --     o Read and write ExodusIIV2 database format
 C   --
 C   --The ALGEBRA program allows the user to process data from a finite
 C   --element analysis before it is plotted. The finite element output
@@ -64,57 +53,6 @@ C   --velocity components, etc.) in an EXODUS database.  The ALGEBRA program
 C   --evaluates user-supplied functions of the data and writes the results
 C   --to an output EXODUS database which can be read by plot programs.
 C   --
-C   --Expected input:
-C   --   o The equations and commands on the standard input device.
-C   --   o The input EXODUSIIV2 database on unit 11.
-C   --
-C   --Output:
-C   --   o A listing of the input database information and any errors
-C   --     found on the standard output device.
-C   --   o The output EXODUSIIV2 database on unit 12.
-
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                    ISSUED BY SANDIA LABORATORIES,                   *
-*                      A PRIME CONTRACTOR TO THE                      *
-*                  UNITED STATES DEPARTMENT OF ENERGY                 *
-* * * * * * * * * * * * * *   N O T I C E   * * * * * * * * * * * * * *
-* This program was prepared as an account of work sponsored by the    *
-* United States Government.  Neither the United States nor the United *
-* States Department of Energy nor any of their employees, nor any of  *
-* their contractors, subcontractors, or their employees, makes any    *
-* warranty, express or implied, or assumes any legal liability or     *
-* responsibility for the accuracy, completeness or usefulness of any  *
-* information, apparatus, product or process disclosed, or represents *
-* that its use would not infringe privately owned rights.             *
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
-C   --Developed at Sandia National Laboratories.
-C   --
-C   --Current author and code sponsor: Amy Gilkey
-C   --
-C   --Revision History:
-C   --   8/95   Converted from ExodusIIv1 to ExodusIIv2 database format
-C   --   11/87  Converted from SEACO to EXODUS database (Amy Gilkey)
-C   --   11/84  New sponsor (Amy Gilkey)
-C   --   05/82  Changed to CRAY (M.A. Richgels)
-C   --   11/81  Altered to FORTRAN 77 (M.A. Richgels)
-C   --   11/81  Changed to VAX interactive (M.A. Richgels)
-C   --   06/80  Created (M.A. Richgels)
-C   --
-C   --Source is in FORTRAN 77
-C   --
-C   --External software used:
-C   --   Some of the SUPES subroutines have been rewritten for this code
-C   --   SUPES package (dynamic memory, FORTRAN extensions)
-C   --   SLATEC mathematics library
-C   --
-C   --Runs on VAX VMS !#VAX
-C#CTSSC   --Runs on CRAY CTSS
-
-C   --Documentation: SAND86-0881, printed May 1986
-C   --   "ALGEBRA - A Program That Algebraically Manipulates the Output
-C   --   of a Finite Element Analysis"
-
       include 'exodusII.inc'
       include 'ag_namlen.blk'
       
@@ -471,6 +409,29 @@ C     selected element blocks
          MERR = 1
          GOTO 130
       END IF
+
+C ... See if the input database has any nodeset or sideset variables.
+C     If there are any, then output a warning message telling the user
+C     that these are not supported in algebra and will be stripped from
+C     output file.
+      call exgvp(ndbin, 'M', nvarns, ierr)
+      call exgvp(ndbin, 'S', nvarss, ierr)
+      if (nvarns .gt. 0) then
+         CALL PRTERR('WARNING',
+     $        'The Input Database contains NODESET VARIABLES')
+         CALL PRTERR('CMDSPEC',
+     $        '      NODESET VARIABLES are not supported by algebra')
+         CALL PRTERR('CMDSPEC',
+     $        '      These will NOT be saved to the output database')
+      end if
+      if (nvarss .gt. 0) then
+         CALL PRTERR('WARNING',
+     $        'The Input Database contains SIDESET VARIABLES')
+         CALL PRTERR('CMDSPEC',
+     $        '      SIDESET VARIABLES are not supported by algebra')
+         CALL PRTERR('CMDSPEC',
+     $        '      These will NOT be saved to the output database')
+      end if
 
 C     Read in the equations
 C     call rdeqns(DMarray, DCarray, coord_names, elem_names, db_var_names,

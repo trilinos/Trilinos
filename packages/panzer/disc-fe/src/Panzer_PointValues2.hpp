@@ -82,9 +82,9 @@ namespace panzer {
       */
     template <typename CoordinateArray,typename PointArray>
     void evaluateValues(const CoordinateArray & node_coords,
-                        const PointArray & point_coords)
+                        const PointArray & in_point_coords)
     { copyNodeCoords(node_coords);
-      copyPointCoords(point_coords);
+      copyPointCoords(in_point_coords);
       evaluateValues(); }
 
     /** Evaluate teh jacobian and derivative information at the requested reference
@@ -96,13 +96,13 @@ namespace panzer {
       */ 
     template <typename PointArray>
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coords,
-                        const PointArray & point_coords, 
+                        const PointArray & in_point_coords, 
                         bool shallow_copy_nodes)
     { if(shallow_copy_nodes)
         node_coordinates = node_coords;
       else
         copyNodeCoords(node_coords);
-      copyPointCoords(point_coords);
+      copyPointCoords(in_point_coords);
       evaluateValues(); }
 
     //! Return reference cell coordinates this class uses (IP,Dim) sized

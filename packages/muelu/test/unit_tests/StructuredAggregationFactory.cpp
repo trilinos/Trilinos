@@ -60,93 +60,18 @@
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_LocalLexicographicIndexManager.hpp"
+#include "MueLu_GlobalLexicographicIndexManager.hpp"
 
 namespace MueLuTests {
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, CreateGlobalLexicographicIndexManager, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    out << "version: " << MueLu::Version() << std::endl;
-
-    // Set global geometric data
-    const bool coupled = true;
-    const int numDimensions = 2;
-    const int interpolationOrder = 0;
-    Array<GO> meshData;
-    Array<LO> lNodesPerDir(3);
-    Array<GO> gNodesPerDir(3);
-    for(int dim = 0; dim < 3; ++dim) {
-      if(dim < numDimensions) {
-        // Use more nodes in 1D to have a reasonable number of nodes per procs
-        gNodesPerDir[dim] = 6;
-      } else {
-        gNodesPerDir[dim] = 1;
-      }
-    }
-
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
-      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
-                                                                 lNodesPerDir, meshData,
-                                                                 "Global Lexicographic");
-
-    RCP<const Teuchos::Comm<int> > comm = Coordinates->getMap()->getComm();
-    Array<LO> coarseRate(1);
-    coarseRate[0] = 3;
-    RCP<MueLu::GlobalLexicographicIndexManager<LO,GO,NO> > myIndexManager =
-      rcp(new MueLu::GlobalLexicographicIndexManager<LO,GO,NO>(comm, coupled, numDimensions,
-                                                               interpolationOrder, gNodesPerDir,
-                                                               lNodesPerDir, coarseRate, 0));
-
-  } // CreateGlobalLexicographicIndexManager
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, CreateLocalLexicographicIndexManager, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include "MueLu_UseShortNames.hpp"
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    out << "version: " << MueLu::Version() << std::endl;
-
-    // Set global geometric data
-    const bool coupled = true;
-    const int numDimensions = 2;
-    const int interpolationOrder = 0;
-    Array<GO> meshData;
-    Array<LO> lNodesPerDir(3);
-    Array<GO> gNodesPerDir(3);
-    for(int dim = 0; dim < 3; ++dim) {
-      if(dim < numDimensions) {
-        // Use more nodes in 1D to have a reasonable number of nodes per procs
-        gNodesPerDir[dim] = 6;
-      } else {
-        gNodesPerDir[dim] = 1;
-      }
-    }
-
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
-      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
-                                                                 lNodesPerDir, meshData,
-                                                                 "Local Lexicographic");
-
-    RCP<const Teuchos::Comm<int> > comm = Coordinates->getMap()->getComm();
-    Array<LO> coarseRate(1);
-    coarseRate[0] = 3;
-    RCP<MueLu::LocalLexicographicIndexManager<LO,GO,NO> > myIndexManager =
-      rcp(new MueLu::LocalLexicographicIndexManager<LO,GO,NO>(comm, coupled, numDimensions,
-                                                              interpolationOrder, comm->getRank(),
-                                                              comm->getSize(), gNodesPerDir,
-                                                              lNodesPerDir, coarseRate, meshData));
-
-  } // CreateLocalLexicographicIndexManager
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, GlobalLexiTentative1D, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
@@ -173,7 +98,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -182,8 +107,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -249,6 +173,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -273,7 +200,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -282,8 +209,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -349,6 +275,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -373,7 +302,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -382,8 +311,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -449,6 +377,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -474,7 +405,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -483,8 +414,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -551,6 +481,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -576,7 +509,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -585,8 +518,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -653,6 +585,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -678,7 +613,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -687,8 +622,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -756,6 +690,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -782,7 +719,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -796,8 +733,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace1D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -866,6 +802,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -892,7 +831,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -906,8 +845,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -976,6 +914,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
 
@@ -1002,7 +943,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -1016,8 +957,7 @@ namespace MueLuTests {
     matrixList.set("nx", gNodesPerDir[0]);
     matrixList.set("matrixType","Laplace1D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
@@ -1088,6 +1028,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -1108,7 +1051,7 @@ namespace MueLuTests {
       }
     }
 
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+    RCP<RealValuedMultiVector> Coordinates =
       TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
                                                                  lNodesPerDir, meshData,
                                                                  meshLayout);
@@ -1124,8 +1067,7 @@ namespace MueLuTests {
     matrixList.set("nz", gNodesPerDir[2]);
     matrixList.set("matrixType","Laplace3D");
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
-      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D",
-                                                           Coordinates->getMap(),
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace3D", Coordinates->getMap(),
                                                            matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
 
@@ -1145,10 +1087,10 @@ namespace MueLuTests {
     // create the factory manager and the factories
     FactoryManager M;
 
-    RCP<Factory>      amalgFact     = rcp(new AmalgamationFactory());
+    RCP<Factory>      AmalgFact     = rcp( new AmalgamationFactory() );
     RCP<Factory>      CDropfact     = rcp( new CoalesceDropFactory() );
     RCP<Factory>      Aggfact       = rcp( new StructuredAggregationFactory() );
-    RCP<Factory>      coarseMapFact = rcp(new CoarseMapFactory());
+    RCP<Factory>      coarseMapFact = rcp( new CoarseMapFactory() );
     RCP<Factory>      Pfact         = rcp( new TentativePFactory() );
     RCP<Factory>      Rfact         = rcp( new TransPFactory() );
     RCP<Factory>      Tfact         = rcp( new CoordinatesTransferFactory() );
@@ -1164,7 +1106,7 @@ namespace MueLuTests {
     Tfact->SetParameter("structured aggregation", Teuchos::ParameterEntry(true));
 
     // Set interfactory dependencies
-    CDropfact->SetFactory("UnAmalgamationInfo", amalgFact);
+    CDropfact->SetFactory("UnAmalgamationInfo", AmalgFact);
     Aggfact->SetFactory("Graph", CDropfact);
     coarseMapFact->SetFactory("Aggregates", Aggfact);
     Pfact->SetFactory("Aggregates", Aggfact);
@@ -1174,14 +1116,12 @@ namespace MueLuTests {
     Acfact->AddTransferFactory(Tfact);
 
     // Set default factories in the manager
-    M.SetFactory("P",           Pfact);
-    M.SetFactory("R",           Rfact);
-    M.SetFactory("A",           Acfact);
-    M.SetFactory("Nullspace",   NSfact);
-    M.SetFactory("Graph",       CDropfact);
-    M.SetFactory("gNodesPerDim", Tfact);
-    M.SetFactory("lNodesPerDim", Tfact);
-    M.SetFactory("gCoarseNodesPerDim", Aggfact);
+    M.SetFactory("P",                  Pfact);
+    M.SetFactory("R",                  Rfact);
+    M.SetFactory("A",                  Acfact);
+    M.SetFactory("Nullspace",          NSfact);
+    M.SetFactory("Graph",              CDropfact);
+    M.SetFactory("lNodesPerDim",       Tfact);
     M.SetFactory("lCoarseNodesPerDim", Aggfact);
 
     // setup smoothers
@@ -1204,11 +1144,8 @@ namespace MueLuTests {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A", A);                        // set fine level matrix
     Finest->Set("Nullspace", nullSpace);        // set null space information for finest level
-    Finest->Set("Coordinates", Coordinates);    // set fine level coordinates
-    Finest->Set("gNodesPerDim", gNodesPerDir);  // set GeneralGeometricPFactory specific info
+    // Finest->Set("Coordinates", Coordinates);    // set fine level coordinates
     Finest->Set("lNodesPerDim", lNodesPerDir);  // set GeneralGeometricPFactory specific info
-    // Finest->Set("meshData", meshData);          // set GeneralGeometricPFactory specific info
-    Finest->SetFactoryManager(Teuchos::rcpFromRef(M));
 
     // Setup the hierarchy
     LO maxLevels = 5;
@@ -1269,8 +1206,6 @@ namespace MueLuTests {
   } // UncoupledMultilevelScalar
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,CreateGlobalLexicographicIndexManager,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,CreateLocalLexicographicIndexManager,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative1D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative2D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative3D,Scalar,LO,GO,Node) \

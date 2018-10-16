@@ -23,14 +23,14 @@ namespace Tempus {
  *
  */
 template<class Scalar>
-class TimeStepControlStrategyPID 
-  : virtual public TimeStepControlStrategy<Scalar> 
+class TimeStepControlStrategyPID
+  : virtual public TimeStepControlStrategy<Scalar>
 {
 public:
 
   /// Constructor
   TimeStepControlStrategyPID(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null){
-     this->setParameterList(pList);  
+     this->setParameterList(pList);
   }
 
   /// Destructor
@@ -38,7 +38,7 @@ public:
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(const TimeStepControl<Scalar> tsc,
-    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory, 
+    Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
     Status & integratorStatus) override
   {
 
@@ -55,7 +55,6 @@ public:
      volatile const Scalar errorRel = metaData->getErrorRel();
      int order = metaData->getOrder();
      Scalar dt = metaData->getDt();
-     Teuchos::RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
      bool printChanges = solutionHistory->getVerbLevel() !=
         Teuchos::as<int>(Teuchos::VERB_NONE);
 
@@ -92,7 +91,8 @@ public:
      // new (optimal) suggested time step
      dt = beta * dt;
 
-     if (stepperState->stepperStatus_ == Status::PASSED) {
+     if (workingState->getSolutionStatus() == Status::PASSED or
+         workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
            dt = std::min(dt, metaData->getDt());
         } else {

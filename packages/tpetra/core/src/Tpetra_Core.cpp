@@ -55,7 +55,7 @@ namespace Tpetra {
     class HideOutputExceptOnProcess0 {
     public:
       HideOutputExceptOnProcess0 (std::ostream& stream,
-				  const int myRank) :
+                                  const int myRank) :
         stream_ (stream),
         originalBuffer_ (stream.rdbuf ())
       {
@@ -81,36 +81,36 @@ namespace Tpetra {
       // Not sure if MPI_Initialized or MPI_Finalized meet the strong
       // exception guarantee.
       try {
-	(void) MPI_Initialized (&isInitialized);
+        (void) MPI_Initialized (&isInitialized);
       }
       catch (...) {
-	isInitialized = 0;
+        isInitialized = 0;
       }
       try {
-	(void) MPI_Finalized (&isFinalized);
+        (void) MPI_Finalized (&isFinalized);
       }
       catch (...) {
-	isFinalized = 0;
+        isFinalized = 0;
       }
       return isInitialized != 0 && isFinalized == 0;
     }
 
     int getRankHarmlessly (MPI_Comm comm)
     {
-      int myRank = 0;      
+      int myRank = 0;
       if (mpiIsInitializedAndNotFinalized ()) {
-	try {
-	  (void) MPI_Comm_rank (comm, &myRank);
-	}
-	catch (...) {
-	  // Not sure if MPI_Comm_rank meets strong exception guarantee
-	  myRank = 0;
-	}
+        try {
+          (void) MPI_Comm_rank (comm, &myRank);
+        }
+        catch (...) {
+          // Not sure if MPI_Comm_rank meets strong exception guarantee
+          myRank = 0;
+        }
       }
       return myRank;
     }
 #endif // defined(HAVE_TPETRACORE_MPI)
-    
+
 
     // Whether one of the Tpetra::initialize() functions has been called before.
     bool tpetraIsInitialized_ = false;
@@ -140,7 +140,7 @@ namespace Tpetra {
         // Kokkos::initialize() always initializes the default execution
         // space, so it suffices to check whether that was initialized.
         const bool kokkosIsInitialized =
-          Kokkos::DefaultExecutionSpace::is_initialized ();
+          Kokkos::is_initialized ();
         if (! kokkosIsInitialized) {
           HideOutputExceptOnProcess0 hideCerr (std::cerr, myRank);
           HideOutputExceptOnProcess0 hideCout (std::cout, myRank);
@@ -152,11 +152,11 @@ namespace Tpetra {
       }
 
       const bool kokkosIsInitialized =
-        Kokkos::DefaultExecutionSpace::is_initialized ();
+        Kokkos::is_initialized ();
       TEUCHOS_TEST_FOR_EXCEPTION
         (! kokkosIsInitialized, std::logic_error, "At the end of "
-	 "initKokkosIfNeeded, Kokkos is not initialized.  "
-	 "Please report this bug to the Tpetra developers.");
+         "initKokkosIfNeeded, Kokkos is not initialized.  "
+         "Please report this bug to the Tpetra developers.");
     }
 
 #ifdef HAVE_TPETRACORE_MPI
@@ -174,19 +174,19 @@ namespace Tpetra {
 
       const bool mpiReady = mpiIsInitializedAndNotFinalized ();
       if (! mpiReady) {
-	// Tpetra doesn't currently need to call MPI_Init_thread,
-	// since with Tpetra, only one thread ever calls MPI
-	// functions.  If we ever want to explore
-	// MPI_THREAD_MULTIPLE, here would be the place to call
-	// MPI_Init_thread.
-	const int err = MPI_Init (argc, argv);
+        // Tpetra doesn't currently need to call MPI_Init_thread,
+        // since with Tpetra, only one thread ever calls MPI
+        // functions.  If we ever want to explore
+        // MPI_THREAD_MULTIPLE, here would be the place to call
+        // MPI_Init_thread.
+        const int err = MPI_Init (argc, argv);
         TEUCHOS_TEST_FOR_EXCEPTION
           (err != MPI_SUCCESS, std::runtime_error, "MPI_Init failed with "
            "error code " << err << " != MPI_SUCCESS.  If MPI was set up "
            "correctly, then this should not happen, since we have already "
-	   "checked that MPI_Init (or MPI_Init_thread) has not yet been "
-	   "called.  This may indicate that your MPI library is corrupted "
-	   "or that it is incorrectly linked to your program.");
+           "checked that MPI_Init (or MPI_Init_thread) has not yet been "
+           "called.  This may indicate that your MPI library is corrupted "
+           "or that it is incorrectly linked to your program.");
         tpetraInitializedMpi_ = true;
       }
     }
@@ -214,10 +214,10 @@ namespace Tpetra {
       // initialized and not finalized.
       const bool mpiReady = mpiIsInitializedAndNotFinalized ();
       if (mpiReady) {
-	comm = Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+        comm = Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
       }
       else {
-	comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
+        comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
       }
 #else
       comm = Teuchos::rcp (new Teuchos::SerialComm<int> ());
@@ -226,11 +226,11 @@ namespace Tpetra {
     }
     return wrappedDefaultComm_;
   }
-  
+
   void initialize (int* argc, char*** argv)
   {
     if (! tpetraIsInitialized_) {
-#if defined(HAVE_TPETRACORE_MPI)      
+#if defined(HAVE_TPETRACORE_MPI)
       initMpiIfNeeded (argc, argv);
       // It's technically legal to initialize Tpetra after
       // MPI_Finalize has been called.  This means that we can't call
@@ -238,7 +238,7 @@ namespace Tpetra {
       const int myRank = getRankHarmlessly (MPI_COMM_WORLD);
 #else
       const int myRank = 0;
-#endif // defined(HAVE_TPETRACORE_MPI)      
+#endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
     }
     tpetraIsInitialized_ = true;
@@ -248,19 +248,19 @@ namespace Tpetra {
   void initialize (int* argc, char*** argv, MPI_Comm comm)
   {
     if (! tpetraIsInitialized_) {
-#if defined(HAVE_TPETRACORE_MPI)      
+#if defined(HAVE_TPETRACORE_MPI)
       initMpiIfNeeded (argc, argv);
       // It's technically legal to initialize Tpetra after
       // MPI_Finalize has been called.  This means that we can't call
       // MPI_Comm_rank without first checking MPI_Finalized.
-      const int myRank = getRankHarmlessly (comm); 
+      const int myRank = getRankHarmlessly (comm);
 #else
       const int myRank = 0;
-#endif // defined(HAVE_TPETRACORE_MPI)      
+#endif // defined(HAVE_TPETRACORE_MPI)
       initKokkosIfNeeded (argc, argv, myRank);
     }
     tpetraIsInitialized_ = true;
-    
+
     // Set the default communicator.  We set it here, after the above
     // initialize() call, just in case users have not yet initialized
     // MPI.  (This is legal if users pass in a predefined
@@ -292,7 +292,7 @@ namespace Tpetra {
               const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     if (! tpetraIsInitialized_) {
-#if defined(HAVE_TPETRACORE_MPI)   
+#if defined(HAVE_TPETRACORE_MPI)
       initMpiIfNeeded (argc, argv);
 #endif // defined(HAVE_TPETRACORE_MPI)
       // It's technically legal to initialize Tpetra after
@@ -330,12 +330,12 @@ namespace Tpetra {
       // throw an exception on error.  MPI implementations do have
       // the option to throw on error, so let's catch that here.
       try {
-	if (Details::mpiIsInitialized ()) {
-	  // This must be called by the same thread that called
-	  // MPI_Init or MPI_Init_thread (possibly, but not
-	  // necessarily, in Tpetra::initialize()).
-	  (void) MPI_Finalize ();
-	}
+        if (Details::mpiIsInitialized ()) {
+          // This must be called by the same thread that called
+          // MPI_Init or MPI_Init_thread (possibly, but not
+          // necessarily, in Tpetra::initialize()).
+          (void) MPI_Finalize ();
+        }
       }
       catch (...) {}
     }
@@ -343,4 +343,22 @@ namespace Tpetra {
 
     tpetraIsInitialized_ = false; // it's not anymore.
   }
+
+  ScopeGuard::ScopeGuard (int* argc, char*** argv)
+  {
+    ::Tpetra::initialize (argc, argv);
+  }
+
+#ifdef HAVE_TPETRA_MPI
+  ScopeGuard::ScopeGuard (int* argc, char*** argv, MPI_Comm comm)
+  {
+    ::Tpetra::initialize (argc, argv, comm);
+  }
+#endif // HAVE_TPETRA_MPI
+
+  ScopeGuard::~ScopeGuard ()
+  {
+    ::Tpetra::finalize ();
+  }
+
 } // namespace Tpetra

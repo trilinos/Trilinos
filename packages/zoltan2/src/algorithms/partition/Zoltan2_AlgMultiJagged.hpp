@@ -2124,13 +2124,13 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
         for (mj_part_t ii = 0; ii < current_num_parts; ++ii){
             num_partitioning_in_current_dim.push_back(p);
         }
-        //cout << "me:" << this->myRank << " current_iteration" << current_iteration <<
+        //std::cout << "me:" << this->myRank << " current_iteration" << current_iteration <<
         //" current_num_parts:" << current_num_parts << std::endl;
-        //cout << "num_partitioning_in_current_dim[0]:" << num_partitioning_in_current_dim[0] << std::endl;
+        //std::cout << "num_partitioning_in_current_dim[0]:" << num_partitioning_in_current_dim[0] << std::endl;
         //set the new value of future_num_parts.
 
         /*
-        cout << "\tfuture_num_parts:" << future_num_parts
+       std::cout << "\tfuture_num_parts:" << future_num_parts
                         << " num_partitioning_in_current_dim[0]:" << num_partitioning_in_current_dim[0]
                         << future_num_parts/ num_partitioning_in_current_dim[0] << std::endl;
         */
@@ -2163,7 +2163,7 @@ mj_part_t AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::update_part_num_arr
         //since each part might be divided into different number of parts.
         future_num_parts = 1;
 
-        //cout << "i:" << i << std::endl;
+        //std::cout << "i:" << i << std::endl;
 
         for (mj_part_t ii = 0; ii < current_num_parts; ++ii){
             //get how many parts a part should be divided.
@@ -2471,8 +2471,8 @@ void AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box()
                 localMax = this->mj_coordinates[i][j];
             }
         }
-        //cout << " localMin:" << localMin << endl;
-        //cout << " localMax:" << localMax << endl;
+        //std::cout << " localMin:" << localMin << std::endl;
+        //std::cout << " localMax:" << localMax << std::endl;
         mins[i] = localMin;
         maxs[i] = localMax;
 
@@ -2707,21 +2707,21 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_initial_cut_coord
             //how much each part should weigh in ideal case.
             mj_scalar_t unit_part_weight = global_weight / total_future_part_count_in_part;
             /*
-            cout << "total_future_part_count_in_part:" << total_future_part_count_in_part << endl;
-            cout << "global_weight:" << global_weight << endl;
-            cout << "unit_part_weight" << unit_part_weight <<endl;
+           std::cout << "total_future_part_count_in_part:" << total_future_part_count_in_part << std::endl;
+           std::cout << "global_weight:" << global_weight << std::endl;
+           std::cout << "unit_part_weight" << unit_part_weight << std::endl;
             */
             for(mj_part_t i = 0; i < num_cuts; ++i){
                 cumulative += (*next_future_num_parts_in_parts)[i + obtained_part_index];
 
                 /*
-                cout << "obtained_part_index:" << obtained_part_index <<
+               std::cout << "obtained_part_index:" << obtained_part_index <<
                                 " (*next_future_num_parts_in_parts)[i + obtained_part_index]:" << (*next_future_num_parts_in_parts)[i + obtained_part_index] <<
-                                " cumulative:" << cumulative << endl;
+                                " cumulative:" << cumulative << std::endl;
                 */
                 //set target part weight.
                 current_target_part_weights[i] = cumulative * unit_part_weight;
-                //cout <<"i:" << i << " current_target_part_weights:" << current_target_part_weights[i] << endl;
+                //std::cout <<"i:" << i << " current_target_part_weights:" << current_target_part_weights[i] <<std::endl;
                 //set initial cut coordinate.
 
                 initial_cut_coords[i] = min_coord + (coord_range * cumulative) / total_future_part_count_in_part;
@@ -3771,10 +3771,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                 seen_weight_in_part = current_global_part_weights[i * 2];
 
                 /*
-                cout << "seen_weight_in_part:" << i << " is "<< seen_weight_in_part << endl;
-                cout << "\tcut:" << current_cut_coordinates[i]
+               std::cout << "seen_weight_in_part:" << i << " is "<< seen_weight_in_part <<std::endl;
+               std::cout << "\tcut:" << current_cut_coordinates[i]
                        << " current_cut_lower_bounds:" << current_cut_lower_bounds[i]
-               << " current_cut_upper_bounds:" << current_cut_upper_bounds[i] << endl;
+               << " current_cut_upper_bounds:" << current_cut_upper_bounds[i] << std::endl;
                */
                 //expected ratio
                 expected_weight_in_part = current_part_target_weights[i];
@@ -4030,12 +4030,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                                         mj_scalar_t space_left_to_me = space_to_put_left + my_weight_on_line;
 
                                         /*
-                                        cout << "expected_part_weight:" << expected_part_weight
+                                       std::cout << "expected_part_weight:" << expected_part_weight
                                                         << " necessary_weight_on_line_for_left:" << necessary_weight_on_line_for_left
                                                         << " my_weight_on_line" << my_weight_on_line
                                                         << " weight_on_line_upto_process_inclusive:" << weight_on_line_upto_process_inclusive
                                                         << " space_to_put_left:" << space_to_put_left
-                                                        << " space_left_to_me" << space_left_to_me << endl;
+                                                        << " space_left_to_me" << space_left_to_me << std::endl;
                                          */
                                         if(space_left_to_me < 0){
                                                 //space_left_to_me is negative and i dont need to put anything to left.
@@ -4045,13 +4045,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                                                 //space left to me is bigger than the weight of the processor on cut.
                                                 //so put everything to left.
                                                 current_part_cut_line_weight_to_put_left[i] = my_weight_on_line;
-                                                //cout << "setting current_part_cut_line_weight_to_put_left to my_weight_on_line:" << my_weight_on_line << endl;
+                                                //std::cout << "setting current_part_cut_line_weight_to_put_left to my_weight_on_line:" << my_weight_on_line << std::endl;
                                         }
                                         else {
                                                 //put only the weight as much as the space.
                                                 current_part_cut_line_weight_to_put_left[i] = space_left_to_me ;
 
-                                                //cout << "setting current_part_cut_line_weight_to_put_left to space_left_to_me:" << space_left_to_me << endl;
+                                                //std::cout << "setting current_part_cut_line_weight_to_put_left to space_left_to_me:" << space_left_to_me << std::endl;
                                         }
 
                                 }
@@ -4180,7 +4180,7 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_check_to_migrate(
 
                 /*
         if (this->myRank == 0) {
-                cout << "imbalance for next iteration:" << global_imbalance << endl;
+               std::cout << "imbalance for next iteration:" << global_imbalance << std::endl;
         }
         */
 
@@ -4474,7 +4474,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
             //we reverse it here. This should not happen, as we have already reversed them above.
 #ifdef MJ_DEBUG
             if (num_points_to_sent < 0) {
-                cout << "Migration - processor assignments - for part:" << i << "from proc:" << nonassigned_proc_id << " num_points_to_sent:" << num_points_to_sent << std::endl;
+               std::cout << "Migration - processor assignments - for part:" << i << "from proc:" << nonassigned_proc_id << " num_points_to_sent:" << num_points_to_sent << std::endl;
                 exit(1);
             }
 #endif
@@ -4520,7 +4520,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
 
 #ifdef MJ_DEBUG
                     if(next_part_to_send_index <  nprocs - required_proc_count ){
-                        cout << "Migration - processor assignments - for part:"
+                       std::cout << "Migration - processor assignments - for part:"
                                         << i
                                         <<  " next_part_to_send :" << next_part_to_send_index
                                         << " nprocs:" << nprocs
@@ -5388,7 +5388,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
                 for (mj_part_t i = 0; i < no_cuts; ++i){
                         //the left to be put on the left of the cut.
                         mj_scalar_t left_weight = used_local_cut_line_weight_to_left[i];
-                        //cout << "i:" << i << " left_weight:" << left_weight << endl;
+                        //std::cout << "i:" << i << " left_weight:" << left_weight << std::endl;
                         for(int ii = 0; ii < this->num_threads; ++ii){
                                 if(left_weight > this->sEpsilon){
                                         //the weight of thread ii on cut.
@@ -6189,10 +6189,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
                 mj_lno_t coordinate_begin_index = current_work_part_in_concurrent_parts==0 ? 0: this->part_xadj[current_work_part_in_concurrent_parts -1];
 
 /*
-                cout << "i:" << i << " j:" << current_work_part + kk
+               std::cout << "i:" << i << " j:" << current_work_part + kk
                                 << " coordinate_begin_index:" << coordinate_begin_index
                                 << " coordinate_end_index:" << coordinate_end_index
-                                << " total:" << coordinate_end_index - coordinate_begin_index<< endl;
+                                << " total:" << coordinate_end_index - coordinate_begin_index<< std::endl;
                                 */
                 this->mj_get_local_min_max_coord_totW(
                                 coordinate_begin_index,
@@ -7537,7 +7537,7 @@ AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box_boundaries(
   mj_part_t boxCount = localPartBoxes->size();
   for (mj_part_t i = 0; i < boxCount; ++i){
     mj_part_t pId = (*localPartBoxes)[i].getpId();
-      //cout << "me:" << comm->getRank() << " has:" << pId << endl;
+      //std::cout << "me:" << comm->getRank() << " has:" << pId << std::endl;
 
     mj_scalar_t *lmins = (*localPartBoxes)[i].getlmins();
     mj_scalar_t *lmaxs = (*localPartBoxes)[i].getlmaxs();
@@ -7546,10 +7546,10 @@ AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box_boundaries(
       localPartMins[dim * pId + j] = lmins[j];
       localPartMaxs[dim * pId + j] = lmaxs[j];
       /*
-      cout << "me:" << comm->getRank()  <<
+      std::cout << "me:" << comm->getRank()  <<
               " dim * pId + j:"<< dim * pId + j <<
               " localMin:" << localPartMins[dim * pId + j] <<
-              " localMax:" << localPartMaxs[dim * pId + j] << endl;
+              " localMax:" << localPartMaxs[dim * pId + j] << std::endl;
       */
     }
   }
@@ -7566,10 +7566,10 @@ AlgMJ<mj_scalar_t,mj_lno_t,mj_gno_t,mj_part_t>::compute_global_box_boundaries(
 
     /*
     for (int j = 0; j < dim; ++j){
-        cout << "me:" << comm->getRank()  <<
+       std::cout << "me:" << comm->getRank()  <<
                 " dim * pId + j:"<< dim * i + j <<
                 " globalMin:" << globalPartMins[dim * i + j] <<
-                " globalMax:" << globalPartMaxs[dim * i + j] << endl;
+                " globalMax:" << globalPartMaxs[dim * i + j] << std::endl;
     }
     */
     pB->push_back(tpb);

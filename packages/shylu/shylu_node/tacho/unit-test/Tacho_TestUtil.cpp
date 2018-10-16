@@ -75,21 +75,21 @@ TEST( util, tag ) {
 
 TEST( util, task_scheduler ) {
   TEST_BEGIN;
-  size_t capacity = 100;
+  size_t span = 100;
   unsigned int min_block_size  = 10;
   unsigned int max_block_size  = 10;
   unsigned int superblock_size = 10;
 
   typedef Kokkos::TaskScheduler<HostSpaceType> host_sched_type;
   host_sched_type host_sched(typename host_sched_type::memory_space(),
-                             capacity,
+                             span,
                              min_block_size,
                              max_block_size,
                              superblock_size);
   
   typedef Kokkos::TaskScheduler<DeviceSpaceType> device_sched_type;
   device_sched_type device_sched(typename device_sched_type::memory_space(),
-                                 capacity,
+                                 span,
                                  min_block_size,
                                  max_block_size,
                                  superblock_size);
@@ -106,6 +106,7 @@ int main (int argc, char *argv[]) {
   
   ::testing::InitGoogleTest(&argc, argv);
 
+  int result = RUN_ALL_TESTS();
   Kokkos::finalize();
-  return RUN_ALL_TESTS();
+  return result;
 }

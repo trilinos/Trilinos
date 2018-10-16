@@ -583,7 +583,7 @@ namespace MueLu {
         bool bHasDiag = false;
         for (decltype(indices.size()) col = 0; col < indices.size(); col++) {
           if ( indices[col] != row) {
-            if (STS::magnitude(vals[col] / sqrt(STS::magnitude(diagVecData[row]) * STS::magnitude(diagVecData[col]))   ) > tol) {
+            if (STS::magnitude(vals[col] / STS::magnitude(sqrt(STS::magnitude(diagVecData[row]) * STS::magnitude(diagVecData[col])))   ) > tol) {
               nnz++;
             }
           } else bHasDiag = true; // found a diagonal entry

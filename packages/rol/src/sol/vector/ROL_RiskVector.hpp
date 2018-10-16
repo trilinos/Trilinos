@@ -434,6 +434,21 @@ public:
     }
   }
 
+  void randomize( const Real l=0.0, const Real u=1.0 ) {
+    vec_->randomize(l,u);
+    if (augmentedObj_ && statObj_vec_ != ROL::nullPtr) {
+      statObj_vec_->randomize(l,u);
+    }
+    if (augmentedCon_) {
+      int size = statCon_vec_.size();
+      for (int i = 0; i < size; ++i) {
+        if (statCon_vec_[i] != ROL::nullPtr) {
+          statCon_vec_[i]->randomize(l,u);
+        }
+      }
+    }
+  }
+
   int dimension(void) const {
     int dim = vec_->dimension();
     if (augmentedObj_) {

@@ -110,6 +110,7 @@ namespace MueLu {
 
   public:
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+    typedef Xpetra::MultiVector<Magnitude,LO,GO,NO> RealValuedMultiVector;
 
 #ifdef HAVE_MUELU_EPETRA
     //! Helper utility to pull out the underlying Epetra objects from an Xpetra object
@@ -318,6 +319,7 @@ namespace MueLu {
     typedef int LocalOrdinal;
     typedef int GlobalOrdinal;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+    typedef Xpetra::MultiVector<Magnitude,LocalOrdinal,GlobalOrdinal,Node> RealValuedMultiVector;
 
   private:
 #undef MUELU_UTILITIES_KOKKOS_SHORT

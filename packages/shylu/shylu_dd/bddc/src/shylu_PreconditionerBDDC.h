@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -68,15 +68,15 @@ using Teuchos::rcp;
 
 // Author: Clark R. Dohrmann
 namespace bddc {
-  
-template <class SX, class SM, class LO, class GO> 
+
+template <class SX, class SM, class LO, class GO>
   class PreconditionerBDDC
 {
 public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::Map<>::node_type  Node;
   typedef Tpetra::Map<LO,GO,Node>                                 Map;
   typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
   typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
@@ -130,7 +130,7 @@ public:
     initializeVariables();
     initializePreconditioner(nodeGlobalIDs1to1);
   }
-   
+
   PreconditionerBDDC
     (LO numNodes,
      const GO* nodeGlobalIDs,
@@ -158,7 +158,7 @@ public:
     initializeVariables();
     initializePreconditioner(nodeGlobalIDs1to1);
   }
-   
+
   ~PreconditionerBDDC()
   {
     if (m_usingSimpleInterface) {
@@ -213,7 +213,7 @@ public:
   }
 
   int InitialStaticCondensation(SX* rightHandSide1to1,
-				SX* initialSolution1to1)
+                                SX* initialSolution1to1)
   {
     if (m_interfacePreconditioner == false) return 0;
     double startTime = GetTime();
@@ -223,34 +223,34 @@ public:
     {
 #pragma omp for
       for (LO i=0; i<m_numSub; i++) {
-	const std::vector<LO> & interiorDofs = m_subInteriorDofs[i];
-	LO numInteriorDofs = interiorDofs.size();
-	SX *subRhs(0), *subSol(0);
-	int threadID = getThreadID();
-	getArrays(threadID, subRhs, subSol);
-	for (LO j=0; j<numInteriorDofs; j++) {
-	  LO row = interiorDofs[j];
-	  subRhs[j] = rightHandSide1to1[row];
-	}
-	m_Subdomain[i]->removeInteriorResiduals(&subRhs[0], &subSol[0]);
-	// no potential write conflicts because interior dofs are unique
-	// to each thread
-	for (LO j=0; j<numInteriorDofs; j++) {
-	  LO row = interiorDofs[j];
-	  initialSolution1to1[row] += subSol[j];
-	}
-	const std::vector<LO> & boundaryDofs = m_subBoundaryDofs[i];
-	LO numBoundaryDofs = boundaryDofs.size();
-	// potential write conflicts because boundary dofs are common
-	// to different threads
-	//#pragma omp critical(initial_static_condensation)
-	{
-	  for (LO j=0; j<numBoundaryDofs; j++) {
-	    LO row = boundaryDofs[j];
+        const std::vector<LO> & interiorDofs = m_subInteriorDofs[i];
+        LO numInteriorDofs = interiorDofs.size();
+        SX *subRhs(0), *subSol(0);
+        int threadID = getThreadID();
+        getArrays(threadID, subRhs, subSol);
+        for (LO j=0; j<numInteriorDofs; j++) {
+          LO row = interiorDofs[j];
+          subRhs[j] = rightHandSide1to1[row];
+        }
+        m_Subdomain[i]->removeInteriorResiduals(&subRhs[0], &subSol[0]);
+        // no potential write conflicts because interior dofs are unique
+        // to each thread
+        for (LO j=0; j<numInteriorDofs; j++) {
+          LO row = interiorDofs[j];
+          initialSolution1to1[row] += subSol[j];
+        }
+        const std::vector<LO> & boundaryDofs = m_subBoundaryDofs[i];
+        LO numBoundaryDofs = boundaryDofs.size();
+        // potential write conflicts because boundary dofs are common
+        // to different threads
+        //#pragma omp critical(initial_static_condensation)
+        {
+          for (LO j=0; j<numBoundaryDofs; j++) {
+            LO row = boundaryDofs[j];
 #pragma omp atomic
-	    rhsB[row] += subRhs[j];
-	  }
-	}
+            rhsB[row] += subRhs[j];
+          }
+        }
       }
     }
     m_rhsVecB1to1->doExport(*m_rhsVecB, *m_exporterB, Tpetra::ADD);
@@ -259,7 +259,7 @@ public:
       LO row = m_boundaryToAll1to1[i];
       rhsB1to1[i] += rightHandSide1to1[row];
     }
-    for (LO i=0; i<m_numDofsB1to1; i++) { 
+    for (LO i=0; i<m_numDofsB1to1; i++) {
       rightHandSide1to1[i] = rhsB1to1[i];
     }
     m_timings[TIME_INIT_STATIC_COND] += GetTime() - startTime;
@@ -267,7 +267,7 @@ public:
   }
 
   void StaticExpansion(SX* deltaSolution,
-		       SX* initialSolution)
+                       SX* initialSolution)
   {
     if (m_interfacePreconditioner) {
       double startTime = GetTime();
@@ -278,30 +278,30 @@ public:
 #pragma omp parallel num_threads(m_numThreads)
       {
 #pragma omp for
-	for (LO i=0; i<m_numSub; i++) {
-	  const std::vector<LO> & subBoundaryDofs = m_subBoundaryDofs[i];
-	  const std::vector<LO> & interiorDofs = m_subInteriorDofs[i];
-	  LO numDofsB = subBoundaryDofs.size();
-	  LO numDofsI = interiorDofs.size();
-	  SX *xB(0), *xI(0);
-	  int threadID = getThreadID();
-	  getArrays(threadID, xB, xI);
-	  for (LO j=0; j<numDofsB; j++) {
-	    LO row = subBoundaryDofs[j];
-	    xB[j] = solB[row];
-	  }
-	  m_Subdomain[i]->staticExpansion(&xB[0], &xI[0]);
-	  // no potential write conflicts because interior dofs are unique
-	  // to each thread
-	  for (LO j=0; j<numDofsI; j++) {
-	    LO row = interiorDofs[j];
-	    initialSolution[row] += xI[j];
-	  }
-	}
+        for (LO i=0; i<m_numSub; i++) {
+          const std::vector<LO> & subBoundaryDofs = m_subBoundaryDofs[i];
+          const std::vector<LO> & interiorDofs = m_subInteriorDofs[i];
+          LO numDofsB = subBoundaryDofs.size();
+          LO numDofsI = interiorDofs.size();
+          SX *xB(0), *xI(0);
+          int threadID = getThreadID();
+          getArrays(threadID, xB, xI);
+          for (LO j=0; j<numDofsB; j++) {
+            LO row = subBoundaryDofs[j];
+            xB[j] = solB[row];
+          }
+          m_Subdomain[i]->staticExpansion(&xB[0], &xI[0]);
+          // no potential write conflicts because interior dofs are unique
+          // to each thread
+          for (LO j=0; j<numDofsI; j++) {
+            LO row = interiorDofs[j];
+            initialSolution[row] += xI[j];
+          }
+        }
       }
       for (LO i=0; i<m_numDofsB1to1; i++) {
-	LO row = m_boundaryToAll1to1[i];
-	initialSolution[row] += deltaSolution[i];
+        LO row = m_boundaryToAll1to1[i];
+        initialSolution[row] += deltaSolution[i];
       }
       m_timings[TIME_STATIC_EXPANSION] += GetTime() - startTime;
     }
@@ -348,19 +348,19 @@ public:
     scaleFactors.resize(m_dofMap1to1->getNodeNumElements(), 1);
   }
 
-  void Apply(SX* r, 
-	     SX* Pr,
-	     SX* APr)
+  void Apply(SX* r,
+             SX* Pr,
+             SX* APr)
   {
     Apply(r, Pr);
     double startTime = GetTime();
     ApplyOperator(Pr, APr);
     m_timings[TIME_APPLY_OPER] += GetTime() - startTime;
-    
+
   }
 
-  void Apply(SX* r, 
-	     SX* Pr)
+  void Apply(SX* r,
+             SX* Pr)
   {
     if (m_useDirectSolver == true) {
       m_directSolver->Solve(1, r, Pr);
@@ -374,8 +374,8 @@ public:
       m_residualVector.resize(numRows);
       m_deltaSol.assign(numRows, 0);
       for (LO i=0; i<numRows; i++) {
-	m_residualVector[i] = r[i];
-	Pr[i] = 0;
+        m_residualVector[i] = r[i];
+        Pr[i] = 0;
       }
       InitialStaticCondensation(m_residualVector.data(), Pr);
       PrInterface = m_deltaSol.data();
@@ -386,14 +386,14 @@ public:
     RCP<Vector> rhsVec1to1, solVec1to1, rhsVec, solVec;
     RCP<Export> exporter;
     std::vector< std::vector<LO> > & subDofs = m_subBoundaryDofs;
-    setTpetraObjects(rhsVec1to1, solVec1to1, rhsVec, solVec, 
-		     exporter, subDofs);
+    setTpetraObjects(rhsVec1to1, solVec1to1, rhsVec, solVec,
+                     exporter, subDofs);
     // restrict residual to next coarser level
     Teuchos::ArrayRCP<SX> rhsData = rhsVec1to1->getDataNonConst();
     LO numDof = rhsVec1to1->getMap()->getNodeNumElements();
     for (LO i=0; i<numDof; i++) rhsData[i] = rUse[i];
-    applyPhiTranspose(rhsVec1to1, m_coarseVecNextLevel, 
-		      m_interfacePreconditioner);
+    applyPhiTranspose(rhsVec1to1, m_coarseVecNextLevel,
+                      m_interfacePreconditioner);
     LO numCoarseDof = m_coarseVecNextLevel->getMap()->getNodeNumElements();
     Teuchos::ArrayRCP<const SX> rhsCoarse = m_coarseVecNextLevel->getData();
     for (LO i=0; i<numCoarseDof; i++) m_coarseRhsWork[i] = rhsCoarse[i];
@@ -401,23 +401,23 @@ public:
     if (m_disjointCommunicators) {
       // asynchronous work across different levels
       if (m_coarseProc == true) {
-	applyCoarseCorrection(m_coarseRhsWork.data(), m_coarseSolWork.data());
+        applyCoarseCorrection(m_coarseRhsWork.data(), m_coarseSolWork.data());
       }
-      else {	
-	changeMapsForTpetraObjects(rhsVec1to1, solVec1to1, rhsVec, solVec,
-				   exporter);
-	applyLocalCorrections(rhsVec1to1, rhsVec, solVec1to1, solVec,
-			      exporter, subDofs);
-	resetMapsForTpetraObjects(rhsVec1to1, solVec1to1, rhsVec, solVec,
-				  exporter);
+      else {
+        changeMapsForTpetraObjects(rhsVec1to1, solVec1to1, rhsVec, solVec,
+                                   exporter);
+        applyLocalCorrections(rhsVec1to1, rhsVec, solVec1to1, solVec,
+                              exporter, subDofs);
+        resetMapsForTpetraObjects(rhsVec1to1, solVec1to1, rhsVec, solVec,
+                                  exporter);
       }
     }
     else {
       if (m_coarseProc == true) {
-	applyCoarseCorrection(m_coarseRhsWork.data(), m_coarseSolWork.data());
+        applyCoarseCorrection(m_coarseRhsWork.data(), m_coarseSolWork.data());
       }
-      applyLocalCorrections(rhsVec1to1, rhsVec, solVec1to1, solVec, 
-			    exporter, subDofs); 
+      applyLocalCorrections(rhsVec1to1, rhsVec, solVec1to1, solVec,
+                            exporter, subDofs);
     }
     // sum of coarse and local (subdomain) corrections
     Teuchos::ArrayRCP<SX> solCoarse = m_coarseVecNextLevel->getDataNonConst();
@@ -432,23 +432,23 @@ public:
     }
   }
 
-  void applyCoarseCorrection(SX* coarseRhs, 
-			     SX* coarseSol)
+  void applyCoarseCorrection(SX* coarseRhs,
+                             SX* coarseSol)
   {
     if (m_coarsePreconditioner->useDirectSolver() == true) {
       if (m_reorderCoarseDofs.size() == 0) {
-	determineReorderCoarseDofs();
+        determineReorderCoarseDofs();
       }
       LO numRows = m_reorderCoarseDofs.size();
       m_coarseRhsWork2.resize(numRows);
       for (LO i=0; i<numRows; i++) {
-	LO row = m_reorderCoarseDofs[i];
-	m_coarseRhsWork2[i] = coarseRhs[row];
+        LO row = m_reorderCoarseDofs[i];
+        m_coarseRhsWork2[i] = coarseRhs[row];
       }
       m_coarsePreconditioner->Apply(m_coarseRhsWork2.data(), coarseRhs);
       for (LO i=0; i<numRows; i++) {
-	LO row = m_reorderCoarseDofs[i];
-	coarseSol[row] = coarseRhs[i];
+        LO row = m_reorderCoarseDofs[i];
+        coarseSol[row] = coarseRhs[i];
       }
     }
     else {
@@ -456,21 +456,21 @@ public:
     }
   }
 
-  void applyCoarseCorrection(std::vector<SX> & m_coarseRhsWork, 
-			     std::vector<SX> & m_coarseSolWork)
+  void applyCoarseCorrection(std::vector<SX> & m_coarseRhsWork,
+                             std::vector<SX> & m_coarseSolWork)
   {
     double startTime = GetTime();
     m_coarsePreconditioner->Apply(m_coarseRhsWork.data(),
-				  m_coarseSolWork.data());
+                                  m_coarseSolWork.data());
     m_timings[TIME_COARSE_CORR] += GetTime() - startTime;
   }
 
   void applyLocalCorrections(RCP<Vector> & rhsVec1to1,
-			     RCP<Vector> & rhsVec,
-			     RCP<Vector> & solVec1to1, 
-			     RCP<Vector> & solVec,
-			     RCP<Export> & exporter,
-			     std::vector< std::vector<LO> > & subDofs)
+                             RCP<Vector> & rhsVec,
+                             RCP<Vector> & solVec1to1,
+                             RCP<Vector> & solVec,
+                             RCP<Export> & exporter,
+                             std::vector< std::vector<LO> > & subDofs)
   {
     double startTime = GetTime();
     rhsVec->doImport(*rhsVec1to1, *exporter, Tpetra::INSERT);
@@ -481,23 +481,23 @@ public:
     {
 #pragma omp for
       for (LO i=0; i<m_numSub; i++) {
-	const std::vector<LO> & subdofs = subDofs[i];
-	LO numDofSub = subdofs.size();
-	SX *subRhs(0), *subSol(0);
-	int threadID = getThreadID();
-	getArrays(threadID, subRhs, subSol);
-	for (LO j=0; j<numDofSub; j++) {
-	  subRhs[j] = rhs[subdofs[j]];
-	}
-	m_Subdomain[i]->applyNeumannCorrection(subRhs, subSol);
-	//#pragma omp critical(apply)
-	{
-	  for (LO j=0; j<numDofSub; j++) {
-	    int row = subdofs[j];
+        const std::vector<LO> & subdofs = subDofs[i];
+        LO numDofSub = subdofs.size();
+        SX *subRhs(0), *subSol(0);
+        int threadID = getThreadID();
+        getArrays(threadID, subRhs, subSol);
+        for (LO j=0; j<numDofSub; j++) {
+          subRhs[j] = rhs[subdofs[j]];
+        }
+        m_Subdomain[i]->applyNeumannCorrection(subRhs, subSol);
+        //#pragma omp critical(apply)
+        {
+          for (LO j=0; j<numDofSub; j++) {
+            int row = subdofs[j];
 #pragma omp atomic
-	    sol[row] += subSol[j];
-	  }
-	}
+            sol[row] += subSol[j];
+          }
+        }
       }
     }
     solVec1to1->putScalar(0);
@@ -505,8 +505,8 @@ public:
     m_timings[TIME_SUB_CORR] += GetTime() - startTime;
   }
 
-  void ApplyOperator(SX* x, 
-		     SX* Ax)
+  void ApplyOperator(SX* x,
+                     SX* Ax)
   {
     if (m_interfacePreconditioner) {
       RCP<Vector> & xVec1to1 = m_rhsVecB1to1;
@@ -526,25 +526,25 @@ public:
                     << omp_get_num_threads() << "\n";
 #endif
 #pragma omp for
-	for (LO i=0; i<m_numSub; i++) {
-	  const std::vector<LO> & subBoundaryDofs = m_subBoundaryDofs[i];
-	  LO numDofB = subBoundaryDofs.size();
-	  SX *xSub(0), *AxSub(0);
-	  int threadID = getThreadID();
-	  getArrays(threadID, xSub, AxSub);
-	  for (LO j=0; j<numDofB; j++) {
-	    xSub[j] = xValues[subBoundaryDofs[j]];
-	  }
-	  m_Subdomain[i]->applyBoundaryOperator(&xSub[0], &AxSub[0]);
-	  //#pragma omp critical(apply_operator)
-	  {
-	    for (LO j=0; j<numDofB; j++) {
-	      int row = subBoundaryDofs[j]; 
+        for (LO i=0; i<m_numSub; i++) {
+          const std::vector<LO> & subBoundaryDofs = m_subBoundaryDofs[i];
+          LO numDofB = subBoundaryDofs.size();
+          SX *xSub(0), *AxSub(0);
+          int threadID = getThreadID();
+          getArrays(threadID, xSub, AxSub);
+          for (LO j=0; j<numDofB; j++) {
+            xSub[j] = xValues[subBoundaryDofs[j]];
+          }
+          m_Subdomain[i]->applyBoundaryOperator(&xSub[0], &AxSub[0]);
+          //#pragma omp critical(apply_operator)
+          {
+            for (LO j=0; j<numDofB; j++) {
+              int row = subBoundaryDofs[j];
 #pragma omp atomic
-	      AxValues[row] += AxSub[j];
-	    }
-	  }
-	}
+              AxValues[row] += AxSub[j];
+            }
+          }
+        }
       }
       RCP<Vector> & AxVec1to1 = m_solVecB1to1;
       AxVec1to1->doExport(*AxVec, *m_exporterB, Tpetra::ADD);
@@ -556,8 +556,8 @@ public:
     }
   }
 
-  void ApplyFullOperator(SX* x, 
-			 SX* Ax)
+  void ApplyFullOperator(SX* x,
+                         SX* Ax)
   {
     Teuchos::ArrayRCP<SX> xValues1to1 = m_xVecAll1to1->getDataNonConst();
     LO numDofs1to1 = m_dofMap1to1->getNodeNumElements();
@@ -580,23 +580,23 @@ public:
 #endif
 #pragma omp for
       for (LO i=0; i<m_numSub; i++) {
-	const std::vector<LO> & subDofs = m_subDofs[i];
-	LO numDofs = subDofs.size();
-	SX *xSub(0), *AxSub(0);
-	int threadID = getThreadID();
-	getArrays(threadID, xSub, AxSub);
-	for (LO j=0; j<numDofs; j++) {
-	  xSub[j] = xValues[subDofs[j]];
-	}
-	m_Subdomain[i]->applyFullOperator(&xSub[0], &AxSub[0]);
-	//#pragma omp critical(apply_full_operator)
-	{
-	  for (LO j=0; j<numDofs; j++) {
-	    int row = subDofs[j];
+        const std::vector<LO> & subDofs = m_subDofs[i];
+        LO numDofs = subDofs.size();
+        SX *xSub(0), *AxSub(0);
+        int threadID = getThreadID();
+        getArrays(threadID, xSub, AxSub);
+        for (LO j=0; j<numDofs; j++) {
+          xSub[j] = xValues[subDofs[j]];
+        }
+        m_Subdomain[i]->applyFullOperator(&xSub[0], &AxSub[0]);
+        //#pragma omp critical(apply_full_operator)
+        {
+          for (LO j=0; j<numDofs; j++) {
+            int row = subDofs[j];
 #pragma omp atomic
-	    AxValues[row] += AxSub[j];
-	  }
-	}
+            AxValues[row] += AxSub[j];
+          }
+        }
       }
     }
     m_AxVecAll1to1->doExport(*m_AxVecAll, *m_exporterAll, Tpetra::ADD);
@@ -605,34 +605,34 @@ public:
   }
 
   void ReduceSum(SX* inputVec,
-		 LO numTerms,
-		 SX* summedVec)
+                 LO numTerms,
+                 SX* summedVec)
   {
-    Teuchos::reduceAll<int, SX> (*m_Comm, Teuchos::REDUCE_SUM, numTerms, 
-				 inputVec, summedVec);
+    Teuchos::reduceAll<int, SX> (*m_Comm, Teuchos::REDUCE_SUM, numTerms,
+                                 inputVec, summedVec);
   }
 
-  SM Norm2(SX* x, 
-	   LO numTerm) 
+  SM Norm2(SX* x,
+           LO numTerm)
   {
     SX dotprod = DotProd(x, x, numTerm);
     return sqrt(UtilBDDC<SX,SM>::real(dotprod));
   }
 
-  SX DotProd(SX* x, 
-	     SX* y, 
-	     LO numTerm)
+  SX DotProd(SX* x,
+             SX* y,
+             LO numTerm)
   {
     SX localDotProd(0), dotProd;
     for (LO i=0; i<numTerm; i++) {
       localDotProd += UtilBDDC<SX,SM>::conj(x[i])*y[i];
     }
-    Teuchos::reduceAll<int, SX> (*m_Comm, Teuchos::REDUCE_SUM, 1, 
-				 &localDotProd, &dotProd);
+    Teuchos::reduceAll<int, SX> (*m_Comm, Teuchos::REDUCE_SUM, 1,
+                                 &localDotProd, &dotProd);
     return dotProd;
   }
 
-  int MyPID() 
+  int MyPID()
   {
     return m_myPID;
   }
@@ -653,7 +653,7 @@ private:
   RCP<Teuchos::ParameterList> & m_Parameters;
   MPI_Comm m_mpiComm, m_mpiCommSplit;
   LO m_spatialDim;
-  enum bddc::ProblemType m_problemType; 
+  enum bddc::ProblemType m_problemType;
   RCP<const Teuchos::Comm<int> > m_Comm, m_CommFine;
   int m_myPID, m_numThreads;
   Tpetra::global_size_t m_IGO;
@@ -687,7 +687,7 @@ private:
   std::vector<SM> m_xCoordCoarse, m_yCoordCoarse, m_zCoordCoarse;
   std::vector<SX> m_coarseRhsWork, m_coarseSolWork, m_fine1to1Work,
     m_coarseRhsWork2, m_residualVector, m_deltaSol;
-  std::vector< std::vector<LO> > m_subNodesCoarse, m_subRowBeginCoarse, 
+  std::vector< std::vector<LO> > m_subNodesCoarse, m_subRowBeginCoarse,
     m_subColumnsCoarse, m_subDofsCoarse;
   std::vector< std::vector<SX> > m_subValuesCoarse;
   RCP< PreconditionerBDDC<SX,SM,LO,GO> > m_coarsePreconditioner;
@@ -702,9 +702,9 @@ private:
     m_solVecB1to1_dis, m_rhsVecAll_dis, m_solVecAll_dis,
     m_rhsVecAll1to1_dis, m_solVecAll1to1_dis;
 
-  void convertSingleSudomain(LO* subRowBegin, 
-			     LO* subColumns, 
-			     SX* subValues)
+  void convertSingleSudomain(LO* subRowBegin,
+                             LO* subColumns,
+                             SX* subValues)
   {
     m_subNodes.resize(1);
     m_subNodes[0].resize(m_numNodes);
@@ -713,7 +713,7 @@ private:
     m_subColumns = new LO*[1]; m_subColumns[0] = subColumns;
     m_subValues = new SX*[1]; m_subValues[0] = subValues;
     LO spatialDim = m_Parameters->get("Spatial Dimension", 3);
-    enum bddc::ProblemType problemType = 
+    enum bddc::ProblemType problemType =
       m_Parameters->get("Problem Type BDDC", bddc::SCALARPDE);
     int numDofPerNode = 0;
     if (problemType == bddc::SCALARPDE) {
@@ -729,7 +729,7 @@ private:
     numDof = 0;
     for (LO i=0; i<m_numNodes; i++) {
       for (int j=0; j<numDofPerNode; j++) {
-	m_localDofs[numDof++] = j;
+        m_localDofs[numDof++] = j;
       }
       m_nodeBegin[i+1] = numDof;
     }
@@ -770,12 +770,12 @@ private:
     double startTime = GetTime();
     m_Partition =
       rcp( new bddc::PartitionOfUnity<SX,SM,LO,GO>
-	   (m_numNodes, m_nodeGlobalIDs, m_subNodeBegin, m_subNodes, 
-	    m_subRowBegin, m_subColumns, m_subValues,
-	    m_spatialDim, m_Parameters, m_Comm) );
+           (m_numNodes, m_nodeGlobalIDs, m_subNodeBegin, m_subNodes,
+            m_subRowBegin, m_subColumns, m_subValues,
+            m_spatialDim, m_Parameters, m_Comm) );
     bddc::DofManager<LO,GO>::
       determineGlobalIDs(m_numNodes, m_nodeGlobalIDs, m_nodeBegin, m_localDofs,
-			 m_Comm, m_dofMap, m_dofMap1to1, nodeGlobalIDs1to1);
+                         m_Comm, m_dofMap, m_dofMap1to1, nodeGlobalIDs1to1);
     determineBoundaryDofs();
     determineBoundaryMaps();
     initializeSubdomains();
@@ -791,12 +791,12 @@ private:
     m_timings[TIME_INITIALIZATION] += GetTime() - startTime;
   }
 
-  void setTpetraObjects(RCP<Vector> & rhsVec1to1, 
-			RCP<Vector> & solVec1to1, 
-			RCP<Vector> & rhsVec, 
-			RCP<Vector> & solVec, 
-			RCP<Export> & exporter,
-			std::vector< std::vector<LO> > & subDofs)
+  void setTpetraObjects(RCP<Vector> & rhsVec1to1,
+                        RCP<Vector> & solVec1to1,
+                        RCP<Vector> & rhsVec,
+                        RCP<Vector> & solVec,
+                        RCP<Export> & exporter,
+                        std::vector< std::vector<LO> > & subDofs)
   {
     subDofs = m_subBoundaryDofs;
     if (m_interfacePreconditioner == true) {
@@ -816,11 +816,11 @@ private:
     }
   }
 
-  void resetMapsForTpetraObjects(RCP<Vector> & rhsVec1to1, 
-				 RCP<Vector> & solVec1to1, 
-				 RCP<Vector> & rhsVec, 
-				 RCP<Vector> & solVec,
-				 RCP<Export> & exporter)
+  void resetMapsForTpetraObjects(RCP<Vector> & rhsVec1to1,
+                                 RCP<Vector> & solVec1to1,
+                                 RCP<Vector> & rhsVec,
+                                 RCP<Vector> & solVec,
+                                 RCP<Export> & exporter)
   {
     if (m_interfacePreconditioner == true) {
       rhsVec1to1->replaceMap(m_dofMapB1to1);
@@ -838,11 +838,11 @@ private:
     }
   }
 
-  void changeMapsForTpetraObjects(RCP<Vector> & rhsVec1to1, 
-				  RCP<Vector> & solVec1to1, 
-				  RCP<Vector> & rhsVec, 
-				  RCP<Vector> & solVec,
-				  RCP<Export> & exporter)
+  void changeMapsForTpetraObjects(RCP<Vector> & rhsVec1to1,
+                                  RCP<Vector> & solVec1to1,
+                                  RCP<Vector> & rhsVec,
+                                  RCP<Vector> & solVec,
+                                  RCP<Export> & exporter)
   {
     if (m_interfacePreconditioner == true) {
       rhsVec1to1->replaceMap(m_dofMapB1to1_dis);
@@ -871,7 +871,7 @@ private:
     for (LO i=0; i<m_numNodesCoarse; i++) {
       LO node = subNodesCoarse[i];
       for (LO j=m_nodeBeginCoarse[node]; j<m_nodeBeginCoarse[node+1]; j++) {
-	m_reorderCoarseDofs[numRows++] = j;
+        m_reorderCoarseDofs[numRows++] = j;
       }
     }
   }
@@ -885,9 +885,9 @@ private:
     return threadID;
   }
 
-  void getArrays(int threadID, 
-		 SX* & array1, 
-		 SX* & array2)
+  void getArrays(int threadID,
+                 SX* & array1,
+                 SX* & array2)
   {
 #ifdef _OPENMP
     array1 = m_work1T[threadID];
@@ -925,15 +925,15 @@ private:
 #endif
   }
 
-  void determineNewMap(RCP<const Map> dofMap, 
-		       RCP<const Map> & dofMap_dis)
+  void determineNewMap(RCP<const Map> dofMap,
+                       RCP<const Map> & dofMap_dis)
   {
     LO numRows = dofMap->getNodeNumElements();
     std::vector<GO> globalIDs(numRows);
     for (LO i=0; i<numRows; i++) {
       globalIDs[i] = dofMap->getGlobalElement(i);
     }
-    dofMap_dis = 
+    dofMap_dis =
       rcp( new Map(m_IGO, Teuchos::ArrayView<GO>(globalIDs), 0, m_CommFine) );
   }
 
@@ -947,17 +947,17 @@ private:
       LO numNode = m_subNodes[i].size();
       m_subNodeBegin[i].resize(numNode+1, 0);
       for (LO j=0; j<numNode; j++) {
-	LO node = m_subNodes[i][j];
-	numDof += m_nodeBegin[node+1] - m_nodeBegin[node];
-	m_subNodeBegin[i][j+1] = numDof;
+        LO node = m_subNodes[i][j];
+        numDof += m_nodeBegin[node+1] - m_nodeBegin[node];
+        m_subNodeBegin[i][j+1] = numDof;
       }
       m_subLocalDofs[i].resize(numDof);
       numDof = 0;
       for (LO j=0; j<numNode; j++) {
-	LO node = m_subNodes[i][j];
-	for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
-	  m_subLocalDofs[i][numDof++] = m_localDofs[j];
-	}
+        LO node = m_subNodes[i][j];
+        for (LO j=m_nodeBegin[node]; j<m_nodeBegin[node+1]; j++) {
+          m_subLocalDofs[i][numDof++] = m_localDofs[j];
+        }
       }
     }
   }
@@ -967,22 +967,22 @@ private:
     if (m_disjointCommunicators == false) return;
     if (m_fineProc == true) {
       if (m_interfacePreconditioner == true) {
-	determineNewMap(m_dofMapB, m_dofMapB_dis);
-	determineNewMap(m_dofMapB1to1, m_dofMapB1to1_dis);
-	m_rhsVecB_dis = rcp( new Vector(m_dofMapB_dis) );
-	m_solVecB_dis = rcp( new Vector(m_dofMapB_dis) );
-	m_rhsVecB1to1_dis = rcp( new Vector(m_dofMapB1to1_dis) );
-	m_solVecB1to1_dis = rcp( new Vector(m_dofMapB1to1_dis) );
-	m_exporterB_dis = rcp( new Export(m_dofMapB_dis, m_dofMapB1to1_dis) );
+        determineNewMap(m_dofMapB, m_dofMapB_dis);
+        determineNewMap(m_dofMapB1to1, m_dofMapB1to1_dis);
+        m_rhsVecB_dis = rcp( new Vector(m_dofMapB_dis) );
+        m_solVecB_dis = rcp( new Vector(m_dofMapB_dis) );
+        m_rhsVecB1to1_dis = rcp( new Vector(m_dofMapB1to1_dis) );
+        m_solVecB1to1_dis = rcp( new Vector(m_dofMapB1to1_dis) );
+        m_exporterB_dis = rcp( new Export(m_dofMapB_dis, m_dofMapB1to1_dis) );
       }
       else {
-	determineNewMap(m_dofMap, m_dofMap_dis);
-	determineNewMap(m_dofMap1to1, m_dofMap1to1_dis);
-	m_exporterAll_dis = rcp( new Export(m_dofMap1to1_dis, m_dofMap_dis) );
-	m_rhsVecAll_dis = rcp( new Vector(m_dofMap_dis) );
-	m_solVecAll_dis = rcp( new Vector(m_dofMap_dis) );
-	m_rhsVecAll1to1_dis = rcp( new Vector(m_dofMap1to1_dis) );
-	m_solVecAll1to1_dis = rcp( new Vector(m_dofMap1to1_dis) );
+        determineNewMap(m_dofMap, m_dofMap_dis);
+        determineNewMap(m_dofMap1to1, m_dofMap1to1_dis);
+        m_exporterAll_dis = rcp( new Export(m_dofMap1to1_dis, m_dofMap_dis) );
+        m_rhsVecAll_dis = rcp( new Vector(m_dofMap_dis) );
+        m_solVecAll_dis = rcp( new Vector(m_dofMap_dis) );
+        m_rhsVecAll1to1_dis = rcp( new Vector(m_dofMap1to1_dis) );
+        m_solVecAll1to1_dis = rcp( new Vector(m_dofMap1to1_dis) );
       }
     }
   }
@@ -1009,7 +1009,7 @@ private:
     GO numMySubs = m_subNodeBegin.size();
     GO numSubs(0);
     Teuchos::reduceAll<int, GO>(*m_Comm, Teuchos::REDUCE_SUM, 1,
-				&numMySubs, &numSubs);
+                                &numMySubs, &numSubs);
     assert (numSubs > 0);
     if (numSubs == 1) {
       useDirectSolver = true;
@@ -1028,21 +1028,21 @@ private:
     LO* columns = m_subColumns[0];
     SX* values = m_subValues[0];
     m_directSolver = Factory.Generate(numRows, rowBegin, columns, values,
-				      *m_Parameters);
+                                      *m_Parameters);
     m_directSolver->Initialize();
   }
 
   void determineWeights()
   {
-    m_Weights = 
+    m_Weights =
       rcp( new bddc::WeightsBDDC<SX,SM,LO,GO>
-	   (m_Subdomain, m_Partition, m_exporterB,
-	    m_subBoundaryDofs, m_diagBoundary, m_Parameters) );
+           (m_Subdomain, m_Partition, m_exporterB,
+            m_subBoundaryDofs, m_diagBoundary, m_Parameters) );
     m_Weights->determineWeights();
   }
 
-  RCP<const Map> constructOneToOne(RCP<const Map> map, 
-				   RCP<const Map> map1to1)
+  RCP<const Map> constructOneToOne(RCP<const Map> map,
+                                   RCP<const Map> map1to1)
   {
     std::vector<GO> globalIDs;
     LO numRows = map->getNodeNumElements();
@@ -1050,7 +1050,7 @@ private:
       GO globalID = map->getGlobalElement(i);
       LO localID = map1to1->getLocalElement(globalID);
       if (localID != Teuchos::OrdinalTraits<LO>::invalid()) {
-	globalIDs.push_back(globalID);
+        globalIDs.push_back(globalID);
       }
     }
     RCP<const Map> newMap1to1 = generateMap(globalIDs);
@@ -1088,20 +1088,20 @@ private:
       LO numInteriorDofs = interiorDofs.size();
       m_subInteriorDofs[i].resize(numInteriorDofs);
       for (LO j=0; j<numInteriorDofs; j++) {
-	LO localID = m_subDofs[i][interiorDofs[j]];
-	GO globalID = m_dofMap->getGlobalElement(localID);
-	LO localID1to1 = m_dofMap1to1->getLocalElement(globalID);
-	assert (localID1to1 != Teuchos::OrdinalTraits<LO>::invalid());
-	m_subInteriorDofs[i][j] = localID1to1;
+        LO localID = m_subDofs[i][interiorDofs[j]];
+        GO globalID = m_dofMap->getGlobalElement(localID);
+        LO localID1to1 = m_dofMap1to1->getLocalElement(globalID);
+        assert (localID1to1 != Teuchos::OrdinalTraits<LO>::invalid());
+        m_subInteriorDofs[i][j] = localID1to1;
       }
     }
   }
 
   void determineBoundaryDofs()
   {
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
-    const std::vector< std::vector<LO> > & equivClasses = 
+    const std::vector< std::vector<LO> > & equivClasses =
       m_Partition->getEquivClasses();
     m_numSub = subdomainEquivClasses.size();
     m_boundaryDofsLocal.resize(m_numSub);
@@ -1110,12 +1110,12 @@ private:
     std::vector<LO> globalToLocalMap(m_numNodes, -1);
     std::vector<bool> boundaryFlag(m_numDofs, false);
     for (LO i=0; i<m_numSub; i++) {
-      getBoundaryDofs(i, subdomainEquivClasses[i], equivClasses, 
-		      globalToLocalMap, m_boundaryDofsLocal[i],
-		      m_subBoundaryDofs[i]);
+      getBoundaryDofs(i, subdomainEquivClasses[i], equivClasses,
+                      globalToLocalMap, m_boundaryDofsLocal[i],
+                      m_subBoundaryDofs[i]);
       getSubDofs(i, m_subDofs[i]);
       for (size_t j=0; j<m_subBoundaryDofs[i].size(); j++) {
-	boundaryFlag[m_subBoundaryDofs[i][j]] = true;
+        boundaryFlag[m_subBoundaryDofs[i][j]] = true;
       }
     }
     for (LO i=0; i<m_numDofs; i++) {
@@ -1128,10 +1128,10 @@ private:
     }
     for (LO i=0; i<m_numSub; i++) {
       for (size_t j=0; j<m_subBoundaryDofs[i].size(); j++) {
-	LO dof = m_subBoundaryDofs[i][j];
-	LO dofB = m_globalToBoundaryMap[dof];
-	assert (dofB != -1);
-	m_subBoundaryDofs[i][j] = dofB;
+        LO dof = m_subBoundaryDofs[i][j];
+        LO dofB = m_globalToBoundaryMap[dof];
+        assert (dofB != -1);
+        m_subBoundaryDofs[i][j] = dofB;
       }
     }
     determineEquivBoundaryDofs(equivClasses);
@@ -1144,32 +1144,32 @@ private:
     m_equivBoundaryDofs.resize(numEquiv);
     for (LO i=0; i<numEquiv; i++) {
       for (size_t j=0; j<equivClasses[i].size(); j++) {
-	LO node = equivClasses[i][j];
-	for (LO k=m_nodeBegin[node]; k<m_nodeBegin[node+1]; k++) {
-	  LO dofB = m_globalToBoundaryMap[k];
-	  assert (dofB != -1);
-	  m_equivBoundaryDofs[i].push_back(dofB);
-	}
+        LO node = equivClasses[i][j];
+        for (LO k=m_nodeBegin[node]; k<m_nodeBegin[node+1]; k++) {
+          LO dofB = m_globalToBoundaryMap[k];
+          assert (dofB != -1);
+          m_equivBoundaryDofs[i].push_back(dofB);
+        }
       }
     }
   }
 
   void determineCoarseMpiRanks(int & myCoarseMpiRank,
-			       std::vector<int> & mpiRanks)
+                               std::vector<int> & mpiRanks)
   {
-    int numSubdomainsPerCoarseSubdomain = 
+    int numSubdomainsPerCoarseSubdomain =
       m_Parameters->get("numSubdomainsPerCoarseSubdomain", 512);
-    int numCoarseSubdomainsPerMpiRank = 
+    int numCoarseSubdomainsPerMpiRank =
       m_Parameters->get("numCoarseSubdomainsPerMpiRank", 1);
-    int numSubdomainsPerMpiRank = 
+    int numSubdomainsPerMpiRank =
       numCoarseSubdomainsPerMpiRank*numSubdomainsPerCoarseSubdomain;
     int numMySubdomains = m_Partition->getNumberOfMySubdomains();
     int totalNumSubdomains;
-    Teuchos::reduceAll<int, int> 
+    Teuchos::reduceAll<int, int>
       (*m_Comm, Teuchos::REDUCE_SUM, 1, &numMySubdomains, &totalNumSubdomains);
     int averageNumSubdomainsPerMpiRank = totalNumSubdomains/m_Comm->getSize();
     numSubdomainsPerMpiRank = std::max(numSubdomainsPerMpiRank,
-				       averageNumSubdomainsPerMpiRank);
+                                       averageNumSubdomainsPerMpiRank);
     int numMpiRanks = totalNumSubdomains/numSubdomainsPerMpiRank;
     if (totalNumSubdomains % numSubdomainsPerMpiRank != 0) numMpiRanks++;
     numMpiRanks = std::min(numMpiRanks, m_Comm->getSize());
@@ -1180,8 +1180,8 @@ private:
       if (mpiRanks[i] == m_myPID) myRankActive = 1;
     }
     int myRankActiveSS;
-    Teuchos::scan<int, int> (*m_Comm, Teuchos::REDUCE_SUM, 1, &myRankActive, 
-			     &myRankActiveSS);
+    Teuchos::scan<int, int> (*m_Comm, Teuchos::REDUCE_SUM, 1, &myRankActive,
+                             &myRankActiveSS);
     myCoarseMpiRank = -1;
     if (myRankActive == 1) {
       myCoarseMpiRank = myRankActiveSS - 1;
@@ -1206,8 +1206,8 @@ private:
     int numProc = m_Comm->getSize();
     int numCoarseProc = mpiRanks.size();
     std::vector<SM> procLoadAll(numProc);
-    Teuchos::gatherAll<int, SM> (*m_Comm, 1, &procLoad, numProc, 
-				 procLoadAll.data());
+    Teuchos::gatherAll<int, SM> (*m_Comm, 1, &procLoad, numProc,
+                                 procLoadAll.data());
     std::vector< std::pair<SM, int> > procSize(numProc);
     for (int i=0; i<numProc; i++) {
       procSize[i] = std::make_pair(procLoadAll[i], i);
@@ -1227,10 +1227,10 @@ private:
       double sumX(0), sumY(0), sumZ(0);
       LO numNode = m_subNodes[i].size();
       for (LO j=0; j<numNode; j++) {
-	LO node = m_subNodes[i][j];
-	sumX += m_xCoord[node];
-	sumY += m_yCoord[node];
-	sumZ += m_zCoord[node];
+        LO node = m_subNodes[i][j];
+        sumX += m_xCoord[node];
+        sumY += m_yCoord[node];
+        sumZ += m_zCoord[node];
       }
       coords[i+0*m_numSub] = sumX/numNode;
       coords[i+1*m_numSub] = sumY/numNode;
@@ -1245,7 +1245,7 @@ private:
     for (LO i=0; i<m_numSub; i++) {
       subGIDs[i] = startingSub + i;
     }
-    subdomainMap = generateMap(subGIDs); 
+    subdomainMap = generateMap(subGIDs);
   }
 
   void determineSubdomainCoordsForMpiRank
@@ -1266,24 +1266,24 @@ private:
       zCoords[i] = subdomainCoords[i+2*m_numSub];
     }
     RCP<const Map> targetMap = subsForCoarseProc->getColMap();
-    MVD coordsVecTarget(targetMap, 3); 
+    MVD coordsVecTarget(targetMap, 3);
     Export exporter(sourceMap, targetMap);
     coordsVecTarget.doExport(coordsVec, exporter, Tpetra::INSERT);
-    Teuchos::ArrayRCP<double> xCoordsTarget = 
+    Teuchos::ArrayRCP<double> xCoordsTarget =
       coordsVecTarget.getDataNonConst(0);
-    Teuchos::ArrayRCP<double> yCoordsTarget = 
+    Teuchos::ArrayRCP<double> yCoordsTarget =
       coordsVecTarget.getDataNonConst(1);
-    Teuchos::ArrayRCP<double> zCoordsTarget = 
+    Teuchos::ArrayRCP<double> zCoordsTarget =
       coordsVecTarget.getDataNonConst(2);
     LO numSubTarget = targetMap->getNodeNumElements();
-    subCoordsForCoarse.resize(3*numSubTarget);    
+    subCoordsForCoarse.resize(3*numSubTarget);
     for (LO i=0; i<numSubTarget; i++) {
       subCoordsForCoarse[i+0*numSubTarget] = xCoordsTarget[i];
       subCoordsForCoarse[i+1*numSubTarget] = yCoordsTarget[i];
       subCoordsForCoarse[i+2*numSubTarget] = zCoordsTarget[i];
     }
   }
-  
+
   void getConnectivityGraphForCoarse
     (RCP<const CrsGraph> subsForCoarseProc,
      RCP<CrsGraph> & Graph)
@@ -1294,50 +1294,50 @@ private:
     Import importer(sourceGraph->getRowMap(), targetMap);
     targetGraph.doImport(*sourceGraph, importer, Tpetra::INSERT);
     targetGraph.fillComplete(sourceGraph->getDomainMap(),
-			     sourceGraph->getRangeMap());
+                             sourceGraph->getRangeMap());
     LO numRows = targetMap->getNodeNumElements();
     if (numRows > 0) {
       MPI_Comm mpiComm = MPI_COMM_SELF;
-      RCP<const Teuchos::Comm<int> > Comm = 
-	rcp( new Teuchos::MpiComm<int>(mpiComm) );
+      RCP<const Teuchos::Comm<int> > Comm =
+        rcp( new Teuchos::MpiComm<int>(mpiComm) );
       std::vector<GO> rowIDs(numRows);
       Teuchos::ArrayRCP<size_t> count(numRows);
       Teuchos::ArrayView<const LO> Indices;
       for (LO i=0; i<numRows; i++) {
-	rowIDs[i] = i;
-	targetGraph.getLocalRowView(i, Indices);
-	LO numLocal(0);
-	for (int j=0; j<Indices.size(); j++) {
-	  GO globalID = targetGraph.getColMap()->getGlobalElement(Indices[j]);
-	  LO localID = targetMap->getLocalElement(globalID);
-	  if (localID !=  Teuchos::OrdinalTraits<LO>::invalid()) numLocal++;
-	}
-	count[i] = numLocal;
+        rowIDs[i] = i;
+        targetGraph.getLocalRowView(i, Indices);
+        LO numLocal(0);
+        for (int j=0; j<Indices.size(); j++) {
+          GO globalID = targetGraph.getColMap()->getGlobalElement(Indices[j]);
+          LO localID = targetMap->getLocalElement(globalID);
+          if (localID !=  Teuchos::OrdinalTraits<LO>::invalid()) numLocal++;
+        }
+        count[i] = numLocal;
       }
       RCP<const Map> rowMap = generateMap(rowIDs);
       Graph = rcp( new CrsGraph(rowMap, rowMap, count, Tpetra::StaticProfile) );
       for (LO i=0; i<numRows; i++) {
-	targetGraph.getLocalRowView(i, Indices);
-	std::vector<LO> indices;
-	for (int j=0; j<Indices.size(); j++) {
-	  GO globalID = targetGraph.getColMap()->getGlobalElement(Indices[j]);
-	  LO localID = targetMap->getLocalElement(globalID);
-	  if (localID !=  Teuchos::OrdinalTraits<LO>::invalid()) {
-	    indices.push_back(localID);
-	  }
-	}
-	Graph->insertLocalIndices(i, Teuchos::ArrayView<LO>(indices));
+        targetGraph.getLocalRowView(i, Indices);
+        std::vector<LO> indices;
+        for (int j=0; j<Indices.size(); j++) {
+          GO globalID = targetGraph.getColMap()->getGlobalElement(Indices[j]);
+          LO localID = targetMap->getLocalElement(globalID);
+          if (localID !=  Teuchos::OrdinalTraits<LO>::invalid()) {
+            indices.push_back(localID);
+          }
+        }
+        Graph->insertLocalIndices(i, Teuchos::ArrayView<LO>(indices));
       }
       Graph->fillComplete();
     }
   }
-  
+
   void partitionSubdomainsWithinMpiRanks
     (RCP<const CrsGraph> subsForCoarseProc,
      std::vector< std::vector<GO> > & coarseSubdomainSubs)
   {
     LO numSubdomains = subsForCoarseProc->getNodeNumCols();
-    int numSubdomainsPerCoarseSubdomain = 
+    int numSubdomainsPerCoarseSubdomain =
       m_Parameters->get("numSubdomainsPerCoarseSubdomain", 512);
     int numParts = numSubdomains/numSubdomainsPerCoarseSubdomain;
     if (numSubdomains % numSubdomainsPerCoarseSubdomain != 0) numParts++;
@@ -1347,12 +1347,12 @@ private:
     }
     int maxNumParts(0);
     Teuchos::reduceAll<int, int>(*m_Comm, Teuchos::REDUCE_MAX, 1,
-				 &numParts, &maxNumParts);
+                                 &numParts, &maxNumParts);
     // quick exit if no further partitioning required
     if (maxNumParts < 2) {
       if (numParts == 1) {
-	coarseSubdomainSubs.resize(1);
-	coarseSubdomainSubs[0] = subdomainGIDs;
+        coarseSubdomainSubs.resize(1);
+        coarseSubdomainSubs[0] = subdomainGIDs;
       }
       return;
     }
@@ -1381,18 +1381,18 @@ private:
     }
     else {
       if (coarsenOption == "Recursive Coordinate Bisection") {
-	params->set("LB Method", "RCB");
+        params->set("LB Method", "RCB");
       }
       else if (coarsenOption == "Recursive Inertial Bisection") {
-	params->set("LB Method", "RIB");
+        params->set("LB Method", "RIB");
       }
       LO *rowBegin(0), *columns(0);
       std::vector<GO> globalIDs(numSubdomains);
       for (LO i=0; i<numSubdomains; i++) globalIDs[i] = i;
       MPI_Comm mpiComm = MPI_COMM_SELF;
       partition = new ZoltanPartition<LO, GO>
-	(numSubdomains, rowBegin, columns, elemCoords.data(), 
-	 globalIDs.data(), mpiComm, params);
+        (numSubdomains, rowBegin, columns, elemCoords.data(),
+         globalIDs.data(), mpiComm, params);
     }
     partition->setDefaultWeights();
     partition->doPartition();
@@ -1406,7 +1406,7 @@ private:
   }
 
   void partitionSubdomainsAcrossMpiRanks(const std::vector<int> & mpiRanks,
-					 std::vector<GO> & parts)
+                                         std::vector<GO> & parts)
   {
     parts.resize(m_numSub, 0);
     std::vector<double> subdomainCoords;
@@ -1420,24 +1420,24 @@ private:
       params->set("Number of Parts", numCoarseRanks);
       params->set("Coordinates", subdomainCoords.data());
       ZoltanPartition<LO, GO>* partition(nullptr);
-      std::string coarsenOption = 
-	m_Parameters->get("Coarsening Option", "Graph");
+      std::string coarsenOption =
+        m_Parameters->get("Coarsening Option", "Graph");
       if (coarsenOption == "Graph") {
-	RCP<const CrsGraph> Graph = m_Partition->getConnectivityGraph();
-	params->set("LB Method", "Graph");
-	partition = new ZoltanPartition<LO, GO>(Graph, params);
+        RCP<const CrsGraph> Graph = m_Partition->getConnectivityGraph();
+        params->set("LB Method", "Graph");
+        partition = new ZoltanPartition<LO, GO>(Graph, params);
       }
       else {
-	if (coarsenOption == "Recursive Coordinate Bisection") {
-	  params->set("LB Method", "RCB");
-	}
-	else if (coarsenOption == "Recursive Inertial Bisection") {
-	  params->set("LB Method", "RIB");
-	}
-	LO *rowBegin(0), *columns(0);
-	partition = new ZoltanPartition<LO, GO>
-	  (m_numSub, rowBegin, columns, subdomainCoords.data(), 
-	   globalIDs.data(), m_mpiComm, params);
+        if (coarsenOption == "Recursive Coordinate Bisection") {
+          params->set("LB Method", "RCB");
+        }
+        else if (coarsenOption == "Recursive Inertial Bisection") {
+          params->set("LB Method", "RIB");
+        }
+        LO *rowBegin(0), *columns(0);
+        partition = new ZoltanPartition<LO, GO>
+          (m_numSub, rowBegin, columns, subdomainCoords.data(),
+           globalIDs.data(), m_mpiComm, params);
       }
       partition->setDefaultWeights();
       partition->doPartition();
@@ -1446,10 +1446,10 @@ private:
       delete partition;
     }
   }
-  
+
   void determineSubdomainsInCoarsePartition
-    (int myCoarseMpiRank, 
-     const std::vector<GO> & parts, 
+    (int myCoarseMpiRank,
+     const std::vector<GO> & parts,
      RCP<CrsGraph> & subsForCoarseProc)
   {
     std::vector<GO> uniqueParts;
@@ -1467,7 +1467,7 @@ private:
     CrsGraph subsForParts(partMap, subMap, count, Tpetra::StaticProfile);
     for (size_t i=0; i<uniqueParts.size(); i++) {
       subsForParts.insertLocalIndices
-	(i, Teuchos::ArrayView<LO>(localIndices[i]));
+        (i, Teuchos::ArrayView<LO>(localIndices[i]));
     }
     std::vector<GO> coarseParts;
     if (myCoarseMpiRank != -1) coarseParts.resize(1, myCoarseMpiRank);
@@ -1478,11 +1478,11 @@ private:
     subsForCoarseProc->doExport(subsForParts, exporter, Tpetra::ADD);
     subsForCoarseProc->fillComplete(subMap, coarsePartsMap);
   }
-  
+
   void getCoarseNodeLocalDofs
     (std::vector< std::vector<LO> > & coarseNodeLocalDofs)
   {
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
     LO numCoarseNodes = m_Partition->getNumEquivClasses();
     coarseNodeLocalDofs.resize(numCoarseNodes);
@@ -1490,11 +1490,11 @@ private:
     for (LO i=0; i<m_numSub; i++) {
       LO numEquiv = m_Subdomain[i]->getNumEquiv();
       for (LO j=0; j<numEquiv; j++) {
-	LO equiv = subdomainEquivClasses[i][j];
-	if (equivProcessed[equiv] == false) {
-	  coarseNodeLocalDofs[equiv] = m_Subdomain[i]->getEquivLocalDofs(j); 
-	  equivProcessed[equiv] = true;
-	}
+        LO equiv = subdomainEquivClasses[i][j];
+        if (equivProcessed[equiv] == false) {
+          coarseNodeLocalDofs[equiv] = m_Subdomain[i]->getEquivLocalDofs(j);
+          equivProcessed[equiv] = true;
+        }
       }
     }
   }
@@ -1515,8 +1515,8 @@ private:
     std::vector<GO> activeCoarseNodeGIDs;
     for (LO i=0; i<numCoarseNodes; i++) {
       if (coarseNodeLocalDofs[i].size() > 0) {
-	activeCoarseNodes.push_back(i);
-	activeCoarseNodeGIDs.push_back(coarseNodeGIDs[i]);
+        activeCoarseNodes.push_back(i);
+        activeCoarseNodeGIDs.push_back(coarseNodeGIDs[i]);
       }
     }
     LO numActiveCoarseNodes = activeCoarseNodes.size();
@@ -1534,12 +1534,12 @@ private:
       yCoords[i] = coarseCoords[i+1*numActiveCoarseNodes];
       zCoords[i] = coarseCoords[i+2*numActiveCoarseNodes];
     }
-    RCP<const Map> coarseNodeMap1to1 = 
+    RCP<const Map> coarseNodeMap1to1 =
       Tpetra::createOneToOne<LO,GO,Node>(coarseNodeMap);
     coarseCoordsVec1to1 = rcp( new MVD(coarseNodeMap1to1, 3) );
     nodeExporter = rcp( new Export(coarseNodeMap, coarseNodeMap1to1) );
-    coarseCoordsVec1to1->doExport(coarseCoordsVec, *nodeExporter, 
-				  Tpetra::INSERT);
+    coarseCoordsVec1to1->doExport(coarseCoordsVec, *nodeExporter,
+                                  Tpetra::INSERT);
     // next, determine localDofs graph
     std::vector<GO> allLocalDofs, allLocalDofsUnique;
     Teuchos::ArrayRCP<size_t> count(numActiveCoarseNodes);
@@ -1550,7 +1550,7 @@ private:
       count[i] = localDofs.size();
       numCoarseDof += count[i];
       for (size_t j=0; j<localDofs.size(); j++) {
-	allLocalDofs.push_back(localDofs[j]);
+        allLocalDofs.push_back(localDofs[j]);
       }
     }
     DofManager<LO,GO>::determineUniqueIndices(allLocalDofs, allLocalDofsUnique);
@@ -1559,8 +1559,8 @@ private:
       mapLocalDofs.insert(std::make_pair(allLocalDofsUnique[i], i));
     }
     RCP<const Map> colMap = generateMap(allLocalDofsUnique);
-    CrsGraph localDofsGraph(coarseNodeMap, colMap, count, 
-			    Tpetra::StaticProfile);
+    CrsGraph localDofsGraph(coarseNodeMap, colMap, count,
+                            Tpetra::StaticProfile);
     std::vector<LO> indices;
     activeCoarseNodesNumDofs.resize(numActiveCoarseNodes);
     for (LO i=0; i<numActiveCoarseNodes; i++) {
@@ -1569,9 +1569,9 @@ private:
       activeCoarseNodesNumDofs[i] = localDofs.size();
       indices.resize(localDofs.size());
       for (size_t j=0; j<localDofs.size(); j++) {
-	auto iter = mapLocalDofs.find(localDofs[j]);
-	assert (iter != mapLocalDofs.end());
-	indices[j] = iter->second;
+        auto iter = mapLocalDofs.find(localDofs[j]);
+        assert (iter != mapLocalDofs.end());
+        indices[j] = iter->second;
       }
       localDofsGraph.insertLocalIndices(i, Teuchos::ArrayView<LO>(indices));
     }
@@ -1582,7 +1582,7 @@ private:
     localDofsGraph1to1->doExport(localDofsGraph, *nodeExporter, Tpetra::INSERT);
     localDofsGraph1to1->fillComplete(colMap1to1, coarseNodeMap1to1);
   }
-  
+
   RCP<const Map> generateMap(const std::vector<GO> & globalIDs)
   {
     return
@@ -1611,7 +1611,7 @@ private:
       m_nodeGlobalIDsCoarse1to1[i] = targetMap->getGlobalElement(i);
       GO start = startValues[i];
       for (GO j=0; j<numDofValues[i]; j++) {
-	globalIDs.push_back(start+j);
+        globalIDs.push_back(start+j);
       }
     }
     coarseMapNextLevel = generateMap(globalIDs);
@@ -1626,29 +1626,29 @@ private:
      RCP<const Map> & coarseMap)
   {
     determineCoarseNodeData(localDofsGraph1to1, startNodeVector1to1,
-			    numDofNodeVector1to1);
+                            numDofNodeVector1to1);
     std::vector<GO> coarseDofGIDs;
-    determineCoarseDofGIDs(startNodeVector1to1, nodeExporter, 
-			   activeCoarseNodesNumDofs, coarseDofGIDs);
+    determineCoarseDofGIDs(startNodeVector1to1, nodeExporter,
+                           activeCoarseNodesNumDofs, coarseDofGIDs);
     coarseMap = generateMap(coarseDofGIDs);
   }
 
   void determineCoarseNodeData
-    (RCP<const CrsGraph> localDofsGraph1to1, 
+    (RCP<const CrsGraph> localDofsGraph1to1,
      RCP<VectorGO> & startNodeVector1to1,
      RCP<VectorGO> & numDofNodeVector1to1)
   {
     GO numDof1to1 = localDofsGraph1to1->getNodeNumEntries();
     GO numDof1to1SS;
-    Teuchos::scan<int, GO> (*m_Comm, Teuchos::REDUCE_SUM, 1, &numDof1to1, 
-			     &numDof1to1SS);
+    Teuchos::scan<int, GO> (*m_Comm, Teuchos::REDUCE_SUM, 1, &numDof1to1,
+                             &numDof1to1SS);
     GO start = numDof1to1SS - numDof1to1;
     RCP<const Map> coarseNodeMap1to1 = localDofsGraph1to1->getRowMap();
     startNodeVector1to1 = rcp( new VectorGO(coarseNodeMap1to1) );
     numDofNodeVector1to1 = rcp( new VectorGO(coarseNodeMap1to1) );
-    Teuchos::ArrayRCP<GO> startVals1to1 = 
+    Teuchos::ArrayRCP<GO> startVals1to1 =
       startNodeVector1to1->getDataNonConst();
-    Teuchos::ArrayRCP<GO> numDofVals1to1 = 
+    Teuchos::ArrayRCP<GO> numDofVals1to1 =
       numDofNodeVector1to1->getDataNonConst();
     Teuchos::ArrayView<const LO> Indices;
     for (size_t i=0; i<coarseNodeMap1to1->getNodeNumElements(); i++) {
@@ -1660,15 +1660,15 @@ private:
   }
 
   void determineCoarseDofGIDs
-    (RCP<const VectorGO> startNodeVector1to1, 
+    (RCP<const VectorGO> startNodeVector1to1,
      RCP<const Export> nodeExporter,
      const std::vector<LO> & activeCoarseNodesNumDofs,
      std::vector<GO> & coarseDofGIDs)
   {
     RCP<const Map> coarseNodeMap = nodeExporter->getSourceMap();
     VectorGO startNodeVector(coarseNodeMap);
-    startNodeVector.doImport(*startNodeVector1to1, *nodeExporter, 
-			     Tpetra::INSERT);
+    startNodeVector.doImport(*startNodeVector1to1, *nodeExporter,
+                             Tpetra::INSERT);
     Teuchos::ArrayRCP<const GO> startVals = startNodeVector.getData();
     LO numCoarseDof(0);
     for (size_t i=0; i<activeCoarseNodesNumDofs.size(); i++) {
@@ -1678,7 +1678,7 @@ private:
     numCoarseDof = 0;
     for (size_t i=0; i<activeCoarseNodesNumDofs.size(); i++) {
       for (LO j=0; j<activeCoarseNodesNumDofs[i]; j++) {
-	coarseDofGIDs[numCoarseDof++] = startVals[i] + j;
+        coarseDofGIDs[numCoarseDof++] = startVals[i] + j;
       }
     }
   }
@@ -1693,7 +1693,7 @@ private:
     determineSubdomainMap(subMap);
     // next, determine CrsGraph containing active coarse nodes of the
     // original subdomains
-    const std::vector< std::vector<LO> > subdomainCoarseNodes = 
+    const std::vector< std::vector<LO> > subdomainCoarseNodes =
       m_Partition->getSubdomainEquivClasses();
     const std::vector<GO> coarseNodeGIDs = m_Partition->getGlobalIDs();
     LO numActiveCoarseNodes = activeCoarseNodes.size();
@@ -1714,7 +1714,7 @@ private:
       GO coarseNode = coarseNodeGIDs[i];
       auto iter = mapCoarseNodeGIDs.find(coarseNode);
       if (iter != mapCoarseNodeGIDs.end()) {
-	indexMap[i] = iter->second;
+        indexMap[i] = iter->second;
       }
     }
     Teuchos::ArrayRCP<size_t> count(m_numSub);
@@ -1723,34 +1723,34 @@ private:
     for (LO i=0; i<m_numSub; i++) {
       count[i] = 0;
       for (size_t j=0; j<subdomainCoarseNodes[i].size(); j++) {
-	LO index = indexMap[subdomainCoarseNodes[i][j]];
-	if (index != -1) {
-	  indices[i].push_back(index);
-	  count[i]++;
-	  for (LO k=nodeBeginCoarse[index]; k<nodeBeginCoarse[index+1]; k++) {
-	    m_subDofsCoarse[i].push_back(k);
-	  }
-	}
+        LO index = indexMap[subdomainCoarseNodes[i][j]];
+        if (index != -1) {
+          indices[i].push_back(index);
+          count[i]++;
+          for (LO k=nodeBeginCoarse[index]; k<nodeBeginCoarse[index+1]; k++) {
+            m_subDofsCoarse[i].push_back(k);
+          }
+        }
       }
       m_subDofsCoarse[i].shrink_to_fit();
     }
     RCP<const Map> activeCoarseNodeMap = generateMap(activeCoarseNodeGIDs);
     coarseNodesForSubdomains = rcp
-      ( new CrsGraph(subMap, activeCoarseNodeMap, count, 
-		     Tpetra::StaticProfile) );
+      ( new CrsGraph(subMap, activeCoarseNodeMap, count,
+                     Tpetra::StaticProfile) );
     for (LO i=0; i<m_numSub; i++) {
       coarseNodesForSubdomains->insertLocalIndices
-	(i, Teuchos::ArrayView<const LO>(indices[i]));
+        (i, Teuchos::ArrayView<const LO>(indices[i]));
     }
-    RCP<const Map> activeCoarseNodeMap1to1 = 
+    RCP<const Map> activeCoarseNodeMap1to1 =
       Tpetra::createOneToOne<LO,GO,Node>(activeCoarseNodeMap);
     coarseNodesForSubdomains->fillComplete(activeCoarseNodeMap1to1, subMap);
   }
-  
+
   void getCoordsCoarseNode(const std::vector<LO> & activeCoarseNodes,
-			   std::vector<SM> & coordsCoarseNode)
+                           std::vector<SM> & coordsCoarseNode)
   {
-    const std::vector< std::vector<LO> > & equivClasses = 
+    const std::vector< std::vector<LO> > & equivClasses =
       m_Partition->getEquivClasses();
     LO numActiveCoarseNodes = activeCoarseNodes.size();
     coordsCoarseNode.resize(3*numActiveCoarseNodes);
@@ -1759,19 +1759,19 @@ private:
       LO numNode = equivClasses[index].size();
       SM sumX(0), sumY(0), sumZ(0);
       for (LO j=0; j<numNode; j++) {
-	LO node = equivClasses[index][j];
-	sumX += m_xCoord[node];
-	sumY += m_yCoord[node];
-	sumZ += m_zCoord[node];
+        LO node = equivClasses[index][j];
+        sumX += m_xCoord[node];
+        sumY += m_yCoord[node];
+        sumZ += m_zCoord[node];
       }
       coordsCoarseNode[i+0*numActiveCoarseNodes] = sumX/numNode;
       coordsCoarseNode[i+1*numActiveCoarseNodes] = sumY/numNode;
       coordsCoarseNode[i+2*numActiveCoarseNodes] = sumZ/numNode;
     }
   }
-  
-  void getSubdomainParts(const std::vector<GO> & partsWithinMpiRanks, 
-			 std::vector< std::vector<LO> > & partsForSubs)
+
+  void getSubdomainParts(const std::vector<GO> & partsWithinMpiRanks,
+                         std::vector< std::vector<LO> > & partsForSubs)
   {
     LO numSubs(0);
     for (size_t i=0; i<partsWithinMpiRanks.size(); i++) {
@@ -1805,13 +1805,13 @@ private:
   }
 
   void applyPhi(RCP<Vector> & coarseVectorNextLevel,
-		RCP<Vector> & fineVector1to1,
-		SX beta,
-		bool restrictToBoundary)
+                RCP<Vector> & fineVector1to1,
+                SX beta,
+                bool restrictToBoundary)
   {
     RCP<Vector> coarseVector = m_coarseVec;
     coarseVector->doImport(*coarseVectorNextLevel, *m_exporterCoarse,
-			   Tpetra::INSERT);
+                           Tpetra::INSERT);
 
     Teuchos::ArrayRCP<const SX> xVals = coarseVector->getData();
     RCP<Vector> fineVector;
@@ -1835,15 +1835,15 @@ private:
       LO numRows = subDofsCoarse.size();
       LO numDof(0);
       for (LO j=0; j<numRows; j++) {
-	LO row = subDofsCoarse[j];
-	x[numDof++] = xVals[row];
+        LO row = subDofsCoarse[j];
+        x[numDof++] = xVals[row];
       }
       bool transpose(false);
       m_Subdomain[i]->multiplyByPhi(x, b, restrictToBoundary, transpose);
       const std::vector<LO> & dofs = subDofs[i];
       LO numDofs = dofs.size();
       for (LO j=0; j<numDofs; j++) {
-	bVals[dofs[j]] += b[j];
+        bVals[dofs[j]] += b[j];
       }
     }
     // The following two lines of code doesn't do what I expect. It seems
@@ -1868,8 +1868,8 @@ private:
   }
 
   void applyPhiTranspose(RCP<Vector> & fineVector1to1,
-			 RCP<Vector> & coarseVectorNextLevel,
-			 bool restrictToBoundary)
+                         RCP<Vector> & coarseVectorNextLevel,
+                         bool restrictToBoundary)
   {
     RCP<Vector> fineVector;
     RCP<Export> exporter;
@@ -1896,7 +1896,7 @@ private:
       const std::vector<LO> & dofs = subDofs[i];
       LO numDofs = dofs.size();
       for (LO j=0; j<numDofs; j++) {
-	x[j] = xVals[dofs[j]];
+        x[j] = xVals[dofs[j]];
       }
       bool transpose(true);
       m_Subdomain[i]->multiplyByPhi(x, b, restrictToBoundary, transpose);
@@ -1904,13 +1904,13 @@ private:
       LO numRows = subDofsCoarse.size();
       LO numDof(0);
       for (LO j=0; j<numRows; j++) {
-	LO row = subDofsCoarse[j];
-	bVals[row] += b[numDof++];
+        LO row = subDofsCoarse[j];
+        bVals[row] += b[numDof++];
       }
     }
     coarseVectorNextLevel->putScalar(0);
     coarseVectorNextLevel->doExport(*coarseVector, *m_exporterCoarse,
-				    Tpetra::ADD);
+                                    Tpetra::ADD);
   }
 
   void printCoarseMatrices()
@@ -1924,7 +1924,7 @@ private:
       int* columns = m_subColumnsCoarse[i].data();
       SX* values = m_subValuesCoarse[i].data();
       UtilBDDC<SX,SM>::printSparseMatrix
-	(numDof, rowBegin, columns, values, fname);
+        (numDof, rowBegin, columns, values, fname);
     }
   }
 
@@ -1953,9 +1953,9 @@ private:
       Teuchos::ArrayView<const SX> Values;
       LO numTerms(0);
       for (LO j=0; j<numDof; j++) {
-	coarseMatrix->getLocalRowView(startRow+j, Indices, Values);
-	numTerms += Indices.size();
-	m_subRowBeginCoarse[i][j+1] = numTerms;
+        coarseMatrix->getLocalRowView(startRow+j, Indices, Values);
+        numTerms += Indices.size();
+        m_subRowBeginCoarse[i][j+1] = numTerms;
       }
       m_subValuesCoarse[i].resize(numTerms);
       m_subColumnsCoarse[i].resize(numTerms);
@@ -1968,14 +1968,14 @@ private:
       Teuchos::ArrayView<const SX> Values;
       LO numTerms(0);
       for (LO j=0; j<numDof; j++) {
-	coarseMatrix->getLocalRowView(startRow+j, Indices, Values);
-	for (int k=0; k<Indices.size(); k++) {
-	  LO subCol = Indices[k] - startRow;
-	  assert ((subCol >= 0) && (subCol < numDof));
-	  m_subValuesCoarse[i][numTerms] = Values[k];
-	  m_subColumnsCoarse[i][numTerms] = subCol;
-	  numTerms++;
-	}
+        coarseMatrix->getLocalRowView(startRow+j, Indices, Values);
+        for (int k=0; k<Indices.size(); k++) {
+          LO subCol = Indices[k] - startRow;
+          assert ((subCol >= 0) && (subCol < numDof));
+          m_subValuesCoarse[i][numTerms] = Values[k];
+          m_subColumnsCoarse[i][numTerms] = subCol;
+          numTerms++;
+        }
       }
       startRow += numDof;
     }
@@ -1984,27 +1984,27 @@ private:
     }
   }
 
-  void getSubdomainCoarseDofs(LO sub, 
-			      const std::vector<LO> & equivBegin,
-			      std::vector<LO> & myCoarseDofs)
+  void getSubdomainCoarseDofs(LO sub,
+                              const std::vector<LO> & equivBegin,
+                              std::vector<LO> & myCoarseDofs)
   {
     LO numCoarseDof = m_Subdomain[sub]->getCoarseSpaceDimension();
     myCoarseDofs.resize(numCoarseDof);
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
     LO numEquiv = m_Subdomain[sub]->getNumEquiv();
     LO currentCol(0);
     for (LO j=0; j<numEquiv; j++) {
       LO equiv = subdomainEquivClasses[sub][j];
       for (LO k=equivBegin[equiv]; k<equivBegin[equiv+1]; k++) {
-	myCoarseDofs[currentCol++] = k;
+        myCoarseDofs[currentCol++] = k;
       }
     }
     assert (currentCol == numCoarseDof);
   }
 
-  void getMapGIDs(RCP<const Map> map, 
-		  std::vector<GO> & mapGIDs)
+  void getMapGIDs(RCP<const Map> map,
+                  std::vector<GO> & mapGIDs)
   {
     LO numRows = map->getNodeNumElements();
     mapGIDs.resize(numRows);
@@ -2014,8 +2014,8 @@ private:
   }
 
   void determineCoarseNodesForCoarseProc
-    (const std::vector< std::vector<GO> > & coarseSubdomainSubs, 
-     RCP<const CrsGraph> coarseNodesForSubdomains, 
+    (const std::vector< std::vector<GO> > & coarseSubdomainSubs,
+     RCP<const CrsGraph> coarseNodesForSubdomains,
      RCP<CrsGraph> & coarseNodesForCoarseProc)
   {
     LO numSubAll(0);
@@ -2026,20 +2026,20 @@ private:
     numSubAll = 0;
     for (size_t i=0; i<coarseSubdomainSubs.size(); i++) {
       for (size_t j=0; j<coarseSubdomainSubs[i].size(); j++) {
-	subdomainGIDs[numSubAll++] = coarseSubdomainSubs[i][j];
+        subdomainGIDs[numSubAll++] = coarseSubdomainSubs[i][j];
       }
     }
     RCP<const Map> subMap = generateMap(subdomainGIDs);
     coarseNodesForCoarseProc = rcp( new CrsGraph(subMap, 0) );
     Import importer(coarseNodesForSubdomains->getRowMap(), subMap);
     coarseNodesForCoarseProc->doImport(*coarseNodesForSubdomains, importer,
-				       Tpetra::INSERT);
+                                       Tpetra::INSERT);
     coarseNodesForCoarseProc->fillComplete
       (coarseNodesForSubdomains->getDomainMap(), subMap);
   }
 
   void determineNodalDataForCoarseProblem
-    (RCP<const CrsGraph> coarseNodesForCoarseProc, 
+    (RCP<const CrsGraph> coarseNodesForCoarseProc,
      RCP<const CrsGraph> coarseLocalDofsGraph1to1,
      RCP<MVD> coarseCoordsVec1to1)
   {
@@ -2048,7 +2048,7 @@ private:
     Import importer(coarseLocalDofsGraph1to1->getRowMap(), nodeMap);
     nodeLocalDofs.doImport(*coarseLocalDofsGraph1to1, importer, Tpetra::INSERT);
     nodeLocalDofs.fillComplete(coarseLocalDofsGraph1to1->getDomainMap(),
-			       coarseLocalDofsGraph1to1->getRangeMap());
+                               coarseLocalDofsGraph1to1->getRangeMap());
     LO numNode = nodeMap->getNodeNumElements();
     m_numNodesCoarse = numNode;
     Teuchos::ArrayView<const LO> Indices;
@@ -2068,8 +2068,8 @@ private:
     for (LO i=0; i<numNode; i++) {
       nodeLocalDofs.getLocalRowView(i, Indices);
       for (int j=0; j<Indices.size(); j++) {
-	int localDof = colMap->getGlobalElement(Indices[j]);
-	m_localDofsCoarse[numDof++] = localDof;
+        int localDof = colMap->getGlobalElement(Indices[j]);
+        m_localDofsCoarse[numDof++] = localDof;
       }
     }
     // coordinates of coarse nodes
@@ -2090,7 +2090,7 @@ private:
   }
 
   void determineNodesForEachCoarseSubdomain
-    (const std::vector< std::vector<GO> > & coarseSubdomainSubs, 
+    (const std::vector< std::vector<GO> > & coarseSubdomainSubs,
      RCP<const CrsGraph> coarseNodesForCoarseProc)
   {
     LO numSubCoarse = coarseSubdomainSubs.size();
@@ -2102,28 +2102,28 @@ private:
     Teuchos::ArrayView<const LO> Indices;
     for (LO i=0; i<numSubCoarse; i++) {
       for (size_t j=0; j<coarseSubdomainSubs[i].size(); j++) {
-	coarseNodesForCoarseProc->getLocalRowView(row++, Indices);
-	for (int k=0; k<Indices.size(); k++) {
-	  if (nodeFlag[Indices[k]] == false) {
-	    m_subNodesCoarse[i].push_back(Indices[k]);
-	  }
-	  nodeFlag[Indices[k]] = true;
-	}
+        coarseNodesForCoarseProc->getLocalRowView(row++, Indices);
+        for (int k=0; k<Indices.size(); k++) {
+          if (nodeFlag[Indices[k]] == false) {
+            m_subNodesCoarse[i].push_back(Indices[k]);
+          }
+          nodeFlag[Indices[k]] = true;
+        }
       }
       for (size_t j=0; j<m_subNodesCoarse[i].size(); j++) {
-	LO node = m_subNodesCoarse[i][j];
-	nodeFlag[node] = false;
+        LO node = m_subNodesCoarse[i][j];
+        nodeFlag[node] = false;
       }
     }
   }
 
   void getSubData(int row,
-		  const std::vector<GO> & coarseSubdomainSubs, 
-		  RCP<const CrsGraph> coarseNodesForCoarseProc,
-		  std::vector<LO> & activeNodes,
-		  std::vector<LO> & nodeFlag,
-		  std::vector< std::vector<LO> > & localNodeNumbers,
-		  std::vector<LO> & nodeBeginSub)
+                  const std::vector<GO> & coarseSubdomainSubs,
+                  RCP<const CrsGraph> coarseNodesForCoarseProc,
+                  std::vector<LO> & activeNodes,
+                  std::vector<LO> & nodeFlag,
+                  std::vector< std::vector<LO> > & localNodeNumbers,
+                  std::vector<LO> & nodeBeginSub)
   {
     LO numSub = coarseSubdomainSubs.size();
     localNodeNumbers.resize(numSub);
@@ -2133,12 +2133,12 @@ private:
       coarseNodesForCoarseProc->getLocalRowView(row, Indices);
       localNodeNumbers[i].resize(Indices.size());
       for (int j=0; j<Indices.size(); j++) {
-	LO node = Indices[j];
-	if (nodeFlag[node] == -1) {
-	  activeNodes[numActive] = node;
-	  nodeFlag[node] = numActive++;
-	}
-	localNodeNumbers[i][j] = nodeFlag[node];
+        LO node = Indices[j];
+        if (nodeFlag[node] == -1) {
+          activeNodes[numActive] = node;
+          nodeFlag[node] = numActive++;
+        }
+        localNodeNumbers[i][j] = nodeFlag[node];
       }
       row++;
     }
@@ -2159,32 +2159,32 @@ private:
     LO numSubCoarse = m_subNodesCoarse.size();
     for (LO i=0; i<numSubCoarse; i++) {
       for (size_t j=0; j<m_subNodesCoarse[i].size(); j++) {
-	LO node = m_subNodesCoarse[i][j];
-	LO numDofNode = m_nodeBeginCoarse[node+1] - m_nodeBeginCoarse[node];
-	numRowsMpiRank += numDofNode;
+        LO node = m_subNodesCoarse[i][j];
+        LO numDofNode = m_nodeBeginCoarse[node+1] - m_nodeBeginCoarse[node];
+        numRowsMpiRank += numDofNode;
       }
     }
     GO numRowsMpiRankSS;
-    Teuchos::scan<int, GO> 
+    Teuchos::scan<int, GO>
       (*m_Comm, Teuchos::REDUCE_SUM, 1, &numRowsMpiRank, &numRowsMpiRankSS);
     startRowMpiRank = numRowsMpiRankSS - numRowsMpiRank;
     globalIDsTargetMatrix.resize(numRowsMpiRank);
     numRowsMpiRank = 0;
     for (LO i=0; i<numSubCoarse; i++) {
       for (size_t j=0; j<m_subNodesCoarse[i].size(); j++) {
-	LO node = m_subNodesCoarse[i][j];
-	for (LO m=m_nodeBeginCoarse[node]; m<m_nodeBeginCoarse[node+1]; m++) {
-	  globalIDsTargetMatrix[numRowsMpiRank++] = startRowMpiRank++;
-	}
+        LO node = m_subNodesCoarse[i][j];
+        for (LO m=m_nodeBeginCoarse[node]; m<m_nodeBeginCoarse[node+1]; m++) {
+          globalIDsTargetMatrix[numRowsMpiRank++] = startRowMpiRank++;
+        }
       }
     }
     startRowMpiRank = numRowsMpiRankSS - numRowsMpiRank;
   }
-  
+
   void determineStartingLocationsForCoarseMatrices
     (const std::vector< std::vector<GO> > & coarseSubdomainSubs,
-     RCP<const CrsGraph> coarseNodesForSubdomains, 
-     RCP<const CrsGraph> coarseNodesForCoarseProc, 
+     RCP<const CrsGraph> coarseNodesForSubdomains,
+     RCP<const CrsGraph> coarseNodesForCoarseProc,
      const GO startRowMpiRank,
      RCP<CrsMatrixGO> & startIndicesSub)
   {
@@ -2194,26 +2194,26 @@ private:
     std::vector<GO> startIndices;
     coarseNodesForCoarseProcStart.resumeFill();
     LO numNodeAll = coarseNodesForCoarseProc->getColMap()->getNodeNumElements();
-    std::vector<LO> activeNodes(numNodeAll), nodeBeginSub(numNodeAll+1), 
+    std::vector<LO> activeNodes(numNodeAll), nodeBeginSub(numNodeAll+1),
       nodeFlag(numNodeAll, -1);
     Teuchos::ArrayView<const LO> Indices;
     LO numSubCoarse = m_subNodesCoarse.size();
     for (LO i=0; i<numSubCoarse; i++) {
       std::vector< std::vector<LO> > localNodeNumbers;
       getSubData(row, coarseSubdomainSubs[i], coarseNodesForCoarseProc,
-		 activeNodes, nodeFlag, localNodeNumbers, nodeBeginSub);
+                 activeNodes, nodeFlag, localNodeNumbers, nodeBeginSub);
       for (size_t j=0; j<nodeBeginSub.size()-1; j++) {
-	assert (m_subNodesCoarse[i][j] == activeNodes[j]);
+        assert (m_subNodesCoarse[i][j] == activeNodes[j]);
       }
       for (size_t j=0; j<coarseSubdomainSubs[i].size(); j++) {
-	const std::vector<LO> & localNodes = localNodeNumbers[j];
-	startIndices.resize(localNodes.size());
-	for (size_t k=0; k<localNodes.size(); k++) {
-	  startIndices[k] = start + nodeBeginSub[localNodes[k]];
-	}
-	coarseNodesForCoarseProc->getLocalRowView(row, Indices);
-	coarseNodesForCoarseProcStart.replaceLocalValues
-	  (row++, Indices, Teuchos::ArrayView<const GO>(startIndices)); 
+        const std::vector<LO> & localNodes = localNodeNumbers[j];
+        startIndices.resize(localNodes.size());
+        for (size_t k=0; k<localNodes.size(); k++) {
+          startIndices[k] = start + nodeBeginSub[localNodes[k]];
+        }
+        coarseNodesForCoarseProc->getLocalRowView(row, Indices);
+        coarseNodesForCoarseProcStart.replaceLocalValues
+          (row++, Indices, Teuchos::ArrayView<const GO>(startIndices));
       }
       start += nodeBeginSub.back();
     }
@@ -2221,9 +2221,9 @@ private:
     startIndicesSub = rcp( new CrsMatrixGO(coarseNodesForSubdomains) );
     startIndicesSub->resumeFill();
     Import importer(coarseNodesForCoarseProcStart.getRowMap(),
-		    coarseNodesForSubdomains->getRowMap());
+                    coarseNodesForSubdomains->getRowMap());
     startIndicesSub->doImport(coarseNodesForCoarseProcStart, importer,
-			      Tpetra::REPLACE);
+                              Tpetra::REPLACE);
     startIndicesSub->fillComplete();
   }
 
@@ -2240,7 +2240,7 @@ private:
     for (LO i=0; i<numSub; i++) {
       startIndicesSubNodes->getLocalRowView(i, Indices, Values);
       for (int j=0; j<Indices.size(); j++) {
-	count[Indices[j]]++;
+        count[Indices[j]]++;
       }
     }
     startIndicesNodes.resize(numNode);
@@ -2251,14 +2251,14 @@ private:
     for (LO i=0; i<numSub; i++) {
       startIndicesSubNodes->getLocalRowView(i, Indices, Values);
       for (int j=0; j<Indices.size(); j++) {
-	LO index = Indices[j];
-	startIndicesNodes[index][count[index]++] = Values[j];
+        LO index = Indices[j];
+        startIndicesNodes[index][count[index]++] = Values[j];
       }
     }
   }
 
   void determineSourceMatrixBookkeepingData
-    (const std::vector< std::vector<GO> > & startIndicesNodes, 
+    (const std::vector< std::vector<GO> > & startIndicesNodes,
      const std::vector<LO> & coarseNodesNumDofs,
      std::vector<LO> & nodeStart,
      std::vector<LO> & nodeBeginAll,
@@ -2271,13 +2271,13 @@ private:
     std::vector<LO> count(numNode);
     for (LO i=0; i<numNode; i++) {
       std::vector<GO> uniqueIndices;
-      DofManager<LO,GO>::determineUniqueIndices(startIndicesNodes[i], 
-						uniqueIndices);
+      DofManager<LO,GO>::determineUniqueIndices(startIndicesNodes[i],
+                                                uniqueIndices);
       count[i] = uniqueIndices.size();
       numNodeAll += count[i];
       numDofAll += count[i]*coarseNodesNumDofs[i];
       if (coarseNodesNumDofs[i] > maxNumDofsNode) {
-	maxNumDofsNode = coarseNodesNumDofs[i];
+        maxNumDofsNode = coarseNodesNumDofs[i];
       }
     }
     nodeBeginAll.resize(numNodeAll+1, 0);
@@ -2287,17 +2287,17 @@ private:
     for (LO i=0; i<numNode; i++) {
       nodeStart[i] = numNodeAll;
       for (LO j=0; j<count[i]; j++) {
-	for (LO k=0; k<coarseNodesNumDofs[i]; k++) {
-	  globalIDsSourceMatrix[numDofAll++] = startIndicesNodes[i][j] + k;
-	}
-	nodeBeginAll[numNodeAll+1] = numDofAll;
-	numNodeAll++;
+        for (LO k=0; k<coarseNodesNumDofs[i]; k++) {
+          globalIDsSourceMatrix[numDofAll++] = startIndicesNodes[i][j] + k;
+        }
+nodeBeginAll[numNodeAll+1] = numDofAll;
+        numNodeAll++;
       }
     }
   }
 
   void determineSubdomainNodesAccountingForAnyNodeReplications
-    (RCP<const CrsMatrixGO> startIndicesSubNodes, 
+    (RCP<const CrsMatrixGO> startIndicesSubNodes,
      const std::vector< std::vector<GO> > & startIndicesNodes,
      const std::vector<LO> & nodeStart,
      std::vector< std::vector<LO> > & subNodes)
@@ -2309,22 +2309,22 @@ private:
       startIndicesSubNodes->getLocalRowView(i, Indices, Values);
       subNodes[i].resize(Indices.size());
       for (int j=0; j<Indices.size(); j++) {
-	LO node = Indices[j];
-	std::vector<GO> uniqueIndices;
-	DofManager<LO,GO>::determineUniqueIndices(startIndicesNodes[node], 
-						  uniqueIndices);
-	auto lower = std::find(uniqueIndices.begin(), uniqueIndices.end(), 
-			       Values[j]);
-	assert (lower != uniqueIndices.end());
-	int offset = std::distance(uniqueIndices.begin(), lower);
-	LO nodeAll = nodeStart[node] + offset;
-	subNodes[i][j] = nodeAll;
+        LO node = Indices[j];
+        std::vector<GO> uniqueIndices;
+        DofManager<LO,GO>::determineUniqueIndices(startIndicesNodes[node],
+                                                  uniqueIndices);
+        auto lower = std::find(uniqueIndices.begin(), uniqueIndices.end(),
+                               Values[j]);
+        assert (lower != uniqueIndices.end());
+        int offset = std::distance(uniqueIndices.begin(), lower);
+        LO nodeAll = nodeStart[node] + offset;
+        subNodes[i][j] = nodeAll;
       }
     }
   }
 
   void determineNodeSubdomains
-    (const std::vector< std::vector<LO> > & subNodes, 
+    (const std::vector< std::vector<LO> > & subNodes,
      const std::vector<LO> & nodeBeginAll,
      std::vector< std::vector<LO> > & nodeSubs,
      std::vector< std::vector<LO> > & nodeSubsStart)
@@ -2333,7 +2333,7 @@ private:
     std::vector<LO> count(numNodeAll, 0);
     for (LO i=0; i<m_numSub; i++) {
       for (size_t j=0; j<subNodes[i].size(); j++) {
-	count[subNodes[i][j]]++;
+        count[subNodes[i][j]]++;
       }
     }
     nodeSubs.resize(numNodeAll);
@@ -2346,45 +2346,45 @@ private:
     for (LO i=0; i<m_numSub; i++) {
       LO start = 0;
       for (size_t j=0; j<subNodes[i].size(); j++) {
-	LO node = subNodes[i][j];
-	nodeSubs[node][count[node]] = i;
-	nodeSubsStart[node][count[node]++] = start;
-	start += nodeBeginAll[node+1] - nodeBeginAll[node];
+        LO node = subNodes[i][j];
+        nodeSubs[node][count[node]] = i;
+        nodeSubsStart[node][count[node]++] = start;
+        start += nodeBeginAll[node+1] - nodeBeginAll[node];
       }
     }
   }
 
   void determineNodalConnectivity
-    (const std::vector< std::vector<LO> > & subNodes, 
-     const std::vector< std::vector<LO> > & nodeSubs, 
+    (const std::vector< std::vector<LO> > & subNodes,
+     const std::vector< std::vector<LO> > & nodeSubs,
      std::vector< std::vector<LO> > & nodalConn)
   {
-    // determine nodal connectivity 
+    // determine nodal connectivity
     LO numNodeAll = nodeSubs.size();
     nodalConn.resize(numNodeAll);
     std::vector<LO> nodeFlag(numNodeAll, -1), connNodes(numNodeAll);
     for (LO i=0; i<numNodeAll; i++) {
       LO numConn = 0;
       for (size_t j=0; j<nodeSubs[i].size(); j++) {
-	LO sub = nodeSubs[i][j];
-	for (size_t k=0; k<subNodes[sub].size(); k++) {
-	  LO node = subNodes[sub][k];
-	  if (nodeFlag[node] == -1) {
-	    nodeFlag[node] = numConn;
-	    connNodes[numConn++] = node;
-	  }
-	}
+        LO sub = nodeSubs[i][j];
+        for (size_t k=0; k<subNodes[sub].size(); k++) {
+          LO node = subNodes[sub][k];
+          if (nodeFlag[node] == -1) {
+            nodeFlag[node] = numConn;
+            connNodes[numConn++] = node;
+          }
+        }
       }
       nodalConn[i].resize(numConn);
       for (LO j=0; j<numConn; j++) {
-	nodalConn[i][j]= connNodes[j];
-	nodeFlag[connNodes[j]] = -1;
+        nodalConn[i][j]= connNodes[j];
+        nodeFlag[connNodes[j]] = -1;
       }
     }
   }
 
   void initializeSourceMatrix
-    (const std::vector<GO> & globalIDsSourceMatrix, 
+    (const std::vector<GO> & globalIDsSourceMatrix,
      const std::vector< std::vector<LO> > & nodalConn,
      const std::vector<LO> & coarseNodesNumDofs,
      const std::vector<LO> & nodeBeginAll,
@@ -2398,55 +2398,55 @@ private:
     for (LO i=0; i<numNodeAll; i++) {
       LO numTermsRow(0);
       for (size_t j=0; j<nodalConn[i].size(); j++) {
-	LO node = nodalConn[i][j];
-	numTermsRow += coarseNodesNumDofs[node];
+        LO node = nodalConn[i][j];
+        numTermsRow += coarseNodesNumDofs[node];
       }
       rowCount[i] = numTermsRow;
       for (LO j=nodeBeginAll[i]; j<nodeBeginAll[i+1]; j++) {
-	count[j] = numTermsRow;
+        count[j] = numTermsRow;
       }
     }
     RCP<const Map> rowMap = generateMap(globalIDsSourceMatrix);
-    sourceMatrix = 
+    sourceMatrix =
       rcp( new CrsMatrix(rowMap, rowMap, count, Tpetra::StaticProfile) );
   }
 
-  void getMyIndices(const std::vector<LO> & subNodes, 
-		    const std::vector<LO> & nodeBeginAll, 
-		    LO & startIndex,
-		    std::vector<LO> & nodeFlag, 
-		    std::vector<LO> & myIndices)
+  void getMyIndices(const std::vector<LO> & subNodes,
+                    const std::vector<LO> & nodeBeginAll,
+                    LO & startIndex,
+                    std::vector<LO> & nodeFlag,
+                    std::vector<LO> & myIndices)
   {
     myIndices.resize(0);
     for (size_t k=0; k<subNodes.size(); k++) {
       LO node = subNodes[k];
       if (nodeFlag[node] == -1) {
-	nodeFlag[node] = startIndex;
-	startIndex += nodeBeginAll[node+1] - nodeBeginAll[node];
+        nodeFlag[node] = startIndex;
+        startIndex += nodeBeginAll[node+1] - nodeBeginAll[node];
       }
       for (LO m=nodeBeginAll[node]; m<nodeBeginAll[node+1]; m++) {
-	LO mm = m - nodeBeginAll[node];
-	myIndices.push_back(nodeFlag[node]+mm);
+        LO mm = m - nodeBeginAll[node];
+        myIndices.push_back(nodeFlag[node]+mm);
       }
     }
   }
-  
+
   void assembleSourceMatrix
-    (const std::vector<LO> & nodeBeginAll, 
+    (const std::vector<LO> & nodeBeginAll,
      const std::vector<LO> & rowCount,
      const LO maxNumDofsNode,
-     const std::vector< std::vector<LO> > & nodalConn, 
-     const std::vector< std::vector<LO> > & subNodes, 
-     const std::vector< std::vector<LO> > & nodeSubs, 
+     const std::vector< std::vector<LO> > & nodalConn,
+     const std::vector< std::vector<LO> > & subNodes,
+     const std::vector< std::vector<LO> > & nodeSubs,
      const std::vector< std::vector<LO> > & nodeSubsStart,
      RCP<CrsMatrix> sourceMatrix)
   {
     // calculate coarse subdomain matrices (this could be threaded later)
     std::vector< std::vector<SX> > subAc(m_numSub);
-    bool restrictPhiToBoundary(true), scaleRows(true);  
+    bool restrictPhiToBoundary(true), scaleRows(true);
     for (LO i=0; i<m_numSub; i++) {
       m_Subdomain[i]->calculateCoarseMatrices(subAc[i], restrictPhiToBoundary,
-					      scaleRows);
+                                              scaleRows);
     }
     // assemble source coarse matrix
     LO numNodeAll = nodeBeginAll.size() - 1;
@@ -2455,40 +2455,40 @@ private:
     for (LO i=0; i<numNodeAll; i++) {
       colIndices.resize(rowCount[i]);
       for (LO j=nodeBeginAll[i]; j<nodeBeginAll[i+1]; j++) {
-	LO jj = j - nodeBeginAll[i];
-	rowValues[jj].assign(rowCount[i], 0);
+        LO jj = j - nodeBeginAll[i];
+        rowValues[jj].assign(rowCount[i], 0);
       }
       LO numEntries(0);
       for (size_t j=0; j<nodalConn[i].size(); j++) {
-	LO node = nodalConn[i][j];
-	for (LO k=nodeBeginAll[node]; k<nodeBeginAll[node+1]; k++) {
-	  colIndices[numEntries++] = k;
-	}
+        LO node = nodalConn[i][j];
+        for (LO k=nodeBeginAll[node]; k<nodeBeginAll[node+1]; k++) {
+          colIndices[numEntries++] = k;
+        }
       }
       LO startIndex = 0;
       for (size_t j=0; j<nodeSubs[i].size(); j++) {
-	LO sub = nodeSubs[i][j];
-	getMyIndices(subNodes[sub], nodeBeginAll, startIndex, nodeFlag, 
-		     myIndices);
-	LO numDofSub = myIndices.size();
-	assert (LO(subAc[sub].size()) == numDofSub*numDofSub);
-	LO subStart = nodeSubsStart[i][j];
-	for (LO j=nodeBeginAll[i]; j<nodeBeginAll[i+1]; j++) {
-	  LO jj = j - nodeBeginAll[i];
-	  for (LO k=0; k<numDofSub; k++) {
-	    rowValues[jj][myIndices[k]] += subAc[sub][subStart+k*numDofSub];
-	  }
-	  subStart++;
-	}
+        LO sub = nodeSubs[i][j];
+        getMyIndices(subNodes[sub], nodeBeginAll, startIndex, nodeFlag,
+                     myIndices);
+        LO numDofSub = myIndices.size();
+        assert (LO(subAc[sub].size()) == numDofSub*numDofSub);
+        LO subStart = nodeSubsStart[i][j];
+        for (LO j=nodeBeginAll[i]; j<nodeBeginAll[i+1]; j++) {
+          LO jj = j - nodeBeginAll[i];
+          for (LO k=0; k<numDofSub; k++) {
+            rowValues[jj][myIndices[k]] += subAc[sub][subStart+k*numDofSub];
+          }
+          subStart++;
+        }
       }
       for (size_t j=0; j<nodalConn[i].size(); j++) {
-	LO node = nodalConn[i][j];
-	nodeFlag[node] = -1;
+        LO node = nodalConn[i][j];
+        nodeFlag[node] = -1;
       }
       for (LO j=nodeBeginAll[i]; j<nodeBeginAll[i+1]; j++) {
-	LO jj = j - nodeBeginAll[i];
-	sourceMatrix->insertLocalValues(j, Teuchos::ArrayView<LO>(colIndices),
-					Teuchos::ArrayView<SX>(rowValues[jj]));
+        LO jj = j - nodeBeginAll[i];
+        sourceMatrix->insertLocalValues(j, Teuchos::ArrayView<LO>(colIndices),
+                                        Teuchos::ArrayView<SX>(rowValues[jj]));
       }
     }
     sourceMatrix->fillComplete();
@@ -2508,17 +2508,17 @@ private:
     for (size_t i=0; i<sourceMatrix->getNodeNumRows(); i++) {
       sourceMatrix->getLocalRowView(i, Indices, Values);
       for (int j=0; j<Indices.size(); j++) {
-	fout << i+1 << "  " << Indices[j]+1 << " ";
-	fout << std::setw(22) << std::setprecision(15);
-	fout << Values[j] << std::endl;
+        fout << i+1 << "  " << Indices[j]+1 << " ";
+        fout << std::setw(22) << std::setprecision(15);
+        fout << Values[j] << std::endl;
       }
     }
     fout.close();
   }
 
-  void assembleTargetMatrix(RCP<const CrsMatrix> sourceMatrix, 
-			    const std::vector<GO> & globalIDsTargetMatrix,
-			    RCP<CrsMatrix> & targetMatrix)
+  void assembleTargetMatrix(RCP<const CrsMatrix> sourceMatrix,
+                            const std::vector<GO> & globalIDsTargetMatrix,
+                            RCP<CrsMatrix> & targetMatrix)
   {
     RCP<const Map> sourceMap = sourceMatrix->getRowMap();
     RCP<const Map> targetMap = generateMap(globalIDsTargetMatrix);
@@ -2531,8 +2531,8 @@ private:
   }
 
   void determineSubdomainDataForCoarseProblem
-    (const std::vector< std::vector<GO> > & coarseSubdomainSubs, 
-     RCP<const CrsGraph> coarseNodesForSubdomains, 
+    (const std::vector< std::vector<GO> > & coarseSubdomainSubs,
+     RCP<const CrsGraph> coarseNodesForSubdomains,
      RCP<const CrsGraph> coarseNodesForCoarseProc,
      const std::vector<LO> & coarseNodesNumDofs)
   {
@@ -2574,19 +2574,19 @@ private:
     std::vector<LO> rowCount;
     RCP<CrsMatrix> sourceMatrix;
     initializeSourceMatrix
-      (globalIDsSourceMatrix, nodalConn, coarseNodesNumDofs, nodeBeginAll, 
+      (globalIDsSourceMatrix, nodalConn, coarseNodesNumDofs, nodeBeginAll,
        rowCount, sourceMatrix);
 
-    assembleSourceMatrix(nodeBeginAll, rowCount, maxNumDofsNode, nodalConn, 
-			 subNodes, nodeSubs, nodeSubsStart, sourceMatrix);
+    assembleSourceMatrix(nodeBeginAll, rowCount, maxNumDofsNode, nodalConn,
+                         subNodes, nodeSubs, nodeSubsStart, sourceMatrix);
 
     RCP<CrsMatrix> targetMatrix;
     assembleTargetMatrix(sourceMatrix, globalIDsTargetMatrix, targetMatrix);
     extractSubdomainMatrices(targetMatrix);
   }
-  
-  void determineProcessorTypes(bool & fineProc, 
-			       bool & coarseProc)
+
+  void determineProcessorTypes(bool & fineProc,
+                               bool & coarseProc)
   {
     fineProc = coarseProc = false;
     if (m_numSub > 0) {
@@ -2606,7 +2606,7 @@ private:
     MPI_Comm_split(m_mpiComm, color, key, &m_mpiCommSplit);
     if (m_disjointCommunicators == true) {
       if (m_coarseProc == false) {
-	m_CommFine = rcp( new Teuchos::MpiComm<int>(m_mpiCommSplit) );
+        m_CommFine = rcp( new Teuchos::MpiComm<int>(m_mpiCommSplit) );
       }
     }
   }
@@ -2616,9 +2616,9 @@ private:
     GO fineProc(0), coarseProc(0), fineProcSum(0), coarseProcSum(0);
     if (m_fineProc == true) fineProc = 1;
     if (m_coarseProc == true) coarseProc = 1;
-    Teuchos::reduceAll<int, GO> 
+    Teuchos::reduceAll<int, GO>
       (*m_Comm, Teuchos::REDUCE_SUM, 1, &fineProc, &fineProcSum);
-    Teuchos::reduceAll<int, GO> 
+    Teuchos::reduceAll<int, GO>
       (*m_Comm, Teuchos::REDUCE_SUM, 1, &coarseProc, &coarseProcSum);
     GO numProc = m_Comm->getSize();
     bool disjointCommunicator = false;
@@ -2630,7 +2630,7 @@ private:
 
   void determineCoarseSpace()
   {
-    // mpiRanks is a vector of active MPI ranks at the coarse level 
+    // mpiRanks is a vector of active MPI ranks at the coarse level
     //   (this is the same vector across all current level MPI ranks)
     // m_myCoarseMpiRank is the MPI rank at the coarse level (-1 if inactive)
     std::vector<int> mpiRanks;
@@ -2654,7 +2654,7 @@ private:
     std::vector< std::vector<GO> > coarseSubdomainSubs;
     partitionSubdomainsWithinMpiRanks(subsForCoarseProc, coarseSubdomainSubs);
     // activeCoarseNodes is a list of active coarse node indices
-    // coarseCoordsVec1to1 is a multivector containing active coarse node 
+    // coarseCoordsVec1to1 is a multivector containing active coarse node
     //   coordinates
     // coarseLocalDofsGraph1to1 is a CrsGraph containing active coarse node
     //  local dof numbers
@@ -2667,7 +2667,7 @@ private:
     determineActiveCoarseNodeCoordinatesAndLocalDofs
       (activeCoarseNodes, activeCoarseNodesNumDofs,
        coarseCoordsVec1to1, coarseLocalDofsGraph1to1, nodeExporter);
-    // startNodeVector1to1 contains the starting locations of all the 
+    // startNodeVector1to1 contains the starting locations of all the
     //  active coarse nodes
     // numDofNodeVector1to1 contains the number of dofs for all of the
     //  active coarse nodes
@@ -2688,12 +2688,12 @@ private:
       (coarseSubdomainSubs, coarseNodesForSubdomains, coarseNodesForCoarseProc);
 
     determineNodalDataForCoarseProblem
-      (coarseNodesForCoarseProc, coarseLocalDofsGraph1to1, 
-       coarseCoordsVec1to1); 
+      (coarseNodesForCoarseProc, coarseLocalDofsGraph1to1,
+       coarseCoordsVec1to1);
     // m_coarseMapNextLevel is the counterpart of m_coarseMap, but at the
     //  next coarser level
     determineCoarseMapNextLevel(startNodeVector1to1, numDofNodeVector1to1,
-				m_coarseMapNextLevel);
+                                m_coarseMapNextLevel);
 
     determineSubdomainDataForCoarseProblem
       (coarseSubdomainSubs, coarseNodesForSubdomains, coarseNodesForCoarseProc,
@@ -2707,22 +2707,22 @@ private:
     convertToPointers
       (m_subRowBeginCoarse, m_subColumnsCoarse, m_subValuesCoarse,
        subRowBeginPtr, subColumnsPtr, subValuesPtr);
-    m_coarsePreconditioner = 
+    m_coarsePreconditioner =
       rcp( new PreconditionerBDDC<SX,SM,LO,GO>
-	(m_numNodesCoarse, m_nodeBeginCoarse.data(), m_localDofsCoarse.data(), 
-	 m_nodeGlobalIDsCoarse.data(), m_xCoordCoarse.data(), 
-	 m_yCoordCoarse.data(), m_zCoordCoarse.data(), m_subNodesCoarse, 
-	 subRowBeginPtr.data(), subColumnsPtr.data(), subValuesPtr.data(), 
-	 m_Parameters, m_mpiCommSplit, m_level+1, &m_nodeGlobalIDsCoarse1to1) );
+        (m_numNodesCoarse, m_nodeBeginCoarse.data(), m_localDofsCoarse.data(),
+         m_nodeGlobalIDsCoarse.data(), m_xCoordCoarse.data(),
+         m_yCoordCoarse.data(), m_zCoordCoarse.data(), m_subNodesCoarse,
+         subRowBeginPtr.data(), subColumnsPtr.data(), subValuesPtr.data(),
+         m_Parameters, m_mpiCommSplit, m_level+1, &m_nodeGlobalIDsCoarse1to1) );
   }
 
-  void convertToPointers(std::vector< std::vector<LO> > & subRowBeginCoarse, 
-			 std::vector< std::vector<LO> > & subColumnsCoarse, 
-			 std::vector< std::vector<SX> > & subValuesCoarse,
-			 std::vector< LO* > & subRowBeginPtr, 
-			 std::vector< LO* > & subColumnsPtr,
-			 std::vector< SX* > & subValuesPtr)
-  {    
+  void convertToPointers(std::vector< std::vector<LO> > & subRowBeginCoarse,
+                         std::vector< std::vector<LO> > & subColumnsCoarse,
+                         std::vector< std::vector<SX> > & subValuesCoarse,
+                         std::vector< LO* > & subRowBeginPtr,
+                         std::vector< LO* > & subColumnsPtr,
+                         std::vector< SX* > & subValuesPtr)
+  {
     const LO numSub = subRowBeginCoarse.size();
     subRowBeginPtr.resize(numSub);
     subColumnsPtr.resize(numSub);
@@ -2739,20 +2739,20 @@ private:
     m_Subdomain.resize(m_numSub);
     for (LO i=0; i<m_numSub; i++) {
       m_Subdomain[i] = new bddc::SubdomainBDDC<SX,SM,LO,GO>
-	(m_subNodes[i].size(), &m_subNodeBegin[i][0], &m_subLocalDofs[i][0],
-	 &m_subRowBegin[i][0], &m_subColumns[i][0], &m_subValues[i][0], 
-	 m_boundaryDofsLocal[i].size(), &m_boundaryDofsLocal[i][0], 
-	 *m_Parameters);
+        (m_subNodes[i].size(), &m_subNodeBegin[i][0], &m_subLocalDofs[i][0],
+         &m_subRowBegin[i][0], &m_subColumns[i][0], &m_subValues[i][0],
+         m_boundaryDofsLocal[i].size(), &m_boundaryDofsLocal[i][0],
+         *m_Parameters);
     }
   }
 
   void determineBaseConstraints()
   {
-    m_Constraints = 
+    m_Constraints =
       rcp( new bddc::ConstraintsBDDC<SX,SM,LO,GO>
-	   (m_numNodes, m_nodeBegin, m_localDofs, m_xCoord, m_yCoord, m_zCoord,
-	    m_subNodes, m_Subdomain, m_Partition, 
-	    m_exporterB, m_diagBoundary, m_Parameters) );
+           (m_numNodes, m_nodeBegin, m_localDofs, m_xCoord, m_yCoord, m_zCoord,
+            m_subNodes, m_Subdomain, m_Partition,
+            m_exporterB, m_diagBoundary, m_Parameters) );
     m_Constraints->determineBaseConstraints();
   }
 
@@ -2767,8 +2767,8 @@ private:
     for (LO i=0; i<m_numSub; i++) {
       LO numB = m_Subdomain[i]->getNumBoundaryDofs();
       for (LO j=0; j<numB; j++) {
-	LO dofB = m_subBoundaryDofs[i][j];
-	m_diagBoundary[dofB] += m_Subdomain[i]->getBoundaryDiagValue(j);
+        LO dofB = m_subBoundaryDofs[i][j];
+        m_diagBoundary[dofB] += m_Subdomain[i]->getBoundaryDiagValue(j);
       }
     }
     VectorSM diagBoundary(m_dofMapB), diagBoundary1to1(m_dofMapB1to1);
@@ -2781,25 +2781,25 @@ private:
     for (LO i=0; i<m_numDofsB; i++) m_diagBoundary[i] = values[i];
   }
 
-  void getSubDofs(LO sub, 
-		  std::vector<LO> & subDofs)
+  void getSubDofs(LO sub,
+                  std::vector<LO> & subDofs)
   {
     const std::vector<LO> & subNodes = m_subNodes[sub];
     LO numNode = subNodes.size();
     for (LO i=0; i<numNode; i++) {
       LO nodeGlobal = subNodes[i];
       for (LO k=m_nodeBegin[nodeGlobal]; k<m_nodeBegin[nodeGlobal+1]; k++) {
-	subDofs.push_back(k);
+        subDofs.push_back(k);
       }
     }
   }
 
   void getBoundaryDofs(LO sub,
-		       const std::vector<LO> & subEquivClasses,
-		       const std::vector< std::vector<LO> > & equivClasses,
-		       std::vector<LO> & globalToLocalMap,
-		       std::vector<LO> & boundaryDofsLocal,
-		       std::vector<LO> & boundaryDofsGlobal)
+                       const std::vector<LO> & subEquivClasses,
+                       const std::vector< std::vector<LO> > & equivClasses,
+                       std::vector<LO> & globalToLocalMap,
+                       std::vector<LO> & boundaryDofsLocal,
+                       std::vector<LO> & boundaryDofsGlobal)
   {
     const std::vector<LO> & subNodes = m_subNodes[sub];
     const std::vector<LO> & nodeBeginSub = m_subNodeBegin[sub];
@@ -2809,20 +2809,20 @@ private:
     for (LO i=0; i<numEquiv; i++) {
       LO equiv = subEquivClasses[i];
       for (size_t j=0; j<equivClasses[equiv].size(); j++) {
-	LO nodeGlobal = equivClasses[equiv][j];
-	LO nodeLocal = globalToLocalMap[nodeGlobal];
-	assert (nodeLocal != -1);
-	for (LO k=nodeBeginSub[nodeLocal]; k<nodeBeginSub[nodeLocal+1]; k++) {
-	  boundaryDofsLocal.push_back(k);
-	}
-	for (LO k=m_nodeBegin[nodeGlobal]; k<m_nodeBegin[nodeGlobal+1]; k++) {
-	  boundaryDofsGlobal.push_back(k);
-	}
-	LO numDofsLocal = nodeBeginSub[nodeLocal+1] - nodeBeginSub[nodeLocal];
-	LO numDofsGlobal = m_nodeBegin[nodeGlobal+1] - m_nodeBegin[nodeGlobal];
-	assert (numDofsLocal == numDofsGlobal);
-	(void)(numDofsLocal);
-	(void)(numDofsGlobal);
+        LO nodeGlobal = equivClasses[equiv][j];
+        LO nodeLocal = globalToLocalMap[nodeGlobal];
+        assert (nodeLocal != -1);
+        for (LO k=nodeBeginSub[nodeLocal]; k<nodeBeginSub[nodeLocal+1]; k++) {
+          boundaryDofsLocal.push_back(k);
+        }
+        for (LO k=m_nodeBegin[nodeGlobal]; k<m_nodeBegin[nodeGlobal+1]; k++) {
+          boundaryDofsGlobal.push_back(k);
+        }
+        LO numDofsLocal = nodeBeginSub[nodeLocal+1] - nodeBeginSub[nodeLocal];
+        LO numDofsGlobal = m_nodeBegin[nodeGlobal+1] - m_nodeBegin[nodeGlobal];
+        assert (numDofsLocal == numDofsGlobal);
+        (void)(numDofsLocal);
+        (void)(numDofsGlobal);
       }
     }
   }
@@ -2832,4 +2832,4 @@ private:
 } // namespace bddc
 
 #endif // PRECONDITIONERBDDC_H
-  
+

@@ -43,17 +43,18 @@
 
 
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
-#include "KokkosSparse_trsv_spec.hpp"
-
-namespace KokkosSparse {
-namespace Impl {
+#include "KokkosKernels_config.h"
 #if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT) \
  && defined (KOKKOSKERNELS_INST_EXECSPACE_OPENMP) \
  && defined (KOKKOSKERNELS_INST_MEMSPACE_HBWSPACE) \
  && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_INT) 
+#include "KokkosSparse_trsv_spec.hpp"
+
+namespace KokkosSparse {
+namespace Impl {
  KOKKOSSPARSE_TRSV_ETI_SPEC_INST(Kokkos::complex<double>, int, int, Kokkos::LayoutRight, Kokkos::OpenMP, Kokkos::Experimental::HBWSpace)
-#endif
 } // Impl
 } // KokkosSparse
+#endif

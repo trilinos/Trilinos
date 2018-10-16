@@ -42,7 +42,7 @@
 */
 
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_MultiVectorFiller.hpp"
@@ -154,7 +154,7 @@ namespace { // (anonymous)
   // Test that MultiVectorFiller::clear actually clears out the object.
   TEUCHOS_UNIT_TEST( MultiVectorFiller, FillClearFill)
   {
-    auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    auto comm = Tpetra::getDefaultComm ();
     int gblSuccess = 1;
     //int lclSuccess = 1;
     int lclExPass = 1; // whether the calling process did NOT threw an exception

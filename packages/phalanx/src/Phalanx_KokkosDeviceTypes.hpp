@@ -81,7 +81,7 @@ namespace PHX {
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   // Contiguous layout with FAD stride of 32.  IMPORTANT: The
   // FadStride must be the same as the vector_size in the
   // Kokkos::TeamPolicy constructor. This value is only used for SFad

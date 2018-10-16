@@ -57,12 +57,12 @@ void cusparse_matvec(AType A, XType x, YType y, int rows_per_thread, int team_si
                   A.numRows(), A.numCols(),  A.nnz(),
                   &s_a,
                   A.cusparse_descr,
-                  A.values.ptr_on_device(),
-                  (const int*) A.graph.row_map.ptr_on_device(),
-                  A.graph.entries.ptr_on_device(),
-                  x.ptr_on_device(),
+                  A.values.data(),
+                  (const int*) A.graph.row_map.data(),
+                  A.graph.entries.data(),
+                  x.data(),
                   &s_b,
-                  y.ptr_on_device());
+                  y.data());
 }
 #endif
 

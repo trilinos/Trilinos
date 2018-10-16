@@ -181,7 +181,7 @@ namespace Tacho {
                  const ordinal_type_array &stree_parent_,
                  const size_type_array &stree_ptr_,
                  const ordinal_type_array &stree_children_) {
-        const ordinal_type nsupernodes = snodes_.dimension_0() - 1;
+        const ordinal_type nsupernodes = snodes_.extent(0) - 1;
 
         /// allocate and assign supernodes
         supernodes_ = supernode_type_array("supernodes", nsupernodes); // managed view
@@ -328,7 +328,7 @@ namespace Tacho {
                               const ordinal_type_array &perm,
                               const ordinal_type_array &peri) {
 #if 1
-        const ordinal_type nsupernodes = self.supernodes.dimension_0();
+        const ordinal_type nsupernodes = self.supernodes.extent(0);
         Kokkos::TeamPolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > 
           policy(nsupernodes, Kokkos::AUTO()); // team and vector sizes are AUTO selected.
 
@@ -360,8 +360,8 @@ namespace Tacho {
               });
           });
 #else
-        const ordinal_type nsupernodes = self.supernodes.dimension_0();
-        const ordinal_type m = ap.dimension_0() - 1;
+        const ordinal_type nsupernodes = self.supernodes.extent(0);
+        const ordinal_type m = ap.extent(0) - 1;
         Kokkos::TeamPolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > 
           policy(nsupernodes, Kokkos::AUTO()); // team and vector sizes are AUTO selected.
 
@@ -424,7 +424,7 @@ namespace Tacho {
                       crs_matrix_type &A,
                       const bool replace_value_with_one = false) {
         // count m, n, nnz
-        const ordinal_type nsupernodes = self.supernodes.dimension_0();
+        const ordinal_type nsupernodes = self.supernodes.extent(0);
 
         auto d_last = Kokkos::subview(self.supernodes, nsupernodes - 1);
         auto h_last = Kokkos::create_mirror_view(d_last);

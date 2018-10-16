@@ -114,20 +114,20 @@ namespace Impl{
         (Kokkos::Impl::is_same<idx, it>::value && Kokkos::Impl::is_same<typename KernelHandle::size_type, it>::value )
         ){
 
-      unsigned int * a_xadj = (unsigned int *)row_mapA.ptr_on_device();
-      unsigned int * b_xadj = (unsigned int * )row_mapB.ptr_on_device();
-      unsigned int * c_xadj = (unsigned int * )row_mapC.ptr_on_device();
+      unsigned int * a_xadj = (unsigned int *)row_mapA.data();
+      unsigned int * b_xadj = (unsigned int * )row_mapB.data();
+      unsigned int * c_xadj = (unsigned int * )row_mapC.data();
 
-      unsigned int * a_adj = (unsigned int * )entriesA.ptr_on_device();
-      unsigned int * b_adj = (unsigned int * )entriesB.ptr_on_device();
-      unsigned int * c_adj = (unsigned int * )entriesC.ptr_on_device();
+      unsigned int * a_adj = (unsigned int * )entriesA.data();
+      unsigned int * b_adj = (unsigned int * )entriesB.data();
+      unsigned int * c_adj = (unsigned int * )entriesC.data();
 
-      int nnzA = entriesA.dimension_0();
-      int nnzB = entriesB.dimension_0();
+      int nnzA = entriesA.extent(0);
+      int nnzB = entriesB.extent(0);
 
-      value_type *a_ew = valuesA.ptr_on_device();
-      value_type *b_ew = valuesB.ptr_on_device();
-      value_type *c_ew = valuesC.ptr_on_device();
+      value_type *a_ew = valuesA.data();
+      value_type *b_ew = valuesB.data();
+      value_type *c_ew = valuesC.data();
 
 
 

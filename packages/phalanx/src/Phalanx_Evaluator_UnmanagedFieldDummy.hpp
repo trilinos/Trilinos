@@ -63,7 +63,7 @@ public:
     this->addEvaluatedField(f);
     this->setName("UnmanageFieldDummy");
   }
-  void evaluateFields(typename Traits::EvalData workset) override {}
+  void evaluateFields(typename Traits::EvalData /* workset */) override {}
 };
 
 }

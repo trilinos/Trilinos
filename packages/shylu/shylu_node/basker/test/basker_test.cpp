@@ -40,13 +40,9 @@ int main(int argc, char* argv[])
   //std::string fname = "matrix1.mtx";
  
   cout << "basker_test: using " << numthreads << "threads" << endl;
-  #ifdef BASKER_KOKKOS
-  Exe_Space::initialize(numthreads);
-  cout << "---------------USING KOKKOS-------------" << endl;
-  #else
-  //omp_set_num_threads(numthreads);
-  cout << "-------------- USING OMP---------------" << endl;
-  #endif
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = numthreads;
+  Kokkos::initialize( init_args );
 
   {
   #ifdef BASKER_KOKKOS

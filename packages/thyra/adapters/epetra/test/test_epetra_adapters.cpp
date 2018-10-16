@@ -302,6 +302,21 @@ int main( int argc, char* argv[] )
         << "\n***\n";
 
     //
+    // Check that the original epetra map can be extracted from the vector space RCP
+    // Note: get_Epetra_Map accepts also an RCP<const Epetra_Comm>, which is used to
+    //       create an epetra map if the RCP<const Epetra_Map> is not found in the
+    //       extra data of the inptu RCP<const VectorSpaceBase<double>>.
+    //       However, in this case we KNOW that that extra data SHOULD be there, so
+    //       we don't pass the comm, and let the converter throw if the data is not found.
+    //
+
+    if(verbose) *out << "\n*** (B.0) Testing idempotency of transformation: RCP<const Epetra_Map> => RCP<const VectorSpaceBase<double> => RCP<const Epetra_Map> \n";
+    RCP<const Epetra_Map> epetra_map_from_vs = get_Epetra_Map(epetra_vs);
+
+    result = epetra_map->SameAs(*epetra_map_from_vs);
+    if(!result) success = false;
+
+    //
     // Check for compatibility of the vector and Multi-vectors
     // w.r.t. RTOps
     //
@@ -805,8 +820,20 @@ int main( int argc, char* argv[] )
       if(verbose) *out << "\net1_v.get() = " << et1_v.get() << " == et1.get() = " << et1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
 
+      // Like the above, but looks for RCP<Epetra_Vector> in t1's extra data
+      et1_v = get_Epetra_Vector(t1);
+      result = et1_v.get() == et1.get();
+      if(verbose) *out << "\net1_v.get() = " << et1_v.get() << " == et1.get() = " << et1.get() << " : " << passfail(result) << endl;
+      if(!result) success = false;
+
       Teuchos::RCP<Epetra_MultiVector>
         eT1_v = get_Epetra_MultiVector(*epetra_map,T1);
+      result = eT1_v.get() == eT1.get();
+      if(verbose) *out << "\neT1_v.get() = " << eT1_v.get() << " == eT1.get() = " << eT1.get() << " : " << passfail(result) << endl;
+      if(!result) success = false;
+
+      // Like the above, but looks for RCP<Epetra_MultiVector> in T1's extra data
+      eT1_v = get_Epetra_MultiVector(T1);
       result = eT1_v.get() == eT1.get();
       if(verbose) *out << "\neT1_v.get() = " << eT1_v.get() << " == eT1.get() = " << eT1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
@@ -835,8 +862,20 @@ int main( int argc, char* argv[] )
       if(verbose) *out << "\ncet1_v.get() = " << cet1_v.get() << " == et1.get() = " << et1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
 
+      // Like the above, but looks for RCP<const Epetra_Vector> in ct1's extra data
+      cet1_v = get_Epetra_Vector(ct1);
+      result = cet1_v.get() == et1.get();
+      if(verbose) *out << "\ncet1_v.get() = " << cet1_v.get() << " == et1.get() = " << et1.get() << " : " << passfail(result) << endl;
+      if(!result) success = false;
+
       Teuchos::RCP<const Epetra_MultiVector>
         ceT1_v = get_Epetra_MultiVector(*epetra_map,cT1);
+      result = ceT1_v.get() == eT1.get();
+      if(verbose) *out << "\nceT1_v.get() = " << ceT1_v.get() << " == eT1.get() = " << eT1.get() << " : " << passfail(result) << endl;
+      if(!result) success = false;
+
+      // Like the above, but looks for RCP<const Epetra_MultiVector> in ct1's extra data
+      ceT1_v = get_Epetra_MultiVector(cT1);
       result = ceT1_v.get() == eT1.get();
       if(verbose) *out << "\nceT1_v.get() = " << ceT1_v.get() << " == eT1.get() = " << eT1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;

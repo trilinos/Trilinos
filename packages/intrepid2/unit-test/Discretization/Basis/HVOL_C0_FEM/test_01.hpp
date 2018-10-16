@@ -149,7 +149,7 @@ namespace Intrepid2 {
           const auto allTags = basis.getAllDofTags();
           
           // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-          const ordinal_type dofTagSize = allTags.dimension(0);
+          const ordinal_type dofTagSize = allTags.extent(0);
           for (ordinal_type i=0;i<dofTagSize;++i) {
             const ordinal_type bfOrd = basis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
             

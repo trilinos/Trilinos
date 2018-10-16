@@ -15,7 +15,7 @@ SET(Trilinos_REPOSITORY_LOCATION_DEFAULT
 SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT
   "software.sandia.gov:/space/git/nightly/Trilinos")
 SET(CTEST_DROP_SITE_COVERAGE_DEFAULT
-  "testing.sandia.gov")
+  "testing-vm.sandia.gov")
 SET(CTEST_DROP_LOCATION_COVERAGE_DEFAULT
   "/extended/cdash/submit.php?project=Trilinos")
 

@@ -54,12 +54,11 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -69,7 +68,7 @@
 
 
 int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   typedef double Scalar;
   typedef Tpetra::Map<>::local_ordinal_type LO;
@@ -90,8 +89,8 @@ int main(int argc, char *argv[]) {
                                 // failure, which it isn't really
   }
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
-    = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::getDefaultComm();
 
   size_t myRank = comm->getRank();
 

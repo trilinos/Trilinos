@@ -170,7 +170,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 bool LOCA::Epetra::ModelEvaluatorInterface::
 computePreconditioner(const Epetra_Vector& x,
               Epetra_Operator& M,
-              Teuchos::ParameterList* precParams)
+              Teuchos::ParameterList* /* precParams */)
 {
   // Create inargs
   EpetraExt::ModelEvaluator::InArgs inargs = model_->createInArgs();
@@ -250,7 +250,7 @@ computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
 // *****************************************************************
 // *****************************************************************
 void LOCA::Epetra::ModelEvaluatorInterface::
-setXdot(const Epetra_Vector& xdot_, const double time_)
+setXdot(const Epetra_Vector& xdot_, const double /* time_ */)
 {
   if (x_dot == NULL)
     x_dot = new Epetra_Vector(xdot_.Map());
@@ -340,7 +340,7 @@ ModelEvaluatorInterface(const LOCA::Epetra::ModelEvaluatorInterface& m) :
 
 Teuchos::RCP<LOCA::DerivUtils>
 LOCA::Epetra::ModelEvaluatorInterface::
-clone(NOX::CopyType type) const
+clone(NOX::CopyType /* type */) const
 {
   return Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(*this));
 }

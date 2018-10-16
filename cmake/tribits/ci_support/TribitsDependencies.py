@@ -291,10 +291,15 @@ class TribitsDependencies:
 
 
   def filterPackageNameList(self, inputPackagesList, keepTypesList, verbose=False):
+    if len(inputPackagesList)==1 and inputPackagesList[0]=='':
+      return []
     i = 0
     outputPackagesList = []
     for packageName in inputPackagesList:
       #print("packageName = " + packageName)
+      if packageName == "ALL_PACKAGES":
+        outputPackagesList.append(packageName)
+        continue
       packageDep = self.getPackageByName(packageName)
       packageType = packageDep.packageType
       #print("packageType = " + packageType)

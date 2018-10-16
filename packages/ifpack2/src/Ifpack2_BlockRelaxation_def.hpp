@@ -88,7 +88,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   PartitionerType_ ("linear"),
   NumSweeps_ (1),
   NumLocalBlocks_(0),
-  containerType_ ("Dense"),
+  containerType_ ("TriDi"),
   PrecType_ (Ifpack2::Details::JACOBI),
   ZeroStartingSolution_ (true),
   hasBlockCrsMatrix_ (false),
@@ -177,6 +177,13 @@ setParameters (const Teuchos::ParameterList& List)
     // If its value does not match the currently registered Container types,
     // the ContainerFactory will throw with an informative message.
     containerType_ = List.get<std::string> ("relaxation: container");
+    // Intercept more human-readable aliases for the *TriDi containers
+    if(containerType_ == "Tridiagonal") {
+      containerType_ = "TriDi";
+    }
+    if(containerType_ == "Block Tridiagonal") {
+      containerType_ = "BlockTriDi";
+    }
   }
 
   if (List.isParameter ("relaxation: type")) {
@@ -277,7 +284,7 @@ setParameters (const Teuchos::ParameterList& List)
     }
   }
 
-  std::string defaultContainer = "Dense";
+  std::string defaultContainer = "TriDi";
   if(std::is_same<ContainerType, Container<MatrixType> >::value)
   {
     //Generic container template parameter, container type specified in List
@@ -679,7 +686,7 @@ ExtractSubmatricesStructure ()
   std::string containerType = ContainerType::getName ();
   if (containerType == "Generic") {
     // ContainerType is Container<row_matrix_type>.  Thus, we need to
-    // get the container name from the parameter list.  We use "Dense"
+    // get the container name from the parameter list.  We use "TriDi"
     // as the default container type.
     containerType = containerType_;
   }

@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -99,6 +99,32 @@ std::string extract_token(std::string &s, const char *delimiters)
       // no tokens
       s = "";
       return "";
+    }
+    else if (s[p] == '"') {
+      // Special case of a quoted variable name which likely contains
+      // whitespace, but it should work for any quoted variable
+      // name. Some of this is a bit redundant but it makes this section
+      // completely self contained so that this code is only executed
+      // when a quoted variable name is found and it doesn't affect any
+      // action outside of this block of code.
+
+      // Find the closing quote
+      unsigned cq = s.find_first_of("\"", p + 1);
+
+      // No closing quote found. Error out.
+      SMART_ASSERT(cq < s.size());
+
+      std::string tok = s.substr(p + 1, cq - (p + 1));
+
+      unsigned r = s.find_first_not_of(delimiters, cq + 1);
+
+      if (r >= s.size()) {
+        s = "";
+      }
+      else {
+        s.erase(0, r);
+      }
+      return tok;
     }
 
     // move to end of first token
