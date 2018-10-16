@@ -47,30 +47,14 @@
 /// \file Tpetra_RowMatrixTransposer_fwd.hpp
 /// \brief Forward declaration of Tpetra::RowMatrixTransposer
 
-namespace Tpetra {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of RowMatrixTransposer.
-template <class SC, class LO, class GO, class N> class RowMatrixTransposer;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Classes::RowMatrixTransposer.
+namespace Tpetra {
 template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node = ::Tpetra::Details::DefaultTypes::node_type>
-using RowMatrixTransposer = Classes::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
+class RowMatrixTransposer;
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_ROWMATRIXTRANSPOSER_FWD_HPP

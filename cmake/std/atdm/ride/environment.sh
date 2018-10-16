@@ -86,8 +86,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ] ; then
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
-  export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
@@ -110,8 +110,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   fi
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
-  export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
   export ATDM_CONFIG_USE_CUDA=ON
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1

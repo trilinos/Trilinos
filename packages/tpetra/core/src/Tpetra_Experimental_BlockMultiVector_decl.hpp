@@ -50,7 +50,6 @@
 
 namespace Tpetra {
 namespace Experimental {
-namespace Classes {
 
 /// \class BlockMultiVector
 /// \brief MultiVector for multiple degrees of freedom per mesh point
@@ -140,10 +139,10 @@ namespace Classes {
 /// It doesn't make sense for BlockMultiVector to implement
 /// MultiVector, because the desired fill interfaces of the two
 /// classes are different.
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LO,
+         class GO,
+         class Node>
 class BlockMultiVector :
     public Tpetra::DistObject<Scalar, LO, GO, Node>
 {
@@ -667,7 +666,6 @@ private:
   getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src);
 };
 
-} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 

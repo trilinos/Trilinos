@@ -83,8 +83,8 @@ export MPICC=`which cc`
 export MPIF90=`which ftn`
 
 # Cray provides differently named wrappers
-export ATDM_CONFIG_LAPACK_LIB="-mkl"
-export ATDM_CONFIG_BLAS_LIB="-mkl"
+export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 

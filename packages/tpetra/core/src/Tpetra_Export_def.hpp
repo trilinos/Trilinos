@@ -58,7 +58,7 @@ namespace {
 } // namespace (anonymous)
 
 namespace Tpetra {
-namespace Classes {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Export<LocalOrdinal,GlobalOrdinal,Node>::
@@ -664,7 +664,6 @@ namespace Classes {
     }
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 // Explicit instantiation macro.
@@ -675,7 +674,6 @@ namespace Classes {
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_EXPORT_INSTANT(LO, GO, NODE) \
-  \
-  namespace Classes { template class Export< LO , GO , NODE >; }
+  template class Export< LO , GO , NODE >;
 
 #endif // TPETRA_EXPORT_DEF_HPP

@@ -88,7 +88,7 @@ exAmesos_Factory.py.
 #include "Amesos_ConfigDefs.h"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
@@ -120,7 +120,7 @@ exAmesos_Factory.py.
 
 // External Trilinos packages
 %import "Teuchos.i"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 

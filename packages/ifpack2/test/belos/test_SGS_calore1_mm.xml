@@ -9,6 +9,7 @@
   <Parameter name="Ifpack2::Preconditioner" type="string" value="RELAXATION"/>
   <ParameterList name="Ifpack2">
     <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: damping factor" type="double" value="1.1"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="19"/>

@@ -47,32 +47,16 @@
 /// \file Tpetra_Experimental_BlockMultiVector_fwd.hpp
 /// \brief Forward declaration of Tpetra::Experimental::BlockMultiVector.
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
 namespace Experimental {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra::Experimental,
-///   use the alias Tpetra::Experimental::CLASS, <i>NOT</i>
-///   Tpetra::Experimental::Classes::CLASS.
-namespace Classes {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-template <class SC, class LO, class GO, class NT> class BlockMultiVector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Experimental::Classes::BlockMultiVector.
 template<class SC = ::Tpetra::Details::DefaultTypes::scalar_type,
          class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class NT = ::Tpetra::Details::DefaultTypes::node_type>
-using BlockMultiVector = ::Tpetra::Experimental::Classes::BlockMultiVector<SC, LO, GO, NT>;
-
+class BlockMultiVector;
 } // namespace Experimental
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_FWD_HPP

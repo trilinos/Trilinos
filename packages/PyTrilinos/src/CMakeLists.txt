@@ -41,44 +41,47 @@
 # ***********************************************************************
 # @HEADER
 
-
 #
-# Package-specific configuration options
-IF(PyTrilinos_ENABLE_Epetra)
-  SET(HAVE_EPETRA ON)
-ENDIF()
-
-IF(PyTrilinos_ENABLE_Tpetra)
-  SET(HAVE_TPETRA ON)
-ENDIF()
-
-IF(PyTrilinos_ENABLE_Domi)
-  SET(HAVE_DOMI ON)
-ENDIF()
-
-IF(PyTrilinos_ENABLE_STK)
-  SET(HAVE_STK ON)
-ENDIF()
-
-IF(NOX_ENABLE_Epetra)
-  SET(HAVE_NOX_EPETRA ON)
-ENDIF(NOX_ENABLE_Epetra)
-
-IF(NOX_ENABLE_EpetraExt)
-  SET(HAVE_NOX_EPETRAEXT ON)
-ENDIF(NOX_ENABLE_EpetraExt)
-
-IF(NOX_ENABLE_PETSC)
-  SET(HAVE_NOX_PETSC ON)
-ENDIF(NOX_ENABLE_PETSC)
-
+# Global configure options
 IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
   IF(Mpi4Py_FOUND)
     SET(HAVE_MPI4PY ON)
-  ENDIF(Mpi4Py_FOUND)
-ENDIF(TPL_ENABLE_MPI)
+  ENDIF()
+ENDIF()
 
+#
+# Package-specific configuration options
+IF(PyTrilinos_ENABLE_AztecOO)
+  IF(AztecOO_ENABLE_Teuchos)
+    SET(HAVE_PYTRILINOS_AZTECOO_TEUCHOS ON)
+  ENDIF()
+ENDIF()
+
+IF(EpetraExt_BUILD_MODEL_EVALUATOR)
+  SET(HAVE_PYTRILINOS_EPETRAEXT_MODEL_EVALUATOR ON)
+ENDIF()
+
+IF(PyTrilinos_ENABLE_NOX)
+  IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
+    SET(HAVE_PYTRILINOS_NOX_EPETRA ON)
+  ENDIF()
+
+  IF(NOX_ENABLE_EpetraExt)
+    SET(HAVE_PYTRILINOS_NOX_EPETRAEXT ON)
+  ENDIF()
+
+  IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC)
+    SET(HAVE_PYTRILINOS_NOX_PETSC ON)
+  ENDIF()
+
+  IF(NOX_ENABLE_LOCA)
+    SET(HAVE_PYTRILINOS_LOCA ON)
+  ENDIF()
+ENDIF()
+
+#
+# Build the PyTrilinos configuration file
 TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)
 
 #
@@ -90,7 +93,7 @@ IF(APPLE)
      (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     SET(EXTRA_LINK_ARGS "${EXTRA_LINK_ARGS} -undefined dynamic_lookup")
   ENDIF()
-ENDIF(APPLE)
+ENDIF()
 
 #
 # Add the current binary and source directories, the python include

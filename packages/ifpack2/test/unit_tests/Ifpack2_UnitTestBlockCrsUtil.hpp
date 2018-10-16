@@ -300,7 +300,7 @@ struct BlockCrsMatrixMaker {
         auto* const block = &values(j*bs2);
         for (Int bi = 0; bi < bs; ++bi) {
           auto& e = block[bi*bs + bi];
-          e = 1.01*std::max(rowsum[bs*r + bi], colsum(bs*c + bi, 0))*signof(e);
+          e = Magnitude(1.01)*std::max(rowsum[bs*r + bi], colsum(bs*c + bi, 0))*signof(e);
         }
       }
     }

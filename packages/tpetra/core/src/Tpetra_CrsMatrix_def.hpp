@@ -130,7 +130,6 @@ struct AbsMax {
 } // namespace Tpetra
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -8879,7 +8878,6 @@ namespace Classes {
     transferAndFillComplete (destMatrix, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -8890,9 +8888,7 @@ namespace Classes {
 
 #define TPETRA_CRSMATRIX_MATRIX_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  namespace Classes { \
-    template class CrsMatrix< SCALAR , LO , GO , NODE >; \
-  } \
+  template class CrsMatrix< SCALAR , LO , GO , NODE >; \
   template Teuchos::RCP< CrsMatrix< SCALAR , LO , GO , NODE > >   \
                 CrsMatrix< SCALAR , LO , GO , NODE >::convert< SCALAR > () const;
 

@@ -780,7 +780,7 @@ INCLUDE(PrintVar)
 # ``${PROJECT_NAME}_TRIBITS_DIR`` (pointing to the TriBITS location).  For example,
 # a valid project can be a simple as::
 #
-#   CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
+#   CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
 #   SET(PROJECT_NAME TAATDriver)
 #   PROJECT(${PROJECT_NAME} NONE)
 #   SET(${PROJECT_NAME}_TRACE_ADD_TEST TRUE)
@@ -818,13 +818,11 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     SET(TEST_NAME ${TEST_NAME_IN})
   ENDIF()
 
-  IF (NOT CMAKE_VERSION VERSION_LESS "3.1.0.0")
-    # Avoid quoted strings lookup variables 
-    CMAKE_POLICY(SET CMP0054 NEW)
-    # NOTE: For some reason, setting this policy at the top level with TriBITS
-    # in TribitsCMakePolices.cmake does not affect this function.  Therefore,
-    # I have to set it again here.
-  ENDIF()
+  # Avoid quoted strings lookup variables
+  CMAKE_POLICY(SET CMP0054 NEW)
+  # NOTE: For some reason, setting this policy at the top level with TriBITS
+  # in TribitsCMakePolices.cmake does not affect this function.  Therefore, I
+  # have to set it again here.
 
   #
   # A) Parse the overall arguments and figure out how many tests

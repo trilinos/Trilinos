@@ -49,7 +49,7 @@ MESSAGE("*******************************")
 MESSAGE("")
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 
 #
 # Get the basic variables that define the project and the build
@@ -553,8 +553,9 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     the specific set of packages to test.  If left at the default value of
 #     empty "", then `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ is set to ``ON``
 #     and that enables packages as described in `<Project>_ENABLE_ALL_PACKAGES
-#     enables all PT (cond. ST) SE packages`_.  This variable can use ',' to
-#     separate package names instead of ';'.  The default value is empty "".
+#     enables all PT (and conditionally all ST) SE packages`_.  This variable
+#     can use ',' to separate package names instead of ';'.  The default value
+#     is empty "".
 #
 #   .. _${PROJECT_NAME}_ADDITIONAL_PACKAGES:
 #
@@ -591,12 +592,13 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #
 #   ``${PROJECT_NAME}_EXCLUDE_PACKAGES``
 #
-#     A list of package **NOT** to enable when determining the set of packages
-#     to be tested.  NOTE: Listing packages here will *not* disable the
-#     package in the inner CMake configure.  To do that, you will have to
-#     disable them in the variable EXTRA_CONFIGURE_OPTIONS (set in your driver
-#     script). This list can be specified with semi-colons ';' or with comas
-#     ','.  The default value is empty "".
+#     A semi-colon ';' or comma ',' separated list of packages **NOT** to
+#     enable when determining the set of packages to be tested.  NOTE: Listing
+#     packages here will *not* disable the package in the inner CMake
+#     configure when using the package-by-packages approach.  To do that, you
+#     will have to disable them in the variable EXTRA_CONFIGURE_OPTIONS (set
+#     in your driver script).  But for the all-at-once approach this list of
+#     package disables **IS** pass into the inner configure.
 #
 #   ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES``
 #
@@ -1534,6 +1536,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # List of packages to not directly process.  .
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_EXCLUDE_PACKAGES "" )
+  STRING(REPLACE "," ";" ${PROJECT_NAME}_EXCLUDE_PACKAGES
+    "${${PROJECT_NAME}_EXCLUDE_PACKAGES}" )
 
   IF(${PROJECT_NAME}_REPOSITORY_BRANCH)
     SET(${PROJECT_NAME}_BRANCH_DEFAULT ${${PROJECT_NAME}_REPOSITORY_BRANCH})

@@ -52,7 +52,6 @@
 
 namespace Tpetra {
 namespace Experimental {
-namespace Classes {
 
 /// \class BlockCrsMatrix
 /// \brief Sparse matrix whose entries are small dense square blocks,
@@ -131,10 +130,10 @@ namespace Classes {
 /// }
 /// \endcode
 ///
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LO,
+         class GO,
+         class Node>
 class BlockCrsMatrix :
   virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   virtual public ::Tpetra::DistObject<char, LO, GO, Node>
@@ -1273,7 +1272,6 @@ public:
   //@}
 };
 
-} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 

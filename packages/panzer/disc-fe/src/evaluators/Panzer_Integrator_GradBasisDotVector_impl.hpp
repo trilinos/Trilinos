@@ -76,7 +76,6 @@ namespace panzer
     :
     evalStyle_(evalStyle),
     multiplier_(multiplier),
-    numDim_(static_cast<int>(ir.dl_vector->extent(2))),
     basisName_(basis.name())
   {
     using Kokkos::View;
@@ -86,7 +85,6 @@ namespace panzer
     using panzer::IP;
     using PHX::DataLayout;
     using PHX::MDField;
-    using PHX::typeAsString;
     using std::invalid_argument;
     using std::logic_error;
     using std::string;
@@ -99,14 +97,14 @@ namespace panzer
       "Integrator_GradBasisDotVector called with an empty flux name.")
     RCP<const PureBasis> tmpBasis = basis.getBasis();
     TEUCHOS_TEST_FOR_EXCEPTION(not tmpBasis->supportsGrad(), logic_error,
-      "Integrator_GradBasisDotVector:  Basis of type \"" << tmpBasis->name() <<
-      "\" does not support the gradient operator.");
+      "Error:  Integrator_GradBasisDotVector:  Basis of type \""
+      << tmpBasis->name() << "\" does not support the gradient operator.")
     RCP<DataLayout> tmpVecDL = ir.dl_vector;
     if (not vecDL.is_null())
     {
       tmpVecDL = vecDL;
       TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<int>(tmpVecDL->extent(2)) < numDim_, logic_error,
+        tmpVecDL->extent(2) < ir.dl_vector->extent(2), logic_error,
         "Integrator_GradBasisDotVector:  Dimension of space exceeds "         \
         "dimension of Vector Data Layout.");
     } // end if (not vecDL.is_null())
@@ -122,7 +120,7 @@ namespace panzer
       this->addContributedField(field_);
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       this->addEvaluatedField(field_);
- 
+
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
@@ -138,10 +136,10 @@ namespace panzer
     // Set the name of this object.
     string n("Integrator_GradBasisDotVector (");
     if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
-      n += "Cont";
+      n += "CONTRIBUTES";
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      n += "Eval";
-    n += ", " + typeAsString<EvalT>() + "):  " + field_.fieldTag().name();
+      n += "EVALUATES";
+    n += "):  " + field_.fieldTag().name();
     this->setName(n);
   } // end of Main Constructor
 
@@ -192,15 +190,12 @@ namespace panzer
   {
     using panzer::getBasisIndex;
     using std::size_t;
+    using PHX::Device;
 
     // Get the Kokkos::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-
-    // Determine the number of quadrature points and the dimensionality of the
-    // vector that we're integrating.
-    numQP_  = vector_.extent(1);
-    numDim_ = vector_.extent(2);
+    Device::fence;
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
@@ -223,7 +218,8 @@ namespace panzer
     using panzer::EvaluatorStyle;
 
     // Initialize the evaluated field.
-    const int numBases(basis_.extent(1));
+    const int numQP(vector_.extent(1)), numDim(vector_.extent(2)),
+              numBases(basis_.extent(1));
     if (evalStyle_ == EvaluatorStyle::EVALUATES)
       for (int basis(0); basis < numBases; ++basis)
         field_(cell, basis) = 0.0;
@@ -236,9 +232,9 @@ namespace panzer
       // Loop over the quadrature points and dimensions of our vector fields,
       // scale the integrand by the multiplier, and then perform the
       // integration, looping over the bases.
-      for (int qp(0); qp < numQP_; ++qp)
+      for (int qp(0); qp < numQP; ++qp)
       {
-        for (int dim(0); dim < numDim_; ++dim)
+        for (int dim(0); dim < numDim; ++dim)
         {
           tmp = multiplier_ * vector_(cell, qp, dim);
           for (int basis(0); basis < numBases; ++basis)
@@ -251,9 +247,9 @@ namespace panzer
       // Loop over the quadrature points and dimensions of our vector fields,
       // scale the integrand by the multiplier and the single field multiplier,
       // and then perform the actual integration, looping over the bases.
-      for (int qp(0); qp < numQP_; ++qp)
+      for (int qp(0); qp < numQP; ++qp)
       {
-        for (int dim(0); dim < numDim_; ++dim)
+        for (int dim(0); dim < numDim; ++dim)
         {
           tmp = multiplier_ * vector_(cell, qp, dim) *
             kokkosFieldMults_(0)(cell, qp);
@@ -270,12 +266,12 @@ namespace panzer
       // the field multipliers, and then perform the actual integration,
       // looping over the bases.
       const int numFieldMults(kokkosFieldMults_.extent(0));
-      for (int qp(0); qp < numQP_; ++qp)
+      for (int qp(0); qp < numQP; ++qp)
       {
         ScalarT fieldMultsTotal(1);
         for (int fm(0); fm < numFieldMults; ++fm)
           fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
-        for (int dim(0); dim < numDim_; ++dim)
+        for (int dim(0); dim < numDim; ++dim)
         {
           tmp = multiplier_ * vector_(cell, qp, dim) * fieldMultsTotal;
           for (int basis(0); basis < numBases; ++basis)
