@@ -1603,7 +1603,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
   const size_type shmem_size_expected =
-    ( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + mask ) & ~mask;
+    (( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
 
@@ -2068,7 +2068,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   static const size_type align = 8;
   static const size_type mask  = align - 1;
   const size_type shmem_size_expected =
-    ( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask;
+    (( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
 
