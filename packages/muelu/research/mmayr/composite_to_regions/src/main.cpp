@@ -588,7 +588,7 @@ void vCycle(const int l, ///< ID of current level
 }
 
 Teuchos::Array<int> setLocalNodesPerDim(const std::string& problemType,
-    const bool doing1D, const Epetra_Map& rowMap, const int ownedX, const int ownedY)
+    const bool doing1D, const Epetra_Map& rowMap, const int dimX, const int dimY, const int dimZ = 1)
 {
   // Number of nodes per x/y/z-direction per processor
   Teuchos::Array<int> lNodesPerDim(3);
@@ -648,9 +648,9 @@ Teuchos::Array<int> setLocalNodesPerDim(const std::string& problemType,
     }
     else
     {
-      lNodesPerDim[0] = ownedX;
-      lNodesPerDim[1] = ownedY;
-      lNodesPerDim[2] = 1;
+      lNodesPerDim[0] = dimX;
+      lNodesPerDim[1] = dimY;
+      lNodesPerDim[2] = dimZ;
     }
   }
 
@@ -1506,9 +1506,15 @@ int main(int argc, char *argv[]) {
 
     for (int j = 0; j < maxRegPerProc; j++) {
 
-      // Set number of nodes per processor per dimension
+      /* Set number of nodes per processor per dimension
+       *
+       * We don't use the number of owned nodes provided on input.
+       * Use the region dimensions instead. This is the right thing to do
+       * since duplication of interface nodes has added duplicated nodes to those regions
+       * where OWNEDX/OWNEDY and REGIONX/REGIONY have been different on input.
+       */
       Array<int> lNodesPerDim = setLocalNodesPerDim(problemType, doing1D,
-          *revisedRowMapPerGrp[j], genericVector[OWNEDX], genericVector[OWNEDY]);
+          *revisedRowMapPerGrp[j], genericVector[REGIONX], genericVector[REGIONY]);
 
       // Set aggregation type for each region
       std::string aggregationRegionType = setAggregationTypePerRegion(problemType, myRank);
