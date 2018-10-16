@@ -97,12 +97,12 @@ extern void fillCircleSquareData(int ArowPtr[], int Acols[], int ownedX, int own
 extern int LIDregionCircleSquare(void *ptr, int compLID,int whichGrp);
 
 #define ISSTRUCTURED 0
-#define OWNEDX   1 
-#define OWNEDY   2 
-#define REGIONX  3 
-#define REGIONY  4 
-#define CORNERX  5 
-#define CORNERY  6 
+#define OWNEDX   1
+#define OWNEDY   2
+#define REGIONX  3
+#define REGIONY  4
+#define CORNERX  5
+#define CORNERY  6
 #define NGHOSTS  7
 #define FirstLIDsOfGhosts 8
 
@@ -1094,7 +1094,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<int> rowGIDsReg;
     int *colGIDsComp = AComp->ColMap().MyGlobalElements();
-sleep(myRank*3);
+//sleep(myRank*3);
     for (int k = 0; k < (int) myRegions.size(); k++) {
       rowGIDsReg.resize(0);
       std::vector<int> tempRegIDs(AComp->ColMap().NumMyElements());
@@ -1319,10 +1319,6 @@ sleep(myRank*3);
       colImportPerGrp[j] = Teuchos::rcp(new Epetra_Import(*(colMapPerGrp[j]), *mapComp));
     }
   }
-
-//  printRegionalMap("revisedRowMapPerGrp", revisedRowMapPerGrp, myRank);
-//  sleep(2);
-//  printRegionalMap("revisedColMapPerGrp", revisedColMapPerGrp, myRank);
 
   Comm.Barrier();
 
@@ -2442,39 +2438,39 @@ void fillCircleSquareData(int ArowPtr[], int Acols[], int ownedX, int ownedY, in
 std::vector<int> &appData)
 {
 /* Fills the vector appData so that the function LIDregionCircleSquareWithUnstr2D() can
- * properly map CompositeLIDs to RegionLIDs. Specifically, appData's 
- * contents will be given by 
+ * properly map CompositeLIDs to RegionLIDs. Specifically, appData's
+ * contents will be given by
  *
- *   appData[OWNEDX ]     x/y dimensions of rectangle owned by proc, which is 
+ *   appData[OWNEDX ]     x/y dimensions of rectangle owned by proc, which is
  *   appData[OWNEDY ]     given as input parameters 'ownedX' and 'ownedY'
  *
- *   appData[REGIONX]     x/y dimensions of proc's region, which is given 
+ *   appData[REGIONX]     x/y dimensions of proc's region, which is given
  *   appData[REGIONY]     as input parameters 'Rx' and 'Ry'
  *
  *   appData[CORNERX]     Offset of the lower left corner defined by the
- *   appData[CORNERY]     rectangular region piece that is actually owned by 
+ *   appData[CORNERY]     rectangular region piece that is actually owned by
  *                        this processor (in the composite layout). Should be
  *                        either 0 or 1.  So, Cx = Cy=0 means that the processor
  *                        actually owns the lower left corner of the region.
  *                        This is given as input parameters 'Cx' and 'Cy'
  *
- *   appData[k]           Gives the region LID associated with the 
+ *   appData[k]           Gives the region LID associated with the
  *                        (k-FirstLIDsOfGhosts+ownedX*ownedY)^th
  *                        composite LID  .. for k >= FirstLIDsOfGhosts,
  *                        which is the (k-FirstLIDsOfGhosts)^th ghost
  *                        composite LID.
  *
  *
- * Before filling appData, fillCircleSquareData() first fills 
+ * Before filling appData, fillCircleSquareData() first fills
  * ghostCompLIDs with ids of any ghosts associated with a region boundary.
- * The edges are done in the following order: bottom, top, left, right. 
+ * The edges are done in the following order: bottom, top, left, right.
  * If a region boundary does not correspond to ghost unknowns in the composite layout,
  * then this boundary is not included in ghostCompLIDs. Once filled, ghostCompLIDs[]
  * should have the following contents:
- * 
+ *
  *    ghostCompLIDs[startBot:startTop-1]   Ghost composite LIDs for bottom
  *                                         edge of region
- *    
+ *
  *    ghostCompLIDs[startTop:startLft-1]   Ghost composite LIDs for top
  *                                         edge of region
  *
@@ -2489,7 +2485,7 @@ std::vector<int> &appData)
  *                                         with the bottom or top ghosts
  *
  * Read comments for edgeGhosts(). The main assumption is that all stencils are full (9
- * point in the interior). 
+ * point in the interior).
  *
  */
 
@@ -2531,7 +2527,7 @@ std::vector<int> &appData)
   for (int k = 0; k < nRegionalGhosts; k++)
      if (ghostCompLIDs[k] > biggest) biggest = ghostCompLIDs[k];
 
-  // fill appData 
+  // fill appData
 
   appData.resize(FirstLIDsOfGhosts+biggest-ownedX*ownedY);
 
@@ -2570,14 +2566,14 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 %
 %  Find the local region-oriented ids of a region's shared interface, which is
 %  owned by another processor in the composite layout. The situation is basically
-%  this 
+%  this
 %
 %            ?   ?   ?  ?  ?  ?  ?  ?
-%             ====================== 
+%             ======================
 %            ?|| .   .  .  .  .  .||?
 %            ?||                  ||?
 %
-%  The = and || denote the inter-processor boundary. We know that we have a 
+%  The = and || denote the inter-processor boundary. We know that we have a
 %  bunch of externally owned vertices, denoted by ?. The problem is that we
 %  are not completely sure which remote local composite id is associated with
 %  which vertex on the regular grid layout (as this was done automatically
@@ -2590,13 +2586,13 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 %      to the ownedEdge that is adjacent to the shared interface that we wish
 %      to find region ids.
 %   2) We assign any non-local columns (those > nOwned) an index, ii, indicating
-%      that this column is adjacent to the ii^th point along ownedEdge. Some 
-%      columns might be adjacent to several points along ownedEdge. These 
+%      that this column is adjacent to the ii^th point along ownedEdge. Some
+%      columns might be adjacent to several points along ownedEdge. These
 %      columns end up with the largest ii value, as we over-write the assigned
 %      indices. Thus, a typical situation might look like this
 %
 %            1   2   3  4  5  6  6  6
-%             ====================== 
+%             ======================
 %            1|| .   .  .  .  .  .||6
 %            1||                  ||6
 %
@@ -2611,10 +2607,10 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 %      (equal to nOwned) in these locations. This is done by probing points
 %      that are 1 away (provided externally as interiorEdge) from the corner
 %      along orthogonal edges and assigning these a largeNumber. Our example
-%      might now look like 
+%      might now look like
 %
 %            1   2   3  4  5  6  6  6
-%             ====================== 
+%             ======================
 %            L|| .   .  .  .  .  .||L
 %            L|| *               *||L
 %            L||                  ||L
@@ -2626,13 +2622,13 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 %      Specifically, we take the 1st vertex along ownedEdge and examine its
 %      5 neighbors (e.g., col1,col2,col3,col4,col5). We look at assignedIndices
 %      computed in steps 2 and 3. The column with the lowest assignedIndices
-%      value (= 1) is the corner point. The column with the next lowest 
+%      value (= 1) is the corner point. The column with the next lowest
 %      (= 2) is adjacent to this corner point along the desired edge. The
 %      column with the next lowest value (= 3) is the next point. We record
-%      these 3 column indices in ghostCompLIDs and set assignedIndices for 
+%      these 3 column indices in ghostCompLIDs and set assignedIndices for
 %      them to a large number (so now 1 2 3 in the above picture would now be
 %      replaced by L L L). We now examine the 2nd vertex's remote neighbors
-%      which should have the values L L 3 and assign the column associated 
+%      which should have the values L L 3 and assign the column associated
 %      with the smallest value (= 3) to ghostCompLIDs ... continuing along
 %      until we have assigned the entire edge.
 %
@@ -2642,12 +2638,12 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 %  For example, we might have the case below
 %
 %                ?   ?  ?  ?  ?  ?  ?
-%             ====================== 
+%             ======================
 %             || .   .  .  .  .  .||?
 %             ||                  ||?
-%  Here, the left edge might be a real physical boundary or it might be that 
+%  Here, the left edge might be a real physical boundary or it might be that
 %  the processor owns the shared interface of the region (so it has remotes
-%  to the left of the leftmost ||, but there is no need to assign them a 
+%  to the left of the leftmost ||, but there is no need to assign them a
 %  local region-oriented id.  In these cases start is not necessarily 1
 %  and fullEdgeLength is not necessarily equal to edgeLength
 */
@@ -2672,7 +2668,7 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
     /* non-Ghosts are lexicographically ordered  */
 
     if   (alongX) row = ownedX*(ownedEdge-1) +     ii   ;
-    else          row = ownedX*(   ii    -1) + ownedEdge; 
+    else          row = ownedX*(   ii    -1) + ownedEdge;
     cols = &(Acols[ArowPtr[row-1]]);
     nCols = ArowPtr[row] - ArowPtr[row-1];
     for (int k = 0; k < nCols; k++) {
@@ -2685,7 +2681,7 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 
   /* non-Ghosts are lexicographically ordered  */
   if  (alongX) row = ownedX*(interiorEdge-1)+     1     ;
-  else         row =                        interiorEdge; 
+  else         row =                        interiorEdge;
 
   cols = &(Acols[ArowPtr[row-1]]);
   nCols = ArowPtr[row] - ArowPtr[row-1];
@@ -2695,8 +2691,8 @@ void edgeGhosts(int ArowPtr[], int Acols[], int &nGhostFound, int ghostCompLIDs[
 
 // This is a case not originally considered. I hope it fixes this bug.
 // When coding this up, I failed to recognize the case when Cx is 0
-// because 
-if ( (start==2) && (firstCornerHasGhosts == false)) start--; 
+// because
+if ( (start==2) && (firstCornerHasGhosts == false)) start--;
 
   /* non-Ghosts are lexicographically ordered  */
   if  (alongX) row = ownedX*(interiorEdge-1) +  edgeLength ;
@@ -2705,7 +2701,7 @@ if ( (start==2) && (firstCornerHasGhosts == false)) start--;
   cols = &(Acols[ArowPtr[row-1]]);
   nCols = ArowPtr[row] - ArowPtr[row-1];
   for (int k = 0; k < nCols; k++)
-    if (cols[k] >= nOwned) assignedIndices[cols[k]]=largeNumber; 
+    if (cols[k] >= nOwned) assignedIndices[cols[k]]=largeNumber;
 
   /* Now perform step 4 by looking at smallest */
   /* assignedIndices along ownedEdge.          */
@@ -2758,10 +2754,10 @@ if ( (start==2) && (firstCornerHasGhosts == false)) start--;
 
 int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
 {
-   // Maps composite LIDs to region LIDs for the example 
+   // Maps composite LIDs to region LIDs for the example
    // corresponding to a circle embedded within a box created
-   // by the mkUnstrQuads Matlab functions. Assumes that 
-   // fillCircleSquareData() has been invoked. 
+   // by the mkUnstrQuads Matlab functions. Assumes that
+   // fillCircleSquareData() has been invoked.
 
    int* appData      = (int *) ptr;
 
@@ -2783,7 +2779,7 @@ int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
 
    if (compLID < ownedX*ownedY) {
       i = (compLID+1)%ownedX;
-      if (i==0) i=ownedX; 
+      if (i==0) i=ownedX;
 
       j = (compLID+1 - i)/ownedX + 1;
 
@@ -2791,8 +2787,8 @@ int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
    }
    else {
       ii = compLID - ownedX*ownedY;
-      if (ii > appData[NGHOSTS] ) return(-1); 
+      if (ii > appData[NGHOSTS] ) return(-1);
       if (LIDsOfGhosts[ii] == -1) return(-1);
-      return(LIDsOfGhosts[ii]); 
+      return(LIDsOfGhosts[ii]);
    }
 }
