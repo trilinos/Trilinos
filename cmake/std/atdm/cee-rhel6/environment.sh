@@ -25,16 +25,31 @@ echo "Using CEE RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG
 
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=16
+
+# Get ATDM_CONFIG_NUM_CORES_ON_MACHINE for this machine
+source $ATDM_SCRIPT_DIR/utils/get_num_cores_on_machine.sh
+
+if [ "$ATDM_CONFIG_NUM_CORES_ON_MACHINE" -gt "16" ] ; then
+  export ATDM_CONFIG_MAX_NUM_CORES_TO_USE=16
+  # NOTE: We get links crashing if we try to use to many processes.  ToDo: We
+  # should limit the number of processes that ninja uses to link instead of
+  # reducing the overrall parallel build level like this.
+else
+  export ATDM_CONFIG_MAX_NUM_CORES_TO_USE=$ATDM_CONFIG_NUM_CORES_ON_MACHINE
+fi
+
+export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
+# NOTE: Use as many build processes and there are cores by default.
 
 module purge
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
 else
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
 fi
+# NOTE: Above, we use 1/2 as many executors as
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
   module load sparc-dev/gcc
