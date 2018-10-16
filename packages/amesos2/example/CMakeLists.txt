@@ -50,13 +50,11 @@ TRIBITS_ADD_EXECUTABLE(
   )
 ENDIF ()
 
-IF (Tpetra_INST_INT_INT)
- TRIBITS_ADD_EXECUTABLE(
-   SimpleSolveFileExample
-  SOURCES SimpleSolve_File
- )
-ENDIF ()
-
+TRIBITS_ADD_EXECUTABLE(
+  Issue_3647
+  SOURCES Issue_3647
+  COMM serial mpi
+)
 
 IF (Tpetra_INST_INT_INT)
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
