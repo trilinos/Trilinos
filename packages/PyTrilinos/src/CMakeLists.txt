@@ -260,6 +260,14 @@ EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
 )
 
 #
+# Temporary Isorropia issue
+IF(PyTrilinos_ENABLE_Isorropia)
+  IF(NOT ${PYTHON_VERSION} VERSION_LESS "3.0")
+    MESSAGE(FATAL_ERROR "Isorropia must be disabled when PyTrilinos is built with Python 3 due to an import error. Please set Trilinos_ENABLE_Isorropia or PyTrilinos_ENABLE_Isorropia to OFF. Alternatively, you can use Python 2.")
+  ENDIF()
+ENDIF()
+
+#
 # Define the PyTrilinos swig setup
 SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
@@ -335,7 +343,17 @@ SWIG_LINK_LIBRARIES(${TEUCHOS_RCP_TARGET} ${Trilinos_LIBRARIES})
 SET_TARGET_PROPERTIES(${TEUCHOS_RCP_TARGET} PROPERTIES
   LINK_FLAGS "${EXTRA_LINK_ARGS}"
   )
+ADD_CUSTOM_COMMAND(TARGET ${TEUCHOS_RCP_TARGET} POST_BUILD
+  COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/Teuchos/RCP.py', 'PyTrilinos/Teuchos/RCP.pyc')"
+  COMMENT "Byte compiling Teuchos/RCP.py"
+  VERBATIM)
 LIST(APPEND ADDITIONAL_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/${TEUCHOS_RCP})
+INSTALL(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/RCP.py
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/Teuchos/RCP.pyc
+  DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
+INSTALL(TARGETS ${TEUCHOS_RCP_TARGET}
+  DESTINATION ${PyTrilinos_INSTALL_DIR}/Teuchos)
 
 #
 # Loop over the PyTrilinos-enabled Trilinos modules and define the
@@ -358,7 +376,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       python
       "${MODULE}.i"
       "${MODULE_OUTDIR}/${MODULE_NAME}"
-      "__init__")
+      "${MODULE_NAME}")
   ELSE("${MODULE_NAME}" MATCHES "Teuchos")
     SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
       python
@@ -411,6 +429,17 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   # PyTrilinos.NOX.Epetra
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py', 'PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc')"
+      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX.PETSc
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/PETSc")

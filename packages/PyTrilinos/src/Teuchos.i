@@ -121,7 +121,7 @@ using std::string;
 %pythoncode
 %{
 __all__ = ["RCP"]
-import RCP
+from . import RCP
 %}
 
 // Standard exception handling
