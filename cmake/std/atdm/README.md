@@ -251,8 +251,10 @@ builds on the local system can be run by using `all` instead of `<job-name-0>
 The parallel level for building and running tests are determined by the env
 vars `ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
 respectfully, as set by default for the given system by the `atdm/load-env.sh`
-script.  These values can be overridden by setting the env vars
-`ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
+script for the given machine.  (On most machines, these are fixed but on
+generic systems like <a href="#sems-rhel6-environment">sems-rhel6</a>, they
+are computed from the number of cores on that machine).  These values can be
+overridden by setting the env vars `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE`, respectfully as, for example:
 
 ```
@@ -518,7 +520,7 @@ $ cmake \
 
 $ make NP=16
 
-$ ctest -j16 \
+$ ctest -j8
 ```
 
 NOTE: Above including `sems-rhel6` in the job build name
@@ -536,6 +538,12 @@ $ ./checkin-test-atdm.sh sems-rhel6-clang-opt-openmp \
   --enable-packages=MueLu \
   --local-do-all
 ```
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
+`atdm/load-env.sh <job-name>` script.
 
 
 ### CEE RHEL6 environment
@@ -582,6 +590,12 @@ $ env ATDM_CHT_DEFAULT_ENV=cee-rhel6-default \
 NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=cee-rhel6-default` in the env
 when passing in `all` in order for it to select the correct set of supported
 builds for the `cee-rhel6` env.
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
+`atdm/load-env.sh <job-name>` script.
 
 
 ### waterman
