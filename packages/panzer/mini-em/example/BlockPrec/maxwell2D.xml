@@ -112,6 +112,9 @@
       <ParameterList name="sigma">
         <Parameter name="Type" type="string" value="TENSOR CONDUCTIVITY"/>
         <Parameter name="sigma" type="double" value="0.0"/>
+        <Parameter name="betax" type="double" value="0.0"/>
+        <Parameter name="betay" type="double" value="0.0"/>
+        <Parameter name="betaz" type="double" value="0.0"/>
         <Parameter name="DoF Name" type="string" value="E_edge"/>
       </ParameterList>
       <!-- Inverse of the permeability -->
