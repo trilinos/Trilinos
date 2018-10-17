@@ -890,23 +890,30 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos:
         return 0;
     }
 template <class SC, class LO, class GO, class NO>
-Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
+Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
     //connection: alternativ in Sparse Matrix...
     
     Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = connection->getMap()->getComm();
     int MYPID = TeuchosComm->getRank();
     
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+    
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg  = Xpetra::MapFactory<LO,GO,NO>::Build(connection->getMap(),1);
     
     //Fill Graph -> Needs make better -> Insert one row at once
-     Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(Mapg,connection->getNumVectors());
-    for(int i = 0;i<connection->getNumVectors();i++){
-        Teuchos::ArrayRCP<const int> con = connection->getData(i);
-        for(int j = 0;j<connection->getLocalLength();j++){
-            Xgraph->insertLocalIndices(j,con[j]);
-        }
+     Teuchos::RCP<Xpetra::CrsGraph<GO,GO,NO> > Xgraph = Xpetra::CrsGraphFactory<GO,GO,NO>::Build(Mapg,connection->getNumVectors());
+    LO localRows = connection->getRowMap()->getNodeNumElements();
+    GO a;
+    Teuchos::ArrayView< const LO>  indices;
+    Teuchos::
+    ArrayView< const GO>   values;
+    for(int j = 0;j<localRows;j++){
+        connection->getLocalRowView(j,indices,values);
+        Xgraph->insertLocalIndices(j,values);
     }
+    
     Xgraph->fillComplete();
+    Xgraph->describe(*fancy,Teuchos::VERB_EXTREME);
     
     //Partition the subdomains
     typedef Zoltan2::XpetraCrsGraphAdapter<Xpetra::CrsGraph<LO,GO,NO> > inputAdapter;
@@ -931,8 +938,8 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Mul
     Teuchos::RCP<const Xpetra::Map<GO,LO,NO> > EleRepMap = ReGraph->getColMap();
     
     //Change NodeElementList Map to RepeatedMap
-    Teuchos::RCP<Xpetra::MultiVector<long long,LO,GO,NO> >
-    NNodeEleList  = Xpetra::MultiVectorFactory<long long,LO,GO,NO>::Build(ReGraph->getColMap(),NodeElementList->getNumVectors());
+    Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> >
+    NNodeEleList  = Xpetra::MultiVectorFactory<GO,LO,GO,NO>::Build(ReGraph->getColMap(),NodeElementList->getNumVectors());
     
     
     Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
@@ -942,16 +949,16 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Mul
     
     
     //Create repeated NodeMap
-    std::map<long long,int> rep;
+    std::map<GO,int> rep;
     
     //std::vector<std::vector<long long> > el1(NodeEleList->getNumVectors());
     //std::vector<std::vector<long long> > el2(NodeEleList->getNumVectors());
-    Teuchos::ArrayRCP<const long long> arr;
+    Teuchos::ArrayRCP<const GO> arr;
     for(int i = 0;i<NodeElementList->getNumVectors();i++){
         arr = NNodeEleList->getData(i);
         //el1.resize(arr.size())
         for(int j = 0;j<arr.size();j++){
-            rep.insert(std::pair<long long,int>(arr[j],MYPID));
+            rep.insert(std::pair<GO,int>(arr[j],MYPID));
         }
     }
 
