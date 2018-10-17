@@ -3383,7 +3383,8 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                 const typename local_graph_type::entries_type::non_const_type& columnIndices)
+                 const typename local_graph_type::entries_type::non_const_type& columnIndices,
+                 const bool overwrite)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3398,9 +3399,12 @@ namespace Tpetra {
     // FIXME (mfh 07 Aug 2014) We need to relax this restriction,
     // since the future model will be allocation at construction, not
     // lazy allocation on first insert.
+    // FIXME (tjf 11 Oct 2018) added overwrite flag to bypass check - useful for
+    // import/export operations that are allowed to insert new entries in to the
+    // static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->k_lclInds1D_.extent (0) != 0 ||
-       this->k_gblInds1D_.extent (0) != 0,
+      (!overwrite && (this->k_lclInds1D_.extent (0) != 0 ||
+                      this->k_gblInds1D_.extent (0) != 0),
        std::runtime_error, "You may not call this method if 1-D data "
        "structures are already allocated.");
 
@@ -3436,7 +3440,8 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   setAllIndices (const Teuchos::ArrayRCP<size_t>& rowPointers,
-                 const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices)
+                 const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+                 const bool overwrite)
   {
     using Kokkos::View;
     typedef typename local_graph_type::row_map_type row_map_type;
@@ -3489,7 +3494,7 @@ namespace Tpetra {
 
     Kokkos::View<LocalOrdinal*, layout_type , execution_space > k_ind =
       Kokkos::Compat::getKokkosViewDeepCopy<device_type> (columnIndices ());
-    setAllIndices (ptr_rot, k_ind);
+    setAllIndices (ptr_rot, k_ind, overwrite);
   }
 
 

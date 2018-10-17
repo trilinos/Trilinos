@@ -95,7 +95,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DetermineLocalTriangularStructure
-  SOURCES 
+  SOURCES
     DetermineLocalTriangularStructure
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -108,7 +108,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnpackIntoStaticGraph
   SOURCES
     CrsGraph_UnpackIntoStaticGraph
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1-4

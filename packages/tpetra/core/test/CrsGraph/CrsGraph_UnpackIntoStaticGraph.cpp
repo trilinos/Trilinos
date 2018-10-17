@@ -72,30 +72,17 @@ using Tpetra::Details::unpackCrsGraphAndCombine;
 using Tpetra::Details::resizeRowPtrsAndIndices;
 using std::endl;
 
-template<class T>
-bool
-essentially_equal(T a, T b) {
-  typedef Kokkos::ArithTraits<T> KAT;
-  const auto eps = KAT::eps();
-  return KAT::abs(a - b) <= ( (KAT::abs(a) > KAT::abs(b) ? KAT::abs(b) : KAT::abs(a)) * eps);
-}
-
-
 TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices)
 {
-
-  int argc = 0;
-  char* argv[] = {NULL};
-  char** argv2 = &argv[0];
-  Tpetra::ScopeGuard tpetra_scope(&argc, &argv2);
-
+  typedef typename Tpetra::Map<>::device_type device_type;
   using ordinal_type = size_t;
-  using view_type = Kokkos::View<ordinal_type*>;
+  using view_type = Kokkos::View<ordinal_type*, device_type>;
 
   ordinal_type num_row = 4;
   ordinal_type num_indices_per_row = 5;
   ordinal_type num_indices = num_indices_per_row * num_row;
   auto row_ptrs_beg = view_type("beg", num_row+1);
+  // this assumes UVM
   for (ordinal_type i=0; i<num_row+1; i++) row_ptrs_beg(i) = num_indices_per_row*i;
 
   auto row_ptrs_end = view_type("end", num_row);
@@ -110,13 +97,18 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices)
     }
   }
 
+  auto import_lids = view_type("import lids", num_row);
   auto num_packets_per_lid = view_type("num packets", num_row);
-  for (ordinal_type i=0; i<num_row; i++) num_packets_per_lid(i) = i;
+  for (ordinal_type i=0; i<num_row; i++) {
+   import_lids(i) = i;
+   num_packets_per_lid(i) = i;
+  }
   ordinal_type num_extra = num_row*(num_packets_per_lid(0) + num_packets_per_lid(num_row-1))/2;
 
-  resizeRowPtrsAndIndices<view_type, view_type, view_type>(row_ptrs_beg, row_ptrs_end, indices,
-                                                           num_packets_per_lid, false);
-
+  // could we just let this function deduce its template parameters?
+  resizeRowPtrsAndIndices(row_ptrs_beg, row_ptrs_end, indices,
+                          num_packets_per_lid, import_lids, false);
+  // watch out for signed/unsigned comparison
   TEST_ASSERT(indices.size() == num_indices + num_extra);
 
   {
@@ -144,7 +136,6 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices)
     TEST_ASSERT(indices_ok);
   }
 }
-
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT)
@@ -176,28 +167,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   auto num_loc_rows = static_cast<LO>(4);
   const auto num_gbl_rows = Tpetra::global_size_t(num_loc_rows*comm->getSize());
   auto map1 = rcp(new map_type(num_gbl_rows, 0, comm));
-  auto D = rcp(new graph_type(map1, 1, Tpetra::StaticProfile));
+  auto A = rcp(new graph_type(map1, 1, Tpetra::StaticProfile));
   for (LO loc_row=0; loc_row<num_loc_rows; loc_row++) {
     const auto gbl_row = map1->getGlobalElement(loc_row);
-    D->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row));
+    A->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row));
   }
-  D->fillComplete();
 
-  // Off diagonal graph with bandwidth=1
-  auto X = rcp(new graph_type(map1, 2));
+  // Off diagonal graph with half-bandwidth=1 and no diagonal entries
+  out << "Building second graph" << endl;
+  auto B = rcp(new graph_type(map1, 2)); // could use StaticProfile
   for (LO loc_row=0; loc_row<num_loc_rows; loc_row++) {
     const auto gbl_row = map1->getGlobalElement(loc_row);
-    // X[0,0:1] = [-, 1]
+    // B[0,0:1] = [-, 1]
     if (gbl_row == 0)
-      X->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row));
-    // X[N-1,N-2:N-1] = [1, -]
+      B->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row+1));
+    // B[N-1,N-2:N-1] = [1, -]
     else if (static_cast<Tpetra::global_size_t>(gbl_row) == num_gbl_rows-1)
-      X->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row-1));
-    // X[I,I-1:I+1] = [1, -, 1]
+      B->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row-1));
+    // B[I,I-1:I+1] = [1, -, 1]
     else
-      X->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row-1, gbl_row+1));
+      B->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row-1, gbl_row+1));
   }
-  X->fillComplete();
+  B->fillComplete();
 
   auto loc_success = 1; // to be revised below
   auto gbl_success = 0; // output argument
@@ -211,7 +202,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   auto exports = Array<packet_type>(); // output argument; to be realloc'd
   auto num_packets_per_lid = Array<size_t>(num_loc_rows, 0); // output argument
   size_t const_num_packets; // output argument
-  auto distor = Tpetra::Distributor(comm); // argument required, but not used
+
+  // We're not actually communicating in this test; we just need the Distributor
+  // for the interface of packCrsGraph (which doesn't use it).  Consider changing
+  // packCrsGraph's interface so it doesn't take a Distributor?  No, because
+  // Distributor has index permutation information that we could use to pack in
+  // a particular order and thus avoid the slow path in Distributor::doPosts.
+  auto distor = Tpetra::Distributor(comm);
 
   out << "Calling packCrsGraph" << endl;
 
@@ -219,7 +216,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     int local_op_ok;
     std::ostringstream msg;
     try {
-      packCrsGraph<LO,GO,NT>(*X, exports, num_packets_per_lid(), export_lids(),
+      packCrsGraph<LO,GO,NT>(*B, exports, num_packets_per_lid(), export_lids(),
           const_num_packets, distor);
       local_op_ok = 1;
     } catch (std::exception& e) {
@@ -240,25 +237,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     }
   }
 
-  // Now make sure that the pack is correct by creating an empty graph and
-  // unpacking in to it.  The graph should end up being the same as the above graph.
-  out << "Building second graph" << endl;
-
-#ifdef KOKKOS_ENABLE_SERIAL
-  const bool atomic_updates = ! std::is_same<execution_space, Kokkos::Serial>::value;
-#else
-  const bool atomic_updates = true;
-#endif // KOKKOS_ENABLE_SERIAL
-
-  out << "Calling unpackCrsGraphAndCombine with "
-      << "CombineMode=Tpetra::REPLACE" << endl;
+  // Now unpack in to the static graph
+  out << "Calling unpackCrsGraphAndCombine" << endl;
 
   {
     int local_op_ok;
     std::ostringstream msg;
-    D->resumeFill();
-    unpackCrsGraphAndCombine<LO,GO,NT>(*D, exports, num_packets_per_lid(),
-        export_lids(), const_num_packets, distor, Tpetra::REPLACE, atomic_updates);
+    unpackCrsGraphAndCombine<LO,GO,NT>(*A, exports, num_packets_per_lid(),
+        export_lids(), const_num_packets, distor, Tpetra::REPLACE);
     local_op_ok = 1;
 
     TEST_ASSERT(local_op_ok == 1);
@@ -278,39 +264,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   // compare graph values.  Thus, we need to do a fence before
   // comparing graph values, in order to ensure that changes made on
   // device are visible on host.
+  A->fillComplete();
   execution_space::fence ();
 
   auto loc_num_errs = 0;
 
-  out << "Comparing graphs after unpackCrsGraphAndCombine "
-    "with CombineMode=REPLACE" << endl;
+  out << "Comparing graphs after unpackCrsGraphAndCombine" << endl;
   {
     std::ostringstream errStrm;
     for (LO loc_row=0; loc_row<num_loc_rows; ++loc_row) {
-      ArrayView<const LO> A_indices;
-      D->getLocalRowView(loc_row, A_indices);
+      const auto gbl_row = map1->getGlobalElement(loc_row);
+      size_t num_entries = 3;
+      Array<GO> A_indices(num_entries);
+      A->getGlobalRowCopy(gbl_row, A_indices(), num_entries);
+      std::sort(A_indices.begin(), A_indices.begin()+num_entries);
 
-      //ArrayView<const LO> B_indices;
-      //B->getLocalRowView(loc_row, B_indices);
-
-      continue;
-      /*
-       * Test to be uncommented when unpackCrsGraphAndCombine is finished.
-       *
-      TEST_EQUALITY( A_indices.size (), B_indices.size () );
-
-      int curNumErrors = 0;
-      LO num_indices = static_cast<LO>(A_indices.size());
-      for (LO i=0; i<num_indices; i++) {
-        if (A_indices[i] != B_indices[i]) {
-          errStrm << "ERROR: Proc " << my_rank << ", row " << loc_row
-                  << ", A[" << i << "]=" << A_indices[i] << ", but "
-                  <<   "B[" << i << "]=" << B_indices[i] << "!\n";
-          ++curNumErrors;
+      auto errors = 0; // Herb Sutter loves you :)
+      if (gbl_row == 0) {
+        // A[0,0:1] = [1, 1]
+        if (num_entries != 2) {
+          errStrm << "ERROR: Proc " << my_rank << ", row " << gbl_row
+                  << ", expected row to have 2 indices not " << num_entries << "!\n";
+          ++errors;
+        } else if (!(A_indices[0]==gbl_row && A_indices[1]==gbl_row+1)) {
+          errStrm << "ERROR: Proc " << my_rank << ", row " << gbl_row
+                  << ", incorrect indices: "
+                  << A_indices(0,num_entries)
+                  << " != [" << gbl_row << ", " << gbl_row+1 << "]\n";
+          ++errors;
+        }
+      } else if (static_cast<Tpetra::global_size_t>(gbl_row) == num_gbl_rows-1) {
+        // B[N-1,N-2:N-1] = [1, -]
+        if (num_entries != 2) {
+          errStrm << "ERROR: Proc " << my_rank << ", row " << gbl_row
+                  << ", expected row to have 3 indices not " << num_entries << "!\n";
+          ++errors;
+        } else if (!(A_indices[0]==gbl_row-1 && A_indices[1]==gbl_row)) {
+          errStrm << "ERROR: Proc " << my_rank << ", row " << gbl_row
+                  << ", incorrect indices: "
+                  << A_indices(0,num_entries)
+                  << " != [" << gbl_row-1 << ", " << gbl_row << "]\n";
+          ++errors;
         }
       }
-      loc_num_errs += curNumErrors;
-      */
+      else {
+        // B[I,I-1:I+1] = [1, -, 1]
+        if (num_entries != 3) {
+          errStrm << "ERROR: Proc " << my_rank << ", row " << gbl_row
+                  << ", expected row to have 3 indices not " << num_entries << "!\n";
+          ++errors;
+        } else if (!(A_indices[0]==gbl_row-1 && A_indices[1]==gbl_row && A_indices[2]==gbl_row+1)) {
+          errStrm << "ERROR: Proc " << my_rank << ", row " << gbl_row
+                  << ", incorrect indices: "
+                  << A_indices(0,num_entries)
+                  << " != [" << gbl_row-1 << ", " << gbl_row << ", " << gbl_row+1 << "]\n";
+          ++errors;
+        }
+      }
+      loc_num_errs += errors;
     }
     TEST_ASSERT(loc_num_errs == 0);
 
@@ -350,3 +361,14 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_LGN(UNIT_TEST_GROUP)
 
 } // namespace (anonymous)
+
+int
+main (int argc, char* argv[])
+{
+  // Initialize MPI (if enabled) before initializing Kokkos.  This
+  // lets MPI control things like pinning processes to sockets.
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  const int errCode =
+    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+  return errCode;
+}

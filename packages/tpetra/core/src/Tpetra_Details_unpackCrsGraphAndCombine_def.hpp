@@ -137,19 +137,20 @@ unpackRow(typename Kokkos::View<GO*,Device,Kokkos::MemoryUnmanaged>& gids_out,
 /// Data (bytes) describing the row of the CRS graph are "unpacked"
 /// from a single (concatenated) (view of) Packet* directly into the
 /// row of the graph.
-template<class Packet, class LocalGraph, class LocalMap, class BufferDevice>
+template<class LocalOrdinal, class Packet, class RowView,
+         class IndicesView, class Device, class BufferDevice>
 class UnpackAndCombineFunctor {
 
+  using LO = LocalOrdinal;
+  using GO = typename IndicesView::value_type;
   using packet_type = Packet;
-  using local_map_type = LocalMap;
-  using local_graph_type = LocalGraph;
+  using row_ptrs_type = RowView;
+  using indices_type = IndicesView;
   using buffer_device_type = BufferDevice;
 
-  using LO = typename local_map_type::local_ordinal_type;
-  using GO = typename local_map_type::global_ordinal_type;
   // Kokkos::parallel_reduce fails to compile if named device_type and typedef
   // is public
-  using device_type = typename local_map_type::device_type;
+  using device_type = Device;
   using execution_space = typename device_type::execution_space;
 
   using num_packets_per_lid_type = Kokkos::View<const size_t*, buffer_device_type>;
@@ -157,28 +158,20 @@ class UnpackAndCombineFunctor {
   using input_buffer_type = Kokkos::View<const packet_type*, buffer_device_type>;
   using import_lids_type = Kokkos::View<const LO*, device_type>;
 
-  using lids_scratch_type = Kokkos::View<LO*, device_type>;
   using gids_scratch_type = Kokkos::View<GO*, device_type>;
   using pids_scratch_type = Kokkos::View<int*,device_type>;
 
-  static_assert(std::is_same<LO, typename local_graph_type::data_type>::value,
-                "LocalMap::local_ordinal_type and "
-                "LocalGraph::data_type must be the same.");
-
-  typename local_graph_type::row_map_type::non_const_type row_ptrs_beg;
-  typename local_graph_type::row_map_type::non_const_type row_ptrs_end;
-  typename local_graph_type::entries_type::non_const_type indices;
-  local_map_type local_col_map;
+  row_ptrs_type row_ptrs_beg;
+  row_ptrs_type row_ptrs_end;
+  indices_type indices;
   input_buffer_type imports;
   num_packets_per_lid_type num_packets_per_lid;
   import_lids_type import_lids;
   offsets_type offsets;
   size_t max_num_ent;
   bool unpack_pids;
-  bool atomic;
   Kokkos::Experimental::UniqueToken<execution_space,
                                     Kokkos::Experimental::UniqueTokenScope::Global> tokens;
-  lids_scratch_type lids_scratch;
   gids_scratch_type gids_scratch;
   pids_scratch_type pids_scratch;
 
@@ -186,32 +179,27 @@ class UnpackAndCombineFunctor {
   using value_type = Kokkos::pair<int, LO>;
 
   UnpackAndCombineFunctor(
-      typename local_graph_type::row_map_type::non_const_type& row_ptrs_beg_in,
-      typename local_graph_type::row_map_type::non_const_type& row_ptrs_end_in,
-      typename local_graph_type::entries_type::non_const_type& indices_in,
-      const local_map_type& local_col_map_in,
+      const row_ptrs_type& row_ptrs_beg_in,
+      row_ptrs_type& row_ptrs_end_in,
+      indices_type& indices_in,
       const input_buffer_type& imports_in,
       const num_packets_per_lid_type& num_packets_per_lid_in,
       const import_lids_type& import_lids_in,
       const offsets_type& offsets_in,
       const size_t max_num_ent_in,
-      const bool unpack_pids_in,
-      const bool atomic_in) :
+      const bool unpack_pids_in) :
     row_ptrs_beg(row_ptrs_beg_in),
     row_ptrs_end(row_ptrs_end_in),
     indices(indices_in),
-    local_col_map(local_col_map_in),
     imports(imports_in),
     num_packets_per_lid(num_packets_per_lid_in),
     import_lids(import_lids_in),
     offsets(offsets_in),
     max_num_ent(max_num_ent_in),
     unpack_pids(unpack_pids_in),
-    atomic(atomic_in),
     tokens(execution_space()),
-    lids_scratch("pids_scratch", tokens.size() * max_num_ent),
     gids_scratch("gids_scratch", tokens.size() * max_num_ent),
-    pids_scratch("lids_scratch", tokens.size() * max_num_ent)
+    pids_scratch("pids_scratch", tokens.size() * max_num_ent)
   {}
 
   KOKKOS_INLINE_FUNCTION void init(value_type& dst) const
@@ -249,7 +237,6 @@ class UnpackAndCombineFunctor {
     using size_type = typename execution_space::size_type;
     using slice = typename Kokkos::pair<size_type, size_type>;
 
-    using lids_out_type = View<LO*, device_type, MemoryUnmanaged>;
     using pids_out_type = View<int*,device_type, MemoryUnmanaged>;
     using gids_out_type = View<GO*, device_type, MemoryUnmanaged>;
 
@@ -283,7 +270,6 @@ class UnpackAndCombineFunctor {
     const size_type token = tokens.acquire();
     const size_t a = static_cast<size_t>(token) * max_num_ent;
     const size_t b = a + num_ent;
-    lids_out_type lids_out = subview(lids_scratch, slice(a, b));
     gids_out_type gids_out = subview(gids_scratch, slice(a, b));
     pids_out_type pids_out = subview(pids_scratch, slice(a, (unpack_pids ? b : a)));
 
@@ -293,14 +279,15 @@ class UnpackAndCombineFunctor {
 
     if (err != 0) {
       dst = Kokkos::make_pair(3, i);
+      tokens.release(token);
       return;
     }
 
-    // Column indices come in as global indices, in case the
-    // source object's column Map differs from the target object's
-    // (this's) column Map, and must be converted local index values
+    auto import_lid = import_lids(i);
     for (size_t k = 0; k < num_ent; ++k) {
-      lids_out(k) = local_col_map.getLocalElement(gids_out(k));
+      indices(row_ptrs_end(import_lid)) = gids_out(k);
+      // this is OK; don't need atomic, since LIDs to pack don't have repeats.
+      row_ptrs_end(import_lid) += 1;
     }
 
     tokens.release(token);
@@ -311,33 +298,28 @@ class UnpackAndCombineFunctor {
 ///
 /// \tparam LocalGraph the specialization of the KokkosSparse::CrsGraph
 ///   local graph
-/// \tparam LocalMap the type of the local column map
 ///
 /// This is a higher level interface to the UnpackAndCombineFunctor
-template<class Packet, class LocalGraph, class LocalMap, class BufferDevice>
+template<class LocalOrdinal, class Packet, class RowView,
+         class IndicesView, class Device, class BufferDevice>
 void
 unpackAndCombine(
-    typename LocalGraph::row_map_type::non_const_type& row_ptrs_beg,
-    typename LocalGraph::row_map_type::non_const_type& row_ptrs_end,
-    typename LocalGraph::entries_type::non_const_type& indices,
-    const LocalMap& local_map,
+    RowView& row_ptrs_beg,
+    RowView& row_ptrs_end,
+    IndicesView& indices,
     const Kokkos::View<const Packet*, BufferDevice, Kokkos::MemoryUnmanaged>& imports,
     const Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>& num_packets_per_lid,
-    const Kokkos::View<const typename LocalMap::local_ordinal_type*,
-                       typename LocalMap::device_type,
-                       Kokkos::MemoryUnmanaged>& import_lids,
-    const bool unpack_pids,
-    const bool atomic)
+    const Kokkos::View<const LocalOrdinal*, Device, Kokkos::MemoryUnmanaged>& import_lids,
+    const bool unpack_pids)
 {
 
-  using num_packets_view_type = Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
-  using row_view_type = typename LocalGraph::row_map_type::non_const_type;
-  using entries_view_type = typename LocalGraph::entries_type::non_const_type;
-  using LO = typename LocalMap::local_ordinal_type;
-  using device_type = typename LocalMap::device_type;
+  using ImportLidsView = Kokkos::View<const LocalOrdinal*, Device, Kokkos::MemoryUnmanaged>;
+  using NumPacketsView = Kokkos::View<const size_t*, BufferDevice, Kokkos::MemoryUnmanaged>;
+  using LO = LocalOrdinal;
+  using device_type = Device;
   using execution_space = typename device_type::execution_space;
   using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
-  using unpack_functor_type = UnpackAndCombineFunctor<Packet,LocalGraph,LocalMap,BufferDevice>;
+  using unpack_functor_type = UnpackAndCombineFunctor<LO,Packet,RowView,IndicesView,Device,BufferDevice>;
 
   const char prefix[] =
     "Tpetra::Details::UnpackAndCombineCrsGraphImpl::unpackAndCombine: ";
@@ -365,14 +347,13 @@ unpackAndCombine(
       if (num_ent > running_max_num_ent) running_max_num_ent = num_ent;
     }, Kokkos::Max<size_t>(max_num_ent));
 
-  resizeRowPtrsAndIndices<row_view_type, entries_view_type, num_packets_view_type>(
-      row_ptrs_beg, row_ptrs_end, indices, num_packets_per_lid, unpack_pids);
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "HERE I AM!");
+  resizeRowPtrsAndIndices<RowView,IndicesView,NumPacketsView,ImportLidsView>(
+      row_ptrs_beg, row_ptrs_end, indices, num_packets_per_lid, import_lids, unpack_pids);
 
   // Now do the actual unpack!
-  unpack_functor_type f(row_ptrs_beg, row_ptrs_end, indices, local_map,
+  unpack_functor_type f(row_ptrs_beg, row_ptrs_end, indices,
       imports, num_packets_per_lid, import_lids, offsets,
-      max_num_ent, unpack_pids, atomic);
+      max_num_ent, unpack_pids);
 
   typename unpack_functor_type::value_type x;
   Kokkos::parallel_reduce(range_policy(0, static_cast<LO>(num_import_lids)), f, x);
@@ -841,8 +822,6 @@ unpackAndCombineIntoCrsArrays(
 ///   is not checked.  Any incoming indices are just inserted in to the graph.
 ///   graphs is
 ///
-/// \param atomic [in] whether or not do atomic adds/replaces in to the graph
-///
 /// This is the public interface to the unpack and combine machinery and
 /// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
@@ -851,31 +830,32 @@ unpackAndCombineIntoCrsArrays(
 template<class LO, class GO, class Node>
 void
 unpackCrsGraphAndCombine(
-    const CrsGraph<LO, GO, Node>& graph,
+    CrsGraph<LO, GO, Node>& graph,
     const Teuchos::ArrayView<const typename CrsGraph<LO,GO,Node>::packet_type>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
     size_t constantNumPackets,
     Distributor & distor,
-    CombineMode /* combineMode */,
-    const bool atomic)
+    CombineMode /* combineMode */)
 {
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!graph.isLocallyIndexed(), std::invalid_argument,
-      "Graph must be locally indexed");
+  TEUCHOS_TEST_FOR_EXCEPTION(!graph.isGloballyIndexed(), std::invalid_argument,
+      "Graph must be globally indexed!");
 
   using Kokkos::View;
+  using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
+  using graph_type = CrsGraph<LO,GO,Node>;
   using device_type = typename Node::device_type;
   using packet_type = typename CrsGraph<LO,GO,Node>::packet_type;
-  using local_graph_type = typename CrsGraph<LO, GO, Node>::local_graph_type;
   using buffer_device_type = typename CrsGraph<LO, GO, Node>::buffer_device_type;
-  static_assert(std::is_same<device_type, typename local_graph_type::device_type>::value,
-                 "Node::device_type and LocalGraph::device_type must be the same.");
   using execution_space = typename device_type::execution_space;
   typename execution_space::device_type outputDevice;
   using buffer_execution_space = typename buffer_device_type::execution_space;
   typename buffer_execution_space::device_type bufferOutputDevice;
   using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
+
+  using row_ptrs_type = typename graph_type::local_graph_type::row_map_type::non_const_type;
+  using indices_type = typename graph_type::t_GlobalOrdinal_1D;
 
   // Convert all Teuchos::Array to Kokkos::View.
 
@@ -897,60 +877,57 @@ unpackCrsGraphAndCombine(
         importLIDs.getRawPtr(), importLIDs.size(),
         true, "import_lids");
 
-  auto local_graph = graph.getLocalGraph();
-  auto local_col_map = graph.getColMap()->getLocalMap();
+  // mfh Could fix the use of protected data by adding a method
+  // to CrsGraph that returns the "local, globally indexed graph".
+  // However, this function needs to change those arrays anyway,
+  // so we might as well make this function a friend of CrsGraph.
 
-  // There are three cases addressed
-  //   1. Unpacked storage (the source graph does not have a valid local_graph_type)
-  //   2. Packed storage (the source graph has a valid local_graph_type)
-  typename local_graph_type::entries_type::non_const_type indices;
-  typename local_graph_type::row_map_type::non_const_type row_ptrs_beg;
-  typename local_graph_type::row_map_type::non_const_type row_ptrs_end;
-  bool has_valid_local_graph = false;
+  //FIXME (tjf 11 Oct 2018) need to use non-protected data
+  indices_type indices("indices", graph.k_gblInds1D_.extent(0));
+  Kokkos::deep_copy(indices, graph.k_gblInds1D_);
 
+  row_ptrs_type row_ptrs_beg("row_ptrs_beg", graph.k_rowPtrs_.extent(0));
+  Kokkos::deep_copy(row_ptrs_beg, graph.k_rowPtrs_);
+
+  const auto N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1); // TODO fix auto
+  row_ptrs_type row_ptrs_end("row_ptrs_end", N);
+
+  bool has_num_entries = false;
   if (graph.k_numRowEntries_.extent(0) > 0) {
-    // Case 1: Unpacked storage
-    indices = graph.k_lclInds1D_;
-    Kokkos::resize(row_ptrs_beg, graph.k_rowPtrs_.extent(0));
-    Kokkos::deep_copy(row_ptrs_beg, graph.k_rowPtrs_);
-
-    const auto N = row_ptrs_beg.extent(0);
-    Kokkos::resize(row_ptrs_end, N-1);
+    // Case 1: Packed storage
+    has_num_entries = true;
     auto num_row_entries = graph.k_numRowEntries_;
+    Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
+        KOKKOS_LAMBDA(const size_t i){
+          row_ptrs_end(i) = row_ptrs_beg(i) + num_row_entries(i);
+      });
+
+  } else {
+    // mfh If packed storage, don't need row_ptrs_end to be separate allocation;
+    // could just have it alias row_ptrs_beg+1.
+
+      // Case 2: Packed storage
     Kokkos::parallel_for("Fill end row pointers",
-        range_policy(0, N-1), KOKKOS_LAMBDA(const size_t i){
-        row_ptrs_end(i) = row_ptrs_beg(i) + num_row_entries(i);
-    });
-
-  } else if (local_graph.entries.extent(0) > 0) {
-      // Case 1: Unpacked storage
-
-    has_valid_local_graph = true;
-    indices = local_graph.entries;
-    Kokkos::resize(row_ptrs_beg, local_graph.row_map.extent(0));
-    Kokkos::deep_copy(row_ptrs_beg, local_graph.row_map);
-
-    const auto N = row_ptrs_beg.extent(0);
-    Kokkos::resize(row_ptrs_end, N-1);
-    Kokkos::parallel_for("Fill end row pointers",
-        range_policy(0, N-1), KOKKOS_LAMBDA(const size_t i){
+        range_policy(0, N), KOKKOS_LAMBDA(const size_t i){
         row_ptrs_end(i) = row_ptrs_beg(i+1);
     });
-  } else {
-    // FIXME:
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Unimplemented unpack case");
   }
 
   // Now do the actual unpack!
-  using local_map_type = decltype(local_col_map);
-  UnpackAndCombineCrsGraphImpl::unpackAndCombine<
-    packet_type,local_graph_type,local_map_type,buffer_device_type>(
-        row_ptrs_beg, row_ptrs_end, indices, local_col_map, imports_d,
-        num_packets_per_lid_d, import_lids_d, false, atomic);
+  unpackAndCombine<LO,packet_type,row_ptrs_type,indices_type,device_type,buffer_device_type>(
+        row_ptrs_beg, row_ptrs_end, indices, imports_d,
+        num_packets_per_lid_d, import_lids_d, false);
 
-  if (has_valid_local_graph) {
-    // Regenerate the local graph
+  // mfh Later, permit graph to be locally indexed, and check whether
+  // incoming column indices are in the column Map.  If not, error.
+  if (has_num_entries) {
+    Kokkos::parallel_for("Fill num entries",
+        range_policy(0, N), KOKKOS_LAMBDA(const size_t i){
+        graph.k_numRowEntries_(i) = row_ptrs_end(i) - row_ptrs_beg(i);
+    });
   }
+  graph.k_rowPtrs_ = row_ptrs_beg;
+  graph.k_gblInds1D_ = indices;
 
   return;
 }
@@ -958,7 +935,7 @@ unpackCrsGraphAndCombine(
 template<class LO, class GO, class Node>
 void
 unpackCrsGraphAndCombineNew(
-    const CrsGraph<LO, GO, Node>& sourceGraph,
+    CrsGraph<LO, GO, Node>& sourceGraph,
     const Kokkos::DualView<const typename CrsGraph<LO,GO,Node>::packet_type*,
                            typename CrsGraph<LO,GO,Node>::buffer_device_type>& imports,
     const Kokkos::DualView<const size_t*,
@@ -966,18 +943,22 @@ unpackCrsGraphAndCombineNew(
     const Kokkos::DualView<const LO*, typename Node::device_type>& importLIDs,
     const size_t constantNumPackets,
     Distributor& distor,
-    const CombineMode /* combineMode */,
-    const bool atomic)
+    const CombineMode /* combineMode */)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "METHOD NOT COMPLETE");
+  using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
   using Tpetra::Details::castAwayConstDualView;
   using Kokkos::View;
   using device_type = typename Node::device_type;
-  using crs_graph_type = CrsGraph<LO, GO, Node>;
-  using packet_type = typename crs_graph_type::packet_type;
-  using local_graph_type = typename crs_graph_type::local_graph_type;
-  using buffer_device_type = typename crs_graph_type::buffer_device_type;
+  using graph_type = CrsGraph<LO, GO, Node>;
+  using packet_type = typename graph_type::packet_type;
+  using local_graph_type = typename graph_type::local_graph_type;
+  using buffer_device_type = typename graph_type::buffer_device_type;
   using buffer_memory_space = typename buffer_device_type::memory_space;
   using memory_space = typename device_type::memory_space;
+
+  using row_ptrs_type = typename graph_type::local_graph_type::row_map_type::non_const_type;
+  using indices_type = typename graph_type::t_GlobalOrdinal_1D;
 
   static_assert(std::is_same<device_type, typename local_graph_type::device_type>::value,
                 "Node::device_type and LocalGraph::device_type must be "
@@ -1001,19 +982,14 @@ unpackCrsGraphAndCombineNew(
   }
   auto imports_d = imports.template view<buffer_memory_space>();
 
-  auto local_graph = sourceGraph.getLocalGraph();
-  auto local_col_map = sourceGraph.getColMap()->getLocalMap();
-  using local_map_type = decltype(local_col_map);
-
   // Now do the actual unpack!
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "METHOD NOT COMPLETE");
-  typename local_graph_type::entries_type::non_const_type indices;
-  typename local_graph_type::row_map_type::non_const_type row_ptrs_beg;
-  typename local_graph_type::row_map_type::non_const_type row_ptrs_end;
-  UnpackAndCombineCrsGraphImpl::unpackAndCombine<
-    packet_type,local_graph_type,local_map_type,buffer_device_type>(
-      row_ptrs_beg, row_ptrs_end, indices, local_col_map, imports_d,
-      num_packets_per_lid_d, import_lids_d, false, atomic);
+  // TJF: Should be grabbed from the Graph
+  indices_type indices;
+  row_ptrs_type row_ptrs_beg;
+  row_ptrs_type row_ptrs_end;
+  unpackAndCombine<LO,packet_type,row_ptrs_type,indices_type,device_type,buffer_device_type>(
+      row_ptrs_beg, row_ptrs_end, indices, imports_d,
+      num_packets_per_lid_d, import_lids_d, false);
 }
 
 /// \brief Special version of Tpetra::Details::unpackCrsGraphAndCombine
@@ -1269,25 +1245,23 @@ unpackAndCombineIntoCrsArrays(
 #define TPETRA_DETAILS_UNPACKCRSGRAPHANDCOMBINE_INSTANT( LO, GO, NT ) \
   template void \
   Details::unpackCrsGraphAndCombine<LO, GO, NT>( \
-    const CrsGraph<LO, GO, NT>&, \
+    CrsGraph<LO, GO, NT>&, \
     const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>&, \
     const Teuchos::ArrayView<const size_t>&, \
     const Teuchos::ArrayView<const LO>&, \
     size_t, \
     Distributor&, \
-    CombineMode, \
-    const bool); \
+    CombineMode); \
   template void \
   Details::unpackCrsGraphAndCombineNew<LO, GO, NT>( \
-    const CrsGraph<LO, GO, NT>&, \
+    CrsGraph<LO, GO, NT>&, \
     const Kokkos::DualView<const typename CrsGraph<LO,GO,NT>::packet_type*, \
                            typename CrsGraph<LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<const size_t*, typename CrsGraph<LO, GO, NT>::buffer_device_type>&, \
     const Kokkos::DualView<const LO*, NT::device_type>&, \
     const size_t, \
     Distributor&, \
-    const CombineMode, \
-    const bool); \
+    const CombineMode); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<LO, GO, NT>( \
     const CrsGraph<LO, GO, NT> &, \

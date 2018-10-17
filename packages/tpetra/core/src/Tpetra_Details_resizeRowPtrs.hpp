@@ -44,6 +44,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 /// \file Tpetra_Details_resizeRowPtr.hpp
 /// \brief Functions that resizes CSR row pointers and indices
@@ -54,86 +55,145 @@
 namespace Tpetra {
 namespace Details {
 
+namespace resize_ptrs_details {
 
-// Determine if row_ptrs and indices arrays need to be resized to accommodate
+template<class ViewType>
+ViewType empty_view(const std::string& name, const size_t& size) {
+  ViewType v(Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size);
+  return v;
+}
+
+// Determine if row_ptr and indices arrays need to be resized to accommodate
 // new entries
-template<class RowView, class EntriesView, class NumPacketsView>
-KOKKOS_FUNCTION void
-resizeRowPtrsAndIndices(RowView& row_ptrs_beg, RowView& row_ptrs_end, EntriesView& indices,
-                        const NumPacketsView& num_packets_per_lid, const bool unpack_pids)
+template<class RowPtr, class Indices, class NumPackets, class ImportLids>
+void
+pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
+               const NumPackets& num_packets_per_lid,
+               const ImportLids& import_lids,
+               const bool unpack_pids)
 {
+  using range = Kokkos::pair<typename RowPtr::value_type, typename RowPtr::value_type>;
+
+  // Create a mapping of {LID: extra space needed} to rapidly look up which LIDs
+  // need additional padding.
+  using key_type = typename ImportLids::non_const_value_type;
+  using val_type = typename NumPackets::non_const_value_type;
+  Kokkos::UnorderedMap<key_type, val_type> padding(import_lids.size());
+  Kokkos::parallel_for("Fill padding", import_lids.size(),
+      KOKKOS_LAMBDA(typename ImportLids::size_type i) {
+        padding.insert(import_lids(i), num_packets_per_lid(i));
+      }
+    );
 
   // Determine if the indices array is large enough
-  RowView entries_this_row("entries_this_row", num_packets_per_lid.size());
+  auto num_row = row_ptr_beg.size() - 1;
+  RowPtr entries_this_row("entries_this_row", num_row);
   Kokkos::deep_copy(entries_this_row, 0);
   size_t additional_size_needed = 0;
-  Kokkos::parallel_reduce("Determine additional size needed", num_packets_per_lid.size(),
+  Kokkos::parallel_reduce("Determine additional size needed", num_row,
     KOKKOS_LAMBDA(const int& i, size_t& ladditional_size_needed) {
-      size_t num_packets_this_lid = num_packets_per_lid(i);
-      size_t num_ent = (unpack_pids) ? num_packets_this_lid/2
-                                     : num_packets_this_lid;
-      auto allocated_this_row = row_ptrs_beg(i+1) - row_ptrs_beg(i);
-      auto used_this_row = row_ptrs_end(i) - row_ptrs_beg(i);
+
+      auto allocated_this_row = row_ptr_beg(i+1) - row_ptr_beg(i);
+      auto used_this_row = row_ptr_end(i) - row_ptr_beg(i);
       auto free_this_row = allocated_this_row - used_this_row;
-      auto n = (num_ent > free_this_row) ? num_ent - free_this_row : 0;
-      entries_this_row(i) = allocated_this_row + n;
-      ladditional_size_needed += n;
+      entries_this_row(i) = allocated_this_row;
+
+      auto k = padding.find(static_cast<key_type>(i));
+      if (padding.valid_at(k)) {
+        // Additional padding was requested for this LID
+        auto num_extra_this_lid = padding.value_at(k);
+        auto num_ent = (unpack_pids) ? num_extra_this_lid/2
+                                     : num_extra_this_lid;
+        auto n = (num_ent > free_this_row) ? num_ent - free_this_row : 0;
+        entries_this_row(i) += n;
+        ladditional_size_needed += n;
+      }
     }, additional_size_needed);
 
   if (additional_size_needed == 0) return;
 
-  // The row_ptrs and indices arrays must be resized
-  EntriesView indices_copy("", indices.size());
-  Kokkos::deep_copy(indices_copy, indices);
+  // The row_ptr and indices arrays must be resized
+  auto indices_new = empty_view<Indices>("ind new", indices.size()+additional_size_needed);
 
-  auto this_row_beg = row_ptrs_beg(0);
-  auto next_row_beg = row_ptrs_beg(1);
-  auto this_row_end = row_ptrs_end(0);
-  Kokkos::resize(indices, indices.size()+additional_size_needed);
-  Kokkos::deep_copy(indices, Teuchos::OrdinalTraits<typename EntriesView::value_type>::invalid());
-  for (size_t i=0; i<num_packets_per_lid.size()-1; i++) {
+  // mfh: Not so fussy about this not being a kernel initially,
+  // since we're adding a new feature upon which existing code does not rely,
+  // namely Export/Import to a StaticProfile CrsGraph.  However, watch out
+  // for fence()ing relating to UVM.
+  auto this_row_beg = row_ptr_beg(0);
+  auto this_row_end = row_ptr_end(0);
+  auto next_row_beg = row_ptr_beg(1);
+  for (typename RowPtr::size_type i=0; i<num_row-1; i++) {
 
     auto allocated_this_row = next_row_beg - this_row_beg;
     auto used_this_row = this_row_end - this_row_beg;
-    auto additional_entries_needed = entries_this_row(i) - allocated_this_row;
 
     // First, copy over indices for this row
-    const auto slice1 = std::pair<size_t,size_t>(this_row_beg, this_row_beg+used_this_row);
-    auto indices_copy_subview = subview(EntriesView(indices_copy), slice1);
+    auto indices_old_subview =
+      subview(indices, range(this_row_beg, this_row_beg+used_this_row));
+    auto indices_new_subview =
+      subview(indices_new, range(row_ptr_beg(i), row_ptr_beg(i)+used_this_row));
 
-    // subview of new indices array
-    const auto slice2 = std::pair<size_t,size_t>(row_ptrs_beg(i), row_ptrs_beg(i)+used_this_row);
-    auto indices_subview = subview(EntriesView(indices), slice2);
+    // just call memcpy; it works fine on device if this becomes a kernel
+    using value_type = typename Indices::non_const_value_type;
+    memcpy(indices_new_subview.data(), indices_old_subview.data(),
+           used_this_row * sizeof(value_type));
 
-    Kokkos::deep_copy(indices_subview, indices_copy_subview);
+    // TODO could this actually have extra entries at the end of each row?
+    // If yes, then fill those entries with an "invalid" value.
 
-    // Before modifying the row_ptrs arrays, save current beg, end for next iteration
-    this_row_beg = row_ptrs_beg(i+1);
-    next_row_beg = row_ptrs_beg(i+2);
-    this_row_end = row_ptrs_end(i+1);
+    // Before modifying the row_ptr arrays, save current beg, end for next iteration
+    this_row_beg = row_ptr_beg(i+1);
+    next_row_beg = row_ptr_beg(i+2);
+    this_row_end = row_ptr_end(i+1);
 
+    auto additional_entries_needed = entries_this_row(i) - allocated_this_row;
     if (additional_entries_needed <= 0) {
       // Nothing more to do
       continue;
     }
 
-    // Shift the row_ptrs array to accommodate the extra space needed
-    auto used_next_row = row_ptrs_end(i+1) - row_ptrs_beg(i+1);
-    row_ptrs_beg(i+1) = row_ptrs_beg(i) + entries_this_row(i);
-    row_ptrs_end(i+1) = row_ptrs_beg(i+1) + used_next_row;
+    TEUCHOS_TEST_FOR_EXCEPTION(!padding.exists(static_cast<key_type>(i)),
+      std::logic_error,
+      "Import LID " << i << " should not be requesting extra space!  "
+      "This exception should never be reached.  Please contact Tpetra team.");
+
+    // Shift the row_ptr array to accommodate the extra space needed
+    auto used_next_row = row_ptr_end(i+1) - row_ptr_beg(i+1);
+    // mfh: if we want to kernel-ize this, this would imply a scan
+    row_ptr_beg(i+1) = row_ptr_beg(i) + entries_this_row(i);
+    row_ptr_end(i+1) = row_ptr_beg(i+1) + used_next_row;
   }
+
   // Copy last row
   {
     auto used_this_row = this_row_end - this_row_beg;
-    auto n = row_ptrs_beg.extent(0);
-    const auto slice1 = std::pair<size_t,size_t>(this_row_beg, this_row_beg+used_this_row);
-    auto indices_copy_subview = subview(EntriesView(indices_copy), slice1);
-    const auto slice2 = std::pair<size_t,size_t>(row_ptrs_beg(n-2), row_ptrs_beg(n-2)+used_this_row);
-    auto indices_subview = subview(EntriesView(indices), slice2);
-    Kokkos::deep_copy(indices_subview, indices_copy_subview);
-    row_ptrs_beg(n-1) = indices.extent(0);
+    auto num_row = row_ptr_beg.extent(0) - 1;
+    auto indices_old_subview =
+      subview(indices, range(this_row_beg, this_row_beg+used_this_row));
+    auto idx = import_lids(import_lids.size()-1);
+    auto indices_new_subview =
+      subview(indices_new, range(row_ptr_beg(idx), row_ptr_beg(idx)+used_this_row));
+    Kokkos::deep_copy(indices_new_subview, indices_old_subview);
+    row_ptr_beg(num_row) = indices_new.extent(0);
   }
 
+  indices = indices_new;
+}
+} // namespace resize_ptrs_details
+
+// Determine if row_ptr and indices arrays need to be resized to accommodate
+// new entries
+template<class RowPtr, class Indices, class NumPackets, class ImportLids>
+void
+resizeRowPtrsAndIndices(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
+                        const NumPackets& num_packets_per_lid,
+                        const ImportLids& import_lids,
+                        const bool unpack_pids)
+{
+  using resize_ptrs_details::pad_csr_arrays;
+  pad_csr_arrays<RowPtr, Indices, NumPackets, ImportLids>(
+      row_ptr_beg, row_ptr_end, indices, num_packets_per_lid, import_lids,
+      unpack_pids);
 }
 
 } // namespace Details

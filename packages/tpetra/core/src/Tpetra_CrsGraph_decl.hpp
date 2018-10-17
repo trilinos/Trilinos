@@ -1315,7 +1315,8 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                   const typename local_graph_type::entries_type::non_const_type& columnIndices);
+                   const typename local_graph_type::entries_type::non_const_type& columnIndices,
+                   const bool overwrite=false);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
@@ -1327,7 +1328,8 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
-                   const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices);
+                   const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
+                   const bool overwrite=false);
 
     /// \brief Get a host view of the row offsets.
     ///
@@ -2170,12 +2172,12 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is locally indexed
-  public: // TJF FIXME
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
-  protected: // TJF FIXME
 
     //! Type of the k_gblInds1D_ array of global column indices.
+  public: // TJF FIXME
     typedef Kokkos::View<GlobalOrdinal*, execution_space> t_GlobalOrdinal_1D;
+  protected: // TJF FIXME
 
     /// \brief Global column indices for all rows.
     ///
@@ -2184,7 +2186,9 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is globally indexed
+  public: // TJF FIXME
     t_GlobalOrdinal_1D k_gblInds1D_;
+  protected: // TJF FIXME
 
     /// \brief Row offsets for "1-D" storage.
     ///
