@@ -133,6 +133,7 @@ namespace MueLu {
         if (j < as<int>(neighOfINode.length)) {
           // Assign to an adjacent aggregate
           vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
+          numNonAggregatedNodes--;
           failedToAggregate = false;
         } 
       }
