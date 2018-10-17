@@ -348,6 +348,10 @@ namespace Teuchos
   { SSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info); }
 
 
+  void LAPACK<int,float>::PTEQR(const char& COMPZ, const int& n, float* D, float* E, float* Z, const int& ldz, float* WORK, int* info) const
+  { SPTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info); }
+
+
   void LAPACK<int, float>::HSEQR(const char& JOB, const char& COMPZ, const int& n, const int& ilo, const int& ihi, float* H, const int& ldh, float* WR, float* WI, float* Z, const int& ldz, float* WORK, const int& lwork, int* info) const
   { SHSEQR_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPZ), &n, &ilo, &ihi, H, &ldh, WR, WI, Z, &ldz, WORK, &lwork, info); }
 
@@ -773,9 +777,11 @@ namespace Teuchos
 
 
   void LAPACK<int,double>::STEQR(const char& COMPZ, const int& n, double* D, double* E, double* Z, const int& ldz, double* WORK, int* info) const
-  {
-    DSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
-  }
+  { DSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info); }
+
+  
+  void LAPACK<int,double>::PTEQR(const char& COMPZ, const int& n, double* D, double* E, double* Z, const int& ldz, double* WORK, int* info) const
+  { DPTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info); }
 
 
   void LAPACK<int, double>::HSEQR(const char& JOB, const char& COMPZ, const int& n, const int& ilo, const int& ihi, double* H, const int& ldh, double* WR, double* WI, double* Z, const int& ldz, double* WORK, const int& lwork, int* info) const
@@ -1272,6 +1278,12 @@ namespace Teuchos
   }
 
 
+  void LAPACK<int,std::complex<float> >::PTEQR(const char& COMPZ, const int& n, float* D, float* E, std::complex<float>* Z, const int& ldz, float* WORK, int* info) const
+  {
+    CPTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
+  }
+
+
   void LAPACK<int,std::complex<float> >::HEEV(const char& JOBZ, const char& UPLO, const int& n, std::complex<float> * A, const int& lda, float*  W, std::complex<float> * WORK, const int& lwork, float* RWORK, int* info) const
   {
     CHEEV_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &n, A, &lda, W, WORK, &lwork, RWORK, info);
@@ -1712,6 +1724,12 @@ namespace Teuchos
   void LAPACK<int,std::complex<double> >::STEQR(const char& COMPZ, const int& n, double* D, double* E, std::complex<double>* Z, const int& ldz, double* WORK, int* info) const
   {
     ZSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
+  }
+
+
+  void LAPACK<int,std::complex<double> >::PTEQR(const char& COMPZ, const int& n, double* D, double* E, std::complex<double>* Z, const int& ldz, double* WORK, int* info) const
+  {
+    ZPTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
   }
 
 
