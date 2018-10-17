@@ -27,6 +27,11 @@ no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.
 whoami
 which -a env
 
+echo -e ""
+echo -e "Jenkins Environment Variables:"
+echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME}"
+echo -e ""
+
 ## Rather than do proper option handling right now I am just going to
 ##  test that all these environment variables are set.  Because getopt ;->
 : ${TRILINOS_SOURCE_REPO:?}
@@ -217,7 +222,10 @@ cmake --version
 
 module list
 
-echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+# This crashes for the serial case since MPI variables are not set
+if [ "*_SERIAL" != "${JOB_BASE_NAME:?}" ]; then
+  echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+fi
 
 CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"
