@@ -93,14 +93,14 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   case EX_ELEM_MAP: vobj = VAR_NAME_EM; break;
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, vobj, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -109,7 +109,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
   if (ent_ndx == -EX_LOOKUPFAIL) { /* could not find the element block id */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s id %" PRId64 " not found in file id %d",
              ex_name_of_object(obj_type), entity_id, exoid);
-    ex_err(__func__, errmsg, EX_LOOKUPFAIL);
+    ex_err_fn(exoid, __func__, errmsg, EX_LOOKUPFAIL);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

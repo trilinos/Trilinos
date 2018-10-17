@@ -73,7 +73,7 @@ static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimensi
     if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", name,
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
     *value = tmp;
@@ -143,7 +143,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
   if (info->num_elem_blk == 0 && info->num_elem > 0) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate number of element blocks in file id %d", exoid);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -188,7 +188,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
 
   if ((status = nc_inq_att(rootid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no title in file id %d", rootid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
   }
 
   /* Check title length to avoid overrunning clients memory space; include
@@ -208,7 +208,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
     }
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get title in file id %d", rootid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
