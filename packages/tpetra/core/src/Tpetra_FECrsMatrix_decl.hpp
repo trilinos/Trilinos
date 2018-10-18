@@ -219,6 +219,7 @@ class FECrsMatrix :
                          const Teuchos::ArrayView<const Scalar>& vals,
                          const bool atomic = useAtomicUpdatesByDefault);
 
+
     /// \brief Epetra compatibility version of sumIntoGlobalValues
     ///   (see above), that takes input as raw pointers instead of
     ///   Kokkos::View.
@@ -247,6 +248,7 @@ class FECrsMatrix :
                          const Scalar vals[],
                          const GlobalOrdinal cols[],
                          const bool atomic = useAtomicUpdatesByDefault);
+
 
     /// \brief Sum into one or more sparse matrix entries, using global
     ///   row and column indices.
@@ -283,16 +285,19 @@ class FECrsMatrix :
     ///
     /// This method has the same preconditions and return value
     /// meaning as replaceGlobalValues() (which see).
-    template<class GlobalIndicesViewType,
-         class ImplScalarViewType>
+    #if 0
+    template<class GlobalIndicesViewType, class ImplScalarViewType>
     LocalOrdinal
     sumIntoGlobalValues (const GlobalOrdinal globalRow,
                          const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
                          const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
                          const bool atomic = useAtomicUpdatesByDefault) const;
+    #endif
+
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar& alpha);
+
 
     //@}
     //! @name Transformational methods
@@ -345,9 +350,11 @@ class FECrsMatrix :
 
 
   private:
+
     // We forbid copy construction by declaring this method private
     // and not implementing it.
     FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
+
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
