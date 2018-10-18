@@ -182,7 +182,11 @@ private:
     const SC one  = STS::one ();
     const bool computeRitzValues = true;
 
+    // initialize output parameters
     SolverOutput<SC> output {};
+    output.converged = false;
+    output.numRests = 0;
+    output.numIters = 0;
 
     if (outPtr != nullptr) {
       *outPtr << "GmresSstep" << endl;
@@ -212,10 +216,6 @@ private:
     vec_type MP (B.getMap ());
     MV  Q (B.getMap (), restart+1);
     vec_type P = * (Q.getVectorNonConst (0));
-
-    output.converged = false;
-    output.numRests = 0;
-    output.numIters = 0;
 
     // Compute initial residual (making sure R = B - Ax)
     A.apply (X, R);

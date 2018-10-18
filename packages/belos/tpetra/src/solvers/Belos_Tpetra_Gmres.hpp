@@ -469,7 +469,13 @@ protected:
     int restart = input.resCycle;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
+
+    // initialize output parameters
     SolverOutput<SC> output {};
+    output.converged = false;
+    output.numRests = 0;
+    output.numIters = 0;
+
 
     if (outPtr != nullptr) {
       *outPtr << "Gmres" << endl;
@@ -525,11 +531,6 @@ protected:
     dense_matrix_type  h (restart+1, 1, true); // for reorthogonalization
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
-
-    // initialize output parameters
-    output.converged = false;
-    output.numRests = 0;
-    output.numIters = 0;
 
     // initialize starting vector
     P.scale (one / b_norm);
