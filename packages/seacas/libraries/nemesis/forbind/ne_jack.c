@@ -111,9 +111,9 @@ static void ex_fcdcpy(char *fstring, size_t fslen, char *sstring)
 {
   size_t i, len = strlen(sstring);
 
-  for (i           = 0; i < len; i++)
+  for (i = 0; i < len; i++)
     *(fstring + i) = *(sstring + i);
-  for (i           = len; i < fslen; i++)
+  for (i = len; i < fslen; i++)
     *(fstring + i) = ' ';
 }
 
