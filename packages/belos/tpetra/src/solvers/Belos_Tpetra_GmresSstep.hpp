@@ -192,49 +192,6 @@ private:
       *outPtr << input;
     }
 
-    mag_type b_norm;  // initial residual norm
-    mag_type b0_norm; // initial residual norm, not left preconditioned
-    mag_type r_norm;
-    vec_type R (B.getMap ());
-    vec_type MP (B.getMap ());
-    MV  Q (B.getMap (), restart+1);
-    vec_type P = * (Q.getVectorNonConst (0));
-
-    // initial residual (making sure R = B - Ax)
-    if (input.precoSide == "right") {
-      M.apply (X, MP);
-      A.apply (MP, R);
-    }
-    else {
-      A.apply (X, R);
-    }
-    R.update (one, B, -one);
-    b0_norm = R.norm2 (); // residual norm, not preconditioned
-
-    if (input.precoSide == "left") {
-      M.apply (R, P);
-      b_norm = P.norm2 (); // residual norm, left-preconditioned
-    }
-    else {
-      Tpetra::deep_copy (P, R);
-      b_norm = b0_norm;
-    }
-    mag_type metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
-
-    if (metric <= input.tol) {
-      if (outPtr != nullptr) {
-        *outPtr << "Initial guess' residual norm " << b_norm
-                << " meets tolerance " << input.tol << endl;
-      }
-      output.absResid = b_norm;
-      output.relResid = STM::one ();
-      output.numIters = 0;
-      output.converged = true;
-      // return residual norm as B
-      Tpetra::deep_copy (B, P);
-      return output;
-    }
-
     Teuchos::BLAS<LO, SC> blas;
     Teuchos::LAPACK<LO, SC> lapack;
     dense_matrix_type  H (restart+1, restart, true); // Hessenburg matrix
@@ -245,13 +202,46 @@ private:
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
 
+    mag_type b_norm;  // initial residual norm
+    mag_type b0_norm; // initial residual norm, not left preconditioned
+    mag_type r_norm;
+    mag_type metric;
+    vec_type R (B.getMap ());
+    vec_type MP (B.getMap ());
+    MV  Q (B.getMap (), restart+1);
+    vec_type P = * (Q.getVectorNonConst (0));
+
     output.converged = false;
     output.numRests = 0;
     output.numIters = 0;
 
-    // Invoke standard Gmres for the first restart cycle, to compute
-    // Ritz values for use as Newton shifts
-    {
+    // Compute initial residual (making sure R = B - Ax)
+    A.apply (X, R);
+    R.update (one, B, -one);
+    b0_norm = R.norm2 (); // initial residual norm, not preconditioned
+    if (input.precoSide == "left") {
+      M.apply (R, P);
+      r_norm = P.norm2 (); // initial residual norm, left-preconditioned
+    } else {
+      r_norm = b0_norm;
+    }
+    b_norm = r_norm;
+
+    metric = this->getConvergenceMetric (b0_norm, b0_norm, input);
+    if (metric <= input.tol) {
+      if (outPtr != nullptr) {
+        *outPtr << "Initial guess' residual norm " << b_norm
+                << " meets tolerance " << input.tol << endl;
+      }
+      output.absResid = r_norm;
+      output.relResid = r_norm / b0_norm;
+      output.converged = true;
+      // Return residual norm as B
+      Tpetra::deep_copy (B, P);
+      return output;
+    } else if (1) {
+      // Invoke standard Gmres for the first restart cycle, to compute
+      // Ritz values for use as Newton shifts
       if (outPtr != nullptr) {
         *outPtr << "Run standard GMRES for first restart cycle" << endl;
       }
@@ -259,28 +249,31 @@ private:
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = true;
 
-      Tpetra::deep_copy (B, R);
+      Tpetra::deep_copy (R, B);
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
                                                input_gmres);
       if (output.converged) {
         return output; // standard GMRES converged
       }
+
       if (input.precoSide == "left") {
         M.apply (R, P);
         r_norm = P.norm2 (); // residual norm
       }
       else {
-        Tpetra::deep_copy (P, R);
         r_norm = output.absResid;
       }
       output.numRests++;
-      metric = this->getConvergenceMetric (r_norm, b0_norm, input);
     }
-    // initialize starting vector
+
+    // Initialize starting vector
+    if (input.precoSide != "left") {
+      Tpetra::deep_copy (P, R);
+    }
     P.scale (one / r_norm);
     y[0] = r_norm;
 
-    // main loop
+    // Main loop
     while (output.numIters < input.maxNumIters && ! output.converged) {
       if (outPtr != nullptr) {
         *outPtr << "Restart cycle " << output.numRests << ":" << endl;
@@ -305,7 +298,7 @@ private:
         }
         Indent indent3 (outPtr);
 
-        // compute matrix powers
+        // Compute matrix powers
         for (step=0; step < stepSize && iter+step < restart; step++) {
           if (outPtr != nullptr) {
             *outPtr << "step=" << step
@@ -329,7 +322,7 @@ private:
             M.apply (MP, AP);
           }
           // Shift for Newton basis
-          if ( int (output.ritzValues.size()) >= step) {
+          if ( int (output.ritzValues.size()) > step) {
             //AP.update (-output.ritzValues(step), P, one);
             const complex_type theta = output.ritzValues[step];
             UpdateNewton<SC, MV>::updateNewtonV(iter+step, Q, theta);
@@ -366,7 +359,7 @@ private:
         else {
           metric = STM::zero ();
         }
-      } // end of restart cycle
+      } // End of restart cycle
 
       // Update solution
       blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,
@@ -378,7 +371,6 @@ private:
       if (input.precoSide == "right") {
         dense_vector_type y_iter (Teuchos::View, y.values (), iter);
 
-        //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
         MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
         M.apply (R, MP);
         X.update (one, MP, one);
@@ -386,7 +378,6 @@ private:
       else {
         dense_vector_type y_iter (Teuchos::View, y.values (), iter);
 
-        //MVT::MvTimesMatAddMv (one, *Qj, y, one, X);
         MVT::MvTimesMatAddMv (one, *Qj, y_iter, one, X);
       }
       // Compute real residual (not-preconditioned)
@@ -417,7 +408,7 @@ private:
       }
     }
 
-    // return residual norm as B
+    // Return residual norm as B
     Tpetra::deep_copy (B, P);
 
     if (outPtr != nullptr) {
