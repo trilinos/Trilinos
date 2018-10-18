@@ -846,8 +846,8 @@ unpackCrsGraphAndCombine(
   using UnpackAndCombineCrsGraphImpl::unpackAndCombine;
   using graph_type = CrsGraph<LO,GO,Node>;
   using device_type = typename Node::device_type;
-  using packet_type = typename CrsGraph<LO,GO,Node>::packet_type;
-  using buffer_device_type = typename CrsGraph<LO, GO, Node>::buffer_device_type;
+  using packet_type = typename graph_type::packet_type;
+  using buffer_device_type = typename graph_type::buffer_device_type;
   using execution_space = typename device_type::execution_space;
   typename execution_space::device_type outputDevice;
   using buffer_execution_space = typename buffer_device_type::execution_space;
@@ -958,7 +958,8 @@ unpackCrsGraphAndCombineNew(
   using memory_space = typename device_type::memory_space;
 
   using row_ptrs_type = typename graph_type::local_graph_type::row_map_type::non_const_type;
-  using indices_type = typename graph_type::t_GlobalOrdinal_1D;
+  using execution_space = typename device_type::execution_space;
+  using indices_type =  Kokkos::View<GO*, execution_space>;
 
   static_assert(std::is_same<device_type, typename local_graph_type::device_type>::value,
                 "Node::device_type and LocalGraph::device_type must be "

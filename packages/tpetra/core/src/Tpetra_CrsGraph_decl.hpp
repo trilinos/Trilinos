@@ -81,7 +81,17 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
-  } // namespace Details
+    template<class LO, class GO, class NT>
+    void
+    unpackCrsGraphAndCombine(
+        CrsGraph<LO, GO, NT>& graph,
+        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        const Teuchos::ArrayView<const LO>& importLIDs,
+        size_t constantNumPackets,
+        Distributor & distor,
+        CombineMode combineMode);
+      } // namespace Details
 
   namespace { // (anonymous)
 
@@ -1521,6 +1531,17 @@ namespace Tpetra {
                                                                  typename CrsGraphType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
+    template<class LO, class GO, class NT>
+    friend void
+    ::Tpetra::Details::unpackCrsGraphAndCombine(
+        CrsGraph<LO, GO, NT>& graph,
+        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        const Teuchos::ArrayView<const LO>& importLIDs,
+        size_t constantNumPackets,
+        Distributor & distor,
+        CombineMode combineMode);
+
   public:
     /// \brief Import from <tt>this</tt> to the given destination
     ///   graph, and make the result fill complete.
@@ -2175,9 +2196,7 @@ namespace Tpetra {
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
-  public: // TJF FIXME
     typedef Kokkos::View<GlobalOrdinal*, execution_space> t_GlobalOrdinal_1D;
-  protected: // TJF FIXME
 
     /// \brief Global column indices for all rows.
     ///
@@ -2186,9 +2205,7 @@ namespace Tpetra {
     ///   - The calling process has a nonzero number of entries
     ///   - The graph has StaticProfile (1-D storage)
     ///   - The graph is globally indexed
-  public: // TJF FIXME
     t_GlobalOrdinal_1D k_gblInds1D_;
-  protected: // TJF FIXME
 
     /// \brief Row offsets for "1-D" storage.
     ///
@@ -2214,9 +2231,7 @@ namespace Tpetra {
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
-  public: // TJF FIXME
     typename local_graph_type::row_map_type::const_type k_rowPtrs_;
-  protected: // TJF FIXME
 
     //@}
     /// \name 2-D storage (DynamicProfile) data structures
@@ -2283,9 +2298,7 @@ namespace Tpetra {
     /// "Optimize Storage" parameter is set to \c true.
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-  public: // TJF FIXME
     num_row_entries_type k_numRowEntries_;
-  protected: // TJF FIXME
 
     //@}
 

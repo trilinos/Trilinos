@@ -55,7 +55,7 @@
 namespace Tpetra {
 namespace Details {
 
-namespace resize_ptrs_details {
+namespace pad_csr_details {
 
 template<class ViewType>
 ViewType empty_view(const std::string& name, const size_t& size) {
@@ -161,7 +161,7 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
   }
   indices = indices_new;
 }
-} // namespace resize_ptrs_details
+} // namespace pad_csr_details
 
 // Determine if row_ptr and indices arrays need to be resized to accommodate
 // new entries
@@ -172,7 +172,7 @@ resizeRowPtrsAndIndices(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indic
                         const ImportLids& import_lids,
                         const bool unpack_pids)
 {
-  using resize_ptrs_details::pad_csr_arrays;
+  using pad_csr_details::pad_csr_arrays;
   pad_csr_arrays<RowPtr, Indices, NumPackets, ImportLids>(
       row_ptr_beg, row_ptr_end, indices, num_packets_per_lid, import_lids,
       unpack_pids);
