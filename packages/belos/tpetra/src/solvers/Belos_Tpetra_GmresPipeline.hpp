@@ -55,6 +55,8 @@ private:
     const SC one  = STS::one ();
     const mag_type eps = STS::eps ();
     const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
+    const bool computeRitzValues = false;
+
     SolverOutput<SC> output {};
 
     Teuchos::BLAS<LO ,SC> blas;
@@ -98,7 +100,7 @@ private:
 
     // Invoke standard Gmres for the first restart cycle, to compute
     // Ritz values as Newton shifts
-    {
+    if (computeRitzValues) {
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = true;

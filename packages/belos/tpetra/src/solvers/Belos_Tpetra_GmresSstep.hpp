@@ -180,6 +180,8 @@ private:
     int step = stepSize;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
+    const bool computeRitzValues = true;
+
     SolverOutput<SC> output {};
 
     if (outPtr != nullptr) {
@@ -239,7 +241,7 @@ private:
       // Return residual norm as B
       Tpetra::deep_copy (B, P);
       return output;
-    } else if (1) {
+    } else if (computeRitzValues) {
       // Invoke standard Gmres for the first restart cycle, to compute
       // Ritz values for use as Newton shifts
       if (outPtr != nullptr) {
