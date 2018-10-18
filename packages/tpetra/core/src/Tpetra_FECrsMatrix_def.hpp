@@ -48,6 +48,83 @@
 
 namespace Tpetra {
 
+explicit FECrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
+                      const Teuchos::RCP<const crs_graph_type>& offRankGraph,
+                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+{
+
+}
+
+
+virtual ~CrsMatrix ()
+{
+
+}
+
+
+LocalOrdinal
+sumIntoGlobalValues (const GlobalOrdinal globalRow,
+                     const Teuchos::ArrayView<const GlobalOrdinal>& cols,
+                     const Teuchos::ArrayView<const Scalar>& vals,
+                     const bool atomic = useAtomicUpdatesByDefault)
+{
+
+}
+
+
+LocalOrdinal
+sumIntoGlobalValues (const GlobalOrdinal globalRow,
+                     const LocalOrdinal numEnt,
+                     const Scalar vals[],
+                     const GlobalOrdinal cols[],
+                     const bool atomic = useAtomicUpdatesByDefault)
+{
+
+}
+
+
+template<class GlobalIndicesViewType, class ImplScalarViewType>
+LocalOrdinal
+sumIntoGlobalValues (const GlobalOrdinal globalRow,
+                     const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
+                     const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
+                     const bool atomic = useAtomicUpdatesByDefault)
+{
+
+}
+
+
+void setAllToScalar (const Scalar& alpha)
+{
+
+}
+
+
+void globalAssemble()
+{
+
+}
+
+
+void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+{
+
+}
+
+
+FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+{
+
+}
+
+
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+{
+
+}
+
+
 
 
 
