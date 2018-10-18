@@ -223,6 +223,7 @@ cmake --version
 module list
 
 # This crashes for the serial case since MPI variables are not set
+# - See Issue #3625
 if [ "*_SERIAL" != "${JOB_BASE_NAME:?}" ]; then
   echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
