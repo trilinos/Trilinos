@@ -72,7 +72,7 @@ using Tpetra::Details::unpackCrsGraphAndCombine;
 using Tpetra::Details::resizeRowPtrsAndIndices;
 using std::endl;
 
-TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices)
+TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
 {
   typedef typename Tpetra::Map<>::device_type device_type;
   using ordinal_type = size_t;
@@ -137,6 +137,71 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices)
   }
 }
 
+TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
+{
+  typedef typename Tpetra::Map<>::device_type device_type;
+  using ordinal_type = size_t;
+  using view_type = Kokkos::View<ordinal_type*, device_type>;
+
+  auto row_ptrs_beg = view_type("beg", 4);
+  auto row_ptrs_end = view_type("end", 3);
+  auto indices = view_type("indices", 9);
+
+  // Row 1, 3 allocations, 3 used
+  row_ptrs_beg(0) = 0; row_ptrs_end(0) = 3;
+  indices(0) = 1; indices(1) = 2; indices(2) = 3;  // Row 1
+
+  // Row 2, 3 allocations only 1 used
+  row_ptrs_beg(1) = 3; row_ptrs_end(1) = 4;
+  indices(3) = 4;
+
+  // Row 3, 3 allocations, only 2 used
+  row_ptrs_beg(2) = 6; row_ptrs_end(2) = 8;
+  indices(6) = 7; indices(7) = 8;
+
+  row_ptrs_beg(3) = 9;
+
+  // Import 5 extra values in to Row 1 and 3 extra in to Row 3
+  auto import_lids = view_type("import lids", 2);
+  auto num_packets_per_lid = view_type("num packets", 2);
+
+  // Import LIDs not ordered
+  import_lids(0) = 2;
+  num_packets_per_lid(0) = 3;
+
+  import_lids(1) = 0;
+  num_packets_per_lid(1) = 5;
+
+  // could we just let this function deduce its template parameters?
+  resizeRowPtrsAndIndices(row_ptrs_beg, row_ptrs_end, indices,
+                          num_packets_per_lid, import_lids, false);
+
+  // Check row offsets
+  TEST_ASSERT(row_ptrs_beg(0) == 0);
+  TEST_ASSERT(row_ptrs_beg(1) == 8);
+  TEST_ASSERT(row_ptrs_beg(2) == 11);
+  TEST_ASSERT(row_ptrs_beg(3) == 16);
+  TEST_ASSERT(indices.size() == 16);
+
+  TEST_ASSERT(row_ptrs_end(0) == 3);
+  TEST_ASSERT(row_ptrs_end(1) == 9);
+  TEST_ASSERT(row_ptrs_end(2) == 13);
+
+  // Row 1
+  TEST_ASSERT(indices(0) == 1);
+  TEST_ASSERT(indices(1) == 2);
+  TEST_ASSERT(indices(2) == 3);
+  // 5 extra entries in Row 1
+
+  // Row 2
+  TEST_ASSERT(indices(8) == 4);
+  // 2 unused indices in Row 2
+
+  // Row 2
+  TEST_ASSERT(indices(11) == 7);
+  TEST_ASSERT(indices(12) == 8);
+
+}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT)
 {

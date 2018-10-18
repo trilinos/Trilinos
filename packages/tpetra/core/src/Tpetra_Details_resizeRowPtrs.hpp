@@ -112,7 +112,7 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
 
   if (additional_size_needed == 0) return;
 
-  // The row_ptr and indices arrays must be resized
+  // The indices array must be resized and the row_ptr arrays shuffled
   auto indices_new = empty_view<Indices>("ind new", indices.size()+additional_size_needed);
 
   // mfh: Not so fussy about this not being a kernel initially,
@@ -121,13 +121,10 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
   // for fence()ing relating to UVM.
   auto this_row_beg = row_ptr_beg(0);
   auto this_row_end = row_ptr_end(0);
-  auto next_row_beg = row_ptr_beg(1);
   for (typename RowPtr::size_type i=0; i<num_row-1; i++) {
 
-    auto allocated_this_row = next_row_beg - this_row_beg;
-    auto used_this_row = this_row_end - this_row_beg;
-
     // First, copy over indices for this row
+    auto used_this_row = this_row_end - this_row_beg;
     auto indices_old_subview =
       subview(indices, range(this_row_beg, this_row_beg+used_this_row));
     auto indices_new_subview =
@@ -143,40 +140,25 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
 
     // Before modifying the row_ptr arrays, save current beg, end for next iteration
     this_row_beg = row_ptr_beg(i+1);
-    next_row_beg = row_ptr_beg(i+2);
     this_row_end = row_ptr_end(i+1);
 
-    auto additional_entries_needed = entries_this_row(i) - allocated_this_row;
-    if (additional_entries_needed <= 0) {
-      // Nothing more to do
-      continue;
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(!padding.exists(static_cast<key_type>(i)),
-      std::logic_error,
-      "Import LID " << i << " should not be requesting extra space!  "
-      "This exception should never be reached.  Please contact Tpetra team.");
-
-    // Shift the row_ptr array to accommodate the extra space needed
     auto used_next_row = row_ptr_end(i+1) - row_ptr_beg(i+1);
-    // mfh: if we want to kernel-ize this, this would imply a scan
     row_ptr_beg(i+1) = row_ptr_beg(i) + entries_this_row(i);
     row_ptr_end(i+1) = row_ptr_beg(i+1) + used_next_row;
   }
-
-  // Copy last row
   {
-    auto used_this_row = this_row_end - this_row_beg;
-    auto num_row = row_ptr_beg.extent(0) - 1;
+    row_ptr_beg(num_row) = indices_new.size();
+    // Copy indices for last row
+    auto n = num_row - 1;
+    auto used_this_row = row_ptr_end(n) - row_ptr_beg(n);
     auto indices_old_subview =
       subview(indices, range(this_row_beg, this_row_beg+used_this_row));
-    auto idx = import_lids(import_lids.size()-1);
     auto indices_new_subview =
-      subview(indices_new, range(row_ptr_beg(idx), row_ptr_beg(idx)+used_this_row));
-    Kokkos::deep_copy(indices_new_subview, indices_old_subview);
-    row_ptr_beg(num_row) = indices_new.extent(0);
+      subview(indices_new, range(row_ptr_beg(n), row_ptr_beg(n)+used_this_row));
+    using value_type = typename Indices::non_const_value_type;
+    memcpy(indices_new_subview.data(), indices_old_subview.data(),
+           used_this_row * sizeof(value_type));
   }
-
   indices = indices_new;
 }
 } // namespace resize_ptrs_details
