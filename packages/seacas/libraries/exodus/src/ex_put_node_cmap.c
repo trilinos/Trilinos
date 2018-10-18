@@ -79,7 +79,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, varidx, processor) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_N_COMM_INFO_IDX, exoid);
-    ex_err(__func__, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -89,7 +89,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find index for variable \"%s\" in file ID %d", VAR_N_COMM_IDS,
              exoid);
-    ex_err(__func__, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -100,7 +100,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if ((status = nc_inq_varid(exoid, VAR_N_COMM_STAT, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_N_COMM_STAT, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -108,7 +108,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if ((status = nc_get_var1_int(exoid, varid, start, &value)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to get variable \"%s\" from file ID %d",
              VAR_N_COMM_STAT, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -120,7 +120,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if (ex_get_idx(exoid, VAR_N_COMM_DATA_IDX, varidx, map_idx) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_N_COMM_DATA_IDX, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -131,7 +131,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
     if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get dimension ID for \"%s\" in file ID %d",
                DIM_NCNT_CMAP, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -139,7 +139,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NCNT_CMAP,
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -153,7 +153,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if ((status = nc_inq_varid(exoid, VAR_N_COMM_NIDS, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_N_COMM_NIDS, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -167,7 +167,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
     fprintf(stderr, "Start, Count = %" ST_ZU "\t%" ST_ZU "\n", start[0], count[0]);
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output vector \"%s\" in file ID %d",
              VAR_N_COMM_NIDS, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -175,7 +175,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if ((status = nc_inq_varid(exoid, VAR_N_COMM_PROC, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_N_COMM_PROC, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -188,7 +188,7 @@ int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" in file ID %d",
              VAR_N_COMM_PROC, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

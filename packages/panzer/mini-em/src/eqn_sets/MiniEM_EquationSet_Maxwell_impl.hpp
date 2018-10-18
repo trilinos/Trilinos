@@ -16,6 +16,7 @@
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Integrator_TransientBasisTimesScalar.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
+#include "Panzer_Integrator_BasisTimesTensorTimesVector.hpp"
 #include "Panzer_Integrator_CurlBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
@@ -39,7 +40,7 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
     /*  Equations are
-     *   eps dE/dt = 1/mu \nabla \times B - J - sigma E
+     *   epsilon dE/dt = 1/mu \nabla \times B - J - sigma E
      *   dB/dt = - \nabla \times E
      *
      *   in weak form
@@ -49,6 +50,9 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Model ID","","Closure model id associated with this equation set");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",2,"Order of the integration");
+    valid_parameters.set("Permittivity","epsilon","Permittivity");
+    valid_parameters.set("Conductivity","sigma","Conductivity");
+    valid_parameters.set("Inverse Permeability","1/mu","Inverse Permeability");
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -79,6 +83,9 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
     this->addDOFTimeDerivative(m_Bfield_dof_name);
   }
 
+  permittivity_ = params->get<std::string>("Permittivity");
+  conductivity_ = params->get<std::string>("Conductivity");
+  inverse_permeability_ = params->get<std::string>("Inverse Permeability");
   this->addClosureModel(model_id);
 
   this->setupDOFs();
@@ -111,7 +118,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Basis", basis);
       p.set("IR", ir);
       p.set("Multiplier", 1.0);
-      const std::vector<std::string> fieldMultiplier = {"PERMITTIVITY"};
+      const std::vector<std::string> fieldMultiplier = {permittivity_};
       p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
 
       RCP< PHX::Evaluator<panzer::Traits> > op =
@@ -127,12 +134,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Value Name", m_Efield_dof_name);
       p.set("Basis", basis);
       p.set("IR", ir);
-      p.set("Multiplier", 1.0);
-      const std::vector<std::string> fieldMultiplier = {"CONDUCTIVITY"};
-      p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
-
-      RCP< PHX::Evaluator<panzer::Traits> > op =
-          rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+      p.set("Tensor Name", conductivity_);
+      RCP<PHX::Evaluator<panzer::Traits> > op =
+        rcp(new panzer::Integrator_BasisTimesTensorTimesVector<EvalT, panzer::Traits>(p));
 
       this->template registerEvaluator<EvalT>(fm, op);
       residual_operator_names.push_back(resid);
@@ -146,7 +150,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       string resName("RESIDUAL_" + m_Efield_dof_name),
              valName(m_Bfield_dof_name);
       double multiplier(-1.0);
-      std::vector<std::string> fieldMultiplier = {"INVERSE_PERMEABILITY"};
+      std::vector<std::string> fieldMultiplier = {inverse_permeability_};
       RCP<Evaluator<Traits>> op = rcp(new
         Integrator_CurlBasisDotVector<EvalT, Traits>(
         EvaluatorStyle::CONTRIBUTES, resName, valName, *basis, *ir,

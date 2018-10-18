@@ -73,7 +73,7 @@ public:
   /// \brief The specialization of Map used by this class and subclasses.
   ///
   /// The initial two colons avoid confusion between Tpetra::Map and
-  /// Tpetra::Details::Map.
+  /// Tpetra::Detaills::Map.
   typedef ::Tpetra::Map<LO, GO, NT> map_type;
 
   /// \brief Number of initial identical IDs.

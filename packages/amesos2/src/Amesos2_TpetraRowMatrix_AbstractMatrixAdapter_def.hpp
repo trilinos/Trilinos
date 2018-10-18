@@ -66,16 +66,7 @@ namespace Amesos2 {
     DerivedMat>::AbstractConcreteMatrixAdapter(RCP<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > m)
       : MatrixAdapter<DerivedMat>(Teuchos::rcp_static_cast<DerivedMat>(m))
   {
-     auto *crsptr = 
-      dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> *> (this->mat_.getRawPtr());
-    auto * nc_crsptr = const_cast<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> *>(crsptr);
-    if(nc_crsptr != nullptr) {
-      auto const crsgraph_ptr = nc_crsptr->getCrsGraph().getRawPtr();
-      auto nc_crsgraph_ptr = const_cast< Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> * > (crsgraph_ptr);
-      nc_crsgraph_ptr->computeGlobalConstants(false);
-    }
-    
-
+    // anything else? probs not
   }
 
   // implementation functions

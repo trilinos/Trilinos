@@ -345,35 +345,12 @@ std::string Chebyshev<MatrixType>::description () const {
     out << "Matrix: null";
   }
   else {
-      // auto mx = impl_.getMatrix ();
-      // auto mxptr = mx.getRawPtr();
-      // const Tpetra::CrsMatrix<typename MatrixType::scalar_type,
-      // 			typename MatrixType::local_ordinal_type,
-      // 			typename MatrixType::global_ordinal_type,
-      // 			typename MatrixType::node_type> *crsptr
-      // 	  = dynamic_cast<const Tpetra::CrsMatrix<typename MatrixType::scalar_type,
-      // 					   typename MatrixType::local_ordinal_type,
-      // 					   typename MatrixType::global_ordinal_type,
-      // 					   typename MatrixType::node_type> *> (mxptr);
-      auto crsptr = getCrsMatrix();
-      if(crsptr.is_null())  {
-	  out << "Global matrix dimensions: ["
-	      << impl_.getMatrix ()->getGlobalNumRows () << ", "
-	      << impl_.getMatrix ()->getGlobalNumCols () << "]"
-	      << ", Global nnz: " << impl_.getMatrix ()->getGlobalNumEntries();
-      }
-      else {	 
-	  if( crsptr-> haveGlobalConstants()) {
-	      out << "Global matrix dimensions: ["
-		  << crsptr->getGlobalNumRows () << ", "
-		  << crsptr->getGlobalNumCols () << "]"
-		  << ", Global nnz: " << crsptr->getGlobalNumEntries();
-	  }
-	  else {
-	      out << "Global Constants not Computed ";
-	  }
-      }
+    out << "Global matrix dimensions: ["
+        << impl_.getMatrix ()->getGlobalNumRows () << ", "
+        << impl_.getMatrix ()->getGlobalNumCols () << "]"
+        << ", Global nnz: " << impl_.getMatrix ()->getGlobalNumEntries();
   }
+
   out << "}";
   return out.str ();
 }

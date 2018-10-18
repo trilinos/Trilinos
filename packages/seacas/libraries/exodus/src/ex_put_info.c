@@ -126,7 +126,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       /* put file into define mode  */
       if ((status = nc_redef(rootid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed put file id %d into define mode", rootid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -135,12 +135,12 @@ int ex_put_info(int exoid, int num_info, char *info[])
         if (status == NC_ENAMEINUSE) { /* duplicate entry? */
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: info records already exist in file id %d",
                    rootid);
-          ex_err(__func__, errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
         }
         else {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to define number of info records in file id %d", rootid);
-          ex_err(__func__, errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
         }
 
         goto error_ret; /* exit define mode and return */
@@ -150,7 +150,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       if ((status = nc_def_dim(rootid, DIM_LIN, (MAX_LINE_LENGTH + 1), &lindim)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define line length in file id %d",
                  rootid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
 
@@ -161,7 +161,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       if ((status = nc_def_var(rootid, VAR_INFO, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define info record in file id %d",
                  rootid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
       ex_compress_variable(rootid, varid, 3);
@@ -170,7 +170,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       if ((status = nc_enddef(rootid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to complete info record definition in file id %d", rootid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -178,7 +178,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
       if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find info record variable in file id %d",
                  rootid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -196,7 +196,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
         if ((status = nc_put_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store info record in file id %d",
                    rootid);
-          ex_err(__func__, errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
       }
@@ -218,7 +218,7 @@ int ex_put_info(int exoid, int num_info, char *info[])
 error_ret:
   if ((status = nc_enddef(rootid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", rootid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
   }
   EX_FUNC_LEAVE(EX_FATAL);
 }

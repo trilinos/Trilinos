@@ -593,11 +593,9 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
     float *yptr = nullptr;
     float *zptr = nullptr;
     switch (mesh->num_dims) {
-    case 3:
-      zptr = (mesh->coords) + 2 * mesh->num_nodes;
+    case 3: zptr = (mesh->coords) + 2 * mesh->num_nodes;
     /* FALLTHRU */
-    case 2:
-      yptr = (mesh->coords) + mesh->num_nodes;
+    case 2: yptr = (mesh->coords) + mesh->num_nodes;
     /* FALLTHRU */
     case 1: xptr = mesh->coords;
     }

@@ -424,19 +424,25 @@ mult_test_results multiply_test_autofc(
 
 #if 0
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  std::cout<<"*** C->colMap() ***"<<std::endl;
   C->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** C->domainMap() ***"<<std::endl;
   C->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
 
   if(C->getGraph()->getImporter().is_null()) std::cout<<"C->getImporter is null"<<std::endl;
   else {
+    std::cout<<"*** C->getImporter()->getTargetMap() ***"<<std::endl;
     C->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
 
+  std::cout<<"*** computedC->colMap() ***"<<std::endl;
   computedC->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** computedC->domainMap() ***"<<std::endl;
   computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
 
   if(computedC->getGraph()->getImporter().is_null()) std::cout<<"computedC->getImporter is null"<<std::endl;
   else {
+    std::cout<<"*** computedC->getImporter()->getTargetMap() ***"<<std::endl;
     computedC->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
 #endif
@@ -510,19 +516,25 @@ mult_test_results multiply_RAP_test_autofc(
 
 #if 0
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  std::cout<<"*** Ac->colMap() ***"<<std::endl;
   Ac->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** Ac->domainMap() ***"<<std::endl;
   Ac->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
 
   if(Ac->getGraph()->getImporter().is_null()) std::cout<<"Ac->getImporter is null"<<std::endl;
   else {
+    std::cout<<"*** Ac->getImporter()->getTargetMap() ***"<<std::endl;
     Ac->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
 
+  std::cout<<"*** computedAc->colMap() ***"<<std::endl;
   computedAc->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** computedAc->domainMap() ***"<<std::endl;
   computedAc->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
 
   if(computedAc->getGraph()->getImporter().is_null()) std::cout<<"computedAc->getImporter is null"<<std::endl;
   else {
+    std::cout<<"*** computedAc->getImporter()->getTargetMap() ***"<<std::endl;
     computedAc->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
 #endif
@@ -797,6 +809,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
 
+
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
        ++it) {
@@ -837,8 +850,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     const bool BT = currentSystem.get<bool> ("TransB");
     const bool CT = currentSystem.get<bool> ("TransC", false);
     const int numProcs = currentSystem.get<int> ("numProcs", 0);
-    if(numProcs > 0 && comm->getSize() != numProcs)
-      throw std::runtime_error("Test requires exactly " + std::to_string(numProcs) +" MPI ranks.");
+
+    // Don't run tests where the core count does not match the maps
+    if(numProcs > 0 && comm->getSize() != numProcs) continue;
+
 
     double epsilon = currentSystem.get<double> ("epsilon",
                                        100. * Teuchos::ScalarTraits<SC>::eps());
@@ -847,64 +862,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     RCP<Matrix_t> A, B, C, D;
 
     if (A_file != ""){
-	if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "") {
-	    newOut << " reading file "<<A_file<<std::endl;
-	    A = Reader<Matrix_t>::readSparseFile (A_file, comm);
-	}
+      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "")
+        A = Reader<Matrix_t>::readSparseFile (A_file, comm);
       else {
-	newOut<< " reading domainmapfile "<<A_domainmap_file<<std::endl;
         RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm);
-	newOut<< " reading rangemapfile "<<A_rangemap_file<<std::endl;
         RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm);
-	newOut<< " reading rowmapfile "<<A_rowmap_file<<std::endl;
         RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm);
-	newOut<< " reading colmapfile "<<A_colmap_file<<std::endl;
         RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm);
-	newOut<< " reading Asparsefile "<<A_file<<std::endl;
         A = Reader<Matrix_t>::readSparseFile (A_file, rowmap, colmap, domainmap, rangemap);
       }
     }
     if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "")
       B = Reader<Matrix_t>::readSparseFile (B_file, comm);
     else {
-	newOut<< " reading BDomainfile "<<B_domainmap_file<<std::endl;
-	RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm);
-	newOut<< " reading Brangefile "<<B_rangemap_file<<std::endl;
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm);
       RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm);
-	newOut<< " reading B_rowfile "<<B_rowmap_file<<std::endl;
       RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm);
-      newOut<< " reading B_colfile "<<B_colmap_file<<std::endl;
       RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm);
-      newOut<< " reading B_sparsefile "<<B_file<<std::endl;
       B = Reader<Matrix_t>::readSparseFile (B_file, rowmap, colmap, domainmap, rangemap);
     }
     if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "")
       C = Reader<Matrix_t>::readSparseFile (C_file, comm);
     else {
-	newOut<< " reading C_domainfile "<<C_domainmap_file<<std::endl;
       RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm);
-	newOut<< " reading C_rangefile "<<C_rangemap_file<<std::endl;
       RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm);
-	newOut<< " reading C_rowfile "<<C_rowmap_file<<std::endl;
       RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm);
-	newOut<< " reading C_colfile "<<C_colmap_file<<std::endl;
       RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm);
-	newOut<< " reading C_sparsefile "<<C_file<<std::endl;
       C = Reader<Matrix_t>::readSparseFile (C_file, rowmap, colmap, domainmap, rangemap);
     }
     if (D_file != "") {
       if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "")
         D = Reader<Matrix_t>::readSparseFile (D_file, comm);
       else {
-	newOut<< " reading D_domainfile "<<D_domainmap_file<<std::endl;
         RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm);
-	newOut<< " reading D_rangefile "<<D_rangemap_file<<std::endl;
         RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm);
-	newOut<< " reading D_rowfile "<<D_rowmap_file<<std::endl;
         RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm);
-	newOut<< " reading D_colfile "<<D_colmap_file<<std::endl;
         RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm);
-	newOut<< " reading D_sparsefile "<<D_file<<std::endl;
         D = Reader<Matrix_t>::readSparseFile (D_file, rowmap, colmap, domainmap, rangemap);
       }
     }
@@ -918,7 +911,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
     if (op == "multiply") {
       if (verbose)
-        newOut << "Running multiply test (manual FC) for " << currentSystem.name() <<" from "<<matnamesFile<<" with AT="<<AT<<" BT="<<BT<< endl;
+        newOut << "Running multiply test (manual FC) for " << currentSystem.name() << endl;
+
       mult_test_results results = multiply_test_manualfc(name, A, B, AT, BT, C, comm, newOut);
 
       if (verbose) {
@@ -932,7 +926,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
-        newOut << "Running multiply test (auto FC) for " << currentSystem.name() <<" with AT="<<AT<<" BT="<<BT<< endl;
+        newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
 
       results = multiply_test_autofc(name, A, B, AT, BT, C, comm, newOut);
 
@@ -947,7 +941,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
-        newOut << "Running multiply reuse test for " << currentSystem.name() <<" with AT="<<AT<<" BT="<<BT<< endl;
+        newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
 
       results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
 
@@ -1188,8 +1182,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
 
   newOut << "Call fillComplete on bMatrix" << endl;
   bMatrix->fillComplete(bDomainMap, bRangeMap);
-  newOut << "Called fillComplete on bMatrix" << endl;
-  
+
   newOut << "Regular I*P" << endl;
   mult_test_results results = multiply_test_manualfc(
     "Different Range and Row Maps",

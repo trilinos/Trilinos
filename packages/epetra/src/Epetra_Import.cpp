@@ -49,8 +49,6 @@
 #include "Epetra_Util.h"
 #include "Epetra_Export.h"
 
-#include "Teuchos_TimeMonitor.hpp"
-
 #include <algorithm>
 #include <vector>
 
@@ -288,8 +286,6 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
   return;
 }
 
-
-
 //==============================================================================
 // Epetra_Import constructor function for a Epetra_BlockMap object
 template<typename int_type>
@@ -343,9 +339,7 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
     PermuteToLIDs_ = new int[NumPermuteIDs_];
     PermuteFromLIDs_ = new int[NumPermuteIDs_];
   }
-#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Epetra_Import::Construct:iport_ctor pre-sort",pre_sort);
-#endif
+
   NumPermuteIDs_ = 0;
   NumRemoteIDs_ = 0;
   for (i=NumSameIDs_; i< NumTargetIDs; i++) {
@@ -450,10 +444,6 @@ void Epetra_Import::Construct( const Epetra_BlockMap &  targetMap, const Epetra_
       {
         throw ReportError("Epetra_Import::Epetra_Import: GlobalIndices Internal Error", -1);
       }
-
-#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Epetra_Import::Naive:iport_ctor:pre-cFSAR",post_sort_filter);
-#endif
     Distor_ = sourceMap.Comm().CreateDistributor();
 
     // Construct list of exports that calling processor needs to send as a result
@@ -600,14 +590,9 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_B
     NumRecv_(0),
     Distor_(0)
 {
+  if(!targetMap.GlobalIndicesTypeMatch(sourceMap))
+    throw ReportError("Epetra_Import::Epetra_Import: GlobalIndicesTypeMatch failed", -1);
 
-    
-
-    if(!targetMap.GlobalIndicesTypeMatch(sourceMap))
-	throw ReportError("Epetra_Import::Epetra_Import: GlobalIndicesTypeMatch failed", -1);
-#ifdef EPETRA_CRSMATRIX_TEUCHOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Epetra_Import::Construct:iport_ctor postGITM(sourceMap) ");    
-#endif
   if(targetMap.GlobalIndicesInt())
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     Construct<int>(targetMap, sourceMap);
