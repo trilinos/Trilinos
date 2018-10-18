@@ -22,6 +22,15 @@ ML_Comm *global_comm = NULL; /* should not be used to avoid side effect */
 
 int ML_Comm_Create( ML_Comm ** com )
 {
+#ifdef ML_MPI
+  return ML_Comm_Create2(com, MPI_COMM_WORLD);
+#else
+  return ML_Comm_Create2(com, 0);
+#endif
+}
+
+int ML_Comm_Create2( ML_Comm ** com, USR_COMM in_comm )
+{
    ML_Comm *com_ptr;
 
    ML_memory_alloc( (void **) com, sizeof (ML_Comm), "CM1" );
@@ -36,13 +45,13 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_cheapwaitbytes  = ML_Comm_CheapWait;
 
 #ifdef ML_MPI
-   MPI_Comm_size(MPI_COMM_WORLD, &(com_ptr->ML_nprocs));
-   MPI_Comm_rank(MPI_COMM_WORLD, &(com_ptr->ML_mypid));
+   MPI_Comm_size(in_comm, &(com_ptr->ML_nprocs));
+   MPI_Comm_rank(in_comm, &(com_ptr->ML_mypid));
    com_ptr->USR_sendbytes  = ML_Comm_Send;
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
    com_ptr->USR_cheapwaitbytes  = ML_Comm_CheapWait;
-   com_ptr->USR_comm       = MPI_COMM_WORLD;
+   com_ptr->USR_comm       = in_comm;
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
    /* register the error handling function */
    ML_Comm_ErrorHandlerCreate((USR_ERRHANDLER_FUNCTION *) ML_Comm_ErrorHandler,
