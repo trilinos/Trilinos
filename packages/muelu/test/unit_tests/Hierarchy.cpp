@@ -1095,6 +1095,7 @@ namespace MueLuTests {
     // Test that HierarchyManager throws if user-supplied nullspace has dimension smaller than numPDEs
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     GO nx = 30;
     RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
