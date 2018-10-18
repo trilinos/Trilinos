@@ -1513,7 +1513,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
              "EXODUS: ERROR: File format specified as netcdf-4, but the "
              "NetCDF library being used was not configured to enable "
              "this format\n");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 #endif
@@ -1524,7 +1524,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
              "EXODUS: ERROR: File format specified as 64bit_data, but "
              "the NetCDF library being used does not support this "
              "format\n");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 #endif
@@ -1595,7 +1595,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
              "EXODUS: ERROR: 64-bit integer storage requested, but the "
              "netcdf library does not support the required netcdf-4 or "
              "64BIT_DATA extensions.\n");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
 #endif
   }
@@ -1619,7 +1619,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
                "EXODUS: ERROR: EX_MPIPOSIX parallel output requested "
                "which requires NetCDF-4 support, but the library does "
                "not have that option enabled.\n");
-      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
 #endif
     }
@@ -1631,7 +1631,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
                "EXODUS: ERROR: EX_MPIIO parallel output requested which "
                "requires NetCDF-4 support, but the library does not "
                "have that option enabled.\n");
-      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
 #endif
     }
@@ -1643,7 +1643,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
                "EXODUS: ERROR: EX_NETCDF4 parallel output requested which "
                "requires NetCDF-4 support, but the library does not "
                "have that option enabled.\n");
-      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
 #endif
     }
@@ -1661,7 +1661,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
                "EXODUS: ERROR: EX_PNETCDF parallel output requested "
                "which requires PNetCDF support, but the library does "
                "not have that option enabled.\n");
-      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
 #endif
     }
