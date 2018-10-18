@@ -61,7 +61,7 @@ The `<job-name>` argument is a single string of the form
 `XXX-<keyword0>-<keyword1>-...`.  The standard order and format of this string
 is:
 
-    <system-name>-<compiler>-<debug_or_opt>-<kokkos_threading>-<kokkos_arch>
+    <system-name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
 
 Each of these keywords are described below.
 
@@ -96,12 +96,24 @@ compilers and which versions are supported.  If you choose a compiler that is
 not supported, an error message will be provided.  If `default` is used, then
 the default compiler for the system will be selected.
 
-**`<debug_or_opt>`:** The following `<job-name>` keywords specify debug or
-optimized build and the `<BUILD_TYPE> variable `(used for the CMake cache var
-`CMAKE_BUILD_TYPE`with default `<BUILD_TYPE>=DEBUG`):
+**`<release_or_debug>`:** The following `<job-name>` keywords specify debug or
+optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
+var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
+checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `debug`: Use `<BUILD_TYPE>=DEBUG`
-* `opt`: Use `<BUILD_TYPE>=RELEASE`
+* `release-debug`: (`<BUILD_TYPE>=RELEASE_RELEASE`)
+  * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
+  * Turn **ON** runtime debug checking
+  * NOTE: This build runs runtime checks to catch developer and user mistakes
+    but still runs fairly fast.
+* `debug`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
+  * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
+  * Turn **ON** runtime debug checking
+  * NOTE: This build supports running in a debugger. 
+* `release` or `opt`: (`<BUILD_TYPE>=RELEASE`)
+  * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
+  * Turn **OFF** runtime debug checking
+  * NOTE: This build runs fast with minimal checks (i.e. production).
 
 **`<kokkos_threading>`:** The following `<job-name>` keywords determine the
 Kokkos threading model variable `<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL`
