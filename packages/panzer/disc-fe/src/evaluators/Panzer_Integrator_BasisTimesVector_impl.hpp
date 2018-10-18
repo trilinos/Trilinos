@@ -121,7 +121,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesVector::KokkosFieldMultipliers",
+      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("BasisTimesVector::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -197,7 +197,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(multipliers.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesVector::KokkosFieldMultipliers",
+      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("BasisTimesVector::KokkosFieldMultipliers",
       multipliers.size());
     for (const auto& fm : multipliers)
     {
