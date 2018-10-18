@@ -166,7 +166,7 @@ class FECrsMatrix :
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     explicit FECrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-              const Teuchos::RCP<const crs_graph_type>& offRankGraph,
+                          const Teuchos::RCP<const crs_graph_type>& offRankGraph,
                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
@@ -287,9 +287,9 @@ class FECrsMatrix :
          class ImplScalarViewType>
     LocalOrdinal
     sumIntoGlobalValues (const GlobalOrdinal globalRow,
-            const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
-            const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
-            const bool atomic = useAtomicUpdatesByDefault) const;
+                         const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
+                         const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
+                         const bool atomic = useAtomicUpdatesByDefault) const;
 
     //! Set all matrix entries equal to \c alpha.
     void setAllToScalar (const Scalar& alpha);
