@@ -333,10 +333,9 @@ private:
       // the preconditioner (if any) at this point.  Thus, we can use
       // Belos::OrthoManagerFactory here.
       Belos::OrthoManagerFactory<SC, MV, OP> factory;
-      Teuchos::RCP<const OP> M = this->getPreconditioner ();
       Teuchos::RCP<Belos::OutputManager<SC>> outMan; // can be null
       Teuchos::RCP<Teuchos::ParameterList> params; // can be null
-      ortho_ = factory.makeMatOrthoManager (ortho, M, outMan, "Belos", params);
+      ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
       TEUCHOS_TEST_FOR_EXCEPTION
         (ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
          "create (Mat)OrthoManager of type \"" << ortho << "\".");
