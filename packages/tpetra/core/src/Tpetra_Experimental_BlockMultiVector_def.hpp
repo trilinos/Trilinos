@@ -96,7 +96,6 @@ namespace { // anonymous
 
 namespace Tpetra {
 namespace Experimental {
-namespace Classes {
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::mv_type
@@ -911,7 +910,6 @@ blockJacobiUpdate (const Scalar& alpha,
   }
 }
 
-} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 
@@ -922,9 +920,7 @@ blockJacobiUpdate (const Scalar& alpha,
 //
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
   namespace Experimental { \
-    namespace Classes { \
-      template class BlockMultiVector< S, LO, GO, NODE >; \
-    } \
+    template class BlockMultiVector< S, LO, GO, NODE >; \
   }
 
 #endif // TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DEF_HPP

@@ -259,6 +259,8 @@ private:
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType defaultTol_;
                                                      
   void assertInitialized() const;
+
+  std::string label_;
   
 };
 

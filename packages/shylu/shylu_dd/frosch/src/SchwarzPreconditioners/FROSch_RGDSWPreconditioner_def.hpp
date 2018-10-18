@@ -70,11 +70,11 @@ namespace FROSch {
             return initialize(3,1,repeatedMap);
         } else {
             DofOrdering dofOrdering;
-            if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("NodeWise")) {
+            if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
-            } else if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("DimensionWise")) {
+            } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
                 dofOrdering = DimensionWise;
-            } else if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("Custom")) {
+            } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("Custom")) {
                 dofOrdering = Custom;
             } else {
                 FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
@@ -101,11 +101,11 @@ namespace FROSch {
             return initialize(3,1,repeatedMap,dirichletBoundaryDofs);
         } else {
             DofOrdering dofOrdering;
-            if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("NodeWise")) {
+            if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("NodeWise")) {
                 dofOrdering = NodeWise;
-            } else if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("DimensionWise")) {
+            } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("DimensionWise")) {
                 dofOrdering = DimensionWise;
-            } else if (!this->ParameterList_->get("DofOrdering","NodeOrdering").compare("Custom")) {
+            } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("Custom")) {
                 dofOrdering = Custom;
             } else {
                 FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");

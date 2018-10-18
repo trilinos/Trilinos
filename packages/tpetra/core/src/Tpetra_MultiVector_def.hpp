@@ -299,7 +299,6 @@ namespace { // (anonymous)
 
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -4034,7 +4033,7 @@ namespace Classes {
     const bool A_is_local = ! A.isDistributed ();
     const bool B_is_local = ! B.isDistributed ();
     const bool C_is_local = ! this->isDistributed ();
-    
+
     // In debug mode, check compatibility of local dimensions.  We
     // only do this in debug mode, since it requires an all-reduce
     // to ensure correctness on all processses.  It's entirely
@@ -4064,50 +4063,50 @@ namespace Classes {
         const bool lclBad = this->getLocalLength () != A_nrows ||
           this->getNumVectors () != B_ncols || A_ncols != B_nrows;
 
-	const int myRank = comm->getRank ();
-	std::ostringstream errStrm;
-	if (this->getLocalLength () != A_nrows) {
-	  errStrm << "Proc " << myRank << ": this->getLocalLength()="
-	    << this->getLocalLength () << " != A_nrows=" << A_nrows
-	    << "." << std::endl;
-	}
-	if (this->getNumVectors () != B_ncols) {
-	  errStrm << "Proc " << myRank << ": this->getNumVectors()="
-	    << this->getNumVectors () << " != B_ncols=" << B_ncols
-	    << "." << std::endl;
-	}
-	if (A_ncols != B_nrows) {
-	  errStrm << "Proc " << myRank << ": A_ncols="
-	    << A_ncols << " != B_nrows=" << B_nrows
-	    << "." << std::endl;
-	}
-	
+        const int myRank = comm->getRank ();
+        std::ostringstream errStrm;
+        if (this->getLocalLength () != A_nrows) {
+          errStrm << "Proc " << myRank << ": this->getLocalLength()="
+            << this->getLocalLength () << " != A_nrows=" << A_nrows
+            << "." << std::endl;
+        }
+        if (this->getNumVectors () != B_ncols) {
+          errStrm << "Proc " << myRank << ": this->getNumVectors()="
+            << this->getNumVectors () << " != B_ncols=" << B_ncols
+            << "." << std::endl;
+        }
+        if (A_ncols != B_nrows) {
+          errStrm << "Proc " << myRank << ": A_ncols="
+            << A_ncols << " != B_nrows=" << B_nrows
+            << "." << std::endl;
+        }
+
         const int lclGood = lclBad ? 0 : 1;
         int gblGood = 0;
         reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
-	if (gblGood != 1) {
-	  std::ostringstream os;
-	  ::Tpetra::Details::gathervPrint (os, errStrm.str (), *comm);
+        if (gblGood != 1) {
+          std::ostringstream os;
+          ::Tpetra::Details::gathervPrint (os, errStrm.str (), *comm);
 
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (true, std::runtime_error, "Inconsistent local dimensions on at "
-	     "least one process in this object's communicator." << std::endl
-	     << "Operation: "
-	     << "C(" << (C_is_local ? "local" : "distr") << ") = "
-	     << alpha << "*A" 
-	     << (transA == Teuchos::TRANS ? "^T" :
-		 (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
-	     << "(" << (A_is_local ? "local" : "distr") << ") + "
-	     << beta << "*B"
-	     << (transA == Teuchos::TRANS ? "^T" :
-		 (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
-	     << "(" << (B_is_local ? "local" : "distr") << ")." << std::endl
-	     << "Global dimensions: C(" << this->getGlobalLength () << ", "
-	     << this->getNumVectors () << "), A(" << A.getGlobalLength ()
-	     << ", " << A.getNumVectors () << "), B(" << B.getGlobalLength ()
-	     << ", " << B.getNumVectors () << ")." << std::endl
-	     << os.str ());
-	}
+             "least one process in this object's communicator." << std::endl
+             << "Operation: "
+             << "C(" << (C_is_local ? "local" : "distr") << ") = "
+             << alpha << "*A"
+             << (transA == Teuchos::TRANS ? "^T" :
+                 (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
+             << "(" << (A_is_local ? "local" : "distr") << ") + "
+             << beta << "*B"
+             << (transA == Teuchos::TRANS ? "^T" :
+                 (transA == Teuchos::CONJ_TRANS ? "^H" : ""))
+             << "(" << (B_is_local ? "local" : "distr") << ")." << std::endl
+             << "Global dimensions: C(" << this->getGlobalLength () << ", "
+             << this->getNumVectors () << "), A(" << A.getGlobalLength ()
+             << ", " << A.getNumVectors () << "), B(" << B.getGlobalLength ()
+             << ", " << B.getNumVectors () << ")." << std::endl
+             << os.str ());
+        }
       }
     }
 
@@ -5110,7 +5109,6 @@ namespace Classes {
     this->origView_     = origView;
     this->whichVectors_ = whichVectors;
   }
-} // namespace Classes
 
   template <class Scalar, class LO, class GO, class NT>
   Teuchos::RCP<MultiVector<Scalar, LO, GO, NT> >
@@ -5140,7 +5138,7 @@ namespace Classes {
 //
 
 #define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  namespace Classes { template class MultiVector< SCALAR , LO , GO , NODE >; } \
+  template class MultiVector< SCALAR , LO , GO , NODE >; \
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src); \
   template Teuchos::RCP<MultiVector< SCALAR , LO , GO , NODE > > createMultiVector (const Teuchos::RCP<const Map<LO, GO, NODE> >& map, size_t numVectors);
 

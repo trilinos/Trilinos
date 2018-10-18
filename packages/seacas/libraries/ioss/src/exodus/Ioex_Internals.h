@@ -389,6 +389,8 @@ namespace Ioex {
       title[MAX_LINE_LENGTH] = '\0';
     }
 
+    void populate(Ioss::Region *region);
+
     char title[MAX_LINE_LENGTH + 1]{};
     int  dimensionality;
     bool file_per_processor;
@@ -412,7 +414,7 @@ namespace Ioex {
     Internals(const Internals &from) = delete;
     Internals &operator=(const Internals &from) = delete;
 
-    int initialize_state_file(Ioss::Region &region, const ex_var_params &var_params,
+    int initialize_state_file(Mesh &mesh, const ex_var_params &var_params,
                               const std::string &base_file_name);
 
     int write_meta_data(Mesh &mesh);
@@ -432,17 +434,17 @@ namespace Ioex {
     void get_global_counts(Mesh &mesh);
 
     int put_metadata(const Mesh &mesh, const CommunicationMetaData &comm);
-    int put_metadata(const std::vector<NodeBlock> &nodeblocks);
-    int put_metadata(const std::vector<EdgeBlock> &blocks);
-    int put_metadata(const std::vector<FaceBlock> &blocks);
-    int put_metadata(const std::vector<ElemBlock> &blocks);
+    int put_metadata(const std::vector<NodeBlock> &nodeblocks, bool count_only = false);
+    int put_metadata(const std::vector<EdgeBlock> &blocks, bool count_only = false);
+    int put_metadata(const std::vector<FaceBlock> &blocks, bool count_only = false);
+    int put_metadata(const std::vector<ElemBlock> &blocks, bool count_only = false);
 
-    int put_metadata(const std::vector<NodeSet> &nodesets);
-    int put_metadata(const std::vector<EdgeSet> &edgesets);
-    int put_metadata(const std::vector<FaceSet> &facesets);
-    int put_metadata(const std::vector<ElemSet> &elemsets);
+    int put_metadata(const std::vector<NodeSet> &nodesets, bool count_only = false);
+    int put_metadata(const std::vector<EdgeSet> &edgesets, bool count_only = false);
+    int put_metadata(const std::vector<FaceSet> &facesets, bool count_only = false);
+    int put_metadata(const std::vector<ElemSet> &elemsets, bool count_only = false);
 
-    int put_metadata(const std::vector<SideSet> &sidesets);
+    int put_metadata(const std::vector<SideSet> &sidesets, bool count_only = false);
 
     int put_non_define_data(const CommunicationMetaData &comm);
     int put_non_define_data(const std::vector<NodeBlock> &nodeblocks);

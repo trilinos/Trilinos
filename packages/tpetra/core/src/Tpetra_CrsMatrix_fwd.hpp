@@ -47,30 +47,14 @@
 /// \file Tpetra_CrsMatrix_fwd.hpp
 /// \brief Forward declaration of Tpetra::CrsMatrix
 
-namespace Tpetra {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of CrsMatrix.
-template <class SC, class LO, class GO, class N> class CrsMatrix;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Classes::CrsMatrix.
+namespace Tpetra {
 template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node = ::Tpetra::Details::DefaultTypes::node_type>
-using CrsMatrix = Classes::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
+class CrsMatrix;
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_CRSMATRIX_FWD_HPP

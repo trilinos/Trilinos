@@ -111,13 +111,13 @@ convertToMDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 // Given a 'distarray' object returned by the DistArray protocol,
 // convert to an RCP of a Domi MDMap.
-Teuchos::RCP< const Domi::MDMap<> >
+Teuchos::RCP< const Domi::MDMap >
 convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                const DistArrayProtocol & distarray);
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > & mdMap);
+PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap > & mdMap);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -250,7 +250,7 @@ convertToMDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                   const DistArrayProtocol & distarray)
 {
   // Get the equivalent MDMap
-  Teuchos::RCP< const Domi::MDMap<> > mdMap =
+  Teuchos::RCP< const Domi::MDMap > mdMap =
     convertToMDMap(teuchosComm, distarray);
 
   // Get the equivalent MDArrayRCP

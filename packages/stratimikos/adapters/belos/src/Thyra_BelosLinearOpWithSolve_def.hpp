@@ -151,7 +151,8 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
   :convergenceTestFrequency_(-1),
   isExternalPrec_(false),
   supportSolveUse_(SUPPORT_SOLVE_UNSPECIFIED),
-  defaultTol_ (-1.0)
+  defaultTol_ (-1.0),
+  label_("")
 {}
 
 
@@ -224,8 +225,10 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
       }
     }
 
-    if (solverPL_->isParameter("Timer Label") && solverPL_->isType<std::string>("Timer Label"))
-      lp_->setLabel(solverPL_->get<std::string>("Timer Label"));
+    if (solverPL_->isParameter("Timer Label") && solverPL_->isType<std::string>("Timer Label")) {
+      label_ = solverPL_->get<std::string>("Timer Label");
+      lp_->setLabel(label_);
+    }
   }
   else {
     RCP<const Teuchos::ParameterList> defaultPL =
@@ -653,8 +656,10 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     try {
       belosSolveStatus = iterativeSolver_->solve();
     }
-    catch (Belos::BelosError&) {
-      belosSolveStatus = Belos::Unconverged;
+    catch (Belos::BelosError& ex) {
+      TEUCHOS_TEST_FOR_EXCEPTION( true,
+                                  CatastrophicSolveFailure,
+                                  ex.what() );
     }
   }
 
@@ -717,7 +722,8 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 
   std::ostringstream ossmessage;
   ossmessage
-    << "The Belos solver of type \""<<iterativeSolver_->description()
+    << "The Belos solver " << (label_ != "" ? ("\"" + label_  + "\" ") : "")
+    << "of type \""<<iterativeSolver_->description()
     <<"\" returned a solve status of \""<< toString(solveStatus.solveStatus) << "\""
     << " in " << iterativeSolver_->getNumIters() << " iterations"
     << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;

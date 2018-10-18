@@ -76,13 +76,6 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# IF (Domi_ENABLE_PyTrilinos)
-#   INCLUDE_DIRECTORIES(PYTHON_INCLUDE_PATH)
-#   INCLUDE_DIRECTORIES(NumPy_INCLUDE_DIR)
-# ENDIF (Domi_ENABLE_PyTrilinos)
-
-# ADD_SUBDIRECTORY(PyTrilinos)
-
 #
 # Define the header and source files (and directories)
 SET(HEADERS ${HEADERS}
@@ -94,7 +87,6 @@ APPEND_SET(HEADERS
   Domi_Version.hpp
   Domi_Utils.hpp
   Domi_Exceptions.hpp
-  Domi_DefaultNode.hpp
   Domi_Slice.hpp
   Domi_MDIterator.hpp
   Domi_MDRevIterator.hpp
@@ -111,9 +103,9 @@ APPEND_SET(SOURCES
   Domi_Version.cpp
   Domi_Utils.cpp
   Domi_Exceptions.cpp
-  Domi_DefaultNode.cpp
   Domi_Slice.cpp
   Domi_MDComm.cpp
+  Domi_MDMap.cpp
   Domi_getValidParameters.cpp
   )
 

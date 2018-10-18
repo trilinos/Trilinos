@@ -2,7 +2,7 @@
 #
 # Set up env on toss3 (chama and serrano) for ATMD builds of Trilinos
 #
-# This source script gets the settings from the JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
 #
 ################################################################################
 
@@ -49,8 +49,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
     export OMPI_FC=`which ifort`
-    export ATDM_CONFIG_LAPACK_LIB="-mkl"
-    export ATDM_CONFIG_BLAS_LIB="-mkl"
+    export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+    export ATDM_CONFIG_BLAS_LIBS="-mkl"
 else
     echo
     echo "***"
@@ -100,7 +100,7 @@ export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 # In this case, sbatch is used to run the script but it also sends ouptut to
 # STDOUT in real-time while it is running in addition to writing to the
 # <outout_file>.  The job name for the sbatch script is taken from the env var
-# 'JOB_NAME'.  This works for local builds since JOB_NAME.
+# 'ATDM_CONFIG_JOB_NAME'.  This works for local builds since ATDM_CONFIG_JOB_NAME.
 #
 # Note that you can pass in the script to run with arguments such as with
 # "<some-script> <arg1> <arg2>" and it will work.  But note that this has to
@@ -146,7 +146,7 @@ function atdm_run_script_on_compute_node {
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
   sbatch --output=$output_file --wait -N1 --time=${timeout} \
-    -J $JOB_NAME --account=${account} ${script_to_run} &
+    -J $ATDM_CONFIG_JOB_NAME --account=${account} ${script_to_run} &
   SBATCH_PID=$!
   set +x
   

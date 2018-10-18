@@ -57,8 +57,7 @@
 
 
 #ifdef HAVE_XPETRA_TPETRA
-#  include "Tpetra_ConfigDefs.hpp"
-#  include "Tpetra_DefaultPlatform.hpp"
+#  include "Tpetra_Core.hpp"
 #  include "Tpetra_Map.hpp"
 #  include "Xpetra_TpetraMultiVector.hpp"
 #  include "Xpetra_TpetraVector.hpp"

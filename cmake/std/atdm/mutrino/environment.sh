@@ -2,7 +2,7 @@
 #
 # Set up env on mutrino for ATMD builds of Trilinos
 #
-# This source script gets the settings from the JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
 #
 ################################################################################
 
@@ -18,7 +18,7 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "HSW" ] && [ "$ATDM_CONFIG_KOKKOS_ARCH" != "K
   echo
   echo "***"
   echo "*** ERROR: KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a valid option on this system."
-  echo "*** '$ATDM_CONFIG_KOKKOS_ARCH' appears in $JOB_NAME which then sets the KOKKOS_ARCH."
+  echo "*** '$ATDM_CONFIG_KOKKOS_ARCH' appears in $ATDM_CONFIG_JOB_NAME which then sets the KOKKOS_ARCH."
   echo "*** On Mutrino 'HSW' and 'KNL' are the only valid KOKKOS_ARCH settings."
   echo "*** If no KOKKOS_ARCH is specified then 'HSW' will be used by default."
   echo "***"
@@ -83,8 +83,8 @@ export MPICC=`which cc`
 export MPIF90=`which ftn`
 
 # Cray provides differently named wrappers
-export ATDM_CONFIG_LAPACK_LIB="-mkl"
-export ATDM_CONFIG_BLAS_LIB="-mkl"
+export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+export ATDM_CONFIG_BLAS_LIBS="-mkl"
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
@@ -109,7 +109,7 @@ export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE
 # In this case, sbatch is used to run the script but it also sends ouptut to
 # STDOUT in real-time while it is running in addition to writing to the
 # <outout_file>.  The job name for the sbatch script is taken from the env var
-# 'JOB_NAME'.  This works for local builds since JOB_NAME.
+# 'ATDM_CONFIG_JOB_NAME'.  This works for local builds since ATDM_CONFIG_JOB_NAME.
 #
 # Note that you can pass in the script to run with arguments such as with
 # "<some-script> <arg1> <arg2>" and it will work.  But note that this has to
@@ -172,7 +172,7 @@ function atdm_run_script_on_compute_node {
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
   sbatch --output=$output_file --wait -N1 ${ATDM_CONFIG_SBATCH_EXTRA_ARGS} \
-    --time=${timeout} -J $JOB_NAME ${script_to_run} &
+    --time=${timeout} -J $ATDM_CONFIG_JOB_NAME ${script_to_run} &
   SBATCH_PID=$!
   set +x
   

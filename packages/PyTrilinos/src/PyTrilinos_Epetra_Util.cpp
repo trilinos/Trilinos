@@ -74,7 +74,7 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
 #include "Domi_MDVector.hpp"
 #include "PyTrilinos_Domi_Util.hpp"
 #endif
@@ -144,14 +144,14 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   static swig_type_info * swig_EIV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Epetra_IntVector >*");
   static swig_type_info * swig_DMDV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<int,Domi::DefaultNode::DefaultNodeType> >*");
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<int> >*");
   //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
   Teuchos::RCP< Epetra_IntVector > smartresult;
   Teuchos::RCP< Epetra_IntVector > * result;
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   Teuchos::RCP< Domi::MDVector<int> > dmdv_rcp;
 #endif
   *newmem = 0;
@@ -177,7 +177,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj,
   const Teuchos::RCP< const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<int>
   *newmem = 0;
@@ -290,14 +290,14 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   static swig_type_info * swig_EMV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector >*");
   static swig_type_info * swig_DMDV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double> >*");
   //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
   Teuchos::RCP< Epetra_MultiVector > smartresult;
   Teuchos::RCP< Epetra_MultiVector > * result;
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
 #endif
   *newmem = 0;
@@ -323,7 +323,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj,
   const Teuchos::RCP< const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<double>
   *newmem = 0;
@@ -449,14 +449,14 @@ convertPythonToEpetraVector(PyObject * pyobj,
   static swig_type_info * swig_EV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector >*");
   static swig_type_info * swig_DMDV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double> >*");
   //
   // Result objects
   void *argp = 0;
   PyObject * distarray = 0;
   Teuchos::RCP< Epetra_Vector > smartresult;
   Teuchos::RCP< Epetra_Vector > * result;
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
 #endif
   *newmem = 0;
@@ -482,7 +482,7 @@ convertPythonToEpetraVector(PyObject * pyobj,
   const Teuchos::RCP< const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<double>
   *newmem = 0;

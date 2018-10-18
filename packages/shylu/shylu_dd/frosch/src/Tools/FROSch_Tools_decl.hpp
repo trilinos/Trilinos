@@ -152,18 +152,28 @@ namespace FROSch {
                                                                     Epetra_MultiVector &vector,
                                                                     Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ExtractCoordinatesFromParameterList(Teuchos::ParameterList& paramList);
+    
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList, std::string nameMap="RepeatedMap");
+    
+
     template <class LO,class GO,class NO>
     Teuchos::RCP<Epetra_Map> ConvertToEpetra(const Xpetra::Map<LO,GO,NO> &map,
                                              Teuchos::RCP<Epetra_Comm> epetraComm);
     
+    
     template <class SC, class LO,class GO, class NO>
     Teuchos::RCP<Epetra_MultiVector > ConvertToEpetra(Xpetra::MultiVector<SC,LO,GO,NO> &vector,
                                                                     Teuchos::RCP<Epetra_Comm> epetraComm);
-
     
     
     template <class LO>
     Teuchos::Array<LO> GetIndicesFromString(std::string string);
+
     
     template <class SC, class LO,class GO,class NO>
     int RepartionMatrixZoltan2(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &crsMatrix, Teuchos::RCP<Teuchos::ParameterList> parameterList);

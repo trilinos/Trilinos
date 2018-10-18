@@ -2,7 +2,7 @@
 #
 # Set up env on shiller/hansen for ATMD builds of Trilinos
 #
-# This source script gets the settings from the JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
 #
 ################################################################################
 
@@ -43,15 +43,15 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU" && "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]]
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
-  export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
-  export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL" && "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]] ; then
   module load devpack/openmpi/2.1.1/intel/17.4.196/cuda/none
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
   export OMPI_FC=`which ifort`
-  export ATDM_CONFIG_LAPACK_LIB="-mkl"
-  export ATDM_CONFIG_BLAS_LIB="-mkl"
+  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+  export ATDM_CONFIG_BLAS_LIBS="-mkl"
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* && "$ATDM_CONFIG_KOKKOS_ARCH" == "Kepler37" ]] ; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
     export ATDM_CONFIG_COMPILER=CUDA-8.0  # The default CUDA version currently
@@ -77,8 +77,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* && "$ATDM_CONFIG_KOKKOS_ARCH" == "Kep
   export ATDM_CONFIG_USE_CUDA=ON
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-  export ATDM_CONFIG_LAPACK_LIB="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
-  export ATDM_CONFIG_BLAS_LIB="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran"
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
   # Avoids timeouts due to not running on seprate GPUs (see #2446)
 else
@@ -103,7 +103,7 @@ export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;-lhdf5_hl;-lhdf5;-lz;-ldl"
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${PNETCDF_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS}"
 
 # Use manually installed cmake and ninja (see TRIL-209)
-export PATH=/ascldap/users/rabartl/install/hansen-shiller/cmake-3.11.2/bin:/ascldap/users/rabartl/install/hansen-shiller/ninja-1.8.2/bin:$PATH
+export PATH=/home/rabartl/install/hansen-shiller/cmake-3.11.2/bin:/home/rabartl/install/hansen-shiller/ninja-1.8.2/bin:$PATH
 
 # Set MPI wrappers
 export MPICC=`which mpicc`

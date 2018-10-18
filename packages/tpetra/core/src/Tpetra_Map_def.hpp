@@ -63,7 +63,6 @@
 #include <typeinfo>
 
 namespace Tpetra {
-namespace Classes {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -2013,7 +2012,6 @@ namespace Classes {
     return global;
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 template <class LocalOrdinal, class GlobalOrdinal>
@@ -2291,7 +2289,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
 //! Explicit instantiation macro supporting the Map class. Instantiates the class and the non-member constructors.
 #define TPETRA_MAP_INSTANT(LO,GO,NODE) \
   \
-  namespace Classes { template class Map< LO , GO , NODE >; } \
+  template class Map< LO , GO , NODE >; \
   \
   template Teuchos::RCP< const Map<LO,GO,NODE> > \
   createLocalMapWithNode<LO,GO,NODE> (const size_t numElements, \

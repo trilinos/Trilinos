@@ -27,6 +27,11 @@ no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.
 whoami
 which -a env
 
+echo -e ""
+echo -e "Jenkins Environment Variables:"
+echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME}"
+echo -e ""
+
 ## Rather than do proper option handling right now I am just going to
 ##  test that all these environment variables are set.  Because getopt ;->
 : ${TRILINOS_SOURCE_REPO:?}
@@ -96,12 +101,25 @@ fi
 
 git remote -v
 
-git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
-ierror=$?
-if [[ $ierror != 0 ]]; then
-  echo "Source remote fetch failed. The error code was: $ierror"
-  exit $ierror
-fi
+num_retries=3
+
+for i in `seq ${num_retries}`
+do
+  git fetch source_remote ${TRILINOS_SOURCE_BRANCH:?}
+  ierror=$?
+  if [[ $ierror != 0 ]]; then
+    echo "Source remote fetch failed. The error code was: $ierror"
+    if $i != $num_retries
+    then
+      echo "retry $i"
+      sleep $(($i*20))
+    else
+      exit $ierror
+    fi
+  else
+    break
+  fi
+done
 
 git fetch origin ${TRILINOS_TARGET_BRANCH:?}
 ierror=$?
@@ -178,6 +196,14 @@ elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ] ; then
     echo "There was an issue loading the gcc environment. The error code was: $ierror"
     exit $ierror
   fi
+elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ] ; then
+  # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
+  source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC4.9.3TestingEnvSERIAL.sh 
+  ierror=$?
+  if [[ $ierror != 0 ]]; then
+    echo "There was an issue loading the gcc environment. The error code was: $ierror"
+    exit $ierror
+  fi
 elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
   source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestIntel17.0.1TestingEnv.sh
   ierror=$?
@@ -196,7 +222,11 @@ cmake --version
 
 module list
 
-echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+# This crashes for the serial case since MPI variables are not set
+# - See Issue #3625
+if [ "*_SERIAL" != "${JOB_BASE_NAME:?}" ]; then
+  echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+fi
 
 CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"
@@ -243,6 +273,9 @@ else
     CONFIG_SCRIPT=PullRequestLinuxGCC4.8.4TestingSettings.cmake
   elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ]; then
     CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettings.cmake
+  elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ]; then
+    # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
+    CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake
   fi
 fi
 

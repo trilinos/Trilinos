@@ -1,8 +1,8 @@
 PLATFORM_TYPE=`uname`
 
-if [ "$PLATFORM_TYPE" == "Linux" ] ; then
+if [ "$PLATFORM_TYPE" = "Linux" ] ; then
   sems_compiler_and_version_default=sems-gcc/4.8.4
-elif [ "$PLATFORM_TYPE" == "Darwin" ] ; then
+elif [ "$PLATFORM_TYPE" = "Darwin" ] ; then
   sems_compiler_and_version_default=sems-gcc/5.3.0
 else
   echo "ERROR, unknown platform type '$PLATFORM_TYPE'!"

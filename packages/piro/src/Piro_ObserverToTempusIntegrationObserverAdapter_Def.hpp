@@ -191,6 +191,12 @@ template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
+  //Don't observe solution if step failed to converge
+  if ((solutionHistory_->getWorkingState() != Teuchos::null) && 
+     (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) { 
+    return;
+  }
+ 
   //Get solution
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
   solution.assert_not_null();

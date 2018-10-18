@@ -233,9 +233,7 @@ namespace MueLu {
       // FIXME: Should allow specification of NumVectors on parameterlist
       H.AllocateLevelMultiVectors(1);
       
-      RCP<Teuchos::FancyOStream> fos = this->getOStream();
-      fos->setOutputToRootOnly(0);
-      H.describe(*fos, verbosity_);
+      H.describe(H.GetOStream(Runtime0), verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
       // change the number of levels. We also cannot make requests

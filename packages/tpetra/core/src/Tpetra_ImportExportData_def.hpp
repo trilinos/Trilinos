@@ -47,7 +47,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 namespace Tpetra {
-namespace Classes {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::
   ImportExportData (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
@@ -151,7 +151,6 @@ namespace Classes {
   ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData()
   {}
 
-} // namespace Classes
 } // namespace Tpetra
 
 // Explicit instantiation macro.
@@ -162,7 +161,6 @@ namespace Classes {
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_IMPORTEXPORTDATA_INSTANT(LO, GO, NODE) \
-  \
-  namespace Classes { template class ImportExportData< LO , GO , NODE >; }
+  template class ImportExportData< LO , GO , NODE >;
 
 #endif // TPETRA_IMPORTEXPORTDATA_DEF_HPP

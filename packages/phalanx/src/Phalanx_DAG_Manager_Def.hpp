@@ -435,6 +435,14 @@ evaluateFields(typename Traits::EvalData d)
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
+
+#ifdef PHX_DEBUG
+    if (nonnull(start_stop_debug_ostream_)) {
+      *start_stop_debug_ostream_ << "Phalanx::DagManager: Starting node: "
+                                 << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
+                                 << std::endl;
+    }
+#endif
     
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
@@ -442,6 +450,15 @@ evaluateFields(typename Traits::EvalData d)
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
     
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
+
+#ifdef PHX_DEBUG
+    if (nonnull(start_stop_debug_ostream_)) {
+      *start_stop_debug_ostream_ << "Phalanx::DagManager: Completed node: "
+                                 << nodes_[topoSortEvalIndex[n]].getNonConst()->getName()
+                                 << std::endl;
+    }
+#endif
+
   }
 }
 
@@ -860,6 +877,15 @@ std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>&
 PHX::DagManager<Traits>::getEvaluatorsBindingField(const PHX::FieldTag& ft)
 {
   return field_to_evaluators_binding_[ft.identifier()];
+}
+
+//=======================================================================
+template<typename Traits>
+void
+PHX::DagManager<Traits>::
+printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
+{
+  start_stop_debug_ostream_ = ostr;
 }
 
 //=======================================================================

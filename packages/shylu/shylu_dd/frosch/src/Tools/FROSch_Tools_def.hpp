@@ -420,10 +420,11 @@ namespace FROSch {
                 }
             }
         } else if (dofOrdering == 1) {
+            GO numGlobalIDs = map->getMaxAllGlobalIndex()+1;
             for (unsigned i=0; i<nodes.size(); i++) {
                 nodes[i] = map->getGlobalElement(i);
                 for (unsigned j=0; j<dofsPerNode; j++) {
-                    dofs[j][i] = nodes[i]+j*(map->getMaxAllGlobalIndex()+1)/dofsPerNode;
+                    dofs[j][i] = nodes[i]+j*numGlobalIDs/dofsPerNode;
                 }
             }
         } else {
@@ -790,6 +791,37 @@ namespace FROSch {
         return xMultiVector;
     }
 
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> >  ExtractCoordinatesFromParameterList(Teuchos::ParameterList& paramList){
+        Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+        
+        if(paramList.isParameter ("Coordinates") == false)
+            return coordinates;
+        
+        if(paramList.isType<decltype(coordinates)>("Coordinates")) {
+            coordinates = paramList.get<decltype(coordinates)>("Coordinates");
+        } else{
+            std::cerr<<"Wrong Type of Multivector\n";
+        }
+        
+        return coordinates;
+    }
+    
+    template <class LO,class GO,class NO>
+Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList, std::string nameMap){
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repMap = Teuchos::null;
+        if(paramList.isParameter(nameMap) == false){
+            return repMap;
+        }
+        if(paramList.isType<decltype(repMap)>(nameMap)){
+            repMap = paramList.get<decltype(repMap)>(nameMap);
+        }else{
+            std::cerr<<"Wrong Type of Map\n";
+        }
+        return repMap;
+    }
+
 
     template <class LO,class GO,class NO>
     Teuchos::RCP<Epetra_Map> ConvertToEpetra(const Xpetra::Map<LO,GO,NO> &map,
@@ -806,6 +838,7 @@ namespace FROSch {
             return Teuchos::rcp(new Epetra_Map(numGlobalElements,0,NULL,0,*epetraComm));
     }
 
+
     template <class SC, class LO, class GO,class NO>
     Teuchos::RCP<Epetra_MultiVector > ConvertToEpetra(Xpetra::MultiVector<SC,LO,GO,NO> &vector,
                                                                     Teuchos::RCP<Epetra_Comm> epetraComm)
@@ -820,6 +853,7 @@ namespace FROSch {
         return multiVector;
     }
 
+
     template <class LO>
     Teuchos::Array<LO> GetIndicesFromString(std::string string, LO dummy){
         
@@ -829,6 +863,7 @@ namespace FROSch {
         }
         return indices;
     }
+
 
     template <class SC, class LO,class GO,class NO>
     int RepartionMatrixZoltan2(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &crsMatrix, Teuchos::RCP<Teuchos::ParameterList> parameterList){
@@ -854,7 +889,6 @@ namespace FROSch {
 #endif
         return 0;
     }
-    
 }
 
 #endif

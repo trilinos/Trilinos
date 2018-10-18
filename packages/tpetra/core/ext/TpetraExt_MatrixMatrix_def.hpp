@@ -201,7 +201,7 @@ void Multiply(
   // we'll error out later when trying to store result values.
 
   // CGB: However, matrix must be in active-fill
-  TEUCHOS_TEST_FOR_EXCEPT( C.isFillActive() == false );
+  if (!C.isFillActive()) C.resumeFill();
 
   // We're going to need to import remotely-owned sections of A and/or B if
   // more than one processor is performing this run, depending on the scenario.

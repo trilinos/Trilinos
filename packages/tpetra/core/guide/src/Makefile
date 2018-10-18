@@ -1,0 +1,158 @@
+# Makefile for Sphinx documentation
+#
+
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         =
+DOCSDIR       = ../docs
+
+
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = -d $(DOCSDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+# the i18n builder cannot share the environment and doctrees with the others
+I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  html       to make standalone HTML files"
+	@echo "  dirhtml    to make HTML files named index.html in directories"
+	@echo "  singlehtml to make a single large HTML file"
+	@echo "  pickle     to make pickle files"
+	@echo "  json       to make JSON files"
+	@echo "  htmlhelp   to make HTML files and a HTML help project"
+	@echo "  qthelp     to make HTML files and a qthelp project"
+	@echo "  devhelp    to make HTML files and a Devhelp project"
+	@echo "  epub       to make an epub"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
+	@echo "  text       to make text files"
+	@echo "  man        to make manual pages"
+	@echo "  texinfo    to make Texinfo files"
+	@echo "  info       to make Texinfo files and run them through makeinfo"
+	@echo "  gettext    to make PO message catalogs"
+	@echo "  changes    to make an overview of all changed/added/deprecated items"
+	@echo "  linkcheck  to check all external links for integrity"
+	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+
+clean:
+	-rm -rf $(DOCSDIR)/*
+
+html:
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(DOCSDIR)/www
+	@echo
+	@echo "Build finished. The HTML pages are in $(DOCSDIR)/www"
+
+dirhtml:
+	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(DOCSDIR)/dirhtml
+	@echo
+	@echo "Build finished. The HTML pages are in $(DOCSDIR)/dirhtml."
+
+singlehtml:
+	$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $(DOCSDIR)/singlehtml
+	@echo
+	@echo "Build finished. The HTML page is in $(DOCSDIR)/singlehtml."
+
+pickle:
+	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) $(DOCSDIR)/pickle
+	@echo
+	@echo "Build finished; now you can process the pickle files."
+
+json:
+	$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $(DOCSDIR)/json
+	@echo
+	@echo "Build finished; now you can process the JSON files."
+
+htmlhelp:
+	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) $(DOCSDIR)/htmlhelp
+	@echo
+	@echo "Build finished; now you can run HTML Help Workshop with the" \
+	      ".hhp project file in $(DOCSDIR)/htmlhelp."
+
+qthelp:
+	$(SPHINXBUILD) -b qthelp $(ALLSPHINXOPTS) $(DOCSDIR)/qthelp
+	@echo
+	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
+	      ".qhcp project file in $(DOCSDIR)/qthelp, like this:"
+	@echo "# qcollectiongenerator $(DOCSDIR)/qthelp/Payette.qhcp"
+	@echo "To view the help file:"
+	@echo "# assistant -collectionFile $(DOCSDIR)/qthelp/Payette.qhc"
+
+devhelp:
+	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(DOCSDIR)/devhelp
+	@echo
+	@echo "Build finished."
+	@echo "To view the help file:"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/Payette"
+	@echo "# ln -s $(DOCSDIR)/devhelp $$HOME/.local/share/devhelp/Payette"
+	@echo "# devhelp"
+
+epub:
+	$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $(DOCSDIR)/epub
+	@echo
+	@echo "Build finished. The epub file is in $(DOCSDIR)/epub."
+
+latex:
+	rm -rf $(DOCSDIR/latex)
+	ln -s SANDreport/* $(DOCSDIR)/latex/.
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(DOCSDIR)/latex
+	@echo
+	@echo "Build finished; the LaTeX files are in $(DOCSDIR)/latex."
+	@echo "Run \`make' in that directory to run these through (pdf)latex" \
+	      "(use \`make latexpdf' here to do that automatically)."
+	@echo "Note, make the modifications in README.md in that directory"\
+		    "before making the pdf"
+
+latexpdf:
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(DOCSDIR)/latex
+	@echo "Running LaTeX files through pdflatex..."
+	$(MAKE) -C $(DOCSDIR)/latex all-pdf
+	@echo "pdflatex finished; the PDF files are in $(DOCSDIR)/latex."
+
+text:
+	$(SPHINXBUILD) -b text $(ALLSPHINXOPTS) $(DOCSDIR)/text
+	@echo
+	@echo "Build finished. The text files are in $(DOCSDIR)/text."
+
+man:
+	$(SPHINXBUILD) -b man $(ALLSPHINXOPTS) $(DOCSDIR)/man
+	@echo
+	@echo "Build finished. The manual pages are in $(DOCSDIR)/man."
+
+texinfo:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(DOCSDIR)/texinfo
+	@echo
+	@echo "Build finished. The Texinfo files are in $(DOCSDIR)/texinfo."
+	@echo "Run \`make' in that directory to run these through makeinfo" \
+	      "(use \`make info' here to do that automatically)."
+
+info:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(DOCSDIR)/texinfo
+	@echo "Running Texinfo files through makeinfo..."
+	make -C $(DOCSDIR)/texinfo info
+	@echo "makeinfo finished; the Info files are in $(DOCSDIR)/texinfo."
+
+gettext:
+	$(SPHINXBUILD) -b gettext $(I18NSPHINXOPTS) $(DOCSDIR)/locale
+	@echo
+	@echo "Build finished. The message catalogs are in $(DOCSDIR)/locale."
+
+changes:
+	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $(DOCSDIR)/changes
+	@echo
+	@echo "The overview file is in $(DOCSDIR)/changes."
+
+linkcheck:
+	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(DOCSDIR)/linkcheck
+	@echo
+	@echo "Link check complete; look for any errors in the above output " \
+	      "or in $(DOCSDIR)/linkcheck/output.txt."
+
+doctest:
+	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(DOCSDIR)/doctest
+	@echo "Testing of doctests in the sources finished, look at the " \
+	      "results in $(DOCSDIR)/doctest/output.txt."

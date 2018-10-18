@@ -47,6 +47,7 @@
 // options.  Thus, we just exclude all the content of this file if MPI
 // is not enabled.
 #ifdef HAVE_TPETRA_MPI
+#ifndef TPETRA_HIDE_DEPRECATED_CODE
 #  include <Tpetra_MpiPlatform.hpp>
 
 namespace Tpetra {
@@ -160,4 +161,5 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
+#endif // TPETRA_HIDE_DEPRECATED_CODE
 #endif // HAVE_TPETRA_MPI

@@ -76,14 +76,14 @@ private:
   bool is_vector_basis;
 
   Teuchos::RCP<const PureBasis> basis;
-  Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
-  PHX::MDField<const ScalarT, BASIS, IP,    void, void, void, void, void, void>
+  Teuchos::RCP<BasisValues2<double> > basisValues;
+  PHX::MDField<const double, BASIS, IP,    void, void, void, void, void, void>
     constBasisRefScalar_;
-  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   void, void, void, void, void>
+  PHX::MDField<const double, Cell,  BASIS, IP,   void, void, void, void, void>
     constBasisScalar_;
-  PHX::MDField<const ScalarT, BASIS, IP,    Dim,  void, void, void, void, void>
+  PHX::MDField<const double, BASIS, IP,    Dim,  void, void, void, void, void>
     constBasisRefVector_;
-  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   Dim,  void, void, void, void>
+  PHX::MDField<const double, Cell,  BASIS, IP,   Dim,  void, void, void, void>
     constBasisVector_;
 };
 
@@ -117,14 +117,14 @@ private:
   Kokkos::View<int*,PHX::Device> offsets_array;
 
   Teuchos::RCP<const PureBasis> basis;
-  Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
-  PHX::MDField<const ScalarT, BASIS, IP,    void, void, void, void, void, void>
+  Teuchos::RCP<BasisValues2<double> > basisValues;
+  PHX::MDField<const double, BASIS, IP,    void, void, void, void, void, void>
     constBasisRefScalar_;
-  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   void, void, void, void, void>
+  PHX::MDField<const double, Cell,  BASIS, IP,   void, void, void, void, void>
     constBasisScalar_;
-  PHX::MDField<const ScalarT, BASIS, IP,    Dim,  void, void, void, void, void>
+  PHX::MDField<const double, BASIS, IP,    Dim,  void, void, void, void, void>
     constBasisRefVector_;
-  PHX::MDField<const ScalarT, Cell,  BASIS, IP,   Dim,  void, void, void, void>
+  PHX::MDField<const double, Cell,  BASIS, IP,   Dim,  void, void, void, void>
     constBasisVector_;
 };
 

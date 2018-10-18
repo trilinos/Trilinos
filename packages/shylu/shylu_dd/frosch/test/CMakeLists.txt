@@ -7,5 +7,8 @@ ADD_SUBDIRECTORIES(
     LocalPartitionOfUnityBasis
 #    InterfacePartitionOfUnity
     TwoLevelPreconditionerInputFiles
-    TwoLevelPreconditionerBlockInputFiles    
+    Thyra_Xpetra
+    Thyra_Tpetra
+#  Thyra_Xpetra_PrecBlock
+#  TwoLevelPreconditionerBlockInputFiles
 )

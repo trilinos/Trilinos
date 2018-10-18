@@ -272,7 +272,7 @@ namespace MueLu {
     // Actually fill up the matrix, in this case all values are one, pretty easy!
     int dofIdx;
     ArrayView<const LO> colIdx;
-    for(LO rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+    for(LO rowIdx = 0; rowIdx < static_cast<LO>(prolongatorGraph->getNodeNumRows()); ++rowIdx) {
       prolongatorGraph->getLocalRowView(rowIdx, colIdx);
       for(int dof = 0; dof < dofsPerNode; ++dof) {
         dofIdx = rowIdx*dofsPerNode + dof;
@@ -395,7 +395,7 @@ namespace MueLu {
     ArrayView<const LO> colIndices;
     Array<Array<real_type> > coords(numInterpolationPoints + 1);
     Array<real_type> stencil(numInterpolationPoints);
-    for(LO rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+    for(LO rowIdx = 0; rowIdx < static_cast<LO>(prolongatorGraph->getNodeNumRows()); ++rowIdx) {
       prolongatorGraph->getLocalRowView(rowIdx, colIndices);
 
       // rowIdx and colIdx correspond to single ids of nodes on the fine resp. coarse mesh
