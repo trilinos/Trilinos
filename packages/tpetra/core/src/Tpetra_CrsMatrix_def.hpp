@@ -54,8 +54,6 @@
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 
-#include "Tpetra_ImportExportData_decl.hpp"  // for debugging cbl delete me
-
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
@@ -8989,6 +8987,9 @@ namespace Tpetra {
 
 	    int MIN_PID = TPETRA_MIN3(PID1,PID2,PID3);
 	    GO  MIN_GID = TPETRA_MIN3( ((PID1==MIN_PID)?GID1:InfGID), ((PID2==MIN_PID)?GID2:InfGID), ((PID3==MIN_PID)?GID3:InfGID));
+#ifdef TPETRA_MIN3
+#  undef TPETRA_MIN3
+#endif // TPETRA_MIN3
 	    bool added_entry=false;
 
 	    if(PID1 == MIN_PID && GID1 == MIN_GID){
