@@ -50,6 +50,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_radixSort.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Export.hpp"
@@ -370,9 +371,9 @@ void Jacobi(Scalar omega,
   RCP<Teuchos::ParameterList> importParams1 = Teuchos::rcp(new Teuchos::ParameterList);
   if(!params.is_null()) {
       importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      int mm_optimization_core_count=0;
       auto slist = params->sublist("matrixmatrix: kernel params",false);
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount ());
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       auto & ip1slist = importParams1->sublist("matrixmatrix: kernel params",false);
       ip1slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
@@ -394,9 +395,9 @@ void Jacobi(Scalar omega,
   RCP<Teuchos::ParameterList> importParams2 = Teuchos::rcp(new Teuchos::ParameterList);
   if(!params.is_null()) {
       importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+
       auto slist = params->sublist("matrixmatrix: kernel params",false);
-      mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      int mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount () );
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       auto & ip2slist = importParams2->sublist("matrixmatrix: kernel params",false);
       ip2slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);

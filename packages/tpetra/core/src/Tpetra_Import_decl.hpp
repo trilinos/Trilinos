@@ -254,11 +254,6 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
     /// \brief Expert constructor.
-    ///
-    /// \warning THIS IS FOR EXPERT USERS ONLY.  More specifically,
-    ///   this constructor exists for MueLu (algebraic multigrid)
-    ///   setup ONLY.  If you aren't a MueLu or Tpetra developer,
-    ///   DON'T USE THIS.
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
             const Teuchos::ArrayView<int> & remotePIDs,

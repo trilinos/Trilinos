@@ -181,17 +181,7 @@ namespace {
     const Teuchos::ArrayView<const LO> exportLIDs      = G->getImporter()->getExportLIDs();
     const Teuchos::ArrayView<const int> userExportPIDs = G->getImporter()->getExportPIDs();
 
-    // Tpetra::Import<LO,GO,NT> newimport(source,
-    //                                    target,
-    //                                    userRemotePIDs,
-    //                                    remoteGIDs,
-    //                                    exportLIDs,
-    //                                    userExportPIDs ,
-    //                                    false,
-    //                                    Teuchos::null,
-    //                                    Teuchos::null ); // plist == null
-
-	Tpetra::Import<LO,GO,NT> newimport(source,
+    Tpetra::Import<LO,GO,NT> newimport(source,
 				       target,
 				       userRemotePIDs,
 				       exportLIDs,
