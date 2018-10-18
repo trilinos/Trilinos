@@ -490,13 +490,7 @@ protected:
     vec_type P = * (Q.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
-    if (input.precoSide == "right") {
-      M.apply (X, MP);
-      A.apply (MP, R);
-    }
-    else {
-      A.apply (X, R);
-    }
+    A.apply (X, R);
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // residual norm, not-preconditioned
     if (input.precoSide == "left") {
