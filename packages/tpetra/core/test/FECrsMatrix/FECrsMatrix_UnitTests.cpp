@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, ZeroMatrix, LO, GO, Scalar, Node
     /*
     MAT zero(map,0);
     zero.fillComplete();
-  
+
     //
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
@@ -132,11 +132,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, ZeroMatrix, LO, GO, Scalar, Node
     zero.apply(mvrand,mvres);
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvres.norm1(norms());
-    if (ST::isOrdinal) 
+    if (ST::isOrdinal)
     {
         TEST_COMPARE_ARRAYS(norms,zeros);
-    } 
-    else 
+    }
+    else
     {
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
     }
@@ -148,7 +148,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, ZeroMatrix, LO, GO, Scalar, Node
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, ZeroMatrix,     LO, GO, SCALAR, NODE ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, ZeroMatrix, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
