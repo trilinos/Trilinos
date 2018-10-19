@@ -92,6 +92,7 @@ sumIntoGlobalValues(const GlobalOrdinal globalRow,
 #if 0
 template<class GlobalIndicesViewType, class ImplScalarViewType>
 LocalOrdinal
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 sumIntoGlobalValues (const GlobalOrdinal globalRow,
                      const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
                      const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
@@ -140,6 +141,15 @@ operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 
 
 }  // end namespace Tpetra
+
+
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+#define TPETRA_FECRSMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
+  template class FECrsMatrix<SCALAR, LO, GO, NODE>;
 
 
 
