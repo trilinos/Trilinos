@@ -1808,9 +1808,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<Kokkos::HostSpace> ();
-      auto X1_local = X1->template getLocalView<Kokkos::HostSpace> ();
-      auto X2_local = X2->template getLocalView<Kokkos::HostSpace> ();
+      auto X_local = X->getLocalViewHost ();
+      auto X1_local = X1->getLocalViewHost ();
+      auto X2_local = X2->getLocalViewHost ();
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -2173,11 +2173,11 @@ namespace {
             std::ostringstream os;
             os << ">>> Proc " << comm->getSize ();
             auto A_dv = A.getDualView ();
-            os << ": A.modified_host: " << A_dv.modified_host ()
-               << ", A.modified_device: " << A_dv.modified_device ();
+            os << ": A.modified_host: " << A_dv.need_sync_device ()?1:0;
+               << ", A.modified_device: " << A_dv.need_sync_host ()?1:0;
             auto B_dv = B.getDualView ();
-            os << ": B.modified_host: " << B_dv.modified_host ()
-               << ", B.modified_device: " << B_dv.modified_device ();
+            os << ": B.modified_host: " << B_dv.need_sync_device ()?1:0;
+               << ", B.modified_device: " << B_dv.need_sync_host ()?1:0;
             os << std::endl;
             std::cerr << os.str ();
           }
@@ -3180,10 +3180,10 @@ namespace {
 
     myOut << "Modify entries of x and y" << endl;
     
-    x.template sync<Kokkos::HostSpace> ();
-    y.template sync<Kokkos::HostSpace> ();
-    x.template modify<Kokkos::HostSpace> ();
-    y.template modify<Kokkos::HostSpace> ();    
+    x.sync_host ();
+    y.sync_host ();
+    x.modify_host ();
+    y.modify_host ();    
     
     // dot([i], [i]) should be 1, not -1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
@@ -3195,10 +3195,10 @@ namespace {
 
     myOut << "Modify entries of x and y" << endl;
 
-    x.template sync<Kokkos::HostSpace> ();
-    y.template sync<Kokkos::HostSpace> ();
-    x.template modify<Kokkos::HostSpace> ();
-    y.template modify<Kokkos::HostSpace> ();    
+    x.sync_host ();
+    y.sync_host ();
+    x.modify_host ();
+    y.modify_host ();    
     
     // dot([-i], [i]) should be -1, not +1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), -STM::one ()));
@@ -3584,9 +3584,9 @@ namespace {
     // when ExecSpace is Kokkos::Serial.  That's why we use
     // execution_space here and not memory_space.
 
-    if (X->template need_sync<Kokkos::HostSpace> ()) {
+    if (X->need_sync_host ()) {
       out << "Sync to host" << endl;
-      X->template sync<Kokkos::HostSpace> ();
+      X->sync_host ();
     } else if (X->template need_sync<device_type> ()) {
       out << "Sync to device" << endl;
       X->template sync<device_type> ();
@@ -3601,7 +3601,7 @@ namespace {
       std::is_same<typename device_type::memory_space,
                    Kokkos::HostSpace>::value;
     if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (! X->template need_sync<Kokkos::HostSpace> () &&
+      lclSuccess = (! X->need_sync_host () &&
                     ! X->template need_sync<device_type> ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -3615,8 +3615,8 @@ namespace {
     // Modify the data through the host View, by setting all of its
     // entries to a different number than before.  (ONE and TWO differ
     // even in the finite field Z_2.)
-    auto X_lcl_h = X->template getLocalView<Kokkos::HostSpace> ();
-    X->template modify<Kokkos::HostSpace> ();
+    auto X_lcl_h = X->getLocalViewHost ();
+    X->modify_host ();
     Kokkos::deep_copy (X_lcl_h, ONE);
     X->template sync<device_type> ();
 
@@ -3627,7 +3627,7 @@ namespace {
     Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
     norms.template modify<device_type> ();
     X->normInf (norms.template view<device_type> ());
-    norms.template sync<Kokkos::HostSpace> ();
+    norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
@@ -3672,8 +3672,8 @@ namespace {
     dual_view_type X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::DualView's data on the host.
-    auto X_lcl_h = X_lcl.template view<Kokkos::HostSpace> ();
-    X_lcl.template modify<Kokkos::HostSpace> ();
+    auto X_lcl_h = X_lcl.view_host ();
+    X_lcl.modify_host ();
     Kokkos::deep_copy (X_lcl_h, ONE);
     X_lcl.template sync<device_type> ();
 
@@ -3687,7 +3687,7 @@ namespace {
       typename dual_view_type::t_dev::memory_space,
       typename dual_view_type::t_host::memory_space>::value;
     if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
+      lclSuccess = (X_lcl.need_sync_host()==false && X_lcl.need_sync_device()==false) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST(gblSuccess, 1);
@@ -3711,7 +3711,7 @@ namespace {
     Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
     norms.template modify<device_type> ();
     X_gbl.normInf (norms.template view<device_type> ());
-    norms.template sync<Kokkos::HostSpace> ();
+    norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
@@ -3721,7 +3721,7 @@ namespace {
     auto X_lcl_d = X_lcl.template view<device_type> ();
     X_lcl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl_d, TWO);
-    X_lcl.template sync<Kokkos::HostSpace> ();
+    X_lcl.sync_host ();
 
     // Make sure that the DualView actually sync'd.
     //
@@ -3729,7 +3729,7 @@ namespace {
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
     if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
+      lclSuccess = (X_lcl.need_sync_host()==false && X_lcl.need_sync_device()==false) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST(gblSuccess, 1);
@@ -3742,7 +3742,7 @@ namespace {
     // Make sure that X_gbl saw the changes made to X_lcl's data.
     norms.template modify<device_type> ();
     X_gbl.normInf (norms.template view<device_type> ());
-    norms.template sync<Kokkos::HostSpace> ();
+    norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
@@ -3833,7 +3833,7 @@ namespace {
     Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
     norms.template modify<device_type> ();
     X_gbl.normInf (norms.template view<device_type> ());
-    norms.template sync<Kokkos::HostSpace> ();
+    norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
@@ -3864,7 +3864,7 @@ namespace {
     // Make sure that X_gbl saw the changes made to X_lcl's data.
     norms.template modify<device_type> ();
     X_gbl.normInf (norms.template view<device_type> ());
-    norms.template sync<Kokkos::HostSpace> ();
+    norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
@@ -3873,8 +3873,8 @@ namespace {
       std::ostringstream os;
       os << ">>> Proc " << comm->getSize ();
       auto X_gbl_dv = X_gbl.getDualView ();
-      os << ": X_gbl.modified_host: " << X_gbl_dv.modified_host ()
-         << ", X_gbl.modified_device: " << X_gbl_dv.modified_device ();
+      os << ": X_gbl.modified_host: " << (X_gbl_dv.need_sync_device()?1:0)
+         << ", X_gbl.modified_device: " << (X_gbl_dv.need_sync_host()?1:0);
       os << std::endl;
       std::cerr << os.str ();
     }
@@ -3898,10 +3898,10 @@ namespace {
 
     // We modified on device above, and we're about to modify on host
     // now, so we need to sync to host first.
-    X_gbl.template sync<Kokkos::HostSpace> ();
+    X_gbl.sync_host ();
 
-    auto X_host = X_gbl.template getLocalView<Kokkos::HostSpace> ();
-    X_gbl.template modify<Kokkos::HostSpace> ();
+    auto X_host = X_gbl.getLocalViewHost ();
+    X_gbl.modify_host ();
 
     {
       lclSuccess = success ? 1 : 0;

@@ -277,8 +277,8 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      X.template sync<Kokkos::HostSpace> ();
-      X.template modify<Kokkos::HostSpace> ();
+      X.sync_host ();
+      X.modify_host();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -303,8 +303,8 @@ namespace {
     myOut << "maxVecNorm = " << maxVecNorm << endl;
 
     {
-      Y.template sync<Kokkos::HostSpace> ();
-      Y.template modify<Kokkos::HostSpace> ();
+      Y.sync_host ();
+      Y.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -337,7 +337,7 @@ namespace {
     myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     {
-      Y.template sync<Kokkos::HostSpace> ();
+      Y.sync_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -500,8 +500,8 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      X.template sync<Kokkos::HostSpace> ();
-      X.template modify<Kokkos::HostSpace> ();
+      X.sync_host ();
+      X.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
