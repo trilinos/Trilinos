@@ -38,9 +38,9 @@
 //
 // ************************************************************************
 // @HEADER
-
 #ifndef TPETRA_FECRSMATRIX_DECL_HPP
 #define TPETRA_FECRSMATRIX_DECL_HPP
+
 
 /// \file Tpetra_FECrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::FECrsMatrix class
@@ -53,7 +53,9 @@
 #include "Tpetra_CrsMatrix_decl.hpp"
 
 
+
 namespace Tpetra {
+
 
 
 // \class FECrsMatrix
@@ -76,7 +78,7 @@ class FECrsMatrix :
     //@{
 
     /// \brief This class' first template parameter; the type of each
-    ///   entry in the matrix.
+    ///        entry in the matrix.
     typedef Scalar scalar_type;
 
     /// \brief The type used internally in place of \c Scalar.
@@ -128,11 +130,12 @@ class FECrsMatrix :
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_type local_graph_type;
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
-    ///   the part of the sparse matrix on each MPI process.
+    ///        the part of the sparse matrix on each MPI process.
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
 
     /// \brief Parent CrsMatrix type using the same scalars
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+    typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+
 
     //@}
     //! @name Constructors and destructor
@@ -165,12 +168,12 @@ class FECrsMatrix :
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    explicit FECrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-                          const Teuchos::RCP<const crs_graph_type>& offRankGraph,
-                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    explicit FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
+                         const Teuchos::RCP<const crs_graph_type>& offRankGraph,
+                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
-    virtual ~CrsMatrix ();
+    virtual ~FECrsMatrix();
 
     //@}
     //! @name Methods for inserting, modifying, or removing entries
@@ -333,6 +336,7 @@ class FECrsMatrix :
     /// Tpetra was built with debug checking enabled.
     void globalAssemble();
 
+
     /// \brief Resume operations that may change the values or
     ///   structure of the matrix.
     ///
@@ -363,16 +367,32 @@ class FECrsMatrix :
 
 
     ///! Off-rank graph
-    Teuchos::RCP<Graph> offRankGraph_;
+    Teuchos::RCP<crs_graph_type> offRankGraph_;
     //@}
+
 
     //! The offRank local sparse matrix.
     Teuchos::RCP<crs_matrix_type> offRankMatrix_;
 
 
-}; // end class FECrsMatrix
+    /// \brief Whether sumIntoLocalValues and sumIntoGlobalValues should use
+    ///        atomic updates by default.
+    ///
+    /// \warning This is an implementation detail
+    static const bool useAtomicUpdatesByDefault =
+    #ifdef KOKKOS_ENABLE_SERIAL
+        ! std::is_same<execution_space, Kokkos::Serial>::value;
+    #else
+        true;
+    #endif  // KOKKOS_ENABLE_SERIAL
 
 
-};  // end namespace Tpetra
+};    // end class FECrsMatrix
+
+
+
+}     // end namespace Tpetra
+
+
 
 #endif // TPETRA_FECRSMATRIX_DECL_HPP
