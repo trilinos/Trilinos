@@ -82,6 +82,8 @@ protected:
   Ptr<Vector<Real> > scaledc_;  // penaltyParameter_ * c_
   Ptr<Vector<Real> > gL_;       // gradient of Lagrangian (g - A*y)
 
+  Real cnorm_;                  // norm of constraint violation
+
   bool isValueComputed_;
   bool isGradientComputed_;
   bool isMultiplierComputed_;
@@ -160,8 +162,10 @@ public:
 
   const Ptr<Vector<Real>> getMultiplierVec(const Vector<Real>& x) {
     // TODO: Figure out reasonable tolerance
-    Real tol = static_cast<Real>(1e-12);
-    computeMultipliers(x, tol);
+    if( !isMultiplierComputed_ ) {
+      Real tol = static_cast<Real>(1e-12);
+      computeMultipliers(x, tol);
+    }
     return y_;
   }
 
