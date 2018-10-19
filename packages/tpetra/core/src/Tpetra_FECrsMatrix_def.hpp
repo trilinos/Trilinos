@@ -61,6 +61,13 @@ FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+FECrsMatrix(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+{
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 ~FECrsMatrix()
 {
 }
@@ -120,13 +127,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 resumeFill(const Teuchos::RCP<Teuchos::ParameterList>& params)
-{
-}
-
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-FECrsMatrix(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 {
 }
 

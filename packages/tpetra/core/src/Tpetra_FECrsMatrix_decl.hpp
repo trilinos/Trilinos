@@ -69,10 +69,15 @@ class FECrsMatrix :
    public CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 
+
     private:
+
+
         friend class CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
+
     public:
+
 
     //! @name Typedefs
     //@{
@@ -354,6 +359,7 @@ class FECrsMatrix :
 
 
   private:
+
 
     // We forbid copy construction by declaring this method private
     // and not implementing it.
