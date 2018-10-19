@@ -61,7 +61,7 @@ The `<job-name>` argument is a single string of the form
 `XXX-<keyword0>-<keyword1>-...`.  The standard order and format of this string
 is:
 
-    <system-name>-<compiler>-<debug_or_opt>-<kokkos_threading>-<kokkos_arch>
+    <system-name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
 
 Each of these keywords are described below.
 
@@ -96,12 +96,24 @@ compilers and which versions are supported.  If you choose a compiler that is
 not supported, an error message will be provided.  If `default` is used, then
 the default compiler for the system will be selected.
 
-**`<debug_or_opt>`:** The following `<job-name>` keywords specify debug or
-optimized build and the `<BUILD_TYPE> variable `(used for the CMake cache var
-`CMAKE_BUILD_TYPE`with default `<BUILD_TYPE>=DEBUG`):
+**`<release_or_debug>`:** The following `<job-name>` keywords specify debug or
+optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
+var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
+checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `debug`: Use `<BUILD_TYPE>=DEBUG`
-* `opt`: Use `<BUILD_TYPE>=RELEASE`
+* `release-debug`: (`<BUILD_TYPE>=RELEASE_RELEASE`)
+  * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
+  * Turn **ON** runtime debug checking
+  * NOTE: This build runs runtime checks to catch developer and user mistakes
+    but still runs fairly fast.
+* `debug`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
+  * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
+  * Turn **ON** runtime debug checking
+  * NOTE: This build supports running in a debugger. 
+* `release` or `opt`: (`<BUILD_TYPE>=RELEASE`)
+  * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
+  * Turn **OFF** runtime debug checking
+  * NOTE: This build runs fast with minimal checks (i.e. production).
 
 **`<kokkos_threading>`:** The following `<job-name>` keywords determine the
 Kokkos threading model variable `<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL`
@@ -251,8 +263,10 @@ builds on the local system can be run by using `all` instead of `<job-name-0>
 The parallel level for building and running tests are determined by the env
 vars `ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
 respectfully, as set by default for the given system by the `atdm/load-env.sh`
-script.  These values can be overridden by setting the env vars
-`ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
+script for the given machine.  (On most machines, these are fixed but on
+generic systems like <a href="#sems-rhel6-environment">sems-rhel6</a>, they
+are computed from the number of cores on that machine).  These values can be
+overridden by setting the env vars `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE`, respectfully as, for example:
 
 ```
@@ -518,7 +532,7 @@ $ cmake \
 
 $ make NP=16
 
-$ ctest -j16 \
+$ ctest -j8
 ```
 
 NOTE: Above including `sems-rhel6` in the job build name
@@ -536,6 +550,12 @@ $ ./checkin-test-atdm.sh sems-rhel6-clang-opt-openmp \
   --enable-packages=MueLu \
   --local-do-all
 ```
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
+`atdm/load-env.sh <job-name>` script.
 
 
 ### CEE RHEL6 environment
@@ -582,6 +602,12 @@ $ env ATDM_CHT_DEFAULT_ENV=cee-rhel6-default \
 NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=cee-rhel6-default` in the env
 when passing in `all` in order for it to select the correct set of supported
 builds for the `cee-rhel6` env.
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
+`atdm/load-env.sh <job-name>` script.
 
 
 ### waterman
