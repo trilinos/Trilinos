@@ -100,6 +100,8 @@ private:
   Ptr<Vector<Real> > Tv_;       // Temporary for matvecs
   Ptr<Vector<Real> > w_;        // first component of augmented system solve solution
   Ptr<Vector<Real> > v_;        // second component of augmented system solve solution
+  Ptr<Vector<Real> > wg_;       // first component of augmented system solve solution for gradient
+  Ptr<Vector<Real> > vg_;       // second component of augmented system solve solution for gradient
 
   Ptr<Vector<Real> > xzeros_;   // zero vector
   Ptr<Vector<Real> > czeros_;   // zero vector
@@ -182,6 +184,8 @@ public:
       Tv_ = optVec.dual().clone();
       w_ = optVec.dual().clone();
       v_ = conVec.dual().clone();
+      wg_ = optVec.dual().clone();
+      vg_ = conVec.dual().clone();
 
       xzeros_ = optVec.dual().clone();
       xzeros_->zero();
@@ -270,18 +274,20 @@ public:
     gradSolveError_ = origTol / static_cast<Real>(2);
     computeMultipliers(x, gradSolveError_);
 
+    bool refine = isGradientComputed_;
+
     // gPhi = sum y_i H_i w + sigma w + sum v_i H_i gL - H w + gL
-    solveAugmentedSystem( *w_, *v_, *xzeros_, *c_, x, gradSolveError_ );
+    solveAugmentedSystem( *wg_, *vg_, *xzeros_, *c_, x, gradSolveError_, refine );
     gradSolveError_ += multSolverError_;
     tol = gradSolveError_;
 
-    con_->applyAdjointHessian( *gPhi_, *y_, *w_, x, tol2 ); tol2 = origTol;
-    gPhi_->axpy( penaltyParameter_, *w_ );
+    con_->applyAdjointHessian( *gPhi_, *y_, *wg_, x, tol2 ); tol2 = origTol;
+    gPhi_->axpy( penaltyParameter_, *wg_ );
 
-    obj_->hessVec( *Tv_, *w_, x, tol2 ); tol2 = origTol;
+    obj_->hessVec( *Tv_, *wg_, x, tol2 ); tol2 = origTol;
     gPhi_->axpy( static_cast<Real>(-1), *Tv_ );
 
-    con_->applyAdjointHessian( *Tv_, *v_, *gL_, x, tol2 ); tol2 = origTol;
+    con_->applyAdjointHessian( *Tv_, *vg_, *gL_, x, tol2 ); tol2 = origTol;
     gPhi_->plus( *Tv_ );
 
     gPhi_->plus( *gL_ );
