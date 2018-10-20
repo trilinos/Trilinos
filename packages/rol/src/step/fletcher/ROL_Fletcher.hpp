@@ -83,7 +83,7 @@ private:
   using FletcherBase<Real>::scaledc_;  // penaltyParameter_ * c_
   using FletcherBase<Real>::gL_;       // gradient of Lagrangian (g - A*y)
 
-  using FletcherBase<Real>::cnorm_;        // norm of constraint violation
+  using FletcherBase<Real>::cnorm_;    // norm of constraint violation
 
   using FletcherBase<Real>::isValueComputed_;
   using FletcherBase<Real>::isGradientComputed_;
@@ -118,6 +118,9 @@ private:
   using FletcherBase<Real>::v1_;
   using FletcherBase<Real>::v2_;
   using FletcherBase<Real>::vv_;
+  using FletcherBase<Real>::w1_;
+  using FletcherBase<Real>::w2_;
+  using FletcherBase<Real>::ww_;
   using FletcherBase<Real>::b1_;
   using FletcherBase<Real>::b2_;
   using FletcherBase<Real>::bb_;
@@ -195,6 +198,10 @@ public:
       v1_ = optVec.dual().clone();
       v2_ = conVec.dual().clone();
       vv_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>> >({v1_, v2_}));
+
+      w1_ = optVec.dual().clone();
+      w2_ = conVec.dual().clone();
+      ww_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>> >({w1_, w2_}));
 
       b1_ = optVec.dual().clone();
       b2_ = conVec.clone();
@@ -298,7 +305,6 @@ public:
     }
 
     g.set(*gPhi_);
-
     isGradientComputed_ = true;
   }
 
@@ -366,18 +372,18 @@ public:
     b2_->set(b2);
 
     if( refine ) {
+      // TODO: Make sure this tol is actually ok...
       Real origTol = tol;
-      b1_->axpy( static_cast<Real>(-1), v1 );
-      con_->applyAdjointJacobian(*v1_, v2, x, tol );  tol = origTol;
-      b1_->axpy( static_cast<Real>(-1), *v1_ );
+      w1_->set(v1);
+      w2_->set(v2);
+      K->apply(*vv_, *ww_, tol); tol = origTol;
 
-      con_->applyJacobian(*v2_, v1, x, tol );  tol = origTol;
+      b1_->axpy( static_cast<Real>(-1), *v1_ );
       b2_->axpy( static_cast<Real>(-1), *v2_ );
-      b2_->axpy( delta_*delta_, v2 );
     }
 
-    v1_->zero();//set(v1);
-    v2_->zero();//set(v2);
+    v1_->zero();
+    v2_->zero();
 
     // If inexact, change tolerance
     if( useInexact_ ) {
@@ -401,12 +407,14 @@ public:
       return;
     }
 
-    bool refine = isMultiplierComputed_;
+    if( !isMultiplierComputed_ ) {
+      Real tol2 = tol;
+      FletcherBase<Real>::objGrad(x, tol2); tol2 = tol;
+      FletcherBase<Real>::conValue(x, tol2);
+      cnorm_ = c_->norm();
+    }
 
-    Real tol2 = tol;
-    FletcherBase<Real>::objGrad(x, tol2); tol2 = tol;
-    FletcherBase<Real>::conValue(x, tol2);
-    cnorm_ = c_->norm();
+    bool refine = isMultiplierComputed_;
 
     multSolverError_ = tol;
     solveAugmentedSystem(*gL_, *y_, *g_, *scaledc_, x, multSolverError_, refine);

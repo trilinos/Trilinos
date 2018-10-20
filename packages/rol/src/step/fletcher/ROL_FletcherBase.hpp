@@ -108,6 +108,9 @@ protected:
   Ptr<Vector<Real> > b1_;
   Ptr<Vector<Real> > b2_;
   Ptr<PartitionedVector<Real> > bb_;
+  Ptr<Vector<Real> > w1_;
+  Ptr<Vector<Real> > w2_;
+  Ptr<PartitionedVector<Real> > ww_;
 
   void objValue(const Vector<Real>& x, Real &tol) {
     if( !isObjValueComputed_ ) {
