@@ -103,6 +103,7 @@ extern "C"
 #endif
 
 extern int    ML_Comm_Create( ML_Comm ** comm );
+extern int    ML_Comm_Create2( ML_Comm ** comm, USR_COMM com );
 extern int    ML_Comm_Destroy( ML_Comm ** comm );
 extern int    ML_Comm_Check( ML_Comm *comm );
 

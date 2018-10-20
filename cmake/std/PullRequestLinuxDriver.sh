@@ -176,6 +176,12 @@ fi
 # not all test jobs kick off right away
 
 #------------------------------
+# PR merge is complete
+#------------------------------
+
+# TODO: Split this script in two here (See Issue 3625 for reasons)
+
+#------------------------------
 # Doing setup for build
 #------------------------------
 
@@ -223,8 +229,13 @@ cmake --version
 module list
 
 # This crashes for the serial case since MPI variables are not set
-if [ "*_SERIAL" != "${JOB_BASE_NAME:?}" ]; then
+# - See Issue #3625
+# - wcm: bugfix #3673
+regex=".*(_SERIAL)$"
+if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
   echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+else
+  echo "Job is SERIAL"
 fi
 
 CDASH_TRACK="Pull Request"

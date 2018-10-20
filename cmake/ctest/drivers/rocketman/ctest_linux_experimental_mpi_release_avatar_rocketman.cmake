@@ -80,7 +80,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTPL_ENABLE_SuperLU=ON"
   "-DTPL_ENABLE_Avatar=ON"
-  "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/src;/home/csiefer/avatar/util/fclib-1.6.1/modules"
+  "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src;/home/csiefer/avatar/avatar/util/fclib-1.6.1/modules"
   "-DAvatar_LIBRARY_DIRS=/home/csiefer/avatar/build/src;/home/csiefer/avatar/build/util/fclib-1.6.1/modules"
   "-DTPL_Avatar_LIBRARIES=/home/csiefer/avatar/build/libavatar.a;/home/csiefer/avatar/build/util/fclib-1.6.1/modules/libfclib.a"
   "-DTrilinos_EXTRA_LINK_FLAGS:STRING=:-L/home/csiefer/avatar/TPLs/lib -lgsl -lgslcblas"

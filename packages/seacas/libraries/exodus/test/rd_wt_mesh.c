@@ -195,9 +195,9 @@ int main(int argc, char **argv)
                              &num_iterations, &sleep_time));
   }
 
-    /*
-     *	Broadcast Input
-     */
+  /*
+   *	Broadcast Input
+   */
 
 #ifdef HAVE_PARALLEL
   MPI_Bcast(&quit, 1, MPI_INT, 0, MPI_COMM_WORLD);
