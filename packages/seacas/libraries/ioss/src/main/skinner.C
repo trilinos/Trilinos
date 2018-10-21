@@ -40,7 +40,6 @@
 #include <iostream>
 #include <numeric>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -66,6 +65,13 @@
 // ========================================================================
 
 namespace {
+  struct my_numpunct : std::numpunct<char>
+  {
+  protected:
+    char        do_thousands_sep() const override { return ','; }
+    std::string do_grouping() const override { return "\3"; }
+  };
+
   template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
   std::string                  codename;
   std::string                  version = "0.6";
@@ -81,6 +87,9 @@ int main(int argc, char *argv[])
 
   Skinner::Interface interface;
   interface.parse_options(argc, argv);
+
+  std::cout.imbue(std::locale(std::locale(), new my_numpunct));
+  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
 
   std::string in_type = "exodusII";
 
@@ -101,11 +110,17 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (interface.ints_64_bit()) {
-    skinner(interface, static_cast<int64_t>(0));
+  try {
+    if (interface.ints_64_bit()) {
+      skinner(interface, static_cast<int64_t>(0));
+    }
+    else {
+      skinner(interface, 0);
+    }
   }
-  else {
-    skinner(interface, 0);
+  catch (std::exception &e) {
+    std::cerr << "\n" << e.what() << "\n\nskinner terminated due to exception\n";
+    exit(EXIT_FAILURE);
   }
 
   if (my_rank == 0) {

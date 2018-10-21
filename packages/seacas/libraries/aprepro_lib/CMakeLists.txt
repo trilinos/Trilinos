@@ -91,6 +91,20 @@ if(USE_TRIBITS)
     SOURCES ${SOURCES}
   )
 
+if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+   # add a target to generate API documentation with Doxygen
+   if(SEACASProj_ENABLE_DOXYGEN)
+     find_package(Doxygen)
+     if(DOXYGEN_FOUND)
+       add_custom_command(TARGET aprepro_lib POST_BUILD
+          COMMAND ${DOXYGEN_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          COMMENT "Generating Aprepro API documentation with Doxygen" VERBATIM
+        )     
+     endif(DOXYGEN_FOUND)
+   endif()
+endif()
+
 if(${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
   add_executable(aprepro_test_app apr_test.cc)
   target_link_libraries(aprepro_test_app aprepro_lib)

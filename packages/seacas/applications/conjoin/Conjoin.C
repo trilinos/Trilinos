@@ -1241,17 +1241,17 @@ namespace {
       // Number of elements per block in local block order...
       std::vector<size_t> local_order_entity_count(global.count(Excn::EBLK));
       for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
-	int local_order = blocks[p][b].position_;
-	local_order_entity_count[local_order] = blocks[p][b].entity_count();
+        int local_order                       = blocks[p][b].position_;
+        local_order_entity_count[local_order] = blocks[p][b].entity_count();
       }
       size_t sum = 0;
       for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
-	size_t save = local_order_entity_count[b];
-	local_order_entity_count[b] = sum;
-	sum += save;
+        size_t save                 = local_order_entity_count[b];
+        local_order_entity_count[b] = sum;
+        sum += save;
       }
       for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
-	int local_order = blocks[p][b].position_;
+        int local_order      = blocks[p][b].position_;
         blocks[p][b].offset_ = local_order_entity_count[local_order];
 
         if (debug_level & 4) {

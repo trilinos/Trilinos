@@ -113,7 +113,7 @@ int ex_put_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t 
   if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
              nodal_var_index, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_WARN);
   }
   start[0] = --time_step;
@@ -133,7 +133,7 @@ int ex_put_nodal_var_int(int exoid, int time_step, int nodal_var_index, int64_t 
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store nodal variables in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_FATAL);
   }
   return (EX_NOERR);

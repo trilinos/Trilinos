@@ -105,7 +105,6 @@ namespace Intrepid2 {
           case OPERATOR_CURL:
           case OPERATOR_D1:
             return 7*cardinality;
-            break;
           default:
             return getDkCardinality<opType,3>()*cardinality;
           }

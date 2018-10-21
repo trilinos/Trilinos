@@ -24,7 +24,21 @@ fi
 echo "Using SEMS RHEL6 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE"
 
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=32
+
+# Get ATDM_CONFIG_NUM_CORES_ON_MACHINE for this machine
+source $ATDM_SCRIPT_DIR/utils/get_num_cores_on_machine.sh
+
+if [ "$ATDM_CONFIG_NUM_CORES_ON_MACHINE" -gt "20" ] ; then
+  export ATDM_CONFIG_MAX_NUM_CORES_TO_USE=20
+  # NOTE: We get links crashing if we try to use to many processes.  ToDo: We
+  # should limit the number of processes that ninja uses to link instead of
+  # reducing the overrall parallel build level like this.
+else
+  export ATDM_CONFIG_MAX_NUM_CORES_TO_USE=$ATDM_CONFIG_NUM_CORES_ON_MACHINE
+fi
+
+export ATDM_CONFIG_BUILD_COUNT=$ATDM_CONFIG_MAX_NUM_CORES_TO_USE
+# NOTE: Use as many build processes and there are cores by default.
 
 module purge
 module load sems-env
@@ -35,16 +49,21 @@ module load atdm-cmake/3.11.1
 module load atdm-ninja_fortran/1.7.2
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ]] ; then
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
   export OMP_NUM_THREADS=2
-  # NOTE: With hyper-threading enabled, the 16 cores can run two threads each
-  # or 32 threads total.
+  # NOTE: With hyper-threading enabled, you can run as many threads as there
+  # are cores and with 2 OpenMP threads per MPI process, the means you can run
+  # as many MPI processes as there are cores on the machine with 2 OpenMP
+  # threads.  But we want to be conservative and instead run with half that
+  # many to be safe and avoid time-outs.
 else
-  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
-  # NOTE: When running in serial, the second hyperthread can't see to run a
-  # sperate MPI process and if you try to run with -j32 with ctest, you get a
-  # bunch of failures that say "libgomp: Thread creation failed: Resource
-  # temporarily unavailable".  Therefore, we need to run with -j16, not -j32.
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=$(($ATDM_CONFIG_MAX_NUM_CORES_TO_USE/2))
+  # NOTE: NOTE: When running in serial, the second hyperthread can't seem to
+  # run a sperate MPI process and if you try to run with as many they you get
+  # a bunch of failures that say "libgomp: Thread creation failed: Resource
+  # temporarily unavailable".  So we can only run with as many MPI processes
+  # as there are cores on the machine.  But we want to be conservative and
+  # instead run with half that many to be safe and avoid time-outs.
 fi
 
 if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then

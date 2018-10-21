@@ -213,7 +213,6 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   default: {
     INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
         ">>> ERROR (Basis_HVOL_TRI_Cn_FEM): Operator type not implemented" );
-    break;
   }
   }
 }
