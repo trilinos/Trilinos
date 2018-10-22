@@ -45,16 +45,19 @@ module load sems-superlu/4.3/base
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
-setenv OMPI_CFLAGS `echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
-setenv OMPI_CXXFLAGS `echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
+#setenv OMPI_CFLAGS="`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`"
+#setenv OMPI_CXXFLAGS="`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`"
 
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-export OMP_NUM_THREADS=2
+setenv OMP_NUM_THREADS 2
+
+
 
 # Machine independent cron_driver:
-setenv SCRIPT_DIR `cd "\`dirname \"$0\"\`";pwd`
+setenv SCRIPT_DIR `dirname "$0"`
+echo "SCRIPT_DIR = " $SCRIPT_DIR
 $SCRIPT_DIR/../cron_driver.py
 
 module unload sems-superlu/4.3/base

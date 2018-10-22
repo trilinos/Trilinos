@@ -34,11 +34,11 @@ fi
 #Perl script to produce prettified HTML
 HTMLPERLSCRIPT="/home/nightlyTesting/Trilinos/packages/muelu/utils/misc/drakify-email.pl"
 #root of cdash testing directory
-TESTLOCATION="/space/nightlyTesting"
-LOGBACKUPDIRECTORY="/space/nightlyTesting/logs"
+TESTLOCATION="/home/nightlyTesting"
+LOGBACKUPDIRECTORY="/home/nightlyTesting/logs"
 
 #packages to be summarized
-PATTERN="(Xpetra|MueLu|TrilinosCouplings)"
+PATTERN="(Avatar|Xpetra|MueLu|TrilinosCouplings)"
 
 #variables to be passed to the perl script
 MACHINENAME=`hostname -s`

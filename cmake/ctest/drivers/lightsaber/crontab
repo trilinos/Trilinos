@@ -12,7 +12,7 @@ SHELL=/bin/bash
 
 # nightly tests
 
-0  22 * * * cd /home/nightlyTesting/Trilinos/cmake/ctest/drivers/lightsaber; git pull ; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/Trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log 
+0  22 * * * cd /home/nightlyTesting/Trilinos/cmake/ctest/drivers/lightsaber; git pull ; ./cron_driver.csh >&! /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/Trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log 
 
 #
 #@reboot /home/jhu/bin/send-reboot-email.sh
