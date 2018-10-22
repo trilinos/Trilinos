@@ -574,8 +574,8 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector(
-                     const NOX::Abstract::MultiVector& input,
-                     NOX::Abstract::MultiVector& result) const
+                     const NOX::Abstract::MultiVector& /* input */,
+                     NOX::Abstract::MultiVector& /* result */) const
 {
   globalData->locaErrorCheck->throwError(
           "LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector()",

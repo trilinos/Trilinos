@@ -50,9 +50,9 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_BarrierFunctions.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 int main( int argc, char *argv[] ) {
 
@@ -91,8 +91,8 @@ int main( int argc, char *argv[] ) {
   
 
 /*
-  Teuchos::ParameterList logList;
-  Teuchos::ParameterList quadList;
+  ROL::ParameterList logList;
+  ROL::ParameterList quadList;
 
   logList.sublist("Barrier Function").set("Type","Logarithmic");
   quadList.sublist("Barrier Function").set("Type","Quadratic");

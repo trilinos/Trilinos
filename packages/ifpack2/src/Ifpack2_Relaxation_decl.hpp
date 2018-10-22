@@ -51,10 +51,7 @@
 #include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
-
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 #include <KokkosKernels_Handle.hpp>
-#endif
 
 namespace Teuchos {
   // forward declarations
@@ -595,7 +592,6 @@ private:
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
 
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
   //@}
   //! \name Implementation of multithreaded Gauss-Seidel.
@@ -612,7 +608,6 @@ private:
       <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
   Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
-#endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
@@ -711,6 +706,9 @@ private:
 
   void computeBlockCrs ();
 
+  //! A service routine for updating the cached MultiVector
+  void updateCachedMultiVector(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& map, size_t numVecs) const;
+
 
   //@}
   //! @name Internal data and parameters
@@ -726,13 +724,13 @@ private:
 
   //! The matrix for which to construct the preconditioner or smoother.
   Teuchos::RCP<const row_matrix_type> A_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
+  //! Time object to track timing (setup).
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
   Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
   //! Contains the diagonal elements of \c A_.
   Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
-
+  //! MultiVector for caching purposes (so apply doesn't need to allocate one on each call)
+  mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedMV_;
 
   typedef Kokkos::View<typename block_crs_matrix_type::impl_scalar_type***,
                        typename block_crs_matrix_type::device_type> block_diag_type;

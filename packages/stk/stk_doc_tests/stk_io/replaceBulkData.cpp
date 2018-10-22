@@ -93,7 +93,8 @@ namespace {
       //+       since it commits the meta data.
       const std::string fieldName = "disp";
       stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
-      stk::mesh::put_field(field, stkIo.meta_data().universal_part());
+      stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
+                                   (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
       //+ commit the meta data and create the bulk data.  
       //+ populate the bulk data with data from the mesh file.
@@ -141,6 +142,7 @@ namespace {
         stkIo.end_output_step(fh);
       }
       //-END      
+      delete bd;
     }
     // ============================================================
     //+ VERIFICATION
@@ -166,5 +168,6 @@ namespace {
     // Cleanup
     unlink(mesh_name.c_str());
     unlink(results_name.c_str());
+
   }
 }

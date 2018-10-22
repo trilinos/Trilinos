@@ -67,22 +67,22 @@ namespace Intrepid2 {
       case OPERATOR_VALUE : {
         const auto x = input(0);
 
-        output(0) = (1.0 - x)/2.0;
-        output(1) = (1.0 + x)/2.0;
+        output.access(0) = (1.0 - x)/2.0;
+        output.access(1) = (1.0 + x)/2.0;
         break;
       }
       case OPERATOR_GRAD : {
-        output(0, 0) = -0.5;
-        output(1, 0) =  0.5;
+        output.access(0, 0) = -0.5;
+        output.access(1, 0) =  0.5;
         break;
       }
       case OPERATOR_MAX : {
-        const ordinal_type jend = output.dimension(1);
-        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.extent(1);
+        const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type i=0;i<iend;++i)
-            output(i, j) = 0.0;
+            output.access(i, j) = 0.0;
         break;
       }
       default: {
@@ -108,7 +108,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

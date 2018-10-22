@@ -53,9 +53,9 @@
 #include "ROL_Constraint.hpp"
 #include "ROL_OptimizationSolver.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 typedef double RealT;
 
@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   std::string filename = "input_ex02.xml";
-  Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-  Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+  
+  auto parlist = ROL::getParametersFromXmlFile( filename );
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -121,10 +121,10 @@ int main(int argc, char *argv[]) {
 
     ROL::Ptr<ROL::BoundFletcher<RealT> > fletcher_penalty = ROL::makePtr<ROL::BoundFletcher<RealT> >(obj, con, bndxs, *xs, *lis, *parlist);
 
-    ROL::Ptr<ROL::Vector<RealT> > v = xs->clone(); RandomizeVector(*v);
+    ROL::Ptr<ROL::Vector<RealT> > v = xs->clone(); v->randomize();
     std::vector<std::vector<RealT> > gCheck = fletcher_penalty->checkGradient(*xs, *v, true );
 
-    ROL::Ptr<ROL::Vector<RealT> > w = xs->clone(); RandomizeVector(*w);
+    ROL::Ptr<ROL::Vector<RealT> > w = xs->clone(); w->randomize();
     std::vector<RealT> hCheck = fletcher_penalty->checkHessSym( *xs, *v, *w, true, *outStream);
 
     // Define algorithm.

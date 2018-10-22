@@ -129,9 +129,9 @@ KOKKOS_INLINE_FUNCTION
 void ScalarToVector<EvalT, TRAITS>::operator()(const size_t &cell) const {
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
   // Loop over points
-  for (size_type pt = 0; pt < vector_field.dimension(1); ++pt) {
+  for (size_type pt = 0; pt < vector_field.extent(1); ++pt) {
     // Loop over scalars
-    for (std::size_t sc = 0; sc < internal_scalar_fields.dimension(0); ++sc) {
+    for (std::size_t sc = 0; sc < internal_scalar_fields.extent(0); ++sc) {
       vector_field(cell,pt,sc) = internal_scalar_fields(sc)(cell,pt);
 
     }

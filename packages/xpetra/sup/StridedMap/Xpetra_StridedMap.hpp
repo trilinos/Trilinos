@@ -101,15 +101,6 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
   private:
 
   typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory_t;
@@ -148,7 +139,7 @@ namespace Xpetra {
                 LocalOrdinal stridedBlockId = -1,  // FIXME (mfh 03 Sep 2014) This breaks for unsigned LocalOrdinal
                 GlobalOrdinal offset = 0,
                 LocalGlobal lg = GloballyDistributed,
-                const Teuchos::RCP< Node >& node = defaultArgNode())
+                const Teuchos::RCP< Node >& node = Teuchos::rcp(new Node))
       : stridingInfo_ (stridingInfo),
         stridedBlockId_ (stridedBlockId),
         offset_ (offset),
@@ -246,7 +237,7 @@ namespace Xpetra {
      */
     StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, std::vector<size_t>& stridingInfo,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), offset_(offset), indexBase_(indexBase)
     {
       size_t blkSize = getFixedBlockSize();
@@ -335,7 +326,7 @@ namespace Xpetra {
      */
     StridedMap(UnderlyingLib xlib, global_size_t numGlobalElements, const Teuchos::ArrayView< const GlobalOrdinal > &elementList, GlobalOrdinal indexBase,
                std::vector<size_t>& stridingInfo, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, LocalOrdinal stridedBlockId = -1,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
     : stridingInfo_(stridingInfo), stridedBlockId_(stridedBlockId), indexBase_(indexBase)
     {
       size_t blkSize = getFixedBlockSize();

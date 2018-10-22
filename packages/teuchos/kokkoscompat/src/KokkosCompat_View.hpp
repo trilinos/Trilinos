@@ -66,13 +66,13 @@ namespace Kokkos {
     Teuchos::ArrayView<typename ViewType::value_type>
     getArrayView(const ViewType& a) {
       return Teuchos::ArrayView<typename ViewType::value_type>(
-        a.ptr_on_device(), a.size());
+        a.data(), a.size());
     }
     template <typename ViewType>
     Teuchos::ArrayView<const typename ViewType::value_type>
     getConstArrayView(const ViewType& a) {
       return Teuchos::ArrayView<const typename ViewType::value_type>(
-        a.ptr_on_device(), a.size());
+        a.data(), a.size());
     }
 
    // Convert Teuchos::ArrayView to Kokkos::View through deep_copy
@@ -184,7 +184,7 @@ namespace Kokkos {
       // allocated (e.g.,) using new or malloc, but it's not a problem
       // here, because the custom deallocator does not free anything.
       // Nevertheless, it's better not to trouble the tracking system.
-      return Teuchos::arcp(view.ptr_on_device(), 0, view.capacity(),
+      return Teuchos::arcp(view.data(), 0, view.span(),
                            deallocator(view), false);
     }
 
@@ -195,7 +195,7 @@ namespace Kokkos {
       const ViewType& view,
       typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type offset,
       typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type size) {
-      return Teuchos::arcp(view.ptr_on_device()+offset, 0, size,
+      return Teuchos::arcp(view.data()+offset, 0, size,
                            deallocator(view), false);
     }
 

@@ -50,7 +50,7 @@
 #include "ROL_HS2.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_RandomVector.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 //#include <fenv.h>
 
@@ -69,14 +69,14 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
     outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
   RealT zero(0);

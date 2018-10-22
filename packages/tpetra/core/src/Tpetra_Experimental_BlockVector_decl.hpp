@@ -42,11 +42,13 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKVECTOR_DECL_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKVECTOR_DECL_HPP
 
-#include <Tpetra_Experimental_BlockMultiVector.hpp>
-#include <Tpetra_Vector.hpp>
+#include "Tpetra_Experimental_BlockVector_fwd.hpp"
+#include "Tpetra_Experimental_BlockMultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
 namespace Experimental {
+namespace Classes {
 
 /// \class BlockVector
 /// \brief Vector for multiple degrees of freedom per mesh point
@@ -323,6 +325,7 @@ public:
   //@}
 };
 
+} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 

@@ -57,8 +57,8 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold)
-    : varName_(ename), threshold_(threshold)
+  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ThresholdAFilterFactory(const std::string& ename, const Scalar threshold, const bool keepDiagonal, const GlobalOrdinal expectedNNZperRow)
+    : varName_(ename), threshold_(threshold), keepDiagonal_(keepDiagonal), expectedNNZperRow_(expectedNNZperRow)
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -81,8 +81,9 @@ namespace MueLu {
     RCP<OMatrix> Ain = Get< RCP<OMatrix> >(currentLevel, varName_);
 
     // create new empty Matrix
-    RCP<CrsOMatrix> Aout = rcp(new CrsOMatrix(Ain->getRowMap(),Ain->getGlobalMaxNumRowEntries(),Xpetra::StaticProfile)); //FIXME
-
+    RCP<const Map> rowmap = Ain->getRowMap();
+    RCP<const Map> colmap = Ain->getColMap();
+    RCP<CrsOMatrix> Aout = rcp(new CrsOMatrix(rowmap, expectedNNZperRow_ <= 0 ? Ain->getGlobalMaxNumRowEntries() : expectedNNZperRow_ , Xpetra::DynamicProfile));
     // loop over local rows
     for(size_t row=0; row<Ain->getNodeNumRows(); row++)
       {
@@ -97,13 +98,24 @@ namespace MueLu {
         Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<GlobalOrdinal>::zero());
         Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
         size_t nNonzeros = 0;
-        for(size_t i=0; i<(size_t)indices.size(); i++) {
-          if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || indices[i]==(LocalOrdinal)row) {
-            indout[nNonzeros] = Ain->getColMap()->getGlobalElement(indices[i]); // LID -> GID (column)
-            valout[nNonzeros] = vals[i];
-            nNonzeros++;
+        if (keepDiagonal_) {
+          GlobalOrdinal glbRow = rowmap->getGlobalElement(row);
+          LocalOrdinal lclColIdx = colmap->getLocalElement(glbRow);
+          for(size_t i=0; i<(size_t)indices.size(); i++) {
+            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || indices[i]==lclColIdx) {
+              indout[nNonzeros] = colmap->getGlobalElement(indices[i]); // LID -> GID (column)
+              valout[nNonzeros] = vals[i];
+              nNonzeros++;
+            }
           }
-        }
+        } else
+          for(size_t i=0; i<(size_t)indices.size(); i++) {
+            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_)) {
+              indout[nNonzeros] = colmap->getGlobalElement(indices[i]); // LID -> GID (column)
+              valout[nNonzeros] = vals[i];
+              nNonzeros++;
+            }
+          }
 
         indout.resize(nNonzeros);
         valout.resize(nNonzeros);

@@ -1,5 +1,8 @@
 #!/bin/env bash
 
+# 2018-08-01 : This script is deprecated in the PR testing suite and 
+#              is replaced by `commonTools/framework/get-changed-trilinos-packages.sh`
+
 #The purpose of this file is to generate a list of package enables that
 #when used with forward packages turned on will result in the right set of
 #tests being run to test a pull request. The current implementation is neither
@@ -143,6 +146,12 @@ else #If we aren't building everything, figure out which packages to bulid
 
   if grep -q packages/shylu/ gitchanges.txt; then
         PackageEnables+="-DTrilinos_ENABLE_ShyLU=ON "
+        if grep -q shylu_node gitchanges.txt; then
+              PackageEnables+="-DTrilinos_ENABLE_ShyLU_Node=ON "
+        fi
+        if grep -q shylu_dd gitchanges.txt; then
+              PackageEnables+="-DTrilinos_ENABLE_ShyLU_DD=ON "
+        fi
   fi
 
   if grep -q packages/amesos2/ gitchanges.txt; then

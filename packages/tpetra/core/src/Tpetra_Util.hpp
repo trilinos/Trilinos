@@ -51,10 +51,13 @@
   here so that they can be updated and maintained in a single spot.
 */
 
-#include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
+#include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_DualView.hpp"
-#include "Teuchos_Utils.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_Utils.hpp"
 #include <algorithm>
 #include <iterator>
 #include <sstream>
@@ -884,8 +887,8 @@ namespace Tpetra {
 
       auto x_host = x.template view<Kokkos::HostSpace> ();
       typedef typename DualViewType::t_dev::value_type value_type;
-      return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                             x_host.dimension_0 ());
+      return Teuchos::ArrayView<value_type> (x_host.data (),
+                                             x_host.extent (0));
     }
 
     /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the
@@ -942,7 +945,7 @@ namespace Tpetra {
       const auto dev = dv.modified_host ();
 
       std::ostringstream os;
-      os << name << ": {size: " << dv.dimension_0 ()
+      os << name << ": {size: " << dv.extent (0)
          << ", sync: {host: " << host << ", dev: " << dev << "}";
       return os.str ();
     }

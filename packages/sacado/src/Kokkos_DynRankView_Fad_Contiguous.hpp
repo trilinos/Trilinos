@@ -305,7 +305,7 @@ private:
   enum { rank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
               + unsigned(R4) + unsigned(R5) + unsigned(R6) };
 
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::stride> array_layout ;
+  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::scalar_stride> array_layout ;
 
   typedef typename SrcTraits::value_type  value_type ;
 
@@ -497,7 +497,7 @@ private:
   enum { rank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
               + unsigned(R4) + unsigned(R5) + unsigned(R6) };
 
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::stride> array_layout ;
+  typedef Kokkos::LayoutContiguous<Kokkos::LayoutStride,SrcTraits::array_layout::scalar_stride> array_layout ;
 
   typedef typename SrcTraits::value_type  value_type ;
 
@@ -681,8 +681,9 @@ public:
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has FAD only
     std::is_same< typename DstTraits::specialize
@@ -769,8 +770,9 @@ public:
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
     &&
     // Destination view has ordinary
     std::is_same< typename DstTraits::specialize , void >::value

@@ -82,9 +82,9 @@ private:
   Real rate_;
   Real eps_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log Quantile");
     }
@@ -107,13 +107,13 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((alpha_ < zero) || (alpha_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((alpha_ < zero) || (alpha_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Linear growth rate must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((rate_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((rate_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Exponential growth rate must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Smoothing parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(pf_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): PlusFunction pointer is null!");
   }
 
@@ -142,7 +142,7 @@ public:
       \li "Smoothing Parameter" (must be positive)
       \li A sublist for plus function information.
   */
-  LogQuantileQuadrangle(Teuchos::ParameterList &parlist)
+  LogQuantileQuadrangle(ROL::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     checkInputs();
@@ -150,9 +150,9 @@ public:
 
   Real error(Real x, int deriv = 0) {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION( (deriv > 2), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( (deriv > 2), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle::error): deriv greater than 2!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle::error): deriv less than 0!");
 
     Real X = ((deriv == 0) ? x : ((deriv == 1) ? one : zero));
@@ -161,9 +161,9 @@ public:
 
   Real regret(Real x, int deriv = 0) {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION( (deriv > 2), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( (deriv > 2), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle::regret): deriv greater than 2!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle::regret): deriv less than 0!");
 
     Real arg  = std::exp(rate_*x);

@@ -91,9 +91,9 @@ private:
 
   Real eps_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Smoothed Worst Case");
     }
@@ -111,7 +111,7 @@ private:
 
   void checkInputs(void) const {
     Real zero(0);
-    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::SmoothedWorstCaseQuadrangle): Smoothing parameter must be positive!");
   }
 
@@ -133,7 +133,7 @@ public:
       within the "Smoothed Worst-Case Quadrangle" sublist should have the following parameters
       \li "Smoothing Parameter" (must be positive).
   */
-  SmoothedWorstCaseQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
+  SmoothedWorstCaseQuadrangle(ROL::ParameterList &parlist) : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     checkInputs();
   }

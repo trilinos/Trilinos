@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LO, GO)
     diff.update (STS::one (), x, -STS::one ());
     diff.normInf (norms);
     Kokkos::deep_copy (norms_h, norms);
-    for (LO j = 0; j < static_cast<LO> (norms_h.dimension_0 ()); ++j) {
+    for (LO j = 0; j < static_cast<LO> (norms_h.extent (0)); ++j) {
       const mag_type absVal = ArithTraits<mag_type>::abs (norms_h(j));
       TEST_ASSERT( absVal <= bound );
       if (absVal > bound) {
@@ -220,26 +220,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrd
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Amesos2Wrapper, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Amesos2Wrapper, Test0, Scalar, LocalOrdinal, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Amesos2Wrapper, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
 
-// mfh 21 Oct 2015: This class was only getting tested for Scalar =
-// double, LocalOrdinal = int, GlobalOrdinal = int, and the default
-// Node type.  As part of the fix for Bug 6358, I'm removing the
-// assumption that GlobalOrdinal = int exists.
+// FIXME (mfh 11 Apr 2018) We should test this at least for all
+// enabled real Scalar types, if not complex Scalar types as well.
 
 typedef Tpetra::MultiVector<>::scalar_type default_scalar_type;
 typedef Tpetra::MultiVector<>::local_ordinal_type default_local_ordinal_type;
 typedef Tpetra::MultiVector<>::global_ordinal_type default_global_ordinal_type;
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL( default_scalar_type, default_local_ordinal_type, default_global_ordinal_type )
-
-// //typedef std::complex<double> ComplexDouble;
-// //UNIT_TEST_GROUP_SCALAR_ORDINAL(ComplexDouble, int, int)
-// UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-// #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-// UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-// #endif
 
 } // namespace (anonymous)
 

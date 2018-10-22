@@ -42,17 +42,15 @@
 #ifndef TPETRA_ROWGRAPH_DECL_HPP
 #define TPETRA_ROWGRAPH_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Packable.hpp"
-
+#include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
   /// \class RowGraph
   /// \brief An abstract interface for graphs accessed by rows.
@@ -149,11 +147,18 @@ namespace Tpetra {
     /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
+    /// \brief Number of diagonal entries over all processes in the
+    ///   graph's communicator.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
 
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
+    /// \brief Number of diagonal entries on the calling process.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
@@ -161,14 +166,32 @@ namespace Tpetra {
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     virtual size_t getNodeMaxNumRowEntries() const = 0;
 
-    //! \brief Indicates whether the graph has a well-defined column map.
+    //! Whether the graph has a well-defined column Map.
     virtual bool hasColMap() const = 0;
 
-    //! \brief Indicates whether the graph is lower triangular.
-    virtual bool isLowerTriangular() const = 0;
+    /// \brief Whether the graph is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
 
-    //! \brief Indicates whether the graph is upper triangular.
-    virtual bool isUpperTriangular() const = 0;
+    /// \brief Whether the graph is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
     virtual bool isLocallyIndexed() const = 0;
@@ -219,7 +242,7 @@ namespace Tpetra {
     /// If subclasses override the default (trivial) implementation of
     /// getLocalRowView() and getGlobalRowView(), then they need to
     /// override this method as well.
-    bool supportsRowViews () const {
+    virtual bool supportsRowViews () const {
       return false;
     }
 
@@ -286,6 +309,7 @@ namespace Tpetra {
           Distributor& distor) const;
     //@}
   }; // class RowGraph
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_ROWGRAPH_DECL_HPP

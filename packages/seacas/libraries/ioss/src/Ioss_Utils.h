@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_IOUtils_h
-#define IOSS_Ioss_IOUtils_h
+#ifndef IOSS_Ioss_Utils_h
+#define IOSS_Ioss_Utils_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Field.h>
@@ -64,6 +64,30 @@ namespace Ioss {
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
 #define IOSS_WARNING std::cerr
 
+namespace {
+  // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
+  template <typename T> size_t unique(std::vector<T> &out, bool skip_first)
+  {
+    if (out.empty())
+      return 0;
+    size_t i    = 1;
+    size_t pos  = 1;
+    T      oldv = out[0];
+    if (skip_first) {
+      i    = 2;
+      pos  = 2;
+      oldv = out[1];
+    }
+    for (; i < out.size(); ++i) {
+      T newv   = out[i];
+      out[pos] = newv;
+      pos += (newv != oldv);
+      oldv = newv;
+    }
+    return pos;
+  }
+} // namespace
+
 namespace Ioss {
 
   /* \brief Utility methods.
@@ -92,7 +116,7 @@ namespace Ioss {
         it++;
       }
       std::sort(it, vec.end());
-      vec.erase(std::unique(it, vec.end()), vec.end());
+      vec.resize(unique(vec, skip_first));
       vec.shrink_to_fit();
     }
 
@@ -109,8 +133,8 @@ namespace Ioss {
 
     template <typename T> static T find_index_location(T node, const std::vector<T> &index)
     {
-// 0-based node numbering
-// index[p] = first node (0-based) on processor p
+      // 0-based node numbering
+      // index[p] = first node (0-based) on processor p
 
 #if 1
       // Assume data coherence.  I.e., a new search will be close to the
@@ -140,8 +164,54 @@ namespace Ioss {
 #endif
     }
 
+    template <typename T> static void clear(std::vector<T> &vec)
+    {
+      vec.clear();
+      vec.shrink_to_fit();
+      assert(vec.capacity() == 0);
+    }
+
+    inline static int power_2(int count)
+    {
+      // Return the power of two which is equal to or greater than 'count'
+      // count = 15 -> returns 16
+      // count = 16 -> returns 16
+      // count = 17 -> returns 32
+
+      // Use brute force...
+      int pow2 = 1;
+      while (pow2 < count) {
+        pow2 *= 2;
+      }
+      return pow2;
+    }
+
+    template <typename T> static bool check_block_order(const std::vector<T *> &blocks)
+    {
+#ifndef NDEBUG
+      // Verify that element blocks are defined in sorted offset order...
+      typename std::vector<T *>::const_iterator I;
+
+      int64_t eb_offset = -1;
+      for (I = blocks.begin(); I != blocks.end(); ++I) {
+        int64_t this_off = (*I)->get_offset();
+        if (this_off < eb_offset) {
+          {
+            {
+              return false;
+            }
+          }
+        }
+        eb_offset = this_off;
+      }
+#endif
+      return true;
+    }
+
+    static int log_power_2(uint64_t value);
+
     static char **get_name_array(size_t count, int size);
-    static void delete_name_array(char **names, int count);
+    static void   delete_name_array(char **names, int count);
 
     // Fill time_string and date_string with current time and date
     // formatted as "HH:MM:SS" for time and "yy/mm/dd" or "yyyy/mm/dd"
@@ -150,7 +220,8 @@ namespace Ioss {
 
     static std::string decode_filename(const std::string &filename, int processor,
                                        int num_processors);
-    static int decode_entity_name(const std::string &entity_name);
+    static size_t      get_number(const std::string &suffix);
+    static int64_t     extract_id(const std::string &name_id);
     static std::string encode_entity_name(const std::string &entity_type, int64_t id);
 
     // Convert 'name' to lowercase and convert spaces to '_'
@@ -161,6 +232,7 @@ namespace Ioss {
     // based on the property value.  Either "TRUE", "YES", "ON", or 1 for true;
     // or "FALSE", "NO", "OFF", or not equal to 1 for false.
     // Returns true/false depending on whether property found and value set.
+    // Does not set 'prop_val' if 'prop_name' does not exist.
     static bool check_set_bool_property(const Ioss::PropertyManager &properties,
                                         const std::string &prop_name, bool &prop_value);
 
@@ -175,8 +247,11 @@ namespace Ioss {
     // does some other transformations to remove some exodusII ambiguity.
     static std::string fixup_type(const std::string &base, int nodes_per_element, int spatial);
 
-    static std::string uppercase(const std::string &name);
-    static std::string lowercase(const std::string &name);
+    static std::string uppercase(std::string name);
+    static std::string lowercase(std::string name);
+
+    static void check_non_null(void *ptr, const char *type, const std::string &name,
+                               const std::string &func);
 
     static int case_strcmp(const std::string &s1, const std::string &s2);
 
@@ -198,7 +273,8 @@ namespace Ioss {
                                       const std::string &working_directory);
 
     static void get_fields(int64_t entity_count, char **names, size_t num_names,
-                           Ioss::Field::RoleType fld_role, char suffix_separator, int *local_truth,
+                           Ioss::Field::RoleType fld_role, bool enable_field_recognition,
+                           char suffix_separator, int *local_truth,
                            std::vector<Ioss::Field> &fields);
 
     static int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
@@ -209,7 +285,7 @@ namespace Ioss {
                                                const void *sides, int64_t number_sides,
                                                const Region *region);
 
-    // And yet another idiosyncracy of sidesets...
+    // And yet another idiosyncrasy of sidesets...
     // The side of an element (especially shells) can be
     // either a face or an edge in the same sideset.  The
     // ordinal of an edge is (local_edge_number+#faces) on the

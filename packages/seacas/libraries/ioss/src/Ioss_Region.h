@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -121,14 +121,19 @@ namespace Ioss {
     bool end_mode(State current_state);
 
     // Add a new state at this time, return state number
-    virtual int add_state(double time);
+    virtual int add_state(double time)
+    {
+      IOSS_FUNC_ENTER(m_);
+      return add_state__(time);
+    }
+    virtual int add_state__(double time);
 
     // Get time corresponding to specified state
 
     virtual double get_state_time(int state = -1) const;
-    int    get_current_state() const;
-    double begin_state(int state);
-    double end_state(int state);
+    int            get_current_state() const;
+    double         begin_state(int state);
+    double         end_state(int state);
 
     /** \brief Determine whether the metadata defining the model (nontransient,
      *         geometry, and toploloty) has been set.
@@ -185,19 +190,19 @@ namespace Ioss {
 
     // Retrieve the Grouping Entity with the specified name.
     // Returns nullptr if the entity does not exist
-    GroupingEntity *get_entity(const std::string &my_name, EntityType io_type) const;
-    GroupingEntity *get_entity(const std::string &my_name) const;
-    NodeBlock *get_node_block(const std::string &my_name) const;
-    EdgeBlock *get_edge_block(const std::string &my_name) const;
-    FaceBlock *get_face_block(const std::string &my_name) const;
-    ElementBlock *get_element_block(const std::string &my_name) const;
-    SideSet *get_sideset(const std::string &my_name) const;
-    SideBlock *get_sideblock(const std::string &my_name) const;
-    NodeSet *get_nodeset(const std::string &my_name) const;
-    EdgeSet *get_edgeset(const std::string &my_name) const;
-    FaceSet *get_faceset(const std::string &my_name) const;
-    ElementSet *get_elementset(const std::string &my_name) const;
-    CommSet *get_commset(const std::string &my_name) const;
+    GroupingEntity * get_entity(const std::string &my_name, EntityType io_type) const;
+    GroupingEntity * get_entity(const std::string &my_name) const;
+    NodeBlock *      get_node_block(const std::string &my_name) const;
+    EdgeBlock *      get_edge_block(const std::string &my_name) const;
+    FaceBlock *      get_face_block(const std::string &my_name) const;
+    ElementBlock *   get_element_block(const std::string &my_name) const;
+    SideSet *        get_sideset(const std::string &my_name) const;
+    SideBlock *      get_sideblock(const std::string &my_name) const;
+    NodeSet *        get_nodeset(const std::string &my_name) const;
+    EdgeSet *        get_edgeset(const std::string &my_name) const;
+    FaceSet *        get_faceset(const std::string &my_name) const;
+    ElementSet *     get_elementset(const std::string &my_name) const;
+    CommSet *        get_commset(const std::string &my_name) const;
     StructuredBlock *get_structured_block(const std::string &my_name) const;
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
@@ -205,9 +210,10 @@ namespace Ioss {
     // Add the name 'alias' as an alias for the database entity with the
     // name 'db_name'. Returns true if alias added; false if problems
     // adding alias.
-    bool add_alias(const std::string &db_name, const std::string &alias);
-    bool add_alias(const GroupingEntity *ge);
+    bool        add_alias(const std::string &db_name, const std::string &alias);
+    bool        add_alias(const GroupingEntity *ge);
     std::string get_alias(const std::string &alias) const;
+    std::string get_alias__(const std::string &alias) const; // Not locked by mutex
 
     const AliasMap &get_alias_map() const;
 
@@ -249,8 +255,8 @@ namespace Ioss {
     Property get_implicit_property(const std::string &my_name) const override;
 
     const std::vector<std::string> &get_information_records() const;
-    void add_information_records(const std::vector<std::string> &info);
-    void add_information_record(const std::string &info);
+    void                            add_information_records(const std::vector<std::string> &info);
+    void                            add_information_record(const std::string &info);
 
     const std::vector<std::string> &get_qa_records() const;
     void add_qa_record(const std::string &code, const std::string &code_qa,
@@ -258,10 +264,10 @@ namespace Ioss {
 
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,
-                                    size_t data_size) const override;
+                                    size_t data_size = 0) const override;
 
     int64_t internal_put_field_data(const Field &field, void *data,
-                                    size_t data_size) const override;
+                                    size_t data_size = 0) const override;
 
   private:
     // Add the name 'alias' as an alias for the database entity with the
@@ -269,7 +275,6 @@ namespace Ioss {
     // adding alias. Not protected by mutex -- call internally only.
     bool add_alias__(const std::string &db_name, const std::string &alias);
     bool add_alias__(const GroupingEntity *ge);
-    std::string get_alias__(const std::string &alias) const;
 
     bool begin_mode__(State new_state);
     bool end_mode__(State current_state);
@@ -341,8 +346,8 @@ inline void Ioss::Region::add_information_records(const std::vector<std::string>
 /** \brief Add an information record (an informative string) to the region's database.
  *
  *  \param[in] info The string to add.
- */ inline void
-Ioss::Region::add_information_record(const std::string &info)
+ */
+inline void Ioss::Region::add_information_record(const std::string &info)
 {
   IOSS_FUNC_ENTER(m_);
   return get_database()->add_information_record(info);
@@ -367,7 +372,7 @@ inline void Ioss::Region::add_qa_record(const std::string &code, const std::stri
 
 /** \brief Get all QA records, each of which consists of 4 strings, from the region's database.
  *
- *  The 4 strings that make up a databse QA record are:
+ *  The 4 strings that make up a database QA record are:
  *
  *  1. A descriptive code name, such as the application that modified the database.
  *

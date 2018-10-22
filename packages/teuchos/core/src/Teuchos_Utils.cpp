@@ -87,6 +87,13 @@ std::string Utils::toString(const int& x)
 	return std::string(s);
 }
 
+std::string Utils::toString(const long long& x)
+{
+	char s[100];
+	std::sprintf(s, "%lld", x);
+	return std::string(s);
+}
+
 std::string Utils::toString(const unsigned int& x)
 {
 	char s[100];

@@ -71,30 +71,18 @@ NOX.StatusTest provides the following user-level classes:
 	docstring    = %nox_statustest_docstring) StatusTest
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_FiniteValue.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Generic.H"
+// NOX include files
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
+#include "PyTrilinos_NOX_StatusTest_Headers.hpp"
+#include "PyTrilinos_NOX_Solver_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -108,7 +96,7 @@ NOX.StatusTest provides the following user-level classes:
 // Include NOX documentation
 %include "NOX_dox.i"
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // General ignore directives

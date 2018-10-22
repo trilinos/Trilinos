@@ -64,7 +64,7 @@ public:
 
   using size_type  = typename vector<Real>::size_type;
    
-  TankState( Teuchos::ParameterList& pl );
+  TankState( ROL::ParameterList& pl );
 
   void solve( StateVector& c, StateVector& u_new, 
               const StateVector& u_old, const ControlVector& z ) const;
@@ -72,28 +72,14 @@ public:
   void value( StateVector& c, const StateVector& u_old, 
               const StateVector& u_new, const ControlVector& z ) const;
  
-
   void applyJacobian_1_old( StateVector& jv, const StateVector& v_old ) const;
-
-
   void applyJacobian_1_new( StateVector& jv, const StateVector& v_old ) const;
-
-
-  void applyJacobian_2( StateVector &jv, const ControlVector &v_new ) const;
-
-
-  // Subvector Accessor Methods
- //       Real& h( vector<Real>& x,       size_type r, size_type c ) const { return x.at(cols_*r+c); }
- // const Real& h( const vector<Real>& x, size_type r, size_type c ) const { return x.at(cols_*r+c); }
-
- //       Real& Qout(       vector<Real>& x, size_type r, size_type c ) const { return x.at(Ntanks_+cols_*r+c); }
- // const Real& Qout( const vector<Real>& x, size_type r, size_type c ) const { return x.at(Ntanks_+cols_*r+c); }
- // 
- //       Real& Qin(       vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
- // const Real& Qin( const vector<Real>& x, size_type r, size_type c ) const { return x.at(2*Ntanks_+cols_*r+c); }
-
-  const Real& p( size_type r, size_type c ) const { return p_.at(cols_*r+c); }
- // const Real& w( size_type r, size_type c ) const { return w_.at(cols_*r+c); }
+  void applyInverseJacobian_1_new( StateVector& ijv, const StateVector& v_new ) const;
+  void applyAdjointJacobian_1_old( StateVector& ajv, const StateVector& v_old ) const;
+  void applyAdjointJacobian_1_new( StateVector& ajv, const StateVector& v_new ) const;
+  void applyInverseAdjointJacobian_1_new( StateVector& iajv, const StateVector& v_new ) const;
+  void applyJacobian_2( StateVector& jv, const ControlVector& v ) const;
+  void applyAdjointJacobian_2( ControlVector& ajv, const StateVector& v ) const;
 
   void print_members( ostream& os ) const;
 
@@ -116,17 +102,19 @@ private:
   Real dt_;                    // Time step size
 
   size_type    Ntanks_;        // Total number of tanks 
-  vector<Real> p_;             // Passthrough coefficients
-  vector<Real> w_;             // Flow coupling weights 
+
+  ControlVector p_;            // Passthrough coefficients
+  mutable StateVector scratch_;
 
   Real         kappa_;         // Cv*rho*g
   Real         beta_;          // dt/A
-//  Real         betaL_;         // (1-theta)*dt/A
-//  Real         betaR_;         // theta*dt/A
   Real         alphaL_;        // kappa*(theta-1)
   Real         alphaR_;        // kappa*theta
 
-  shared_ptr<Matrix> L_, R_;
+  shared_ptr<Matrix> L_, R_, S_;
+
+  //--------- Subvector addressing ---------------------------------------------
+  size_type  h_, Qout_, Qin_,  z_;
 
 }; // class TankState
 

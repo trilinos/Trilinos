@@ -98,9 +98,6 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
-
-  // setup the field data object
-  this->utils.setFieldData(gatherFieldTangents,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 }
 
@@ -115,7 +112,7 @@ evaluateFields(typename Traits::EvalData workset)
   else {
     const shards::CellTopology & parentCell = *basis->getCellTopology();
     int cellDim = parentCell.getDimension();
-    int numEdges = gatherFieldTangents.dimension(1);
+    int numEdges = gatherFieldTangents.extent(1);
 
     auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
 

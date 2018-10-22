@@ -560,9 +560,9 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
     largest = eigenvalues[N_eigs-1];
 
   } else {
-
-    printf( "\n%sWarning : The Lanczos matrix is too small\n",
-	    prefix );
+    if( proc_config[AZ_node] == 0 )
+      printf( "\n%sWarning : The Lanczos matrix is too small\n",
+              prefix );
     
     smallest = 1.0;
     largest = 1.0;
@@ -571,12 +571,13 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
   
   /* Simply a check that all the eigenvalues are positive */
   if( smallest <= 0.0 ) {
-    printf( "\n%sWarning : The smallest eigenvalue of the Lanczos matrix\n"
-	    "%sis negative or zero (%e)\n",
-	    prefix,
-	    prefix,
-	    smallest );
-
+    if( proc_config[AZ_node] == 0 )
+      printf( "\n%sWarning : The smallest eigenvalue of the Lanczos matrix\n"
+              "%sis negative or zero (%e)\n",
+              prefix,
+              prefix,
+              smallest );
+    
   } 
     
   *lambda_min = smallest;

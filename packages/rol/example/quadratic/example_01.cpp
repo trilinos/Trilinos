@@ -52,7 +52,7 @@
 #include "ROL_QuadraticObjective.hpp"
 #include "ROL_StdVector.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -138,12 +138,14 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+
     for (int i=0; i<dim; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*g_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*d_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*v_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
+
     ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
     ROL::Ptr<ROL::Vector<RealT> > g = ROL::makePtr<ROL::StdVector<RealT>>(g_ptr);
     ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
@@ -152,17 +154,18 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::QuadraticObjective<RealT>>(op,g);
 
    // Define algorithm
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string paramfile = "input.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile(paramfile);
+
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
 
     // Test objective
     obj->checkGradient(*x, *d, true, *outStream);
     *outStream << "\n"; 
+
     obj->checkHessVec(*x, *v, true, *outStream);
     *outStream << "\n";
+
     obj->checkHessSym(*x, *d, *v, true, *outStream);
     *outStream << "\n";
 

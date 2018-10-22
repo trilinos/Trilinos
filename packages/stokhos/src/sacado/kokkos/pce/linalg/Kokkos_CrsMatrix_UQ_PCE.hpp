@@ -189,7 +189,7 @@ public:
     const size_type iBlockRow = device.league_rank();
 
     // Check for valid row
-    const size_type row_count = m_A_graph.row_map.dimension_0()-1;
+    const size_type row_count = m_A_graph.row_map.extent(0)-1;
     if (iBlockRow >= row_count)
       return;
 
@@ -318,7 +318,7 @@ public:
     const size_type iBlockRow = device.league_rank();
 
     // Check for valid row
-    const size_type row_count = m_A_graph.row_map.dimension_0()-1;
+    const size_type row_count = m_A_graph.row_map.extent(0)-1;
     if (iBlockRow >= row_count)
       return;
 
@@ -439,7 +439,7 @@ public:
     const bool use_block_algorithm = false;
 #endif
 
-    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
+    const size_t row_count = A.graph.row_map.extent(0) - 1 ;
     if (use_block_algorithm) {
 #ifdef __MIC__
       const size_t team_size = 4;  // 4 hyperthreads for MIC
@@ -547,7 +547,7 @@ public:
     const size_type iEntryBegin = m_A_graph.row_map[ iBlockRow ];
     const size_type iEntryEnd   = m_A_graph.row_map[ iBlockRow + 1 ];
 
-    const size_type num_col = m_y.dimension_2();
+    const size_type num_col = m_y.extent(2);
 
     // Leading dimension guaranteed contiguous for LayoutLeft
     if ( m_b == output_scalar(0) )
@@ -595,7 +595,7 @@ public:
     const size_type iBlockRow = device.league_rank();
 
     // Check for valid row
-    const size_type row_count = m_A_graph.row_map.dimension_0()-1;
+    const size_type row_count = m_A_graph.row_map.extent(0)-1;
     if (iBlockRow >= row_count)
       return;
 
@@ -605,7 +605,7 @@ public:
       details::compute_work_range<output_scalar>(
         device, m_tensor.dimension(), num_thread, thread_idx);
 
-    const size_type num_col = m_y.dimension_2();
+    const size_type num_col = m_y.extent(2);
 
     // Leading dimension guaranteed contiguous for LayoutLeft
     if ( m_b == output_scalar(0) )
@@ -733,7 +733,7 @@ public:
     const size_type iBlockRow = device.league_rank();
 
     // Check for valid row
-    const size_type row_count = m_A_graph.row_map.dimension_0()-1;
+    const size_type row_count = m_A_graph.row_map.extent(0)-1;
     if (iBlockRow >= row_count)
       return;
 
@@ -743,7 +743,7 @@ public:
       details::compute_work_range<output_scalar>(
         device, m_tensor.dimension(), num_thread, thread_idx);
 
-    const size_type num_col = m_y.dimension_2();
+    const size_type num_col = m_y.extent(2);
 
     // Leading dimension guaranteed contiguous for LayoutLeft
     if ( m_b == output_scalar(0) )
@@ -861,7 +861,7 @@ public:
     const bool use_block_algorithm = false;
 #endif
 
-    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
+    const size_t row_count = A.graph.row_map.extent(0) - 1 ;
     if (use_block_algorithm) {
 #ifdef __MIC__
       const size_t team_size = 4;  // 4 hyperthreads for MIC
@@ -1120,7 +1120,7 @@ public:
                      const input_scalar & a = input_scalar(1) ,
                      const output_scalar & b = output_scalar(0) )
   {
-    const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
+    const size_t row_count = A.graph.row_map.extent(0) - 1 ;
     const size_type dim = Kokkos::dimension_scalar(x);
 
     // Choose block size appropriately for PCE dimension
@@ -1206,7 +1206,7 @@ public:
       OutputP... > output_vector_1d_type;
     typedef MeanMultiply<matrix_type,input_vector_1d_type,
       output_vector_1d_type> MeanMultiply1D;
-    const size_type num_col = x.dimension_1();
+    const size_type num_col = x.extent(1);
     for (size_type i=0; i<num_col; ++i) {
       input_vector_1d_type x_col =
         Kokkos::subview(x, Kokkos::ALL(), i);
@@ -1292,7 +1292,7 @@ spmv(
     Kokkos::Impl::raise_error(
       "Stokhos spmv not implemented for transposed or conjugated matrix-vector multiplies");
   }
-  if (y.dimension_1() == 1) {
+  if (y.extent(1) == 1) {
     auto y_1D = subview(y, Kokkos::ALL(), 0);
     auto x_1D = subview(x, Kokkos::ALL(), 0);
     spmv(mode, a, A, x_1D, b, y_1D, RANK_ONE());

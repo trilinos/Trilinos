@@ -45,6 +45,7 @@
 #define ROL_STATUSTEST_H
 
 #include "ROL_Types.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** \class ROL::StatusTest
     \brief Provides an interface to check status of optimization algorithms.
@@ -65,7 +66,7 @@ public:
 
   virtual ~StatusTest() {}
 
-  StatusTest( Teuchos::ParameterList &parlist ) {
+  StatusTest( ROL::ParameterList &parlist ) {
     Real em6(1e-6);
     gtol_     = parlist.sublist("Status Test").get("Gradient Tolerance", em6);
     stol_     = parlist.sublist("Status Test").get("Step Tolerance", em6*gtol_);
@@ -87,6 +88,7 @@ public:
        state.statusFlag = (state.gnorm <= gtol_ ? EXITSTATUS_CONVERGED
                            : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
                            : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
+                           : std::isnan(state.gnorm)||std::isnan(state.snorm) ? EXITSTATUS_NAN
                            : EXITSTATUS_LAST);
        return false;
      }

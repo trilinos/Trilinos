@@ -56,18 +56,15 @@
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xmatrix_t;
@@ -140,10 +137,11 @@ int verifyInputAdapter(
   return fail;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
   int fail = 0, gfail=0;
   bool aok = true;
@@ -218,7 +216,7 @@ int main(int argc, char *argv[])
       }
       catch (std::exception &e){
         fail = 11;
-        cout << "Error caught:  " << e.what() << endl;
+        std::cout << "Error caught:  " << e.what() << std::endl;
       }
 
       gfail = globalFail(comm, fail);
@@ -280,7 +278,7 @@ int main(int argc, char *argv[])
         xMInput->applyPartitioningSolution(*xM, mMigrate, solution);
       }
       catch (std::exception &e){
-        cout << "Error caught:  " << e.what() << endl;
+        std::cout << "Error caught:  " << e.what() << std::endl;
         fail = 11;
       }
   
@@ -360,7 +358,7 @@ int main(int argc, char *argv[])
           eMInput->applyPartitioningSolution(*eM, mMigrate, solution);
         }
         catch (std::exception &e){
-          cout << "Error caught:  " << e.what() << endl;
+          std::cout << "Error caught:  " << e.what() << std::endl;
           fail = 11;
         }
   

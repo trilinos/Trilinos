@@ -50,16 +50,19 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
   VIEW_FAD_TESTS_SFLD( F, RightContiguous32, D )
 
 // Instantiate tests for Cuda device
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_FDC(  DFadType , Cuda )
+#endif
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::HostSpace::execution_space::initialize();
-  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
-  Kokkos::Cuda::print_configuration(std::cout);
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration(std::cout);
 
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
   Sacado::createGlobalMemoryPool(
@@ -77,8 +80,7 @@ int main( int argc, char* argv[] ) {
 #endif
 
   // Finalize Cuda
-  Kokkos::HostSpace::execution_space::finalize();
-  Kokkos::Cuda::finalize();
+  Kokkos::finalize();
 
   return res;
 }

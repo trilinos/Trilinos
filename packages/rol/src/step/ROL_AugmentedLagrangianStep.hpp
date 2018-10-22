@@ -49,7 +49,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::AugmentedLagrangianStep
@@ -147,7 +147,7 @@ private:
   ROL::Ptr<Vector<Real> > x_; 
   ROL::Ptr<BoundConstraint<Real> > bnd_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
   // Lagrange multiplier update
   bool useDefaultInitPen_;
   bool scaleLagrangian_;
@@ -212,11 +212,11 @@ public:
 
   ~AugmentedLagrangianStep() {}
 
-  AugmentedLagrangianStep(Teuchos::ParameterList &parlist)
+  AugmentedLagrangianStep(ROL::ParameterList &parlist)
     : Step<Real>(), algo_(ROL::nullPtr),
       x_(ROL::nullPtr), parlist_(parlist), subproblemIter_(0) {
     Real one(1), p1(0.1), p9(0.9), ten(1.e1), oe8(1.e8), oem8(1.e-8);
-    Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
+    ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
     useDefaultInitPen_    = sublist.get("Use Default Initial Penalty Parameter",true);
     Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",ten);
     // Multiplier update parameters

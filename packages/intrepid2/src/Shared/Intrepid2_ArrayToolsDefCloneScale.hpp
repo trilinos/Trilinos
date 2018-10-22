@@ -76,22 +76,22 @@ namespace Intrepid2 {
                  const ordinal_type pt) const {
         switch (valRank) {
         case 0: {
-          _output(cl, pt) = _input(pt);
+          _output.access(cl, pt) = _input.access(pt);
           break;
         }
         case 1: {
-          const ordinal_type iend = _output.dimension(2);
+          const ordinal_type iend = _output.extent(2);
           for (ordinal_type i=0;i<iend;++i)
-            _output(cl, pt, i) = _input(pt, i);
+            _output.access(cl, pt, i) = _input.access(pt, i);
           break;
         }
         case 2: {
           const ordinal_type
-            iend = _output.dimension(2),
-            jend = _output.dimension(3);
+            iend = _output.extent(2),
+            jend = _output.extent(3);
           for (ordinal_type i=0;i<iend;++i)
             for (ordinal_type j=0;j<jend;++j)
-              _output(cl, pt, i, j) = _input(pt, i, j);
+              _output.access(cl, pt, i, j) = _input.access(pt, i, j);
           break;
         }
         }
@@ -105,22 +105,22 @@ namespace Intrepid2 {
                  const ordinal_type pt) const {
         switch (valRank) {
         case 0: {
-          _output(cl, bf, pt) = _input(bf, pt);
+          _output.access(cl, bf, pt) = _input.access(bf, pt);
           break;
         }
         case 1: {
-          const ordinal_type iend = _output.dimension(3);
+          const ordinal_type iend = _output.extent(3);
           for (ordinal_type i=0;i<iend;++i)
-            _output(cl, bf, pt, i) = _input(bf, pt, i);
+            _output.access(cl, bf, pt, i) = _input.access(bf, pt, i);
           break;
         }
         case 2: {
           const ordinal_type
-            iend = _output.dimension(3),
-            jend = _output.dimension(4);
+            iend = _output.extent(3),
+            jend = _output.extent(4);
           for (ordinal_type i=0;i<iend;++i)
             for (ordinal_type j=0;j<jend;++j)
-              _output(cl, bf, pt, i, j) = _input(bf, pt, i, j);
+              _output.access(cl, bf, pt, i, j) = _input.access(bf, pt, i, j);
           break;
         }
         }
@@ -141,7 +141,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( ( output.rank() != (input.rank()+1) ), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::clone): The rank of the input fields container must be one less than the rank of the output fields container.");
       for (size_type i=0;i< input.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( (input.dimension(i) != output.dimension(i+1)), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( (input.extent(i) != output.extent(i+1)), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::clone): Dimensions of input and output fields containers do not match.");
       }
     }
@@ -155,9 +155,9 @@ namespace Intrepid2 {
       < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
     
     const ordinal_type
-      C = output.dimension(0),
-      F = output.dimension(1),
-      P = output.dimension(2);
+      C = output.extent(0),
+      F = output.extent(1),
+      P = output.extent(2);
     
     range_policy_type policy( { 0, 0, 0 },
                               { C, F, P } );
@@ -165,17 +165,17 @@ namespace Intrepid2 {
     switch (valRank) {
     case 0: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 1: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 2: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     }
@@ -194,7 +194,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( ( output.rank() != (input.rank()+1) ), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::clone): The rank of the input fields container must be one less than the rank of the output fields container.");
       for (ordinal_type i=0;i<input.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( (input.dimension(i) != output.dimension(i+1)), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( (input.extent(i) != output.extent(i+1)), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::clone): Dimensions of input and output fields containers do not match.");
       }
     }
@@ -208,8 +208,8 @@ namespace Intrepid2 {
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     
     const ordinal_type
-      C = output.dimension(0),
-      P = output.dimension(1);
+      C = output.extent(0),
+      P = output.extent(1);
     
     range_policy_type policy( { 0, 0 },
                               { C, P } );
@@ -217,17 +217,17 @@ namespace Intrepid2 {
     switch (valRank) {
     case 0: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,0> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 1: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,1> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     case 2: {
       typedef FunctorArrayTools::F_clone<outputViewType,inputViewType,2> FunctorType;
-      Kokkos::Experimental::md_parallel_for( policy, FunctorType(output, input) );
+      Kokkos::parallel_for( policy, FunctorType(output, input) );
       break;
     }
     }

@@ -50,6 +50,7 @@
 
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 #include "Tpetra_Vector.hpp"
 
 namespace panzer {
@@ -68,13 +69,21 @@ template<typename LocalOrdinalT, typename GlobalOrdinalT>
 void
 Filtered_UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>::
 initialize(
-  const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>>&
-    ugi,
+  const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT, GlobalOrdinalT>> & ugi,
   const std::vector<GlobalOrdinalT>& filtered)
 {
+  typedef GlobalOrdinalT GO;
+  typedef LocalOrdinalT LO;
+  typedef panzer::TpetraNodeType Node;
+  typedef Tpetra::Map<LO, GO, Node> Map;
+  typedef Tpetra::Vector<GO,LO,GO,Node> Vector;
+  typedef Tpetra::Export<LO,GO,Node> Export;
+
   using std::size_t;
   using std::vector;
   using HashTable = std::unordered_set<GlobalOrdinalT>;
+  using Teuchos::RCP;
+
   owned_.clear();
   ghosted_.clear();
   base_ = ugi;
@@ -84,10 +93,42 @@ initialize(
   base_->getOwnedIndices(baseOwned);
   base_->getGhostedIndices(baseGhosted);
 
+  RCP<const Map> ownedMap 
+      = Tpetra::createNonContigMap<LO,GO>(baseOwned,getComm());
+  RCP<const Map> ghostedMap 
+      = Tpetra::createNonContigMap<LO,GO>(baseGhosted,getComm());
+
+  Vector ownedFiltered(ownedMap);
+  Vector ghostedFiltered(ghostedMap);
+
+  ownedFiltered.putScalar(0.0);
+  ghostedFiltered.putScalar(0.0);
+
+  for(GlobalOrdinalT f : filtered) {
+    bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
+    bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
+ 
+    if(isOwned)
+      ownedFiltered.replaceGlobalValue(f,1.0);
+    else if(isGhosted)
+      ghostedFiltered.replaceGlobalValue(f,1.0);
+    // else no one cares...
+  }
+
+  Export exporter(ghostedMap,ownedMap);
+  ownedFiltered.doExport(ghostedFiltered, exporter, Tpetra::ADD);
+
+  Teuchos::ArrayRCP<const GlobalOrdinalT> data = ownedFiltered.getData();
+
   // Build a hash table for fast searching.
   HashTable filteredHash;
-  for (size_t i(0); i < filtered.size(); ++i)
-    filteredHash.insert(filtered[i]);
+  for(int i(0); i < data.size(); ++i) {
+    if(data[i]!=0)
+      filteredHash.insert(baseOwned[i]);
+  }
+  // for (size_t i(0); i < filtered.size(); ++i) {
+  //   filteredHash.insert(filtered[i]);
+  // }
 
   // Search for indices in the filtered array; add to owned_ if not found, and
   // add to ghosted_ otherwise.

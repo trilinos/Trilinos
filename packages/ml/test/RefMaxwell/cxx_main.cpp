@@ -305,6 +305,8 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   MatlabFileToMultiVector("coord_node.dat",NodeMap,dim,coords);
   coords->ExtractView(&coord_ptr,&N);
 
+  coords->Print(std::cout);
+
   /* Build the edge coordinates */
   Epetra_MultiVector n_coords_ghost(D0->ColMap(),dim);  
   if(D0->Importer()) n_coords_ghost.Import(*coords,*D0->Importer(),Add);
@@ -343,17 +345,23 @@ bool matrix_read(Epetra_ActiveComm &Comm){
 
   /* Do Tests */
   Epetra_Vector lhs(EdgeMap,true);
+  if(!Comm.MyPID()) printf("*** Test 1 ***\n");
   rpc_test_additive(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 2 ***\n");
   rpc_test_additive(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 3 ***\n");
   rpc_test_additive(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 4 ***\n");
   rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 5 ***\n");
   rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
   // This only works in serial, for reasons which are not entirely obvious
+  if(!Comm.MyPID()) printf("*** Test 6 ***\n");
   if(Comm.NumProc()==1) {
     lhs.PutScalar(0.0);
     rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
@@ -362,19 +370,27 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   /* Check RNG control */
   int status1, status2 = 0;
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 7 ***\n");
   status1 = rpc_test_additive_repeat(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 8 ***\n");
   status2 = rpc_test_additive_repeat(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
 
   /* Test w/ ParameterList-based constructor */
+  lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 9 ***\n");
   rpc_test_additive_newconstructor(Comm,List_2level,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 10 ***\n");
   rpc_test_additive_newconstructor(Comm,List_SGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 11 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 12 ***\n");
   rpc_test_additive_newconstructor(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
+  if(!Comm.MyPID()) printf("*** Test 13 ***\n");
   rpc_test_additive_newconstructor(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
 
   delete M0; delete M1e;

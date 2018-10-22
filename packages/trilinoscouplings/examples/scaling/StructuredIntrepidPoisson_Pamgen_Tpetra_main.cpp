@@ -58,7 +58,6 @@
 */
 
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -71,7 +70,8 @@
 #  include "MueLu_CreateTpetraPreconditioner.hpp"
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
-#include <MatrixMarket_Tpetra.hpp>
+#include "Tpetra_Core.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 int
 main (int argc, char *argv[])
@@ -87,7 +87,6 @@ main (int argc, char *argv[])
   using IntrepidPoissonExample::setCommandLineArgumentDefaults;
   using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
   using IntrepidPoissonExample::setUpCommandLineArguments;
-  using Tpetra::DefaultPlatform;
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
@@ -105,24 +104,22 @@ main (int argc, char *argv[])
   typedef TpetraIntrepidPoissonExample::GO GO;
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
-  typedef Teuchos::ScalarTraits<ST> STS;
-  typedef STS::magnitudeType MT;
+  typedef TpetraIntrepidPoissonExample::MT MT;
   typedef Teuchos::ScalarTraits<MT> STM;
   typedef TpetraIntrepidPoissonExample::sparse_matrix_type sparse_matrix_type;
   typedef TpetraIntrepidPoissonExample::vector_type vector_type;
+  typedef TpetraIntrepidPoissonExample::realmultivector_type realmultivector_type;
   typedef TpetraIntrepidPoissonExample::operator_type operator_type;
 
   bool success = true;
   try {
     Teuchos::oblackholestream blackHole;
-    Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-    const int myRank = mpiSession.getRank ();
-    //const int numProcs = mpiSession.getNProc ();
+    Tpetra::ScopeGuard mpiSession (&argc, &argv);
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<Node> node; // OK to be null
 
-    // Get the default communicator and Kokkos Node instance
-    RCP<const Comm<int> > comm =
-      DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<Node> node = DefaultPlatform::getDefaultPlatform ().getNode ();
+    const int myRank = comm->getRank ();
+    //const int numProcs = comm->getSize ();
 
     // Did the user specify --help at the command line to print help
     // with command-line arguments?
@@ -261,13 +258,17 @@ main (int argc, char *argv[])
 
       RCP<sparse_matrix_type> A;
       RCP<vector_type> B, X_exact, X;
-      Teuchos::Array<Teuchos::Array<ST> > coordsArray(3);
+      RCP<realmultivector_type> Coordinates;
+      Teuchos::Array<Teuchos::ArrayView<const MT> > coordArrayView(3);
+      Teuchos::Array<Teuchos::Array<MT> > coordsArray(3);
       Teuchos::Array<LO> lNodesPerDim(3);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Assembly", total_assembly);
         makeMatrixAndRightHandSide (A, B, X_exact, X, coordsArray, lNodesPerDim,
                                     comm, node, meshInput, out, err, verbose, debug);
       }
+      for(int dim = 0; dim < 3; ++dim) {coordArrayView[dim] = coordsArray[dim]();}
+      Coordinates = Teuchos::rcp(new realmultivector_type(A->getRowMap(), coordArrayView(), 3));
 
       // Optionally dump the matrix and/or its row Map to files.
       {
@@ -302,19 +303,18 @@ main (int argc, char *argv[])
 
         if (prec_type == "MueLu") {
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
-	  for(int i=0; i<numMueluRebuilds+1; i++) {
-	    if (inputList.isSublist("MueLu")) {
-	      ParameterList mueluParams = inputList.sublist("MueLu");
+          for(int i=0; i<numMueluRebuilds+1; i++) {
+            if (inputList.isSublist("MueLu")) {
+              ParameterList mueluParams = inputList.sublist("MueLu");
               const std::string userName = "user data";
               Teuchos::ParameterList& userParamList = mueluParams.sublist(userName);
-              Teuchos::Array<GO> gNodesPerDim(3, -1);
-              userParamList.set<Teuchos::Array<GO> >("Array<GO> gNodesPerDim", gNodesPerDim);
+              userParamList.set<RCP<realmultivector_type> >("Coordinates", Coordinates);
               userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
-	    } else {
-	      M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
-	    }
-	  }
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams,mueluParams);
+            } else {
+              M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
+            }
+          }
 #else // NOT HAVE_TRILINOSCOUPLINGS_MUELU
           TEUCHOS_TEST_FOR_EXCEPTION(
             prec_type == "MueLu", std::runtime_error, "Tpetra scaling example: "

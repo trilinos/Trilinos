@@ -206,7 +206,7 @@ namespace ZOO {
       return makePtr<PrimalScaledStdVector<Real>>(x0p,scale);
     }
 
-    Ptr<Vector<Real>> getSolution(void) const {
+    Ptr<Vector<Real>> getSolution(const int i = 0) const {
       int n = 2;
       // Build scale
       Ptr<std::vector<Real> > scale = makePtr<std::vector<Real>>(n,static_cast<Real>(0));

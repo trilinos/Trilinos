@@ -54,6 +54,10 @@
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_VerboseObject.hpp"
 #include "MueLu_MutuallyExclusiveTime.hpp"
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+#include "Teuchos_StackedTimer.hpp"
+#include <sstream>
+#endif
 
 namespace MueLu {
 
@@ -83,13 +87,43 @@ namespace MueLu {
         // Start the timer (this is what is done by Teuchos::TimeMonitor)
         timer_->start();
         timer_->incrementNumCalls();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+        const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+        if (nonnull(stackedTimer))
+          stackedTimer->start(timer_->name());
+#endif
       }
     }
 
     ~TimeMonitor() {
       // Stop the timer if present
-      if (timer_ != Teuchos::null)
+      if (timer_ != Teuchos::null) {
         timer_->stop();
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+        try {
+          const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+          if (nonnull(stackedTimer))
+            stackedTimer->stop(timer_->name());
+        }
+        catch (std::runtime_error) {
+          std::ostringstream warning;
+          warning <<
+            "\n*********************************************************************\n"
+            "WARNING: Overlapping timers detected!\n"
+            "A TimeMonitor timer was stopped before a nested subtimer was\n"
+            "stopped. This is not allowed by the StackedTimer. This corner case\n"
+            "typically occurs if the TimeMonitor is stored in an RCP and the RCP is\n"
+            "assigned to a new timer. To disable this warning, either fix the\n"
+            "ordering of timer creation and destuction or disable the StackedTimer\n"
+            "support in the TimeMonitor by setting the StackedTimer to null\n"
+            "with:\n"
+            "Teuchos::TimeMonitor::setStackedTimer(Teuchos::null)\n"
+            "*********************************************************************\n";
+          std::cout << warning.str() << std::endl;
+          Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+        }
+#endif
+      }
     }
 
   protected:

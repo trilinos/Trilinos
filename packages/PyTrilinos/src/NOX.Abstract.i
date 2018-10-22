@@ -69,36 +69,27 @@ NOX.Abstract provides the following user-level classes:
 	docstring    = %nox_abstract_docstring) Abstract
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// NOX includes
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_Abstract_MultiVector.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Solver_Generic.H"
+// NOX include files
+#include "PyTrilinos_NOX_Abstract_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
 
-// Configuration and optional includes
+// Configuration and optional include files
 %include "PyTrilinos_config.h"
 #ifdef HAVE_NOX_EPETRA
 %{

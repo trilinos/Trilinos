@@ -28,7 +28,6 @@ public:
   /** \brief Construct to uninitialized. */
   ReusePreconditionerFactory() {}
 
-  /** \brief . */
   void initialize(
     const RCP<PreconditionerBase<Scalar> > &prec
     ) {
@@ -38,15 +37,12 @@ public:
     prec_ = prec;
   }
 
-  /** \brief . */
   RCP<PreconditionerBase<Scalar> >
   getNonconstPreconditioner() { return prec_; }
 
-  /** \brief . */
   RCP<const PreconditionerBase<Scalar> >
   getPreconditioner() const { return prec_; }
 
-  /** \brief . */
   void uninitialize() {
     prec_ = Teuchos::null;
   }
@@ -54,7 +50,6 @@ public:
   /** \name Overridden from Teuchos::Describable. */
   //@{
 
-  /** \brief . */
   std::string description() const
   {
     std::ostringstream oss;
@@ -74,30 +69,25 @@ public:
   /** @name Overridden from ParameterListAcceptor (simple forwarding functions) */
   //@{
 
-  /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList)
   {
   }
 
-  /** \brief . */
   RCP<ParameterList> getNonconstParameterList()
   {
     return Teuchos::null;
   }
 
-  /** \brief . */
   RCP<ParameterList> unsetParameterList()
   {
     return Teuchos::null;
   }
 
-  /** \brief . */
   RCP<const ParameterList> getParameterList() const
   {
     return Teuchos::null;
   }
 
-  /** \brief . */
   RCP<const ParameterList> getValidParameters() const
   {
     return rcp(new ParameterList);
@@ -110,15 +100,12 @@ public:
   /** @name Overridden from PreconditionerFactoryBase */
   //@{
 
-  /** \brief . */
   bool isCompatible(const LinearOpSourceBase<Scalar> &fwdOpSrc) const
   { return false; }
 
-  /** \brief . */
    RCP<PreconditionerBase<Scalar> > createPrec() const
   { return prec_; }
 
-  /** \brief . */
   void initializePrec(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     PreconditionerBase<Scalar> *precOp,
@@ -127,7 +114,6 @@ public:
   {
   }
 
-  /** \brief . */
   void uninitializePrec(
     PreconditionerBase<Scalar> *precOp,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,

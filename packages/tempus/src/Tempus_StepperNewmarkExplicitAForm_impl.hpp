@@ -120,6 +120,16 @@ void StepperNewmarkExplicitAForm<Scalar>::setSolver(
   return;
 }
 
+template<class Scalar>
+void StepperNewmarkExplicitAForm<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperNewmarkExplicitAForm::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
+}
 
 template<class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::takeStep(
@@ -129,6 +139,14 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperNewmarkExplicitAForm::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperNewmarkExplicitAForm<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for NewmarkExplicitAForm.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
@@ -222,7 +240,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     *out_ << "IKT v_new = " << Thyra::max(*(workingState()->getXDot())) << "\n";
 #endif
 
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
   }
   return;

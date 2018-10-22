@@ -53,7 +53,7 @@
 namespace ROL {
 
 template<class Real>
-inline void RandVarFunctionalInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void RandVarFunctionalInfo(ROL::ParameterList &parlist, std::string &name,
                                   int &nStatistic, std::vector<Real> &lower,
                                   std::vector<Real> &upper, bool &isBoundActivated,
                                   const bool printToStream = false,
@@ -75,13 +75,13 @@ inline void RandVarFunctionalInfo(Teuchos::ParameterList &parlist, std::string &
     ProbabilityInfo<Real>(parlist,name,nStatistic,lower,upper,isBoundActivated,printToStream,outStream);
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::RandVarFunctionalInfo): Invalid random variable functional type!");
   }
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

@@ -118,9 +118,9 @@ private:
   Real lb_;
   Real ub_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Generalized Moreau-Yosida CVaR");
     }
@@ -140,11 +140,11 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::GenMoreauYosidaCVaR): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
       ">>> ERROR (ROL::GenMoreauYosidaCVaR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::GenMoreauYosidaCVaR): Smoothing parameter must be positive!");
   }
 
@@ -193,7 +193,7 @@ public:
       \li "Convex Combination Parameter" (between 0 and 1)
       \li "Smoothing Parameter" (must be positive)
   */
-  GenMoreauYosidaCVaR(Teuchos::ParameterList &parlist)
+  GenMoreauYosidaCVaR(ROL::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     checkInputs();

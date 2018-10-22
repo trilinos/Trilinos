@@ -58,8 +58,8 @@ CCFLAGS = -g -O3 -std=c++11 -fopenmp -fPIC -fdiagnostics-color=auto
 CCINCS = -I. -I${QTHREADS_DIR}/include -I${TRILINOS_DIR}/include -I${SCOTCH_DIR}/include
 CCWARN = -Wno-pointer-arith
 CCDEFS = -D KOKKOS_DONT_INCLUDE_CORE_CONFIG_H \
-	 -D KOKKOS_HAVE_PTHREAD \
-	 -D KOKKOS_HAVE_OPENMP 
+	 -D KOKKOS_ENABLE_THREADS \
+	 -D KOKKOS_ENABLE_OPENMP 
 
 CCDEFS =
 

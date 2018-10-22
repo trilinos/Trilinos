@@ -69,10 +69,10 @@
 
 #include <iostream>
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"

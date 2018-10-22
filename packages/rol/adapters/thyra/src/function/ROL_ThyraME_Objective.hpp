@@ -107,7 +107,7 @@ public:
     else if(dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM))
       dgdp_orient = Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      ROL_TEST_FOR_EXCEPTION(true, std::logic_error,
        "ROL::ThyraME_Objective: DgDp does support neither DERIV_MV_JACOBIAN_FORM nor DERIV_MV_GRADIENT_FORM forms");
     }
 

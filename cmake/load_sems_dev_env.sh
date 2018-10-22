@@ -18,8 +18,8 @@
 #   "default" (see the default listed below).
 #
 #   <cmake-and-version> is the SEMS module name for the CMake and its version,
-#   e.g. 'sems-cmake/3.5.2'.  To use the default just pass in "default" (see
-#   the default listed below).
+#   e.g. 'sems-cmake/3.5.2' or 'atdm-cmake/3.11.1'.  To use the default just
+#   pass in "default" (see the default listed below).
 #
 # Once sourced, this script also loads the SEMS modules for all of the TPLs
 # and tools that Trilinos can use that are provided by SEMS (see below for the
@@ -100,8 +100,6 @@ if [ "$sems_cmake_and_version_load" == "" ] || [ "$sems_cmake_and_version_load" 
 fi
 #echo "sems_cmake_and_version_load = $sems_cmake_and_version_load"
 
-TRILINOS_SEMS_DEV_ENV_TO_LOAD="$sems_compiler_and_version_load $sems_mpi_and_version_load $sems_cmake_and_version_load"
-
 #
 # B) Purge the current set of modules
 #
@@ -113,15 +111,21 @@ module purge
 #
 
 module load sems-env
+module load atdm-env
 module load $sems_python_and_version_default
 module load $sems_cmake_and_version_load
 module load $sems_git_and_version_default
+
+# Load Fortran-capable ninja in case someone wants to use it
+module load atdm-ninja_fortran/1.7.2
 
 # The SEMS Intel modules point to an unsupported version of GCC.
 # until this is fixed, the workaround is below.
 # Please see https://github.com/trilinos/Trilinos/issues/2142
 # for updates regarding the right solution.
-if [[ $sems_compiler_and_version_load == "sems-intel/"* ]]; then
+if [[ $sems_compiler_and_version_load == "sems-intel/17.0.1" ]]; then
+  module load sems-gcc/4.9.3
+elif [[ $sems_compiler_and_version_load == "sems-intel/"* ]]; then
   module load sems-gcc/4.8.4
 fi
 
@@ -135,6 +139,5 @@ module load $sems_parmetis_and_version_default
 module load $sems_scotch_and_version_default
 module load $sems_superlu_and_version_default
 
-if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
-  module list
-fi
+export OMP_NUM_THREADS=2
+# This was the agreement for the OpenMP builds as per #2317

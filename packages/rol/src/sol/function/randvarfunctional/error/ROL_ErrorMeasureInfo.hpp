@@ -44,13 +44,13 @@
 #ifndef ROL_ERRORMEASUREINFO_HPP
 #define ROL_ERRORMEASUREINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
 
 template<class Real>
-inline void ErrorMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void ErrorMeasureInfo(ROL::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
                             std::vector<Real> &upper, bool &isBoundActivated,
                             const bool printToStream = false,
@@ -58,24 +58,24 @@ inline void ErrorMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   name = parlist.sublist("SOL").sublist("Error Measure").get<std::string>("Name");
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
-  if ( name == "Koenker-Bassett" ||
-       name == "Moreau-Yosida-Koenker-Bassett" ||
+  if ( name == "Koenker-Bassett"                           ||
+       name == "Moreau-Yosida-Koenker-Bassett"             ||
        name == "Generalized Moreau-Yosida-Koenker-Bassett" ||
-       name == "Exponential" ||
-       name == "Least Squares" ||
-       name == "Huber" ||
-       name == "Log Quantile" ||
+       name == "Exponential"                               ||
+       name == "Least Squares"                             ||
+       name == "Huber"                                     ||
+       name == "Log Quantile"                              ||
        name == "Smoothed Worst Cast" ) {
     nStatistic = 0;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::ErrorMeasureInfo): Invalid probability " << name << "!");
   }
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

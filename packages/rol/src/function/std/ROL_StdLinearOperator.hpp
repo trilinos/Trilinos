@@ -46,9 +46,8 @@
 
 #include "ROL_LinearOperator.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_LAPACK.hpp"
 
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 /** @ingroup func_group
     \class ROL::StdLinearOperator
@@ -78,8 +77,7 @@ private:
   mutable vector           PLU_;
   mutable std::vector<int> ipiv_; 
 
-  Teuchos::BLAS<int,Real>    blas_;
-  Teuchos::LAPACK<int,Real>  lapack_;
+  ROL::LAPACK<int,Real>  lapack_;
 
 public:
 
@@ -89,7 +87,7 @@ public:
     int N2 = A_->size();
     N_ = (std::round(std::sqrt(N2)));
     bool isSquare = N_*N_ == N2;
-    TEUCHOS_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
       "Error: vector representation of matrix must have a square "
       "number of elements.");
     ipiv_.resize(N_);   
@@ -115,9 +113,12 @@ public:
   }
 
   virtual void apply( std::vector<Real> &Hv, const std::vector<Real> &v, Real &tol ) const {
-    int LDA = N_;
-
-    blas_.GEMV(Teuchos::NO_TRANS,N_,N_,1.0,&(*A_)[0],LDA,&(v)[0],1,0.0,&(Hv)[0],1);
+    for( int i=0; i<N_; ++i ) {
+      Hv[i] = Real(0);
+      for( int j=0; j<N_; ++j ) {
+        Hv.at(i) += A_->at(N_*j+i)*v.at(j);
+      }
+    }
   }
 
   // Matrix multiplication with transpose
@@ -130,9 +131,12 @@ public:
   }
 
   virtual void applyAdjoint( std::vector<Real> &Hv, const std::vector<Real> &v, Real &tol ) const {
-    int LDA = N_;
-
-    blas_.GEMV(Teuchos::TRANS,N_,N_,1.0,&(*A_)[0],LDA,&(v)[0],1,0.0,&(Hv)[0],1);
+    for( int i=0; i<N_; ++i ) {
+      Hv[i] = Real(0);
+      for( int j=0; j<N_; ++j ) {
+        Hv.at(i) += A_->at(N_*i+j)*v.at(j);
+      }
+    }
   }
   
 
@@ -159,16 +163,16 @@ public:
     // Do LU factorization
     lapack_.GETRF(N_,N_,&PLU_[0],LDA,&ipiv_[0],&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
       "Zero diagonal element encountered in matrix factor U(" << INFO << "," << INFO << ").");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
       "Illegal value encountered in element " << -INFO << " when performing LU factorization.");    
 
     // Solve factored system
     lapack_.GETRS('N',N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyInverse(): "
       "Illegal value encountered in element " << -INFO << " when solving the factorized system. "); 
   
   }
@@ -196,16 +200,16 @@ public:
     // Do LU factorization
     lapack_.GETRF(N_,N_,&PLU_[0],LDA,&ipiv_[0],&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO>0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Zero diagonal element encountered in matrix factor U(" << INFO << "," << INFO << ").");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Illegal value encountered in element " << -INFO << " when performing LU factorization.");    
 
     // Solve factored system
     lapack_.GETRS('T',N_,NRHS,&PLU_[0],LDA,&ipiv_[0],&Hv[0],LDB,&INFO);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
+    ROL_TEST_FOR_EXCEPTION(INFO<0,std::logic_error,"Error in StdLinearOperator::applyAdjointInverse(): "
       "Illegal value encountered in element " << -INFO << " when solving the factorized system. "); 
   
   }

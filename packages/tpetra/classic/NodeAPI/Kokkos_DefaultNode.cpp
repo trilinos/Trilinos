@@ -43,46 +43,10 @@
 
 namespace KokkosClassic {
 
-namespace Details {
-
-template<class NodeType>
-Teuchos::RCP<NodeType>
-getNode (const Teuchos::RCP<Teuchos::ParameterList>& params)
-{
-  static Teuchos::RCP<NodeType> theNode;
-  if (theNode.is_null ()) {
-    if (params.is_null ()) {
-      Teuchos::ParameterList defaultParams;
-      theNode = Teuchos::rcp (new NodeType (defaultParams));
-    } else {
-      theNode = Teuchos::rcp (new NodeType (*params));
-    }
-  }
-  return theNode;
-}
-
-#ifdef KOKKOS_ENABLE_CUDA
-template Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode> getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_CUDA
-
-#ifdef KOKKOS_ENABLE_OPENMP
-template Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode> getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_OPENMP
-
-#ifdef KOKKOS_ENABLE_SERIAL
-template Teuchos::RCP< ::Kokkos::Compat::KokkosSerialWrapperNode> getNode< ::Kokkos::Compat::KokkosSerialWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_SERIAL
-
-#ifdef KOKKOS_ENABLE_PTHREAD
-template Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode> getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_PTHREAD
-
-} // namespace Details
-
 Teuchos::RCP<DefaultNode::DefaultNodeType>
 DefaultNode::getDefaultNode()
 {
-  return Details::getNode<DefaultNodeType> ();
+  return Teuchos::rcp (new DefaultNode::DefaultNodeType);
 }
 
 } // namespace KokkosClassic

@@ -43,6 +43,7 @@
 #define KOKKOS_VIEW_MP_VECTOR_UTILS_HPP
 
 #include "Kokkos_View_Utils.hpp"
+#include "Kokkos_View.hpp"
 #include "Sacado_MP_Vector.hpp"
 
 namespace Kokkos {

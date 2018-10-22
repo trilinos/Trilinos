@@ -137,6 +137,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   bool success = true;
   bool verbose = true;
@@ -226,7 +228,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 #endif
 
       RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriParameters);
+        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixType, map, galeriParameters);
       A = Pr->BuildMatrix();
 
       if (matrixType == "Elasticity2D" ||

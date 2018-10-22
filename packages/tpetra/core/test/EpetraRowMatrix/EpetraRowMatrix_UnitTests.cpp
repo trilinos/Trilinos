@@ -52,11 +52,12 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_EpetraRowMatrix.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
 
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
@@ -82,7 +83,7 @@ namespace {
   {
     Teuchos::RCP<const Teuchos::Comm<int> > ret;
     if (testMpi) {
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     }
     else {
       ret = Teuchos::rcp(new Teuchos::SerialComm<int>());
@@ -136,8 +137,8 @@ namespace {
       matrix->sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
     }
     matrix->fillComplete();
-    TEST_EQUALITY( matrix->getNodeNumDiags(), numLocal );
-    TEST_EQUALITY( matrix->getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*matrix), static_cast<LO> (numLocal) );
+    TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*matrix), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( matrix->getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
 #ifdef HAVE_MPI

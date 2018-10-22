@@ -218,7 +218,7 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 7,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 7 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3,index4,index5,index6);
+  return m_field_data.access(index0,index1,index2,index3,index4,index5,index6);
 }
 
 //**********************************************************************
@@ -235,7 +235,7 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 6,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 6 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3,index4,index5);
+  return m_field_data.access(index0,index1,index2,index3,index4,index5);
 }
 
 //**********************************************************************
@@ -252,7 +252,7 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 5,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 5 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3,index4);
+  return m_field_data.access(index0,index1,index2,index3,index4);
 }
 
 //**********************************************************************
@@ -268,7 +268,7 @@ operator()(iType0 index0, iType1 index1, iType2 index2,
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 4,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 4 operator().");
 #endif
-  return m_field_data(index0,index1,index2,index3);
+  return m_field_data.access(index0,index1,index2,index3);
 }
 
 //**********************************************************************
@@ -283,7 +283,7 @@ operator()(iType0 index0, iType1 index1, iType2 index2) const
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 3,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 3 operator().");
 #endif
-  return m_field_data(index0,index1,index2);
+  return m_field_data.access(index0,index1,index2);
 }
 
 //**********************************************************************
@@ -298,7 +298,7 @@ operator()(iType0 index0, iType1 index1) const
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 2,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 2 operator().");
 #endif
-  return m_field_data(index0,index1);
+  return m_field_data.access(index0,index1);
 }
 
 //**********************************************************************
@@ -313,7 +313,7 @@ operator()(iType0 index0) const
   TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
   TEUCHOS_TEST_FOR_EXCEPTION(m_tag->dataLayout().rank() != 1,std::logic_error,"Error: The MDField \"" << m_tag->name() << "\" is of rank " << m_tag->dataLayout().rank() << " but was accessed with the rank 1 operator().");
 #endif
-  return m_field_data(index0);
+  return m_field_data.access(index0);
 }
 
 //**********************************************************************
@@ -492,46 +492,46 @@ V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const PHX::inde
   using idx_t = PHX::index_t;
 
   if (RANK == 1){
-    base_.m_field_data(ind1) = base_.m_field_data(ind1)*source_(ind1);
+    base_.m_field_data.access(ind1) = base_.m_field_data.access(ind1)*source_(ind1);
   }
   else if (RANK == 2){
-    for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-      base_.m_field_data(ind1,ind2) = base_.m_field_data(ind1,ind2)*source_(ind1,ind2);
+    for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+      base_.m_field_data.access(ind1,ind2) = base_.m_field_data.access(ind1,ind2)*source_(ind1,ind2);
   }
    else if (RANK == 3){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         base_.m_field_data(ind1,ind2,ind3) = base_.m_field_data(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         base_.m_field_data.access(ind1,ind2,ind3) = base_.m_field_data.access(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
    }
    else if (RANK == 4){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           base_.m_field_data(ind1,ind2,ind3,ind4) = base_.m_field_data(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           base_.m_field_data.access(ind1,ind2,ind3,ind4) = base_.m_field_data.access(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
    }
    else if (RANK == 5){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             base_.m_field_data(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.extent(4)); ind5++)
+             base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
    }
    else if (RANK == 6){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
-               base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.extent(4)); ind5++)
+             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.extent(5)); ind6++)
+               base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
    }
    else if (RANK == 7){
-     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.dimension(1)); ind2++)
-       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.dimension(2)); ind3++)
-         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.dimension(3)); ind4++)
-           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.dimension(4)); ind5++)
-             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.dimension(5)); ind6++)
-               for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.m_field_data.dimension(6)); ind7++)
-                 base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
+     for (idx_t ind2=0; ind2 < static_cast<idx_t>(base_.m_field_data.extent(1)); ind2++)
+       for (idx_t ind3=0; ind3 < static_cast<idx_t>(base_.m_field_data.extent(2)); ind3++)
+         for (idx_t ind4=0; ind4 < static_cast<idx_t>(base_.m_field_data.extent(3)); ind4++)
+           for (idx_t ind5=0; ind5 < static_cast<idx_t>(base_.m_field_data.extent(4)); ind5++)
+             for (idx_t ind6=0; ind6 < static_cast<idx_t>(base_.m_field_data.extent(5)); ind6++)
+               for (idx_t ind7=0; ind7 < static_cast<idx_t>(base_.m_field_data.extent(6)); ind7++)
+                 base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data.access(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
    }
  }
 
@@ -543,7 +543,7 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 V_Multiply(const MDFieldType& source)
 {
   typedef PHX::MDField<DataT,void,void,void,void,void,void,void,void> ThisType;
-  const auto length = m_tag->dataLayout().dimension(0);
+  const auto length = m_tag->dataLayout().extent(0);
   if (m_tag->dataLayout().rank() == 1){
     Kokkos::parallel_for( length, V_MultiplyFunctor<ThisType, MDFieldType, 1>(*this, source) );
   }

@@ -40,10 +40,10 @@ namespace Tacho {
                       std::is_same<value_type_b,value_type_c>::value,
                       "A, B and C do not have the same value type.");
 
-        const ordinal_type m = C.dimension_0();
-        const ordinal_type n = C.dimension_1();
+        const ordinal_type m = C.extent(0);
+        const ordinal_type n = C.extent(1);
         const ordinal_type 
-          k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
+          k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.extent(0) : B.extent(1));
         
         if (m > 0 && n > 0 && k > 0) 
           BlasTeam<value_type>::gemm(member,

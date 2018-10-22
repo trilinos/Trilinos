@@ -84,15 +84,6 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>(); // TODO fix this
-    }
-
     //! @name Constructors and destructor
     //@{
 
@@ -101,14 +92,14 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp (new Node))
     {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode()) {
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Teuchos::rcp(new Node)) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
@@ -118,7 +109,7 @@ namespace Xpetra {
         const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
         GlobalOrdinal indexBase,
         const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-        const Teuchos::RCP< Node > &node = defaultArgNode()) {
+        const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
@@ -202,7 +193,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>(); // TODO fix this (just returns Teuchos::null)
+      return Teuchos::rcp (new Node);
     }
 
     //@}
@@ -291,15 +282,6 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
@@ -308,7 +290,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
     {
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
@@ -360,7 +342,7 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode())
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Teuchos::rcp(new Node))
     {
       // This test come from Tpetra
       using Teuchos::outArg;
@@ -464,7 +446,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode())
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node))
     {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, static_cast<int>(elementList.size()), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
@@ -550,7 +532,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>(); // TODO fix this
+      return Teuchos::rcp (new Node);
     }
 
     //@}
@@ -827,15 +809,6 @@ namespace Xpetra {
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
 
-    static Teuchos::RCP<Node> defaultArgNode() {
-        // Workaround function for a deferred visual studio bug
-        // http://connect.microsoft.com/VisualStudio/feedback/details/719847/erroneous-error-c2783-could-not-deduce-template-argument
-        // Use this function for default arguments rather than calling
-        // what is the return value below.  Also helps in reducing
-        // duplication in various constructors.
-        return KokkosClassic::Details::getNode<Node>();
-    }
-
     //! @name Constructors and destructor
     //@{
 
@@ -844,7 +817,7 @@ namespace Xpetra {
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
                LocalGlobal lg=GloballyDistributed,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
       // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
       // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
       std::string errPrefix;
@@ -895,7 +868,7 @@ namespace Xpetra {
     }
 
     //! Constructor with a user-defined contiguous distribution.
-    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=defaultArgNode()) {
+    EpetraMapT(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node=Teuchos::rcp(new Node)) {
       // This test come from Tpetra
       using Teuchos::outArg;
 
@@ -998,7 +971,7 @@ namespace Xpetra {
                const Teuchos::ArrayView< const GlobalOrdinal > &elementList,
                GlobalOrdinal indexBase,
                const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-               const Teuchos::RCP< Node > &node = defaultArgNode()) {
+               const Teuchos::RCP< Node > &node = Teuchos::rcp(new Node)) {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
         IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
       } else {
@@ -1083,7 +1056,7 @@ namespace Xpetra {
     //! Get this Map's Node object.
     Teuchos::RCP< Node > getNode() const {
       XPETRA_MONITOR("EpetraMapT<GlobalOrdinal>::getNode");
-      return KokkosClassic::Details::getNode<Node>();
+      return Teuchos::rcp (new Node);
     }
 
     //@}

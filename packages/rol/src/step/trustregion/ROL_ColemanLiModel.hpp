@@ -45,8 +45,6 @@
 #define ROL_COLEMANLIMODEL_HPP
 
 #include "ROL_TrustRegionModel.hpp"
-#include "ROL_BoundConstraint.hpp"
-#include "ROL_Secant.hpp"
 
 /** @ingroup func_group
     \class ROL::ColemanLiModel
@@ -61,25 +59,21 @@ namespace ROL {
 template<class Real>
 class ColemanLiModel : public TrustRegionModel<Real> {
 private:
-  ROL::Ptr<BoundConstraint<Real> > bnd_;              // Bound constraint
-  ROL::Ptr<Secant<Real> > sec_;                       // Secant storage
+  Ptr<Vector<Real>> prim_, dual_, hv_;          // Auxiliary storage
+  Ptr<Vector<Real>> step_;                      // Step storage
+  Ptr<Vector<Real>> cauchyStep_, cauchyScal_;   // Cauchy point vectors
+  Ptr<Vector<Real>> reflectStep_, reflectScal_; // Reflective step vectors
+  Ptr<Vector<Real>> Dmat_;                      // sqrt(abs(v))
+  Ptr<Vector<Real>> Cmat_;                      // diag(g) * dv/dx
+  Ptr<Vector<Real>> lx_, ux_;                   // Temporary vectors for bound computation
 
-  ROL::Ptr<Vector<Real> > prim_, dual_, hv_;          // Auxiliary storage
-  ROL::Ptr<Vector<Real> > step_;                      // Step storage
-  ROL::Ptr<Vector<Real> > cauchyStep_, cauchyScal_;   // Cauchy point vectors
-  ROL::Ptr<Vector<Real> > reflectStep_, reflectScal_; // Reflective step vectors
-  ROL::Ptr<Vector<Real> > Dmat_;                      // sqrt(abs(v))
-  ROL::Ptr<Vector<Real> > Cmat_;                      // diag(g) * dv/dx
+  Real TRradius_;                               // Trust-region radius
+  const Real stepBackMax_, stepBackScale_;      // Primal transform parameters
+  const bool singleReflect_;                    // Use single reflection
+  Real sCs_, pred_;                             // Actual/predicted reduction
 
-  const bool useSecantPrecond_;                           // Use secant as preconditioner (unused)
-  const bool useSecantHessVec_;                           // Use secant as Hessian
-
-  const Real TRradius_, stepBackMax_, stepBackScale_;     // Primal transform parameters
-  const bool singleReflect_;                              // Use single reflection
-  Real sCs_, pred_;                                       // Actual/predicted reduction
-
-  Elementwise::Multiply<Real> mult_;                      // Elementwise multiply
-  Elementwise::Divide<Real>   div_;                       // Elementwise division
+  Elementwise::Multiply<Real> mult_;            // Elementwise multiply
+  Elementwise::Divide<Real>   div_;             // Elementwise division
 
   // Apply diagonal D matrix
   void applyD( Vector<Real> &Dv, const Vector<Real> &v ) {
@@ -100,9 +94,9 @@ private:
   }
 
   void constructC(void) {
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const ROL::Ptr<const Vector<Real> > l  = bnd_->getLowerBound();
-    const ROL::Ptr<const Vector<Real> > u  = bnd_->getUpperBound();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> l  = TrustRegionModel<Real>::getBoundConstraint()->getLowerBound();
+    const Ptr<const Vector<Real>> u  = TrustRegionModel<Real>::getBoundConstraint()->getUpperBound();
 
     // Set Cmat_ to be the sign of the gradient
     Cmat_->set(gc->dual());
@@ -136,10 +130,10 @@ private:
   }
 
   void constructInverseD(void) {
-    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
-    const ROL::Ptr<const Vector<Real> > l  = bnd_->getLowerBound();
-    const ROL::Ptr<const Vector<Real> > u  = bnd_->getUpperBound();
+    const Ptr<const Vector<Real>> xc = TrustRegionModel<Real>::getIterate();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> l  = TrustRegionModel<Real>::getBoundConstraint()->getLowerBound();
+    const Ptr<const Vector<Real>> u  = TrustRegionModel<Real>::getBoundConstraint()->getUpperBound();
     const Real zero(0), one(1), INF(ROL_INF<Real>()), NINF(ROL_NINF<Real>());
     const int LESS_THAN    = 0;
     const int EQUAL_TO     = 1;
@@ -208,64 +202,54 @@ private:
   }
 
   // Build diagonal D and C matrices
-  void initialize(Objective<Real> &obj, BoundConstraint<Real> &bnd,
-                  const Vector<Real> &x, const Vector<Real> &g) {
-    bnd_ = ROL::makePtrFromRef(bnd);
-
+  void initialize(const Vector<Real> &x, const Vector<Real> &g) {
     prim_ = x.clone();
     dual_ = g.clone();
     hv_   = g.clone();
     step_ = x.clone();
     Dmat_ = x.clone();
     Cmat_ = x.clone();
+    lx_   = x.clone();
+    ux_   = x.clone();
 
     cauchyStep_  = x.clone();
     cauchyScal_  = x.clone();
     reflectStep_ = x.clone();
     reflectScal_ = x.clone();
-
-    constructC();
-    constructInverseD();
   }
 
  public:
 
   ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
-                  const Vector<Real> &x, const Vector<Real> &g)
-    : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
-      sec_(ROL::nullPtr), useSecantPrecond_(false), useSecantHessVec_(false),
-      TRradius_(1), stepBackMax_(0.9999), stepBackScale_(1),
-      singleReflect_(true), sCs_(0), pred_(0) {
-    initialize(obj,bnd,x,g);
+                  const Vector<Real> &x, const Vector<Real> &g,
+                  const Real stepBackMax = 0.9999, const Real stepBackScale = 1.0,
+                  const bool singleReflect = true,
+                  const Ptr<Secant<Real>> &secant = nullPtr,
+                  const bool useSecantPrecond = false, const bool useSecantHessVec = false)
+    : TrustRegionModel<Real>::TrustRegionModel(obj,bnd,x,g,secant,useSecantPrecond,useSecantHessVec),
+      TRradius_(1), stepBackMax_(stepBackMax), stepBackScale_(stepBackScale),
+      singleReflect_(singleReflect), sCs_(0), pred_(0) {
+    initialize(x,g);
   }
 
-  ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
-                  const Vector<Real> &x, const Vector<Real> &g,
-                  const Real TRradius, const Real stepBackMax, const Real stepBackScale,
-                  const bool singleReflect = true )
-    : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
-      sec_(ROL::nullPtr), useSecantPrecond_(false), useSecantHessVec_(false),
-      TRradius_(TRradius), stepBackMax_(stepBackMax), stepBackScale_(stepBackScale),
-      singleReflect_(singleReflect), sCs_(0), pred_(0) {
-    initialize(obj,bnd,x,g);
+  void update(Objective<Real> &obj, BoundConstraint<Real> &bnd,
+              const Vector<Real> &x, const Vector<Real> &g,
+              const Ptr<Secant<Real>> &secant = nullPtr) {
+    TrustRegionModel<Real>::update(obj,bnd,x,g,secant);
+    constructC();
+    constructInverseD();
   }
 
-  ColemanLiModel( Objective<Real> &obj, BoundConstraint<Real> &bnd,
-                  const Vector<Real> &x, const Vector<Real> &g,
-                  const ROL::Ptr<Secant<Real> > &sec,
-                  const bool useSecantPrecond, const bool useSecantHessVec,
-                  const Real TRradius, const Real stepBackMax, const Real stepBackScale,
-                  const bool singleReflect = true )
-    : TrustRegionModel<Real>::TrustRegionModel(obj,x,g,false),
-      sec_(sec), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec),
-      TRradius_(TRradius), stepBackMax_(stepBackMax), stepBackScale_(stepBackScale),
-      singleReflect_(singleReflect), sCs_(0), pred_(0) {
-    initialize(obj,bnd,x,g);
+  void setRadius(const Real del) {
+    TRradius_ = del;
   }
  
+  /***************************************************************************/
+  /*********  BEGIN OBJECTIVE FUNCTION DEFINITIONS  **************************/
+  /***************************************************************************/
   // Note that s is the \f$\hat{s}\f$ and \f$\psi\f$ is the $\hat\psi$ from the paper
   Real value( const Vector<Real> &s, Real &tol ) {
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
     // Apply Hessian to s
     hessVec(*hv_, s, s, tol);
     hv_->scale(static_cast<Real>(0.5));
@@ -277,28 +261,25 @@ private:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &s, Real &tol ) {
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
     hessVec(g, s, s, tol);
     applyInverseD(*prim_, gc->dual());
     g.plus(prim_->dual());    
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &s, Real &tol ) {
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
     // Build B = inv(D) * Hessian * inv(D)
     applyInverseD(*prim_, v);
-    if(useSecantHessVec_) {
-      sec_->applyB(*dual_, *prim_);
-    }
-    else {
-      const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-      TrustRegionModel<Real>::getObjective()->hessVec(*dual_, *prim_, *xc, tol);   
-    }
+    TrustRegionModel<Real>::applyHessian(*dual_,*prim_,tol);
     applyInverseD(hv, *dual_);
     // Build C = diag(g) J
     applyC(*prim_, v);
     hv.plus(prim_->dual()); 
   }
+  /***************************************************************************/
+  /*********  END OBJECTIVE FUNCTION DEFINITIONS  ****************************/
+  /***************************************************************************/
   
   void dualTransform( Vector<Real> &tv, const Vector<Real> &v ) {
     applyInverseD(tv, v);
@@ -398,16 +379,12 @@ private:
     ared += sCs_;
   }
 
-  const ROL::Ptr<BoundConstraint<Real> > getBoundConstraint(void) const {
-    return bnd_;
-  }
-
 private:
 
   void getScalarBounds( Real &lowerBound, Real &upperBound, const Vector<Real> &p ) {
-    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-    const ROL::Ptr<const Vector<Real> > l  = bnd_->getLowerBound();
-    const ROL::Ptr<const Vector<Real> > u  = bnd_->getUpperBound();
+    const Ptr<const Vector<Real>> xc = TrustRegionModel<Real>::getIterate();
+    const Ptr<const Vector<Real>> l  = TrustRegionModel<Real>::getBoundConstraint()->getLowerBound();
+    const Ptr<const Vector<Real>> u  = TrustRegionModel<Real>::getBoundConstraint()->getUpperBound();
     const Real one(1);
     Real pnorm = p.norm();
 
@@ -459,7 +436,7 @@ private:
   }
 
   Real minimize1D(Real &tau, const Real lowerBound, const Real upperBound, const Vector<Real> &p) {
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
     Real tol = std::sqrt(ROL_EPSILON<Real>());
 
     // Compute coefficients of one dimensional quadratic
@@ -483,7 +460,7 @@ private:
 
   Real computeCauchyPoint(void) {
     // Set step = -inv(D) g
-    const ROL::Ptr<const Vector<Real> > gc = TrustRegionModel<Real>::getGradient();
+    const Ptr<const Vector<Real>> gc = TrustRegionModel<Real>::getGradient();
     applyInverseD(*cauchyStep_, gc->dual());
     cauchyStep_->scale(static_cast<Real>(-1));
 
@@ -505,7 +482,7 @@ private:
   }
 
   void computeReflectiveStep(Vector<Real> &Rv, const Vector<Real> &v, const Vector<Real> &Dv) {
-    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const Ptr<const Vector<Real>> xc = TrustRegionModel<Real>::getIterate();
     Real alpha = computeAlpha(Dv);
     Rv.set(v);
 
@@ -516,7 +493,7 @@ private:
       }
     };
     prim_->set(*xc); prim_->axpy(alpha,Dv);
-    prim_->applyBinary(LowerBound(),*bnd_->getLowerBound());
+    prim_->applyBinary(LowerBound(),*TrustRegionModel<Real>::getBoundConstraint()->getLowerBound());
     Rv.applyBinary(mult_,*prim_);
 
     class UpperBound : public Elementwise::BinaryFunction<Real> {
@@ -526,12 +503,12 @@ private:
       }
     };
     prim_->set(*xc); prim_->axpy(alpha,Dv);
-    prim_->applyBinary(UpperBound(),*bnd_->getUpperBound());
+    prim_->applyBinary(UpperBound(),*TrustRegionModel<Real>::getBoundConstraint()->getUpperBound());
     Rv.applyBinary(mult_,*prim_);
   }
 
   void computeFullReflectiveStep(Vector<Real> &Rv, const Vector<Real> &v, const Vector<Real> &Dv) {
-    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const Ptr<const Vector<Real>> xc = TrustRegionModel<Real>::getIterate();
     Rv.set(v);
 
     class LowerBound : public Elementwise::BinaryFunction<Real> {
@@ -541,7 +518,7 @@ private:
       }
     };
     prim_->set(*xc); prim_->plus(Dv);
-    prim_->applyBinary(LowerBound(),*bnd_->getLowerBound());
+    prim_->applyBinary(LowerBound(),*TrustRegionModel<Real>::getBoundConstraint()->getLowerBound());
     Rv.applyBinary(mult_,*prim_);
 
     class UpperBound : public Elementwise::BinaryFunction<Real> {
@@ -551,13 +528,12 @@ private:
       }
     };
     prim_->set(*xc); prim_->plus(Dv);
-    prim_->applyBinary(UpperBound(),*bnd_->getUpperBound());
+    prim_->applyBinary(UpperBound(),*TrustRegionModel<Real>::getBoundConstraint()->getUpperBound());
     Rv.applyBinary(mult_,*prim_);
   }
 
   Real computeAlpha( const Vector<Real> &d ) {
-    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
-    ROL::Ptr<Vector<Real> > lx = xc->clone(), ux = xc->clone();
+    const Ptr<const Vector<Real>> xc = TrustRegionModel<Real>::getIterate();
     const Real one(1);
 
     // Define elementwise functions
@@ -573,24 +549,24 @@ private:
     };
 
     // (l - x) / d
-    lx->set(*bnd_->getLowerBound());
-    lx->axpy(-one, *xc);
-    lx->applyBinary(SafeDivide(ROL_INF<Real>()), d);
+    lx_->set(*TrustRegionModel<Real>::getBoundConstraint()->getLowerBound());
+    lx_->axpy(-one, *xc);
+    lx_->applyBinary(SafeDivide(ROL_INF<Real>()), d);
 
     // (u - x) / d
-    ux->set(*bnd_->getUpperBound());
-    ux->axpy(-one, *xc);
-    ux->applyBinary(SafeDivide(ROL_INF<Real>()), d);
+    ux_->set(*TrustRegionModel<Real>::getBoundConstraint()->getUpperBound());
+    ux_->axpy(-one, *xc);
+    ux_->applyBinary(SafeDivide(ROL_INF<Real>()), d);
 
     // max{ (l - x) / d, (u - x) / d }
-    lx->applyBinary(Elementwise::Max<Real>(),*ux);
+    lx_->applyBinary(Elementwise::Max<Real>(),*ux_);
 
     // min{ max{ (l - x) / d, (u - x) / d } }
-    return lx->reduce(Elementwise::ReductionMin<Real>());
+    return lx_->reduce(Elementwise::ReductionMin<Real>());
   }
 
   bool isStrictlyFeasibleStep( const Vector<Real> &d ) const {
-    const ROL::Ptr<const Vector<Real> > xc = TrustRegionModel<Real>::getIterate();
+    const Ptr<const Vector<Real>> xc = TrustRegionModel<Real>::getIterate();
 
     class Greater : public Elementwise::BinaryFunction<Real> {
     public:
@@ -600,7 +576,7 @@ private:
       }
     };
     prim_->set(*xc); prim_->plus(d);
-    prim_->applyBinary(Greater(),*bnd_->getLowerBound());
+    prim_->applyBinary(Greater(),*TrustRegionModel<Real>::getBoundConstraint()->getLowerBound());
     Real lowerFeasible = prim_->reduce(Elementwise::ReductionMin<Real>());
 
     class Lesser : public Elementwise::BinaryFunction<Real> {
@@ -611,7 +587,7 @@ private:
       }
     };
     prim_->set(*xc); prim_->plus(d);
-    prim_->applyBinary(Lesser(),*bnd_->getUpperBound());
+    prim_->applyBinary(Lesser(),*TrustRegionModel<Real>::getBoundConstraint()->getUpperBound());
     Real upperFeasible = prim_->reduce(Elementwise::ReductionMin<Real>());
 
     return (upperFeasible * lowerFeasible > 0);

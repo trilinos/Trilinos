@@ -117,14 +117,14 @@ public:
     typedef typename RV::HostMirror HRV;
     RV rv = m_max_min_functor.m_coeff_function.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
-    const Ordinal dim = rv.dimension_0();
+    const Ordinal dim = rv.extent(0);
     Teuchos::Array< std::pair<Scalar,Ordinal> > coeffs(num_samples);
     for (Ordinal sample_index=0; sample_index<num_samples; ++sample_index) {
       for (Ordinal i=0; i<dim; ++i)
         hrv(i) = samples[sample_index][i];
       Kokkos::deep_copy( rv, hrv );
 
-      Ordinal num_elem = m_max_min_functor.m_elem_node_ids.dimension_0();
+      Ordinal num_elem = m_max_min_functor.m_elem_node_ids.extent(0);
       Scalar local_coeff[2] = { 0.0,  Kokkos::ArithTraits<Scalar>::max() };
       parallel_reduce( num_elem, m_max_min_functor, local_coeff );
 

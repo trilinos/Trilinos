@@ -120,7 +120,7 @@ int main (int argc, char *argv[]) {
 
     Random<value_type> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
+      const ordinal_type m = mat.extent(0), n = mat.extent(1);
       for (ordinal_type j=0;j<n;++j)
         for (ordinal_type i=0;i<m;++i)
           mat(i,j) = random.value();

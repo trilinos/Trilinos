@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,7 +40,7 @@ static double s2, cos2; /* squares of sign and cosine of angle */
 
 double func2d(double coeffs[5], /* five different 4-way products */
               double theta      /* angular parameter */
-              )
+)
 
 /* Returns value of penalty function at given angle. */
 {
@@ -60,7 +60,7 @@ double func2d(double coeffs[5], /* five different 4-way products */
 
 double grad2d(double coeffs[5], /* five different 4-way products */
               double theta      /* angular parameter */
-              )
+)
 
 /* Returns 1st derivative of penalty function at given angle. */
 {
@@ -79,7 +79,7 @@ double grad2d(double coeffs[5], /* five different 4-way products */
 }
 
 double hess2d(double coeffs[5] /* five different 4-way products */
-              )
+)
 
 /* Returns 2nd derivative of penalty function at given angle. */
 {

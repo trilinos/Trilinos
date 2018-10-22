@@ -70,8 +70,8 @@ public:
                              Array in_basis) 
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), basis(in_basis)
   {
-    numFields = basis.dimension(1);
-    numPoints = basis.dimension(2);
+    numFields = basis.extent(1);
+    numPoints = basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -105,8 +105,8 @@ public:
                              Array in_basis) 
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), basis(in_basis)
   {
-    numFields = basis.dimension(1);
-    numPoints = basis.dimension(2);
+    numFields = basis.extent(1);
+    numPoints = basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -141,8 +141,8 @@ public:
                              Array in_basis) 
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), offsets(in_offsets), basis(in_basis)
   {
-    numFields = basis.dimension(1);
-    numPoints = basis.dimension(2);
+    numFields = basis.extent(1);
+    numPoints = basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
@@ -187,8 +187,8 @@ public:
                              Array in_basis) 
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), offsets(in_offsets), basis(in_basis)
   {
-    numFields = basis.dimension(1);
-    numPoints = basis.dimension(2);
+    numFields = basis.extent(1);
+    numPoints = basis.extent(2);
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const

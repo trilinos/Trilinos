@@ -60,7 +60,7 @@ namespace Stokhos {
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals) {
-      mean_vals = ViewType("mean-values", vals.dimension_0());
+      mean_vals = ViewType("mean-values", vals.extent(0));
       Kokkos::deep_copy( mean_vals, vals );
     }
 
@@ -84,7 +84,7 @@ namespace Stokhos {
     typedef typename ViewType::size_type size_type;
 
     GetMeanValsFunc(const ViewType& vals_) : vals(vals_) {
-      const size_type nnz = vals.dimension_0();
+      const size_type nnz = vals.extent(0);
       typename Scalar::cijk_type mean_cijk =
         Stokhos::create_mean_based_product_tensor<execution_space, typename Storage::ordinal_type, typename Storage::value_type>();
       mean_vals = Kokkos::make_view<ViewType>("mean-values", mean_cijk, nnz, 1);
@@ -119,7 +119,7 @@ namespace Stokhos {
     GetMeanValsFunc(const ViewType& vals_) :
       vals(vals_), vec_size(Kokkos::dimension_scalar(vals))
     {
-      const size_type nnz = vals.dimension_0();
+      const size_type nnz = vals.extent(0);
       mean_vals = ViewType("mean-values", nnz, 1);
       Kokkos::parallel_for( nnz, *this );
     }
@@ -153,7 +153,7 @@ namespace Stokhos {
     typedef typename ViewType::size_type size_type;
 
     GetScalarMeanValsFunc(const ViewType& vals) {
-      mean_vals = ViewType("mean-values", vals.dimension_0());
+      mean_vals = ViewType("mean-values", vals.extent(0));
       Kokkos::deep_copy( mean_vals, vals );
     }
 
@@ -178,7 +178,7 @@ namespace Stokhos {
     typedef typename ViewType::size_type size_type;
 
     GetScalarMeanValsFunc(const ViewType& vals_) : vals(vals_) {
-      const size_type nnz = vals.dimension_0();
+      const size_type nnz = vals.extent(0);
       mean_vals = MeanViewType("mean-values", nnz, 1);
       Kokkos::parallel_for( nnz, *this );
     }
@@ -212,7 +212,7 @@ namespace Stokhos {
     GetScalarMeanValsFunc(const ViewType& vals_) :
       vals(vals_), vec_size(Kokkos::dimension_scalar(vals))
     {
-      const size_type nnz = vals.dimension_0();
+      const size_type nnz = vals.extent(0);
       mean_vals = ViewType("mean-values", nnz, 1);
       Kokkos::parallel_for( nnz, *this );
     }
@@ -324,8 +324,8 @@ namespace Stokhos {
     template <typename DstView, typename SrcView>
     void impl(const DstView& dst, const SrcView& src) {
       typedef typename SrcView::non_const_value_type Scalar;
-      const size_t m = src.dimension_0();
-      const size_t n = src.dimension_1();
+      const size_t m = src.extent(0);
+      const size_t n = src.extent(1);
       const size_t p = Kokkos::dimension_scalar(src);
       Kokkos::RangePolicy<exec_space> policy(0,m);
       Kokkos::parallel_for( policy, KOKKOS_LAMBDA(const size_t i)
@@ -353,8 +353,8 @@ namespace Stokhos {
     template <typename DstView, typename SrcView>
     void impl(const DstView& dst, const SrcView& src) {
       typedef typename DstView::non_const_value_type Scalar;
-      const size_t m = dst.dimension_0();
-      const size_t n = dst.dimension_1();
+      const size_t m = dst.extent(0);
+      const size_t n = dst.extent(1);
       const size_t p = Kokkos::dimension_scalar(dst);
 
       Kokkos::RangePolicy<exec_space> policy(0,m);
@@ -369,7 +369,7 @@ namespace Stokhos {
     }
   };
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   // Specialization for CopyPCE2Scalar specifically for Cuda that ensures
   // coalesced reads and writes
   template <>
@@ -387,8 +387,8 @@ namespace Stokhos {
       typedef Kokkos::TeamPolicy<exec_space> Policy;
       typedef typename Policy::member_type Member;
 
-      const size_t m = src.dimension_0();
-      const size_t n = src.dimension_1();
+      const size_t m = src.extent(0);
+      const size_t n = src.extent(1);
       const size_t p = Kokkos::dimension_scalar(src);
 
       const size_t ChunkSize = 16;
@@ -444,8 +444,8 @@ namespace Stokhos {
       typedef Kokkos::TeamPolicy<exec_space> Policy;
       typedef typename Policy::member_type Member;
 
-      const size_t m = dst.dimension_0();
-      const size_t n = dst.dimension_1();
+      const size_t m = dst.extent(0);
+      const size_t n = dst.extent(1);
       const size_t p = Kokkos::dimension_scalar(dst);
 
       const size_t ChunkSize = 16;

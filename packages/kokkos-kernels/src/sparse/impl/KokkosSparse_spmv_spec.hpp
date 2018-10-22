@@ -253,7 +253,6 @@ struct SPMV < AT, AO, AD, AM, AS,
   {
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
 
-    typedef typename YVector::non_const_value_type coefficient_type;
     typedef Kokkos::Details::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero ()) {
@@ -344,7 +343,7 @@ struct SPMV_MV<AT, AO, AD, AM, AS,
     typedef SPMV<AT, AO, AD, AM, AS,
       typename XVector::value_type*, XL, XD, XM,
       typename YVector::value_type*, YL, YD, YM> impl_type;
-    for (typename AMatrix::non_const_size_type j = 0; j < x.dimension_1 (); ++j) {
+    for (typename AMatrix::non_const_size_type j = 0; j < x.extent(1); ++j) {
       auto x_j = Kokkos::subview (x, Kokkos::ALL (), j);
       auto y_j = Kokkos::subview (y, Kokkos::ALL (), j);
       impl_type::spmv (mode, alpha, A, x_j, beta, y_j);

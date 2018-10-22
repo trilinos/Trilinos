@@ -63,9 +63,9 @@ struct evaluateGrad_withSens {
   void operator() (const size_t &cell) const
   {
     // evaluate at quadrature points
-    int numFields = grad_basis_.dimension(1);
-    int numPoints = grad_basis_.dimension(2);
-    int spaceDim  = grad_basis_.dimension(3);
+    int numFields = grad_basis_.extent(1);
+    int numPoints = grad_basis_.extent(2);
+    int spaceDim  = grad_basis_.extent(3);
     for (int pt=0; pt<numPoints; pt++) {
       for (int d=0; d<spaceDim; d++) {
         // first initialize to the right thing (prevents over writing with 0)

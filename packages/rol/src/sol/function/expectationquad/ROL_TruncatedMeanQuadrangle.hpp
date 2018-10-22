@@ -54,9 +54,9 @@ private:
 
   Real beta_;
 
-  void parseParameterList(Teuchos::ParameterList &parlist) {
+  void parseParameterList(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    Teuchos::ParameterList list;
+    ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Truncated Mean");
     }
@@ -74,7 +74,7 @@ private:
 
   void checkInputs(void) const {
     Real zero(0);
-    TEUCHOS_TEST_FOR_EXCEPTION((beta_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((beta_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::TruncatedMeanQuadrangle): Threshold must be positive!");
   }
 
@@ -85,14 +85,14 @@ public:
     checkInputs();
   }
 
-  TruncatedMeanQuadrangle(Teuchos::ParameterList &parlist)
+  TruncatedMeanQuadrangle(ROL::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     parseParameterList(parlist);
     checkInputs();
   }
 
   Real error(Real x, int deriv = 0) {
-    bool inside = ( std::abs(x) ? true : false );
+    bool inside = ( std::abs(x) < beta_ ? true : false );
     Real err(0), zero(0), half(0.5), one(1), two(2);
     if (deriv==0) {
       err = (inside ? half*std::pow(x,two)/beta_ : std::abs(x)-half*beta_);

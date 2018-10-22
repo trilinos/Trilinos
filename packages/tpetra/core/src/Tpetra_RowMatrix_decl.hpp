@@ -42,27 +42,17 @@
 #ifndef TPETRA_ROWMATRIX_DECL_HPP
 #define TPETRA_ROWMATRIX_DECL_HPP
 
-#include <Teuchos_Describable.hpp>
-#include <Kokkos_DefaultNode.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Vector_decl.hpp"
+#include "Tpetra_RowMatrix_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_Operator.hpp"
-#include "Tpetra_RowGraph.hpp"
+#include "Tpetra_RowGraph_fwd.hpp"
 #include "Tpetra_Packable.hpp"
 #include "Tpetra_SrcDistObject.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Map;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+namespace Classes {
   /// \class RowMatrix
   /// \brief A read-only, row-oriented interface to a sparse matrix.
   ///
@@ -114,7 +104,7 @@ namespace Tpetra {
     /// This is usually the same as the type of the magnitude
     /// (absolute value) of <tt>Scalar</tt>, but may differ for
     /// certain <tt>Scalar</tt> types.
-    typedef typename Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+    typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
 
     //@}
     //! @name Destructor
@@ -189,26 +179,72 @@ namespace Tpetra {
     ///   the number of entries.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
-    //! The number of global diagonal entries, based on global row/column index comparisons.
-    virtual global_size_t getGlobalNumDiags() const = 0;
+    /// \brief Number of diagonal entries in the matrix's graph, over
+    ///   all processes in the matrix's communicator.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual global_size_t TPETRA_DEPRECATED getGlobalNumDiags () const = 0;
 
-    //! The number of local diagonal entries, based on global row/column index comparisons.
-    virtual size_t getNodeNumDiags() const = 0;
+    /// \brief Number of diagonal entries in the matrix's graph, on
+    ///   the calling process.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    virtual size_t TPETRA_DEPRECATED getNodeNumDiags () const = 0;
 
-    //! The maximum number of entries across all rows/columns on all nodes.
-    virtual size_t getGlobalMaxNumRowEntries() const = 0;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   over all processes.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    virtual size_t getGlobalMaxNumRowEntries () const = 0;
 
-    //! The maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    /// \brief Maximum number of entries in any row of the matrix,
+    ///   on this process.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// This method only uses the matrix's graph.  Explicitly stored
+    /// zeros count as "entries."
+    virtual size_t getNodeMaxNumRowEntries () const = 0;
 
-    //! Whether this matrix has a well-defined column map.
-    virtual bool hasColMap() const = 0;
+    //! Whether this matrix has a well-defined column Map.
+    virtual bool hasColMap () const = 0;
 
-    //! Whether this matrix is lower triangular.
-    virtual bool isLowerTriangular() const = 0;
+    /// \brief Whether the matrix is locally lower triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isLowerTriangular () const = 0;
 
-    //! Whether this matrix is upper triangular.
-    virtual bool isUpperTriangular() const = 0;
+    /// \brief Whether the matrix is locally upper triangular.
+    ///
+    /// \warning DO NOT CALL THIS METHOD!  This method is DEPRECATED
+    ///   and will DISAPPEAR VERY SOON per #2630.
+    ///
+    /// \pre Subclasses reserve the right to impose preconditions on
+    ///   the matrix's state.
+    ///
+    /// \note This is entirely a local property.  That means this
+    ///   method may return different results on different processes.
+    virtual bool TPETRA_DEPRECATED isUpperTriangular () const = 0;
 
     /// \brief Whether matrix indices are locally indexed.
     ///
@@ -401,18 +437,16 @@ namespace Tpetra {
     //! \name Mathematical methods
     //@{
 
-    /**
-     * \brief Scale the RowMatrix on the left with the given Vector x.
-     *
-     * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
-     */
+    /// \brief Scale the matrix on the left with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(i)*A(i,j)\f$.
     virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
-    /**
-     * \brief Scale the RowMatrix on the right with the given Vector x.
-     *
-     * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
-     */
+    /// \brief Scale the matrix on the right with the given Vector.
+    ///
+    /// On return, for all entries i,j in the matrix,
+    /// \f$A(i,j) = x(j)*A(i,j)\f$.
     virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
 
     /// \brief The Frobenius norm of the matrix.
@@ -530,6 +564,7 @@ namespace Tpetra {
           Distributor& distor) const;
     //@}
   }; // class RowMatrix
+} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_ROWMATRIX_DECL_HPP

@@ -293,7 +293,7 @@ public:
                                                    const bool printToStream,
                                                    std::ostream & outStream,
                                                    const int order ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -307,7 +307,7 @@ public:
     std::vector<std::vector<Real> > gCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Evaluate objective value at x.
@@ -413,7 +413,7 @@ public:
                                                    const bool printToStream,
                                                    std::ostream & outStream,
                                                    const int order ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -427,7 +427,7 @@ public:
     std::vector<std::vector<Real> > gCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Evaluate objective value at x.
@@ -549,7 +549,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -564,7 +564,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
@@ -693,7 +693,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -708,7 +708,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
@@ -840,7 +840,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -855,7 +855,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
@@ -987,7 +987,7 @@ public:
                                                    std::ostream & outStream,
                                                    const int order ) {
   
-    TEUCHOS_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument,
                                 "Error: finite difference order must be 1,2,3, or 4" );
   
     using Finite_Difference_Arrays::shifts;
@@ -1002,7 +1002,7 @@ public:
     std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
   
     // Save the format state of the original outStream.
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.

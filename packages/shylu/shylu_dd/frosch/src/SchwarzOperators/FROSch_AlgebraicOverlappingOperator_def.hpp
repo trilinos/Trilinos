@@ -55,17 +55,11 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize()
-    {
-        return initialize(0);
-    }
-    
-    template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::initialize(int overlap, MapPtr repeatedMap)
     {
         if (repeatedMap.is_null()) {
             repeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap(),1);
-        } 
+        }
         this->buildOverlappingMatrices(overlap,repeatedMap);
         this->initializeOverlappingOperator();
         this->IsInitialized_ = true;
@@ -81,7 +75,7 @@ namespace FROSch {
         this->IsComputed_ = true;
         return 0; // RETURN VALUE!!!
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     void AlgebraicOverlappingOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                              const Teuchos::EVerbosityLevel verbLevel) const
@@ -99,13 +93,14 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::buildOverlappingMatrices(int overlap,
                                                                             MapPtr repeatedMap)
     {
-        if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
+        //if (this->Verbose_) std::cout << "WARNING: Can we just copy the pointers like that without changing the matrix...?\n";
+
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
-        
         for (int i=0; i<overlap; i++) {
             ExtendOverlapByOneLayer(this->OverlappingMatrix_,this->OverlappingMap_);
         }
+
         return 0;
     }
     

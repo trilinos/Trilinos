@@ -43,6 +43,8 @@
 
 #include "ROL_Vector.hpp"
 
+#include <initializer_list>
+
 #ifndef ROL_PARTITIONED_VECTOR_H
 #define ROL_PARTITIONED_VECTOR_H
 
@@ -77,7 +79,7 @@ public:
 
   void set( const V &x ) {
     const PV &xs = dynamic_cast<const PV&>(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
     for( size_type i=0; i<vecs_.size(); ++i ) {
@@ -87,7 +89,7 @@ public:
 
   void plus( const V &x ) {
     const PV &xs = dynamic_cast<const PV&>(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
     for( size_type i=0; i<vecs_.size(); ++i ) {
@@ -103,7 +105,7 @@ public:
 
   void axpy( const Real alpha, const V &x ) {
     const PV &xs = dynamic_cast<const PV&>(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+    ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
 
@@ -114,7 +116,7 @@ public:
 
   Real dot( const V &x ) const {
     const PV &xs = dynamic_cast<const PV&>(x);
-   TEUCHOS_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+   ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
                                 std::invalid_argument,
                                 "Error: Vectors must have the same number of subvectors." );
     Real result = 0;
@@ -149,7 +151,7 @@ public:
   }
 
   Vp basis( const int i ) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
+    ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
     Vp bvec = clone();
@@ -216,6 +218,12 @@ public:
     }
   }
 
+  void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    for (size_type i=0; i<vecs_.size(); ++i) {
+      vecs_[i]->randomize(l,u);
+    }
+  }
+
   void print( std::ostream &outStream ) const {
     for( size_type i=0; i<vecs_.size(); ++i ) {
       outStream << "V[" << i << "]: ";
@@ -243,6 +251,21 @@ public:
 
   size_type numVectors() const {
     return vecs_.size();
+  }
+
+public:
+
+  // Make a new PartitionedVector from an initializer_list of pointers to vectors
+  static Ptr<PartitionedVector> create( std::initializer_list<Vp> vs ) {
+    std::vector<Vp> subvecs{vs};
+    return ROL::makePtr<PartitionedVector>( subvecs ); 
+  }
+
+  // Make a new PartitionedVector by cloning the given vector N times
+  static Ptr<PartitionedVector> create( const V& x, size_type N ) {
+    std::vector<Vp> subvecs(N);
+    for( size_type i=0; i<N; ++i ) subvecs.at(i) = x.clone();
+    return ROL::makePtr<PartitionedVector>( subvecs );
   }
 
 };

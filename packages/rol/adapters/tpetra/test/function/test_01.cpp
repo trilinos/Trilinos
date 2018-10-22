@@ -51,7 +51,7 @@
 
 #include "ROL_Types.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Tpetra_DefaultPlatform.hpp"
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
     int iprint     = argc - 1;
     ROL::Ptr<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
     Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
 
     if (iprint > 0)

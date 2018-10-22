@@ -58,30 +58,17 @@
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
 
-//Tpetra includes
-#include "Tpetra_DefaultPlatform.hpp"
-
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Pamgen includes
 #include "create_inline_mesh.h"
 
-using namespace std;
 using Teuchos::ParameterList;
-using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 
-/*********************************************************/
-/*                     Typedefs                          */
-/*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
-
-
+typedef Zoltan2::BasicUserTypes<> basic_user_t;
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
@@ -89,15 +76,14 @@ typedef Zoltan2::BasicUserTypes<double>          basic_user_t;
 
 int main(int narg, char *arg[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
 
   int me = CommT->getRank();
   int numProcs = CommT->getSize();
 
   if (me == 0){
-  cout
+  std::cout
     << "====================================================================\n"
     << "|                                                                  |\n"
     << "|          Example: Partition Pamgen Hexahedral Mesh               |\n"
@@ -116,11 +102,11 @@ int main(int narg, char *arg[]) {
 
 #ifdef HAVE_MPI
   if (me == 0) {
-    cout << "PARALLEL executable \n";
+    std::cout << "PARALLEL executable \n";
   }
 #else
   if (me == 0) {
-    cout << "SERIAL executable \n";
+    std::cout << "SERIAL executable \n";
   }
 #endif
 
@@ -149,18 +135,18 @@ int main(int narg, char *arg[]) {
 
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
-      cout << "\nReading parameter list from the XML file \""
+      std::cout << "\nReading parameter list from the XML file \""
                 <<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,
                                          Teuchos::inoutArg(inputMeshList));
     if (me == 0) {
-      inputMeshList.print(cout,2,true,true);
-      cout << "\n";
+      inputMeshList.print(std::cout,2,true,true);
+      std::cout << "\n";
     }
   }
   else {
-    cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+    std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
     return 5;
   }
 
@@ -179,14 +165,14 @@ int main(int narg, char *arg[]) {
   /***************************** GENERATE MESH *******************************/
   /***************************************************************************/
 
-  if (me == 0) cout << "Generating mesh ... \n\n";
+  if (me == 0) std::cout << "Generating mesh ... \n\n";
 
   // Generate mesh with Pamgen
   long long maxInt = 9223372036854775807LL;
   Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
 
   // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  if (me == 0) std::cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<basic_user_t> inputAdapter_t;
   typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
@@ -195,7 +181,7 @@ int main(int narg, char *arg[]) {
   ia->print(me);
 
   // Set parameters for partitioning
-  if (me == 0) cout << "Creating parameter list ... \n\n";
+  if (me == 0) std::cout << "Creating parameter list ... \n\n";
 
   Teuchos::ParameterList params("test params");
   params.set("timer_output_stream" , "std::cout");
@@ -275,34 +261,34 @@ int main(int narg, char *arg[]) {
     params.set("debug_procs", "all");
   }
 
-  if(me == 0) cout << "Action: " << action << endl;
+  if(me == 0) std::cout << "Action: " << action << std::endl;
   // create Partitioning problem
   if (do_partitioning) {
-    if (me == 0) cout << "Creating partitioning problem ... \n\n";
+    if (me == 0) std::cout << "Creating partitioning problem ... \n\n";
 
     Zoltan2::PartitioningProblem<inputAdapter_t> problem(ia, &params, CommT);
 
     // call the partitioner
-    if (me == 0) cout << "Calling the partitioner ... \n\n";
+    if (me == 0) std::cout << "Calling the partitioner ... \n\n";
 
     problem.solve();
 
     // create metric object
 
-    RCP<quality_t> metricObject = 
+    Teuchos::RCP<quality_t> metricObject = 
       rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
 
     if (!me) {
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
     }
   }
   else {
-    if (me == 0) cout << "Creating coloring problem ... \n\n";
+    if (me == 0) std::cout << "Creating coloring problem ... \n\n";
 
     Zoltan2::ColoringProblem<inputAdapter_t> problem(ia, &params, CommT);
 
     // call the partitioner
-    if (me == 0) cout << "Calling the coloring algorithm ... \n\n";
+    if (me == 0) std::cout << "Calling the coloring algorithm ... \n\n";
 
     problem.solve();
 
@@ -310,7 +296,7 @@ int main(int narg, char *arg[]) {
   }
 
   // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
+  if (me == 0) std::cout << "Deleting the mesh ... \n\n";
 
   Delete_Pamgen_Mesh();
 

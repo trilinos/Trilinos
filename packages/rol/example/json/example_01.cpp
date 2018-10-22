@@ -65,7 +65,7 @@
 
 #include "example_01.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -92,12 +92,12 @@ int main(int argc, char *argv[]) {
 
     int dim = 10;
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
 
     std::string jsonFileName("parameters.json");
     parlist.setName("Imported from " + jsonFileName);
     
-    // Load json parameters into a Teuchos::ParameterList  
+    // Load json parameters into a ROL::ParameterList  
     ROL::JSON_Parameters(jsonFileName,parlist);
     std::string stepname = "Trust Region"; // can we obtain this from parlist?  or jsonFile?
 

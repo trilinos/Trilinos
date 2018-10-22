@@ -52,7 +52,7 @@
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     RealT gtol     = 1e-16;          // gradient tolerance
     RealT stol     = 1e-18;          // step tolerance
     int   max_iter = 100;            // maximum number of optimization iterations
-    Teuchos::ParameterList parlist;  // list of algorithmic parameters
+    ROL::ParameterList parlist;  // list of algorithmic parameters
       parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
       parlist.sublist("General").sublist("Secant").set("Type", "Limited-Memory BFGS");
       // Trust-region step parameters.

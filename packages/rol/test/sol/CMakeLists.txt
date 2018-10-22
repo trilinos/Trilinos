@@ -16,50 +16,55 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  solTeuchosBatchManager
-  SOURCES test_03.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 4
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# moved to adapters/teuchos/tests/sol
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  solTeuchosBatchManager
+#  SOURCES test_03.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 4
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  solSROMGenerator
-  SOURCES test_04.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# moved to adapters/teuchos/tests/sol
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  solSROMGenerator
+#  SOURCES test_04.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  checkParametrizedSimOptSolve
-  SOURCES test_05.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# moved to adapters/teuchos/tests/sol
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  checkParametrizedSimOptSolve
+#  SOURCES test_05.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  checkSROMVector
-  SOURCES test_06.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# moved to adapters/teuchos/tests/sol
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  checkSROMVector
+#  SOURCES test_06.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  checkHMCR
-  SOURCES test_07.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+# moved to adapters/teuchos/tests/sol
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  checkHMCR
+#  SOURCES test_07.cpp
+#  ARGS PrintItAll
+#  NUM_MPI_PROCS 1
+#  PASS_REGULAR_EXPRESSION "TEST PASSED"
+#  ADD_DIR_TO_NAME
+#  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   checkSuperQuantileQuadrangle
@@ -115,19 +120,26 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  checkProgressiveHedging
+  SOURCES test_14.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   solDataCopy
   SOURCE_FILES
     input_01.xml
     input_02.xml
-    input_03.xml
-    input_04.xml
-    input_07.xml
     input_08.xml
     input_09.xml
     input_10.xml
     input_11.xml
     input_12.xml
+    input_14.xml
     points.txt
     weights.txt
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

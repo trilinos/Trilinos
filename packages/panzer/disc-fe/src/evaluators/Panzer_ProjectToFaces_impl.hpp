@@ -118,25 +118,15 @@ ProjectToFaces(
 template<typename EvalT,typename Traits>
 void panzer::ProjectToFaces<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+		      PHX::FieldManager<Traits>& /* fm */)
 {
   orientations = d.orientations_;
 
-  // setup the field data object
-  this->utils.setFieldData(result,fm);
-  for(unsigned qp = 0; qp < vector_values.size(); ++qp)
-    this->utils.setFieldData(vector_values[qp],fm);
-  this->utils.setFieldData(normals,fm);
+  num_pts  = result.extent(1);
+  num_dim  = vector_values[0].extent(2);
 
-  if(quad_degree > 0){
-    this->utils.setFieldData(gatherFieldNormals,fm);
-  }
-
-  num_pts  = result.dimension(1);
-  num_dim  = vector_values[0].dimension(2);
-
-  TEUCHOS_ASSERT(result.dimension(1) == normals.dimension(1));
-  TEUCHOS_ASSERT(vector_values[0].dimension(2) == normals.dimension(2));
+  TEUCHOS_ASSERT(result.extent(1) == normals.extent(1));
+  TEUCHOS_ASSERT(vector_values[0].extent(2) == normals.extent(2));
 }
 
 // **********************************************************************
@@ -199,7 +189,7 @@ evaluateFields(typename Traits::EvalData workset)
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
 
       // get nodal coordinates for this cell 
-      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.dimension(1),num_dim);
+      Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);
       for (int point(0); point < vertex_coords.extent_int(1); ++point)
       {
         for (int ict(0); ict < num_dim; ict++)

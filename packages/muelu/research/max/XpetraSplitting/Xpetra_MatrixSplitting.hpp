@@ -374,21 +374,7 @@ public:
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
     return compositeMatrixData_->getNumEntriesInLocalRow(localRow);
   }
-
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-  /** Undefined if isFillActive().
-   */
-  global_size_t getGlobalNumDiags() const {
-    return compositeMatrixData_->getGlobalNumDiags();
-  }
-
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-  /** Undefined if isFillActive().
-   */
-  size_t getNodeNumDiags() const {
-    return compositeMatrixData_->getNodeNumDiags();
-  }
-
+ 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   /** Undefined if isFillActive().
    */

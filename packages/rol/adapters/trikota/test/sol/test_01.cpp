@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
     ROL::makePtrFromRef(std::cout);
   else
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
       file.close();
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (adapters/trikota/sol/test/test_01): Unable to open file!");
     }
 

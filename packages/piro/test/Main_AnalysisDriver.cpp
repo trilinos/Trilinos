@@ -82,14 +82,15 @@ int main(int argc, char *argv[]) {
 
   Piro::Epetra::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<4; iTest++) {
+  for (int iTest=0; iTest<5; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
        case 1: inputFile="input_Analysis_ROL.xml"; break;
-       case 2: inputFile="input_Analysis_OptiPack.xml"; break;
-       case 3: inputFile="input_Analysis_MOOCHO.xml"; break;
+       case 2: inputFile="input_Analysis_ROL_AdjointSensitivities.xml"; break;
+       case 3: inputFile="input_Analysis_OptiPack.xml"; break;
+       case 4: inputFile="input_Analysis_MOOCHO.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -132,10 +133,19 @@ int main(int argc, char *argv[]) {
       status = Piro::Epetra::PerformAnalysis(*piro, analysisParams, p);
 
       if (Teuchos::nonnull(p)) {
-        // Can post-process results here
+      double p_exact[2] = {1,3};
+      double tol = 1e-5;
+
+      double l2_diff = std::sqrt(std::pow((*p)[0]-p_exact[0],2) + std::pow((*p)[1]-p_exact[1],2));
+      if(l2_diff > tol) {
+        status+=100;
         if (Proc==0) {
-          std::cout << "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << std::endl;
+          std::cout << "\nPiro_AnalysisDrvier:  Optimum parameter values are: {"
+              <<  p_exact[0] << ", " << p_exact[1] << "}, but computed values are: {"
+              <<  (*p)[0] << ", " << (*p)[1] << "}." <<
+              "\n                      Difference in l2 norm: " << l2_diff << " > tol: " << tol <<   std::endl;
         }
+      }
       }
 
     }

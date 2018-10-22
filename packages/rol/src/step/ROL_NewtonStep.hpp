@@ -71,11 +71,11 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a NewtonStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  NewtonStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  NewtonStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);

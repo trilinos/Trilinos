@@ -100,14 +100,14 @@ TEST( DenseByBlocks, chol ) {
     
     const ordinal_type max_functor_size = 4*sizeof(TaskFunctorChol);
     const ordinal_type
-      task_queue_capacity = 1024*max_functor_size,
+      task_queue_span = 1024*max_functor_size,
       min_block_size  = 16,
       max_block_size  = 4*max_functor_size,
       num_superblock  = 4,
-      superblock_size = task_queue_capacity/num_superblock;
+      superblock_size = task_queue_span/num_superblock;
     
     sched_type sched(typename sched_type::memory_space(),
-                     task_queue_capacity,
+                     task_queue_span,
                      min_block_size,
                      max_block_size,
                      superblock_size);
@@ -169,7 +169,7 @@ TEST( DenseByBlocks, gemm ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewTypeHost &mat) {
-      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      const ordinal_type mm = mat.extent(0), nn = mat.extent(1);
       for (ordinal_type j=0;j<nn;++j)
         for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
@@ -246,14 +246,14 @@ TEST( DenseByBlocks, gemm ) {
 
     const ordinal_type max_functor_size = 4*sizeof(TaskFunctorGemm_NT_NT);
     const ordinal_type
-      task_queue_capacity = 1024*max_functor_size,
+      task_queue_span = 1024*max_functor_size,
       min_block_size  = 16,
       max_block_size  = 4*max_functor_size,
       num_superblock  = 4,
-      superblock_size = task_queue_capacity/num_superblock;
+      superblock_size = task_queue_span/num_superblock;
     
     sched_type sched(typename sched_type::memory_space(),
-                     task_queue_capacity,
+                     task_queue_span,
                      min_block_size,
                      max_block_size,
                      superblock_size);
@@ -325,7 +325,7 @@ TEST( DenseByBlocks, herk ) {
     
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewTypeHost &mat) {
-      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      const ordinal_type mm = mat.extent(0), nn = mat.extent(1);
       for (ordinal_type j=0;j<nn;++j)
         for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
@@ -384,14 +384,14 @@ TEST( DenseByBlocks, herk ) {
 
     const ordinal_type max_functor_size = 4*sizeof(TaskFunctorHerk_U_CT);
     const ordinal_type
-      task_queue_capacity = 1024*max_functor_size,
+      task_queue_span = 1024*max_functor_size,
       min_block_size  = 16,
       max_block_size  = 4*max_functor_size,
       num_superblock  = 4,
-      superblock_size = task_queue_capacity/num_superblock;
+      superblock_size = task_queue_span/num_superblock;
     
     sched_type sched(typename sched_type::memory_space(),
-                     task_queue_capacity,
+                     task_queue_span,
                      min_block_size,
                      max_block_size,
                      superblock_size);
@@ -464,7 +464,7 @@ TEST( DenseByBlocks, trsm ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewTypeHost &mat) {
-      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      const ordinal_type mm = mat.extent(0), nn = mat.extent(1);
       for (ordinal_type j=0;j<nn;++j)
         for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
@@ -527,14 +527,14 @@ TEST( DenseByBlocks, trsm ) {
     
     const ordinal_type max_functor_size = 4*sizeof(TaskFunctorTrsm_L_U_CT_ND);
     const ordinal_type
-      task_queue_capacity = 1024*max_functor_size,
+      task_queue_span = 1024*max_functor_size,
       min_block_size  = 16,
       max_block_size  = 4*max_functor_size,
       num_superblock  = 4,
-      superblock_size = task_queue_capacity/num_superblock;
+      superblock_size = task_queue_span/num_superblock;
     
     sched_type sched(typename sched_type::memory_space(),
-                     task_queue_capacity,
+                     task_queue_span,
                      min_block_size,
                      max_block_size,
                      superblock_size);
@@ -597,14 +597,14 @@ TEST( DenseByBlocks, trsm ) {
 // {
 //   const ordinal_type bm = (m/mb) + (m%mb>0);
 //   const ordinal_type
-//     capacity = mb*mb*bm*bm*sizeof(ValueType)+1024,
+//     span = mb*mb*bm*bm*sizeof(ValueType)+1024,
 //     min_block_size  = mb*mb*sizeof(ValueType),
 //     max_block_size  = mb*mb*sizeof(ValueType),
 //     num_superblock  = 1,
-//     superblock_size = capacity/num_superblock;
+//     superblock_size = span/num_superblock;
     
 //   Kokkos::MemoryPool<HostSpaceType> pool(typename HostSpaceType::memory_space(),
-//                                          capacity,
+//                                          span,
 //                                          min_block_size,
 //                                          max_block_size,
 //                                          superblock_size);

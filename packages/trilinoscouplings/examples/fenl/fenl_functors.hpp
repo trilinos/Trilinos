@@ -152,7 +152,7 @@ public:
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
 
-        Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space,TagFillNodeSet>(0,elem_node_id.dimension_0())
+        Kokkos::parallel_reduce( Kokkos::RangePolicy<execution_space,TagFillNodeSet>(0,elem_node_id.extent(0))
                                , *this
                                , failed_insert_count );
 
@@ -216,8 +216,8 @@ public:
       // Element-to-graph mapping:
       wall_clock.reset();
       phase = FILL_ELEMENT_GRAPH ;
-      elem_graph = ElemGraphType("elem_graph", elem_node_id.dimension_0() );
-      Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
+      elem_graph = ElemGraphType("elem_graph", elem_node_id.extent(0) );
+      Kokkos::parallel_for( elem_node_id.extent(0) , *this );
 
       execution_space::fence();
       results.fill_element_graph = wall_clock.seconds();
@@ -230,17 +230,17 @@ public:
   void operator()( const TagFillNodeSet & , const unsigned ielem , unsigned & count ) const
   {
     // Loop over element's (row_local_node,col_local_node) pairs:
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.extent(1) ; ++col_local_node ) {
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
         // If either node is locally owned then insert the pair into the unordered map:
 
-        if ( row_node < row_count.dimension_0() || col_node < row_count.dimension_0() ) {
+        if ( row_node < row_count.extent(0) || col_node < row_count.extent(0) ) {
 
           const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
 
@@ -248,8 +248,8 @@ public:
 
           if ( result.success() ) {
             // First time this pair was inserted
-            if ( row_node < row_count.dimension_0() ) { atomic_increment( & row_count( row_node ) ); }
-            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_increment( & row_count( col_node ) ); }
+            if ( row_node < row_count.extent(0) ) { atomic_increment( & row_count( row_node ) ); }
+            if ( col_node < row_count.extent(0) && col_node != row_node ) { atomic_increment( & row_count( col_node ) ); }
           }
           else if ( result.failed() ) {
             // Ran out of memory for insertion.
@@ -268,13 +268,13 @@ public:
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
 
-      if ( row_node < row_count.dimension_0() ) {
+      if ( row_node < row_count.extent(0) ) {
         typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = col_node ;
       }
 
-      if ( col_node < row_count.dimension_0() && col_node != row_node ) {
+      if ( col_node < row_count.extent(0) && col_node != row_node ) {
         typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = row_node ;
@@ -302,17 +302,17 @@ public:
   void fill_elem_graph_map( const unsigned ielem ) const
   {
     typedef typename CrsGraphType::data_type entry_type;
-    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
+    for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.extent(1) ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+      for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.extent(1) ; ++col_local_node ) {
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
         entry_type entry = 0 ;
 
-        if ( row_node + 1 < graph.row_map.dimension_0() ) {
+        if ( row_node + 1 < graph.row_map.extent(0) ) {
 
           const entry_type entry_end = static_cast<entry_type> (graph.row_map( row_node + 1 ));
 
@@ -356,7 +356,7 @@ public:
     update += row_count( irow );
 
     if ( final ) {
-      if ( irow + 1 == row_count.dimension_0() ) {
+      if ( irow + 1 == row_count.extent(0) ) {
         row_map( irow + 1 ) = update ;
         row_total()         = update ;
       }
@@ -430,7 +430,7 @@ public:
   ParamSensitivityGatherScatterOp(
     const MultiVectorType& sol_dp, const MultiVectorType& res_dp) :
     solution_dp(sol_dp), residual_dp(res_dp),
-    num_p(solution_dp.dimension_1()) {}
+    num_p(solution_dp.extent(1)) {}
 
   KOKKOS_INLINE_FUNCTION
   ParamSensitivityGatherScatterOp(const ParamSensitivityGatherScatterOp&) = default;
@@ -624,7 +624,7 @@ public:
 
   void apply() const
   {
-    const size_t nelem = elem_node_ids.dimension_0();
+    const size_t nelem = elem_node_ids.extent(0);
     if ( use_team ) {
       const size_t team_size = dev_config.block_dim.x * dev_config.block_dim.y;
       const size_t league_size =
@@ -866,7 +866,7 @@ public:
     const unsigned ielem =
       dev.league_rank() * num_element_threads + element_rank;
 
-    if (ielem >= elem_node_ids.dimension_0())
+    if (ielem >= elem_node_ids.extent(0))
       return;
 
     (*this)( ielem, ensemble_rank );
@@ -963,7 +963,7 @@ public:
 
     for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
       const unsigned row = node_index[i] ;
-      if ( row < residual.dimension_0() ) {
+      if ( row < residual.extent(0) ) {
         //atomic_add( & local_residual( row ) , elem_vec[i] );
         local_gather_scatter.scatter_residual(
           row , local_residual , elem_vec[i] );
@@ -1071,7 +1071,7 @@ public:
     , init( arg_init )
     , dev_config( arg_dev_config )
     , assemble_jacobian( arg_assemble_jacobian )
-    , num_param( solution_dp.dimension_1() )
+    , num_param( solution_dp.extent(1) )
     {
       if (!init) {
         parallel_for( node_count , *this );
@@ -1225,7 +1225,7 @@ public:
     , fixture( arg_fixture )
     , solution( arg_solution )
     , solution_dp( arg_solution_dp )
-    , num_param( solution_dp.dimension_1() )
+    , num_param( solution_dp.extent(1) )
     , value_count( num_param+1 )
     {}
 
@@ -1235,7 +1235,7 @@ public:
   {
     Teuchos::Array<scalar_type> response(value_count, 0.0);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , &response[0] );
+    Kokkos::parallel_reduce( solution.extent(0) , *this , &response[0] );
     return response[0];
   }
 
@@ -1243,7 +1243,7 @@ public:
   {
     Teuchos::Array<scalar_type> response(value_count, 0.0);
     //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
-    Kokkos::parallel_reduce( solution.dimension_0() , *this , &response[0] );
+    Kokkos::parallel_reduce( solution.extent(0) , *this , &response[0] );
     return response;
   }
 

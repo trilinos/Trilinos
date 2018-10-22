@@ -30,6 +30,7 @@ const char* toString(const Status status)
     case WORKING: return "WORKING";
     default:      TEUCHOS_TEST_FOR_EXCEPT("Invalid Status!");
   }
+  return "";  // Should not get here.
 }
 
 

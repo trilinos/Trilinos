@@ -68,24 +68,24 @@ namespace Intrepid2 {
         const auto x = input(0);
         const auto y = input(1);
 
-        output(0, 0) = 0.0;
-        output(0, 1) = (y - 1.0)/4.0;
+        output.access(0, 0) = 0.0;
+        output.access(0, 1) = (y - 1.0)/4.0;
 
-        output(1, 0) = (1.0 + x)/4.0;
-        output(1, 1) = 0.0;
+        output.access(1, 0) = (1.0 + x)/4.0;
+        output.access(1, 1) = 0.0;
 
-        output(2, 0) = 0.0;
-        output(2, 1) = (1.0 + y)/4.0;
+        output.access(2, 0) = 0.0;
+        output.access(2, 1) = (1.0 + y)/4.0;
 
-        output(3, 0) = (x - 1.0)/4.0;
-        output(3, 1) = 0.0;
+        output.access(3, 0) = (x - 1.0)/4.0;
+        output.access(3, 1) = 0.0;
         break;
       }
       case OPERATOR_DIV: {
-        output(0) = 0.25;
-        output(1) = 0.25;
-        output(2) = 0.25;
-        output(3) = 0.25;
+        output.access(0) = 0.25;
+        output.access(1) = 0.25;
+        output.access(2) = 0.25;
+        output.access(3) = 0.25;
         break;
       }
       default: {
@@ -111,7 +111,7 @@ namespace Intrepid2 {
 
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

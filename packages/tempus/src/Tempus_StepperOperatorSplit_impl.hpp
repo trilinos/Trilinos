@@ -76,8 +76,12 @@ StepperOperatorSplit<Scalar>::getModel()
     model = (*subStepperIter)->getModel();
     if (model != Teuchos::null) break;
   }
-  TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
-    "Error - StepperOperatorSplit::getModel() Could not find a valid model!\n");
+  if ( model == Teuchos::null ) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::getModel()");
+    *out << "Warning -- StepperOperatorSplit::getModel() "
+         << "Could not find a valid model!  Returning null!" << std::endl;
+  }
 
   return model;
 }
@@ -120,17 +124,13 @@ void StepperOperatorSplit<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (stepperOSObserver_ == Teuchos::null) {
       stepperOSObserver_ =
         Teuchos::rcp(new StepperOperatorSplitObserver<Scalar>());
-      stepperObserver_ =
-        Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >(stepperOSObserver_);
      }
   } else {
-    stepperObserver_ = obs;
     stepperOSObserver_ =
-      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> >
-        (stepperObserver_);
+      Teuchos::rcp_dynamic_cast<StepperOperatorSplitObserver<Scalar> > (obs);
   }
 }
 
@@ -190,8 +190,15 @@ void StepperOperatorSplit<Scalar>::initialize()
   OpSpSolnHistory_->setStorageLimit(2);
   OpSpSolnHistory_->setStorageType(Tempus::STORAGE_TYPE_STATIC);
 
-  tempState_ = rcp(new SolutionState<Scalar>(this->getModel(),
-                                             this->getDefaultStepperState()));
+  if (tempState_ == Teuchos::null) {
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >model = this->getModel();
+    TEUCHOS_TEST_FOR_EXCEPTION( model == Teuchos::null, std::logic_error,
+      "Error - StepperOperatorSplit::initialize() Could not find "
+      "a valid model!\n");
+    tempState_ = rcp(new SolutionState<Scalar>(
+      model, this->getDefaultStepperState()));
+  }
+  this->setParameterList(this->stepperPL_);
   this->setObserver();
 
   if (!isOneStepMethod() ) {
@@ -217,12 +224,21 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperOperatorSplit::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperOperatorSplit<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for OperatorSplit.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     stepperOSObserver_->observeBeginTakeStep(solutionHistory, *this);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
     // Create OperatorSplit SolutionHistory to pass to subSteppers.
     tempState_->copy(solutionHistory->getCurrentState());
+    OpSpSolnHistory_->clear();
     OpSpSolnHistory_->addState(tempState_);
     OpSpSolnHistory_->addWorkingState(workingState, false);
 
@@ -243,7 +259,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
       stepperOSObserver_->observeAfterStepper(index, solutionHistory, *this);
 
-      if (workingSubState->getStepperStatus() == Status::FAILED) {
+      if (workingSubState->getSolutionStatus() == Status::FAILED) {
         pass = false;
         Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"StepperOperatorSplit::takeStep()");
@@ -254,11 +270,11 @@ void StepperOperatorSplit<Scalar>::takeStep(
 
       // "promote" workingSubState
       currentSubState = OpSpSolnHistory_->getCurrentState();
-      currentSubState->copySolutionStepperState(workingSubState);
+      currentSubState->copySolutionData(workingSubState);
     }
 
-    if (pass == true) workingState->setStepperStatus(Status::PASSED);
-    else              workingState->setStepperStatus(Status::FAILED);
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     OpSpSolnHistory_->clear();
     stepperOSObserver_->observeEndTakeStep(solutionHistory, *this);

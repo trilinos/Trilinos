@@ -50,7 +50,6 @@
 
 #include "ROL_TrustRegion.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_HelperFunctions.hpp"
 
 namespace ROL { 
 
@@ -69,7 +68,7 @@ private:
 public:
 
   // Constructor
-  DoubleDogLeg( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
+  DoubleDogLeg( ROL::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
     cpt_ = ROL::makePtr<CauchyPoint<Real>>(parlist);
   }
 

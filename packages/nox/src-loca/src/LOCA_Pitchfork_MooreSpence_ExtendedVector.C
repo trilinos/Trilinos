@@ -180,8 +180,8 @@ LOCA::Pitchfork::MooreSpence::ExtendedVector::ExtendedVector(
 Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::Pitchfork::MooreSpence::ExtendedVector::generateMultiVector(
                             int nColumns,
-                            int nVectorRows,
-                            int nScalarRows) const
+                            int /* nVectorRows */,
+                            int /* nScalarRows */) const
 {
   return
     Teuchos::rcp(new LOCA::Pitchfork::MooreSpence::ExtendedMultiVector(

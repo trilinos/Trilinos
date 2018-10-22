@@ -72,7 +72,7 @@ namespace stk {
       InputFile(Teuchos::RCP<Ioss::Region> ioss_input_region);
 
       ~InputFile()
-      {}
+      {delete m_multiStateSuffixes;}
 
       void create_ioss_region();
       FieldNameToPartVector get_var_names(Ioss::EntityType type, stk::mesh::MetaData& meta);
@@ -88,6 +88,8 @@ namespace stk {
       void get_global_variable_names(std::vector<std::string> &names);
 
       void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
+
+      void build_field_part_associations_from_grouping_entity(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missingFields);
 
       Teuchos::RCP<Ioss::Region> get_input_io_region()
       {
@@ -107,12 +109,51 @@ namespace stk {
       // Only public so easier to test...
       double map_analysis_to_db_time(double time) const;
 
+      void set_surface_split_type(Ioss::SurfaceSplitType split_type) {
+          if(!Teuchos::is_null(m_database)) {
+              m_database->set_surface_split_type(split_type);
+          }
+      }
+      Ioss::SurfaceSplitType get_surface_split_type() const {
+          if(!Teuchos::is_null(m_database)) {
+              return m_database->get_surface_split_type();
+          }
+
+          return Ioss::SPLIT_INVALID;
+      }
+
+      Teuchos::RCP<Ioss::DatabaseIO> get_input_database()
+      {
+	return m_database;
+      }
+
+      bool set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes)
+      {
+          if(nullptr != m_multiStateSuffixes) {
+              delete m_multiStateSuffixes;
+              m_multiStateSuffixes = nullptr;
+          }
+
+          m_multiStateSuffixes = new std::vector<std::string>(multiStateSuffixes);
+          return true;
+      }
+
     private:
+      bool process_fields_for_grouping_entity(stk::io::MeshField &mesh_field,
+                                              const stk::mesh::Part &part,
+                                              Ioss::GroupingEntity *io_entity,
+                                              std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields_collector_ptr = nullptr);
+
       bool build_field_part_associations(stk::io::MeshField &mesh_field,
 					 const stk::mesh::Part &part,
 					 const stk::mesh::EntityRank rank,
 					 Ioss::GroupingEntity *io_entity,
-					 std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = 0);
+					 std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = nullptr);
+
+      void build_field_part_associations_for_part(Ioss::Region *region,
+                                                  const stk::mesh::FieldBase *f,
+                                                  const stk::mesh::Part * part,
+                                                  stk::io::MeshField &mf);
 
       DatabasePurpose m_db_purpose;
       Teuchos::RCP<Ioss::DatabaseIO> m_database;
@@ -176,6 +217,9 @@ namespace stk {
     public:
       bool m_fieldsInitialized;
       
+    private:
+      std::vector<std::string>* m_multiStateSuffixes = nullptr;
+
     private:
       InputFile(const InputFile &);
       const InputFile & operator=(const InputFile &);

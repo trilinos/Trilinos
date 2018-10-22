@@ -54,11 +54,12 @@
 
     This class implements the quadratic objective function
     \f[
-       f(x) = \langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
-            + \langle c,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
+       f(x) = \frac{1}{2}\langle Hx, x\rangle_{\mathcal{X}^*,\mathcal{X}}
+            + \langle g,  x\rangle_{\mathcal{X}^*,\mathcal{X}}
+            + c
     \f]
-    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$ and
-    \f$c\in\mathcal{X}^*\f$.
+    for fixed \f$H\in\mathcal{L}(\mathcal{X},\mathcal{X}^*)\f$,
+    \f$g\in\mathcal{X}^*\f$, and \f$c\in\mathbb{R}\f$.
 
     ---
 */
@@ -69,34 +70,37 @@ namespace ROL {
 template <class Real>
 class QuadraticObjective : public Objective<Real> {
 private:
-  const ROL::Ptr<const LinearOperator<Real> > op_;
-  const ROL::Ptr<const Vector<Real> > vec_;
-  ROL::Ptr<Vector<Real> > tmp_;
+  const Ptr<const LinearOperator<Real>> H_;
+  const Ptr<const Vector<Real>> g_;
+  const Real c_;
+  ROL::Ptr<Vector<Real>> tmp_;
 
 public:
-  QuadraticObjective(const ROL::Ptr<const LinearOperator<Real> > &op,
-                  const ROL::Ptr<const Vector<Real> > &vec)
-    : op_(op), vec_(vec) {
-    tmp_ = vec_->dual().clone();
+  QuadraticObjective(const Ptr<const LinearOperator<Real>> &H,
+                     const Ptr<const Vector<Real>>         &g,
+                     const Real                             c = 0.0)
+    : H_(H), g_(g), c_(c) {
+    tmp_ = g_->clone();
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    op_->apply(*tmp_,x,tol);
-    tmp_->scale(0.5); tmp_->plus(*vec_);
-    return x.dot(tmp_->dual());
+    H_->apply(*tmp_,x,tol);
+    tmp_->scale(static_cast<Real>(0.5));
+    tmp_->plus(*g_);
+    return x.dot(tmp_->dual()) + c_;
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    op_->apply(*tmp_,x,tol);
-    g.set(*tmp_); g.plus(*vec_);
+    H_->apply(g,x,tol);
+    g.plus(*g_);
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    op_->apply(hv,v,tol);
+    H_->apply(hv,v,tol);
   }
 
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    op_->applyInverse(hv,v,tol);
+    H_->applyInverse(hv,v,tol);
   }
 
 }; // class QuadraticObjective

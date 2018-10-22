@@ -114,12 +114,12 @@ postRegistrationSetup(
   for (auto & field : field_multipliers)
     this->utils.setFieldData(field,fm);
 
-  num_nodes = residual.dimension(1);
-  num_qp = scalar.dimension(1);
+  num_nodes = residual.extent(1);
+  num_qp = scalar.extent(1);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.extent(0), num_qp); 
 }
 
 //**********************************************************************

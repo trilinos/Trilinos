@@ -93,7 +93,7 @@ bool floating_compare_equals(const Scalar& a, const Scalar& b,
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType mag_type;
 
-  const mag_type tol = ST::magnitude(scale)*ST::eps()*mag_type(100.0);
+  const mag_type tol = ST::magnitude(scale)*ST::eps()*mag_type(1000.0);
   const mag_type diff = ST::magnitude(a-b);
 
   return diff <= tol || diff <= ST::sfmin();

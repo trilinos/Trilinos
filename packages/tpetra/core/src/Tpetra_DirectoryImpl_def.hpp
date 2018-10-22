@@ -52,14 +52,13 @@
 
 #include <Tpetra_Details_FixedHashTable.hpp>
 #include <Tpetra_HashTable.hpp>
-
+#include "Teuchos_Comm.hpp"
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
-#ifdef HAVE_MPI
+#ifdef HAVE_TPETRACORE_MPI
 #  include <mpi.h>
-#endif // HAVE_MPI
+#endif // HAVE_TPETRACORE_MPI
 // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
-
 
 namespace Tpetra {
   namespace Details {
@@ -327,7 +326,7 @@ namespace Tpetra {
       // MPI_Allgather does.  Matt Bettencourt reports Valgrind issues
       // (memcpy with overlapping data) with MpiComm<int>::gatherAll,
       // which could relate either to this, or to OpenMPI.
-#ifdef HAVE_MPI
+#ifdef HAVE_TPETRACORE_MPI
       MPI_Datatype rawMpiType = MPI_INT;
       bool useRawMpi = true;
       if (typeid (GO) == typeid (int)) {
@@ -358,9 +357,9 @@ namespace Tpetra {
       } else {
         gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
       }
-#else // NOT HAVE_MPI
+#else // NOT HAVE_TPETRACORE_MPI
       gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
-#endif // HAVE_MPI
+#endif // HAVE_TPETRACORE_MPI
       // FIXME (mfh 16 Apr 2013) GIANT HACK ABOVE
 
       //gatherAll<int, GO> (*comm, 1, &minMyGID, numProcs, allMinGIDs_.getRawPtr ());
@@ -905,7 +904,7 @@ namespace Tpetra {
             const std::vector<std::pair<int, LO> >& pidLidList =
               ownedPidLidPairs[i];
             const size_t listLen = pidLidList.size();
-            if (listLen == 0) continue;  // KDD will happen for GIDs not in 
+            if (listLen == 0) continue;  // KDD will happen for GIDs not in
                                          // KDD the user's source map
             const LO dirMapLid = static_cast<LO> (i);
             const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);

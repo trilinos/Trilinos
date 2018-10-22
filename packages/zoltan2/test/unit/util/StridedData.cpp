@@ -62,7 +62,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
-using namespace std;
 
 void StridedDataTest(const Teuchos::SerialComm<int> &comm)
 {
@@ -153,11 +152,10 @@ void StridedDataTest(const Teuchos::SerialComm<int> &comm)
   std::cout << std::endl;
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = 
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > tcomm = Tpetra::getDefaultComm();
 
   // Run the test on only one rank. 
   // There's no parallelism involved in StridedData, 

@@ -483,11 +483,11 @@ void Epetra_LAPACK::SYGV(const int ITYPE, const char JOBZ, const char UPLO, cons
   SSYGV_F77(&ITYPE, CHAR_MACRO(JOBZ), CHAR_MACRO(UPLO), &N, A, &LDA, B, &LDB, W, WORK, &LWORK, INFO);
 }
 //=============================================================================
-void Epetra_LAPACK::SYGVX(const int ITYPE, const char JOBZ, const char RANGE, const char UPLO, const int N,
-	     double* A, const int LDA, double* B, const int LDB, const double* VL, const double* VU,
-	     const int* IL, const int* IU, const double ABSTOL, int* M, double* W, double* Z,
-	     const int LDZ,  double* WORK,  const int LWORK,  int* IWORK,
-			  int* IFAIL, int* INFO) const {
+void Epetra_LAPACK::SYGVX(const int /* ITYPE */, const char /* JOBZ */, const char /* RANGE */, const char /* UPLO */, const int /* N */,
+	     double* /* A */, const int /* LDA */, double* /* B */, const int /* LDB */, const double* /* VL */, const double* /* VU */,
+	     const int* /* IL */, const int* /* IU */, const double /* ABSTOL */, int* /* M */, double* /* W */, double* /* Z */,
+	     const int /* LDZ */,  double* /* WORK */,  const int /* LWORK */,  int* /* IWORK */,
+			  int* /* IFAIL */, int* /* INFO */) const {
 
 #ifdef EPETRA_LAPACK3
   DSYGVX_F77(&ITYPE, CHAR_MACRO(JOBZ), CHAR_MACRO(RANGE), CHAR_MACRO(UPLO), &N,  A,  &LDA, B, &LDB, VL, VU,
@@ -500,11 +500,11 @@ void Epetra_LAPACK::SYGVX(const int ITYPE, const char JOBZ, const char RANGE, co
 #endif
 }
 //=============================================================================
-void Epetra_LAPACK::SYGVX(const int ITYPE, const char JOBZ, const char RANGE, const char UPLO, const int N,
-	     float* A, const int LDA, float* B, const int LDB, const float* VL, const float* VU,
-	     const int* IL, const int* IU, const float ABSTOL, int* M, float* W, float* Z,
-	     const int LDZ,  float* WORK,  const int LWORK,  int* IWORK,
-			  int* IFAIL, int* INFO) const {
+void Epetra_LAPACK::SYGVX(const int /* ITYPE */, const char /* JOBZ */, const char /* RANGE */, const char /* UPLO */, const int /* N */,
+	     float* /* A */, const int /* LDA */, float* /* B */, const int /* LDB */, const float* /* VL */, const float* /* VU */,
+	     const int* /* IL */, const int* /* IU */, const float /* ABSTOL */, int* /* M */, float* /* W */, float* /* Z */,
+	     const int /* LDZ */,  float* /* WORK */,  const int /* LWORK */,  int* /* IWORK */,
+			  int* /* IFAIL */, int* /* INFO */) const {
 
 #ifdef EPETRA_LAPACK3
   SSYGVX_F77(&ITYPE, CHAR_MACRO(JOBZ), CHAR_MACRO(RANGE), CHAR_MACRO(UPLO), &N,  A,  &LDA, B, &LDB, VL, VU,
@@ -517,10 +517,10 @@ void Epetra_LAPACK::SYGVX(const int ITYPE, const char JOBZ, const char RANGE, co
 #endif
 }
 //=============================================================================
-void Epetra_LAPACK::SYEVR(const char JOBZ, const char RANGE, const char UPLO,  const int N,  double* A,  const int LDA,
-			  const double* VL,  const double* VU,  const int *IL,  const int *IU,
-                          const double ABSTOL,  int* M,  double* W,  double* Z, const int LDZ, int* ISUPPZ, double* WORK, const int LWORK, int* IWORK,
-                          const int LIWORK, int* INFO) const {
+void Epetra_LAPACK::SYEVR(const char /* JOBZ */, const char /* RANGE */, const char /* UPLO */,  const int /* N */,  double* /* A */,  const int /* LDA */,
+			  const double* /* VL */,  const double* /* VU */,  const int */* IL */,  const int */* IU */,
+                          const double /* ABSTOL */,  int* /* M */,  double* /* W */,  double* /* Z */, const int /* LDZ */, int* /* ISUPPZ */, double* /* WORK */, const int /* LWORK */, int* /* IWORK */,
+                          const int /* LIWORK */, int* /* INFO */) const {
 
 #ifdef EPETRA_LAPACK3
   DSYEVR_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(RANGE), CHAR_MACRO(UPLO), &N,  A,  &LDA, VL,  VU,  IL,  IU,
@@ -532,10 +532,10 @@ void Epetra_LAPACK::SYEVR(const char JOBZ, const char RANGE, const char UPLO,  c
 #endif
 }
 //=============================================================================
-void Epetra_LAPACK::SYEVR(const char JOBZ, const char RANGE, const char UPLO,  const int N,  float* A,  const int LDA,
-			  const float* VL,  const float* VU,  const int *IL,  const int *IU,
-                          const float ABSTOL,  int* M,  float* W,  float* Z, const int LDZ, int* ISUPPZ, float* WORK, const int LWORK, int* IWORK,
-                          const int LIWORK, int* INFO) const {
+void Epetra_LAPACK::SYEVR(const char /* JOBZ */, const char /* RANGE */, const char /* UPLO */,  const int /* N */,  float* /* A */,  const int /* LDA */,
+			  const float* /* VL */,  const float* /* VU */,  const int */* IL */,  const int */* IU */,
+                          const float /* ABSTOL */,  int* /* M */,  float* /* W */,  float* /* Z */, const int /* LDZ */, int* /* ISUPPZ */, float* /* WORK */, const int /* LWORK */, int* /* IWORK */,
+                          const int /* LIWORK */, int* /* INFO */) const {
 
 #ifdef EPETRA_LAPACK3
   SSYEVR_F77(CHAR_MACRO(JOBZ), CHAR_MACRO(RANGE), CHAR_MACRO(UPLO), &N,  A,  &LDA, VL,  VU,  IL,  IU,
@@ -565,9 +565,9 @@ void Epetra_LAPACK::GEEVX(const char BALANC, const char JOBVL, const char JOBVR,
 	     RCONDV, WORK, &LWORK, IWORK, INFO);
 }
 //=============================================================================
-void Epetra_LAPACK::GESDD(const char JOBZ, const int M, const int N, double* A, const int LDA,  double* S,
-			  double* U,  const int LDU,  double* VT,  const int LDVT,  double* WORK,
-			  const int LWORK, int* IWORK, int* INFO) const{
+void Epetra_LAPACK::GESDD(const char /* JOBZ */, const int /* M */, const int /* N */, double* /* A */, const int /* LDA */,  double* /* S */,
+			  double* /* U */,  const int /* LDU */,  double* /* VT */,  const int /* LDVT */,  double* /* WORK */,
+			  const int /* LWORK */, int* /* IWORK */, int* /* INFO */) const{
 
 #ifdef EPETRA_LAPACK3
   DGESDD_F77(CHAR_MACRO(JOBZ), &M, &N, A, &LDA,  S,  U,  &LDU,  VT,  &LDVT,  WORK,
@@ -578,9 +578,9 @@ void Epetra_LAPACK::GESDD(const char JOBZ, const int M, const int N, double* A, 
 #endif
 }
 //=============================================================================
-void Epetra_LAPACK::GESDD(const char JOBZ, const int M, const int N, float* A, const int LDA,  float* S,
-			  float* U,  const int LDU,  float* VT,  const int LDVT,  float* WORK,
-			  const int LWORK, int* IWORK, int* INFO) const{
+void Epetra_LAPACK::GESDD(const char /* JOBZ */, const int /* M */, const int /* N */, float* /* A */, const int /* LDA */,  float* /* S */,
+			  float* /* U */,  const int /* LDU */,  float* /* VT */,  const int /* LDVT */,  float* /* WORK */,
+			  const int /* LWORK */, int* /* IWORK */, int* /* INFO */) const{
 
 #ifdef EPETRA_LAPACK3
   SGESDD_F77(CHAR_MACRO(JOBZ), &M, &N, A, &LDA,  S,  U,  &LDU,  VT,  &LDVT,  WORK,
@@ -591,10 +591,10 @@ void Epetra_LAPACK::GESDD(const char JOBZ, const int M, const int N, float* A, c
 #endif
 }
 //=============================================================================
-void Epetra_LAPACK::GGEV(const char JOBVL,  const char JOBVR,  const int N,  double* A,
-			 const int LDA,  double* B, const int LDB, double* ALPHAR, double* ALPHAI,
-			 double* BETA, double* VL, const int LDVL, double* VR, const int
-			 LDVR, double* WORK, const int LWORK, int* INFO) const{
+void Epetra_LAPACK::GGEV(const char /* JOBVL */,  const char /* JOBVR */,  const int /* N */,  double* /* A */,
+			 const int /* LDA */,  double* /* B */, const int /* LDB */, double* /* ALPHAR */, double* /* ALPHAI */,
+			 double* /* BETA */, double* /* VL */, const int /* LDVL */, double* /* VR */, const int
+			 /* LDVR */, double* /* WORK */, const int /* LWORK */, int* /* INFO */) const{
 
 #ifdef EPETRA_LAPACK3
   DGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &N,  A,  &LDA,  B, &LDB, ALPHAR, ALPHAI,
@@ -605,10 +605,10 @@ void Epetra_LAPACK::GGEV(const char JOBVL,  const char JOBVR,  const int N,  dou
 #endif
 }
 //=============================================================================
-void Epetra_LAPACK::GGEV(const char JOBVL,  const char JOBVR,  const int N,  float* A,
-			 const int LDA,  float* B, const int LDB, float* ALPHAR, float* ALPHAI,
-			 float* BETA, float* VL, const int LDVL, float* VR, const int
-			 LDVR, float* WORK, const int LWORK, int* INFO) const {
+void Epetra_LAPACK::GGEV(const char /* JOBVL */,  const char /* JOBVR */,  const int /* N */,  float* /* A */,
+			 const int /* LDA */,  float* /* B */, const int /* LDB */, float* /* ALPHAR */, float* /* ALPHAI */,
+			 float* /* BETA */, float* /* VL */, const int /* LDVL */, float* /* VR */, const int
+			 /* LDVR */, float* /* WORK */, const int /* LWORK */, int* /* INFO */) const {
 
 #ifdef EPETRA_LAPACK3
   SGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &N,  A,  &LDA,  B, &LDB, ALPHAR, ALPHAI,

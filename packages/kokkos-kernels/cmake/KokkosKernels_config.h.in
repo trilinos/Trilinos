@@ -66,6 +66,26 @@
 /* Whether to build kernels for offset type size_t */
 #cmakedefine KOKKOSKERNELS_INST_OFFSET_SIZE_T
 
+/*
+ * Third Party Libraries
+ */
+
+/* BLAS library */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_BLAS
+/* MKL library */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL
+/* CUSPARSE */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+/* CUBLAS */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+
+/* if MKL, BLAS is also defined */
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) 
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
+#define KOKKOSKERNELS_ENABLE_TPL_BLAS
+#endif
+#endif
+
 
 /*
  * "Optimization level" for computational kernels in this subpackage.

@@ -55,11 +55,14 @@ namespace ROL {
 template<class Real> 
 class UserInputGenerator : public SampleGenerator<Real> {
 private:
+  int nSamp_;
+
   void sample(const std::string &file_pt,
               const std::string &file_wt,
               const int n,
               const int dim,
               const ROL::Ptr<BatchManager<Real> > &bman) {
+    nSamp_ = n;
     // Read in full point data and weight data
     std::fstream input_pt;
     input_pt.open(file_pt.c_str(),std::ios::in);
@@ -114,10 +117,10 @@ private:
   }
 
 public:
-  UserInputGenerator(Teuchos::ParameterList &parlist,
+  UserInputGenerator(ROL::ParameterList &parlist,
                const ROL::Ptr<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Sample Generator").sublist("User Input");
     if ( list.isParameter("Points File")  &&
          list.isParameter("Weights File") &&
@@ -130,7 +133,7 @@ public:
       sample(file_pt,file_wt,n,dim,bman);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::UserInputGenerator): ParameterList does not contain sufficient information.");
     }
   }
@@ -145,6 +148,10 @@ public:
   }
 
   void refine(void) {}
+
+  int numGlobalSamples(void) const {
+    return nSamp_;
+  }
 };
 
 }

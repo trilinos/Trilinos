@@ -75,33 +75,24 @@ LOCA.Epetra.Interface supports the following classes:
 	docstring    = %loca_epetra_interface_docstring) Interface
 
 %{
-// NumPy includes
+// NumPy include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// NOX include
-#include "NOX_Epetra_Interface_Required.H"
+// NOX include files
+#include "PyTrilinos_NOX_Epetra_Headers.hpp"
 
-// LOCA::Epetra::Interface includes
-#include "LOCA_Epetra_Interface_Required.H"
-#include "LOCA_Epetra_Interface_MassMatrix.H"
-#include "LOCA_Epetra_Interface_TimeDependent.H"
-#include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
+// LOCA::Epetra::Interface include files
+#include "PyTrilinos_LOCA_Epetra_Headers.hpp"
 %}
 
 // General ignore directives

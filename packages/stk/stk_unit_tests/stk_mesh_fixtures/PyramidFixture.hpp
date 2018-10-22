@@ -47,7 +47,7 @@
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 
 
@@ -175,12 +175,12 @@ class PyramidFixture
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 
-  template <typename Iterator>
-  void add_node_parts(Iterator itr, size_t num)
-  {
-    ThrowRequire(!m_meta.is_commit());
-    m_node_parts.insert(m_node_parts.end(), itr, itr + num);
-  }
+  //template <typename Iterator>
+  //void add_node_parts(Iterator itr, size_t num)
+  //{
+  //  ThrowRequire(!m_meta.is_commit());
+  //  m_node_parts.insert(m_node_parts.end(), itr, itr + num);
+  //}
 
  private:
 

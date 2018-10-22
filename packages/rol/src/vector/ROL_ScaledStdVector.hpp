@@ -71,14 +71,14 @@ class PrimalScaledStdVector : public StdVector<Real> {
 
 private:
 
-  ROL::Ptr<std::vector<Element> >               scaling_vec_;
-  mutable ROL::Ptr<DualScaledStdVector<Real> >  dual_vec_;
+  Ptr<std::vector<Element> >               scaling_vec_;
+  mutable Ptr<DualScaledStdVector<Real> >  dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
 
-  PrimalScaledStdVector(const ROL::Ptr<std::vector<Element> > & std_vec,
-                        const ROL::Ptr<std::vector<Element> > & scaling_vec) :
+  PrimalScaledStdVector(const Ptr<std::vector<Element> > & std_vec,
+                        const Ptr<std::vector<Element> > & scaling_vec) :
     StdVector<Real>(std_vec), scaling_vec_(scaling_vec),
     isDualInitialized_(false) {}
 
@@ -94,17 +94,17 @@ public:
     return val;
   }
 
-  ROL::Ptr<Vector<Real> > clone() const {
+  Ptr<Vector<Real> > clone() const {
     uint dimension = (StdVector<Real>::getVector())->size();
-    return ROL::makePtr<PrimalScaledStdVector>(
-           ROL::makePtr<std::vector<Element>>(dimension), scaling_vec_ );
+    return makePtr<PrimalScaledStdVector>(
+           makePtr<std::vector<Element>>(dimension), scaling_vec_ );
   }
 
-  const ROL::Vector<Real> & dual() const {
+  const Vector<Real> & dual() const {
     uint n = StdVector<Real>::getVector()->size();
     if ( !isDualInitialized_ ) {
-      dual_vec_ = ROL::makePtr<DualScaledStdVector<Real>>(
-                  ROL::makePtr<std::vector<Element>>(n),
+      dual_vec_ = makePtr<DualScaledStdVector<Real>>(
+                  makePtr<std::vector<Element>>(n),
                   scaling_vec_);
       isDualInitialized_ = true;
     }
@@ -126,14 +126,14 @@ class DualScaledStdVector : public StdVector<Real> {
 
 private:
 
-  ROL::Ptr<std::vector<Element> >                 scaling_vec_;
-  mutable ROL::Ptr<PrimalScaledStdVector<Real> >  primal_vec_;
+  Ptr<std::vector<Element> >                 scaling_vec_;
+  mutable Ptr<PrimalScaledStdVector<Real> >  primal_vec_;
   mutable bool isDualInitialized_;
 
 public:
 
-  DualScaledStdVector(const ROL::Ptr<std::vector<Element> > & std_vec,
-                      const ROL::Ptr<std::vector<Element> > & scaling_vec) :
+  DualScaledStdVector(const Ptr<std::vector<Element> > & std_vec,
+                      const Ptr<std::vector<Element> > & scaling_vec) :
     StdVector<Real>(std_vec), scaling_vec_(scaling_vec),
     isDualInitialized_(false) {}
 
@@ -149,17 +149,17 @@ public:
     return val;
   }
 
-  ROL::Ptr<Vector<Real> > clone() const {
+  Ptr<Vector<Real> > clone() const {
     uint dimension = (StdVector<Real>::getVector())->size();
-    return ROL::makePtr<DualScaledStdVector>(
-           ROL::makePtr<std::vector<Element>>(dimension), scaling_vec_ );
+    return makePtr<DualScaledStdVector>(
+           makePtr<std::vector<Element>>(dimension), scaling_vec_ );
   }
 
-  const ROL::Vector<Real> & dual() const {
+  const Vector<Real> & dual() const {
     uint n = StdVector<Real>::getVector()->size();
     if ( !isDualInitialized_ ) {
-      primal_vec_ = ROL::makePtr<PrimalScaledStdVector<Real>>(
-                    ROL::makePtr<std::vector<Element>>(n),
+      primal_vec_ = makePtr<PrimalScaledStdVector<Real>>(
+                    makePtr<std::vector<Element>>(n),
                     scaling_vec_);
       isDualInitialized_ = true;
     }

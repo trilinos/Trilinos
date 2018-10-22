@@ -56,6 +56,9 @@ public:
   /// Destructor
   virtual ~TimeStepControl() {}
 
+  virtual void initialize(Teuchos::RCP<Teuchos::ParameterList> pList =
+    Teuchos::null) { this->setParameterList(pList); }
+
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
     const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
@@ -125,8 +128,8 @@ public:
                get<int>("Maximum Number of Consecutive Stepper Failures"); }
     virtual int getNumTimeSteps() const
       { return tscPL_->get<int>("Number of Time Steps"); }
-    virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> 
-       getTimeStepControlStrategy() const { return stepControlStategy_;}
+    virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>>
+       getTimeStepControlStrategy() const { return stepControlStrategy_;}
   //@}
 
   /// \name Set ParameterList values
@@ -191,7 +194,7 @@ protected:
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
 
-  Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStategy_;
+  Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
 
 };
 } // namespace Tempus

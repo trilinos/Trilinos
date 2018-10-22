@@ -196,7 +196,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml  muelu_ho_lin.xml Poisson_RTC.xml GradDiv.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml  muelu_ho_lin.xml Poisson_RTC.xml GradDiv.xml Poisson_avatar.xml avatar.names avatar.trees bounds.data
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
@@ -428,7 +428,42 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuStructuredFiles
     SOURCE_FILES muelu_structured_aggregation.xml
+                 muelu_geometric_interpolation.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
+ENDIF()
+
+# pbo 19 June 2018
+#
+# Just build this executable; don't run it as a test (yet).
+#
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    HybridIntrepidPoisson3D_Pamgen_Tpetra
+    SOURCES HybridIntrepidPoisson3D_Pamgen_Tpetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidHybridPoisson3DExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    COMM serial mpi
+    )
+  TRIBITS_ADD_EXECUTABLE(
+    HybridIntrepidPoisson2D_Pamgen_Tpetra
+    SOURCES HybridIntrepidPoisson2D_Pamgen_Tpetra_main.cpp
+      TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
+      TrilinosCouplings_TpetraIntrepidHybridPoisson2DExample.cpp
+      TrilinosCouplings_TpetraIntrepidPoissonExample_SolveWithBelos.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    COMM serial mpi
+    )
+
+ TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuHybridFiles
+   SOURCE_FILES muelu_hybrid_aggregation_2D.xml muelu_hybrid_aggregation_3D.xml
+   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+   )
 ENDIF()

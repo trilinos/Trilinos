@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -130,7 +130,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
       CHARACTER*(NAMLEN) EBNAME(*), NSNAME(*), SSNAME(*)
       CHARACTER*(MXSTLN) QAREC(4,*)
       CHARACTER*(MXLNLN) INFREC(*)
-      CHARACTER*256 FILNAM, ERRMSG
+      CHARACTER*2048 FILNAM, ERRMSG
       
       REAL TIMES(*)
       LOGICAL WHOTIM(*)

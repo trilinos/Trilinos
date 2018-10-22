@@ -104,9 +104,10 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
-    void setTableau(
-      Teuchos::RCP<Teuchos::ParameterList> pList,
-      std::string stepperType = "");
+    virtual void setTableau(std::string stepperType);
+
+    virtual void setTableau(
+      Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -135,6 +136,11 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
+
+  /// Pass initial guess to Newton solver
+  virtual void setInitialGuess(
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+    {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -171,6 +177,14 @@ protected:
   Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
+
+  // For Embedded RK
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >         initial_guess_;
+
 };
 
 

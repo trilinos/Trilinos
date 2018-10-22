@@ -305,7 +305,7 @@ namespace panzer {
      * \param[in] residual_contributions Vector of field names that will be summed to produce the residual contributions
      * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
      */ 
-    void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+    void buildAndRegisterResidualSummationEvaluator(PHX::FieldManager<panzer::Traits>& fm,
                                                     const std::string dof_name,
                                                     const std::vector<std::string>& residual_contributions,
                                                     const std::string residual_field_name = "") const;
@@ -325,7 +325,7 @@ namespace panzer {
      * \param[in] scale_contributions Vector of scalars for each term in the residual contributions.
      * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
      */ 
-    void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+    void buildAndRegisterResidualSummationEvaluator(PHX::FieldManager<panzer::Traits>& fm,
                                                     const std::string dof_name,
                                                     const std::vector<std::string>& residual_contributions,
                                                     const std::vector<double>& scale_contributions,

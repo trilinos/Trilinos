@@ -100,7 +100,7 @@ public:
 template <class Map, class Fixture >
 void build_lid_to_gid(const Map& lid_to_gid, const Fixture& fixture) {
   typedef BuildLocalToGlobalMap<Map,Fixture> F;
-  Kokkos::parallel_for(lid_to_gid.dimension_0(), F(lid_to_gid, fixture));
+  Kokkos::parallel_for(lid_to_gid.extent(0), F(lid_to_gid, fixture));
 }
 
 } /* namespace FENL */
@@ -170,8 +170,8 @@ private:
     Kokkos::deep_copy(lid_to_gid_row_host, lid_to_gid_row);
 
     return  Teuchos::rcp (new MapType( fixture.node_count_global(),
-        Teuchos::arrayView(lid_to_gid_row_host.ptr_on_device(),
-                           lid_to_gid_row_host.dimension_0()),
+        Teuchos::arrayView(lid_to_gid_row_host.data(),
+                           lid_to_gid_row_host.extent(0)),
         0, comm, node));
   }
 
@@ -188,8 +188,8 @@ private:
 
     return Teuchos::rcp (new MapType (
         Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-        Teuchos::arrayView( lid_to_gid_all_host.ptr_on_device(),
-                            lid_to_gid_all_host.dimension_0()),
+        Teuchos::arrayView( lid_to_gid_all_host.data(),
+                            lid_to_gid_all_host.extent(0)),
         0,comm, node) );
   }
 
@@ -309,11 +309,11 @@ public:
         std::cout << "}" << std::endl ;
 
         std::cout << "ElemGraph {" << std::endl ;
-        for ( unsigned ielem = 0 ; ielem < elem_graph.dimension_0() ; ++ielem ) {
+        for ( unsigned ielem = 0 ; ielem < elem_graph.extent(0) ; ++ielem ) {
           std::cout << "  elem[" << ielem << "]{" ;
-          for ( unsigned irow = 0 ; irow < elem_graph.dimension_1() ; ++irow ) {
+          for ( unsigned irow = 0 ; irow < elem_graph.extent(1) ; ++irow ) {
             std::cout << " {" ;
-            for ( unsigned icol = 0 ; icol < elem_graph.dimension_2() ; ++icol ) {
+            for ( unsigned icol = 0 ; icol < elem_graph.extent(2) ; ++icol ) {
               std::cout << " " << elem_graph(ielem,irow,icol);
             }
             std::cout << " }" ;

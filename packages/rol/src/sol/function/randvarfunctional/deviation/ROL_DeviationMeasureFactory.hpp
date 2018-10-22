@@ -44,7 +44,7 @@
 #ifndef ROL_DEVIATIONMEASUREFACTORY_HPP
 #define ROL_DEVIATIONMEASUREFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Types.hpp"
 
@@ -142,8 +142,8 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > DeviationMeasureFactory(Teuchos::ParameterList &parlist) {
-    std::string risk = parlist.sublist("SOL").sublist("Deviation Measure").get("Name","Least Squares");
+  inline Ptr<RandVarFunctional<Real> > DeviationMeasureFactory(ROL::ParameterList &parlist) {
+    std::string risk = parlist.sublist("SOL").sublist("Deviation Measure").get("Name","Variance");
     EDeviationMeasure ed = StringToEDeviationMeasure(risk);
     switch(ed) {
       case DEVIATIONMEASURE_MEANVARIANCEQUADRANGLE:
@@ -163,7 +163,7 @@ namespace ROL {
       case DEVIATIONMEASURE_SMOOTHEDWORSTCASEQUADRANGLE:
              return makePtr<ExpectationQuadDeviation<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid deviation measure type " << risk << "!");
     }
   }

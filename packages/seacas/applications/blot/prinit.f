@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -69,7 +69,7 @@ C   --   NVARSS - IN - the number of sideset variables (if OPTION)
       CHARACTER*(*) OPTION
       CHARACTER*80 TITLE
 
-      CHARACTER*132 FILNAM
+      CHARACTER*2048 FILNAM
 
       IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'I') .GT. 0)) THEN
          IF (NOUT .GT. 0) WRITE (NOUT, 10000)

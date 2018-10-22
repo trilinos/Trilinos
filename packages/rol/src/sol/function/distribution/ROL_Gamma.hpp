@@ -45,7 +45,7 @@
 #define ROL_GAMMA_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include <math.h>
 
@@ -77,7 +77,7 @@ public:
     coeff_       = 1./(gamma_shape_*std::pow(scale_,shape_));
   }
 
-  Gamma(Teuchos::ParameterList &parlist) {
+  Gamma(ROL::ParameterList &parlist) {
     shape_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gamma").get("Shape",1.);
     scale_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gamma").get("Scale",1.);
     shape_ = (shape_ > 0.) ? shape_ : 1.;

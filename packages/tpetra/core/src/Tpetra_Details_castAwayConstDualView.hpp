@@ -69,10 +69,10 @@ castAwayConstDualView (const Kokkos::DualView<const ValueType*, DeviceType>& inp
 
   out_dev_view_type output_view_dev
     (const_cast<ValueType*> (input_dv.d_view.data ()),
-     input_dv.d_view.dimension_0 ());
+     input_dv.d_view.extent (0));
   out_host_view_type output_view_host
     (const_cast<ValueType*> (input_dv.h_view.data ()),
-     input_dv.h_view.dimension_0 ());
+     input_dv.h_view.extent (0));
 
   Kokkos::DualView<ValueType*, DeviceType> output_dv;
   output_dv.d_view = output_view_dev;

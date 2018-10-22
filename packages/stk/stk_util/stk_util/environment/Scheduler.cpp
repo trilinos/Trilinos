@@ -40,15 +40,20 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <float.h>
-#include <math.h>
+#include <cmath>
 #include <assert.h>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <exception>
+#include <limits>
 
-#ifndef Real_MAX
-#define Real_MAX DBL_MAX
+#ifndef TIME_MAX
+#define TIME_MAX DBL_MAX
+#endif
+
+#ifndef TIME_EPSILON
+#define TIME_EPSILON std::numeric_limits<Time>::epsilon()
 #endif
 
 namespace stk {
@@ -56,14 +61,14 @@ namespace util {
 
 Scheduler::Scheduler() :
       tolerance_(1.0e-6),
-      lastTime_(-Real_MAX),
-      firstTime_(-Real_MAX),
-      lastCalledTime_(-Real_MAX),
+      lastTime_(-TIME_MAX),
+      firstTime_(-TIME_MAX),
+      lastCalledTime_(-TIME_MAX),
       lastInterval_(-1),
       lookAhead_(0),
-      startTime_(-Real_MAX),
-      terminationTime_(Real_MAX),
-      restartTime_(-Real_MAX),
+      startTime_(-TIME_MAX),
+      terminationTime_(TIME_MAX),
+      restartTime_(-TIME_MAX),
       forceSchedule_(false),
       synchronize_(false),
       initialized_(false) {}
@@ -90,7 +95,7 @@ Scheduler::Scheduler(const Scheduler &from) :
 
 void Scheduler::reset_last_time()
 {
-  lastTime_ = -Real_MAX;
+  lastTime_ = -TIME_MAX;
   initialized_ = false;
 }
 
@@ -116,7 +121,9 @@ bool Scheduler::internal_is_it_step(Step  step)
   // then the start step specified in 'begin' will be larger than the
   // current step.  In that case, return now.
   if ((*begin).first > step)
+  {
     return false;
+  }
 
   // Find 'next' interval.  If it is equal to end, then use begin interval,
   // If it is not equal to end, check the step it starts at and see if
@@ -143,7 +150,7 @@ bool Scheduler::internal_is_it_step(Step  step)
 TolerancedTime Scheduler::get_toleranced_time_range(Time time) const
 {
   TolerancedTime delta;
-  if (firstTime_ > -Real_MAX) {
+  if (firstTime_ > -TIME_MAX) {
     // In a transient analysis, the timesteps are typically very small
     // and if 'time' is large enough, multiple timesteps may fall
     // within the tolerance bounds about 'time' which will cause a
@@ -198,7 +205,7 @@ bool Scheduler::internal_is_it_time(Time time)
 
     // If user has specified a start time, make sure none of the
     // "additional times" are previous to that time...
-    if (startTime_ != -Real_MAX && !times_.empty()) {
+    if (startTime_ != -TIME_MAX && !times_.empty()) {
       std::set<Time>::iterator iter = times_.begin();
       while (iter != times_.end() && *iter < startTime_) {
 	times_.erase(iter);
@@ -214,7 +221,7 @@ bool Scheduler::internal_is_it_time(Time time)
       return false;
     }
 
-    if (restartTime_ > -Real_MAX) {
+    if (restartTime_ > -TIME_MAX) {
       assert(restartTime_ <= time);
       TimeContainer::const_iterator interval = get_time_interval(restartTime_, false);
       if (interval != timeIntervals_.end()) {
@@ -223,7 +230,7 @@ bool Scheduler::internal_is_it_time(Time time)
 
         int inter = static_cast<int>((restartTime_ - start) / delta);
         if (inter >= 0) {
-          firstTime_ = (static_cast<double>(inter) * delta) + start;
+          firstTime_ = (static_cast<Time>(inter) * delta) + start;
           lastTime_  = restartTime_;
         }
       }
@@ -239,9 +246,9 @@ bool Scheduler::internal_is_it_time(Time time)
   lastCalledTime_ = time;
 
   if (dt > 0 && dt < tolerance_) {
-    tolerance_ = dt / 100.0;
-    if (tolerance_ < DBL_EPSILON) {
-      tolerance_ = DBL_EPSILON;
+    tolerance_ = dt / 100.0L;
+    if (tolerance_ < TIME_EPSILON) {
+      tolerance_ = TIME_EPSILON;
     }
   }
 
@@ -264,7 +271,7 @@ bool Scheduler::internal_is_it_time(Time time)
           iter = times_.begin();
         }
         lastTime_ = time;
-        if (firstTime_ == -Real_MAX) firstTime_ = time;
+        if (firstTime_ == -TIME_MAX) firstTime_ = time;
         lastInterval_ = -1;
         return true;
       }
@@ -277,10 +284,10 @@ bool Scheduler::internal_is_it_time(Time time)
 
   // Output once if time >= terminationTime_ and then turn off this
   // output stream.
-  if (time >= terminationTime_ && terminationTime_ > -Real_MAX) {
+  if (time >= terminationTime_ && terminationTime_ > -TIME_MAX) {
     if (lastTime_ < terminationTime_) {
       lastTime_ = time;
-      if (firstTime_ == -Real_MAX) firstTime_ = time;
+      if (firstTime_ == -TIME_MAX) firstTime_ = time;
       lastInterval_ = -1;
       return true;
     } else {
@@ -290,7 +297,7 @@ bool Scheduler::internal_is_it_time(Time time)
 
   if (delta.min <= startTime_ && startTime_ <= delta.max) {
     lastTime_ = time;
-    if (firstTime_ == -Real_MAX) firstTime_ = time;
+    if (firstTime_ == -TIME_MAX) firstTime_ = time;
     lastInterval_ = -1;
     return true;
   }
@@ -308,7 +315,7 @@ bool Scheduler::internal_is_it_time(Time time)
   // All times in this interval are to be printed...
   if (tdelta == 0.0 || (delta.min <= start && start <= delta.max)) {
     lastTime_ = time;
-    if (firstTime_ == -Real_MAX) firstTime_ = time;
+    if (firstTime_ == -TIME_MAX) firstTime_ = time;
     lastInterval_ = -1;
     return true;
   }
@@ -316,7 +323,7 @@ bool Scheduler::internal_is_it_time(Time time)
   // Calculate number of intervals needed to reach this time.
   int intervals = static_cast<int>((delta.max - start) / tdelta);
 
-  if (lastInterval_ < 0 && lastTime_ > -Real_MAX) {
+  if (lastInterval_ < 0 && lastTime_ > -TIME_MAX) {
     lastInterval_ = static_cast<int>((lastTime_ - start) / tdelta);
   }
 
@@ -326,20 +333,19 @@ bool Scheduler::internal_is_it_time(Time time)
     // See if the time delta from the last write was > tdelta (Can
     // happen if time is large and tdelta small...)
     
-    //std::cout << "time= " << std::setprecision(15) << time << ", lastTime_= " << std::setprecision(15) << lastTime_ << ", tdelta= " << std::setprecision(15) << tdelta << ", time - lastTime_= " << std::setprecision(15) << time - lastTime_ << "\n";
-
     if ( time >= (lastTime_ + tdelta) ) {
       lastTime_ = time;
       lastInterval_ = intervals;
-      if (firstTime_ == -Real_MAX) firstTime_ = time;
+      if (firstTime_ == -TIME_MAX) firstTime_ = time;
       return true;
     } else {
+      //std::cout << __FUNCTION__ << ", " << __LINE__ << " time= " << std::setprecision(16) << time << " >=  lastTime_ + tdelta= " << std::setprecision(16) << ( lastTime_ + tdelta) << std::endl; 
       return false;
     }
   } else {
     lastTime_ = time;
     lastInterval_ = intervals;
-    if (firstTime_ == -Real_MAX) firstTime_ = time;
+    if (firstTime_ == -TIME_MAX) firstTime_ = time;
     return true;
   }
 }
@@ -364,8 +370,9 @@ bool Scheduler::force_schedule()
   return result;
 }
 
-bool Scheduler::is_it_time(Time time, Step step)
+bool Scheduler::is_it_time(double t, Step step)
 {
+  Time time = t;
   // NOTE: It is possible that this routine is called multiple times
   // at the same time and step and it needs to return the same result
   // each time. To do this, it sets the lastTime_ variable whenever
@@ -388,7 +395,7 @@ bool Scheduler::is_it_time(Time time, Step step)
 
   // If user specified a start time; that overrides
   // everything except for the force_write setting.
-  // If user did not specify the start time, then startTime_ = -Real_MAX
+  // If user did not specify the start time, then startTime_ = -TIME_MAX
   // which doesn't force an output, but does enable the output
   // block...
   if (get_toleranced_time_range(time).max < startTime_)
@@ -418,8 +425,8 @@ bool Scheduler::is_it_time(Time time, Step step)
     // If the code has not specified a startTime, or a terminationTime, or
     // any step or time intervals..., Then assume that it is a non-transient
     // one-time call to this function and we need to output at this time...
-    if (terminationTime_ == Real_MAX &&
-        startTime_ == -Real_MAX &&
+    if (terminationTime_ == TIME_MAX &&
+        startTime_ == -TIME_MAX &&
         timeIntervals_.empty() &&
         stepIntervals_.empty() &&
         times_.empty() &&
@@ -446,7 +453,7 @@ bool Scheduler::is_it_time(Time time, Step step)
  * \post 0.0 < returned_dt <= dt
  * ...
  */
-Time Scheduler::adjust_dt(Time dt, Time time)
+double Scheduler::adjust_dt(double dt, double time)
 {
   assert(dt > 0.0);
 
@@ -461,11 +468,11 @@ Time Scheduler::adjust_dt(Time dt, Time time)
     return dt;
   }
 
-  Time next_imp = next_implicit_output_time(time);
-  Time next_exp = next_explicit_output_time(time);
-  Time next = next_imp < next_exp ? next_imp : next_exp;
+  double next_imp = next_implicit_output_time(time);
+  double next_exp = next_explicit_output_time(time);
+  double next = next_imp < next_exp ? next_imp : next_exp;
 
-  Time delta = next - time;
+  double delta = next - time;
   // Some codes call this routine prior to outputting the current step
   // In that case, we have already hit the desired output time and
   // don't need to adjust the dt
@@ -487,12 +494,12 @@ Time Scheduler::adjust_dt(Time dt, Time time)
   // If 'steps' is less than 'lookAhead', then calculate
   // a new dt which will hit the time exactly...
   if (steps <= lookAhead_) {
-    Time new_dt = delta / steps;
+    double new_dt = delta / steps;
 
     // Check for truncation errors....
     double proj_time = time + (new_dt * steps);
     if (proj_time < next) {
-      new_dt *= (1.0 + DBL_EPSILON);
+      new_dt *= (1.0 + TIME_EPSILON);
     }
     return new_dt;
   }
@@ -527,7 +534,7 @@ Time Scheduler::next_implicit_output_time(Time time) const
 
   if (!initialized_) {
     initialized_ = true;
-    if (restartTime_ > -Real_MAX) {
+    if (restartTime_ > -TIME_MAX) {
       assert(restartTime_ <= time);
       TimeContainer::const_iterator interval = get_time_interval(restartTime_, false);
       if (interval != timeIntervals_.end()) {
@@ -536,7 +543,7 @@ Time Scheduler::next_implicit_output_time(Time time) const
 
         int inter = static_cast<int>((restartTime_ - start) / delta);
         if (inter >= 0) {
-          firstTime_ = (static_cast<double>(inter) * delta) + start;
+          firstTime_ = (static_cast<Time>(inter) * delta) + start;
           lastTime_  = restartTime_;
         }
       }
@@ -609,7 +616,18 @@ Time Scheduler::next_implicit_output_time(Time time) const
   // Some codes call this routine prior to outputting the current step
   // In that case, we have already hit the desired output time and
   // don't need to adjust the dt. If this is the case, then next_time == time.
-  assert(next_time >= time);
+  //
+  //assert(next_time >= time);
+  //
+  //if( next_time >= time )
+  //{
+  //  std::cout << std::setprecision(15) << "TRUE: next_time= " << next_time << ", " << std::setprecision(15) << time << std::endl;
+  //}
+  //else
+  //{
+  //  std::cout << std::setprecision(15) << "FALSE: next_time= " << next_time << ", " << std::setprecision(15) << time << std::endl;
+  //}
+
   return next_time;
 }
 
@@ -620,9 +638,22 @@ bool Scheduler::add_interval(Step step, Step interval)
   return result.second;
 }
 
+bool Scheduler::add_interval(double time, double delta)
+{
+  Time t = time;
+  Time d = delta;
+  return add_interval(t, d);
+}
+
 bool Scheduler::add_explicit(Step step)
 {
   return steps_.insert(step).second;
+}
+
+bool Scheduler::add_explicit(double time)
+{
+  Time t = time;
+  return add_explicit_internal(t);
 }
 
 bool Scheduler::add_interval(Time time, Time delta)
@@ -631,10 +662,11 @@ bool Scheduler::add_interval(Time time, Time delta)
   // than delta... [3 orders of magnitude is arbitrary rule of thumb]
   // Note that this may cause problems if there are time intervals
   // with widely varying interval sizes...
-  if (1000.0 * tolerance_ > delta) {
-    tolerance_ = delta / 1000.0;
-    if (tolerance_ < DBL_EPSILON) {
-      tolerance_ = DBL_EPSILON;
+  const Time scale_factor = 1000.0L;
+  if (scale_factor * tolerance_ > delta) {
+    tolerance_ = delta / scale_factor;
+    if (tolerance_ < TIME_EPSILON) {
+      tolerance_ = TIME_EPSILON;
     }
   }
 
@@ -643,7 +675,7 @@ bool Scheduler::add_interval(Time time, Time delta)
   return result.second;
 }
 
-bool Scheduler::add_explicit(Time time)
+bool Scheduler::add_explicit_internal(Time time)
 {
   return times_.insert(time).second;
 }
@@ -657,7 +689,7 @@ bool Scheduler::set_lookahead(int lookahead)
   return false;
 }
 
-bool Scheduler::set_start_time(Time time)
+bool Scheduler::set_start_time(double time)
 {
   // This is a backwards compatibility function used when there was
   // only the capability to set the time interval and a default start
@@ -670,9 +702,9 @@ bool Scheduler::set_start_time(Time time)
   return true;
 }
 
-bool Scheduler::set_termination_time(Time time)
+bool Scheduler::set_termination_time(double time)
 {
-  if (terminationTime_ > time && time != -Real_MAX)
+  if (terminationTime_ > time && time != -TIME_MAX)
   {
     terminationTime_ = time;
   }
@@ -798,7 +830,7 @@ TimeContainer::const_iterator Scheduler::get_time_interval(Time time, bool erase
   while (next != end && (*next).first <= delta.max) {
     if (erase_old) {
       timeIntervals_.erase(begin);
-      lastTime_ = -Real_MAX; // Reset since in a new interval
+      lastTime_ = -TIME_MAX; // Reset since in a new interval
     }
     begin = next++;
   }
@@ -809,5 +841,6 @@ TimeContainer::const_iterator Scheduler::get_time_interval(Time time, bool erase
   // At this point, have the correct time interval which specifies start and frequency
   return begin;
 }
+
 } // end namespace util
 } // end namespace stk

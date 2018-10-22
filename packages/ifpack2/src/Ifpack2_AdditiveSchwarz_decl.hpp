@@ -94,9 +94,9 @@ preconditioner to a multivector.
 \section Ifpack2_AdditiveSchwarz_Alg Algorithm
 
 One-level overlapping domain decomposition preconditioners use local
-solvers of Dirichlet type. This means that the inverse of the local
-matrix (possibly with overlap) is applied to the residual to be
-preconditioned.
+solvers of Dirichlet type. This means that the solver effectively 
+applies the inverse of the local matrix (possibly with overlap) 
+to the residual to be preconditioned.
 
 The preconditioner can be written as:
 \f[

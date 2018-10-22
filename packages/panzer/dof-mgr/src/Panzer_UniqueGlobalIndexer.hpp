@@ -318,7 +318,7 @@ public:
      functor.global_lids = localIDs_k_;
      functor.local_lids = lids; // we assume this array is sized correctly!
 
-     Kokkos::parallel_for(cellIds.dimension_0(),functor);
+     Kokkos::parallel_for(cellIds.extent(0),functor);
    }
 
    /** \brief How many GIDs are associate with a particular element block
@@ -350,7 +350,7 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<static_cast<int>(local_lids.dimension_1());i++) 
+       for(int i=0;i<static_cast<int>(local_lids.extent(1));i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      

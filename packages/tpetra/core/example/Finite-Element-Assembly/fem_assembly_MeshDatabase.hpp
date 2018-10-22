@@ -51,11 +51,11 @@
 #include "fem_assembly_typedefs.hpp"
 
 
-namespace TpetraExamples 
+namespace TpetraExamples
 {
 
 
-struct LLA 
+struct LLA
 {
   LLA() {data[0]=0; data[1]=0;}
 
@@ -69,7 +69,7 @@ struct LLA
 
 
 
-class MeshDatabase 
+class MeshDatabase
 {
 public:
   MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
@@ -81,37 +81,36 @@ public:
   ~MeshDatabase(){}
 
   // Size accessors
-  size_t getNumOwnedElements() const {return ownedElementGlobalIDs_.dimension(0);}
+  size_t getNumOwnedElements() const {return ownedElementGlobalIDs_.extent(0);}
 
-  size_t getNumGhostElements() const {return ghostElementGlobalIDs_.dimension(0);}
+  size_t getNumGhostElements() const {return ghostElementGlobalIDs_.extent(0);}
 
-  size_t getNumOwnedNodes() const {return ownedNodeGlobalIDs_.dimension(0);}
+  size_t getNumOwnedNodes() const {return ownedNodeGlobalIDs_.extent(0);}
 
-  size_t getNumGhostNodes() const {return ghostNodeGlobalIDs_.dimension(0);}
+  size_t getNumGhostNodes() const {return ghostNodeGlobalIDs_.extent(0);}
 
-  size_t getNumOwnedAndGhostNodes() const {return ownedAndGhostNodeGlobalIDs_.dimension(0);}
+  size_t getNumOwnedAndGhostNodes() const {return ownedAndGhostNodeGlobalIDs_.extent(0);}
 
-  size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.dimension(0);}
+  size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.extent(0);}
 
   // Data accessors
   global_ordinal_view_t getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
   global_ordinal_view_t getGhostElementGlobalIDs() {return ghostElementGlobalIDs_;}
+  global_ordinal_view_t getOwnedAndGhostElementGlobalIDs() {return ownedAndGhostElementGlobalIDs_;}
 
   global_ordinal_view_t getOwnedNodeGlobalIDs() {return ownedNodeGlobalIDs_;}
   global_ordinal_view_t getGhostNodeGlobalIDs() {return ghostNodeGlobalIDs_;}
-
   global_ordinal_view_t getOwnedAndGhostNodeGlobalIDs() {return ownedAndGhostNodeGlobalIDs_;}
-  global_ordinal_view_t getOwnedAndGhostElementGlobalIDs() {return ownedAndGhostElementGlobalIDs_;}
 
   global_ordinal_2d_array_t getOwnedElementToNode() {return ownedElementToNode_;}
   global_ordinal_2d_array_t getGhostElementToNode() {return ghostElementToNode_;}
-  
+
   // Debugging output
   void print(std::ostream & oss);
 
   inline bool nodeIsOwned(global_ordinal_t idx) {
-    global_ordinal_t i,j; 
-    ij_from_idx(globalNodes_[0],idx,i,j); 
+    global_ordinal_t i,j;
+    ij_from_idx(globalNodes_[0],idx,i,j);
     return nodeIsOwned(i,j);
   }
 
@@ -136,7 +135,7 @@ private:
     return j*num_x+i;
   }
 
-  inline void ij_from_idx(global_ordinal_t num_x, global_ordinal_t idx, global_ordinal_t &i, global_ordinal_t&j) const { 
+  inline void ij_from_idx(global_ordinal_t num_x, global_ordinal_t idx, global_ordinal_t &i, global_ordinal_t&j) const {
     i = idx%num_x;
     j = (global_ordinal_t)((idx-i)/num_x);
   }
@@ -184,29 +183,29 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
       globalElements_(global_elements_x,global_elements_y),
       globalNodes_(global_elements_x+1,global_elements_y+1),
       globalProcs_(procs_x,procs_y),
-      comm_(comm) 
+      comm_(comm)
 {
-  
+
   // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction
-  
+
   // Get processor decomp information
   MyRank_ = comm_->getRank();
   ij_from_idx(globalProcs_[0],MyRank_,myProcIJ_[0],myProcIJ_[1]);
-  
+
   // Get local element & node start / stop
   global_ordinal_t num_my_elements=1, num_my_nodes=1;
   for(int k=0; k<2; k++) {
     global_ordinal_t eper = globalElements_[k] / globalProcs_[k];
-    
+
     myElementStart_[k] = myProcIJ_[k] * eper;
     myElementStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalElements_[k] : (myProcIJ_[k]+1) * eper;
     num_my_elements *= (myElementStop_[k]-myElementStart_[k]);
-    
+
     myNodeStart_[k] = myProcIJ_[k] * eper;
     myNodeStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalNodes_[k] : (myProcIJ_[k]+1) * eper;
     num_my_nodes *= (myNodeStop_[k]-myNodeStart_[k]);
   }
-  
+
   // Generate the owned element ids
   Kokkos::resize(ownedElementGlobalIDs_,num_my_elements);
   int ect=0;
@@ -217,7 +216,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
       ect++;
     }
   }
-  
+
   // Generate the owned node ids
   Kokkos::resize(ownedNodeGlobalIDs_,num_my_nodes);
   int nct=0;
@@ -228,7 +227,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
       nct++;
     }
   }
-  
+
   // Generate the element-to-node map
   // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
   Kokkos::resize(ownedElementToNode_,num_my_elements,4);
@@ -237,7 +236,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
     for(global_ordinal_t i=myElementStart_[0]; i<myElementStop_[0]; i++) {
       // The (i,j) of the bottom left corner matches for elements & nodes
       global_ordinal_t nidx=idx_from_ij(globalNodes_[0],i,j);
-      
+
       ownedElementToNode_(cct,0) = nidx;
       ownedElementToNode_(cct,1) = nidx+1;
       ownedElementToNode_(cct,2) = nidx+globalNodes_[0]+1;
@@ -245,7 +244,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
       cct++;
     }
   }
-  
+
   // Generate the list of "ghost" elements & ghostElement2NodeMap
   // NOTE: This only generates a halo for elements where I own at least one node.  On the x/y hi sides,
   // the highers element does not own all the nodes on that proc.  Ergo, no halo in that direction
@@ -254,11 +253,11 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
     if(j<0 || j>=globalElements_[1]) continue; // Ignore stuff off the mesh
     for(global_ordinal_t i=myElementStart_[0]-1; i<myElementStop_[0]; i++) {
       if(i<0 || i>=globalElements_[0]) continue; // Ignore stuff off the mesh
-      
+
       // Ignore proc interior
       if( j>myElementStart_[1]-1 && j<myElementStop_[1] && i>myElementStart_[0]-1 && i<myElementStop_[0])
         continue;
-      
+
       global_ordinal_t idx=idx_from_ij(globalElements_[0],i,j);
       my_ghost_elements.push_back(idx);
     }
@@ -274,24 +273,24 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 
     // The (i,j) of the bottom left corner matches for elements & nodes
     global_ordinal_t nidx=idx_from_ij(globalNodes_[0],i,j);
-      
+
     ghostElementToNode_(k,0) = nidx;
     ghostElementToNode_(k,1) = nidx+1;
     ghostElementToNode_(k,2) = nidx+globalNodes_[0]+1;
     ghostElementToNode_(k,3) = nidx+globalNodes_[0];
   }
- 
+
   // Generate the list of "ghost" nodes (aka any node that exists on the ownedElement list that isn't owned
   std::set<global_ordinal_t> my_ghost_nodes;
-  for(size_t k=0; k<ownedElementToNode_.dimension(0); k++) {
-    for(size_t l=0; l<ownedElementToNode_.dimension(1); l++) {
+  for(size_t k=0; k<ownedElementToNode_.extent(0); k++) {
+    for(size_t l=0; l<ownedElementToNode_.extent(1); l++) {
       global_ordinal_t nidx=ownedElementToNode_(k,l);
       if(!nodeIsOwned(nidx)) {
         my_ghost_nodes.insert(nidx);
       }
     }
   }
-  
+
   Kokkos::resize(ghostNodeGlobalIDs_,my_ghost_nodes.size());
   for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
     size_t kk = std::distance(my_ghost_nodes.begin(),k);
@@ -339,8 +338,8 @@ void MeshDatabase::initializeOwnedAndGhostElementGlobalIDs(void)
 
 
 
-void MeshDatabase::print(std::ostream & oss) 
-{ 
+void MeshDatabase::print(std::ostream & oss)
+{
   std::ostringstream ss;
   ss<<"["<<MyRank_<<","<<myProcIJ_[0]<<","<<myProcIJ_[1]<<"]";
   oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes ="<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
@@ -348,49 +347,49 @@ void MeshDatabase::print(std::ostream & oss)
   oss<<ss.str()<<" Stop/Start Nodes      = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
 
   oss<<ss.str()<<" Owned Global Elements = ";
-  for(size_t i=0; i<ownedElementGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedElementGlobalIDs_.extent(0); i++) {
     oss<<ownedElementGlobalIDs_[i]<<" ";
   }
 
   oss<<"\n"<<ss.str()<<" Owned Global Nodes    = ";
-  for(size_t i=0; i<ownedNodeGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedNodeGlobalIDs_.extent(0); i++) {
     oss<<ownedNodeGlobalIDs_[i]<<" ";
   }
 
   oss<<"\n"<<ss.str()<<" Owned Element2Node    = ";
-  for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
+  for(size_t i=0; i<ownedElementToNode_.extent(0); i++) {
     oss<<"(";
-    for(size_t j=0; j<ownedElementToNode_.dimension(1); j++) {
+    for(size_t j=0; j<ownedElementToNode_.extent(1); j++) {
       oss<<ownedElementToNode_(i,j)<<" ";
     }
     oss<<") ";
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
-  for(size_t i=0; i<ghostElementGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ghostElementGlobalIDs_.extent(0); i++) {
     oss<<ghostElementGlobalIDs_[i]<<" ";
   }
   oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
-  for(size_t i=0; i<ghostNodeGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ghostNodeGlobalIDs_.extent(0); i++) {
     oss<<ghostNodeGlobalIDs_[i]<<" ";
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Element2Node    = ";
-  for(size_t i=0; i<ghostElementToNode_.dimension(0); i++) {
+  for(size_t i=0; i<ghostElementToNode_.extent(0); i++) {
     oss<<"(";
-    for(size_t j=0; j<ghostElementToNode_.dimension(1); j++) {
+    for(size_t j=0; j<ghostElementToNode_.extent(1); j++) {
       oss<<ghostElementToNode_(i,j)<<" ";
     }
     oss<<") ";
-  }      
+  }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Nodes = ";
-  for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.extent(0); i++) {
     oss << ownedAndGhostNodeGlobalIDs_[i]<<" ";
   }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Elements = ";
-  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.dimension(0); i++) {
+  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.extent(0); i++) {
     oss << ownedAndGhostElementGlobalIDs_[i]<<" ";
   }
 

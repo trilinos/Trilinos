@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -64,15 +64,15 @@ using Teuchos::rcp;
 
 // Author: Clark R. Dohrmann
 namespace bddc {
-  
-template <class SX, class SM, class LO, class GO> 
+
+template <class SX, class SM, class LO, class GO>
   class CoarseSpaceBDDC
 {
 public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::Map<>::node_type  Node;
   typedef Tpetra::Map<LO,GO,Node>                                 Map;
   typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
   typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
@@ -128,8 +128,8 @@ public:
     return m_AcRoot->getGlobalNumRows();
   }
 
-  void applyCoarseCorrection(RCP<Vector> & rB, 
-			     RCP<Vector> & solB)
+  void applyCoarseCorrection(RCP<Vector> & rB,
+                             RCP<Vector> & solB)
   {
     m_Phi->apply(*rB, *m_vecCoarse1to1, Teuchos::CONJ_TRANS);
     m_rootVec->doImport(*m_vecCoarse1to1, *m_importerInterlevel, Tpetra::INSERT);
@@ -137,7 +137,7 @@ public:
       Teuchos::ArrayRCP<SX> values = m_rootVec->getDataNonConst();
       for (size_t i=0; i<m_rhsCoarse.size(); i++) m_rhsCoarse[i] = values[i];
       if (m_coarseSolver != 0) {
-	m_coarseSolver->Solve(1, &m_rhsCoarse[0], &m_solCoarse[0]);
+        m_coarseSolver->Solve(1, &m_rhsCoarse[0], &m_solCoarse[0]);
       }
       for (size_t i=0; i<m_rhsCoarse.size(); i++) values[i] = m_solCoarse[i];
     }
@@ -167,8 +167,8 @@ public:
       SM tol(1e-10);
       values = m_vecBoundary1to1->getDataNonConst();
       for (LO i=0; i<numRowsFine; i++) {
-	SM error = std::abs(values[i] -1);
-	if (error > maxError) maxError = error;
+        SM error = std::abs(values[i] -1);
+        if (error > maxError) maxError = error;
       }
     }
     else if (m_problemType == ELASTICITY) {
@@ -178,21 +178,21 @@ public:
       assert (numNodeFine*m_spatialDim == numRowsFine);
       Teuchos::ArrayRCP<SX> coarseValues = m_vecCoarse1to1->getDataNonConst();
       for (LO j=0; j<m_spatialDim; j++) {
-	for (LO i=0; i<numRowsCoarse; i++) coarseValues[i] = 0;
-	for (LO i=0; i<numNodeCoarse; i++) coarseValues[j+m_spatialDim*i] = 1;
-	m_Phi->apply(*m_vecCoarse1to1, *m_vecBoundary1to1, Teuchos::NO_TRANS);
-	SM tol(1e-10);
-	Teuchos::ArrayRCP<SX> fineValues = m_vecBoundary1to1->getDataNonConst();
-	for (LO i=0; i<numNodeFine; i++) {
-	  LO row = j+m_spatialDim*i;
-	  SM error = std::abs(fineValues[row] - 1);
-	  if (error > maxError) maxError = error;
-	}
+        for (LO i=0; i<numRowsCoarse; i++) coarseValues[i] = 0;
+        for (LO i=0; i<numNodeCoarse; i++) coarseValues[j+m_spatialDim*i] = 1;
+        m_Phi->apply(*m_vecCoarse1to1, *m_vecBoundary1to1, Teuchos::NO_TRANS);
+        SM tol(1e-10);
+        Teuchos::ArrayRCP<SX> fineValues = m_vecBoundary1to1->getDataNonConst();
+        for (LO i=0; i<numNodeFine; i++) {
+          LO row = j+m_spatialDim*i;
+          SM error = std::abs(fineValues[row] - 1);
+          if (error > maxError) maxError = error;
+        }
       }
     }
     SM maxErrorAll;
     Teuchos::reduceAll<int, SM>(*m_Comm, Teuchos::REDUCE_MAX, 1,
-				&maxError, &maxErrorAll);
+                                &maxError, &maxErrorAll);
     return maxErrorAll;
   }
 
@@ -205,8 +205,8 @@ public:
     LO numElem = elemConn.size();
     for (LO i=0; i<numElem; i++) {
       for (size_t j=0; j<elemConn[i].size(); j++) {
-	LO node = elemConn[i][j];
-	nodeElements[node].push_back(i);
+        LO node = elemConn[i][j];
+        nodeElements[node].push_back(i);
       }
     }
     nodalConn.resize(numNode);
@@ -215,23 +215,23 @@ public:
     for (LO i=0; i<numNode; i++) {
       LO nanode = 0;
       for (size_t j=0; j<nodeElements[i].size(); j++) {
-	LO elem = nodeElements[i][j];
-	for (size_t k=0; k<elemConn[elem].size(); k++) {
-	  LO node = elemConn[elem][k];
-	  if (nodeFlag[node] == false) {
-	    nodalConn[i].push_back(node);
-	    anode[nanode] = node;
-	    nodeFlag[node] = true;
-	    nanode++;
-	  }
-	}
+        LO elem = nodeElements[i][j];
+        for (size_t k=0; k<elemConn[elem].size(); k++) {
+          LO node = elemConn[elem][k];
+          if (nodeFlag[node] == false) {
+            nodalConn[i].push_back(node);
+            anode[nanode] = node;
+            nodeFlag[node] = true;
+            nanode++;
+          }
+        }
       }
       for (LO j=0; j<nanode; j++) {
-	nodeFlag[anode[j]] = false;
+        nodeFlag[anode[j]] = false;
       }
     }
   }
-  
+
 private:
   std::vector< SubdomainBDDC<SX,SM,LO,GO>* > & m_Subdomain;
   RCP< PartitionOfUnity<SX,SM,LO,GO> > & m_Partition;
@@ -254,23 +254,23 @@ private:
   RCP<Vector> m_vecBoundary1to1, m_vecCoarse1to1, m_rootVec;
   SolverBase<SX>* m_coarseSolver;
 
-  void determineReorder(LO sub, 
-			std::vector<LO> & reorder)
+  void determineReorder(LO sub,
+                        std::vector<LO> & reorder)
   {
-    const std::vector<LO> & coarseDofEquiv = 
+    const std::vector<LO> & coarseDofEquiv =
       m_Subdomain[sub]->getCoarseDofEquiv();
     LO numEquiv = m_Subdomain[sub]->getNumEquiv();
     LO numDofs = coarseDofEquiv.size();
     for (LO i=0; i<numEquiv; i++) {
       for (LO j=0; j<numDofs; j++) {
-	if (coarseDofEquiv[j] == i) reorder.push_back(j);
+        if (coarseDofEquiv[j] == i) reorder.push_back(j);
       }
     }
     assert (LO(reorder.size()) == numDofs);
   }
 
   void determineCoarseStiffnessMatrix
-    (const std::vector< std::vector<LO> > & subEquivs, 
+    (const std::vector< std::vector<LO> > & subEquivs,
      const std::vector< std::vector<LO> > & equivConn,
      std::vector< std::vector<SX> > & subAc)
   {
@@ -281,12 +281,12 @@ private:
     std::vector< std::vector<LO> > columnsA(numDof);
     for (LO i=0; i<numNode; i++) {
       for (LO j=nodeBegin[i]; j<nodeBegin[i+1]; j++) {
-	for (size_t k=0; k<equivConn[i].size(); k++) {
-	  LO node2 = equivConn[i][k];
-	  for (LO m=nodeBegin[node2]; m<nodeBegin[node2+1]; m++) {
-	    columnsA[j].push_back(m);
-	  }
-	}
+        for (size_t k=0; k<equivConn[i].size(); k++) {
+          LO node2 = equivConn[i][k];
+          for (LO m=nodeBegin[node2]; m<nodeBegin[node2+1]; m++) {
+            columnsA[j].push_back(m);
+          }
+        }
       }
     }
     // coarse element assembly
@@ -303,28 +303,28 @@ private:
       determineReorder(i, reorder);
       determineSubDofs(subEquivs[i], nodeBegin, subDofs);
       for (size_t j=0; j<subDofs.size(); j++) {
-	LO dof = subDofs[j];
-	for (size_t k=0; k<columnsA[dof].size(); k++) {
-	  colMap[columnsA[dof][k]] = k;
-	}
-	getSubdomainMatrixRow(Ac, j, reorder, rowValues);
-	for (size_t k=0; k<subDofs.size(); k++) {
-	  LO col = colMap[subDofs[k]];
-	  assert (col != -1);
-	  valuesA[dof][col] += rowValues[k];
-	}
-	for (size_t k=0; k<columnsA[dof].size(); k++) {
-	  colMap[columnsA[dof][k]] = -1;
-	}
+        LO dof = subDofs[j];
+        for (size_t k=0; k<columnsA[dof].size(); k++) {
+          colMap[columnsA[dof][k]] = k;
+        }
+        getSubdomainMatrixRow(Ac, j, reorder, rowValues);
+        for (size_t k=0; k<subDofs.size(); k++) {
+          LO col = colMap[subDofs[k]];
+          assert (col != -1);
+          valuesA[dof][col] += rowValues[k];
+        }
+        for (size_t k=0; k<columnsA[dof].size(); k++) {
+          colMap[columnsA[dof][k]] = -1;
+        }
       }
     }
     Teuchos::ArrayRCP<size_t> count(numDof);
     for (LO i=0; i<numDof; i++) count[i] = columnsA[i].size();
-    CrsMatrix ALocal(m_dofMapCoarse, m_dofMapCoarse, count, 
-		     Tpetra::StaticProfile);
+    CrsMatrix ALocal(m_dofMapCoarse, m_dofMapCoarse, count,
+                     Tpetra::StaticProfile);
     for (LO i=0; i<numDof; i++) {
       ALocal.insertLocalValues(i, Teuchos::ArrayView<LO>(columnsA[i]),
-			       Teuchos::ArrayView<SX>(valuesA[i]));
+                               Teuchos::ArrayView<SX>(valuesA[i]));
     }
     ALocal.fillComplete(m_dofMapCoarse1to1, m_dofMapCoarse1to1);
     m_Ac = rcp( new CrsMatrix(m_dofMapCoarse1to1, 0) );
@@ -333,10 +333,10 @@ private:
   }
 
   void getPhiRow(std::vector<SX> & Phi,
-		 LO row,
-		 LO numRows,
-		 std::vector<LO> & reorder,
-		 std::vector<SX> & rowValues) const
+                 LO row,
+                 LO numRows,
+                 std::vector<LO> & reorder,
+                 std::vector<SX> & rowValues) const
   {
     LO numCols = reorder.size();
     rowValues.resize(numCols);
@@ -347,8 +347,8 @@ private:
   }
 
   void determineSubDofs(const std::vector<LO> & subEquivs,
-			const std::vector<LO> & nodeBegin,
-			std::vector<LO> & subDofs) const
+                        const std::vector<LO> & nodeBegin,
+                        std::vector<LO> & subDofs) const
   {
     LO numSubDofs = 0;
     for (size_t i=0; i<subEquivs.size(); i++) {
@@ -360,13 +360,13 @@ private:
     for (size_t i=0; i<subEquivs.size(); i++) {
       LO equiv = subEquivs[i];
       for (LO j=nodeBegin[equiv]; j<nodeBegin[equiv+1]; j++) {
-	subDofs[numSubDofs++] = j;
+        subDofs[numSubDofs++] = j;
       }
     }
   }
 
-  void scalePhi(LO sub, 
-		std::vector<SX> & Phi) const
+  void scalePhi(LO sub,
+                std::vector<SX> & Phi) const
   {
     LO numRows = m_Subdomain[sub]->getNumBoundaryDofs();
     LO numCols = m_Subdomain[sub]->getCoarseSpaceDimension();
@@ -381,7 +381,7 @@ private:
 
   void determineInterpolationMatrix
     (const std::vector< std::vector<LO> > & subEquivs,
-     const std::vector< std::vector<LO> > & equivConn, 
+     const std::vector< std::vector<LO> > & equivConn,
      std::vector< std::vector<SX> > & subPhi)
   {
     LO numEquiv = m_equivBoundaryDofs.size();
@@ -392,14 +392,14 @@ private:
       LO numAdjEquiv = equivConn[i].size();
       LO numEquivDof = m_equivBoundaryDofs[i].size();
       for (LO j=0; j<numAdjEquiv; j++) {
-	LO equiv = equivConn[i][j];
-	for (LO k=nodeBegin[equiv]; k<nodeBegin[equiv+1]; k++) {
-	  LO dofCoarse = k;
-	  for (LO m=0; m<numEquivDof; m++) {
-	    LO dofB = m_equivBoundaryDofs[i][m];
-	    columnsPhi[dofB].push_back(dofCoarse);
-	  }
-	}
+        LO equiv = equivConn[i][j];
+        for (LO k=nodeBegin[equiv]; k<nodeBegin[equiv+1]; k++) {
+          LO dofCoarse = k;
+          for (LO m=0; m<numEquivDof; m++) {
+            LO dofB = m_equivBoundaryDofs[i][m];
+            columnsPhi[dofB].push_back(dofCoarse);
+          }
+        }
       }
     }
     std::vector< std::vector<SX> > valuesPhi(numDofB);
@@ -418,19 +418,19 @@ private:
       determineSubDofs(subEquivs[i], nodeBegin, subDofs);
       LO numBoundaryDofs = m_Subdomain[i]->getNumBoundaryDofs();
       for (size_t j=0; j<m_subBoundaryDofs[i].size(); j++) {
-	LO dofB = m_subBoundaryDofs[i][j];
-	for (size_t k=0; k<columnsPhi[dofB].size(); k++) {
-	  colMap[columnsPhi[dofB][k]] = k;
-	}
-	getPhiRow(Phi, j, numBoundaryDofs, reorder, rowValues);
-	for (size_t k=0; k<subDofs.size(); k++) {
-	  LO col = colMap[subDofs[k]];
-	  assert (col != -1);
-	  valuesPhi[dofB][col] += rowValues[k];
-	}
-	for (size_t k=0; k<columnsPhi[dofB].size(); k++) {
-	  colMap[columnsPhi[dofB][k]] = -1;
-	}
+        LO dofB = m_subBoundaryDofs[i][j];
+        for (size_t k=0; k<columnsPhi[dofB].size(); k++) {
+          colMap[columnsPhi[dofB][k]] = k;
+        }
+        getPhiRow(Phi, j, numBoundaryDofs, reorder, rowValues);
+        for (size_t k=0; k<subDofs.size(); k++) {
+          LO col = colMap[subDofs[k]];
+          assert (col != -1);
+          valuesPhi[dofB][col] += rowValues[k];
+        }
+        for (size_t k=0; k<columnsPhi[dofB].size(); k++) {
+          colMap[columnsPhi[dofB][k]] = -1;
+        }
       }
     }
     Teuchos::ArrayRCP<size_t> count(numDofB);
@@ -438,7 +438,7 @@ private:
     CrsMatrix PhiLocal(m_dofMapB, m_dofMapCoarse, count, Tpetra::StaticProfile);
     for (LO i=0; i<numDofB; i++) {
       PhiLocal.insertLocalValues(i, Teuchos::ArrayView<LO>(columnsPhi[i]),
-				 Teuchos::ArrayView<SX>(valuesPhi[i]));
+                                 Teuchos::ArrayView<SX>(valuesPhi[i]));
     }
     PhiLocal.fillComplete(m_dofMapCoarse1to1, m_dofMapB1to1);
     m_Phi = rcp( new CrsMatrix(m_dofMapB1to1, 0) );
@@ -453,9 +453,9 @@ private:
     bool restrictPhiToBoundary = true;
     for (LO i=0; i<numSub; i++) {
       m_Subdomain[i]->calculateCoarseMatrices(subPhi[i], subAc[i],
-					      restrictPhiToBoundary);
+                                              restrictPhiToBoundary);
     }
-    const std::vector< std::vector<LO> > & subEquivs = 
+    const std::vector< std::vector<LO> > & subEquivs =
       m_Partition->getSubdomainEquivClasses();
     std::vector< std::vector<LO> > equivConn;
     determineNodalConnectivity(subEquivs, m_numCoarseNodes, equivConn);
@@ -464,13 +464,13 @@ private:
   }
 
   void getMinMemoryProcs(int numCoarseProcs,
-			 std::vector<int> & minMemoryProcs)
+                         std::vector<int> & minMemoryProcs)
   {
     long procLoad = getProcessorLoad();
     int numProc = m_Comm->getSize();
     std::vector<long> procLoadAll(numProc);
-    Teuchos::gatherAll<int, long> (*m_Comm, 1, &procLoad, numProc, 
-				   &procLoadAll[0]);
+    Teuchos::gatherAll<int, long> (*m_Comm, 1, &procLoad, numProc,
+                                   &procLoadAll[0]);
     std::vector< std::pair<long, int> > procSize(numProc);
     for (int i=0; i<numProc; i++) {
       procSize[i] = std::make_pair(procLoadAll[i], i);
@@ -483,7 +483,7 @@ private:
       minMemoryProcs[i] = iter->second;
     }
   }
-    
+
   void coarsen()
   {
     int numCoarseProcs = 1; // two level method for now
@@ -491,12 +491,12 @@ private:
     getMinMemoryProcs(numCoarseProcs, minMemoryProcs);
     assert (numCoarseProcs == 1);
     m_rootProc = minMemoryProcs[0];
-    DofManager<LO,GO>::generateRootMap(m_dofMapCoarse1to1, m_rootProc, 
-				       m_dofMapCoarseRoot);
+    DofManager<LO,GO>::generateRootMap(m_dofMapCoarse1to1, m_rootProc,
+                                       m_dofMapCoarseRoot);
     m_importerInterlevel = rcp(new Import(m_dofMapCoarse1to1,
-					  m_dofMapCoarseRoot) );
+                                          m_dofMapCoarseRoot) );
     m_exporterInterlevel = rcp(new Export(m_dofMapCoarseRoot,
-					  m_dofMapCoarse1to1) );
+                                          m_dofMapCoarse1to1) );
     m_rootVec = rcp( new Vector(m_dofMapCoarseRoot) );
     m_AcRoot = rcp( new CrsMatrix(m_dofMapCoarseRoot, 0) );
     m_AcRoot->doImport(*m_Ac, *m_importerInterlevel, Tpetra::INSERT);
@@ -518,25 +518,25 @@ private:
       Teuchos::ArrayView<const SX> Values;
       numTerms = 0;
       for (LO i=0; i<numRows; i++) {
-	m_AcRoot->getLocalRowView(i, Indices, Values);
-	for (LO j=0; j<Indices.size(); j++) {
-	  columns[numTerms] = Indices[j];
-	  values[numTerms] = Values[j];
-	  numTerms++;
-	}
-	rowBegin[i+1] = numTerms;
+        m_AcRoot->getLocalRowView(i, Indices, Values);
+        for (LO j=0; j<Indices.size(); j++) {
+          columns[numTerms] = Indices[j];
+          values[numTerms] = Values[j];
+          numTerms++;
+        }
+        rowBegin[i+1] = numTerms;
       }
       bool printCoarseMatrix = m_Parameters->get("Print Coarse Matrix", false);
       if (printCoarseMatrix) {
-	UtilBDDC<SX,SM>::printSparseMatrix
-	  (numRows, &rowBegin[0], &columns[0], &values[0], "Ac.dat");
+        UtilBDDC<SX,SM>::printSparseMatrix
+          (numRows, &rowBegin[0], &columns[0], &values[0], "Ac.dat");
       }
       SolverFactory<SX> Factory;
       m_coarseSolver = Factory.Generate(numRows,
-					&rowBegin[0],
-					&columns[0],
-					&values[0],
-					*m_Parameters);
+                                        &rowBegin[0],
+                                        &columns[0],
+                                        &values[0],
+                                        *m_Parameters);
       m_coarseSolver->Initialize();
     }
   }
@@ -554,8 +554,8 @@ private:
     return 0;
   }
 
-  void extractDenseMatrix(const CrsMatrix & A, 
-			  std::vector<SX> & AFull) const
+  void extractDenseMatrix(const CrsMatrix & A,
+                          std::vector<SX> & AFull) const
   {
     Teuchos::ArrayView<const LO> Indices;
     Teuchos::ArrayView<const SX> Values;
@@ -566,15 +566,15 @@ private:
     for (LO i=0; i<numRows; i++) {
       A.getLocalRowView(i, Indices, Values);
       for (LO j=0; j<Indices.size(); j++) {
-	LO col = Indices[j];
-	AFull[i+col*numRows] = Values[j];
+        LO col = Indices[j];
+        AFull[i+col*numRows] = Values[j];
       }
     }
   }
 
   void getNumZeroEigenValuesCoarseStiffnessMatrix(CrsMatrix & Ac)
   {
-    // getNumZeroEigenValuesCoarseStiffnessMatrix is a diagnostic tool 
+    // getNumZeroEigenValuesCoarseStiffnessMatrix is a diagnostic tool
     // intended for smaller examples with no essential boundary conditions.
     bool checkMatrices = m_Parameters->get("Check Coarse Matrices", false);
     if (checkMatrices == false) return;
@@ -589,34 +589,34 @@ private:
       int LWORK = std::max(1, 3*N);
       int INFO(0);
       std::vector<SX> WORK(LWORK);
-      LAPACK.HEEV(JOBZ, UPLO, N, &AcFull[0], N, &W[0], &WORK[0], LWORK, 
-		  &RWORK[0], &INFO);
+      LAPACK.HEEV(JOBZ, UPLO, N, &AcFull[0], N, &W[0], &WORK[0], LWORK,
+                  &RWORK[0], &INFO);
       assert (INFO == 0);
       SM tol(1e-10);
       SM compareValue = tol*W[N-1];
       if (m_problemType == SCALARPDE) {
-	if (N == 1) compareValue = tol;
+        if (N == 1) compareValue = tol;
       }
       else if (m_problemType == ELASTICITY) {
-	if (m_spatialDim == 2) {
-	  if (N < 4) compareValue = tol;
-	}
-	else if (m_spatialDim == 3) {
-	  if (N < 7) compareValue = tol;
-	}
+        if (m_spatialDim == 2) {
+          if (N < 4) compareValue = tol;
+        }
+        else if (m_spatialDim == 3) {
+          if (N < 7) compareValue = tol;
+        }
       }
       m_numZeroEigenValues = 0;
       for (LO i=0; i<N; i++) {
-	if (std::abs(W[i]) < compareValue) m_numZeroEigenValues++;
+        if (std::abs(W[i]) < compareValue) m_numZeroEigenValues++;
       }
     }
     Teuchos::broadcast<int, LO> (*m_Comm, m_rootProc, 1, &m_numZeroEigenValues);
   }
 
   void getSubdomainMatrixRow(std::vector<SX> & Ac,
-			     LO row,
-			     std::vector<LO> & reorder,
-			     std::vector<SX> & rowValues)
+                             LO row,
+                             std::vector<LO> & reorder,
+                             std::vector<SX> & rowValues)
   {
     LO numElemDofs = reorder.size();
     rowValues.resize(numElemDofs);
@@ -629,21 +629,21 @@ private:
 
   void determineGlobalIDs()
   {
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
     LO numCoarseNodes = m_Partition->getNumEquivClasses();
     std::vector<LO> numDofsCoarseNode(numCoarseNodes);
     for (LO i=0; i<m_numSub; i++) {
       LO numEquiv = m_Subdomain[i]->getNumEquiv();
       for (LO j=0; j<numEquiv; j++) {
-	LO equiv = subdomainEquivClasses[i][j];
-	numDofsCoarseNode[equiv] = 0;
+        LO equiv = subdomainEquivClasses[i][j];
+        numDofsCoarseNode[equiv] = 0;
       }
-      const std::vector<LO> & coarseDofEquiv = 
-	m_Subdomain[i]->getCoarseDofEquiv();
+      const std::vector<LO> & coarseDofEquiv =
+        m_Subdomain[i]->getCoarseDofEquiv();
       for (size_t j=0; j<coarseDofEquiv.size(); j++) {
-	LO equiv = subdomainEquivClasses[i][coarseDofEquiv[j]];
-	numDofsCoarseNode[equiv]++;
+        LO equiv = subdomainEquivClasses[i][coarseDofEquiv[j]];
+        numDofsCoarseNode[equiv]++;
       }
     }
     m_nodeBeginCoarse.resize(numCoarseNodes+1, 0);
@@ -653,14 +653,14 @@ private:
     numCoarseDofs = 0;
     for (LO i=0; i<numCoarseNodes; i++) {
       for (LO j=0; j<numDofsCoarseNode[i]; j++) {
-	m_localDofsCoarse[numCoarseDofs] = j;
-	numCoarseDofs++;
+        m_localDofsCoarse[numCoarseDofs] = j;
+        numCoarseDofs++;
       }
       m_nodeBeginCoarse[i+1] = numCoarseDofs;
     }
     const std::vector<GO> & coarseNodeGIDs = m_Partition->getGlobalIDs();
     DofManager<LO,GO>::determineGlobalIDs
-      (numCoarseNodes, &coarseNodeGIDs[0], &m_nodeBeginCoarse[0], 
+      (numCoarseNodes, &coarseNodeGIDs[0], &m_nodeBeginCoarse[0],
        &m_localDofsCoarse[0], m_Comm, m_dofMapCoarse, m_dofMapCoarse1to1);
     m_numCoarseNodes = numCoarseNodes;
     m_exporterCoarse = rcp( new Export(m_dofMapCoarse, m_dofMapCoarse1to1) );
@@ -673,4 +673,4 @@ private:
 } // namespace bddc
 
 #endif // COARSESPACEBDDC_H
-  
+

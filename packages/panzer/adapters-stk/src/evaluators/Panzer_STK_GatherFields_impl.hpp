@@ -85,7 +85,7 @@ panzer_stk::GatherFields<EvalT, Traits>::
 template<typename EvalT, typename Traits> 
 void panzer_stk::GatherFields<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData /* d */, 
-		      PHX::FieldManager<Traits>& fm)
+		      PHX::FieldManager<Traits>& /* fm */)
 {
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     std::string fieldName = gatherFields_[fd].fieldTag().name();
@@ -99,10 +99,6 @@ postRegistrationSetup(typename Traits::SetupData /* d */,
                                  "panzer_stk::GatherFields: STK field " << "\"" << fieldName << "\" " 
                                  "not found.\n STK meta data follows: \n\n" << ss.str());
     }
-     
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
   }
 }
 
@@ -125,7 +121,7 @@ evaluateFields(typename Traits::EvalData workset)
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          VariableField * field = stkFields_[fieldIndex];
 
-         std::size_t basisCnt = gatherFields_[fieldIndex].dimension(1);
+         std::size_t basisCnt = gatherFields_[fieldIndex].extent(1);
 
          if(isConstant_) {
            // loop over basis functions and fill the fields

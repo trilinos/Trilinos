@@ -43,10 +43,10 @@
 
 #include "Kokkos_Core.hpp"
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 #include "Stokhos_Threads_CrsProductTensor.hpp"
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 #include "Stokhos_OpenMP_CrsProductTensor.hpp"
 #endif
 
@@ -136,15 +136,17 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   const size_t threads_per_team =
     Kokkos::hwloc::get_available_threads_per_core();
 
-  Device::initialize( team_count * threads_per_team );
+  Kokkos::InitArguments init_args;
+  init_args.num_threads = team_count*threads_per_team;
+  Kokkos::initialize( init_args );
 
   std::string name = "Host";
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
   Kokkos::Threads::print_configuration( std::cout );
   if (Kokkos::Impl::is_same<Device,Kokkos::Threads>::value)
     name = "Threads";
 #endif
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
   Kokkos::OpenMP::print_configuration( std::cout );
   if (Kokkos::Impl::is_same<Device,Kokkos::OpenMP>::value)
     name = "OpenMP";
@@ -155,22 +157,22 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   unit_test::performance_test_driver<Scalar,Device>::run(
     test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
 
-  Device::finalize();
+  Kokkos::finalize();
 
   return 0 ;
 }
 
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
 template int mainHost<float,Kokkos::Serial>(bool, bool, bool, bool, bool, bool, bool);
 template int mainHost<double,Kokkos::Serial>(bool, bool, bool, bool, bool, bool, bool);
 #endif
 
-#ifdef KOKKOS_HAVE_PTHREAD
+#ifdef KOKKOS_ENABLE_THREADS
 template int mainHost<float,Kokkos::Threads>(bool, bool, bool, bool, bool, bool, bool);
 template int mainHost<double,Kokkos::Threads>(bool, bool, bool, bool, bool, bool, bool);
 #endif
 
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 template int mainHost<float,Kokkos::OpenMP>(bool, bool, bool, bool, bool, bool, bool);
 template int mainHost<double,Kokkos::OpenMP>(bool, bool, bool, bool, bool, bool, bool);
 #endif

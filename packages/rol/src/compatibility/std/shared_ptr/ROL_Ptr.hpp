@@ -48,19 +48,17 @@
 #include <cstddef>
 #include <utility>
 
-
 /* \file  ROL_Ptr.hpp
  * \brief Wraps the C++11 std::shared_ptr
  *        ROL will be build with this implementation if CMake is
- *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
- *        Default behavior is OFF and Teuchos::RCP will be used
+ *        configured with ROL::Ptr='shared_ptr'
  */
 
 namespace ROL {
 
 template<class T> using Ptr = std::shared_ptr<T>;
 
-std::nullptr_t nullPtr = nullptr;
+static std::nullptr_t nullPtr = nullptr;
 
 template<class T, class... Args>
 inline
@@ -108,6 +106,30 @@ template<class T>
 inline
 T* getRawPtr( const Ptr<T>& x ) {
   return x.get();
+}
+
+template<class T>
+inline 
+int getCount( const Ptr<T>& x ) {
+  return x.use_count();
+}
+
+template<class T>
+inline
+bool is_nullPtr( const Ptr<T>& x ) {
+  return x == nullPtr;
+}
+
+template<typename T>
+inline 
+Ptr<T> toPtr( const Ptr<T>& ptr ) { 
+  return ptr;
+}
+
+template<typename T>
+inline 
+Ptr<const T> toPtr( const Ptr<const T>& ptr ) { 
+  return ptr;
 }
 
 

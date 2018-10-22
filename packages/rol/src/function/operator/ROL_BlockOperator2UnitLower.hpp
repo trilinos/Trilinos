@@ -116,7 +116,7 @@ public:
       return C_;
     } 
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                                   ">>> ERROR (ROL_BlockOperator2UnitLower, getOperator): "
                                   "invalid block indices."); 
     }

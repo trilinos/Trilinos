@@ -43,7 +43,7 @@
 #include "BelosSolverFactory.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
@@ -203,8 +203,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const Tpetra::global_size_t gblNumRows = comm->getSize () * 10;
   const size_t numVecs = 3;
 

@@ -45,7 +45,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert
 #include "stk_util/util/NamedPair.hpp"  // for EntitySide::first_type, etc
 
 

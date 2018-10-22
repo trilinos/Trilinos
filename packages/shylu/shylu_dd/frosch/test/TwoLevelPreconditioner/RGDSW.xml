@@ -1,0 +1,149 @@
+<ParameterList name="LaplacianTwoLevel">
+    
+    <ParameterList name="Solver">
+        <Parameter name="Solver"                                            type="string"   value="GMRES"/>
+        <Parameter name="PreconditionerPosition"                            type="string"   value="left"/>
+        <ParameterList name="GMRES">
+            <Parameter name="Num Blocks"                                    type="int"      value="200"/>
+            <Parameter name="Maximum Iterations"                            type="int"      value="200"/>
+            <Parameter name="Maximum Restarts"                              type="int"      value="0"/>
+            <Parameter name="Block Size"                                    type="int"      value="1"/>
+            <Parameter name="Convergence Tolerance"                         type="double"   value="1.0e-6"/>
+            <!--
+             <Parameter name="Implicit Residual Scaling"                    type="string"   value=""/>
+             -->
+            <Parameter name="Explicit Residual Scaling"                     type="string"   value="Norm of Preconditioned Initial Residual"/>
+            <Parameter name="Deflation Quorum"                              type="int"      value="-1"/>
+            <Parameter name="Orthogonalization"                             type="string"   value="DGKS"/>
+            <Parameter name="Verbosity"                                     type="int"      value="47"/>
+            <Parameter name="Output Frequency"                              type="int"      value="1"/>
+            <Parameter name="Output Style"                                  type="int"      value="1"/>
+            <Parameter name="Show Maximum Residual Norm Only"               type="bool"     value="false"/>
+        </ParameterList>
+        <ParameterList name="Flexible GMRES">
+            <Parameter name="Num Blocks"                                    type="int"      value="200"/>
+            <Parameter name="Maximum Iterations"                            type="int"      value="200"/>
+            <Parameter name="Maximum Restarts"                              type="int"      value="0"/>
+            <Parameter name="Block Size"                                    type="int"      value="1"/>
+            <Parameter name="Adaptive Block Size"                           type="bool"     value="true"/>
+            <Parameter name="Convergence Tolerance"                         type="double"   value="1.0e-6"/>
+            <!--
+             <Parameter name="Implicit Residual Scaling"                    type="string"   value=""/>
+             <Parameter name="Explicit Residual Scaling"                    type="string"   value=""/>
+             -->
+            <Parameter name="Orthogonalization"                             type="string"   value="DGKS"/>
+            <Parameter name="Verbosity"                                     type="int"      value="47"/>
+            <Parameter name="Output Frequency"                              type="int"      value="1"/>
+            <Parameter name="Output Style"                                  type="int"      value="1"/>
+            <Parameter name="Show Maximum Residual Norm Only"               type="bool"     value="false"/>
+        </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="TwoLevelPreconditioner">
+        <Parameter name="Dimension"                                         type="int"      value="2"/>
+        <Parameter name="DofsPerNode"                                       type="int"      value="1"/>
+        <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
+        <Parameter name="Overlap"                                           type="int"      value="1"/>
+        
+        <!--<Parameter name="Use OverlappingOperator" 							type="bool" 	value="true">-->
+        <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
+        <!--<Parameter name="Use CoarseOperator" 								type="bool" 	value="true">-->
+        <Parameter name="CoarseOperator Type"                               type="string"   value="RGDSWCoarseOperator"/>
+        <Parameter name="Null Space Type"                                   type="string"   value="Laplace"/>
+        
+        <ParameterList name="AlgebraicOverlappingOperator">
+            <ParameterList name="Solver">
+                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <ParameterList name="Amesos">
+                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
+                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
+                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
+                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
+                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
+                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
+                    <!-- Mumps -->
+                    <ParameterList name="mumps">
+                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
+                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
+                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
+                    </ParameterList>
+                </ParameterList>
+                <ParameterList name="Amesos2">
+                    
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+        
+        <ParameterList name="RGDSWCoarseOperator">
+            <ParameterList name="Blocks">
+                <ParameterList name="1">
+                    <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+                    <Parameter name="Option"                                type="int"      value="1"/>
+                    <Parameter name="Rotations"                             type="bool"     value="true"/>
+                </ParameterList>
+            </ParameterList>
+            
+            <ParameterList name="ExtensionSolver">
+                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <ParameterList name="Amesos">
+                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
+                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
+                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
+                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
+                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
+                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
+                    <!-- Mumps -->
+                    <ParameterList name="mumps">
+                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
+                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
+                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
+                    </ParameterList>
+                </ParameterList>
+                <ParameterList name="Amesos2">
+                    
+                </ParameterList>
+            </ParameterList>
+            
+            <ParameterList name="Distribution">
+                <Parameter name="Type"                                      type="string"   value="linear"/>
+                <Parameter name="GatheringSteps"                            type="int"      value="1"/>
+                <Parameter name="NumProcs"                                  type="int"      value="1"/>
+                <!-- How to use NumProcs
+                 -> 0 stands for all processes
+                 -> 1 stands for 1 process
+                 -> -1 stands corresponds to MaxProcs -1 from Mumps
+                 -> n stands for a factor of 1/n
+                 -> -n stands for the n-th root
+                 -->
+                <Parameter name="Factor"                                    type="double"   value="1.0"/>
+                <!-- NumProcs = Factor * NumProcs -->
+            </ParameterList>
+            
+            <ParameterList name="CoarseSolver">
+                <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <ParameterList name="Amesos">
+                    <Parameter name="MatrixProperty"                        type="string"   value="general"/>
+                    <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
+                    <Parameter name="PrintTiming"                           type="bool"     value="false"/>
+                    <Parameter name="PrintStatus"                           type="bool"     value="false"/>
+                    <Parameter name="MaxProcs"                              type="int"      value="1"/>
+                    <Parameter name="OutputLevel"                           type="int"      value="1"/>
+                    <!-- Mumps -->
+                    <ParameterList name="mumps">
+                        <Parameter name="ICNTL(2)"                          type="int"      value="-1"/>
+                        <Parameter name="ICNTL(3)"                          type="int"      value="-1"/>
+                        <Parameter name="ICNTL(14)"                         type="int"      value="20"/>
+                    </ParameterList>
+                </ParameterList>
+                <ParameterList name="Amesos2">
+                    
+                </ParameterList>
+            </ParameterList>
+            
+        </ParameterList>
+
+    </ParameterList>
+</ParameterList>

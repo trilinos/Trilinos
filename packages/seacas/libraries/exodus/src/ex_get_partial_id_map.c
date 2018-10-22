@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -57,7 +57,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   const char *tname;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -83,7 +83,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
              exoid);
-    ex_err("ex_get_partial_id_map", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -96,7 +96,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
                exoid);
-      ex_err("ex_get_partial_id_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -119,6 +119,9 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
 
   start[0] = start_entity_num - 1;
   count[0] = num_entities;
+  if (count[0] == 0) {
+    start[0] = 0;
+  }
 
   /* read in the id map  */
   if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
@@ -130,7 +133,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s id map in file id %d", tname, exoid);
-    ex_err("ex_get_partial_id_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

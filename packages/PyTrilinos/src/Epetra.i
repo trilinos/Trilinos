@@ -99,10 +99,10 @@ and IntSerialDenseMatrix.
 	docstring = %epetra_docstring) Epetra
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -126,7 +126,7 @@ and IntSerialDenseMatrix.
 %feature("autodoc", "1");
 %feature("compactdefaultargs");
 
-// SWIG library includes
+// SWIG library include files
 using std::string;
 %include "stl.i"
 
@@ -253,13 +253,13 @@ char* strtok;
 %include "Epetra_DLLExportMacro.h"
 
 // Teuchos::RCP<> support
-%include "Teuchos_RCP.i"
+%include "Teuchos_RCP_typemaps.i"
 %include "Teuchos_RCP_DAP.i"
 
 // Include Epetra documentation
 %include "Epetra_dox.i"
 
-// Epetra interface includes
+// Epetra interface include files
 %include "Epetra_Base.i"              // Base classes and utility classes
 %include "Epetra_SerialDense.i"       // SerialDense classes
 %include "Epetra_Comm.i"              // Communicator classes

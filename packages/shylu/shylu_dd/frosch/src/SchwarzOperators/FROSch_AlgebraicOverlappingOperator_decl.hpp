@@ -66,7 +66,11 @@ namespace FROSch {
         AlgebraicOverlappingOperator(CrsMatrixPtr k,
                                      ParameterListPtr parameterList);
         
-        int initialize();
+        virtual int initialize()
+        {
+            FROSCH_ASSERT(0!=0,"AlgebraicOverlappingOperator cannot be built without input parameters.");
+            return 0;
+        };
         
         int initialize(int overlap,
                        MapPtr repeatedMap = Teuchos::null);

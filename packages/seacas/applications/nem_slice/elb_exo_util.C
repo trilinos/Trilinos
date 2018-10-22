@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -94,7 +94,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
     weight->ow.resize(weight->nvals);
     /* Read in the nodal values */
     if (ex_get_var(exoid, weight->exo_tindx, EX_NODAL, weight->exo_vindx, 1, weight->nvals,
-                   TOPTR(values)) < 0) {
+                   values.data()) < 0) {
       Gen_Error(0, "fatal: unable to read nodal values");
       ex_close(exoid);
       return 0;

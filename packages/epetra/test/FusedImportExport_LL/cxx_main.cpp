@@ -45,6 +45,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
+#include "Epetra_Util.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Flops.h"
 
@@ -436,7 +437,7 @@ int main(int argc, char *argv[])
       }
 
     // New map
-    const long long * MyGIDS_ptr = MyGIDS.size() ? &MyGIDS[0] : 0;
+    const long long * MyGIDS_ptr = Epetra_Util_data_ptr(MyGIDS);
     Map1=new Epetra_Map((long long)-1,num_local,MyGIDS_ptr,(long long)0,Comm);
 
     // Execute fused import constructor

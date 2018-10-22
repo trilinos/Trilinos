@@ -59,7 +59,7 @@
 
 // #define EBCOLORING_HIGHER_QUALITY        //suggested
 //
-namespace KokkosGraph { 
+namespace KokkosGraph {
 
 namespace Impl {
 
@@ -141,21 +141,21 @@ public:
                               const_clno_row_view_t t_row_map,
                               const_clno_nnz_view_t t_entries,
                               HandleType*           handle):
-        nr (nr_), 
-        nc (nc_), 
-        ne(ne_), 
-        xadj(row_map), 
-        adj(entries), 
-        t_xadj(t_row_map), 
+        nr (nr_),
+        nc (nc_),
+        ne(ne_),
+        xadj(row_map),
+        adj(entries),
+        t_xadj(t_row_map),
         t_adj(t_entries),
-        nv (nr_), 
+        nv (nr_),
         cp(handle)
   {}
 
 
   /** \brief GraphColor destructor.
    */
-  virtual ~GraphColorD2_MatrixSquared () 
+  virtual ~GraphColorD2_MatrixSquared ()
   {}
 
 
@@ -176,7 +176,7 @@ public:
 
     // Call symbolic multiplication of graph with itself (no transposes, and A and B are the same)
     KokkosSparse::Experimental::spgemm_symbolic(cp, nr, nc, nr, xadj, adj, false, t_xadj, t_adj, false, cRowptrs);
-    
+
     // Get num nz in C
     auto Cnnz = cp->get_spgemm_handle()->get_c_nnz();
 
@@ -189,10 +189,10 @@ public:
     scalar_temp_work_view_t cFakeValues("C placeholder values (meaningless)", Cnnz);
 
     // Run the numeric kernel
-    KokkosSparse::Experimental::spgemm_numeric(cp, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj, 
+    KokkosSparse::Experimental::spgemm_numeric(cp, nr, nc, nr, xadj, adj, aFakeValues, false, t_xadj, t_adj,
                                                aFakeValues, false, cRowptrs, cColinds, cFakeValues);
 
-    // done with spgemm 
+    // done with spgemm
     cp->destroy_spgemm_handle();
 
     // Now run distance-1 graph coloring on C
@@ -217,7 +217,7 @@ public:
  *  General aim is to find the minimum number of colors, minimum number of independent sets.
  */
 template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_, typename clno_row_view_t_, typename clno_nnz_view_t_ >
-class GraphColorD2 
+class GraphColorD2
 {
 public:
 
@@ -262,7 +262,7 @@ protected:
   const_clno_row_view_t t_xadj;   // rowmap, transpose of rowmap
   const_clno_nnz_view_t t_adj;    // entries, transpose of entries
   nnz_lno_t             nv;       // num vertices
-  
+
   typename HandleType::GraphColoringHandleType* cp;    // pointer to the graph coloring handle
 
 private:
@@ -293,14 +293,14 @@ public:
                 const_clno_row_view_t t_row_map,
                 const_clno_nnz_view_t t_entries,
                 HandleType*           handle):
-        nr (nr_), 
-        nc (nc_), 
-        ne(ne_), 
-        xadj(row_map), 
-        adj(entries), 
-        t_xadj(t_row_map), 
+        nr (nr_),
+        nc (nc_),
+        ne(ne_),
+        xadj(row_map),
+        adj(entries),
+        t_xadj(t_row_map),
         t_adj(t_entries),
-        nv (nr_), 
+        nv (nr_),
         cp(handle->get_graph_coloring_handle()),
         _chunkSize(handle->get_graph_coloring_handle()->get_vb_chunk_size()),
         _max_num_iterations(handle->get_graph_coloring_handle()->get_max_number_of_iterations()),
@@ -317,7 +317,7 @@ public:
 
   /** \brief GraphColor destructor.
    */
-  virtual ~GraphColorD2 () 
+  virtual ~GraphColorD2 ()
   {}
 
 
@@ -328,10 +328,7 @@ public:
   // -----------------------------------------------------------------
   virtual void color_graph_d2()
   {
-    // create the colors view (TODO: Check if this is the right place for this -- we copy it into
-    //                               the graph coloring handle later using gc->set_vertex_colors()... but that
-    //                               might be more work than is necessary if the vertex_colors view is already
-    //                               allocated when the handle was created...)
+
     color_view_type colors_out("Graph Colors", this->nv);
 
     // Data:
@@ -344,15 +341,15 @@ public:
     if(this->_ticToc)
     {
       std::cout << "\tcolor_graph_d2 params:" << std::endl
-                << "\t  algorithm                : " << (int) this->_use_color_set << std::endl 
-                << "\t  useConflictList          : " << (int) this->_conflictList << std::endl 
+                << "\t  algorithm                : " << (int) this->_use_color_set << std::endl
+                << "\t  useConflictList          : " << (int) this->_conflictList << std::endl
                 << "\t  ticToc                   : " << this->_ticToc << std::endl
-                << "\t  max_num_iterations       : " << this->_max_num_iterations << std::endl 
-                << "\t  serialConflictResolution : " << (int) this->_serialConflictResolution << std::endl 
-                << "\t  chunkSize                : " << this->_chunkSize << std::endl 
+                << "\t  max_num_iterations       : " << this->_max_num_iterations << std::endl
+                << "\t  serialConflictResolution : " << (int) this->_serialConflictResolution << std::endl
+                << "\t  chunkSize                : " << this->_chunkSize << std::endl
                 << "\t  use_color_set            : " << (int) this->_use_color_set << std::endl
                 << "\tgraph information:" << std::endl
-                << "\t  nv                       : " << this->nv << std::endl 
+                << "\t  nv                       : " << this->nv << std::endl
                 << "\t  ne                       : " << this->ne << std::endl;
     }
 
@@ -385,11 +382,17 @@ public:
     double t, total=0.0;
     Kokkos::Impl::Timer timer;
 
-    int iter=0; 
+    int iter=0;
     for (; (iter < _max_num_iterations) && (numUncolored>0); iter++)
     {
       // Do greedy color
-      this->colorGreedy(this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
+      this->colorGreedy(this->xadj,
+                        this->adj,
+                        this->t_xadj,
+                        this->t_adj,
+                        colors_out,
+                        current_vertexList,
+                        current_vertexListLength);
 
       MyExecSpace::fence();
 
@@ -400,22 +403,24 @@ public:
         std::cout << "\tTime speculative greedy phase " << std::setw(-2) << iter << " : " << t << std::endl;
         timer.reset();
       }
-      
+
       //prettyPrint1DView(colors_out, ">>> WCMCLEN colors_out", 100);
 
       // Find conflicts
-      bool swap_work_arrays = true;   // NOTE: swap_work_arrays can go away in this example -- was only ever 
+      bool swap_work_arrays = true;   // NOTE: swap_work_arrays can go away in this example -- was only ever
                                       //       set false in the PPS code in the original D1 coloring...
 
       // NOTE: not using colorset algorithm in this so we don't include colorset data
       numUncolored = this->findConflicts(swap_work_arrays,
                                          this->xadj,
                                          this->adj,
+                                         this->t_xadj,
+                                         this->t_adj,
                                          colors_out,
                                          current_vertexList,
                                          current_vertexListLength,
                                          next_iteration_recolorList,
-                                         next_iteration_recolorListLength); 
+                                         next_iteration_recolorListLength);
 
       MyExecSpace::fence();
 
@@ -428,7 +433,7 @@ public:
       }
 
       // If conflictList is used and we need to swap the work arrays
-      if(this->_conflictList && swap_work_arrays) 
+      if(this->_conflictList && swap_work_arrays)
       {
         // Swap Work Arrays
         if(iter+1 < this->_max_num_iterations)
@@ -446,11 +451,18 @@ public:
     // clean up in serial
     if (numUncolored > 0)
     {
-      this->resolveConflicts(this->nv, this->xadj, this->adj, colors_out, current_vertexList, current_vertexListLength);
+      this->resolveConflicts(this->nv,
+                             this->xadj,
+                             this->adj,
+                             this->t_xadj,
+                             this->t_adj,
+                             colors_out,
+                             current_vertexList,
+                             current_vertexListLength);
     }
 
     MyExecSpace::fence();
-    
+
     if (_ticToc)
     {
       t = timer.seconds();
@@ -476,6 +488,8 @@ private:
   // -----------------------------------------------------------------
   void colorGreedy(const_lno_row_view_t     xadj_,
                    const_lno_nnz_view_t     adj_,
+                   const_clno_row_view_t    t_xadj_,
+                   const_clno_nnz_view_t    t_adj_,
                    color_view_type          vertex_colors_,
                    nnz_lno_temp_work_view_t current_vertexList_,
                    nnz_lno_t                current_vertexListLength_)
@@ -489,8 +503,10 @@ private:
     }
 
     functorGreedyColor gc(this->nv,
-                          xadj_, 
+                          xadj_,
                           adj_,
+                          t_xadj_,
+                          t_adj_,
                           vertex_colors_,
                           current_vertexList_,
                           current_vertexListLength_,
@@ -513,6 +529,8 @@ private:
   nnz_lno_t findConflicts(bool&                      swap_work_arrays,
                           const_lno_row_view_t       xadj_,
                           adj_view_t                 adj_,
+                          const_clno_row_view_t      t_xadj_,
+                          const_clno_nnz_view_t      t_adj_,
                           color_view_type            vertex_colors_,
                           nnz_lno_temp_work_view_t   current_vertexList_,
                           nnz_lno_t                  current_vertexListLength_,
@@ -523,7 +541,7 @@ private:
     swap_work_arrays = true;
     nnz_lno_t output_numUncolored = 0;
 
-    // conflictList mode: 
+    // conflictList mode:
     if(0 == this->_conflictList)
     {
       // Throw an error -- not implemented (yet)
@@ -549,6 +567,8 @@ private:
         functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
                                                      xadj_,
                                                      adj_,
+                                                     t_xadj_,
+                                                     t_adj_,
                                                      vertex_colors_,
                                                      current_vertexList_,
                                                      next_iteration_recolorList_,
@@ -577,6 +597,8 @@ private:
   void resolveConflicts(nnz_lno_t                _nv,
                         const_lno_row_view_t     xadj_,
                         adj_view_t               adj_,
+                        const_clno_row_view_t    t_xadj_,
+                        const_clno_nnz_view_t    t_adj_,
                         color_view_type          vertex_colors_,
                         nnz_lno_temp_work_view_t current_vertexList_,
                         size_type                current_vertexListLength_)
@@ -587,7 +609,7 @@ private:
 
     typename nnz_lno_temp_work_view_t::HostMirror h_recolor_list;
 
-    if(this->_conflictList) 
+    if(this->_conflictList)
     {
       end = current_vertexListLength_;
       h_recolor_list = Kokkos::create_mirror_view(current_vertexList_);
@@ -595,12 +617,20 @@ private:
     }
 
     color_host_view_t h_colors = Kokkos::create_mirror_view(vertex_colors_);
+
     typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view(xadj_);
     typename adj_view_t::HostMirror h_adj = Kokkos::create_mirror_view(adj_);
 
+    typename const_clno_row_view_t::HostMirror h_t_idx = Kokkos::create_mirror_view(t_xadj_);
+    typename const_clno_nnz_view_t::HostMirror h_t_adj = Kokkos::create_mirror_view(t_adj_);
+
     Kokkos::deep_copy(h_colors, vertex_colors_);
-    Kokkos::deep_copy(h_idx,    xadj_);
-    Kokkos::deep_copy(h_adj,    adj_);
+
+    Kokkos::deep_copy(h_idx, xadj_);
+    Kokkos::deep_copy(h_adj, adj_);
+
+    Kokkos::deep_copy(h_t_idx, t_xadj_);
+    Kokkos::deep_copy(h_t_adj, t_adj_);
 
     for(nnz_lno_t k=0; k<end; k++)
     {
@@ -612,16 +642,18 @@ private:
       {
         vid = k;  // check for uncolored vertices
       }
+
       if(h_colors(vid) > 0) continue;
+
       // loop over distance-1 neighbors of vid
-      for(size_type vid_1adj=h_idx(vid); vid_1adj < h_idx(vid+1); vid_1adj++) 
+      for(size_type vid_1adj=h_idx(vid); vid_1adj < h_idx(vid+1); vid_1adj++)
       {
         size_type vid_1idx = h_adj(vid_1adj);
 
         // loop over distance-1 neighbors of vid_1idx (distance-2 from vid)
-        for(size_type vid_2adj=h_idx(vid_1idx); vid_2adj < h_idx(vid_1idx+1); vid_2adj++)
+        for(size_type vid_2adj=h_t_idx(vid_1idx); vid_2adj < h_t_idx(vid_1idx+1); vid_2adj++)
         {
-          nnz_lno_t vid_2idx = h_adj(vid_2adj);
+          nnz_lno_t vid_2idx = h_t_adj(vid_2adj);
 
           // skip over loops vid -- x -- vid
           if(vid_2idx == vid)
@@ -630,9 +662,11 @@ private:
           forbidden[h_colors(vid_2idx)] = vid;
         }
       }
+
       // color vertex vid with smallest available color
       int c=1;
-      while (forbidden[c]==vid) c++;
+      while (forbidden[c]==vid)  c++;
+
       h_colors(vid) = c;
     }
     Kokkos::deep_copy(vertex_colors_, h_colors);
@@ -648,21 +682,21 @@ private:
   // pretty-print a 1D View with label
   template<typename kokkos_view_t>
   void prettyPrint1DView(kokkos_view_t & view, const char* label, const size_t max_entries=500) const
-  { 
+  {
     int max_per_line=20;
     int line_count=1;
     std::cout << label << " = [ \n\t";
-    for(size_t i=0; i<view.dimension_0(); i++)
+    for(size_t i=0; i<view.extent(0); i++)
     {
       std::cout << std::setw(5) << view(i) << " ";
       if (line_count >= max_per_line) {
-        std::cout << std::endl << "\t"; 
-        line_count = 0; 
+        std::cout << std::endl << "\t";
+        line_count = 0;
       }
       line_count++;
       if(i >= max_entries-1) { std::cout << "<snip>"; break; }
     }
-    if(line_count > 1) 
+    if(line_count > 1)
       std::cout << std::endl;
     std::cout << "\t ]" << std::endl;
   }  // prettyPrint1DView (end)
@@ -678,13 +712,13 @@ private:
    * Functor to init a list sequentialy, that is list[i] = i
    */
   template <typename view_type>
-  struct functorInitList 
+  struct functorInitList
   {
     view_type _vertexList;
     functorInitList (view_type vertexList) : _vertexList(vertexList) {  }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const nnz_lno_t i) const 
+    void operator()(const nnz_lno_t i) const
     {
       // Natural order
       _vertexList(i) = i;
@@ -696,26 +730,32 @@ private:
   /**
    * Functor for VB algorithm speculative coloring without edge filtering.
    */
-  struct functorGreedyColor 
+  struct functorGreedyColor
   {
     nnz_lno_t                nv;                  // num vertices
     const_lno_row_view_t     _idx;                // vertex degree list
     const_lno_nnz_view_t     _adj;                // vertex adjacency list
+    const_clno_row_view_t    _t_idx;              // transpose vertex degree list
+    const_clno_nnz_view_t    _t_adj;              // transpose vertex adjacency list
     color_view_type          _colors;             // vertex colors
-    nnz_lno_temp_work_view_t _vertexList;         // 
-    nnz_lno_t                _vertexListLength;   // 
-    nnz_lno_t                _chunkSize;          // 
+    nnz_lno_temp_work_view_t _vertexList;         //
+    nnz_lno_t                _vertexListLength;   //
+    nnz_lno_t                _chunkSize;          //
 
-    functorGreedyColor (nnz_lno_t                nv_,
-                        const_lno_row_view_t     xadj_,
-                        const_lno_nnz_view_t     adj_,
-                        color_view_type          colors,
-                        nnz_lno_temp_work_view_t vertexList,
-                        nnz_lno_t                vertexListLength,
-                        nnz_lno_t                chunkSize) 
+    functorGreedyColor(nnz_lno_t                nv_,
+                       const_lno_row_view_t     xadj_,
+                       const_lno_nnz_view_t     adj_,
+                       const_clno_row_view_t    t_xadj_,
+                       const_clno_nnz_view_t    t_adj_,
+                       color_view_type          colors,
+                       nnz_lno_temp_work_view_t vertexList,
+                       nnz_lno_t                vertexListLength,
+                       nnz_lno_t                chunkSize)
           : nv(nv_),
             _idx(xadj_),
             _adj(adj_),
+            _t_idx(t_xadj_),
+            _t_adj(t_adj_),
             _colors(colors),
             _vertexList(vertexList),
             _vertexListLength(vertexListLength),
@@ -727,11 +767,11 @@ private:
     // Color vertex i with smallest available color.
     //
     // Each thread colors a chunk of vertices to prevent all vertices getting the same color.
-    // 
+    //
     // This version uses a bool array of size FORBIDDEN_SIZE.
     //
     // param: ii = vertex id
-    // 
+    //
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t vid_) const
     {
@@ -755,7 +795,7 @@ private:
 
         // Do multiple passes if the array is too small.
         // * The Distance-1 code used the knowledge of the degree of the vertex to cap the number of iterations
-        //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.  
+        //   but in distance-2 we'd need the total vertices at distance-2 which we don't easily have aprioi.
         //   This could be as big as all the vertices in the graph if diameter(G)=2...
         // * TODO: Determine a decent cap for this loop to prevent infinite loops (or prove infinite loop can't happen).
         color_t offset = 0;
@@ -774,16 +814,17 @@ private:
           }
 
           // Check neighbors, fill forbidden array.
-          for(size_type vid_1adj=_idx(vid); vid_1adj < _idx(vid+1); vid_1adj++) 
+          for(size_type vid_1adj=_idx(vid); vid_1adj < _idx(vid+1); vid_1adj++)
           {
             nnz_lno_t vid_1idx = _adj(vid_1adj);
-            for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
-            { 
-              nnz_lno_t vid_2idx = _adj(vid_2adj);
+
+            for(size_type vid_2adj=_t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx+1); vid_2adj++)
+            {
+              nnz_lno_t vid_2idx = _t_adj(vid_2adj);
 
               // Skip distance-2-self-loops
               if(vid_2idx == vid || vid_2idx >= nv)
-              { 
+              {
                 continue;
               }
 
@@ -799,7 +840,7 @@ private:
           // color vertex i with smallest available color (firstFit)
           for(int c=0; c < VB_D2_COLORING_FORBIDDEN_SIZE; c++)
           {
-            if(!forbidden[c]) 
+            if(!forbidden[c])
             {
               _colors(vid) = offset + c;
               foundColor = true;
@@ -820,6 +861,8 @@ private:
     nnz_lno_t                  nv;           // num verts
     const_lno_row_view_t       _idx;
     adj_view_t                 _adj;
+    const_clno_row_view_t      _t_idx;
+    const_clno_nnz_view_t      _t_adj;
     color_view_type            _colors;
     nnz_lno_temp_work_view_t   _vertexList;
     nnz_lno_temp_work_view_t   _recolorList;
@@ -829,6 +872,8 @@ private:
     functorFindConflicts_Atomic(nnz_lno_t                  nv_,
                                 const_lno_row_view_t       xadj_,
                                 adj_view_t                 adj_,
+                                const_clno_row_view_t      t_xadj_,
+                                const_clno_nnz_view_t      t_adj_,
                                 color_view_type            colors,
                                 nnz_lno_temp_work_view_t   vertexList,
                                 nnz_lno_temp_work_view_t   recolorList,
@@ -836,6 +881,8 @@ private:
              : nv (nv_),
                _idx(xadj_),
                _adj(adj_),
+               _t_idx(t_xadj_),
+               _t_adj(t_adj_),
                _colors(colors),
                _vertexList(vertexList),
                _recolorList(recolorList),
@@ -856,9 +903,11 @@ private:
       {
         nnz_lno_t vid_1idx = _adj(vid_1adj);
 
-        for(size_type vid_2adj=_idx(vid_1idx); vid_2adj < _idx(vid_1idx+1); vid_2adj++)
-        { 
-          nnz_lno_t vid_2idx = _adj(vid_2adj);
+        bool break_out = false;
+
+        for(size_type vid_2adj=_t_idx(vid_1idx); vid_2adj < _t_idx(vid_1idx+1); vid_2adj++)
+        {
+          nnz_lno_t vid_2idx = _t_adj(vid_2adj);
 
           if(vid == vid_2idx || vid_2idx >= nv) continue;
 
@@ -869,9 +918,11 @@ private:
             const nnz_lno_t k = Kokkos::atomic_fetch_add( &_recolorListLength(), atomic_incr_type(1));
             _recolorList(k) = vid;
             numConflicts += 1;
+            break_out = true;
             break;  // Can exit if vertex gets marked as a conflict.
           }
         }
+        if(break_out) break;
       }
     }
   }; // struct functorFindConflicts_Atomic (end)
@@ -880,7 +931,7 @@ private:
 };  // end class GraphColorD2
 
 
-}  // end Impl namespace 
+}  // end Impl namespace
 }  // end KokkosGraph namespace
 
 

@@ -142,6 +142,9 @@ namespace MueLu {
     // submaps, we do not have to use the maps from blocked A
     for (int k = 0; k < numFactManagers; k++) {
       int i = (backwards ? numFactManagers-1 - k : k);
+       if (restrictionMode_) GetOStream(Runtime1) << "Generating R for block " << k <<"/"<<numFactManagers <<std::endl;
+       else GetOStream(Runtime1) << "Generating P for block " << k <<"/"<<numFactManagers <<std::endl;
+
       const RCP<const FactoryManagerBase>& factManager = FactManager_[i];
 
       SetFactoryManager fineSFM  (rcpFromRef(fineLevel),   factManager);
@@ -286,14 +289,15 @@ namespace MueLu {
         } else {
           P->setMatrix(i, j, Teuchos::null);
         }
-
+    
     P->fillComplete();
 
     // Level Set
     if (!restrictionMode_) {
       // Prolongation mode
       coarseLevel.Set("P", rcp_dynamic_cast<Matrix>(P), this);
-
+      // Stick the CoarseMap on the level if somebody wants it (useful for repartitioning)
+      coarseLevel.Set("CoarseMap",P->getBlockedDomainMap(),this);
     } else {
       // Restriction mode
       // We do not have to transpose the blocked R operator since the subblocks

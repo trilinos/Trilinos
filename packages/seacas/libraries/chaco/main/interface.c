@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -67,7 +67,7 @@ int interface(int    nvtxs,                 /* number of vertices in full graph 
               int     ndims,                /* number of eigenvectors (2^d sets) */
               double  eigtol,               /* tolerance on eigenvectors */
               long    seed                  /* for random graph mutations */
-              )
+)
 {
   extern char *     PARAMS_FILENAME;    /* name of file with parameter updates */
   extern int        MAKE_VWGTS;         /* make vertex weights equal to degrees? */

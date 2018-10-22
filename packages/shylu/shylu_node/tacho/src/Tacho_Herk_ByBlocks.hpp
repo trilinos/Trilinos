@@ -46,10 +46,10 @@ namespace Tacho {
            Algo::External,Algo::Internal>::type GemmAlgoType;
         
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-            const ordinal_type pend = A.dimension_0();
+            const ordinal_type pend = A.extent(0);
             for (ordinal_type p=0;p<pend;++p) {
               const auto beta_select = (p > 0 ? ScalarType(1.0) : beta);
-              const ordinal_type k2end = C.dimension_1();
+              const ordinal_type k2end = C.extent(1);
               for (ordinal_type k2=0;k2<k2end;++k2) {
                 for (ordinal_type k1=0;k1<(k2+1);++k1) {
                   auto &aa = A(p,  k1);

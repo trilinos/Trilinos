@@ -140,7 +140,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = lineBasis.getCardinality();
-        const auto numPoints = lineNodes.dimension(0);
+        const auto numPoints = lineNodes.extent(0);
         const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
         const auto workSize  = numFields*numPoints*spaceDim;
@@ -238,7 +238,7 @@ namespace Intrepid2 {
         const auto allTags = lineBasis.getAllDofTags();
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-        const auto dofTagSize = allTags.dimension(0);
+        const auto dofTagSize = allTags.extent(0);
         for (size_type i=0;i<dofTagSize;++i) {
           const auto bfOrd  = lineBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -326,7 +326,7 @@ namespace Intrepid2 {
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = lineBasis.getCardinality();
-        const ordinal_type numPoints = lineNodes.dimension(0);
+        const ordinal_type numPoints = lineNodes.extent(0);
         const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
         // Check VALUE of basis functions: resize vals to rank-2 container:

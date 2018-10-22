@@ -11,6 +11,9 @@
 
 #include <vector>
 #include "Teuchos_as.hpp"
+#include "Tempus_Stepper.hpp"
+#include <fstream>
+
 
 namespace Tempus_Test {
 
@@ -175,6 +178,162 @@ Teuchos::RCP<LinearRegression<Scalar> > linearRegression()
   Teuchos::RCP<LinearRegression<Scalar> > lr =
     Teuchos::rcp(new LinearRegression<Scalar>());
   return lr;
+}
+
+template<class Scalar>
+void writeOrderError(
+  const std::string filename,
+  Teuchos::RCP<Tempus::Stepper<Scalar> > stepper,
+  std::vector<Scalar> & StepSize,
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutions,
+  std::vector<Scalar> & xErrorNorm,
+  Scalar & xSlope,
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutionsDot,
+  std::vector<Scalar> & xDotErrorNorm,
+  Scalar & xDotSlope,
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutionsDotDot,
+  std::vector<Scalar> & xDotDotErrorNorm,
+  Scalar & xDotDotSlope)
+{
+  Scalar order = stepper->getOrder();
+  int lastElem = solutions.size()-1;     // Last element is the reference soln.
+  std::vector<Scalar> dt;
+
+  auto ref_solution = solutions[lastElem];
+  for (std::size_t i=0; i < lastElem; ++i) {
+    dt.push_back(StepSize[i]);
+    auto tmp = solutions[i];
+    Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solution);
+    Scalar L2norm = Thyra::norm_2(*tmp);
+    xErrorNorm.push_back(L2norm);
+  }
+  xSlope = computeLinearRegressionLogLog<Scalar>(dt, xErrorNorm);
+
+  if (!solutionsDot.empty()) {
+    auto ref_solutionDot = solutionsDot[lastElem];
+    for (std::size_t i=0; i < lastElem; ++i) {
+      auto tmp = solutionsDot[i];
+      Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solutionDot);
+      Scalar L2norm = Thyra::norm_2(*tmp);
+      xDotErrorNorm.push_back(L2norm);
+    }
+    xDotSlope = computeLinearRegressionLogLog<Scalar>(dt, xDotErrorNorm);
+  }
+
+  if (!solutionsDotDot.empty()) {
+    auto ref_solutionDotDot = solutionsDotDot[solutions.size()-1];
+    for (std::size_t i=0; i < lastElem; ++i) {
+      auto tmp = solutionsDotDot[i];
+      Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solutionDotDot);
+      Scalar L2norm = Thyra::norm_2(*tmp);
+      xDotDotErrorNorm.push_back(L2norm);
+    }
+    xDotDotSlope = computeLinearRegressionLogLog<Scalar>(dt, xDotDotErrorNorm);
+  }
+
+  std::cout << "  Stepper = " << stepper->description() << std::endl;
+  std::cout << "  =================================" << std::endl;
+  std::cout << "  Expected Order = " << order        << std::endl;
+  std::cout << "  x        Order = " << xSlope       << std::endl;
+  if (!solutionsDot.empty())
+    std::cout<<"  xDot     Order = " << xDotSlope    << std::endl;
+  if (!solutionsDotDot.empty())
+    std::cout<<"  xDotDot  Order = " << xDotDotSlope << std::endl;
+  std::cout << "  =================================" << std::endl;
+
+  std::ofstream ftmp(filename);
+  Scalar factor = 0.0;
+  for (int n=0; n<lastElem; n++) {
+    factor = 0.8*(pow(dt[n]/dt[0], order));
+    ftmp << dt[n]
+         << "   " << xErrorNorm[n]       << "   " << factor*xErrorNorm[0];
+    if (xDotErrorNorm.size() == lastElem)
+      ftmp <<"   "<< xDotErrorNorm[n]    << "   " << factor*xDotErrorNorm[0];
+    if (xDotDotErrorNorm.size() == lastElem)
+      ftmp <<"   "<< xDotDotErrorNorm[n] << "   " << factor*xDotDotErrorNorm[0];
+    ftmp << std::endl;
+  }
+  ftmp.close();
+}
+
+template<class Scalar>
+void writeOrderError(
+  const std::string filename,
+  Teuchos::RCP<Tempus::Stepper<Scalar> > stepper,
+  std::vector<Scalar> & StepSize,
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutions,
+  std::vector<Scalar> & xErrorNorm,
+  Scalar & xSlope,
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutionsDot,
+  std::vector<Scalar> & xDotErrorNorm,
+  Scalar & xDotSlope)
+{
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> solutionsDotDot;
+  std::vector<Scalar> xDotDotErrorNorm;
+  Scalar xDotDotSlope = Scalar(0.0);
+  writeOrderError(filename, stepper, StepSize,
+                  solutions,       xErrorNorm,       xSlope,
+                  solutionsDot,    xDotErrorNorm,    xDotSlope,
+                  solutionsDotDot, xDotDotErrorNorm, xDotDotSlope);
+}
+
+template<class Scalar>
+void writeOrderError(
+  const std::string filename,
+  Teuchos::RCP<Tempus::Stepper<Scalar> > stepper,
+  std::vector<Scalar> & StepSize,
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> & solutions,
+  std::vector<Scalar> & xErrorNorm,
+  Scalar & xSlope)
+{
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> solutionsDot;
+  std::vector<Scalar> xDotErrorNorm;
+  Scalar xDotSlope    = Scalar(0.0);
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar>>> solutionsDotDot;
+  std::vector<Scalar> xDotDotErrorNorm;
+  Scalar xDotDotSlope = Scalar(0.0);
+  writeOrderError(filename, stepper, StepSize,
+                  solutions,       xErrorNorm,       xSlope,
+                  solutionsDot,    xDotErrorNorm,    xDotSlope,
+                  solutionsDotDot, xDotDotErrorNorm, xDotDotSlope);
+}
+
+template<class Scalar>
+void writeSolution(
+  const std::string filename,
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory)
+{
+  std::ofstream ftmp(filename);
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xDot;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xDotDot;
+  for (int i=0; i<solutionHistory->getNumStates(); i++) {
+    Teuchos::RCP<const Tempus::SolutionState<Scalar> > solutionState =
+      (*solutionHistory)[i];
+    Scalar time = solutionState->getTime();
+    x       = solutionState->getX();
+    xDot    = solutionState->getXDot();
+    xDotDot = solutionState->getXDotDot();
+    int J = x->space()->dim();
+
+    ftmp << time;
+    for (int j=0; j<J; j++)   ftmp << "   " << get_ele(*x, j);
+    if (xDot != Teuchos::null)
+      for (int j=0; j<J; j++) ftmp << "   " << get_ele(*xDot, j);
+    if (xDotDot != Teuchos::null)
+      for (int j=0; j<J; j++) ftmp << "   " << get_ele(*xDotDot, j);
+    ftmp << std::endl;
+  }
+  ftmp.close();
+}
+
+template<class Scalar>
+void writeSolution(
+  const std::string filename,
+  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory)
+{
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > sh(solutionHistory);
+  writeSolution(filename, sh);
 }
 
 } // namespace Tempus_Test

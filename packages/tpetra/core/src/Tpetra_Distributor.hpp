@@ -2131,12 +2131,12 @@ namespace Tpetra {
     typedef ImpView imports_view_type;
 
     const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
                    "Please do not use Tpetra::Distributor with UVM "
                    "allocations.  See GitHub issue #1088.");
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
@@ -2178,7 +2178,7 @@ namespace Tpetra {
         std::ostringstream os;
         os << "Proc " << myRank << ": doPosts: totalNumImportPackets = " <<
           totalNumImportPackets << " = " << totalReceiveLength_ << " * " <<
-          numPackets << "; imports.dimension_0() = " << imports.dimension_0 ()
+          numPackets << "; imports.extent(0) = " << imports.extent (0)
            << endl;
         *out_ << os.str ();
       }
@@ -2186,7 +2186,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
       // mfh 31 Mar 2016: Extra special all-reduce check to help diagnose #227.
       {
-        const size_t importBufSize = static_cast<size_t> (imports.dimension_0 ());
+        const size_t importBufSize = static_cast<size_t> (imports.extent (0));
         const int lclBad = (importBufSize < totalNumImportPackets) ? 1 : 0;
         int gblBad = 0;
         using Teuchos::reduceAll;
@@ -2203,11 +2203,11 @@ namespace Tpetra {
       }
 #else
       TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (imports.dimension_0 ()) < totalNumImportPackets,
+        (static_cast<size_t> (imports.extent (0)) < totalNumImportPackets,
          std::runtime_error,
          "Tpetra::Distributor::doPosts(3 args, Kokkos): The 'imports' "
          "array must have enough entries to hold the expected number of import "
-         "packets.  imports.dimension_0() = " << imports.dimension_0 () << " < "
+         "packets.  imports.extent(0) = " << imports.extent (0) << " < "
          "totalNumImportPackets = " << totalNumImportPackets << " = "
          "totalReceiveLength_ (" << totalReceiveLength_ << ") * numPackets ("
          << numPackets << ").");
@@ -2587,12 +2587,12 @@ namespace Tpetra {
     typedef ImpView imports_view_type;
     const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
                    "Please do not use Tpetra::Distributor with UVM "
                    "allocations.  See GitHub issue #1088.");
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
     Teuchos::OSTab tab (out_);
 
@@ -2646,10 +2646,10 @@ namespace Tpetra {
       totalNumImportPackets += numImportPacketsPerLID[ii];
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-      imports.dimension_0 () < totalNumImportPackets, std::runtime_error,
+      imports.extent (0) < totalNumImportPackets, std::runtime_error,
       "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
       "enough entries to hold the expected number of import packets.  "
-      "imports.dimension_0() = " << imports.dimension_0 () << " < "
+      "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
 #endif // HAVE_TEUCHOS_DEBUG
 

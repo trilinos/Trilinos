@@ -42,11 +42,15 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Details_gemv.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
+
+// kokkos kernels
+#include "KokkosBlas.hpp"
+#include "KokkosKernels_Utils.hpp"
+
 #include <typeinfo>
 
 namespace {
@@ -183,22 +187,22 @@ namespace {
         }
       }
       Kokkos::deep_copy (x2, x_orig);
-      for (int i = 0; i < static_cast<int> (x2.dimension_0 ()); ++i) {
+      for (int i = 0; i < static_cast<int> (x2.extent (0)); ++i) {
         const mag_type curAbs =
           Kokkos::ArithTraits<entry_type>::abs (x2(i));
         x_norm = (curAbs > x_norm) ? curAbs : x_norm;
       }
       Kokkos::deep_copy (y2, y_orig);
-      for (int i = 0; i < static_cast<int> (y2.dimension_0 ()); ++i) {
+      for (int i = 0; i < static_cast<int> (y2.extent (0)); ++i) {
         const mag_type curAbs =
           Kokkos::ArithTraits<entry_type>::abs (y2(i));
         y_norm = (curAbs > y_norm) ? curAbs : y_norm;
       }
     }
 
-    const int A2_stride = Tpetra::Details::Blas::getStride2DView (A2);
-    const int x2_inc = Tpetra::Details::Blas::getStride1DView (x2);
-    const int y2_inc = Tpetra::Details::Blas::getStride1DView (y2);
+    const int A2_stride = A2.stride(1);
+    const int x2_inc = x2.stride(0);
+    const int y2_inc = y2.stride(0);
 
     constexpr int numTransOpts = 6;
     constexpr char transOpts[numTransOpts] =
@@ -270,7 +274,7 @@ namespace {
           // Whether (x,y) are (input,output) or vice versa depends on
           // whether we are exercising the transpose.
           if (isTrans) {
-            Tpetra::Details::Blas::gemv (trans, alpha, A, y, beta, x);
+            KokkosBlas::gemv(&trans, alpha, A, y, beta, x); 
             teuchosBlas.GEMV (teuchosTrans, numRows, numCols, alpha,
                               reinterpret_cast<const EntryType*> (A2.data ()),
                               A2_stride,
@@ -281,7 +285,7 @@ namespace {
             Kokkos::deep_copy (x_host, x);
 
             mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-            for (LO i = 0; i < static_cast<LO> (x.dimension_0 ()); ++i) {
+            for (LO i = 0; i < static_cast<LO> (x.extent (0)); ++i) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (x_host(i) - x2(i));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
@@ -294,7 +298,7 @@ namespace {
             }
           }
           else {
-            Tpetra::Details::Blas::gemv (trans, alpha, A, x, beta, y);
+            KokkosBlas::gemv(&trans, alpha, A, x, beta, y); 
             teuchosBlas.GEMV (teuchosTrans, numRows, numCols, alpha,
                               reinterpret_cast<const EntryType*> (A2.data ()),
                               A2_stride,
@@ -305,7 +309,7 @@ namespace {
             Kokkos::deep_copy (y_host, y);
 
             mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero ();
-            for (LO i = 0; i < static_cast<LO> (y.dimension_0 ()); ++i) {
+            for (LO i = 0; i < static_cast<LO> (y.extent (0)); ++i) {
               const mag_type curErr =
                 Kokkos::ArithTraits<entry_type>::abs (y_host(i) - y2(i));
               maxErr = (curErr > maxErr) ? curErr : maxErr;
@@ -334,7 +338,7 @@ namespace {
     typedef map_type::device_type device_type;
 
     Teuchos::OSTab tab0 (out);
-    out << "Test \"Tpetra::Details::gemv\"" << endl;
+    out << "Test \"KokkosBlas::gemv\"" << endl;
     Teuchos::OSTab tab1 (out);
 
     auto comm = Tpetra::TestingUtilities::getDefaultComm ();

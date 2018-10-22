@@ -721,114 +721,20 @@ and {\sf composite2Region()} when performing matvecs within the Krylov solver.
 \appendix
 
 \section{Matlab interaction}
-To test Trilinos functionality, a combination of Matlab and a Trilinos
-C++ driver was constructed. The basic idea is to use Matlab for ``hard''
-things that do not ultimately affect Trilinos-like design decisions while
-restricting the C++ code to aspects that do affect the Trilinos-like design.
-The way this is implemented is that one first runs the Matlab program in the source folder.
-Then, establish a symbolic link to the C++ executable, but execute it also in the source
-folder, since it relies on files written to the source folder by Matlab.
 
-The Matlab program creates a series of myData\_k files where $ 0 \le k < nProcs$.
-The file should contain a basic command and optionally some data associated
-with that command. After the Matlab program has created a set of these
-myData\_k files it waits (loops with a sleep) until they are removed by
-the C++ program before proceeding. One executes the C++ via mpirun across
-multiple procs. The program first opens a myData\_k file. This very first
-myData\_k file should contain three entries separated by a single space
-corresponding to {\sf maxRegPerGID}, {\sf maxRegPerProc}, and {\sf whichCase}.
-The last entry is a string that should be either {\sf RegionsSpanProcs} or
-{\sf MultipleRegionsPerProc}. The myData\_k file is deleted (so that Matlab
-knows
-to proceed) and then the program enters a big infinite while loop. This loop
-opens a myData\_k file and executes one command per loop iteration.
-Specifically, each loop iteration waits (inner loop with a sleep) for the
-new myData\_k file.  Once it sees this file, it reads the command header.
-The body of the main loop basically has a bunch of `if statements'
-corresponding to the
-different commands and so {\sf myRank} reads the rest of the data and
-performs the associated task. The C++ file never needs to communicate
-any data back to the Matlab program, but it indicates that it is finished
-with the file by deleting it (signaling Matlab to proceed). Not sure if there
-is some chance that the C++ program starts reading a myData\_k file before
-the Matlab program has finished writing to it. This hasn't happened in my
-tests. Some of the myData\_k commands are
-\vskip .1in
+As of May 22, 2018, the Matlab interface has been redesigned.
+The last commit with the old interface is \texttt{commit 657d5544cee8dbb8bf8bfed5a8e93fb64a51eff3}.
 
-\optionbox{LoadCompositeMap}{load the composite GIDs and the non-ghosted portion of {\sf regionsPerGID}. Each line that follows the command line corresponds to one entry of the composite GID. Later communication will be employed in the C++ program so that myRank has ghosted version of this information.}
+To run the region code, two steps are required:
+\begin{enumerate}
+ \item Run the Matlab script {\sf createInput.m} to create the problem and write it to the disk.
+ \item Run the executable {\sf /packages/muelu/research/mmayr/composite\_to\_regions/src/MueLu\_composite\_to\_region\_driver.exe} from the source directory.
+\end{enumerate}
 
-\optionbox{LoadAndCommRegAssignments}{load non-ghosted portion of {\sf regionsPerGID}. Each jth line that follows the command line corresponds to all the regions in  the jth row of {\sf regionsPerGID} separated by spaces. The C++ program performs communication so that it has the ghosted version of this information.}
+The Matlab program creates a series of {\sf my*\_k} files where $ 0 \le k < nProcs$.
+These files contain various input information about the problem, the region layout, etc.
 
-\optionbox{ReadMatrix}{read the file Amat.mm that contains the composite matrix}
-
-\optionbox{LoadRegions}{load the {\sf myRegions} list which appears
-                    immediately after the command (one region per line).}
-
-\optionbox{MakeGrpRegRowMaps}{directs C++ program to make the new row maps.}
-
-\optionbox{MakeGrpRegColMaps}{directs C++ program to make the new col maps.}
-
-\optionbox{MakeExtendedRegGrpMaps}{directs C++ program to make the extended form of the domain and column maps. This extended form includes new GID numbers to address the replication of shared nodes in multiple regions.}
-
-\optionbox{MakeQuasiRegionMatrices}{directs C++ program to extract regional matrices from the composite matrix. Results in correct data, but wrong maps.}
-
-\optionbox{MakeRegMatrices}{directs C++ program to call expertStaticFillComplete on the extended region matrices in order to 'insert' correct range/domain maps into region matrices.}
-
-\optionbox{LoadAppDataForLIDregion()}{loads data associated with the minimum and maximum nodes that myRank will own for each region. Here, `will own' refers to nodes that will be owned by myRank in the regional form of the matrices. However, the min/max values correspond to composite GIDs  Specifically, the $k$th line following the command line provides two numbers. The first number is the minimum associated with {\sf myRegions[~k~]} while the second number is the maximum.}
-
-\optionbox{ComputeMatVecs}{direct C++ program to perform matrix-vector-multiplication in composite and regional form and to compare the results.}
-
-\optionbox{PrintGrpRegRowMaps}{direct C++ program to print new row maps.}
-
-\optionbox{PrintGrpRegColMaps}{directs C++ program to print new col maps.}
-
-\optionbox{PrintGrpRegDomMaps}{directs C++ program to print new extended domain maps.}
-
-\optionbox{PrintRevisedColMaps}{directs C++ program to print new extended col maps.}
-
-\optionbox{PrintQuasiRegionMatrices}{directs C++ program to print quasiRegional matrices.}
-
-\optionbox{PrintRegionMatrices}{directs C++ program to print regional matrices.}
-
-\optionbox{PrintRegionMatrixRowMap}{directs C++ programm to print row map of region matrices.}
-
-\optionbox{PrintRegionMatrixColMap}{directs C++ programm to print col map of region matrices.}
-
-\optionbox{PrintRegionMatrixRangeMap}{directs C++ programm to print range map of region matrices.}
-
-\optionbox{PrintRegionMatrixDomainMap}{directs C++ programm to print domain map of region matrices.}
-
-\optionbox{PrintCompositeMap}{directs C++ program to print composite map.}
-
-\optionbox{PrintRegionAssignments}{directs C++ program to print {\sf regionsPerGID}.}
-
-\optionbox{PrintCompositeVectorX}{directs C++ program to print the composite input vector.}
-
-\optionbox{PrintCompositeVectorY}{directs C++ program to print the composite result vector.}
-
-\optionbox{PrintQuasiRegVectorX}{directs C++ program to print the quasiRegion input vector.}
-
-\optionbox{PrintQuasiRegVectorY}{directs C++ program to print the quasiRegion result vector.}
-
-\optionbox{PrintRegVectorX}{directs C++ program to print the region input vector.}
-
-\optionbox{PrintRegVectorY}{directs C++ program to print the region result vector.}
-
-\optionbox{PrintRegVectorYComp}{directs C++ program to print the composite result vector that is reconstructed from the region result vector.}
-
-\optionbox{Terminate}{C++ program exits.}
-
-For some of the `Make*' commands, the Matlab program is also able to construct the same information and so this can be compared with the C++ program.
-The original intention was that there would be some additional commands to
-initialize vectors, convert from composite to regional views, and do matvecs ...but this is not done right now.
-\REMOVE{Some of these commands appeared in an earlier
-version (that was based on a different composite/region philosophy that
-was deemed not scalable).
-}
-
-
-
-
+The executable reads these files, creates matrices and a MueLu hierarchy and runs a V-cycle. The MueLu configuration is passed in as command line argument \texttt{--xml=PATH/XML\_FILE\_NAME}.
 
 \end{document}
 

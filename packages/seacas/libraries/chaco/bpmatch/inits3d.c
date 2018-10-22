@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,7 @@ void inits3d(struct vtx_data **graph,                /* graph data structure for
              int               startvtx[8][MAXSETS], /* indices defining separation */
              double *          size,                 /* size of each set being modified */
              int *             sets                  /* set each vertex gets assigned to */
-             )
+)
 {
   double xmid, ymid, zmid;    /* median x, y and z values */
   double val, bestval;        /* values for determining set preferences */

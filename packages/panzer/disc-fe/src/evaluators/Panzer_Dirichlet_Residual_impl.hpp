@@ -80,13 +80,9 @@ void
 DirichletResidual<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
+  PHX::FieldManager<Traits>&  /* fm */)
 {
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
-
-  cell_data_size = residual.fieldTag().dataLayout().dimension(1);
+  cell_data_size = residual.fieldTag().dataLayout().extent(1);
 }
 
 //**********************************************************************

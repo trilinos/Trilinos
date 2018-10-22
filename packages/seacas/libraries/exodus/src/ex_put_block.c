@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,26 +33,26 @@
  *
  */
 /*****************************************************************************
-*
-* expblk - ex_put_block: write edge, face, or element block parameters
-*
-* entry conditions -
-*   input parameters:
-*       int     idexo                   exodus file id
-*       int     blk_type                type of block (edge, face, or element)
-*       int     blk_id                  block identifer
-*       char*   entry_descrip           string describing shape of entries in
-*the block
-*       int     num_entries_this_blk    number of entries(records) in the block
-*       int     num_nodes_per_entry     number of nodes per block entry
-*       int     num_edges_per_entry     number of edges per block entry
-*       int     num_faces_per_entry     number of faces per block entry
-*       int     num_attr_per_entry      number of attributes per block entry
-*
-* exit conditions -
-*
-*
-*****************************************************************************/
+ *
+ * expblk - ex_put_block: write edge, face, or element block parameters
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     idexo                   exodus file id
+ *       int     blk_type                type of block (edge, face, or element)
+ *       int     blk_id                  block identifier
+ *       char*   entry_descrip           string describing shape of entries in
+ *the block
+ *       int     num_entries_this_blk    number of entries(records) in the block
+ *       int     num_nodes_per_entry     number of nodes per block entry
+ *       int     num_edges_per_entry     number of edges per block entry
+ *       int     num_faces_per_entry     number of faces per block entry
+ *       int     num_attr_per_entry      number of attributes per block entry
+ *
+ * exit conditions -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_block, MAX_STR_LENGTH, etc
 #include <stdint.h>   // for int64_t
@@ -62,7 +62,7 @@
  * writes the parameters used to describe an element/face/edge block
  * \param   exoid                   exodus file id
  * \param   blk_type                type of block (edge, face, or element)
- * \param   blk_id                  block identifer
+ * \param   blk_id                  block identifier
  * \param   entry_descrip           string describing shape of entries in the
  * block
  * \param   num_entries_this_blk    number of entries(records) in the block

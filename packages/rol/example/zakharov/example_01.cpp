@@ -53,10 +53,10 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_ParameterListConverters.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 
@@ -73,13 +73,7 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = ROL::makePtrFromRef(std::cout);
-  else
-    outStream = ROL::makePtrFromRef(bhs);
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
   int errorFlag  = 0;
 
@@ -89,9 +83,8 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    ROL::Ptr<ParameterList> parlist = ROL::makePtr<ParameterList>();
     std::string paramfile = "parameters.xml";
-    updateParametersFromXmlFile(paramfile,parlist.ptr());
+    auto parlist = ROL::getParametersFromXmlFile( paramfile );
 
    // Define algorithm.
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,8 +60,6 @@
 
 int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
 {
-  const char *func_name = "ex_put_init_info";
-
   int  dimid, varid;
   int  ltempsv;
   int  lftype;
@@ -70,12 +68,12 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* Check the file type */
   if (!ftype) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: NULL file type input for file ID %d", exoid);
-    ex_err(func_name, errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -89,7 +87,7 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   }
   else {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file type requested for file ID %d", exoid);
-    ex_err(func_name, errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -97,7 +95,7 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   /* Put file into define mode */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file ID %d into define mode", exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -107,9 +105,9 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
     if ((status = nc_def_dim(exoid, DIM_NUM_PROCS, ltempsv, &dimid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file ID %d",
                DIM_NUM_PROCS, exoid);
-      ex_err(func_name, errmsg, status);
+      ex_err(__func__, errmsg, status);
       /* Leave define mode before returning */
-      ex_leavedef(exoid, func_name);
+      ex_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -121,10 +119,10 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
     if ((status = nc_def_dim(exoid, DIM_NUM_PROCS_F, ltempsv, &dimid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file ID %d",
                DIM_NUM_PROCS_F, exoid);
-      ex_err(func_name, errmsg, status);
+      ex_err(__func__, errmsg, status);
 
       /* Leave define mode before returning */
-      ex_leavedef(exoid, func_name);
+      ex_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -134,28 +132,28 @@ int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
   if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != NC_NOERR) {
     if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define file type in file ID %d", exoid);
-      ex_err(func_name, errmsg, status);
+      ex_err(__func__, errmsg, status);
 
       /* Leave define mode before returning */
-      ex_leavedef(exoid, func_name);
+      ex_leavedef(exoid, __func__);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if (ex_leavedef(exoid, func_name) != EX_NOERR) {
+    if (ex_leavedef(exoid, __func__) != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_put_var1_int(exoid, varid, NULL, &lftype)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unable to output file type variable in file ID %d",
                exoid);
-      ex_err(func_name, errmsg, status);
+      ex_err(__func__, errmsg, status);
 
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
   else {
-    if (ex_leavedef(exoid, func_name) != EX_NOERR) {
+    if (ex_leavedef(exoid, __func__) != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }

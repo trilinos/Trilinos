@@ -60,7 +60,7 @@ namespace Amesos2 {
     {}
 
   Teuchos::RCP<const MatrixAdapter<Epetra_CrsMatrix> >
-  ConcreteMatrixAdapter<Epetra_CrsMatrix>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution) const
+  ConcreteMatrixAdapter<Epetra_CrsMatrix>::get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution /* distribution */) const
     {
       using Teuchos::as;
       using Teuchos::rcp;

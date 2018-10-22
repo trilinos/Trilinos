@@ -87,7 +87,7 @@ public:
       within the "F-Divergence" sublist should have the following parameters
       \li "Threshold" (greater than 0)
   */
-  Chi2Divergence(Teuchos::ParameterList &parlist) : FDivergence<Real>(parlist) {}
+  Chi2Divergence(ROL::ParameterList &parlist) : FDivergence<Real>(parlist) {}
 
   Real Fprimal(Real x, int deriv = 0) {
     Real zero(0), one(1), half(0.5), val(0);
@@ -101,7 +101,7 @@ public:
       val = (x < zero) ? ROL_INF<Real>() : one;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::Chi2Divergence): Derivative order must be 0, 1, or 2!");
     }
     return val;
@@ -119,7 +119,7 @@ public:
       val = (x < -one) ? zero : one;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::Chi2Divergence): Derivative order must be 0, 1, or 2!");
     }
     return val;

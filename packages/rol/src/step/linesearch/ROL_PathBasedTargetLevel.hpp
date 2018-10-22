@@ -69,7 +69,7 @@ public:
   virtual ~PathBasedTargetLevel() {}
 
   // Constructor
-  PathBasedTargetLevel( Teuchos::ParameterList &parlist ) 
+  PathBasedTargetLevel( ROL::ParameterList &parlist ) 
     : LineSearch<Real>(parlist), min_value_(ROL::ROL_OVERFLOW<Real>()),
       rec_value_(ROL::ROL_OVERFLOW<Real>()),  target_(0.0), sigma_(0.0) {
     Real p1(0.1), one(1);

@@ -41,13 +41,10 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Details_getNumDiags.hpp"
 
 namespace {
 
@@ -57,8 +54,6 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MultipleFillCompletes, LO, GO, Scalar, Node )
   {
-    using Tpetra::TestingUtilities::getDefaultComm;
-    using Tpetra::TestingUtilities::getNode;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::outArg;
@@ -76,8 +71,7 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
-    RCP<const Comm<int> > comm = getDefaultComm ();
-    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numImages = comm->getSize ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -93,8 +87,7 @@ namespace {
     // create a Map
     const size_t numLocal = 1; // change to 10
     RCP<const map_type> map =
-      Tpetra::createContigMapWithNode<LO, GO, Node> (INVALID, numLocal,
-                                                     comm, node);
+      Tpetra::createContigMapWithNode<LO, GO, Node> (INVALID, numLocal, comm);
     RCP<ParameterList> params = parameterList ();
     {
       if (myRank == 0) {
@@ -158,8 +151,8 @@ namespace {
       if (myRank == 0) {
         cerr << "  Test that the matrix is 3*I" << endl;
       }
-      TEST_EQUALITY( matrix.getGlobalNumDiags(), numLocal*numImages );
-      TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (matrix), static_cast<GO> (numLocal*numImages) );
+      TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (matrix), static_cast<LO> (numLocal) );
       TEST_EQUALITY( matrix.getGlobalNumEntries(), numLocal*numImages );
       TEST_EQUALITY( matrix.getNodeNumEntries(), numLocal );
       for (LO r = 0; r < static_cast<LO> (numLocal); ++r) {

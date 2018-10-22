@@ -482,11 +482,11 @@ namespace MueLu {
             if (vindices.find(rit->first) == vindices.end()) {
               // requested by factory which is unknown
               BoostVertex boost_vertex = boost::add_vertex(graph);
-              boost::put("label", dp, boost_vertex, rit->first->description());
+	      boost::put("label", dp, boost_vertex, rit->first->description());
               vindices[rit->first] = vind++;
             }
 
-            edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
+	    edges[std::pair<BoostVertex,BoostVertex>(vindices[rit->first], vindices[it1->first])] =  it2->first;
           }
         }
       }

@@ -50,7 +50,7 @@ algorithm package LOCA:
     http://trilinos.sandia.gov/packages/nox
 
 The purpose of LOCA is to provide a library of continuation
-algorithms.  It includes the following sub-modules:
+algorithms.  It include files the following sub-modules:
 
     * Abstract           - Abstract continuation problem base classes
     * Extended           - Classes that extend NOX.Abstract classes to
@@ -97,35 +97,27 @@ and classes:
 	docstring    = %loca_docstring) __init__
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_LinearProblem.hpp"
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
-#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
-#include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
-#include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
+#include "PyTrilinos_LOCA_Hopf_Headers.hpp"
 
-// Local includes
+// Local include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 %}
@@ -143,7 +135,7 @@ from . import ___init__
 %ignore operator<<(ostream&, const LOCA::ParameterVector&);
 %rename(Print) LOCA::ParameterVector::print(ostream& stream) const;
 
-// SWIG library includes
+// SWIG library include files
 %include "stl.i"
 
 // Trilinos interface import.  Note: Teuchos.i turns off warnings for

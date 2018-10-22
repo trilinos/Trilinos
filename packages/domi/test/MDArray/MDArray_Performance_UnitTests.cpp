@@ -54,10 +54,10 @@ using Teuchos::tuple;
 int numLoops = 100;
 int intPrec = 8;
 int dblPrec = 6;
-int dim1 = 10;
-int dim2 = 8;
-int dim3 = 6;
-int dim4 = 4;
+int MDAdim1 = 10;
+int MDAdim2 = 8;
+int MDAdim3 = 6;
+int MDAdim4 = 4;
 
 TEUCHOS_STATIC_SETUP()
 {
@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST( MDArray, parenOperator1D )
   outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
   outputter.setFieldTypePrecision(TO::INT,    intPrec);
 
-  outputter.pushFieldSpec("dim"         , TO::INT   );
+  outputter.pushFieldSpec("dim         ", TO::INT   );
   outputter.pushFieldSpec("num loops"   , TO::INT   );
   outputter.pushFieldSpec("paren access", TO::DOUBLE);
 
@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST( MDArray, parenOperator1D )
   int scale[4] = {1, 10, 100, 1000};
   for (int test_case_k = 0; test_case_k < 4; ++test_case_k)
   {
-    Ordinal arrayDim = dim1 * scale[test_case_k];
+    Ordinal arrayDim = MDAdim1 * scale[test_case_k];
 
     // dim
     outputter.outputField(arrayDim);
@@ -126,8 +126,8 @@ TEUCHOS_UNIT_TEST( MDArray, parenOperator2D )
   int scale[4] = {1, 2, 5, 10};
   for (int test_case_k = 0; test_case_k < 4; ++test_case_k)
   {
-    Ordinal arrayDim1 = dim1 * scale[test_case_k];
-    Ordinal arrayDim2 = dim2 * scale[test_case_k];
+    Ordinal arrayDim1 = MDAdim1 * scale[test_case_k];
+    Ordinal arrayDim2 = MDAdim2 * scale[test_case_k];
 
     // dim 1
     outputter.outputField(arrayDim1);
@@ -173,9 +173,9 @@ TEUCHOS_UNIT_TEST( MDArray, parenOperator3D )
   int scale[4] = {1, 2, 3, 4};
   for (int test_case_k = 0; test_case_k < 4; ++test_case_k)
   {
-    Ordinal arrayDim1 = dim1 * scale[test_case_k];
-    Ordinal arrayDim2 = dim2 * scale[test_case_k];
-    Ordinal arrayDim3 = dim3 * scale[test_case_k];
+    Ordinal arrayDim1 = MDAdim1 * scale[test_case_k];
+    Ordinal arrayDim2 = MDAdim2 * scale[test_case_k];
+    Ordinal arrayDim3 = MDAdim3 * scale[test_case_k];
 
     // dim 1
     outputter.outputField(arrayDim1);
@@ -226,10 +226,10 @@ TEUCHOS_UNIT_TEST( MDArray, parenOperator4D )
   int scale[4] = {1, 2, 3};
   for (int test_case_k = 0; test_case_k < 3; ++test_case_k)
   {
-    Ordinal arrayDim1 = dim1 * scale[test_case_k];
-    Ordinal arrayDim2 = dim2 * scale[test_case_k];
-    Ordinal arrayDim3 = dim3 * scale[test_case_k];
-    Ordinal arrayDim4 = dim4 * scale[test_case_k];
+    Ordinal arrayDim1 = MDAdim1 * scale[test_case_k];
+    Ordinal arrayDim2 = MDAdim2 * scale[test_case_k];
+    Ordinal arrayDim3 = MDAdim3 * scale[test_case_k];
+    Ordinal arrayDim4 = MDAdim4 * scale[test_case_k];
 
     // dim 1
     outputter.outputField(arrayDim1);

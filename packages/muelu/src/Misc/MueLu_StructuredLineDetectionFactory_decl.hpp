@@ -56,7 +56,7 @@ namespace MueLu {
 
   /*!
     @class StructuredLineDetectionFactory class.
-    @brief Factory for building line detection information on structured meshes
+    @brief Factory building line detection information on structured meshes
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>

@@ -238,9 +238,9 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
-                      NOX::Abstract::Group& soln,
-                      const NOX::Solver::Generic& solver)
+bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& /* dir */,
+                      NOX::Abstract::Group& /* soln */,
+                      const NOX::Solver::Generic& /* solver */)
 {
   throwError("compute", "This direction can only be used with a line search based solver.");
   return false;
@@ -305,6 +305,9 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr,
                            soln.getF(),
                            dir);
+
+  oldJacobianGrpPtr->logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
+
   if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to apply Jacobian inverse");
   dir.scale(-1.0);

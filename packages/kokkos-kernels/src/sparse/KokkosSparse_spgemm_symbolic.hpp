@@ -169,11 +169,11 @@ void spgemm_symbolic(
   Internal_blno_nnz_view_t_ const_b_l  = entriesB;
   Internal_clno_row_view_t_ const_c_r  = row_mapC;
   */
-  Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.dimension_0());
-  Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.dimension_0());
-  Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.dimension_0());
-  Internal_blno_nnz_view_t_ const_b_l  (entriesB.data(), entriesB.dimension_0());
-  Internal_clno_row_view_t_ const_c_r  ( row_mapC.data(), row_mapC.dimension_0());
+  Internal_alno_row_view_t_ const_a_r (row_mapA.data(), row_mapA.extent(0));
+  Internal_alno_nnz_view_t_ const_a_l (entriesA.data(), entriesA.extent(0));
+  Internal_blno_row_view_t_ const_b_r (row_mapB.data(), row_mapB.extent(0));
+  Internal_blno_nnz_view_t_ const_b_l  (entriesB.data(), entriesB.extent(0));
+  Internal_clno_row_view_t_ const_c_r  ( row_mapC.data(), row_mapC.extent(0));
 
   using namespace KokkosSparse::Impl;
   SPGEMM_SYMBOLIC<

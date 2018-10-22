@@ -68,6 +68,7 @@
 #include "Epetra_SerialComm.h"
 
 #include <Epetra_MultiVector.h>
+#include <Epetra_Vector.h>
 
 namespace Xpetra {
 
@@ -479,7 +480,8 @@ namespace Xpetra {
       // scale().  Deal with this by scaling one column at a time.
       const size_t numVecs = this->getNumVectors ();
       for (size_t j = 0; j < numVecs; ++j) {
-        vec_->Scale (alpha[j]);
+        Epetra_Vector *v = (*vec_)(j);
+        v->Scale (alpha[j]);
       }
     }
 
@@ -892,7 +894,8 @@ namespace Xpetra {
       // scale().  Deal with this by scaling one column at a time.
       const size_t numVecs = this->getNumVectors ();
       for (size_t j = 0; j < numVecs; ++j) {
-        vec_->Scale (alpha[j]);
+        Epetra_Vector *v = (*vec_)(j);
+        v->Scale (alpha[j]);
       }
     }
 

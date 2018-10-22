@@ -1,4 +1,16 @@
-function [globalDims,localDims,relCorner,regionCorner] = mk2RegionFile(filename)
+% mk2DRegionFile.m
+%
+% Input
+%   filename  filename of case file
+%   outDir    path to output directory
+%
+% Output
+%   globalDims
+%   localDims
+%   relCorner
+%   regionCorner
+%
+function [globalDims,localDims,relCorner,regionCorner] = mk2RegionFile(filename, outDir)
 %
 %  writes mapping to a file based on information below.
 %
@@ -139,6 +151,126 @@ elseif(strcmp(filename, 'caseNine') == true)  % caseNine
   pxProcChange         = [3];
   pyProcChange         = [3];
 
+elseif(strcmp(filename, 'caseFifteen') == true)  % caseFifteen
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [3 6];   
+  ryInterfaceLocations = [3 6];   
+  pxProcChange         = [4];
+  pyProcChange         = [4];
+  
+elseif(strcmp(filename, 'caseSixteen') == true)  % caseSixteen
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [6 12];   
+  ryInterfaceLocations = [6 12];   
+  pxProcChange         = [7];
+  pyProcChange         = [7];
+
+elseif(strcmp(filename, 'caseSeventeen') == true)  % caseSeventeen
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [30 60];   
+  ryInterfaceLocations = [30 60];   
+  pxProcChange         = [31];
+  pyProcChange         = [31];
+  
+elseif(strcmp(filename, 'caseEightteen') == true)  % caseEightteen
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [15 30 45];   
+  ryInterfaceLocations = [15 30 45];   
+  pxProcChange         = [16 31];
+  pyProcChange         = [16 31];
+
+elseif(strcmp(filename, 'caseNineteen') == true)  % caseNineteen
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [15 30 45 60];   
+  ryInterfaceLocations = [15 30 45 60];   
+  pxProcChange         = [16 31 46];
+  pyProcChange         = [16 31 46];
+  
+elseif(strcmp(filename, 'caseTwenty') == true)  % caseTwenty
+
+%px:0   0   0   0   1   1   1
+%px:            1                
+%   |- rx=0     <-rx=1      |   py  py
+%   |           |           |
+%   0   1   2   3   4   5   6   0   0
+%   7   8   9  10  11  12  13  
+%  14  15  16  17  18  19  20   2   0   1
+%--21--22--23--24--25--26--27<   1
+%  28  29  30  31  32  33  34   1
+%  35  36  37  38  39  40  41
+%  42  43  44  45  46  47  48
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [9 18];   
+  ryInterfaceLocations = [9 18];   
+  pxProcChange         = [10];
+  pyProcChange         = [10];
+
 end
 
 nrx = length(rxInterfaceLocations);
@@ -156,7 +288,7 @@ relCorner   = -ones(nRegions,nProcs,2);
 regionCorner= -ones(nRegions,2);
 localDims =  -ones(nRegions,nProcs,2);
 
-fp = fopen(filename,'w');
+fp = fopen(sprintf('%s/%s', outDir, filename), 'w');
 if fp ~= -1, 
     fprintf(fp,'     #nodes  #regions   #procs   #which case\n');
     fprintf(fp,'%8d %8d %8d       %s\n',nNodes,nRegions,nProcs,whichCase);

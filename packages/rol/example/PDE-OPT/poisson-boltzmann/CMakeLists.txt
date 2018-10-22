@@ -5,6 +5,8 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
    ${PROJECT_NAME}_ENABLE_Amesos2  AND
    ${PROJECT_NAME}_ENABLE_Tpetra )
 
+  INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/sol)
+
   # Need ROL_TpetraMultiVector.hpp
   INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
 

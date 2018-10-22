@@ -63,25 +63,22 @@ python version of the Pliris package supports the following class:
 	docstring = %pliris_docstring) Pliris
 
 %{
-// Configuration includes
+// PyTrilinos configuration
 #include "PyTrilinos_config.h"
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
-#undef HAVE_INTTYPES_H
-#undef HAVE_STDINT_H
+// #undef HAVE_INTTYPES_H
+// #undef HAVE_STDINT_H
 #include "PyTrilinos_Epetra_Headers.hpp"
 
-// NumPy includes
+// NumPy include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Pliris includes
-#include "PlirisVersion.h"
-#include "Pliris.h"
-
+// Pliris include files
+#include "PyTrilinos_Pliris_Headers.hpp"
 #endif
-
 %}
 
 // Auto-documentation feature

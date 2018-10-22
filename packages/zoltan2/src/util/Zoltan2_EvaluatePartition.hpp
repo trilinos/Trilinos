@@ -197,7 +197,7 @@ public:
           Teuchos::null):
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
   {
-    RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
+    Teuchos::RCP<const Comm<int> > problemComm = Tpetra::getDefaultComm();
     sharedConstructor(ia, p, problemComm, soln, graphModel);
   }
 
@@ -450,7 +450,7 @@ void EvaluatePartition<Adapter>::sharedConstructor(
 {
   RCP<const Comm<int> > problemComm;
   if (comm == Teuchos::null) {
-    problemComm = DefaultComm<int>::getComm();//communicator is Teuchos default
+    problemComm = Tpetra::getDefaultComm();
   } else {
     problemComm = comm;
   }

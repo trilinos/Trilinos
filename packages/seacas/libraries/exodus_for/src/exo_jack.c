@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -313,7 +313,7 @@ void F2C(expqa, EXPQA)(int *idexo, int *num_qa_records, char *qa_record, int *ie
                 * use */
   int i, ii, iii, slen, alen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = MAX_STR_LENGTH; /* max str size */
   if (qa_recordlen != MAX_STR_LENGTH) {
@@ -340,7 +340,7 @@ void F2C(expqa, EXPQA)(int *idexo, int *num_qa_records, char *qa_record, int *ie
         *ierr = EX_MEMFAIL;
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Error: failed to allocate space for qa record %d for file id %d", i, *idexo);
-        ex_err("expqa", errmsg, EX_MEMFAIL);
+        ex_err(__func__, errmsg, EX_MEMFAIL);
         return;
       }
       /* copy fortran string into allocated space */
@@ -375,7 +375,7 @@ void F2C(exgqa, EXGQA)(int *idexo, char *qa_record, int *ierr, int qa_recordlen)
                 * use */
   int i, ii, iii, slen, alen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = MAX_STR_LENGTH; /* max str size */
   if (qa_recordlen != MAX_STR_LENGTH) {
@@ -451,7 +451,7 @@ void F2C(expinf, EXPINF)(int *idexo, int *num_info, char *info, int *ierr, int i
   char *sptr;  /* internal string pointer for malloc use */
   int   i, slen;
 
-  *ierr = 0;               /* default no errror */
+  *ierr = 0;               /* default no error */
   slen  = MAX_LINE_LENGTH; /* max str size */
   if (infolen != MAX_LINE_LENGTH) {
     slen = infolen;
@@ -494,7 +494,7 @@ void F2C(exginf, EXGINF)(int *idexo, char *info, int *ierr, int infolen)
   char *sptr;  /* internal string pointer for malloc use */
   int   i, slen, num_info;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   /* do exodus C call to find out how many info records are avail */
   num_info = ex_inquire_int(*idexo, EX_INQ_INFO);
@@ -526,10 +526,10 @@ void F2C(exginf, EXGINF)(int *idexo, char *info, int *ierr, int infolen)
     return;
   }
   for (i = 0; i < num_info; i++) { /* Put pointers to the info records in ptr
-                                  * array */
+                                    * array */
     *(aptr + i) = sptr + i * (slen + 1);
   }                /* put ptr in string ptr
-                                                            * array */
+                    * array */
   *(aptr + i) = 0; /* null out last pointer */
 
   /* Do exodus call to get info records */
@@ -576,7 +576,7 @@ void F2C(expcon, EXPCON)(int *idexo, char *coord_names, int *ierr, int coord_nam
   char *sptr;  /* internal string pointer for malloc use */
   int   i, ndim, slen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -712,7 +712,7 @@ void F2C(expclb, EXPCLB)(int *idexo, void_int *elem_blk_id, char *elem_type,
   int num_elem_blk;
 
   char **aptr; /* ptr to temp staging space for string array
-                        * ptrs */
+                * ptrs */
   char * sptr; /* ptr to temp staging space for strings */
   int    i;
   size_t slen;
@@ -902,7 +902,7 @@ void F2C(exgean, EXGEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
   char *sptr;  /* ptr to temp staging space for strings */
   int   i, slen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
@@ -958,7 +958,7 @@ void F2C(expean, EXPEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
   char *sptr;  /* ptr to temp staging space for strings */
   int   i, slen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -1007,7 +1007,7 @@ void F2C(expnams, EXPNAMS)(int *idexo, int *type, int *num_obj, char *names, int
   char *sptr;  /* ptr to temp staging space for strings */
   int   i, slen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -1052,7 +1052,7 @@ void F2C(expnam, EXPNAM)(int *idexo, int *type, int *id, char *name, int *ierr, 
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -1090,7 +1090,7 @@ void F2C(exgnams, EXGNAMS)(int *idexo, int *type, int *num_obj, char *names, int
   char *sptr;  /* ptr to temp staging space for strings */
   int   i, slen;
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
@@ -1142,7 +1142,7 @@ void F2C(exgnam, EXGNAM)(int *idexo, int *type, int *id, char *name, int *ierr, 
 {
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
@@ -1250,16 +1250,16 @@ void F2C(exgpn, EXGPN)(int *idexo, int *obj_type, char *prop_names, int *ierr, i
   }
   switch ((ex_entity_type)*obj_type) {
   case EX_ELEM_BLOCK: inq_code = EX_INQ_EB_PROP; break;
-  case EX_NODE_SET: inq_code   = EX_INQ_NS_PROP; break;
-  case EX_SIDE_SET: inq_code   = EX_INQ_SS_PROP; break;
-  case EX_ELEM_MAP: inq_code   = EX_INQ_EM_PROP; break;
-  case EX_NODE_MAP: inq_code   = EX_INQ_NM_PROP; break;
+  case EX_NODE_SET: inq_code = EX_INQ_NS_PROP; break;
+  case EX_SIDE_SET: inq_code = EX_INQ_SS_PROP; break;
+  case EX_ELEM_MAP: inq_code = EX_INQ_EM_PROP; break;
+  case EX_NODE_MAP: inq_code = EX_INQ_NM_PROP; break;
   default:
     exerrval = EX_BADPARAM;
     *ierr    = EX_BADPARAM;
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: object type %d not supported; file id %d", *obj_type,
              *idexo);
-    ex_err("exgpn", errmsg, exerrval);
+    ex_err(__func__, errmsg, exerrval);
     return;
   }
 
@@ -1291,7 +1291,7 @@ void F2C(exgpn, EXGPN)(int *idexo, int *obj_type, char *prop_names, int *ierr, i
   for (i = 0; i < num_props; i++) {
     *(aptr + i) = sptr + i * (slen + 1);
   }                /* put ptrs to staging space
-                                                            * into ptr array */
+                    * into ptr array */
   *(aptr + i) = 0; /* set last pointer to null */
 
   /* do Exodus C call to get property name records */
@@ -1890,7 +1890,7 @@ void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
   ex_entity_type obj_type;
   obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
@@ -1939,7 +1939,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
   ex_entity_type obj_type;
   obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
@@ -2409,13 +2409,13 @@ void F2C(exerr, EXERR)(char *pname, char *err_string, int *errcode, int pnamelen
 
   char *proc_name, *error_string;
   if (!(proc_name = malloc((pnamelen + 1) * sizeof(char)))) {
-    ex_err("exerr", "Error: failed to allocate space for process name buffer", EX_MEMFAIL);
+    ex_err(__func__, "Error: failed to allocate space for process name buffer", EX_MEMFAIL);
     *errcode = EX_MEMFAIL;
     return;
   }
   if (!(error_string = malloc((err_stringlen + 1) * sizeof(char)))) {
     free(proc_name);
-    ex_err("exerr", "Error: failed to allocate space for error msg buffer", EX_MEMFAIL);
+    ex_err(__func__, "Error: failed to allocate space for error msg buffer", EX_MEMFAIL);
     *errcode = EX_MEMFAIL;
     return;
   }
@@ -2530,7 +2530,7 @@ void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_n
 {
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
   ex_entity_type obj_type;
   obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
@@ -2628,7 +2628,7 @@ void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_n
 {
   char *sptr; /* ptr to temp staging space for string */
   int   slen;
-  *ierr = 0; /* default no errror */
+  *ierr = 0; /* default no error */
   ex_entity_type obj_type;
   obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
@@ -2674,7 +2674,7 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %d in file id %d\n",
              ftypelen, *idne);
-    ex_err("negii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
 #endif
     slen = ftypelen;
   }
@@ -2685,7 +2685,7 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to get initial information from file id %d",
              *idne);
-    ex_err("negii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 
   if (*ierr == 0) {
@@ -2715,7 +2715,7 @@ void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
 #if defined(EXODUS_STRING_LENGTH_WARNING)
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %d in file id %d\n",
              ftypelen, *idne);
-    ex_err("nepii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
 #endif
   }
 
@@ -2726,7 +2726,7 @@ void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   if ((*ierr = ex_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to put initial information in file id %d",
              *idne);
-    ex_err("nepii", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 
   free(file_type);
@@ -2743,7 +2743,7 @@ void F2C(exgig, EXGIG)(int *idne, void_int *nnodes_g, void_int *nelems_g, void_i
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read initial global information from file id %d", *idne);
-    ex_err("negig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2776,7 +2776,7 @@ void F2C(expig, EXPIG)(int *idne, void_int *nnodes_g, void_int *nelems_g, void_i
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to store initial global information in file id %d", *idne);
-    ex_err("nepig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2792,7 +2792,7 @@ void F2C(exglbp, EXGLBP)(int *idne, void_int *nint_nodes, void_int *nbor_nodes,
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read load balance parameters from file id %d", *idne);
-    ex_err("neglbp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2829,7 +2829,7 @@ void F2C(explbp, EXPLBP)(int *idne, void_int *nint_nodes, void_int *nbor_nodes,
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to store load balance parameters in file id %d",
              *idne);
-    ex_err("neplbp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2845,7 +2845,7 @@ void F2C(explbpc, EXPLBPC)(int *idne, void_int *nint_nodes, void_int *nbor_nodes
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to store load balance parameters in file id %d",
              *idne);
-    ex_err("neplbpc", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2859,7 +2859,7 @@ void F2C(exgnspg, EXGNSPG)(int *idne, void_int *ns_ids_glob, void_int *ns_n_cnt_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read global node set parameters from file id %d", *idne);
-    ex_err("negnspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2873,7 +2873,7 @@ void F2C(expnspg, EXPNSPG)(int *idne, void_int *global_ids, void_int *global_n_c
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to store global node set parameters in file id %d", *idne);
-    ex_err("nepnspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2888,7 +2888,7 @@ void F2C(exgsspg, EXGSSPG)(int *idne, void_int *ss_ids_glob, void_int *ss_n_cnt_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read global side set parameters from file id %d", *idne);
-    ex_err("negsspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2902,7 +2902,7 @@ void F2C(expsspg, EXPSSPG)(int *idne, void_int *global_ids, void_int *global_el_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to store global side set parameters in file id %d", *idne);
-    ex_err("nepsspg", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2915,7 +2915,7 @@ void F2C(exgebig, EXGEBIG)(int *idne, void_int *el_blk_ids, void_int *el_blk_cnt
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read global element block info from file id %d", *idne);
-    ex_err("negebig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2928,7 +2928,7 @@ void F2C(expebig, EXPEBIG)(int *idne, void_int *el_blk_ids, void_int *el_blk_cnt
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to store global element block info in file id %d", *idne);
-    ex_err("nepebig", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2953,7 +2953,7 @@ void F2C(exgnss, EXGNSS)(int *idne, entity_id *ss_id, void_int *start, void_int 
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read side set element list from file id %d",
              *idne);
-    ex_err("negnss", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -2978,7 +2978,7 @@ void F2C(expnss, EXPNSS)(int *idne, entity_id *ss_id, void_int *start, void_int 
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write side set element list to file id %d",
              *idne);
-    ex_err("nepnss", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3002,7 +3002,7 @@ void F2C(exgnssd, EXGNSSD)(int *idne, entity_id *ss_id, void_int *start, void_in
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read side set dist factor from file id %d",
              *idne);
-    ex_err("negnssd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3026,7 +3026,7 @@ void F2C(expnssd, EXPNSSD)(int *idne, entity_id *ss_id, void_int *start, void_in
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write side set dist factor to file id %d",
              *idne);
-    ex_err("nepnssd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3050,7 +3050,7 @@ void F2C(exgnns, EXGNNS)(int *idne, entity_id *ns_id, void_int *start, void_int 
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node set node list from file id %d",
              *idne);
-    ex_err("negnns", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3074,7 +3074,7 @@ void F2C(expnns, EXPNNS)(int *idne, entity_id *ns_id, void_int *start, void_int 
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node set node list to file id %d",
              *idne);
-    ex_err("nepnns", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3098,7 +3098,7 @@ void F2C(exgnnsd, EXGNNSD)(int *idne, entity_id *ns_id, void_int *start, void_in
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node set dist factor from file id %d",
              *idne);
-    ex_err("negnnsd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3122,7 +3122,7 @@ void F2C(expnnsd, EXPNNSD)(int *idne, entity_id *ns_id, void_int *start, void_in
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node set dist factor to file id %d",
              *idne);
-    ex_err("nepnnsd", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3146,7 +3146,7 @@ void F2C(exgncor, EXGNCOR)(int *idne, void_int *start, void_int *count, real *x_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node coordinates from file id %d",
              *idne);
-    ex_err("negcor", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3170,7 +3170,7 @@ void F2C(expncor, EXPNCOR)(int *idne, void_int *start, void_int *count, real *x_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node coordinates to file id %d",
              *idne);
-    ex_err("nepcor", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3195,7 +3195,7 @@ void F2C(exgnec, EXGNEC)(int *idne, entity_id *elem_blk_id, void_int *start, voi
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read element block connectivity from file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3220,7 +3220,7 @@ void F2C(expnec, EXPNEC)(int *idne, entity_id *elem_blk_id, void_int *start, voi
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to write element block connectivity to file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3244,7 +3244,7 @@ void F2C(exgneat, EXGNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read element block attribute from file id %d", *idne);
-    ex_err("negneat", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3268,7 +3268,7 @@ void F2C(expneat, EXPNEAT)(int *idne, entity_id *elem_blk_id, void_int *start, v
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write element block attribute to file id %d",
              *idne);
-    ex_err("nepneat", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3289,7 +3289,7 @@ void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: element type string length is %d in file id %d\n",
              elem_typelen, *idne);
-    ex_err("negelt", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
 #endif
     slen = elem_typelen;
   }
@@ -3300,7 +3300,7 @@ void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read element block type from file id %d",
              *idne);
-    ex_err("negelt", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 
   if (*ierr == 0) {
@@ -3332,7 +3332,7 @@ void F2C(exgnev, EXGNEV)(int *idne, int *time_step, int *elem_var_index, entity_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read element block variable from file id %d",
              *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3357,7 +3357,7 @@ void F2C(expevs, EXPEVS)(int *idne, int *time_step, int *elem_var_index, entity_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to write elem block variable slab to file id %d", *idne);
-    ex_err("negnec", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3381,7 +3381,7 @@ void F2C(exgnnv, EXGNNV)(int *idne, int *time_step, int *nodal_var_index, void_i
                                   nodal_vars)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read nodal variable from file id %d", *idne);
-    ex_err("negnnv", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3406,7 +3406,7 @@ void F2C(expnvs, EXPNVS)(int *idne, int *time_step, int *nodal_var_index, void_i
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write nodal variable slab to file id %d",
              *idne);
-    ex_err("nepnvs", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3430,7 +3430,7 @@ void F2C(exgnenm, EXGNENM)(int *idne, void_int *starte, void_int *num_ent, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read element numbering map from file id %d",
              *idne);
-    ex_err("negnenm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3454,7 +3454,7 @@ void F2C(expnenm, EXPNENM)(int *idne, void_int *starte, void_int *num_ent, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write element numbering map to file id %d",
              *idne);
-    ex_err("nepnenm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3478,7 +3478,7 @@ void F2C(exgnnnm, EXGNNNM)(int *idne, void_int *startn, void_int *num_ent, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read node numbering map from file id %d",
              *idne);
-    ex_err("negnnnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3502,7 +3502,7 @@ void F2C(expnnnm, EXPNNNM)(int *idne, void_int *startn, void_int *num_ent, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write node numbering map to file id %d",
              *idne);
-    ex_err("nepnnnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3517,7 +3517,7 @@ void F2C(exgnmp, EXGNMP)(int *idne, void_int *node_mapi, void_int *node_mapb, vo
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read processor node map from file id %d",
              *idne);
-    ex_err("negnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3532,7 +3532,7 @@ void F2C(expnmp, EXPNMP)(int *idne, void_int *node_mapi, void_int *node_mapb, vo
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write processor node map to file id %d",
              *idne);
-    ex_err("nepnm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3546,7 +3546,7 @@ void F2C(exgemp, EXGEMP)(int *idne, void_int *elem_mapi, void_int *elem_mapb, in
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read processor element map from file id %d",
              *idne);
-    ex_err("negem", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3560,7 +3560,7 @@ void F2C(expemp, EXPEMP)(int *idne, void_int *elem_mapi, void_int *elem_mapb, in
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write processor element map to file id %d",
              *idne);
-    ex_err("nepem", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3575,7 +3575,7 @@ void F2C(exgcmp, EXGCMP)(int *idne, void_int *ncmap_ids, void_int *ncmap_node_cn
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read comm map parameters from file id %d",
              *idne);
-    ex_err("negcmp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3590,7 +3590,7 @@ void F2C(expcmp, EXPCMP)(int *idne, void_int *nmap_ids, void_int *nmap_node_cnts
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write comm map parameters to file id %d",
              *idne);
-    ex_err("nepcmp", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3606,7 +3606,7 @@ void F2C(expcmpc, EXPCMPC)(int *idne, void_int *nmap_ids, void_int *nmap_node_cn
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write comm map parameters to file id %d",
              *idne);
-    ex_err("nepcmpc", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3620,7 +3620,7 @@ void F2C(exgncm, EXGNCM)(int *idne, entity_id *map_id, void_int *node_ids, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to read nodal communications map from file id %d", *idne);
-    ex_err("negncm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3634,7 +3634,7 @@ void F2C(expncm, EXPNCM)(int *idne, entity_id *map_id, void_int *node_ids, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Error: failed to write nodal communications map to file id %d", *idne);
-    ex_err("nepncm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3648,7 +3648,7 @@ void F2C(exgecm, EXGECM)(int *idne, entity_id *map_id, void_int *elem_ids, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to read elemental comm map from file id %d",
              *idne);
-    ex_err("negecm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }
 
@@ -3662,6 +3662,6 @@ void F2C(expecm, EXPECM)(int *idne, entity_id *map_id, void_int *elem_ids, void_
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to write elemental comm map to file id %d",
              *idne);
-    ex_err("nepecm", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
   }
 }

@@ -64,7 +64,7 @@ public:
   virtual void observeSolution(const Epetra_Vector& soln) = 0;
 
   //! LOCA calls this version, which will discard param info in this default implementation
-  virtual void observeSolution(const Epetra_Vector& soln, double time_or_param_val)
+  virtual void observeSolution(const Epetra_Vector& soln, double /* time_or_param_val */)
   { observeSolution(soln); };
 
 private:

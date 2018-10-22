@@ -174,8 +174,8 @@ void testTwoEntitiesTwoBuckets(stk::mesh::BulkData &bulkData, stk::mesh::FieldDa
     stk::mesh::EntityId nodeId1 = 1;
     stk::mesh::EntityId nodeId2 = 2;
 
-    stk::mesh::Entity node1 = bulkData.declare_node(nodeId1, {&meshMetaData.universal_part()});
-    stk::mesh::Entity node2 = bulkData.declare_node(nodeId2, {&part1});
+    stk::mesh::Entity node1 = bulkData.declare_node(nodeId1, stk::mesh::ConstPartVector{&meshMetaData.universal_part()});
+    stk::mesh::Entity node2 = bulkData.declare_node(nodeId2, stk::mesh::ConstPartVector{&part1});
 
     bulkData.modification_end();
 
@@ -374,11 +374,11 @@ void initialize2Parts2Fields(stk::mesh::MetaData &meshMetaData)
 
     stk::mesh::Field<double> &field1 = meshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
     double initial_value1 = 13.13;
-    stk::mesh::put_field( field1, part1, &initial_value1);
+    stk::mesh::put_field_on_mesh( field1, part1, &initial_value1);
 
     stk::mesh::Field<double> &field2 = meshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field2");
     double initial_value2 = -3.2323;
-    stk::mesh::put_field( field2, part2, &initial_value2);
+    stk::mesh::put_field_on_mesh( field2, part2, &initial_value2);
 
     meshMetaData.commit();
 }
@@ -449,15 +449,15 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
         stk::mesh::Part &part1 = *part1_ptr;
         stk::mesh::Part &part2 = *part2_ptr;
 
-        bulkData.declare_node(part1Nodes[0], {&part1});
-        bulkData.declare_node(part1Nodes[1], {&part1});
-        bulkData.declare_node(part1Nodes[2], {&part1});
-        bulkData.declare_node(part1Nodes[3], {&part1});
+        bulkData.declare_node(part1Nodes[0], stk::mesh::ConstPartVector{&part1});
+        bulkData.declare_node(part1Nodes[1], stk::mesh::ConstPartVector{&part1});
+        bulkData.declare_node(part1Nodes[2], stk::mesh::ConstPartVector{&part1});
+        bulkData.declare_node(part1Nodes[3], stk::mesh::ConstPartVector{&part1});
 
-        bulkData.declare_node(part2Nodes[0], {&part2});
-        bulkData.declare_node(part2Nodes[1], {&part2});
-        bulkData.declare_node(part2Nodes[2], {&part2});
-        bulkData.declare_node(part2Nodes[3], {&part2});
+        bulkData.declare_node(part2Nodes[0], stk::mesh::ConstPartVector{&part2});
+        bulkData.declare_node(part2Nodes[1], stk::mesh::ConstPartVector{&part2});
+        bulkData.declare_node(part2Nodes[2], stk::mesh::ConstPartVector{&part2});
+        bulkData.declare_node(part2Nodes[3], stk::mesh::ConstPartVector{&part2});
 
         bulkData.modification_end();
 

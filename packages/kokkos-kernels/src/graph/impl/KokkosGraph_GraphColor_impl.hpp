@@ -2589,12 +2589,12 @@ public:
           << " i:" << i
           << " num_work_edges:" << num_work_edges
           << " num_conflict_reduction:" << num_conflict_reduction
-          << " kok_src:" << kok_src.dimension_0()
-          << " kok_dst:" << kok_dst.dimension_0()
-          << " kok_colors:" << kok_colors.dimension_0()
-          << " color_set:" << color_set.dimension_0()
-          << " edge_conflict_indices:" << edge_conflict_indices.dimension_0()
-          << " edge_conflict_marker:" << edge_conflict_marker.dimension_0()
+          << " kok_src:" << kok_src.extent(0)
+          << " kok_dst:" << kok_dst.extent(0)
+          << " kok_colors:" << kok_colors.extent(0)
+          << " color_set:" << color_set.extent(0)
+          << " edge_conflict_indices:" << edge_conflict_indices.extent(0)
+          << " edge_conflict_marker:" << edge_conflict_marker.extent(0)
           << std::endl;
       */
 

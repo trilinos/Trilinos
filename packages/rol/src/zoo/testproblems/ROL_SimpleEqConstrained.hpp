@@ -94,7 +94,7 @@ namespace ZOO {
      ROL::Ptr<const vector> xp = getVector<XPrim>(x); 
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective value): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective value): "
                                                                    "Primal vector x must be of length 5.");
 
       Real x1 = (*xp)[0];
@@ -115,11 +115,11 @@ namespace ZOO {
       ROL::Ptr<vector> gp = getVector<XDual>(g); 
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective gradient): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective gradient): "
                                                                    " Primal vector x must be of length 5."); 
 
       n = gp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective gradient): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective gradient): "
                                                                    "Gradient vector g must be of length 5."); 
 
       Real x1 = (*xp)[0];
@@ -145,15 +145,15 @@ namespace ZOO {
       ROL::Ptr<vector> hvp = getVector<XDual>(hv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
                                                                    "Primal vector x must be of length 5."); 
 
       n = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
                                                                    "Input vector v must be of length 5."); 
 
       n = hvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
                                                                    "Output vector hv must be of length 5."); 
 
       Real x1 = (*xp)[0];
@@ -240,11 +240,11 @@ namespace ZOO {
       ROL::Ptr<vector> cp = getVector<CPrim>(c);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint value): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint value): "
                                                                    "Primal vector x must be of length 5.");
 
       uint m = cp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (m != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint value): "
+      ROL_TEST_FOR_EXCEPTION( (m != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint value): "
                                                                    "Constraint vector c must be of length 3.");
 
       Real x1 = (*xp)[0];
@@ -266,14 +266,14 @@ namespace ZOO {
       ROL::Ptr<vector> jvp = getVector<CPrim>(jv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
                                                                    "Primal vector x must be of length 5.");
 
       uint d = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
                                                                    "Input vector v must be of length 5.");
       d = jvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
                                                                    "Output vector jv must be of length 3.");
       
       Real x1 = (*xp)[0];
@@ -302,15 +302,15 @@ namespace ZOO {
       ROL::Ptr<vector> ajvp = getVector<XDual>(ajv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
                                                                    "Primal vector x must be of length 5.");
 
       uint d = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
                                                                    "Input vector v must be of length 3.");
 
       d = ajvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
                                                                    "Output vector ajv must be of length 5.");
       
       Real x1 = (*xp)[0];
@@ -339,18 +339,18 @@ namespace ZOO {
       ROL::Ptr<vector> ahuvp = getVector<XDual>(ahuv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
                                                                    "Primal vector x must be of length 5.");
 
       n = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
                                                                    "Direction vector v must be of length 5.");
 
       n = ahuvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
                                                                    "Output vector ahuv must be of length 5.");
       uint d = up->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 3), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
                                                                    "Dual constraint vector u must be of length 3.");
       
       Real x1 = (*xp)[0];
@@ -459,7 +459,7 @@ namespace ZOO {
       return makePtr<XPrim>(x0p);
     }
 
-    Ptr<Vector<Real>> getSolution(void) const { 
+    Ptr<Vector<Real>> getSolution(const int i = 0) const { 
       uint n = 5;
       // Get solution.
       Ptr<vector> solp = makePtr<vector>(n,0);

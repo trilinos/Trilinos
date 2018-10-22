@@ -62,40 +62,16 @@ namespace Details {
   /// \brief Create and return a Kokkos Node instance.
   /// \tparam NodeType The Kokkos Node type.
   ///
-  /// \warning This function is <i>not</i> safe to be called by
-  ///   multiple threads simultaneously.  The first call to this
-  ///   function must be serialized.  Also, RCP is not currently
-  ///   thread safe.
-  ///
-  /// \param params [in/out] On input: Any parameters that the Kokkos
-  ///   Node accepts.  On output, the list may be modified to include
-  ///   missing parameters and their default values.  If params is
-  ///   null, default parameters will be used.
-  ///
-  /// Every Kokkos Node's constructor takes a Teuchos::ParameterList.
-  /// We presume that for every Kokkos Node, if that list of
-  /// parameters is empty, then the Node will use default parameters.
-  /// This is true for all the Node types implemented in Kokkos.
+  /// \warning This function is DEPRECATED.  DO NOT CALL IT.
+  ///   It may return Teuchos::null and/or have no effect.
   template<class NodeType>
-  Teuchos::RCP<NodeType>
-  getNode (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-#ifdef KOKKOS_ENABLE_CUDA
-  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode> getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_CUDA
-
-#ifdef KOKKOS_ENABLE_OPENMP
-  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode> getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_OPENMP
-
-#ifdef KOKKOS_ENABLE_SERIAL
-  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosSerialWrapperNode> getNode< ::Kokkos::Compat::KokkosSerialWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_SERIAL
-
-#ifdef KOKKOS_ENABLE_PTHREAD
-  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode> getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
-#endif // KOKKOS_ENABLE_PTHREAD
-
+  Teuchos::RCP<NodeType> TPETRA_DEPRECATED 
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& /* params */ = Teuchos::null)
+  {
+    // Node instances don't do anything any more, but for backward
+    // compatibility, sometimes it helps for them to be nonnull.
+    return Teuchos::rcp (new NodeType);
+  }
 } // namespace Details
 
   /// \brief Specify Tpetra's default Node type.
@@ -120,8 +96,11 @@ namespace Details {
 #    error "No default Kokkos Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
-    //! \brief Return a pointer to the default node.
-    static Teuchos::RCP<DefaultNodeType> getDefaultNode();
+    /// \brief Return a pointer to a default Node instance.
+    ///
+    /// \warning This method is DEPRECATED and will be removed soon.
+    ///   Node instances don't do anything any more.
+    static Teuchos::RCP<DefaultNodeType> TPETRA_DEPRECATED getDefaultNode();
   };
 
 } // namespace KokkosClassic

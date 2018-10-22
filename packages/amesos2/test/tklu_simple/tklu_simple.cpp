@@ -50,7 +50,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   typedef int Ordinal;
   using Tpetra::global_size_t;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   size_t myRank = comm->getRank();
   size_t numProc = comm->getSize();

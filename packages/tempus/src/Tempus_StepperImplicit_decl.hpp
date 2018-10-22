@@ -45,15 +45,24 @@ public:
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
       { return solver_; }
 
+    virtual std::string getStepperType() const
+     { return stepperPL_->get<std::string>("Stepper Type"); }
+
     /// Solve problem using x in-place.
     const Thyra::SolveStatus<Scalar> solveImplicitODE(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x);
+    
+    /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
+    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+       {initial_guess_ = initial_guess;}
 
     /// Set parameter so that the initial guess is set to zero (=True) or use last timestep (=False).
     virtual void setZeroInitialGuess(bool zIG)
       { stepperPL_->set<bool>("Zero Initial Guess", zIG); }
     virtual bool getZeroInitialGuess() const
       { return stepperPL_->get<bool>("Zero Initial Guess", false); }
+    virtual bool getEmbedded() const
+      { return stepperPL_->get<bool>("Use Embedded", false); }
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
       {return std::numeric_limits<Scalar>::max();}
@@ -64,6 +73,7 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList>                stepperPL_;
   Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >   solver_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 } // namespace Tempus

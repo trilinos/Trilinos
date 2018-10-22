@@ -149,7 +149,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
       // Generic array for the output values; needs to be properly resized depending on the operator type
       const auto numFields = quadBasis.getCardinality();
-      const auto numPoints = quadNodes.dimension(0);
+      const auto numPoints = quadNodes.extent(0);
       //const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
       // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
@@ -198,21 +198,21 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
       }
       {
         // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0));
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality() + 1, quadNodes.extent(0));
         INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
       }
       {
         // exception #14: incorrect 1st dimension of output array (must equal number of points)
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.extent(0) + 1);
         INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
       }
       {
         // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 3);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.extent(0), 3);
         INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
       }
       {
-        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 40);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.extent(0), 40);
 
         // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
         INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D2) );
@@ -248,7 +248,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
     const auto allTags = quadBasis.getAllDofTags();
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const ordinal_type dofTagSize = allTags.dimension(0);
+    const ordinal_type dofTagSize = allTags.extent(0);
     for (ordinal_type i=0;i<dofTagSize;++i) {
       const auto bfOrd = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -596,14 +596,14 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
       // auto quadNodesHost2 = Kokkos::create_mirror_view(quadNodes);
       // Kokkos::deep_copy(quadNodesHost2, quadNodes);
 
-      // for(int i=0; i< quadNodesHost.dimension(0); ++i)
+      // for(int i=0; i< quadNodesHost.extent(0); ++i)
       // std::cout <<  quadNodesHost(i,0) << " "<<  quadNodesHost(i,1) <<std::endl;
-      // for(int i=0; i< quadNodesHost2.dimension(0); ++i)
+      // for(int i=0; i< quadNodesHost2.extent(0); ++i)
       // std::cout <<  quadNodesHost2(i,0) << " "<<  quadNodesHost2(i,1) <<std::endl;
 
       // Dimensions for the output arrays:
       const ordinal_type numFields = quadBasis.getCardinality();
-      const ordinal_type numPoints = quadNodes.dimension(0);
+      const ordinal_type numPoints = quadNodes.extent(0);
       const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
       const ordinal_type D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
       const ordinal_type D3Cardin  = getDkCardinality(OPERATOR_D3, spaceDim);

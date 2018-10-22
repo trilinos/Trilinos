@@ -128,8 +128,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   int gblSuccess = 1;
   std::ostringstream errStrm; // for error collection
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -263,7 +262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
   typedef Scalar scalar_type;
   typedef LO local_ordinal_type;
   typedef GO global_ordinal_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+  typedef Tpetra::Map<>::node_type node_type;
 
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
@@ -288,7 +287,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
 
   // This test assumes indexBase == 0.
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // Short circuit --- this test should only be run in parallel.
   if (comm->getSize() == 1) {
@@ -311,15 +310,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
 
   Array<scalar_type> val(3);
   Array<global_ordinal_type> ind(3);
-  scalar_type zero=0;
-  scalar_type one=1;
-  val[0] = as<scalar_type>(-1);
-  val[1] = as<scalar_type>(2);
-  val[2] = as<scalar_type>(-1);
+  scalar_type zero=0.0;
+  scalar_type one=1.0;
+  val[0] = static_cast<scalar_type>(-1.0);
+  val[1] = static_cast<scalar_type>(2.0);
+  val[2] = static_cast<scalar_type>(-1.0);
 
   GO gidOffset;
-  int nlr = Teuchos::as<int>(numLocalRows);
-  Teuchos::scan(*comm,Teuchos::REDUCE_SUM,1,&nlr,&gidOffset);
+  GO nlr = static_cast<GO>(numLocalRows);
+  Teuchos::scan (*comm, Teuchos::REDUCE_SUM, nlr, Teuchos::outArg (gidOffset));
   gidOffset -= numLocalRows;
 
   if (myRank == 0) {
@@ -331,7 +330,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
     A->insertGlobalValues(0, ind.view(1, 2), val.view(1, 2));
 
     val[0] = val[2] = -one;
-    for (LO i=1; i<Teuchos::as<int>(numLocalRows); ++i) {
+    for (LO i=1; i<static_cast<int>(numLocalRows); ++i) {
       ind[0]=gidOffset+i-1;
       ind[1]=gidOffset+i;
       ind[2]=gidOffset+i+1;
@@ -343,7 +342,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
   } else if (myRank == comm->getSize()-1) {
 
     val[0] = val[2] = -one;
-    for (LO i=0; i<Teuchos::as<int>(numLocalRows)-1; ++i) {
+    for (LO i=0; i<static_cast<int>(numLocalRows)-1; ++i) {
       ind[0]=gidOffset+i-1;
       ind[1]=gidOffset+i;
       ind[2]=gidOffset+i+1;
@@ -361,7 +360,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
   else {
 
     val[0] = val[2] = -one;
-    for (LO i=0; i<Teuchos::as<int>(numLocalRows); ++i) {
+    for (LO i=0; i<static_cast<int>(numLocalRows); ++i) {
       ind[0]=gidOffset+i-1;
       ind[1]=gidOffset+i;
       ind[2]=gidOffset+i+1;
@@ -404,7 +403,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Sca
   localDiag->get1dCopy(ldGids());
   auto ovrmGids = ovRowMap->getMyGlobalIndices();
 
-  TEST_EQUALITY(Teuchos::as<GO>(ldGids.size()),Teuchos::as<GO>(ovrmGids.size()));
+  TEST_EQUALITY(static_cast<GO>(ldGids.size()),static_cast<GO>(ovrmGids.size()));
   for (size_t i=0; i<ovrmGids.size(); ++i)
     TEST_EQUALITY(ldGids[i],ovrmGids[i]);
 }

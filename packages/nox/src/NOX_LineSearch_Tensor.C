@@ -87,6 +87,8 @@
 #include "NOX_GlobalData.H"
 #include "NOX_Direction_Tensor.H"
 #include "NOX_Solver_TensorBasedTest.H"
+#include "NOX_LineSearch_Utils_Counters.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::LineSearch::Tensor::
 Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
@@ -94,6 +96,7 @@ Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr(gd),
   paramsPtr(NULL),
   print(gd->getUtils()),
+  counter(&gd->getNonConstSolverStatistics()->lineSearch),
   slopeObj(gd)
 {
   //  reset(paramsPtr->sublist("Line Search"));
@@ -112,6 +115,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   globalDataPtr = gd;
   utils = *(gd->getUtils());
   print.reset(gd->getUtils());
+  counter = &gd->getNonConstSolverStatistics()->lineSearch;
   paramsPtr = &lsParams;
   slopeObj.reset(gd);
 
@@ -255,7 +259,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
     convCriteria = ArmijoGoldstein;     // bwb - the others aren't implemented
 #endif
 
-  counter.reset();
+  counter->reset();
 
   return true;
 }
@@ -267,7 +271,7 @@ bool NOX::LineSearch::Tensor::compute(NOX::Abstract::Group& newGrp,
                       const NOX::Solver::Generic& s)
 {
   bool ok;
-  counter.incrementNumLineSearches();
+  counter->incrementNumLineSearches();
   isNewtonDirection = false;
 
   const NOX::Direction::Tensor& direction =
@@ -289,7 +293,7 @@ bool NOX::LineSearch::Tensor::compute(NOX::Abstract::Group& newGrp,
 #endif
 
 
-  if (counter.getNumLineSearches() == 1  ||  lsType == Newton)
+  if (counter->getNumLineSearches() == 1  ||  lsType == Newton)
     isNewtonDirection = true;
 
   // Do line search and compute new soln.
@@ -385,7 +389,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
 
   // Update counter and allocate memory for dir2 if a linesearch is needed
   if (!isAccepted) {
-    counter.incrementNumNonTrivialLineSearches();
+    counter->incrementNumNonTrivialLineSearches();
     dir2 = dir.clone(ShapeCopy);
     *dir2 = dir;
   }
@@ -425,7 +429,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
     }
 
     // Update the number of linesearch iterations
-    counter.incrementNumIterations();
+    counter->incrementNumIterations();
     lsIterations ++;
 
     // Compute new trial point and its function value
@@ -451,7 +455,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   }
 
   if (isFailed) {
-    counter.incrementNumFailedLineSearches();
+    counter->incrementNumFailedLineSearches();
     step = recoveryStep;
 
     if (step != 0.0) {
@@ -465,7 +469,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   }
 
   print.printStep(lsIterations, step, oldValue, newValue, message);
-  counter.setValues(*paramsPtr);
+  counter->setValues(*paramsPtr);
 
   dir2 = Teuchos::null;
 

@@ -42,7 +42,8 @@
 */
 
 #include "Tpetra_Map.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -56,8 +57,8 @@
 // has a copy.
 namespace {
 template <typename LO, typename GO>
-class GreedyTieBreak : 
-      public Tpetra::Details::TieBreak<LO,GO> 
+class GreedyTieBreak :
+      public Tpetra::Details::TieBreak<LO,GO>
 {
 public:
   GreedyTieBreak() { }
@@ -91,7 +92,7 @@ public:
 // Given input IDs vecP0, vecP1, vecP2, vecP3, build a (probably overlapping)
 // map with these IDs on the respective processors P0-P3.
 // Then create one-to-one maps from the overlapping map, with and without
-// use of the tie-break function.  
+// use of the tie-break function.
 // Compare the number of unique IDs in the three maps; the test passes if
 // the number of unique IDs matches.
 
@@ -131,9 +132,9 @@ int runTest(
       overlapMap = Teuchos::rcp(new map_t(dummy, arrP3(), 0, comm));
     }
 
-    std::cout << message 
-              << ": Before Tpetra::createOneToOne on " << "Proc " 
-              << overlapMap->getComm()->getRank() 
+    std::cout << message
+              << ": Before Tpetra::createOneToOne on " << "Proc "
+              << overlapMap->getComm()->getRank()
               << "; nGids = " << overlapMap->getNodeNumElements() << "\n";
 
     auto myidx_o =  overlapMap->getMyGlobalIndices();
@@ -147,9 +148,9 @@ int runTest(
     Teuchos::RCP<const map_t> nonOverlapMapTB =
              Tpetra::createOneToOne<LO,GO,NO>(overlapMap, greedy_tie_break);
 
-    std::cout << message 
-              << ": After Tpetra::createOneToOne with TieBreak on Proc " 
-              << overlapMap->getComm()->getRank() 
+    std::cout << message
+              << ": After Tpetra::createOneToOne with TieBreak on Proc "
+              << overlapMap->getComm()->getRank()
               << "; nGids = " << nonOverlapMapTB->getNodeNumElements() << "\n";
 
     auto myidx_notb =  nonOverlapMapTB->getMyGlobalIndices();
@@ -163,9 +164,9 @@ int runTest(
     Teuchos::RCP<const map_t> nonOverlapMap =
              Tpetra::createOneToOne<LO,GO,NO>(overlapMap);
 
-    std::cout << message 
-              << ": After Tpetra::createOneToOne without TieBreak on Proc " 
-              << overlapMap->getComm()->getRank() 
+    std::cout << message
+              << ": After Tpetra::createOneToOne without TieBreak on Proc "
+              << overlapMap->getComm()->getRank()
               << "; nGids = " << nonOverlapMap->getNodeNumElements() << "\n";
 
     auto myidx_no =  nonOverlapMap->getMyGlobalIndices();
@@ -179,25 +180,25 @@ int runTest(
     std::unordered_map<GO,int> uniqueGids;
 
     for (auto i = arrP0.begin(); i != arrP0.end(); i++) {
-      if (uniqueGids.find(*i) != uniqueGids.end()) 
+      if (uniqueGids.find(*i) != uniqueGids.end())
         uniqueGids[*i]++;
       else
         uniqueGids[*i] = 1;
     }
     for (auto i = arrP1.begin(); i != arrP1.end(); i++) {
-      if (uniqueGids.find(*i) != uniqueGids.end()) 
+      if (uniqueGids.find(*i) != uniqueGids.end())
         uniqueGids[*i]++;
       else
         uniqueGids[*i] = 1;
     }
     for (auto i = arrP2.begin(); i != arrP2.end(); i++) {
-      if (uniqueGids.find(*i) != uniqueGids.end()) 
+      if (uniqueGids.find(*i) != uniqueGids.end())
         uniqueGids[*i]++;
       else
         uniqueGids[*i] = 1;
     }
     for (auto i = arrP3.begin(); i != arrP3.end(); i++) {
-      if (uniqueGids.find(*i) != uniqueGids.end()) 
+      if (uniqueGids.find(*i) != uniqueGids.end())
         uniqueGids[*i]++;
       else
         uniqueGids[*i] = 1;
@@ -209,13 +210,13 @@ int runTest(
 
     if (pid == 0) {
       std::cout << "\n\n" << message
-                << ": Before Tpetra::createOneToOne, there are " 
-                << uniqueGids.size() << " ids, with " 
+                << ": Before Tpetra::createOneToOne, there are "
+                << uniqueGids.size() << " ids, with "
                 << ncopies << " copies.\n";
-      std::cout << message 
-                << ": After Tpetra::createOneToOne with TieBreak, there are " 
+      std::cout << message
+                << ": After Tpetra::createOneToOne with TieBreak, there are "
                 << nonOverlapMapTB->getGlobalNumElements() << " ids.\n";
-      std::cout << message 
+      std::cout << message
                 << ": After Tpetra::createOneToOne without TieBreak, there are "
                 << nonOverlapMap->getGlobalNumElements() << " ids.\n";
       std::cout << "\n\n";
@@ -243,11 +244,11 @@ int main(int narg, char *arg[]) {
   typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Map<>::node_type NO;
 
-  Tpetra::initialize(&narg, &arg);
-  Teuchos::RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
+  Tpetra::ScopeGuard tpetraScope(&narg, &arg);
+  auto comm = Tpetra::getDefaultComm();
 
   if (comm->getSize() != 4) {
-    if (comm->getRank() == 0) 
+    if (comm->getRank() == 0)
       std::cout << "TEST FAILED: This test is written for four processes only. "
                 << "You are running on " << comm->getSize() << " processes."
                 << std::endl;
@@ -256,7 +257,7 @@ int main(int narg, char *arg[]) {
 
   int errorFlag  = 0;
 
-  // This little trick lets us print to std::cout only 
+  // This little trick lets us print to std::cout only
   // if a (dummy) command-line argument is provided.
   int iprint     = narg - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -264,24 +265,24 @@ int main(int narg, char *arg[]) {
 
   // Sparse test that uses hash tables in directory
   {
-    std::vector<GO> vecP0 = 
+    std::vector<GO> vecP0 =
       { 0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22, 27, 31, 36, 37, 38, 39, 40,
         41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58,
         59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
         77, 78, 79, 80, 81, 82};
-    std::vector<GO> vecP1 = 
+    std::vector<GO> vecP1 =
       { 1, 2, 4, 5, 10, 11, 13, 14, 19, 20, 22, 23, 28, 32, 37, 46, 55, 56,
         58, 67, 76, 77, 79, 996, 997, 998, 999, 1000, 1001, 1002, 1004, 1005,
         1006, 1007, 1009, 1010, 1013, 1015, 1016, 1017, 1018, 1019, 1020, 1021,
         1022, 1023, 1024, 1025, 1026, 1027, 1028, 1030, 1031, 1034, 1036, 1037,
         1038, 1039, 1040, 1041, 1042};
-    std::vector<GO> vecP2 = 
+    std::vector<GO> vecP2 =
       { 3, 4, 6, 7, 12, 13, 15, 16, 21, 22, 24, 25, 29, 33, 42, 54, 58, 59,
         60, 75, 79, 80, 81, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964,
         1967, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980,
         1981, 1982, 1983, 1984, 1985, 1988, 1991, 1992, 1993, 1994, 1995, 1996,
         1997, 1998, 1999, 2000, 2001, 2002};
-    std::vector<GO> vecP3 = 
+    std::vector<GO> vecP3 =
       { 4, 5, 7, 8, 13, 14, 16, 17, 22, 23, 25, 26, 30, 34, 58, 79, 1002,
         1018, 1019, 1020, 1039, 1040, 1041, 1957, 1975, 1976, 1978, 1996, 1997,
         1999, 2917, 2918, 2919, 2920, 2921, 2922, 2924, 2927, 2930, 2933, 2935,
@@ -299,27 +300,27 @@ int main(int narg, char *arg[]) {
 
   // Dense test that does not use hash tables in directory.
   // Keep same number of IDs and structure of overlap, but
-  // narrow the range of global ID values so that processors more than 
+  // narrow the range of global ID values so that processors more than
   // 0.1 * (max ID - min ID).
   {
-    std::vector<GO> vecP0 = 
+    std::vector<GO> vecP0 =
       { 0, 1, 3, 4, 9, 10, 12, 13, 18, 19, 21, 22, 27, 31, 36, 37, 38, 39, 40,
         41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58,
         59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
         77, 78, 79, 80, 81, 82};
-    std::vector<GO> vecP1 = 
+    std::vector<GO> vecP1 =
       { 1, 2, 4, 5, 10, 11, 13, 14, 19, 20, 22, 23, 28, 32, 37, 46, 55, 56,
         58, 67, 76, 77, 79, 396, 397, 398, 399, 400, 401, 402, 404, 405,
         406, 407, 409, 410, 413, 415, 416, 417, 418, 419, 420, 421,
         422, 423, 424, 425, 426, 427, 428, 430, 431, 434, 436, 437,
         438, 439, 440, 441, 442};
-    std::vector<GO> vecP2 = 
+    std::vector<GO> vecP2 =
       { 3, 4, 6, 7, 12, 13, 15, 16, 21, 22, 24, 25, 29, 33, 42, 54, 58, 59,
         60, 75, 79, 80, 81, 557, 558, 559, 560, 561, 562, 563, 564,
         567, 570, 571, 572, 573, 574, 575, 576, 577, 578, 579, 580,
         581, 582, 583, 584, 585, 588, 591, 592, 593, 594, 595, 596,
         597, 598, 599, 600, 601, 602};
-    std::vector<GO> vecP3 = 
+    std::vector<GO> vecP3 =
       { 4, 5, 7, 8, 13, 14, 16, 17, 22, 23, 25, 26, 30, 34, 58, 79, 402,
         418, 419, 420, 439, 440, 441, 557, 575, 576, 578, 596, 597,
         599, 617, 618, 619, 620, 621, 622, 624, 627, 630, 633, 635,
@@ -335,8 +336,6 @@ int main(int narg, char *arg[]) {
                                    vecP0, vecP1, empty, vecP3);
   }
 
-  Tpetra::finalize();
-
   if (errorFlag != 0) {
     std::cout << "End Result: TEST FAILED" << std::endl;
     return EXIT_FAILURE;
@@ -345,5 +344,4 @@ int main(int narg, char *arg[]) {
     std::cout << "End Result: TEST PASSED" << std::endl;
     return EXIT_SUCCESS;
   }
-
 }

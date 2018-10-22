@@ -130,12 +130,10 @@ int main(int argc, char* argv[])
     myPL.set<long>("my long", 1);
     myPL.set<unsigned long int>("my unsigned long int", 1);
     myPL.set<unsigned long>("my unsigned long", 1);
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     myPL.set<long long int>("my long long int", 1);
     myPL.set<long long>("my long long", 1);
     myPL.set<unsigned long long int>("my unsigned long long int", 1);
     myPL.set<unsigned long long>("my unsigned long long", 1);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
     myPL.set<float>("my float", 4.3);
     myPL.set<double>("my double", 4.3);
     myPL.set("my string", "hello");
@@ -154,12 +152,10 @@ int main(int argc, char* argv[])
         tuple<long int>(1, 2));
     myPL.set<Array<unsigned long int> >("my array unsigned long int",
         tuple<unsigned long int>(1, 2));
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     myPL.set<Array<long long int> >("my array long long int",
         tuple<long long int>(1, 2));
     myPL.set<Array<unsigned long long int> >("my array unsigned long long int",
         tuple<unsigned long long>(1, 2));
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
     myPL.set<Array<float> >("my array float", tuple<float>(1,1, 2.2));
     myPL.set<Array<double> >("my array double", tuple<double>(1,1, 2.2));
     myPL.set<Array<std::string> >("my array string",
@@ -219,7 +215,6 @@ int main(int argc, char* argv[])
     std::cout << "myUnsignedLongInt = " << myUnsignedLongInt << "\n";
     const unsigned long myUnsignedLong = readPL->get<unsigned long>("my unsigned long");
     std::cout << "myUnsignedLong = " << myUnsignedLong << "\n";
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
     const long long int myLongLongInt = readPL->get<long long int>("my long long int");
     std::cout << "myLongLongInt = " << myLongLongInt << "\n";
     const long long int myLongLong = readPL->get<long long>("my long long");
@@ -228,7 +223,6 @@ int main(int argc, char* argv[])
     std::cout << "myUnsignedLongLongInt = " << myUnsignedLongLongInt << "\n";
     const unsigned long long myUnsignedLongLong = readPL->get<unsigned long long>("my unsigned long long");
     std::cout << "myUnsignedLongLong = " << myUnsignedLongLong << "\n";
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
     const float myFloat = readPL->get<float>("my float");
     std::cout << "myFloat = " << myFloat << "\n";
     const double myDouble = readPL->get<double>("my double");

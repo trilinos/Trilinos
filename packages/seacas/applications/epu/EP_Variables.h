@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -57,7 +57,7 @@ namespace Excn {
     {
       int ret_val = 0;
       switch (in_out) {
-      case IN: ret_val  = index_.size() - (addProcessorId ? 1 : 0); break;
+      case IN: ret_val = index_.size() - (addProcessorId ? 1 : 0); break;
       case OUT: ret_val = outputCount; break;
       }
       return ret_val;

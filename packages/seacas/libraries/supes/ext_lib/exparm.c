@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,36 +37,36 @@
  */
 
 /*
-*     DESCRIPTION:
-*     This routine defines various operating environment parameters. A
-*     character ID is supplied for both the processor hardware type and
-*     the operating system. The job processing mode, batch or
-*     interactive, is identified; for this purpose an interactive job
-*     is defined as one where the standard input device is attended by
-*     the user who can respond to unforseen events. The number of
-*     character storage units and the number of numeric storage units
-*     in the smallest block of storage which contains an integral
-*     number of each are defined here. This routine further defines
-*     whether the record length of a direct access unformatted file is
-*     counted in character or numeric storage units.
-*
-*     This skeleton version returns blank strings for hardware and
-*     software IDs, zero to indicate batch mode, and unity for all
-*     other values.
-*
-*     FORMAL PARAMETERS:
-*     HARD      CHARACTER       System Hardware ID
-*     SOFT      CHARACTER       System Software ID
-*     MODE      INTEGER         Job Mode ( 0=batch , 1=interactive )
-*     KCSU      INTEGER         Number of Character Storage Units
-*     KNSU      INTEGER         Number of Numeric Storage Units
-*     IDAU      INTEGER         Unformatted Direct Access Units:
-*                                  0 = Character Storage Units
-*                                  1 = Numeric Storage Units
-*
-************************************************************************
-*
-*/
+ *     DESCRIPTION:
+ *     This routine defines various operating environment parameters. A
+ *     character ID is supplied for both the processor hardware type and
+ *     the operating system. The job processing mode, batch or
+ *     interactive, is identified; for this purpose an interactive job
+ *     is defined as one where the standard input device is attended by
+ *     the user who can respond to unforseen events. The number of
+ *     character storage units and the number of numeric storage units
+ *     in the smallest block of storage which contains an integral
+ *     number of each are defined here. This routine further defines
+ *     whether the record length of a direct access unformatted file is
+ *     counted in character or numeric storage units.
+ *
+ *     This skeleton version returns blank strings for hardware and
+ *     software IDs, zero to indicate batch mode, and unity for all
+ *     other values.
+ *
+ *     FORMAL PARAMETERS:
+ *     HARD      CHARACTER       System Hardware ID
+ *     SOFT      CHARACTER       System Software ID
+ *     MODE      INTEGER         Job Mode ( 0=batch , 1=interactive )
+ *     KCSU      INTEGER         Number of Character Storage Units
+ *     KNSU      INTEGER         Number of Numeric Storage Units
+ *     IDAU      INTEGER         Unformatted Direct Access Units:
+ *                                  0 = Character Storage Units
+ *                                  1 = Numeric Storage Units
+ *
+ ************************************************************************
+ *
+ */
 
 #include "fortranc.h"
 #include <string.h>
@@ -305,7 +305,7 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
 #endif /* SYSV || SVR4 (Solaris 2.X) */
 #endif
 
-/********************************************************************/
+  /********************************************************************/
 
 #if defined(__NO_CYGWIN_OPTION__)
   SYSTEM_INFO   SysInfo;

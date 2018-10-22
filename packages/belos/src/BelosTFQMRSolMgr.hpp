@@ -69,17 +69,17 @@
 /*! \class Belos::TFQMRSolMgr
  *
  *  \brief The Belos::TFQMRSolMgr provides a powerful and fully-featured solver manager over the TFQMR linear solver.
- 
+
  \ingroup belos_solver_framework
- 
+
  \author Heidi Thornquist
 */
 
 namespace Belos {
-  
+
   //! @name TFQMRSolMgr Exceptions
   //@{
-  
+
   /** \brief TFQMRSolMgrLinearProblemFailure is thrown when the linear problem is
    * not setup (i.e. setProblem() was not called) when solve() is called.
    *
@@ -89,7 +89,7 @@ namespace Belos {
   class TFQMRSolMgrLinearProblemFailure : public BelosError {public:
     TFQMRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   /** \brief TFQMRSolMgrOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the initial basis vectors.
    *
@@ -99,21 +99,21 @@ namespace Belos {
   class TFQMRSolMgrOrthoFailure : public BelosError {public:
     TFQMRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
+
   template<class ScalarType, class MV, class OP>
   class TFQMRSolMgr : public SolverManager<ScalarType,MV,OP> {
-    
+
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
-    
+
     //! @name Constructors/Destructor
-    //@{ 
+    //@{
 
     /*! \brief Empty constructor for TFQMRSolMgr.
      * This constructor takes no arguments and sets the default values for the solver.
@@ -126,39 +126,44 @@ namespace Belos {
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the 
+     *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the
      *                            underlying solver is allowed to perform. Default: 1000
-     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms 
+     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
      *                               must reach to decide convergence. Default: 1e-8.
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Output Stream" - a reference-counted pointer to the output stream where all
      *                       solver output is sent.  Default: Teuchos::rcp(&std::cout,false)
-     *   - "Output Frequency" - an \c int specifying how often convergence information should be 
+     *   - "Output Frequency" - an \c int specifying how often convergence information should be
      *                          outputted.  Default: -1 (never)
      *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
      */
     TFQMRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		 const Teuchos::RCP<Teuchos::ParameterList> &pl );
-    
+                 const Teuchos::RCP<Teuchos::ParameterList> &pl );
+
     //! Destructor.
     virtual ~TFQMRSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new TFQMRSolMgr<ScalarType,MV,OP>);
+    }
     //@}
-    
+
     //! @name Accessor methods
     //@{ 
     
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
       return *problem_;
     }
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
     
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
     
     /*! \brief Return the timers for this object. 
      *
@@ -170,19 +175,19 @@ namespace Belos {
     }
 
     /// \brief Tolerance achieved by the last \c solve() invocation.
-    /// 
+    ///
     /// This is the maximum over all right-hand sides' achieved
     /// convergence tolerances, and is set whether or not the solve
     /// actually managed to achieve the desired convergence tolerance.
-    MagnitudeType achievedTol() const {
+    MagnitudeType achievedTol() const override {
       return achievedTol_;
     }
 
     //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
+    int getNumIters() const override {
       return numIters_;
     }
-    
+
     /// \brief Whether loss of accuracy was detected during the last \c solve() invocation.
     ///
     /// In solvers that can detect a loss of accuracy, this method
@@ -190,96 +195,91 @@ namespace Belos {
     /// solve() invocation.  However, our TFQMR implementation does
     /// not currently detect a loss of accuracy, so this method always
     /// returns false.
-    bool isLOADetected() const { return false; }
-    
+    bool isLOADetected() const override { return false; }
     //@}
-    
+
     //! @name Set methods
     //@{
     
     //! Set the linear problem that needs to be solved. 
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; }
     
     //! Set the parameters the solver manager should use to solve the linear problem. 
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
     
     //@}
-    
     //! @name Reset methods
     //@{
+
     /*! \brief Performs a reset of the solver manager specified by the \c ResetType.  This informs the
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) override { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
     //@}
-    
+
     //! @name Solver application methods
-    //@{ 
-    
-    /*! \brief This method performs possibly repeated calls to the underlying linear solver's 
-     *         iterate() routine until the problem has been solved (as decided by the solver manager) 
+    //@{
+
+    /*! \brief This method performs possibly repeated calls to the underlying linear solver's
+     *         iterate() routine until the problem has been solved (as decided by the solver manager)
      *         or the solver manager decides to quit.
      *
-     * This method calls TFQMRIter::iterate(), which will return either because a 
+     * This method calls TFQMRIter::iterate(), which will return either because a
      * specially constructed status test evaluates to ::Passed or an std::exception is thrown.
      *
      * A return from TFQMRIter::iterate() signifies one of the following scenarios:
-     *    - the maximum number of iterations has been exceeded. In this scenario, the current solutions 
+     *    - the maximum number of iterations has been exceeded. In this scenario, the current solutions
      *      to the linear system will be placed in the linear problem and return ::Unconverged.
-     *    - global convergence has been met. In this case, the current solutions to the linear system 
+     *    - global convergence has been met. In this case, the current solutions to the linear system
      *      will be placed in the linear problem and the solver manager will return ::Converged
      *
      * \returns ::ReturnType specifying:
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
      *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
      */
-    ReturnType solve();
-    
+    ReturnType solve() override;
+
     //@}
-    
     /** \name Overridden from Teuchos::Describable */
     //@{
-    
+
     /** \brief Method to return description of the TFQMR solver manager */
-    std::string description() const;
-    
+    std::string description() const override;
     //@}
-    
+
   private:
 
     // Method for checking current status test against defined linear problem.
     bool checkStatusTest();
-    
+
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
-    
+
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
     Teuchos::RCP<std::ostream> outputStream_;
-    
+
     // Status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
-    
+
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
-    
+
     // Default solver values.
-    static const MagnitudeType convtol_default_;
-    static const MagnitudeType impTolScale_default_;
-    static const int maxIters_default_;
-    static const bool expResTest_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const std::string impResScale_default_; 
-    static const std::string expResScale_default_; 
-    static const std::string label_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr bool expResTest_default_ = false;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
+    static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     // Current solver values.
     MagnitudeType convtol_, impTolScale_, achievedTol_;
@@ -288,7 +288,7 @@ namespace Belos {
     int blockSize_;
     bool expResTest_;
     std::string impResScale_, expResScale_;
-    
+
     // Timers.
     std::string label_;
     Teuchos::RCP<Teuchos::Time> timerSolve_;
@@ -298,47 +298,12 @@ namespace Belos {
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename TFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType TFQMRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename TFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType TFQMRSolMgr<ScalarType,MV,OP>::impTolScale_default_ = 10.0;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int TFQMRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string TFQMRSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string TFQMRSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
-
-template<class ScalarType, class MV, class OP>
-const std::string TFQMRSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> TFQMRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr() :
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
-  impTolScale_(impTolScale_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(DefaultSolverParameters::convTol),
+  impTolScale_(DefaultSolverParameters::impTolScale),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -357,13 +322,13 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr( 
-					     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-					     const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr(
+                                             const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                             const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
-  impTolScale_(impTolScale_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(DefaultSolverParameters::convTol),
+  impTolScale_(DefaultSolverParameters::impTolScale),
   achievedTol_(Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>::zero()),
   maxIters_(maxIters_default_),
   numIters_(0),
@@ -379,13 +344,13 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr(
   isSTSet_(false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
-  
+
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
   if ( !is_null(pl) ) {
-    setParameters( pl );  
+    setParameters( pl );
   }
 }
-  
+
 template<class ScalarType, class MV, class OP>
 void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
@@ -409,9 +374,9 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
 
   // Check for blocksize
   if (params->isParameter("Block Size")) {
-    blockSize_ = params->get("Block Size",1);    
+    blockSize_ = params->get("Block Size",1);
     TEUCHOS_TEST_FOR_EXCEPTION(blockSize_ != 1, std::invalid_argument,
-		       "Belos::TFQMRSolMgr: \"Block Size\" must be 1.");
+                       "Belos::TFQMRSolMgr: \"Block Size\" must be 1.");
 
     // Update parameter in our list.
     params_->set("Block Size", blockSize_);
@@ -484,20 +449,34 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
   // Create output manager if we need to.
   if (printer_ == Teuchos::null) {
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
-  }  
-  
+  }
+
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list.
     params_->set("Convergence Tolerance", convtol_);
     isSTSet_ = false;
   }
-  
+
   // Check for implicit residual scaling
   if (params->isParameter("Implicit Tolerance Scale Factor")) {
-    impTolScale_ = params->get("Implicit Tolerance Scale Factor",impTolScale_default_);
+    if (params->isType<MagnitudeType> ("Implicit Tolerance Scale Factor")) {
+      impTolScale_ = params->get ("Implicit Tolerance Scale Factor",
+                                  static_cast<MagnitudeType> (DefaultSolverParameters::impTolScale));
+
+    }
+    else {
+      impTolScale_ = params->get ("Implicit Tolerance Scale Factor",
+                                  DefaultSolverParameters::impTolScale);
+    }
 
     // Update parameter in our list.
     params_->set("Implicit Tolerance Scale Factor", impTolScale_);
@@ -517,9 +496,9 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
 
       // Make sure the convergence test gets constructed again.
       isSTSet_ = false;
-    }      
+    }
   }
-  
+
   if (params->isParameter("Explicit Residual Scaling")) {
     std::string tempExpResScale = Teuchos::getParameter<std::string>( *params, "Explicit Residual Scaling" );
 
@@ -532,7 +511,7 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
 
       // Make sure the convergence test gets constructed again.
       isSTSet_ = false;
-    }      
+    }
   }
 
   if (params->isParameter("Explicit Residual Test")) {
@@ -569,7 +548,7 @@ bool TFQMRSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   if (expResTest_) {
-   
+
     // Implicit residual test, using the native residual to determine if convergence was achieved.
     Teuchos::RCP<StatusTestGenResNorm_t> tmpImpConvTest =
       Teuchos::rcp( new StatusTestGenResNorm_t( impTolScale_*convtol_ ) );
@@ -609,78 +588,81 @@ bool TFQMRSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   std::string solverDesc = " TFQMR ";
   outputTest_->setSolverDesc( solverDesc );
 
-  
+
   // The status test is now set.
   isSTSet_ = true;
 
   return false;
 }
 
-    
+
 template<class ScalarType, class MV, class OP>
-Teuchos::RCP<const Teuchos::ParameterList> 
+Teuchos::RCP<const Teuchos::ParameterList>
 TFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
-  
+
   // Set all the valid parameters and their default values.
   if(is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", convtol_default_,
+
+    // The static_cast is to resolve an issue with older clang versions which
+    // would cause the constexpr to link fail. With c++17 the problem is resolved.
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
-    pl->set("Implicit Tolerance Scale Factor", impTolScale_default_,
+    pl->set("Implicit Tolerance Scale Factor", static_cast<MagnitudeType>(DefaultSolverParameters::impTolScale),
       "The scale factor used by the implicit residual test when explicit residual\n"
       "testing is used.  May enable faster convergence when TFQMR bound is too loose.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
-      "to the output stream.");  
-    pl->set("Output Stream", outputStream_default_,
+      "to the output stream.");
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Explicit Residual Test", expResTest_default_,
+    pl->set("Explicit Residual Test", static_cast<bool>(expResTest_default_),
       "Whether the explicitly computed residual should be used in the convergence test.");
-    pl->set("Implicit Residual Scaling", impResScale_default_,
+    pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
-    pl->set("Explicit Residual Scaling", expResScale_default_,
+    pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
       "The type of scaling used in the explicit residual convergence test.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
     validPL = pl;
   }
   return validPL;
 }
 
-  
+
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
 
   // Set the current parameters if they were not set before.
-  // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
   if (!isSet_) {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,TFQMRSolMgrLinearProblemFailure,
-		     "Belos::TFQMRSolMgr::solve(): Linear problem is not a valid object.");
+                     "Belos::TFQMRSolMgr::solve(): Linear problem is not a valid object.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),TFQMRSolMgrLinearProblemFailure,
                      "Belos::TFQMRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   if (!isSTSet_) {
     TEUCHOS_TEST_FOR_EXCEPTION( checkStatusTest(),TFQMRSolMgrLinearProblemFailure,
-			"Belos::TFQMRSolMgr::solve(): Linear problem and requested status tests are incompatible.");
+                        "Belos::TFQMRSolMgr::solve(): Linear problem and requested status tests are incompatible.");
   }
 
   // Create indices for the linear systems to be solved.
@@ -693,7 +675,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
   //  The index set is generated that informs the linear problem that some linear systems are augmented.
   currIdx.resize( blockSize_ );
   currIdx2.resize( blockSize_ );
-  for (int i=0; i<numCurrRHS; ++i) 
+  for (int i=0; i<numCurrRHS; ++i)
     { currIdx[i] = startPtr+i; currIdx2[i]=i; }
 
   // Inform the linear problem of the current linear system to solve.
@@ -703,17 +685,17 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
   // Parameter list
   Teuchos::ParameterList plist;
   plist.set("Block Size",blockSize_);
-  
-  // Reset the status test.  
+
+  // Reset the status test.
   outputTest_->reset();
 
   // Assume convergence is achieved, then let any failed convergence set this to false.
-  bool isConverged = true;	
+  bool isConverged = true;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // TFQMR solver
 
-  Teuchos::RCP<TFQMRIter<ScalarType,MV,OP> > tfqmr_iter = 
+  Teuchos::RCP<TFQMRIter<ScalarType,MV,OP> > tfqmr_iter =
     Teuchos::rcp( new TFQMRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
 
   // Enter solve() iterations
@@ -744,84 +726,84 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
       tfqmr_iter->initializeTFQMR(newstate);
 
       while(1) {
-	
-	// tell tfqmr_iter to iterate
-	try {
-	  tfqmr_iter->iterate();
-	  
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check convergence first
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convTest_->getStatus() == Passed ) {
-	    // We have convergence of the linear system.
-	    break;  // break from while(1){tfqmr_iter->iterate()}
-	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for maximum iterations
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( maxIterTest_->getStatus() == Passed ) {
-	    // we don't have convergence
-	    isConverged = false;
-	    break;  // break from while(1){tfqmr_iter->iterate()}
-	  }
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // we returned from iterate(), but none of our status tests Passed.
-	  // something is wrong, and it is probably our fault.
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
+        // tell tfqmr_iter to iterate
+        try {
+          tfqmr_iter->iterate();
 
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
-	  }
-	}
-	catch (const std::exception &e) {
-	  printer_->stream(Errors) << "Error! Caught std::exception in TFQMRIter::iterate() at iteration " 
-				   << tfqmr_iter->getNumIters() << std::endl 
-				   << e.what() << std::endl;
-	  throw;
-	}
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check convergence first
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          if ( convTest_->getStatus() == Passed ) {
+            // We have convergence of the linear system.
+            break;  // break from while(1){tfqmr_iter->iterate()}
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for maximum iterations
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( maxIterTest_->getStatus() == Passed ) {
+            // we don't have convergence
+            isConverged = false;
+            break;  // break from while(1){tfqmr_iter->iterate()}
+          }
+
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // we returned from iterate(), but none of our status tests Passed.
+          // something is wrong, and it is probably our fault.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                               "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
+          }
+        }
+        catch (const std::exception &e) {
+          printer_->stream(Errors) << "Error! Caught std::exception in TFQMRIter::iterate() at iteration "
+                                   << tfqmr_iter->getNumIters() << std::endl
+                                   << e.what() << std::endl;
+          throw;
+        }
       }
 
       // Update the current solution with the update computed by the iteration object.
       problem_->updateSolution( tfqmr_iter->getCurrentUpdate(), true );
-      
+
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
-      
+
       // Update indices for the linear systems to be solved.
       startPtr += numCurrRHS;
       numRHS2Solve -= numCurrRHS;
       if ( numRHS2Solve > 0 ) {
-	numCurrRHS = blockSize_;
+        numCurrRHS = blockSize_;
 
-	currIdx.resize( blockSize_ );
-	currIdx2.resize( blockSize_ );
-	for (int i=0; i<numCurrRHS; ++i) 
-	  { currIdx[i] = startPtr+i; currIdx2[i] = i; }
-	// Set the next indices.
-	problem_->setLSIndex( currIdx );
+        currIdx.resize( blockSize_ );
+        currIdx2.resize( blockSize_ );
+        for (int i=0; i<numCurrRHS; ++i)
+          { currIdx[i] = startPtr+i; currIdx2[i] = i; }
+        // Set the next indices.
+        problem_->setLSIndex( currIdx );
 
-	// Set the new blocksize for the solver.
-	tfqmr_iter->setBlockSize( blockSize_ );	
+        // Set the new blocksize for the solver.
+        tfqmr_iter->setBlockSize( blockSize_ );
       }
       else {
         currIdx.resize( numRHS2Solve );
       }
-      
+
     }// while ( numRHS2Solve > 0 )
-    
+
   }
 
   // print final summary
   sTest_->print( printer_->stream(FinalSummary) );
- 
+
   // print timing information
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
   // Calling summarize() can be expensive, so don't call unless the
@@ -830,7 +812,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
   if (verbosity_ & TimingDetails)
     Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
 #endif
- 
+
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
 
@@ -849,9 +831,9 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
     if (expResTest_) {
       pTestValues = expConvTest_->getTestValue();
       if (pTestValues == NULL || pTestValues->size() < 1) {
-	pTestValues = impConvTest_->getTestValue();
+        pTestValues = impConvTest_->getTestValue();
       }
-    } 
+    }
     else {
       // Only the implicit residual norm test is being used.
       pTestValues = impConvTest_->getTestValue();
@@ -870,11 +852,11 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
     // just for the vectors from the last deflation?
     achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
   }
- 
+
   if (!isConverged) {
-    return Unconverged; // return from TFQMRSolMgr::solve() 
+    return Unconverged; // return from TFQMRSolMgr::solve()
   }
-  return Converged; // return from TFQMRSolMgr::solve() 
+  return Converged; // return from TFQMRSolMgr::solve()
 }
 
 //  This method requires the solver manager to return a std::string that describes itself.
@@ -886,7 +868,7 @@ std::string TFQMRSolMgr<ScalarType,MV,OP>::description() const
   oss << "{}";
   return oss.str();
 }
-  
+
 } // end Belos namespace
 
 #endif /* BELOS_TFQMR_SOLMGR_HPP */

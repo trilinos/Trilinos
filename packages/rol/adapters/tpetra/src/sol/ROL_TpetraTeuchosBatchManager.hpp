@@ -66,11 +66,11 @@ public:
     ROL::Ptr<Tpetra_Vector> ovec = dynamic_cast<OptVector&>(output).getVector();
 
     size_t ilength = ivec->getLocalLength(), olength = ovec->getLocalLength();
-    TEUCHOS_TEST_FOR_EXCEPTION(ilength != olength, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(ilength != olength, std::invalid_argument,
       ">>> (TpetraTeuchosBatchManager::sumAll): Inconsistent local lengths!");
 
     size_t invec = ivec->getNumVectors(), onvec = ovec->getNumVectors();
-    TEUCHOS_TEST_FOR_EXCEPTION(invec != onvec, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(invec != onvec, std::invalid_argument,
       ">>> (TpetraTeuchosBatchManager::sumAll): Inconsistent number of vectors!");
 
     for (size_t i = 0; i < invec; ++i) {

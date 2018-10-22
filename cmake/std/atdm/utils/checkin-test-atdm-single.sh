@@ -25,10 +25,16 @@ echo
 echo "  ==> See output file checkin-test.$ATDM_JOB_NAME_KEYS.out"
 echo
 
+if [ "$ATDM_CONFIG_BUILD_COUNT" -gt "0" ] ; then
+  make_options="-j $ATDM_CONFIG_BUILD_COUNT"
+else
+  make_options=
+fi
+
 set -x
 
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
-  --make-options="-j $ATDM_CONFIG_BUILD_COUNT" \
+  --make-options="${make_options}" \
   --ctest-options="-j $ATDM_CONFIG_CTEST_PARALLEL_LEVEL" \
   --st-extra-builds=$ATDM_JOB_NAME_KEYS "$@" \
   $CHECKIN_TEST_USE_NINJA_ARG \
@@ -42,5 +48,3 @@ echo "source $STD_ATDM_DIR/load-env.sh $ATDM_JOB_NAME_KEYS" \
  > $ATDM_JOB_NAME_KEYS/load-env.sh
 
 exit $ATDM_CHT_SINGLE_RETURN_CODE
-
-# ToDo: Read env var ATDM_CONFIG_USE_NINJA and set --use-ninja!

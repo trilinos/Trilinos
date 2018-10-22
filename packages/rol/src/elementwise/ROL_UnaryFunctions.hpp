@@ -232,7 +232,7 @@ public:
 
   Real apply( const Real &x ) const {
     // To avoid circular dependency
-    Real NINF = -0.1*std::abs(Teuchos::ScalarTraits<Real>::rmax()); 
+    Real NINF = -0.1*std::abs(ROL::ScalarTraits<Real>::rmax()); 
     return (x>0) ? std::log(x) : NINF;
   }
 

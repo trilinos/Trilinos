@@ -1,5 +1,6 @@
 ADD_SUBDIRECTORY(operator)
 ADD_SUBDIRECTORY(constraint)
+ADD_SUBDIRECTORY(sketching)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DerivativeCheck

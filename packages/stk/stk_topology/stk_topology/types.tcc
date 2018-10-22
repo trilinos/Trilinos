@@ -33,6 +33,8 @@
 #ifndef STKTOPOLOGY_TYPES_TCC
 #define STKTOPOLOGY_TYPES_TCC
 
+// IWYU pragma: private, include "stk_topology/topology.hpp"
+
 #include <stk_topology/topology_type.tcc>
 
 namespace stk {

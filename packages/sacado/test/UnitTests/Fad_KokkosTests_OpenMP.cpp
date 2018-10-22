@@ -35,6 +35,7 @@
 #include "Kokkos_Core.hpp"
 
 // Instantiate tests for OpenMP device
+#define SACADO_TEST_DFAD 1
 using Kokkos::OpenMP;
 VIEW_FAD_TESTS_D( OpenMP )
 
@@ -42,13 +43,13 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize OpenMP
-  Kokkos::OpenMP::initialize();
-  Kokkos::OpenMP::print_configuration(std::cout);
+  Kokkos::initialize();
+  Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize OpenMP
-  Kokkos::OpenMP::finalize();
+  Kokkos::finalize();
 
   return res;
 }

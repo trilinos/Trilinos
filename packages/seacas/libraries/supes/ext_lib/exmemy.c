@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2008 National Technology & Engineering Solutions
+ * Copyright(C) 2008-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -127,17 +127,17 @@
 
 #include <fortranc.h>
 
-#define ct_assert(e) extern char(*ct_assert(void))[sizeof(char[1 - 2 * !(e)])]
+#define CT_ASSERT(e) extern char(*ct_assert(void))[sizeof(char[1 - 2 * !(e)])]
 /* If the following line causes a compile-time error, then there is a problem
  * which will cause the supes memory manager to not work correctly on this
  * platform. The error will be something similar to:
  *
  * exmemy.c(141): error: the size of an array must be greater than zero
- * ct_assert(sizeof(FTNINT) == sizeof(void*));
+ * CT_ASSERT(sizeof(FTNINT) == sizeof(void*));
  *
  * Contact Greg Sjaardema, gdsjaar@sandia.gov for asisstance.
  */
-ct_assert(sizeof(FTNINT) == sizeof(void *));
+CT_ASSERT(sizeof(FTNINT) == sizeof(void *));
 
 #if defined(ADDC_)
 void exmemy_(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)

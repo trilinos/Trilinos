@@ -256,12 +256,16 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setA( const Teuchos::RCP<const Matrix>
   switch( status_.last_phase_ ){
   case CLEAN:
     status_.numPreOrder_ = 0;
+    // Intentional fallthrough.
   case PREORDERING:
     status_.numSymbolicFact_ = 0;
+    // Intentional fallthrough.
   case SYMBFACT:
     status_.numNumericFact_ = 0;
+    // Intentional fallthrough.
   case NUMFACT:                 // probably won't ever happen by itself
     status_.numSolve_ = 0;
+    // Intentional fallthrough.
   case SOLVE:                   // probably won't ever happen
     break;
   }

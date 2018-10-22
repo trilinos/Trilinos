@@ -62,8 +62,15 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
   appInArgs.set_x_dot(x_dot);
 
   // Setup output condition
+  // Note: For the use that Tempus does of this class, these three args *should*
+  //       be enough. However, keep in mind that it *may* be necessary to add more
+  //       out args in the future. The idea would be the same: if the underlying
+  //       modele supports the arg, then set it in the appOutArgs.
   appOutArgs.set_f(outArgs.get_f());
   appOutArgs.set_W_op(outArgs.get_W_op());
+  if (outArgs.supports(MEB::OUT_ARG_W_prec)) {
+    appOutArgs.set_W_prec(outArgs.get_W_prec());
+  }
 
   appModel_->evalModel(appInArgs,appOutArgs);
 }

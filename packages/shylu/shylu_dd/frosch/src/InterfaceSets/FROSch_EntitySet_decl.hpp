@@ -57,9 +57,13 @@ namespace FROSch {
         
         typedef Xpetra::Map<LO,GO,NO> Map;
         typedef Teuchos::RCP<Map> MapPtr;
+        typedef Teuchos::RCP<const Map> ConstMapPtr;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
+        
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
@@ -73,7 +77,6 @@ namespace FROSch {
         
         typedef Teuchos::Array<SC> SCVec;
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
         
         
         EntitySet(EntityType type);
@@ -84,9 +87,9 @@ namespace FROSch {
         
         int addEntity(InterfaceEntityPtr entity);
         
-        int buildEntityMap(MapPtr &localToGlobalNodesMap);
+        int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
         
-        int findParents(EntitySetPtr entitySet);
+        int findAncestors(EntitySetPtr entitySet);
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix, int pID);
         
@@ -95,7 +98,7 @@ namespace FROSch {
         InterfaceEntityPtrVecPtr sortOutShortEdges();
         
         InterfaceEntityPtrVecPtr sortOutStraightEdges(UN dimension,
-                                                      SCVecPtr2D &localNodeList);
+                                                      MultiVectorPtr &nodeList);
         
         int removeEntity(UN iD);
         
@@ -108,7 +111,7 @@ namespace FROSch {
         bool checkForShortEdges();
         
         bool checkForStraightEdges(UN dimension,
-                                   SCVecPtr2D &localNodeList);
+                                   MultiVectorPtr &nodeList);
         
         bool checkForEmptyEntities();
         
@@ -135,7 +138,7 @@ namespace FROSch {
         const MapPtr getEntityMap() const;
         
         const SCVecPtr getDirection(UN dimension,
-                                    SCVecPtr2D &localNodeList,
+                                    MultiVectorPtr &nodeList,
                                     UN iD) const;
         
     protected:

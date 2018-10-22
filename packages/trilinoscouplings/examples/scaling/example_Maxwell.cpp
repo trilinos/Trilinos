@@ -149,7 +149,9 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
+#ifdef HAVE_MUELU_EPETRA
 #include <MueLu_AztecEpetraOperator.hpp>
+#endif
 #include <MueLu_Exceptions.hpp>
 
 #endif
@@ -278,7 +280,7 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                               double & TotalErrorResidual,
                                               double & TotalErrorExactSol);
 
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+  #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 /** \brief  MueLu Preconditioner
 
     \param  ProblemType        [in]    problem type
@@ -304,7 +306,7 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
                                                    Epetra_MultiVector & b,
                                                    double & TotalErrorResidual,
                                                    double & TotalErrorExactSol);
-#endif
+  #endif
 #endif
 
 /**********************************************************************************/
@@ -523,11 +525,11 @@ int main(int argc, char *argv[]) {
     "   xmin = 0.0                \n"
     "   ymin = 0.0                \n"
     "   numz 1                    \n"
-    "     zblock 1 2.0 interval " + std::to_string(nz) + "\n" +
+    "     zblock 1 1.0 interval " + std::to_string(nz) + "\n" +
     "   numx 1                    \n"
-    "     xblock 1 2.0 interval " + std::to_string(nx) + "\n" +
+    "     xblock 1 1.0 interval " + std::to_string(nx) + "\n" +
     "   numy 1                    \n"
-    "     yblock 1 2.0 interval " + std::to_string(ny) + "\n" +
+    "     yblock 1 1.0 interval " + std::to_string(ny) + "\n" +
     "  end                        \n"
     "  set assign                 \n"
     "     sideset, ilo, 1         \n"
@@ -1829,9 +1831,9 @@ int main(int argc, char *argv[]) {
     // Edge signs
     EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
 
-    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffMatrixC);
-    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassMatrixC);
-    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_k1_matrix.mat",StiffMatrixC);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_m1_matrix.mat",MassMatrixC);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_t_matrix.mat",DGrad);
   }
   
 
@@ -1898,8 +1900,8 @@ int main(int argc, char *argv[]) {
                           << " sec \n"; Time.ResetStartTime();}
 
   if (dump) {
-    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassMatrixG);
-    EpetraExt::RowMatrixToMatlabFile("edge_matrix.dat",StiffMatrixC);
+    EpetraExt::RowMatrixToMatrixMarketFile("mag_m0_matrix.mat",MassMatrixG);
+    EpetraExt::RowMatrixToMatrixMarketFile("edge_matrix.mat",StiffMatrixC);
   }
 
   /**********************************************************************************/
@@ -2020,6 +2022,7 @@ int main(int argc, char *argv[]) {
 
   }
 
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
   if (solverName == "MueLu") {
     // MueLu RefMaxwell
     if(MyPID==0) {std::cout << "\n\nMueLu solve \n";}
@@ -2030,7 +2033,7 @@ int main(int argc, char *argv[]) {
                                               TotalErrorResidual, TotalErrorExactSol);
   }
 
-#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+  #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
   if (solverName == "MueLu-Stratimikos") {
     if(MyPID==0) {std::cout << "\n\nMueLu Stratimikos solve \n";}
     TestMueLuMultiLevelPreconditioner_Stratimikos(probType,MueLuList,StiffMatrixC,
@@ -2039,6 +2042,7 @@ int main(int argc, char *argv[]) {
                                                   xh,rhsVector,
                                                   TotalErrorResidual, TotalErrorExactSol);
   }
+  #endif
 #endif
 
 

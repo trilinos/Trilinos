@@ -72,11 +72,11 @@ public:
   /** \brief Constructor.
 
       Constructor to build a GradientStep object.  Algorithmic specifications
-      are passed in through a Teuchos::ParameterList.
+      are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  GradientStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  GradientStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), verbosity_(0), computeObj_(computeObj) {
     // Parse ParameterList
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);

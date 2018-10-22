@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -43,7 +43,7 @@ static double checkvec();
 void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
                   int               n,     /* number of rows/columns in matrix */
                   double *          vwsqrt /* square roots of vertex weights */
-                  )
+)
 {
   extern int    DEBUG_PERTURB; /* debug flag for matrix perturbation */
   extern int    PERTURB;       /* randomly perturb to break symmetry? */

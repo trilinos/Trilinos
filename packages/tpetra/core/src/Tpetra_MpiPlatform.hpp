@@ -53,35 +53,18 @@ namespace Tpetra {
   /// \brief Implementation of the Platform concept for MPI-based
   ///   platforms.
   ///
-  /// \warning This class will be DEPRECATED, in favor of the
-  ///   initialize() functions in Tpetra_Core.hpp.  Please use those
-  ///   functions for safe, consistent initialization of MPI and
-  ///   Kokkos, on which Tpetra depends.  If you must use this class,
-  ///   please prefer the constructors that take \c argc and \c argv.
-  ///   Those constructors will call initialize() for you.
-  ///
-  /// MpiPlatform is an implementation of Tpetra's Platform concept.
-  /// Classes implementing the Platform concept are templated on the
-  /// Kokkos Node type.  They have at least the following public
-  /// interface:
-  /// \code
-  /// // This is not a real class; it just illustrates the concept.
-  /// template<class Node>
-  /// class Platform {
-  /// public:
-  ///   typedef Node NodeType;
-  ///   explicit Platform (const RCP<Node>& node);
-  ///   RCP<const Comm<int> > getComm() const;
-  ///   RCP<Node> getNode() const;
-  /// };
-  /// \endcode
-  /// MpiPlatform also has a constructor that accepts an MPI
-  /// communicator, over which the application using the platform
-  /// should perform communication.  The default communicator is
-  /// MPI_COMM_WORLD.  MpiPlatform is only available if Trilinos was
-  /// built with MPI.
+  ///  \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+  ///    not use <tt>*Platform</tt> classes any more.  To initialize
+  ///    Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+  ///    Tpetra::ScopeGuard, or Tpetra::initialize and
+  ///    Tpetra::finalize.  To get Tpetra's default Comm instance,
+  ///    include <tt>Tpetra_Core.hpp</tt> and call
+  ///    <tt>Tpetra::getDefaultComm()</tt>.  For the default Node
+  ///    type, use <tt>Tpetra::Map<>::node_type</tt>.  Do not create
+  ///    Node instances yourself.  It is OK for Node instances to be
+  ///    null.
   template <class Node>
-  class MpiPlatform : public Teuchos::Describable {
+  class TPETRA_DEPRECATED MpiPlatform : public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
@@ -100,24 +83,14 @@ namespace Tpetra {
     /// conversions via assignment from the Node instance to an
     /// MpiPlatform.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     explicit MpiPlatform (const Teuchos::RCP<NodeType>& node) :
-      comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD))),
-      node_ (node)
-    {
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  This ensures
-      // that (new) Kokkos won't get initialized with the wrong
-      // command-line arguments, at least not until getNode() is
-      // called.  Initializing Kokkos with the wrong command-line
-      // arguments may result in poor performance due to the wrong
-      // assignment of software threads to hardware execution units.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<NodeType> ();
-      // }
-    }
+      comm_ (new Teuchos::MpiComm<int> (MPI_COMM_WORLD))
+    {}
 
     /// \brief Constructor that accepts the same arguments as
     ///   MPI_Init(), plus a Kokkos Node.
@@ -127,23 +100,18 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of MPI_Init().
     /// \param argv [in/out] Second argument of MPI_Init().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (int* argc,
                  char*** argv,
-                 const Teuchos::RCP<NodeType>& node) :
-      comm_ (Teuchos::null),
-      node_ (node)
+                 const Teuchos::RCP<NodeType>& /* node */) :
+      comm_ (Teuchos::null)
     {
       initialize (argc, argv);
       comm_ = getDefaultComm ();
-
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<Node> ();
-      // }
     }
 
     /// \brief Constructor that accepts a Kokkos Node and a wrapped
@@ -161,15 +129,16 @@ namespace Tpetra {
     /// an \c MPI_Comm and how to set the wrapper to free the
     /// communicator automatically after use.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
-    MpiPlatform (const Teuchos::RCP<NodeType>& node,
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
+    MpiPlatform (const Teuchos::RCP<NodeType>& /* node */,
                  const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >& rawMpiComm)
-      : comm_ (Teuchos::null),
-        node_ (node)
+      : comm_ (Teuchos::null)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(
         rawMpiComm.is_null (), std::invalid_argument, "Tpetra::MpiPlatform "
@@ -179,12 +148,6 @@ namespace Tpetra {
         "nonnull Teuchos::OpaqueWrapper by using the "
         "Teuchos::opaqueWrapper<MPI_Comm>() nonmember constructor.");
       comm_ = Teuchos::createMpiComm<int> (rawMpiComm);
-
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<NodeType> ();
-      // }
     }
 
     /// \brief Constructor that accepts the same arguments as
@@ -205,17 +168,18 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of MPI_Init().
     /// \param argv [in/out] Second argument of MPI_Init().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (int* argc,
                  char*** argv,
-                 const Teuchos::RCP<NodeType>& node,
+                 const Teuchos::RCP<NodeType>& /* node */,
                  const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >& rawMpiComm)
-      : comm_ (Teuchos::null),
-        node_ (node)
+      : comm_ (Teuchos::null)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(
         rawMpiComm.is_null (), std::invalid_argument, "Tpetra::MpiPlatform "
@@ -236,12 +200,6 @@ namespace Tpetra {
       // references to the raw MPI_Comm floating around, and comm_'s
       // destructor will get to do the right thing.
       initialize (argc, argv, comm_);
-
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<NodeType> ();
-      // }
     }
 
     /// \brief Constructor that accepts a Kokkos Node and a raw MPI
@@ -251,21 +209,16 @@ namespace Tpetra {
     /// (not wrapped) MPI communicator.  You are responsible for
     /// freeing the MPI communicator after use, if necessary.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (const Teuchos::RCP<NodeType>& node, MPI_Comm rawMpiComm)
-      : comm_ (Teuchos::createMpiComm<int> (Teuchos::opaqueWrapper<MPI_Comm> (rawMpiComm))),
-        node_ (node)
-    {
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<NodeType> ();
-      // }
-    }
+      : comm_ (new Teuchos::MpiComm<int> (rawMpiComm))
+    {}
 
     /// \brief Constructor that accepts the same arguments as
     ///   MPI_Init(), plus a Kokkos Node and a raw MPI communicator.
@@ -276,26 +229,21 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of MPI_Init().
     /// \param argv [in/out] Second argument of MPI_Init().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (int* argc,
                  char*** argv,
-                 const Teuchos::RCP<NodeType>& node,
+                 const Teuchos::RCP<NodeType>& /* node */,
                  MPI_Comm rawMpiComm)
-      : comm_ (Teuchos::null),
-        node_ (node)
+      : comm_ (Teuchos::null)
     {
       initialize (argc, argv, rawMpiComm);
       comm_ = getDefaultComm ();
-
-      // mfh 29 Jun 2014: Don't initialize the Node yet.  See above note.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::Details::getNode<NodeType> ();
-      // }
     }
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -316,43 +264,17 @@ namespace Tpetra {
 
     /// \brief The default Kokkos Node instance.
     ///
-    /// If a constructor was called with a nonnull Node instance, this
-    ///   just returns that instance.  Otherwise, this method returns
-    ///   a Node set up with default parameters.  It only initializes
-    ///   that Node once, no matter how many times this method is
-    ///   called.
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device.  Thus, the Node may be Teuchos::null, and
+    /// users should not depend on \c getNode.get().
     Teuchos::RCP<NodeType> getNode () const {
-      typedef MpiPlatform<NodeType> this_type;
-      if (node_.is_null ()) {
-        // NOTE (mfh 29 Jun 2014): Creating an instance of one of the
-        // new Kokkos wrapper Nodes _must_ call Kokkos::initialize.
-        // If Kokkos has not been initialized yet, this may result in
-        // Kokkos being initialized correctly, since we have no way to
-        // pass it the command-line arguments at this point.  This is
-        // why we should prefer the *Platform constructors that take
-        // argc and argv, since they can (and do) call
-        // Kokkos::initialize (by calling Tpetra::initialize).
-        //
-        // mfh 29 Jun 2014: We're only keeping the *Platform classes
-        // for backwards compatibility anyway, so I don't feel bad
-        // about the const_cast here.
-        const_cast<this_type*> (this)->node_ =
-          KokkosClassic::Details::getNode<NodeType> ();
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          node_.is_null (), std::logic_error, "Tpetra::MpiPlatform::getNode: "
-          "KokkosClassic::Details::getNode<NodeType>() returned null.  "
-          "This should never happen.  "
-          "Please report this bug to the Tpetra developers.");
-      }
-      return node_;
+      return Teuchos::rcp (new NodeType);
     }
 
     //@}
   protected:
     //! Teuchos::Comm object instantiated for the platform.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-    //! Kokkos Node object instantiated for the platform.
-    Teuchos::RCP<NodeType> node_;
 
   private:
     //! Unimplemented copy constructor (syntactically forbidden).
@@ -364,10 +286,18 @@ namespace Tpetra {
   /// \class MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type>
   /// \brief MpiPlatform specialization for the default Node type.
   ///
-  /// \note <tt>::Tpetra::Details::DefaultTypes::node_type</tt> is a
-  ///   typedef.  Its actual type depends on Trilinos' build options.
+  ///  \warning This class is DEPRECATED and will be REMOVED SOON.  Do
+  ///    not use <tt>*Platform</tt> classes any more.  To initialize
+  ///    Tpetra, include <tt>Tpetra_Core.hpp</tt> and use
+  ///    Tpetra::ScopeGuard, or Tpetra::initialize and
+  ///    Tpetra::finalize.  To get Tpetra's default Comm instance,
+  ///    include <tt>Tpetra_Core.hpp</tt> and call
+  ///    <tt>Tpetra::getDefaultComm()</tt>.  For the default Node
+  ///    type, use <tt>Tpetra::Map<>::node_type</tt>.  Do not create
+  ///    Node instances yourself.  It is OK for Node instances to be
+  ///    null.
   template <>
-  class MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> :
+  class TPETRA_DEPRECATED MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> :
     public Teuchos::Describable {
   public:
     //! @name Typedefs
@@ -400,12 +330,11 @@ namespace Tpetra {
     /// constructor's class's type.)  The "explicit" declaration does
     /// not affect typical use of this constructor.
     ///
-    /// This specialization of MpiPlatform for the default node type
-    /// will instantiate a default Node if node.is_null().
+    /// \param node [in/out] The Kokkos Node instance.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     explicit MpiPlatform (const Teuchos::RCP<NodeType>& node);
 
     /// \brief Constructor that accepts the same arguments as
@@ -416,9 +345,11 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of MPI_Init().
     /// \param argv [in/out] Second argument of MPI_Init().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (int* argc, char*** argv, const Teuchos::RCP<NodeType>& node);
 
     /// \brief Constructor that accepts a Kokkos Node and a wrapped
@@ -436,11 +367,13 @@ namespace Tpetra {
     /// an \c MPI_Comm and how to set the wrapper to free the
     /// communicator automatically after use.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (const Teuchos::RCP<NodeType>& node,
                  const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >& rawMpiComm);
 
@@ -462,11 +395,13 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of MPI_Init().
     /// \param argv [in/out] Second argument of MPI_Init().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The MPI communicator, wrapped in a
     ///   <tt>Teuchos::OpaqueWrapper</tt>.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (int* argc,
                  char*** argv,
                  const Teuchos::RCP<NodeType>& node,
@@ -479,11 +414,13 @@ namespace Tpetra {
     /// wrapped) MPI communicator.  You are responsible for freeing
     /// the MPI communicator after use, if necessary.
     ///
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (const Teuchos::RCP<NodeType>& node, MPI_Comm rawMpiComm);
 
     /// \brief Constructor that accepts the same arguments as
@@ -495,11 +432,13 @@ namespace Tpetra {
     ///
     /// \param argc [in/out] First argument of MPI_Init().
     /// \param argv [in/out] Second argument of MPI_Init().
-    /// \param node [in/out] The Kokkos Node instance.  If null, this
-    ///   class will create a Node with default parameters, at some
-    ///   time no later than during the first call to getNode().
+    /// \param node [in/out] The Kokkos Node instance.
     /// \param rawMpiComm [in] The "raw" (not wrapped) MPI
     ///   communicator.
+    ///
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     MpiPlatform (int* argc,
                  char*** argv,
                  const Teuchos::RCP<NodeType>& node,
@@ -517,11 +456,9 @@ namespace Tpetra {
 
     /// \brief The default Kokkos Node instance.
     ///
-    /// If a constructor was called with a nonnull Node instance, this
-    ///   just returns that instance.  Otherwise, this method returns
-    ///   a Node set up with default parameters.  It only initializes
-    ///   that Node once, no matter how many times this method is
-    ///   called.
+    /// Node will be deprecated and removed in favor of
+    /// Kokkos::Device, so the Node can and should always be
+    /// Teuchos::null.
     Teuchos::RCP<NodeType> getNode () const;
 
     //@}
@@ -535,9 +472,6 @@ namespace Tpetra {
   protected:
     //! Teuchos::Comm object instantiated for the platform.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
-    //! Kokkos Node object instantiated for the platform.
-    Teuchos::RCP<NodeType> node_;
   };
 
 } // namespace Tpetra

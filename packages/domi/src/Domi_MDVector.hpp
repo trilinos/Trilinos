@@ -82,8 +82,10 @@ struct ompi_datatype_t {};
 //struct ompi_request_t {};
 #endif
 
+#include <iostream>
 using std::cout;
 using std::endl;
+
 
 namespace Domi
 {
@@ -1287,10 +1289,10 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _recvMessages()
 {
 #ifdef DOMI_MDVECTOR_VERBOSE
-  std::cout << "_mdArrayRcp  = " << _mdArrayRcp  << std::endl;
-  std::cout << "_mdArrayView.getRawPtr() = " << _mdArrayView.getRawPtr()
-            << " (constructor)" << std::endl;
-  std::cout << "_mdArrayView = " << _mdArrayView << std::endl;
+  cout << "_mdArrayRcp  = " << _mdArrayRcp  << endl;
+  cout << "_mdArrayView.getRawPtr() = " << _mdArrayView.getRawPtr()
+            << " (constructor)" << endl;
+  cout << "_mdArrayView = " << _mdArrayView << endl;
 #endif
   setObjectLabel("Domi::MDVector");
   int numDims = _mdMap->numDims();
@@ -1332,7 +1334,7 @@ MDVector(const MDVector< Scalar, Node > & source,
   if (access == Teuchos::Copy)
   {
 #ifdef DOMI_MDVECTOR_VERBOSE
-    std::cout << "Inside MDVector copy constructor with copy access" << std::endl;
+    cout << "Inside MDVector copy constructor with copy access" << endl;
 #endif
     // Obtain the array of dimensions
     int numDims = _mdMap->numDims();
@@ -1357,8 +1359,8 @@ MDVector(const MDVector< Scalar, Node > & source,
 #ifdef DOMI_MDVECTOR_VERBOSE
   else
   {
-    std::cout << "Inside MDVector copy constructor with view access"
-              << std::endl;
+    cout << "Inside MDVector copy constructor with view access"
+              << endl;
   }
 #endif
 }
@@ -1528,9 +1530,9 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _recvMessages()
 {
 #ifdef DOMI_MDVECTOR_VERBOSE
-  std::cout << "slice axis " << axis << std::endl;
-  std::cout << "  _mdArrayRcp  @ " << _mdArrayRcp.getRawPtr()  << std::endl;
-  std::cout << "  _mdArrayView @ " << _mdArrayView.getRawPtr() << std::endl;
+  cout << "slice axis " << axis << endl;
+  cout << "  _mdArrayRcp  @ " << _mdArrayRcp.getRawPtr()  << endl;
+  cout << "  _mdArrayView @ " << _mdArrayView.getRawPtr() << endl;
 #endif
 
   setObjectLabel("Domi::MDVector");
@@ -1586,9 +1588,9 @@ MDVector(const MDVector< Scalar, Node > & parent,
     _mdArrayView = MDArrayView< Scalar >();
   }
 #ifdef DOMI_MDVECTOR_VERBOSE
-  std::cout << "  _mdArrayView @ " << _mdArrayView.getRawPtr() << std::endl;
-  std::cout << "  offset = " << int(_mdArrayView.getRawPtr() -
-                                    _mdArrayRcp.getRawPtr()) << std::endl;
+  cout << "  _mdArrayView @ " << _mdArrayView.getRawPtr() << endl;
+  cout << "  offset = " << int(_mdArrayView.getRawPtr() -
+                                    _mdArrayRcp.getRawPtr()) << endl;
 #endif
 }
 
@@ -2455,9 +2457,9 @@ MDVector< Scalar, Node >::
 getDataNonConst(bool includePadding)
 {
 #ifdef DOMI_MDVECTOR_VERBOSE
-  std::cout << "_mdArrayView.getRawPtr() = " << _mdArrayView.getRawPtr()
-            << std::endl;
-  std::cout << "_mdArrayView = " << _mdArrayView << std::endl;
+  cout << "_mdArrayView.getRawPtr() = " << _mdArrayView.getRawPtr()
+            << endl;
+  cout << "_mdArrayView = " << _mdArrayView << endl;
 #endif
   if (includePadding)
     return _mdArrayView;
@@ -2745,7 +2747,6 @@ MDVector< Scalar, Node >::
 describe(Teuchos::FancyOStream &out,
          const Teuchos::EVerbosityLevel verbLevel) const
 {
-  using std::endl;
   using std::setw;
   using Teuchos::Comm;
   using Teuchos::RCP;

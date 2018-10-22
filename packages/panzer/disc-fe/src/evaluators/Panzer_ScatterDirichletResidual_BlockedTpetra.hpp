@@ -66,7 +66,10 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class BlockedDOFManager; //forward declaration
 
-/** \brief Pushes residual values into the residual vector for a 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+class UniqueGlobalIndexer; //forward declaration
+
+/** \brief Pushes residual values into the residual vector for a
            Newton-based solve
 
     Currently makes an assumption that the stride is constant for dofs
@@ -90,9 +93,9 @@ public:
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>(Teuchos::null,pl)); }
 
-  void postRegistrationSetup(typename TRAITS::SetupData /* d */, PHX::FieldManager<TRAITS>& /* vm */) 
+  void postRegistrationSetup(typename TRAITS::SetupData /* d */, PHX::FieldManager<TRAITS>& /* vm */)
    { }
-  void evaluateFields(typename TRAITS::EvalData /* d */) 
+  void evaluateFields(typename TRAITS::EvalData /* d */)
    { std::cout << "unspecialized version of \"ScatterDirichletResidual_BlockedTpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
     TEUCHOS_ASSERT(false); }
 };
@@ -105,28 +108,28 @@ public:
 
 
 // **************************************************************
-// Residual 
+// Residual
 // **************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                   const Teuchos::ParameterList& p);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
@@ -152,7 +155,17 @@ private:
   // for scattering
   Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  //! Vector of global indexers, one for each scattered field
+  //! respectively. This is the global indexer for the Thyra
+  //! ProductVector sub-block.
+  std::vector<Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO>>> fieldGlobalIndexers_;
+
+  //! Field IDs in the local product vector block (not global field id)
+  std::vector<int> fieldIds_;
+
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter.
+  std::vector<int> productVectorBlockIndex_;
 
   // This maps the scattered field names to the DOF manager field
   // For instance a Navier-Stokes map might look like
@@ -160,7 +173,16 @@ private:
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
-  std::size_t num_nodes;
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
+
+  //! The local basis index corresponding to the fieldOffset_. Used to
+  //! index into the basis index of MDFields. This is only required
+  //! for tangent/normal BCs.
+  std::vector<Kokkos::View<int*,PHX::Device>> basisIndexForMDFieldOffsets_;
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
@@ -189,24 +211,24 @@ class ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
      : globalIndexer_(indexer) {}
-  
+
   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
                                   const Teuchos::ParameterList& p);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
-  
+
 private:
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
   typedef typename TRAITS::RealType RealType;
@@ -230,14 +252,15 @@ private:
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
+  //! Returns the index into the Thyra ProductVector sub-block. Size
+  //! of number of fields to scatter
+  std::vector<int> productVectorBlockIndex_;
+
   // This maps the scattered field names to the DOF manager field
   // For instance a Navier-Stokes map might look like
   //    fieldMap_["RESIDUAL_Velocity"] --> "Velocity"
   //    fieldMap_["RESIDUAL_Pressure"] --> "Pressure"
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
-
-  std::size_t num_nodes;
-  std::size_t num_eq;
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
@@ -246,11 +269,28 @@ private:
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const BlockedTpetraLinearObjContainer<RealType,LO,GO,NodeT> > blockedContainer_;
 
+  //! Local indices for unknowns
+  Kokkos::View<LO**,PHX::Device> worksetLIDs_;
+
+  //! Offset into the cell lids for each field. Size of number of fields to scatter.
+  std::vector<Kokkos::View<int*,PHX::Device>> fieldOffsets_;
+
+  //! The local basis index corresponding to the fieldOffset_. Used to
+  //! index into the basis index of MDFields. This is only required
+  //! for tangent/normal BCs.
+  std::vector<Kokkos::View<int*,PHX::Device>> basisIndexForMDFieldOffsets_;
+
+  //! The offset values of the blocked DOFs per element. Size of number of blocks in the product vector + 1. The plus one is a sentinel.
+  Kokkos::View<LO*,PHX::Device> blockOffsets_;
+
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+
+  //! Used to allocate temporary space on device
+  static constexpr int maxDerivativeArraySize_ = 256;
 
   ScatterDirichletResidual_BlockedTpetra();
 };

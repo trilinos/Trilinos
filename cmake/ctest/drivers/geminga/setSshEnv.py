@@ -55,7 +55,7 @@ for agent in agentList:
 
       # Check whether this key's fingerprint matches the desired key's
       for key in keyList:
-        if key == keyFingerprint:
+        if keyFingerprint in key:
           keyFound=1
           print envCmd + agent
           break

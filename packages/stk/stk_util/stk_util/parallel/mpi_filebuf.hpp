@@ -121,9 +121,6 @@ protected:
   //: Sync is a no-op
   virtual int sync();
 
-  //: Setbuf is a no-op
-  virtual std::streambuf * setbuf( char * s , std::streamsize n );
-
 private:
 
   mpi_filebuf( const mpi_filebuf & ); // Not allowed

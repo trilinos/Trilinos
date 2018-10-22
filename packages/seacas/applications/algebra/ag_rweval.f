@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -214,7 +214,7 @@ C ... Find the step
           DO IELB = 1, NELBLK
             IDEB = iarray(ia(kidelb), ielb)
             NELEM = iarray(ia(knelb), ielb)
-            IF (i2array(ia(kievok), nelblk, ielb, idxflt) .eq. 1) THEN
+            IF (i2array(ia(kievok), nelblk, ielb, idxflt) .ne. 0) THEN
               call exgev(ndbin, istep, idxflt, IDEB, NELEM,
      *          a(kelvar+iel), ierr)
             ELSE

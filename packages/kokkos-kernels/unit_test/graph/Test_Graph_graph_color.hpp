@@ -118,7 +118,7 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
 
   KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<lno_view_t, lno_nnz_view_t,  typename lno_view_t::non_const_type, typename lno_nnz_view_t::non_const_type, device>
     (numRows, input_mat.graph.row_map, input_mat.graph.entries, sym_xadj, sym_adj);
-  size_type numentries = sym_adj.dimension_0();
+  size_type numentries = sym_adj.extent(0);
   scalar_view_t newValues("vals", numentries);
 
   graph_t static_graph (sym_adj, sym_xadj);

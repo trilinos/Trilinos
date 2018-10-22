@@ -52,14 +52,19 @@ public:
                  const stk::mesh::Selector& inputSkinSelector,
                  const stk::mesh::Selector* inputAirSelector = nullptr);
 
+    static std::vector<SideSetEntry> get_skinned_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector);
+    static std::vector<SideSetEntry> get_skinned_sideset_excluding_region(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector, const stk::mesh::Selector& exclusionRegionSelector);
+    static std::vector<SideSetEntry> get_interior_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector);
+    static std::vector<SideSetEntry> get_all_sides_sideset(stk::mesh::BulkData & bulk, const stk::mesh::Selector& skinSelector);
+
+private:
+    SkinMeshUtil();
+
     std::vector<SideSetEntry> extract_skinned_sideset();
 
     std::vector<SideSetEntry> extract_interior_sideset();
 
     std::vector<SideSetEntry> extract_all_sides_sideset();
-
-private:
-    SkinMeshUtil();
 
     std::vector<int> get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement);
 

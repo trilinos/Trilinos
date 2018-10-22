@@ -51,6 +51,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Complex.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -63,6 +64,30 @@ namespace Details {
 // Users should skip over this anonymous namespace.
 //
 namespace { // (anonymous)
+
+  template<class OutputValueType,
+           class InputValueType>
+  struct ConvertValue {
+    static KOKKOS_INLINE_FUNCTION void
+    convert (OutputValueType& dst, const InputValueType& src) {
+      // This looks trivial, but it actually invokes OutputValueType's
+      // constructor, so that needs to be marked as a __host__
+      // __device__ function (e.g., via the KOKKOS_FUNCTION or
+      // KOKKOS_INLINE_FUNCTION macros).
+      dst = OutputValueType (src);
+    }
+  };
+
+  template<class RealType>
+  struct ConvertValue<RealType, Kokkos::complex<RealType> > {
+    static KOKKOS_INLINE_FUNCTION void
+    convert (RealType& dst, const Kokkos::complex<RealType>& src) {
+      // RealType's constructor needs to be marked as a __host__
+      // __device__ function (e.g., via the KOKKOS_FUNCTION or
+      // KOKKOS_INLINE_FUNCTION macros).
+      dst = RealType (src.real ());
+    }
+  };
 
   /// \brief Functor that helps implement copyConvert (see below).
   ///
@@ -100,11 +125,8 @@ namespace { // (anonymous)
 
     KOKKOS_INLINE_FUNCTION void
     operator () (const index_type& i) const {
-      // This looks trivial, but it actually invokes output_type's
-      // constructor, so that needs to be marked as a __host__
-      // __device__ function (e.g., via the KOKKOS_FUNCTION or
-      // KOKKOS_INLINE_FUNCTION macros).
-      dst_(i) = output_type (src_(i));
+      using input_type = typename std::decay<decltype (src_[i])>::type;
+      ConvertValue<output_type, input_type>::convert (dst_(i), src_(i));
     }
   };
 
@@ -187,11 +209,14 @@ namespace { // (anonymous)
                          false,
                          true> {
     static void run (const OutputViewType& dst, const InputViewType& src) {
-      static_assert (! std::is_same<typename OutputViewType::non_const_value_type,
-                       typename InputViewType::non_const_value_type>::value,
+      static_assert (! std::is_same<typename OutputViewType::array_layout,
+                         typename InputViewType::array_layout>::value ||
+                     ! std::is_same<typename OutputViewType::non_const_value_type,
+                         typename InputViewType::non_const_value_type>::value,
                      "CopyConvertImpl (implementation of copyConvert): We "
-                     "should not be calling this specialization if the entries "
-                     "of OutputViewType and InputViewType have the same type.");
+                     "should not be calling this specialization if "
+                     "OutputViewType and InputViewType have the same entry "
+                     "and layout types.");
       static_assert (OutputViewType::Rank == 1 && InputViewType::Rank == 1,
                      "CopyConvertImpl (implementation of copyConvert): "
                      "OutputViewType and InputViewType must both be rank-1 "
@@ -210,7 +235,7 @@ namespace { // (anonymous)
       typedef typename OutputViewType::execution_space execution_space;
       typedef typename OutputViewType::size_type index_type;
       typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-      Kokkos::parallel_for (range_type (0, dst.dimension_0 ()),
+      Kokkos::parallel_for (range_type (0, dst.extent (0)),
                             functor_type (dst, src));
     }
   };
@@ -259,7 +284,7 @@ namespace { // (anonymous)
         typename OutputViewType::device_type> output_space_copy_type;
       output_space_copy_type
         outputSpaceCopy (ViewAllocateWithoutInitializing ("outputSpace"),
-                         src.dimension_0 ());
+                         src.extent (0));
       Kokkos::deep_copy (outputSpaceCopy, src);
 
       // The output View's execution space can access
@@ -269,7 +294,7 @@ namespace { // (anonymous)
       typedef typename OutputViewType::execution_space execution_space;
       typedef typename OutputViewType::size_type index_type;
       typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-      Kokkos::parallel_for (range_type (0, dst.dimension_0 ()),
+      Kokkos::parallel_for (range_type (0, dst.extent (0)),
                             functor_type (dst, outputSpaceCopy));
     }
   };
@@ -300,11 +325,11 @@ copyConvert (const OutputViewType& dst,
                  "OutputViewType (the type of dst) must be a rank-1 Kokkos::View.");
   static_assert (static_cast<int> (InputViewType::rank) == 1,
                  "InputViewType (the type of src) must be a rank-1 Kokkos::View.");
-  if (dst.dimension_0 () != src.dimension_0 ()) {
+  if (dst.extent (0) != src.extent (0)) {
     std::ostringstream os;
     os << "Tpetra::Details::copyConvert: "
-       << "dst.dimension_0() = " << dst.dimension_0 ()
-       << " != src.dimension_0() = " << src.dimension_0 ()
+       << "dst.extent(0) = " << dst.extent (0)
+       << " != src.extent(0) = " << src.extent (0)
        << ".";
     throw std::invalid_argument (os.str ());
   }

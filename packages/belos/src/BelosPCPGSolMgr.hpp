@@ -172,6 +172,11 @@ namespace Belos {
       base_type ()
     {}
     virtual ~PCPGSolMgr () {}
+
+    //! clone for Inverted Injection (DII)
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,supportsScalarType>);
+    }
   };
 
   template<class ScalarType, class MV, class OP>
@@ -236,6 +241,11 @@ namespace Belos {
 
     //! Destructor.
     virtual ~PCPGSolMgr() {};
+
+    //! clone for Inverted Injection (DII)
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP>);
+    }
     //@}
 
     //! @name Accessor methods
@@ -362,17 +372,15 @@ namespace Belos {
     Teuchos::RCP<Teuchos::ParameterList> params_;
 
     // Default solver values.
-    static const MagnitudeType convtol_default_;
-    static const MagnitudeType orthoKappa_default_;
-    static const int maxIters_default_;
-    static const int deflatedBlocks_default_;
-    static const int savedBlocks_default_;
-    static const int verbosity_default_;
-    static const int outputStyle_default_;
-    static const int outputFreq_default_;
-    static const std::string label_default_;
-    static const std::string orthoType_default_;
-    static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static constexpr int maxIters_default_ = 1000;
+    static constexpr int deflatedBlocks_default_ = 2;
+    static constexpr int savedBlocks_default_ = 16;
+    static constexpr int verbosity_default_ = Belos::Errors;
+    static constexpr int outputStyle_default_ = Belos::General;
+    static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * label_default_ = "Belos";
+    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
 
     //
     // Current solver values.
@@ -411,49 +419,12 @@ namespace Belos {
   };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename PCPGSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-PCPGSolMgr<ScalarType,MV,OP,true>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename PCPGSolMgr<ScalarType,MV,OP,true>::MagnitudeType
-PCPGSolMgr<ScalarType,MV,OP,true>::orthoKappa_default_ = -1.0;
-
-template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP,true>::deflatedBlocks_default_ = 2;
-
-template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP,true>::savedBlocks_default_ = 16;
-
-template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int PCPGSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string PCPGSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const std::string PCPGSolMgr<ScalarType,MV,OP,true>::orthoType_default_ = "DGKS";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> PCPGSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
-
-
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr() :
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
-  orthoKappa_(orthoKappa_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+  convtol_(DefaultSolverParameters::convTol),
+  orthoKappa_(DefaultSolverParameters::orthoKappa),
   achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
   numIters_(0),
   maxIters_(maxIters_default_),
@@ -475,9 +446,10 @@ PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr(
                                              const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                              const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
-  orthoKappa_(orthoKappa_default_),
+  outputStream_(Teuchos::rcp(outputStream_default_,false)),
+
+  convtol_(DefaultSolverParameters::convTol),
+  orthoKappa_(DefaultSolverParameters::orthoKappa),
   achievedTol_(Teuchos::ScalarTraits<MagnitudeType>::zero()),
   numIters_(0),
   maxIters_(maxIters_default_),
@@ -547,7 +519,8 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
                        "Belos::PCPGSolMgr: \"Num Deflated Blocks\" must be <= \"Num Saved Blocks\".");
 
     // Update parameter in our list.
-    params_->set("Num Deflated Blocks", deflatedBlocks_);
+    // The static_cast is for clang link issues with the constexpr before c++17
+    params_->set("Num Deflated Blocks", static_cast<int>(deflatedBlocks_));
   }
 
   // Check to see if the timer label changed.
@@ -598,7 +571,14 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Check which orthogonalization constant to use.
   if (params->isParameter("Orthogonalization Constant")) {
-    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
 
     // Update parameter in our list.
     params_->set("Orthogonalization Constant",orthoKappa_);
@@ -669,7 +649,13 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
@@ -743,33 +729,33 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     // Set all the valid parameters and their default values.
-    pl->set("Convergence Tolerance", convtol_default_,
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Num Deflated Blocks", deflatedBlocks_default_,
+    pl->set("Num Deflated Blocks", static_cast<int>(deflatedBlocks_default_),
       "The maximum number of vectors in the seed subspace." );
-    pl->set("Num Saved Blocks", savedBlocks_default_,
+    pl->set("Num Saved Blocks", static_cast<int>(savedBlocks_default_),
       "The maximum number of vectors saved from old Krylov subspaces." );
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
-    pl->set("Orthogonalization", orthoType_default_,
+    pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use: DGKS, ICGS, IMGS");
-    pl->set("Orthogonalization Constant",orthoKappa_default_,
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
     validPL = pl;

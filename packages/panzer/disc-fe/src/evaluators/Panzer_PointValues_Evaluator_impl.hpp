@@ -120,7 +120,7 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     TEUCHOS_ASSERT(userArray->rank()==2);
     MDFieldArrayFactory md_af("refPointArray",true);
 
-    refPointArray = md_af.buildStaticArray<double,NODE,Dim>("refPointArray",userArray->dimension(0),userArray->dimension(1));
+    refPointArray = md_af.buildStaticArray<double,NODE,Dim>("refPointArray",userArray->extent(0),userArray->extent(1));
     // TEUCHOS_ASSERT(refPointArray.size()==userArray->size());
     for(int i=0;i<userArray->extent_int(0);i++)
       for(int j=0;j<userArray->extent_int(1);j++)

@@ -107,8 +107,8 @@ struct AbsMax<ViewType1, ViewType2, 2> {
       "AbsMax: The type of each entry of X and Y must be the same.");
     typedef Kokkos::Details::ArithTraits<STY> KAT;
 
-    const int numCols = Y.dimension_1 ();
-    const int numRows = Y.dimension_0 ();
+    const int numCols = Y.extent (1);
+    const int numRows = Y.extent (0);
     for (int j = 0; j < numCols; ++j) {
       for (int i = 0; i < numRows; ++i) {
         STY& Y_ij = Y(i,j); // use ref here to avoid 2nd op() call on Y
@@ -148,7 +148,7 @@ struct AbsMax<ViewType1, ViewType2, 1> {
       "AbsMax: The type of each entry of X and Y must be the same.");
     typedef Kokkos::Details::ArithTraits<STY> KAT;
 
-    const int numRows = Y.dimension_0 ();
+    const int numRows = Y.extent (0);
     for (int i = 0; i < numRows; ++i) {
       STY& Y_i = Y(i); // use ref here to avoid 2nd op() call on Y
       const STX X_i = X(i);
@@ -203,7 +203,7 @@ struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 1> {
   static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha, const ViewType& x)
   {
-    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    const IndexType numRows = static_cast<IndexType> (x.extent (0));
     // BLAS _SCAL doesn't check whether alpha is 0.
     for (IndexType i = 0; i < numRows; ++i) {
       x(i) = alpha * x(i);
@@ -222,8 +222,8 @@ struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 2> {
   static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha, const ViewType& A)
   {
-    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+    const IndexType numRows = static_cast<IndexType> (A.extent (0));
+    const IndexType numCols = static_cast<IndexType> (A.extent (1));
 
     // BLAS _SCAL doesn't check whether alpha is 0.
     for (IndexType i = 0; i < numRows; ++i) {
@@ -249,7 +249,7 @@ struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
   {
     const IndexType N = A.size ();
     typedef typename std::decay<decltype (A(0,0)) >::type scalar_type;
-    scalar_type* const A_raw = A.ptr_on_device ();
+    scalar_type* const A_raw = A.data ();
 
     for (IndexType i = 0; i < N; ++i) {
       A_raw[i] = alpha * A_raw[i];
@@ -282,7 +282,7 @@ struct FILL<ViewType, InputType, LayoutType, IndexType, 1> {
   static KOKKOS_INLINE_FUNCTION void
   run (const ViewType& x, const InputType& val)
   {
-    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    const IndexType numRows = static_cast<IndexType> (x.extent (0));
     for (IndexType i = 0; i < numRows; ++i) {
       x(i) = val;
     }
@@ -299,8 +299,8 @@ struct FILL<ViewType, InputType, LayoutType, IndexType, 2> {
   static KOKKOS_INLINE_FUNCTION void
   run (const ViewType& X, const InputType& val)
   {
-    const IndexType numRows = static_cast<IndexType> (X.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (X.dimension_1 ());
+    const IndexType numRows = static_cast<IndexType> (X.extent (0));
+    const IndexType numCols = static_cast<IndexType> (X.extent (1));
     for (IndexType j = 0; j < numCols; ++j) {
       for (IndexType i = 0; i < numRows; ++i) {
         X(i,j) = val;
@@ -346,7 +346,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: x and y must have the same rank.");
 
-    const IndexType numRows = static_cast<IndexType> (y.dimension_0 ());
+    const IndexType numRows = static_cast<IndexType> (y.extent (0));
     if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < numRows; ++i) {
         y(i) += alpha * x(i);
@@ -373,8 +373,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
     using Kokkos::Details::ArithTraits;
     static_assert (ViewType1::rank == ViewType2::rank,
                    "AXPY: X and Y must have the same rank.");
-    const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
+    const IndexType numRows = static_cast<IndexType> (Y.extent (0));
+    const IndexType numCols = static_cast<IndexType> (Y.extent (1));
 
     if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < numRows; ++i) {
@@ -408,8 +408,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
 
     const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.ptr_on_device ();
-    SY* const Y_raw = Y.ptr_on_device ();
+    const SX* const X_raw = X.data ();
+    SY* const Y_raw = Y.data ();
 
     if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < N; ++i) {
@@ -440,8 +440,8 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::L
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
 
     const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.ptr_on_device ();
-    SY* const Y_raw = Y.ptr_on_device ();
+    const SX* const X_raw = X.data ();
+    SY* const Y_raw = Y.data ();
 
     if (alpha != ArithTraits<CoefficientType>::zero ()) {
       for (IndexType i = 0; i < N; ++i) {
@@ -478,7 +478,7 @@ struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   static KOKKOS_INLINE_FUNCTION void
   run (const ViewType1& x, const ViewType2& y)
   {
-    const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
+    const IndexType numRows = static_cast<IndexType> (x.extent (0));
     for (IndexType i = 0; i < numRows; ++i) {
       y(i) = x(i);
     }
@@ -497,8 +497,8 @@ struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   static KOKKOS_INLINE_FUNCTION void
   run (const ViewType1& X, const ViewType2& Y)
   {
-    const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
+    const IndexType numRows = static_cast<IndexType> (Y.extent (0));
+    const IndexType numCols = static_cast<IndexType> (Y.extent (1));
 
     // BLAS _SCAL doesn't check whether alpha is 0.
     for (IndexType i = 0; i < numRows; ++i) {
@@ -524,8 +524,8 @@ struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, Inde
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
 
     const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.ptr_on_device ();
-    SY* const Y_raw = Y.ptr_on_device ();
+    const SX* const X_raw = X.data ();
+    SY* const Y_raw = Y.data ();
 
     // BLAS _SCAL doesn't check whether alpha is 0.
     for (IndexType i = 0; i < N; ++i) {
@@ -549,8 +549,8 @@ struct COPY<ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::LayoutLeft, IndexT
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
 
     const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.ptr_on_device ();
-    SY* const Y_raw = Y.ptr_on_device ();
+    const SX* const X_raw = X.data ();
+    SY* const Y_raw = Y.data ();
 
     // BLAS _SCAL doesn't check whether alpha is 0.
     for (IndexType i = 0; i < N; ++i) {
@@ -580,8 +580,8 @@ struct GEMV {
     static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
     typedef typename std::decay<decltype (y(0)) >::type y_elt_type;
 
-    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+    const IndexType numRows = static_cast<IndexType> (A.extent (0));
+    const IndexType numCols = static_cast<IndexType> (A.extent (1));
 
     for (IndexType i = 0; i < numRows; ++i) {
       y_elt_type y_i = y(i);
@@ -613,9 +613,9 @@ struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
     typedef typename std::decay<decltype (y(0)) >::type y_elt_type;
     typedef typename std::decay<decltype (A(0,0)) >::type A_elt_type;
 
-    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
-    const A_elt_type* const A_raw = A.ptr_on_device ();
+    const IndexType numRows = static_cast<IndexType> (A.extent (0));
+    const IndexType numCols = static_cast<IndexType> (A.extent (1));
+    const A_elt_type* const A_raw = A.data ();
 
     for (IndexType i = 0; i < numRows; ++i) {
       y_elt_type y_i = y(i);
@@ -647,9 +647,9 @@ struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
     static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
     typedef typename std::decay<decltype (A(0,0)) >::type A_elt_type;
 
-    const A_elt_type* const A_raw = A.ptr_on_device ();
-    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+    const A_elt_type* const A_raw = A.data ();
+    const IndexType numRows = static_cast<IndexType> (A.extent (0));
+    const IndexType numCols = static_cast<IndexType> (A.extent (1));
     for (IndexType j = 0; j < numCols; ++j) {
       const A_elt_type* const A_j = A_raw + j*numRows;
       for (IndexType i = 0; i < numRows; ++i) {
@@ -794,14 +794,14 @@ GEMM (const char transA[],
   // Get the dimensions
   IndexType m, n, k;
   if(transA[0] == 'N' || transA[0] == 'n') {
-    m = static_cast<IndexType> (A.dimension_0 ());
-    n = static_cast<IndexType> (A.dimension_1 ());
+    m = static_cast<IndexType> (A.extent (0));
+    n = static_cast<IndexType> (A.extent (1));
   }
   else {
-    m = static_cast<IndexType> (A.dimension_1 ());
-    n = static_cast<IndexType> (A.dimension_0 ());
+    m = static_cast<IndexType> (A.extent (1));
+    n = static_cast<IndexType> (A.extent (0));
   }
-  k = static_cast<IndexType> (C.dimension_1 ());
+  k = static_cast<IndexType> (C.extent (1));
 
   // quick return if possible
   if(alpha == ZERO && beta == ONE)
@@ -927,9 +927,9 @@ GETF2 (const LittleBlockType& A, const LittleVectorType& ipiv, int& info)
   typedef Kokkos::Details::ArithTraits<Scalar> STS;
   const Scalar ZERO = STS::zero();
 
-  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
-  const IndexType pivDim = static_cast<IndexType> (ipiv.dimension_0 ());
+  const IndexType numRows = static_cast<IndexType> (A.extent (0));
+  const IndexType numCols = static_cast<IndexType> (A.extent (1));
+  const IndexType pivDim = static_cast<IndexType> (ipiv.extent (0));
 
   // std::min is not a CUDA device function
   const IndexType minPivDim = (numRows < numCols) ? numRows : numCols;
@@ -1031,9 +1031,9 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 1> {
 
     typedef Kokkos::Details::ArithTraits<Scalar> STS;
     const Scalar ZERO = STS::zero();
-    const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-    const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
-    const IndexType pivDim = static_cast<IndexType> (ipiv.dimension_0 ());
+    const IndexType numRows = static_cast<IndexType> (A.extent (0));
+    const IndexType numCols = static_cast<IndexType> (A.extent (1));
+    const IndexType pivDim = static_cast<IndexType> (ipiv.extent (0));
 
     info = 0;
 
@@ -1124,7 +1124,7 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 2> {
     // The current implementation iterates over one right-hand side at
     // a time.  It might be faster to do this differently, but this
     // should work for now.
-    const IndexType numRhs = B.dimension_1 ();
+    const IndexType numRhs = B.extent (1);
     info = 0;
 
     for (IndexType rhs = 0; rhs < numRhs; ++rhs) {
@@ -1197,10 +1197,10 @@ GETRI (const LittleBlockType& A,
   const Scalar ZERO = STS::zero();
   const Scalar ONE = STS::one();
 
-  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
-  const IndexType pivDim = static_cast<IndexType> (ipiv.dimension_0 ());
-  const IndexType workDim = static_cast<IndexType> (work.dimension_0 ());
+  const IndexType numRows = static_cast<IndexType> (A.extent (0));
+  const IndexType numCols = static_cast<IndexType> (A.extent (1));
+  const IndexType pivDim = static_cast<IndexType> (ipiv.extent (0));
+  const IndexType workDim = static_cast<IndexType> (work.extent (0));
 
   info = 0;
 
@@ -1294,8 +1294,8 @@ GEMV (const char trans,
   // zero entries -- this doesn't actually do y(i), it just returns
   // the type of that expression.
   typedef typename std::remove_reference<decltype (y(0)) >::type y_value_type;
-  const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
-  const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
+  const IndexType numRows = static_cast<IndexType> (A.extent (0));
+  const IndexType numCols = static_cast<IndexType> (A.extent (1));
 
   if (beta == 0.0) {
     if (alpha == 0.0) {

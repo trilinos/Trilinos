@@ -29,11 +29,13 @@ APPEND_SET(HEADERS
   BelosSolverFactory_Tpetra.hpp
   BelosTpetraAdapter.hpp
   Belos_Details_Tpetra_registerLinearSolverFactory.hpp
+  Belos_Details_Tpetra_registerSolverFactory.hpp
   )
 
 APPEND_SET(SOURCES
   BelosTpetraAdapter.cpp
   Belos_Details_Tpetra_registerLinearSolverFactory.cpp
+  Belos_Details_Tpetra_registerSolverFactory.cpp
   )
 
 #

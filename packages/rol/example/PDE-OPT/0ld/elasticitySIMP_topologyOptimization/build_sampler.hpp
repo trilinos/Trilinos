@@ -3,7 +3,7 @@
 #define BUILDSAMPLERHPP
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 

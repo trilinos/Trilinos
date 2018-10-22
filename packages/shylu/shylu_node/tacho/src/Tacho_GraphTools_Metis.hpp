@@ -47,16 +47,16 @@ namespace Tacho {
         // input 
         _nvts = g.NumRows();
 
-        _xadj   = idx_t_array("idx_t_xadj",   g.RowPtr().dimension_0());
-        _adjncy = idx_t_array("idx_t_adjncy", g.ColIdx().dimension_0());
+        _xadj   = idx_t_array("idx_t_xadj",   g.RowPtr().extent(0));
+        _adjncy = idx_t_array("idx_t_adjncy", g.ColIdx().extent(0));
         _vwgt   = idx_t_array();
 
         const auto &g_row_ptr = g.RowPtr();
         const auto &g_col_idx = g.ColIdx();
 
-        for (ordinal_type i=0;i<static_cast<ordinal_type>(_xadj.dimension_0());++i)
+        for (ordinal_type i=0;i<static_cast<ordinal_type>(_xadj.extent(0));++i)
           _xadj(i) = g_row_ptr(i);
-        for (ordinal_type i=0;i<static_cast<ordinal_type>(_adjncy.dimension_0());++i)
+        for (ordinal_type i=0;i<static_cast<ordinal_type>(_adjncy.extent(0));++i)
           _adjncy(i) = g_col_idx(i);
         
         METIS_SetDefaultOptions(_options);
@@ -142,7 +142,7 @@ namespace Tacho {
           os << " -- Not Ordered -- " << std::endl;
 
         if (detail) {
-          const ordinal_type w = 6, m = _perm.dimension_0();
+          const ordinal_type w = 6, m = _perm.extent(0);
           for (ordinal_type i=0;i<m;++i)
             os << std::setw(w) << _perm[i] << "   "
                << std::setw(w) << _peri[i] << "   "

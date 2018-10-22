@@ -405,7 +405,6 @@ struct ScalarTraits<long unsigned int>
 };
 
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct ScalarTraits<long long int>
 {
@@ -479,7 +478,6 @@ struct ScalarTraits<unsigned long long int>
   static inline unsigned long long int log(unsigned long long int x) { return static_cast<unsigned long long int> (std::log (static_cast<double> (x))); }
   static inline unsigned long long int log10(unsigned long long int x) { return static_cast<unsigned long long int> (std::log10 (static_cast<double> (x))); }
 };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 
 #ifdef HAVE_TEUCHOS___INT64

@@ -79,6 +79,9 @@ RCP<const ParameterList> RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal
   validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Factory for generating the non-rebalanced coarse level A. We need this to make sure the non-rebalanced coarse A is calculated first before rebalancing takes place.");
 
   validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory for generating the non-rebalanced Coordinates.");
+  validParamList->set<RCP<const FactoryBase> >("Importer", Teuchos::null, "Generating factory of the matrix Importer for rebalancing");
+  validParamList->set<RCP<const FactoryBase> >("SubImporters", Teuchos::null, "Generating factory of the matrix sub-Importers for rebalancing");
+
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   // SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef SET_VALID_ENTRY
@@ -111,12 +114,24 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     if((*it)->hasFactory("Coordinates") == true)
       coarseLevel.DeclareInput("Coordinates",(*it)->GetFactory("Coordinates").get(), this);
   }
+
+  // Use the non-manager path if the maps / importers are generated in one place
+  if(FactManager_.size() == 0) {
+    Input(coarseLevel,"Importer");
+    Input(coarseLevel,"SubImporters");
+    Input(coarseLevel,"Coordinates");
+  }
+
+
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
+  typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+  typedef Xpetra::BlockedMultiVector<double,LO,GO,NO> xdBV;
 
+  bool UseSingleSource = FactManager_.size() == 0;
   //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   Teuchos::RCP<Matrix> nonrebCoarseA = Get< RCP<Matrix> >(coarseLevel, "A");
@@ -152,6 +167,15 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   std::vector<Teuchos::RCP<Matrix> > subBlockRebP;
   subBlockRebP.reserve(bOriginalTransferOp->Rows());
 
+  // For use in single-source mode only
+  std::vector<RCP<const Import> > importers = std::vector<RCP<const Import> >(bOriginalTransferOp->Rows(), Teuchos::null);
+  std::vector<RCP<xdMV> > newCoordinates(bOriginalTransferOp->Rows());
+  RCP<xdBV> oldCoordinates;
+  if(UseSingleSource) {
+    importers = Get<std::vector<RCP<const Import> > >(coarseLevel,"SubImporters");
+    oldCoordinates = Get<RCP<xdBV> >(coarseLevel,"Coordinates");
+  }
+
   int curBlockId = 0;
   Teuchos::RCP<const Import> rebalanceImporter = Teuchos::null;
   std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
@@ -161,7 +185,8 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     SetFactoryManager coarseSFM(rcpFromRef(coarseLevel), *it);
 
     // TAW: use the Level::Get routine in order to access the data declared in (*it) factory manager (rather than the main factory manager)
-    rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
+    if(UseSingleSource) rebalanceImporter = importers[curBlockId];
+    else rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
 
     // extract diagonal matrix block
     Teuchos::RCP<Matrix> Pii = bOriginalTransferOp->getMatrix(curBlockId, curBlockId);
@@ -208,10 +233,19 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
       // rebalance coordinates
       // TAW: Note, that each sub-block manager overwrites the Coordinates. So far we only support one set of Coordinates
-      //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)
+      //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)   
+      if(UseSingleSource)  {
+	RCP<xdMV> localCoords = oldCoordinates->getMultiVector(curBlockId);
 
-      if((*it)->hasFactory("Coordinates") == true && coarseLevel.IsAvailable("Coordinates",(*it)->GetFactory("Coordinates").get()) == true) {
-        typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+	// FIXME: This should be extended to work with blocking
+	RCP<const Import> coordImporter = rebalanceImporter;
+
+	RCP<xdMV> permutedLocalCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), localCoords->getNumVectors());
+        permutedLocalCoords->doImport(*localCoords, *coordImporter, Xpetra::INSERT);
+
+	newCoordinates[curBlockId] = permutedLocalCoords;
+      }
+      else if ( (*it)->hasFactory("Coordinates") == true && coarseLevel.IsAvailable("Coordinates",(*it)->GetFactory("Coordinates").get()) == true) {
         RCP<xdMV> coords = coarseLevel.Get< RCP<xdMV> >("Coordinates",(*it)->GetFactory("Coordinates").get());
 
         // This line must be after the Get call
@@ -228,13 +262,12 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
                           "MueLu::RebalanceBlockInterpolationFactory::Build: block size. " << rebalanceImporter->getSourceMap()->getNodeNumElements() << " not divisable by " << nodeNumElts);
           myBlkSize = rebalanceImporter->getSourceMap()->getNodeNumElements() / nodeNumElts;
         }
-
+      
         MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
         RCP<const Import> coordImporter = Teuchos::null;
         if (blkSize == 1) {
           coordImporter = rebalanceImporter;
-
         } else {
           // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
           // Proper fix would require using decomposition similar to how we construct importer in the
@@ -251,7 +284,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
           RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
           coordImporter = ImportFactory::Build(origMap, targetMap);
         }
-
+      
         RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
@@ -274,11 +307,10 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       // TAW: Note, that each sub-block manager overwrites the Coordinates. So far we only support one set of Coordinates
       //      for a multiphysics problem (i.e., we only support volume coupled problems with the same mesh)
       if((*it)->hasFactory("Coordinates") == true && coarseLevel.IsAvailable("Coordinates",(*it)->GetFactory("Coordinates").get()) == true) {
-        typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
         coarseLevel.Set("Coordinates", coarseLevel.Get< RCP<xdMV> >("Coordinates",(*it)->GetFactory("Coordinates").get()),this);
       }
     }
-
+  
     // fix striding information for rebalanced diagonal block Pii
     //RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> > rgPMapExtractor = bOriginalTransferOp->getRangeMapExtractor(); // original map extractor
     Teuchos::RCP<const StridedMap> orig_stridedRgMap = Teuchos::rcp_dynamic_cast<const StridedMap>(rangeMapExtractor->getMap(Teuchos::as<size_t>(curBlockId),rangeMapExtractor->getThyraMode()));
@@ -416,6 +448,15 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   bRebP->fillComplete();
 
   Set(coarseLevel, "P", Teuchos::rcp_dynamic_cast<Matrix>(bRebP));
+
+
+  // Finish up the coordinates (single source only)
+  if(UseSingleSource)  {
+    RCP<xdBV> bcoarseCoords = rcp(new xdBV(rebrangeMapExtractor->getBlockedMap(),newCoordinates));
+    Set(coarseLevel,"Coordinates",bcoarseCoords);
+  }
+  
+
 } // Build
 
 } // namespace MueLu

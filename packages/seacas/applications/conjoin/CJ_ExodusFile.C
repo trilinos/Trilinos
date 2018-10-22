@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010 National Technology & Engineering Solutions
+// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -65,7 +65,8 @@ Excn::ExodusFile::ExodusFile(size_t which) : myLocation_(which)
     float version       = 0.0;
     int   cpu_word_size = cpuWordSize_;
     int   io_wrd_size   = ioWordSize_;
-    fileids_[which]     = ex_open(filenames_[which].c_str(), EX_READ | exodusMode_, &cpu_word_size,
+    SMART_ASSERT(fileids_[which] == -1)(which)(fileids_[which]);
+    fileids_[which] = ex_open(filenames_[which].c_str(), EX_READ | exodusMode_, &cpu_word_size,
                               &io_wrd_size, &version);
     if (fileids_[which] < 0) {
       std::cerr << "Cannot open file '" << filenames_[which] << "' - exiting" << '\n';
@@ -94,6 +95,7 @@ Excn::ExodusFile::~ExodusFile()
 {
   try {
     if (!keepOpen_ && myLocation_ != 0) {
+      SMART_ASSERT(fileids_[myLocation_] > 0)(myLocation_)(fileids_[myLocation_]);
       ex_close(fileids_[myLocation_]);
       fileids_[myLocation_] = -1;
     }
@@ -105,7 +107,9 @@ Excn::ExodusFile::~ExodusFile()
 void Excn::ExodusFile::close_all()
 {
   for (auto &elem : fileids_) {
-    ex_close(elem);
+    if (elem > 0) {
+      ex_close(elem);
+    }
     elem = -1;
   }
   ex_close(outputId_);
@@ -124,17 +128,16 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
   }
   else {
     keepOpen_ = false;
-    std::cout << "Single file mode... (Max open = " << max_files << ")\n"
-              << "Consider using the -subcycle option for faster execution...\n\n";
+    std::cout << "Single file mode... (Max open = " << max_files << ")\n\n";
   }
 
   float version = 0.0;
 
   // create exo names
   filenames_.resize(si.inputFiles_.size());
-  fileids_.resize(si.inputFiles_.size());
+  fileids_.resize(si.inputFiles_.size(), -1);
 
-  int overall_max_name_length = 0;
+  int overall_max_name_length = 32;
   for (size_t p = 0; p < si.inputFiles_.size(); p++) {
     std::string name = si.inputFiles_[p];
 
@@ -181,14 +184,18 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
       SMART_ASSERT(ioWordSize_ == io_wrd_size)(ioWordSize_)(io_wrd_size);
     }
 
-    std::cout << "Part " << p + 1 << ": '" << name.c_str() << "'" << '\n';
+    std::cout << "Part " << p + 1 << ": '" << name << "'" << '\n';
   }
 
   maximumNameLength_ = overall_max_name_length;
-  for (size_t p = 0; p < si.inputFiles_.size(); p++) {
-    ex_set_max_name_length(fileids_[p], maximumNameLength_);
+  if (keepOpen_) {
+    for (size_t p = 0; p < si.inputFiles_.size(); p++) {
+      ex_set_max_name_length(fileids_[p], maximumNameLength_);
+    }
   }
-
+  else {
+    ex_set_max_name_length(fileids_[0], maximumNameLength_);
+  }
   return true;
 }
 
@@ -202,12 +209,22 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
     mode |= EX_ALL_INT64_DB;
   }
 
+  if (si.compress_data() > 0 || si.use_netcdf4()) {
+    mode |= EX_NETCDF4;
+  }
+
   std::cout << "Output:   '" << outputFilename_ << "'" << '\n';
   outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   if (outputId_ < 0) {
     std::cerr << "Cannot open file '" << outputFilename_ << "'" << '\n';
     return false;
   }
+
+  if (si.compress_data() > 0) {
+    ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
+    ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
+  }
+
   std::cout << "IO Word size is " << ioWordSize_ << " bytes.\n";
   ex_set_max_name_length(outputId_, maximumNameLength_);
   return true;

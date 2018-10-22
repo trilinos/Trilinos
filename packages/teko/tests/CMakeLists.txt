@@ -23,8 +23,8 @@ SET(UNIT_TEST_DRIVER
 
 # For serial tests, use 1 MPI proc, one thread when threads are available
 # For parallel tests, use 4 MPI procs when OpenMP not enabled; use 2 MPI procs, 2 threads when OpenMP enabled
-IF(DEFINED KOKKOS_HAVE_OPENMP)
-  IF(KOKKOS_HAVE_OPENMP)
+IF(DEFINED KOKKOS_ENABLE_OPENMP)
+  IF(KOKKOS_ENABLE_OPENMP)
     SET(SERIAL_ARGS_STRING "--kokkos-threads=1")
     SET(PARALLEL_ARGS_STRING "--kokkos-threads=2")
     SET(CUSTOM_MPI_PROCS "2")
@@ -64,6 +64,10 @@ TRIBITS_ADD_TEST(
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
+IF (${PACKAGE_NAME}_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
+  SET(testdriver_TARGET_DEFINES -DTEKO_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D)
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE(
   testdriver_tpetra
   SOURCES
@@ -72,6 +76,7 @@ TRIBITS_ADD_EXECUTABLE(
       ./Test_Utils.cpp
       ./Test_Utils.hpp
       ./testdriver_tpetra.cpp
+  TARGET_DEFINES ${testdriver_TARGET_DEFINES}
   COMM mpi serial
   )
 

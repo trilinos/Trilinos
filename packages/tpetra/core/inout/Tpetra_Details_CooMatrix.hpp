@@ -287,7 +287,7 @@ public:
 
     int numPacketsForCount = 0; // output argument of countPackTriplesCount
     {
-      const int errCode =
+      errCode =
         countPackTriplesCount (comm, numPacketsForCount, errStrm);
       if (errCode != 0) {
         if (errStrm != NULL) {
@@ -307,7 +307,7 @@ public:
 
     int numPacketsForTriples = 0; // output argument of countPackTriples
     {
-      const int errCode = countPackTriples<SC, GO> (numEnt, comm, numPacketsForTriples);
+      errCode = countPackTriples<SC, GO> (numEnt, comm, numPacketsForTriples);
       TEUCHOS_TEST_FOR_EXCEPTION
         (errCode != 0, std::runtime_error, prefix << "countPackTriples "
          "returned errCode = " << errCode << " != 0.");
@@ -691,8 +691,8 @@ public:
 
     std::vector<std::size_t> rowOffsetsSV;
     this->impl_.buildCrs (rowOffsetsSV,
-                          gblColInds_h.ptr_on_device (),
-                          vals_h.ptr_on_device ());
+                          gblColInds_h.data (),
+                          vals_h.data ());
     rowOffsets =
       View<OffsetType*, device_type> ("rowOffsets", rowOffsetsSV.size ());
     typename View<OffsetType*, device_type>::HostMirror
@@ -1030,12 +1030,12 @@ protected:
     }
 
     const size_t numPermuteIDs =
-      static_cast<size_t> (permuteToLIDs.dimension_0 ());
-    if (numPermuteIDs != static_cast<size_t> (permuteFromLIDs.dimension_0 ())) {
+      static_cast<size_t> (permuteToLIDs.extent (0));
+    if (numPermuteIDs != static_cast<size_t> (permuteFromLIDs.extent (0))) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix << "permuteToLIDs.dimension_0() = "
-          << numPermuteIDs << " != permuteFromLIDs.dimension_0() = "
-          << permuteFromLIDs.dimension_0 () << "." << endl;
+      err << prefix << "permuteToLIDs.extent(0) = "
+          << numPermuteIDs << " != permuteFromLIDs.extent(0) = "
+          << permuteFromLIDs.extent (0) << "." << endl;
       return;
     }
     if (sizeof (int) <= sizeof (size_t) &&
@@ -1256,7 +1256,7 @@ protected:
 
     // TODO (mfh 28 Jan 2017) pack source object's data, NOT *this's data!
 
-    const size_t numExports = exportLIDs.dimension_0 ();
+    const size_t numExports = exportLIDs.extent (0);
     if (numExports == 0) {
       Details::reallocDualViewIfNeeded (exports, 0, exports.h_view.label ());
       return; // nothing to send
@@ -1384,7 +1384,7 @@ protected:
     std::vector<SC> vals;
 
     int outBufCurPos = 0;
-    packet_type* outBuf = exports.h_view.ptr_on_device ();
+    packet_type* outBuf = exports.h_view.data ();
     for (size_t k = 0; k < numExports; ++k) {
       const LO lclRow = exportLIDs.h_view[k];
       // We're packing the source object's data, so we need to use the
@@ -1426,11 +1426,11 @@ protected:
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
 
-    const std::size_t numImports = importLIDs.dimension_0 ();
+    const std::size_t numImports = importLIDs.extent (0);
     if (numImports == 0) {
       return; // nothing to receive
     }
-    else if (imports.dimension_0 () == 0) {
+    else if (imports.extent (0) == 0) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
       typename Kokkos::DualView<const LO*, device_type>::t_host importLIDs_h;
       {
@@ -1439,7 +1439,7 @@ protected:
           // It's forbidden to sync a DualView<const T>, so we must copy.
           auto importLIDs_d = importLIDs.template view<DMS> ();
           typedef typename decltype (importLIDs_h)::non_const_type HVNC;
-          HVNC importLIDs_h_nc (importLIDs_d.label (), importLIDs.dimension_0 ());
+          HVNC importLIDs_h_nc (importLIDs_d.label (), importLIDs.extent (0));
           Kokkos::deep_copy (importLIDs_h_nc, importLIDs_d);
           importLIDs_h = importLIDs_h_nc;
         }
@@ -1447,8 +1447,8 @@ protected:
           importLIDs_h = importLIDs.h_view; // importLIDs.template view<HMS> ();
         }
       }
-      err << prefix << "importLIDs.dimension_0() = " << numImports << " != 0, "
-          << "but imports.dimension_0() = 0.  This doesn't make sense, because "
+      err << prefix << "importLIDs.extent(0) = " << numImports << " != 0, "
+          << "but imports.extent(0) = 0.  This doesn't make sense, because "
           << "for every incoming LID, CooMatrix packs at least the count of "
           << "triples associated with that LID, even if the count is zero.  "
           << "importLIDs = [";
@@ -1481,14 +1481,14 @@ protected:
 
     // Make sure that the length of 'imports' fits in int.
     // This is ultimately an MPI restriction.
-    if (static_cast<size_t> (imports.dimension_0 ()) >
+    if (static_cast<size_t> (imports.extent (0)) >
         static_cast<size_t> (std::numeric_limits<int>::max ())) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix << "imports.dimension_0() = "
-          << imports.dimension_0 () << " does not fit in int." << endl;
+      err << prefix << "imports.extent(0) = "
+          << imports.extent (0) << " does not fit in int." << endl;
       return;
     }
-    const int inBufSize = static_cast<int> (imports.dimension_0 ());
+    const int inBufSize = static_cast<int> (imports.extent (0));
 
     // It's forbidden to sync a DualView<const T>, so if the input
     // DualView are not in sync on host, we must make copies.
@@ -1502,7 +1502,7 @@ protected:
         auto importLIDs_d = importLIDs.template view<DMS> ();
         typedef typename decltype (importLIDs_h)::non_const_type HVNC;
         HVNC importLIDs_h_nc (importLIDs_d.label (),
-                              importLIDs.dimension_0 ());
+                              importLIDs.extent (0));
         Kokkos::deep_copy (importLIDs_h_nc, importLIDs_d);
         importLIDs_h = importLIDs_h_nc;
       }
@@ -1515,7 +1515,7 @@ protected:
         auto imports_d = imports.template view<CDMS> ();
         typedef typename decltype (imports_h)::non_const_type HVNC;
         HVNC imports_h_nc (imports_d.label (),
-                           imports.dimension_0 ());
+                           imports.extent (0));
         Kokkos::deep_copy (imports_h_nc, imports_d);
         imports_h = imports_h_nc;
       }
@@ -1528,7 +1528,7 @@ protected:
         auto numPacketsPerLID_d = numPacketsPerLID.template view<CDMS> ();
         typedef typename decltype (numPacketsPerLID_h)::non_const_type HVNC;
         HVNC numPacketsPerLID_h_nc (numPacketsPerLID_d.label (),
-                                    numPacketsPerLID.dimension_0 ());
+                                    numPacketsPerLID.extent (0));
         Kokkos::deep_copy (numPacketsPerLID_h_nc, numPacketsPerLID_d);
         numPacketsPerLID_h = numPacketsPerLID_h_nc;
       }
@@ -1543,7 +1543,7 @@ protected:
     std::vector<GO> gblColInds;
     std::vector<SC> vals;
 
-    const packet_type* inBuf = imports_h.ptr_on_device ();
+    const packet_type* inBuf = imports_h.data ();
     int inBufCurPos = 0;
     size_t numInvalidRowInds = 0;
     int errCode = 0;

@@ -51,6 +51,7 @@
 #include <limits.h>
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_input_const.h"
 #include "dr_util_const.h"
 #include "dr_par_util_const.h"

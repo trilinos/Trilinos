@@ -64,7 +64,7 @@ namespace Intrepid2 {
       KOKKOS_FORCEINLINE_FUNCTION
       typename inMatViewType::value_type
       det( const inMatViewType inMat ) {
-        const auto dim = inMat.dimension(0);
+        const auto dim = inMat.extent(0);
         return ( dim == 3 ? ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
                               inMat(1,0) * inMat(2,1) * inMat(0,2) +
                               inMat(2,0) * inMat(0,1) * inMat(1,2) -
@@ -95,13 +95,13 @@ namespace Intrepid2 {
         // 15 % difference, right stride access is better (of course)
 
         // right
-        const auto stride = _inMats.dimension(1);
+        const auto stride = _inMats.extent(1);
         const auto 
           i = iter / stride, 
           j = iter % stride;
 
         // left
-        // const auto stride = _inMats.dimension(0);
+        // const auto stride = _inMats.extent(0);
         // const auto 
         //   i = iter % stride, 
         //   j = iter / stride;
@@ -114,7 +114,7 @@ namespace Intrepid2 {
 
         // direct access (base is 8 rank)
         {
-          const auto dim = _inMats.dimension(2);
+          const auto dim = _inMats.extent(2);
           const auto val = ( dim == 3 ? ( _inMats(i,j,0,0) * _inMats(i,j,1,1) * _inMats(i,j,2,2) +
                                           _inMats(i,j,1,0) * _inMats(i,j,2,1) * _inMats(i,j,0,2) +
                                           _inMats(i,j,2,0) * _inMats(i,j,0,1) * _inMats(i,j,1,2) -

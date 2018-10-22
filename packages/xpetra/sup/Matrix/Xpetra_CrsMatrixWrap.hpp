@@ -158,6 +158,18 @@ public:
     // Default view
     CreateDefaultView();
   }
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const local_matrix_type& lclMatrix, const RCP<const Map> &rowMap, const RCP<const Map>& colMap,
+                const RCP<const Map>& domainMap = Teuchos::null, const RCP<const Map>& rangeMap = Teuchos::null,
+                const Teuchos::RCP<Teuchos::ParameterList>& params = null)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(lclMatrix, rowMap, colMap, domainMap, rangeMap, params);
+
+    // Default view
+    CreateDefaultView();
+  }
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -339,20 +351,6 @@ public:
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
   size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
     return matrixData_->getNumEntriesInLocalRow(localRow);
-  }
-
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
-  /** Undefined if isFillActive().
-   */
-  global_size_t getGlobalNumDiags() const {
-    return matrixData_->getGlobalNumDiags();
-  }
-
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
-  /** Undefined if isFillActive().
-   */
-  size_t getNodeNumDiags() const {
-    return matrixData_->getNodeNumDiags();
   }
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
@@ -614,6 +612,8 @@ public:
 #endif
 
   // JG: Added:
+
+  bool hasCrsGraph() const {return true;}
 
   //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }

@@ -148,7 +148,7 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
 
       // Generic array for the output values; needs to be properly resized depending on the operator type
       const ordinal_type numFields = quadBasis.getCardinality();
-      const ordinal_type numPoints = quadNodes.dimension(0);
+      const ordinal_type numPoints = quadNodes.extent(0);
       const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
       {
@@ -196,17 +196,17 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
         }
         {
           // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension());
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality() + 1, quadNodes.extent(0), quadBasis.getBaseCellTopology().getDimension());
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) ) ;
         }
         {
           // exception #13 incorrect 1st  dimension of output array (must equal number of points)
-          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1, quadBasis.getBaseCellTopology().getDimension() );
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.extent(0) + 1, quadBasis.getBaseCellTopology().getDimension() );
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) ) ;
         }
         {
           // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
-          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension() - 1);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.extent(0), quadBasis.getBaseCellTopology().getDimension() - 1);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) ) ;
         }
       }
@@ -362,7 +362,7 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
     const auto allTags = quadBasis.getAllDofTags();
 
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    const ordinal_type dofTagSize = allTags.dimension(0);
+    const ordinal_type dofTagSize = allTags.extent(0);
     for (ordinal_type i=0;i<dofTagSize;++i) {
       const ordinal_type bfOrd = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
@@ -459,7 +459,7 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
 
     // Generic array for the output values; needs to be properly resized depending on the operator type
     const ordinal_type numFields = quadBasis.getCardinality();
-    const ordinal_type numPoints = quadNodes.dimension(0);
+    const ordinal_type numPoints = quadNodes.extent(0);
     const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
     *outStream << " -- Testing OPERATOR_VALUE \n";

@@ -47,6 +47,7 @@
     <ParameterList name="Default Stepper">
 
       <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Use Embedded"   type="bool" value="false"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
 

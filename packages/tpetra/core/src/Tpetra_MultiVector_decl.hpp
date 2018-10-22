@@ -51,8 +51,11 @@
 /// Tpetra::MultiVector, include this file
 /// (Tpetra_MultiVector_decl.hpp).
 
+#include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
+#include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
-#include "Tpetra_Map_decl.hpp"
+#include "Tpetra_Map_fwd.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -63,17 +66,6 @@
 #include <type_traits>
 
 namespace Tpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of Map
-  template<class LO, class GO, class N> class Map;
-
-  // forward declaration of Vector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N> class Vector;
-
-  // forward declaration of MultiVector (declared later in this file)
-  template<class S, class LO, class GO, class N> class MultiVector;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   namespace Details {
     /// \brief Implementation of ::Tpetra::MultiVector::clone().
@@ -110,7 +102,6 @@ namespace Tpetra {
       clone (const src_mv_type& X,
              const Teuchos::RCP<typename dst_mv_type::node_type>& node2);
     };
-
   } // namespace Details
 
   /// \brief Copy the contents of the MultiVector \c src into \c dst.
@@ -163,6 +154,14 @@ namespace Tpetra {
   Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   createMultiVector (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                      const size_t numVectors);
+
+namespace Classes {
+  // WARNING NOT FOR USERS
+  // This means we don't need to make MultiVector a friend of
+  // Vector or of itself (with different template parameters).
+  template<class SC, class LO, class GO, class NT>
+  Teuchos::ArrayView<const size_t>
+  getMultiVectorWhichVectors (const MultiVector<SC, LO, GO, NT>& X);
 
   /// \brief One or more distributed dense vectors.
   ///
@@ -359,7 +358,7 @@ namespace Tpetra {
   /// expect.  The memory might not even be accessible from the host
   /// CPU.  Instead, we give access through a Kokkos::View, which
   /// behaves like a 2-D array.  You can ask the Kokkos::View for a
-  /// raw pointer by calling its <tt>ptr_on_device()</tt> method, but
+  /// raw pointer by calling its <tt>data()</tt> method, but
   /// then you are responsible for understanding its layout in memory.
   ///
   /// \section Kokkos_KR_MV_dist Parallel distribution of data
@@ -771,6 +770,12 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
     clone (const Teuchos::RCP<Node2>& node2) const;
 
+    /// \brief Swaps the data from *this with the data and maps from mv
+    /// \param mv [in/out] a MultiVector
+    ///
+    /// Note: This is done with minimal copying of data
+    void swap(MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & mv);
+
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~MultiVector ();
 
@@ -784,11 +789,11 @@ namespace Tpetra {
     ///
     /// \warning This is an implementation detail.
     static const bool useAtomicUpdatesByDefault =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
       ! std::is_same<execution_space, Kokkos::Serial>::value;
 #else
       true;
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
 
   public:
     /// \brief Replace value in host memory, using global row index.
@@ -1561,7 +1566,7 @@ namespace Tpetra {
     /// \param dots [out] Device View with getNumVectors() entries.
     ///
     /// \pre <tt>this->getNumVectors () == A.getNumVectors ()</tt>
-    /// \pre <tt>dots.dimension_0 () == A.getNumVectors ()</tt>
+    /// \pre <tt>dots.extent (0) == A.getNumVectors ()</tt>
     ///
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
@@ -1596,7 +1601,7 @@ namespace Tpetra {
     dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
          const Kokkos::View<T*, device_type>& dots) const
     {
-      const size_t numDots = dots.dimension_0 ();
+      const size_t numDots = dots.extent (0);
       Kokkos::View<dot_type*, device_type> dts ("MV::dot tmp", numDots);
       // Call overload that takes a Kokkos::View<dot_type*, device_type>.
       this->dot (A, dts);
@@ -1686,7 +1691,7 @@ namespace Tpetra {
     ///
     /// \param norms [out] Device View with getNumVectors() entries.
     ///
-    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->norm1 (* (A.getVector[j]))</tt>
     ///
     /// The one-norm of a vector is the sum of the magnitudes of the
@@ -1728,7 +1733,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<mag_type, T>::value), void >::type
     norm1 (const Kokkos::View<T*, device_type>& norms) const
     {
-      const size_t numNorms = norms.dimension_0 ();
+      const size_t numNorms = norms.extent (0);
       Kokkos::View<mag_type*, device_type> tmpNorms ("MV::norm1 tmp", numNorms);
       // Call overload that takes a Kokkos::View<mag_type*, device_type>.
       this->norm1 (tmpNorms);
@@ -1778,7 +1783,7 @@ namespace Tpetra {
     ///
     /// \param norms [out] Device View with getNumVectors() entries.
     ///
-    /// \pre <tt>norms.dimension_0 () == this->getNumVectors ()</tt>
+    /// \pre <tt>norms.extent (0) == this->getNumVectors ()</tt>
     /// \post <tt>norms(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     ///
     /// The two-norm of a vector is the standard Euclidean norm, the
@@ -1819,7 +1824,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<mag_type, T>::value), void >::type
     norm2 (const Kokkos::View<T*, device_type>& norms) const
     {
-      const size_t numNorms = norms.dimension_0 ();
+      const size_t numNorms = norms.extent (0);
       Kokkos::View<mag_type*, device_type> theNorms ("MV::norm2 tmp", numNorms);
       // Call overload that takes a Kokkos::View<mag_type*, device_type>.
       this->norm2 (theNorms);
@@ -1904,7 +1909,7 @@ namespace Tpetra {
     typename std::enable_if< ! (std::is_same<mag_type, T>::value), void >::type
     normInf (const Kokkos::View<T*, device_type>& norms) const
     {
-      const size_t numNorms = norms.dimension_0 ();
+      const size_t numNorms = norms.extent (0);
       Kokkos::View<mag_type*, device_type> theNorms ("MV::normInf tmp", numNorms);
       // Call overload that takes a Kokkos::View<mag_type*, device_type>.
       this->normInf (theNorms);
@@ -2197,8 +2202,8 @@ namespace Tpetra {
     template <class DS, class DL, class DG, class DN,
               class SS, class SL, class SG, class SN>
     friend void
-    deep_copy (MultiVector<DS, DL, DG, DN>& dst,
-               const MultiVector<SS, SL, SG, SN>& src);
+    ::Tpetra::deep_copy (MultiVector<DS, DL, DG, DN>& dst,
+                         const MultiVector<SS, SL, SG, SN>& src);
 
     /// \brief The Kokkos::DualView containing the MultiVector's data.
     ///
@@ -2253,6 +2258,9 @@ namespace Tpetra {
     /// isConstantStride() returns true.
     Teuchos::Array<size_t> whichVectors_;
 
+    template<class SC, class LO, class GO, class NT>
+    friend ::Teuchos::ArrayView<const size_t> getMultiVectorWhichVectors (const ::Tpetra::MultiVector<SC, LO, GO, NT>& X);
+
     //! \name Generic implementation of various norms
     //@{
 
@@ -2273,6 +2281,11 @@ namespace Tpetra {
     void
     normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
               const EWhichNorm whichNorm) const;
+
+    //@}
+    //! \name Implementation of various useful kernel utilities
+    //@{
+
 
     //@}
     //! @name Misc. implementation details
@@ -2380,6 +2393,14 @@ namespace Tpetra {
     //@}
   }; // class MultiVector
 
+  template<class SC, class LO, class GO, class NT>
+  Teuchos::ArrayView<const size_t>
+  getMultiVectorWhichVectors (const MultiVector<SC, LO, GO, NT>& X)
+  {
+    return X.whichVectors_ ();
+  }
+} // namespace Classes
+
   namespace Details {
 
     template<class DstMultiVectorType,
@@ -2434,6 +2455,7 @@ namespace Tpetra {
   {
     typedef typename DN::device_type DD;
     //typedef typename SN::device_type SD;
+    using ::Tpetra::Classes::getMultiVectorWhichVectors;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       dst.getGlobalLength () != src.getGlobalLength () ||
@@ -2479,7 +2501,8 @@ namespace Tpetra {
       typedef typename whichvecs_type::t_host::execution_space HES;
 
       if (dst.isConstantStride ()) {
-        const SL numWhichVecs = static_cast<SL> (src.whichVectors_.size ());
+        const SL numWhichVecs =
+          static_cast<SL> (getMultiVectorWhichVectors (src).size ());
         const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
 
         // We can't sync src, since it is only an input argument.
@@ -2494,8 +2517,11 @@ namespace Tpetra {
           // to copy.  Fill whichVecs on the host, and sync to device.
           whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
           whichVecs.template modify<HES> ();
+
+          Teuchos::ArrayView<const size_t> src_whichVectors =
+            getMultiVectorWhichVectors (src);
           for (SL i = 0; i < numWhichVecs; ++i) {
-            whichVecs.h_view(i) = static_cast<SL> (src.whichVectors_[i]);
+            whichVecs.h_view(i) = static_cast<SL> (src_whichVectors[i]);
           }
           // Sync the host version of whichVecs to the device.
           whichVecs.template sync<DES> ();
@@ -2520,8 +2546,10 @@ namespace Tpetra {
           // to copy.  Fill whichVecs on the host, and use it there.
           typedef Kokkos::View<SL*, HES> the_whichvecs_type;
           the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
+          Teuchos::ArrayView<const size_t> src_whichVectors =
+            getMultiVectorWhichVectors (src);
           for (SL i = 0; i < numWhichVecs; ++i) {
-            whichVecs(i) = static_cast<SL> (src.whichVectors_[i]);
+            whichVecs(i) = static_cast<SL> (src_whichVectors[i]);
           }
           // Copy from the selected vectors of src to dst, on the
           // host.  The function ignores the first instance of
@@ -2546,11 +2574,13 @@ namespace Tpetra {
             // to copy.  Fill whichVecs on the host, and sync to device.
             typedef Kokkos::DualView<DL*, DES> the_whichvecs_type;
             const std::string whichVecsLabel ("MV::deep_copy::whichVecs");
-            const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
+            Teuchos::ArrayView<const size_t> dst_whichVectors =
+              getMultiVectorWhichVectors (dst);
+            const DL numWhichVecs = static_cast<DL> (dst_whichVectors.size ());
             the_whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
             whichVecs.template modify<HES> ();
             for (DL i = 0; i < numWhichVecs; ++i) {
-              whichVecs.h_view(i) = dst.whichVectors_[i];
+              whichVecs.h_view(i) = dst_whichVectors[i];
             }
             // Sync the host version of whichVecs to the device.
             whichVecs.template sync<DES> ();
@@ -2575,10 +2605,13 @@ namespace Tpetra {
             // whichVecs tells the kernel which vectors (columns) of src
             // to copy.  Fill whichVecs on the host, and use it there.
             typedef Kokkos::View<DL*, HES> the_whichvecs_type;
-            const DL numWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            the_whichvecs_type whichVecs ("MV::deep_copy::whichVecs", numWhichVecs);
+            Teuchos::ArrayView<const size_t> dst_whichVectors =
+              getMultiVectorWhichVectors (dst);
+            const DL numWhichVecs = static_cast<DL> (dst_whichVectors.size ());
+            the_whichvecs_type whichVecs ("MV::deep_copy::whichVecs",
+                                          numWhichVecs);
             for (DL i = 0; i < numWhichVecs; ++i) {
-              whichVecs(i) = static_cast<DL> (dst.whichVectors_[i]);
+              whichVecs(i) = static_cast<DL> (dst_whichVectors[i]);
             }
             // Copy from src to the selected vectors of dst, on the host.
             Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
@@ -2601,12 +2634,15 @@ namespace Tpetra {
           if (! useHostVersion) { // Copy from the device version of src.
             // whichVectorsDst tells the kernel which columns of dst
             // to copy.  Fill it on the host, and sync to device.
-            const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
+            Teuchos::ArrayView<const size_t> dst_whichVectors =
+              getMultiVectorWhichVectors (dst);
+            const DL dstNumWhichVecs =
+              static_cast<DL> (dst_whichVectors.size ());
             Kokkos::DualView<DL*, DES> whichVecsDst ("MV::deep_copy::whichVecsDst",
                                                      dstNumWhichVecs);
             whichVecsDst.template modify<HES> ();
             for (DL i = 0; i < dstNumWhichVecs; ++i) {
-              whichVecsDst.h_view(i) = static_cast<DL> (dst.whichVectors_[i]);
+              whichVecsDst.h_view(i) = static_cast<DL> (dst_whichVectors[i]);
             }
             // Sync the host version of whichVecsDst to the device.
             whichVecsDst.template sync<DES> ();
@@ -2615,12 +2651,15 @@ namespace Tpetra {
             // (columns) of src to copy.  Fill it on the host, and
             // sync to device.  Use the destination MultiVector's
             // LocalOrdinal type here.
-            const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
+            Teuchos::ArrayView<const size_t> src_whichVectors =
+              getMultiVectorWhichVectors (src);
+            const DL srcNumWhichVecs =
+              static_cast<DL> (src_whichVectors.size ());
             Kokkos::DualView<DL*, DES> whichVecsSrc ("MV::deep_copy::whichVecsSrc",
                                                      srcNumWhichVecs);
             whichVecsSrc.template modify<HES> ();
             for (DL i = 0; i < srcNumWhichVecs; ++i) {
-              whichVecsSrc.h_view(i) = static_cast<DL> (src.whichVectors_[i]);
+              whichVecsSrc.h_view(i) = static_cast<DL> (src_whichVectors[i]);
             }
             // Sync the host version of whichVecsSrc to the device.
             whichVecsSrc.template sync<DES> ();
@@ -2635,17 +2674,25 @@ namespace Tpetra {
                                     whichVecsSrc.d_view);
           }
           else {
-            const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
-            Kokkos::View<DL*, HES> whichVectorsDst ("dstWhichVecs", dstNumWhichVecs);
+            Teuchos::ArrayView<const size_t> dst_whichVectors =
+              getMultiVectorWhichVectors (dst);
+            const DL dstNumWhichVecs =
+              static_cast<DL> (dst_whichVectors.size ());
+            Kokkos::View<DL*, HES> whichVectorsDst ("dstWhichVecs",
+                                                    dstNumWhichVecs);
             for (DL i = 0; i < dstNumWhichVecs; ++i) {
-              whichVectorsDst(i) = dst.whichVectors_[i];
+              whichVectorsDst(i) = dst_whichVectors[i];
             }
 
+            Teuchos::ArrayView<const size_t> src_whichVectors =
+              getMultiVectorWhichVectors (src);
             // Use the destination MultiVector's LocalOrdinal type here.
-            const DL srcNumWhichVecs = static_cast<DL> (src.whichVectors_.size ());
-            Kokkos::View<DL*, HES> whichVectorsSrc ("srcWhichVecs", srcNumWhichVecs);
+            const DL srcNumWhichVecs =
+              static_cast<DL> (src_whichVectors.size ());
+            Kokkos::View<DL*, HES> whichVectorsSrc ("srcWhichVecs",
+                                                    srcNumWhichVecs);
             for (DL i = 0; i < srcNumWhichVecs; ++i) {
-              whichVectorsSrc(i) = src.whichVectors_[i];
+              whichVectorsSrc(i) = src_whichVectors[i];
             }
 
             // Copy from the selected vectors of src to the selected

@@ -219,7 +219,7 @@ solveWithBelosGPU (
               << ":  Attached to GPU " << device_id
               << std::endl;
 
-#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
+#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_ENABLE_CUDA)
     if (!Kokkos::HostSpace::execution_space::is_initialized())
       Kokkos::HostSpace::execution_space::initialize();
     if (!Kokkos::Cuda::is_initialized())
@@ -232,7 +232,7 @@ solveWithBelosGPU (
     cloneAndSolveWithBelos(
       converged, numItersPerformed, tol, maxNumIters, num_steps,
       gpu_node, X, A, B, prec_type, M_left, M_right);
-#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_HAVE_CUDA)
+#if TPETRA_USE_KOKKOS_DISTOBJECT && defined(KOKKOS_ENABLE_CUDA)
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
 #endif

@@ -98,6 +98,18 @@ void StepperForwardEuler<Scalar>::setObserver(
 }
 
 template<class Scalar>
+void StepperForwardEuler<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperForwardEuler::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
+  this->setObserver();
+}
+
+template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -105,6 +117,14 @@ void StepperForwardEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperForwardEuler::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperForwardEuler<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for Forward Euler.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -136,7 +156,7 @@ void StepperForwardEuler<Scalar>::takeStep(
     if (workingState->getXDot() != Teuchos::null)
       assign((workingState->getXDot()).ptr(),
         Teuchos::ScalarTraits<Scalar>::zero());
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

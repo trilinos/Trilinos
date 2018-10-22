@@ -33,7 +33,7 @@
 #ifndef SOLO_SIDE_ID_GENERATOR_HPP_
 #define SOLO_SIDE_ID_GENERATOR_HPP_
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk {

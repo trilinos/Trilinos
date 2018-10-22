@@ -68,9 +68,9 @@ public:
   virtual ~Brents() {}
 
   // Constructor
-  Brents( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+  Brents( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) {
     Real oem10(1.e-10);
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Brent's");
     tol_ = list.get("Tolerance",oem10);
     niter_ = list.get("Iteration Limit",1000);

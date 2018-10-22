@@ -175,15 +175,12 @@ namespace MueLu {
             threshold = newt;
           }
         }
-
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
-
-        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero()) {
+        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
-
           // Detect and record rows that correspond to Dirichlet boundary conditions
           ArrayRCP<const bool > boundaryNodes;
           boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
@@ -204,9 +201,11 @@ namespace MueLu {
           Set(currentLevel, "DofsPerNode", 1);
           Set(currentLevel, "Graph", graph);
 
-        } else if (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) {
+        } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) || 
+                    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
+          // OR a matrix without a CrsGraph
 
           // allocate space for the local graph
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
@@ -256,7 +255,6 @@ namespace MueLu {
             rows[row+1] = realnnz;
           }
           columns.resize(realnnz);
-
           numTotal = A->getNodeNumEntries();
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
@@ -276,7 +274,6 @@ namespace MueLu {
 
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping
-
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
 
@@ -397,7 +394,6 @@ namespace MueLu {
 
         } else if (A->GetFixedBlockSize() > 1 && threshold != STS::zero()) {
           // Case 4:  Multiple DOF/node problem with dropping
-
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
 
@@ -800,7 +796,6 @@ namespace MueLu {
       }
 
     } else {
-
       //what Tobias has implemented
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));

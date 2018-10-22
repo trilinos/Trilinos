@@ -55,11 +55,10 @@
 
 typedef Teuchos::Array<int> rangeList_t;
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
 

@@ -111,13 +111,13 @@ private:
 
   void checkInputs(void) const {
     const Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::HMCR): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((lambda_ < zero) || (lambda_ > one), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((lambda_ < zero) || (lambda_ > one), std::invalid_argument,
       ">>> ERROR (ROL::HMCR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION((order_ < 2), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((order_ < 2), std::invalid_argument,
       ">>> ERROR (ROL::HMCR): Norm order is less than 2!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::HMCR): PlusFunction pointer is null!");
   }
 
@@ -153,11 +153,11 @@ public:
       \li "Order" (unsigned integer)
       \li A sublist for plus function information.
   */
-  HMCR( Teuchos::ParameterList &parlist )
+  HMCR( ROL::ParameterList &parlist )
     : RandVarFunctional<Real>(),
       pnorm_(0), coeff0_(0), coeff1_(0), coeff2_(0),
       HMCR_firstReset_(true) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR");
     // Check HMCR inputs
     prob_  = list.get<Real>("Confidence Level");

@@ -48,6 +48,8 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Thyra.H"
+#include "NOX_SolverStats.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -188,6 +190,18 @@ int main(int argc, char *argv[])
     NOX::StatusTest::StatusType solvStatus = solver->solve();
 
     success = status==0;
+
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numNonlinearSolves,1,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numNonlinearIterations,7,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numTotalNonlinearIterations,7,std::cout,success);
+
+    TEUCHOS_TEST_ASSERT(solver->getSolverStatistics()->linearSolve.lastLinearSolve_Converged,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastLinearSolve_NumIterations,1,std::cout,success);
+    TEUCHOS_TEST_ASSERT(solver->getSolverStatistics()->linearSolve.lastLinearSolve_AchievedTolerance < 1.0e-4,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastNonlinearSolve_NumLinearSolves,7,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastNonlinearSolve_NumLinearIterations,7,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.allNonlinearSolves_NumLinearSolves,7,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.allNonlinearSolves_NumLinearIterations,7,std::cout,success);
 
     if (solvStatus == NOX::StatusTest::Converged)
       std::cout << "Test passed!" << std::endl;

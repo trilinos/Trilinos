@@ -35,7 +35,7 @@ private:
     void create_vector_field_on_universal_part(stk::mesh::EntityRank rank, const std::string& name)
     {
         auto& field = get_meta().declare_field<stk::mesh::Field<double>>(rank, name, 3);
-        stk::mesh::put_field(field, get_meta().universal_part());
+        stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
     }
 };
 

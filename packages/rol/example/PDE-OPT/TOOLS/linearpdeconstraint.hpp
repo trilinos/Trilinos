@@ -291,20 +291,21 @@ public:
     ROL::Ptr<const std::vector<Real> >     zp = getConstParameter(z);
 
     assemble(zf,zp);
+    c.zero();
+    cvec_->putScalar(static_cast<Real>(0));
 
     const Real one(1);
     cf->scale(one,*vecR_);
-
-    matJ1_->apply(*uf,*cvec_);
-    cf->update(one,*cvec_,one);
     if (zf != ROL::nullPtr) {
-      matJ2_->apply(*zf,*cvec_);
+      applyJacobian2(cvec_,zf);
       cf->update(one,*cvec_,one);
     }
     if (zp != ROL::nullPtr) {
       applyJacobian3(cvec_,zp,false);
       cf->update(one,*cvec_,one);
     }
+    applyJacobian1(cvec_,uf);
+    cf->update(one,*cvec_,one);
   }
 
   void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
@@ -314,11 +315,13 @@ public:
     ROL::Ptr<const std::vector<Real> >     zp = getConstParameter(z);
 
     assemble(zf,zp);
+    c.zero();
+    cvec_->putScalar(static_cast<Real>(0));
 
     const Real one(1);
     cf->scale(one,*vecR_);
     if (zf != ROL::nullPtr) {
-      matJ2_->apply(*zf,*cvec_);
+      applyJacobian2(cvec_,zf);
       cf->update(one,*cvec_,one);
     }
     if (zp != ROL::nullPtr) {
@@ -329,7 +332,7 @@ public:
     solveForward(uf,cf);
     uf->scale(-one);
 
-    matJ1_->apply(*uf,*cvec_);
+    applyJacobian1(cvec_,uf);
     cf->update(one,*cvec_,one);
   }
 

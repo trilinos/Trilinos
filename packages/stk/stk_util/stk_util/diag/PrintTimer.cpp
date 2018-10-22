@@ -32,6 +32,7 @@
 // 
 
 #include <stk_util/stk_config.h>
+#include <fstream>
 #if defined ( STK_HAS_MPI )
 #  include "mpi.h"
 #endif
@@ -134,16 +135,6 @@ Percent::operator()(
   return os << strout.str();
 }
 
-
-/**
- * Member function <b>operator&lt;&lt;</b> ...
- *
- * @param os      a <b>std::ostream</b> variable ...
- *
- * @param p      a <b>TimerImpl::Percent</b> variable ...
- *
- * @return      a <b>std::ostream</b> ...
- */
 inline std::ostream &operator<<(std::ostream &os, const Percent &p) {
   return p(os);
 }
@@ -370,6 +361,15 @@ merge_parallel_timer(
   }
 }
 
+size_t round_up_to_next_word(size_t value)
+{
+  const size_t SIZE_OF_WORD = 4;
+  size_t remainder = value % SIZE_OF_WORD;
+  if (remainder == 0) {
+      return value;
+  }
+  return value + SIZE_OF_WORD - remainder;
+}
 
 void
 collect_timers(
@@ -408,31 +408,50 @@ collect_timers(
   std::vector<char> buffer;
 
   for(int ii=0; ii<num_cycles; ++ii) {
-    std::vector<int> recv_count(parallel_size, 0);
-    int * const recv_count_ptr = recv_count.data() ;
-  
     //send_count is the amount of data this processor needs to send.
     int send_count = send_string.size();
+    int padded_send_count = round_up_to_next_word(send_count);
+    send_string.resize(padded_send_count);
 
+    std::vector<int> recv_count(parallel_size, 0);
+    int * const recv_count_ptr = recv_count.data() ;
+    std::vector<int> padded_recv_count(parallel_size, 0);
+    int * const padded_recv_count_ptr = padded_recv_count.data() ;
+  
     //should this processor send on the current cycle ? If not, set send_count to 0.
     if ((parallel_rank+ii)%num_cycles!=0) {
       send_count = 0;
     }
 
-    int result = MPI_Gather(&send_count, 1, MPI_INT,
-                            recv_count_ptr, 1, MPI_INT,
-                            parallel_root, comm);
-    if (MPI_SUCCESS != result) {
-      std::ostringstream message ;
-      message << "stk::diag::collect_timers FAILED: MPI_Gather = " << result ;
-      throw std::runtime_error(message.str());
+    {
+      int result = MPI_Gather(&send_count, 1, MPI_INT,
+                              recv_count_ptr, 1, MPI_INT,
+                              parallel_root, comm);
+      if (MPI_SUCCESS != result) {
+        std::ostringstream message ;
+        message << "stk::diag::collect_timers FAILED: send_count MPI_Gather = " << result ;
+        throw std::runtime_error(message.str());
+      }
     }
   
+    {
+      int result = MPI_Gather(&padded_send_count, 1, MPI_INT,
+                              padded_recv_count_ptr, 1, MPI_INT,
+                              parallel_root, comm);
+      if (MPI_SUCCESS != result) {
+        std::ostringstream message ;
+        message << "stk::diag::collect_timers FAILED: padded_send_count MPI_Gather = " << result ;
+        throw std::runtime_error(message.str());
+      }
+    }
+
     // Receive counts are only non-zero on the root processor:
     std::vector<int> recv_displ(parallel_size + 1, 0);
+    std::vector<int> recv_end(parallel_size + 1, 0);
   
     for (int i = 0 ; i < parallel_size ; ++i) {
-      recv_displ[i + 1] = recv_displ[i] + recv_count[i] ;
+      recv_displ[i + 1] = recv_displ[i] + padded_recv_count[i] ;
+      recv_end[i] = recv_displ[i] + recv_count[i] ;
     }
   
     const int recv_size = recv_displ[parallel_size] ;
@@ -444,15 +463,18 @@ collect_timers(
       char * const recv_ptr = recv_size ? buffer.data() : nullptr;
       int * const recv_displ_ptr = recv_displ.data() ;
   
-      result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
-                           recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
-                           parallel_root, comm);
+      int result = MPI_Gatherv(const_cast<char*>(send_ptr), padded_send_count, MPI_CHAR,
+                               recv_ptr, padded_recv_count_ptr, recv_displ_ptr, MPI_CHAR,
+                               parallel_root, comm);
+//      int result = MPI_Gather(const_cast<char*>(send_ptr), padded_send_count, MPI_CHAR,
+//                              recv_ptr, padded_send_count, MPI_CHAR,
+//                              parallel_root, comm);
       if (MPI_SUCCESS != result) {
         std::ostringstream message ;
         message << "stk::diag::collect_timers FAILED: MPI_Gatherv = " << result ;
         throw std::runtime_error(message.str());
       }
-  
+
       std::vector<ParallelTimer> parallel_timer_vector;
       parallel_timer_vector.reserve(parallel_size);
   
@@ -462,7 +484,7 @@ collect_timers(
           if (received_count > 0) {
             //grow parallel_timer_vector by 1:
             parallel_timer_vector.resize(parallel_timer_vector.size()+1);
-            Marshal min(std::string(recv_ptr + recv_displ[j], recv_ptr + recv_displ[j + 1]));
+            Marshal min(std::string(recv_ptr + recv_displ[j], recv_ptr + recv_end[j]));
             //put this data into the last entry of parallel_timer_vector:
             min >> parallel_timer_vector[parallel_timer_vector.size()-1];
           }
@@ -754,12 +776,6 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
     printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
-
-
-// std::ostream &printXML(std::ostream &os, MPI_Comm mpi_comm, MetricsMask metrics_mask) const;
-std::ostream &printXML(std::ostream &os, MetricsMask metrics_mask, bool timer_checkpoint);
-
-std::ostream &printSubXML(std::ostream &os, MetricsMask metrics_mask, int depth, bool timer_checkpoint);
 
 } // namespace diag
 

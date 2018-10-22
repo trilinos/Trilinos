@@ -61,12 +61,8 @@
 
 #include <Tpetra_CrsMatrix.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
-using std::cout;
-using std::endl;
 
 void testCoordinateModel(std::string &fname, int nWeights,
   const RCP<const Comm<int> > &comm,
@@ -75,10 +71,10 @@ void testCoordinateModel(std::string &fname, int nWeights,
   int fail = 0, gfail = 0;
 
   if (printInfo){
-    cout << "Test: " << fname << endl;
-    cout << "Num Weights: " << nWeights;
-    cout << " proc 0 has all: " << nodeZeroHasAll;
-    cout << endl;
+    std::cout << "Test: " << fname << std::endl;
+    std::cout << "Num Weights: " << nWeights;
+    std::cout << " proc 0 has all: " << nodeZeroHasAll;
+    std::cout << std::endl;
   }
 
   //////////////////////////////////////////////////////////////
@@ -278,11 +274,10 @@ void testCoordinateModel(std::string &fname, int nWeights,
     printFailureCode(comm, fail);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
   string fname("simple");   // reader will seek coord file
@@ -299,7 +294,7 @@ int main(int argc, char *argv[])
 
   testCoordinateModel(fname, 2, comm, true, rank==0);
 
-  if (rank==0) cout << "PASS" << endl;
+  if (rank==0) std::cout << "PASS" << std::endl;
 
   return 0;
 }

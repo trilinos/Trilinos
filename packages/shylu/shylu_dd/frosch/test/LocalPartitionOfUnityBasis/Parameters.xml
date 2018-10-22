@@ -1,0 +1,9 @@
+<ParameterList name="LocalPOUBasis">
+    
+    <Parameter name="Use All Basisfunction"     type="bool"   value="true"/>
+    
+    <ParameterList name="Use Basisfunctions">
+        <Parameter name="1x1"                   type="bool"   value="true"/>
+        </ParameterList>
+    
+</ParameterList>

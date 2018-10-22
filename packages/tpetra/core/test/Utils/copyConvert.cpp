@@ -113,7 +113,7 @@ namespace { // (anonymous)
     // different memory spaces, such that the output View's execution
     // space cannot access the source View's memory space.  This is
     // only possible in a CUDA build.
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     {
       typedef int output_value_type;
       typedef int input_value_type;
@@ -125,7 +125,7 @@ namespace { // (anonymous)
       typedef Kokkos::View<input_value_type*, input_device_type> input_view_type;
       testCopyConvert<output_view_type, input_view_type> (success, out);
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
 
     // Test the case where the Views have different value types, but
     // the same memory spaces.
@@ -146,7 +146,7 @@ namespace { // (anonymous)
     // different memory spaces, such that the output View's execution
     // space cannot access the source View's memory space.  This is
     // only possible in a CUDA build.
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
     {
       // Input and output Views need to have distinct types that
       // nevertheless can be converted one to the other (ignoring
@@ -161,7 +161,7 @@ namespace { // (anonymous)
       typedef Kokkos::View<input_value_type*, input_device_type> input_view_type;
       testCopyConvert<output_view_type, input_view_type> (success, out);
     }
-#endif // KOKKOS_HAVE_CUDA
+#endif // KOKKOS_ENABLE_CUDA
   }
 
 } // namespace (anonymous)

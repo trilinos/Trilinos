@@ -190,7 +190,7 @@ public:
     return ROL::makePtr<PrimalScaledStdVector<Real>>(x0p,scale_);
   }
 
-  Ptr<Vector<Real>> getSolution(void) const {
+  Ptr<Vector<Real>> getSolution(const int i = 0) const {
     // Problem dimension
     int n = 2;
     // Get Solution: (*xp)[0] = 1.0981770261368074e-05;

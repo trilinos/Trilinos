@@ -364,8 +364,8 @@ namespace Tpetra {
       view_type pce_mv = A.getDualView();
       flat_array_type flat_mv = pce_mv.d_view;
 
-      numRows = static_cast<ordinal_type> (flat_mv.dimension_0 ());
-      numCols = static_cast<ordinal_type> (flat_mv.dimension_1 ());
+      numRows = static_cast<ordinal_type> (flat_mv.extent(0));
+      numCols = static_cast<ordinal_type> (flat_mv.extent(1));
       A_ptr = flat_mv.ptr_on_device ();
 
       ordinal_type strides[2];

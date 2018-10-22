@@ -66,7 +66,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
@@ -111,8 +111,6 @@ namespace {
   using Amesos2::ROOTED;
   using Amesos2::GLOBALLY_REPLICATED;
   using Amesos2::SORTED_INDICES;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   // Where to look for input files
   string filedir = "../matrices/";
@@ -187,11 +185,10 @@ namespace {
 
     RCP<const Epetra_Comm> ecomm = getDefaultEComm();
     RCP<const Comm<int> > tcomm = getDefaultTComm();
-    Teuchos::RCP<Node> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
 
     // Read in test matrix file
     std::string mat_pathname = filedir + test_mat_file;
-    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm,node);
+    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm);
     EMAT* EA;
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
@@ -222,11 +219,10 @@ namespace {
 
     RCP<const Epetra_Comm> ecomm = getDefaultEComm();
     RCP<const Comm<int> > tcomm = getDefaultTComm();
-    Teuchos::RCP<Node> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
 
     // Read in test matrix file
     std::string mat_pathname = filedir + test_mat_file;
-    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm,node);
+    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm);
     EMAT* EA;
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
@@ -271,11 +267,10 @@ namespace {
 
     RCP<const Epetra_Comm> ecomm = getDefaultEComm();
     RCP<const Comm<int> > tcomm = getDefaultTComm();
-    Teuchos::RCP<Node> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
 
     // Read in test matrix file
     std::string mat_pathname = filedir + test_mat_file;
-    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm,node);
+    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm);
     EMAT* EA;
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 
@@ -319,13 +314,12 @@ namespace {
 
     RCP<const Epetra_Comm> ecomm = getDefaultEComm();
     RCP<const Comm<int> > tcomm = getDefaultTComm();
-    Teuchos::RCP<Node> node = Tpetra::DefaultPlatform::getDefaultPlatform().getNode();
     const int numprocs = tcomm->getSize();
     const int rank = tcomm->getRank();
 
     // Read in test matrix file
     std::string mat_pathname = filedir + test_mat_file;
-    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm,node);
+    RCP<TMAT> TA = Tpetra::MatrixMarket::Reader<TMAT>::readSparseFile(mat_pathname,tcomm);
     EMAT* EA;
     EpetraExt::MatrixMarketFileToCrsMatrix(mat_pathname.c_str(), *ecomm, EA, false, false);
 

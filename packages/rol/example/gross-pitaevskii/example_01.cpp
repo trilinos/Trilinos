@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
     ROL::Ptr<std::ostream> outStream;
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
     if (iprint > 0)
         outStream = ROL::makePtrFromRef(std::cout);
     else
@@ -87,14 +87,13 @@ int main(int argc, char **argv) {
 
     int errorFlag = 0;
 
-    Teuchos::ParameterList parlist;
-    Teuchos::ParameterList gplist;
+    ROL::ParameterList parlist;
 
     std::string paramfile = "parameters.xml";
-    Teuchos::updateParametersFromXmlFile(paramfile,Teuchos::Ptr<Teuchos::ParameterList>(&gplist));
+    auto gplist = ROL::getParametersFromXmlFile( paramfile );
  
-    int nx    = gplist.get("Interior Grid Points",100);
-    RealT gnl = gplist.get("Nonlinearity Coefficient g",50.0);
+    int nx    = gplist -> get("Interior Grid Points",100);
+    RealT gnl = gplist -> get("Nonlinearity Coefficient g",50.0);
 
     // Grid spacing
     RealT dx = 1.0/(nx+1);

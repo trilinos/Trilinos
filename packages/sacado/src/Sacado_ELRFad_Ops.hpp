@@ -93,6 +93,9 @@ namespace Sacado {                                                      \
       bool updateValue() const { return expr.updateValue(); }           \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
@@ -403,6 +406,9 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
@@ -528,6 +534,9 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
         return VALUE;                                                   \
       }                                                                 \
@@ -639,6 +648,9 @@ namespace Sacado {                                                      \
       bool updateValue() const {                                        \
         return expr2.updateValue();                                     \
       }                                                                 \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      void cache() const {}                                             \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
@@ -1067,6 +1079,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
 
 #endif // SACADO_FAD_OPS_HPP

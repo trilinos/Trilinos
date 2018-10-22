@@ -1,4 +1,4 @@
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_ENABLE_OPENMP
 namespace Intrepid{
 
 template <class Scalar,class ScalarPointer>

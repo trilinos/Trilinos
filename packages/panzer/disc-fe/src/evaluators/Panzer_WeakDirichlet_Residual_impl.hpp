@@ -102,21 +102,13 @@ void
 WeakDirichletResidual<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(normal_dot_flux_plus_pen,fm);
-  this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(normal,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
-  this->utils.setFieldData(sigma,fm);
+  num_ip = flux.extent(1);
+  num_dim = flux.extent(2);
 
-  num_ip = flux.dimension(1);
-  num_dim = flux.dimension(2);
-
-  TEUCHOS_ASSERT(flux.dimension(1) == normal.dimension(1));
-  TEUCHOS_ASSERT(flux.dimension(2) == normal.dimension(2));
+  TEUCHOS_ASSERT(flux.extent(1) == normal.extent(1));
+  TEUCHOS_ASSERT(flux.extent(2) == normal.extent(2));
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }

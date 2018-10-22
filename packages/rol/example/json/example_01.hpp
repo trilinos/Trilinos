@@ -72,20 +72,20 @@
 
 namespace ROL {
 
-void addJSONBlockToPL(const Json::Value& block,Teuchos::ParameterList& parlist);
-void addJSONPairToPL(const Json::Value& block, const std::string &key,Teuchos::ParameterList& parlist);
+void addJSONBlockToPL(const Json::Value& block,ROL::ParameterList& parlist);
+void addJSONPairToPL(const Json::Value& block, const std::string &key,ROL::ParameterList& parlist);
 
 
 /** \brief Given a JSON block and a key, get the value and insert the key-value pair into a
-           Teuchos::ParameterList. If the value is itself a block, recursively iterate.
+           ROL::ParameterList. If the value is itself a block, recursively iterate.
 
     @param[in]     block     is a block from a JSON object
     @param[in]     key       is a string key 
-    @param[in/out] parlist   is a Teuchos::ParameterList
+    @param[in/out] parlist   is a ROL::ParameterList
 */
 void addJSONPairToPL(const Json::Value& block,
                      const std::string &key,
-                     Teuchos::ParameterList& parlist) {
+                     ROL::ParameterList& parlist) {
 
     Json::Value val = block[key];
  
@@ -103,19 +103,19 @@ void addJSONPairToPL(const Json::Value& block,
         addJSONBlockToPL(val,parlist);
     }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (addJSONPairToPL, "
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument, ">>> ERROR (addJSONPairToPL, "
                                                              "json value has unsupported type.");
     }
 }
 
 
-/** \brief Iterate over a block and insert key-value pairs into the Teuchos::ParameterList
+/** \brief Iterate over a block and insert key-value pairs into the ROL::ParameterList
 
     @param[in]     block     is a block from a JSON object
-    @param[in/out] parlist   is a Teuchos::ParameterList
+    @param[in/out] parlist   is a ROL::ParameterList
 */
 void addJSONBlockToPL(const Json::Value& block,
-                      Teuchos::ParameterList& parlist) {
+                      ROL::ParameterList& parlist) {
     if(block.size()>0) {
         for(Json::ValueIterator itr = block.begin(); itr != block.end(); ++itr) {
             addJSONPairToPL(block,itr.key().asString(),parlist);
@@ -125,16 +125,16 @@ void addJSONBlockToPL(const Json::Value& block,
 
 
 
-/** \brief  Read a JSON file and store all parameters in a Teuchos::ParameterList.
+/** \brief  Read a JSON file and store all parameters in a ROL::ParameterList.
             Checks for a key called "Algorithm" which has a string value which can
             specify a Step Type (Linesearch or Trust-Region) and either a
             Descent Type or a Trust-Region Subproblem Solver Type.
     
     @param[in]     block     is a block from a JSON object
-    @param[in/out] parlist   is a Teuchos::ParameterList
+    @param[in/out] parlist   is a ROL::ParameterList
 */
 void JSON_Parameters(const std::string& jsonFileName, 
-		     Teuchos::ParameterList& parlist) {
+		     ROL::ParameterList& parlist) {
 
 Json::Value json;   
 std::ifstream stream(jsonFileName, std::ifstream::binary);
@@ -200,11 +200,11 @@ if(json.isMember("ROL")) {
 
 /** \brief  A minimalist step factory which specializes the Step Type depending on 
             whether a Trust-Region or Linesearch has been selected.     
-    @param[in]     parlist   is a Teuchos::ParameterList
+    @param[in]     parlist   is a ROL::ParameterList
     @param[in/out] step      is a ref count pointer to a ROL::Step 
 */
 template <class Real>
-void stepFactory(Teuchos::ParameterList &parlist,ROL::Ptr<ROL::Step<Real> > &step) {
+void stepFactory(ROL::ParameterList &parlist,ROL::Ptr<ROL::Step<Real> > &step) {
      
     if(parlist.get("Step Type","Linesearch")=="Trust-Region") {
 	step = ROL::makePtr<ROL::TrustRegionStep<Real>>(parlist);

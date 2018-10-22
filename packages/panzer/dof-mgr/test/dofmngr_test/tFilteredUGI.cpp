@@ -307,14 +307,14 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
      // look at the difference, and make sure they are all in the
      // filtering vector
-     TEST_ASSERT(diff.size()<=my_filtered.size());
+     TEST_ASSERT(diff.size()<=all_filtered.size());
      for(std::size_t i=0;i<diff.size();i++) {
-       TEST_ASSERT(std::find(my_filtered.begin(),my_filtered.end(),diff[i])!=my_filtered.end());
+       TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),diff[i])!=my_filtered.end());
      }
 
      // make sure no index in the owned index vector is in the filtering vector
      for(std::size_t i=0;i<indices_f.size();i++) {
-       TEST_ASSERT(std::find(my_filtered.begin(),my_filtered.end(),indices_f[i])==my_filtered.end());
+       TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices_f[i])==all_filtered.end());
      }
    }
 
@@ -343,10 +343,10 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
     // Look at the difference, and make sure they are all in the filtering
     // vector.
-    TEST_ASSERT(diff.size() <= my_filtered.size())
+    TEST_ASSERT(diff.size() <= all_filtered.size())
     for (size_t i(0); i < diff.size(); ++i)
-      TEST_ASSERT(find(my_filtered.begin(), my_filtered.end(), diff[i]) !=
-        my_filtered.end())
+      TEST_ASSERT(find(all_filtered.begin(), all_filtered.end(), diff[i]) !=
+        all_filtered.end())
   }
 
    out << "testing getOwnedAndGhostedNotFilteredIndicator" << std::endl;
@@ -361,10 +361,12 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 
      for(std::size_t i=0;i<indicator.size();i++) {
        if(indicator[i]==1) {
+         out << "Searching (1) " << i << " " << indices[i] << " ";
          // not filtered, should not be in all_filtered array
          TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices[i])==all_filtered.end());
        }
        else if(indicator[i]==0) {
+         out << "Searching (0) " << i << " " << indices[i] << " ";
          // filtered, should be in all_filtered array
          TEST_ASSERT(std::find(all_filtered.begin(),all_filtered.end(),indices[i])!=all_filtered.end());
        }

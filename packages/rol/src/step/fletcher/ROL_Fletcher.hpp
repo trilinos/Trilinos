@@ -166,7 +166,7 @@ public:
            const ROL::Ptr<Constraint<Real> > &con,
            const Vector<Real> &optVec,
            const Vector<Real> &conVec,
-           Teuchos::ParameterList &parlist)
+           ROL::ParameterList &parlist)
       : FletcherBase<Real>(obj, con) {
 
       gPhi_    = optVec.dual().clone();
@@ -193,7 +193,7 @@ public:
       b2_ = conVec.clone();
       bb_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>> >({b1_, b2_}));
 
-      Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
+      ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Fletcher");
       HessianApprox_ = sublist.get("Level of Hessian Approximation",  0);
       penaltyParameter_ = sublist.get("Penalty Parameter", 1.0);
 
@@ -201,7 +201,7 @@ public:
 
       useInexact_ = sublist.get("Inexact Solves", false);
       
-      Teuchos::ParameterList krylovList;
+      ROL::ParameterList krylovList;
       Real atol = static_cast<Real>(1e-12);
       Real rtol = static_cast<Real>(1e-2);
       krylovList.sublist("General").sublist("Krylov").set("Type", "GMRES");

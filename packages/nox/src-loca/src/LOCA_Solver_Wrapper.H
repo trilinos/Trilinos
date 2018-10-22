@@ -169,6 +169,11 @@ namespace LOCA {
        */
       Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
 
+      /*!
+       * \brief Returns the underlying nolinear solver statistics.
+       */
+      Teuchos::RCP<const NOX::SolverStats> getSolverStatistics() const;
+
     protected:
 
       //! Grabs appropriate solution groups from solver

@@ -117,8 +117,8 @@ void mkl_symbolic(
 
     if (Kokkos::Impl::is_same<size_type, int>::value){
 
-      a_xadj = (int *)row_mapA.ptr_on_device();
-      b_xadj = (int *)row_mapB.ptr_on_device();
+      a_xadj = (int *)row_mapA.data();
+      b_xadj = (int *)row_mapB.data();
     }
     else {
 
@@ -127,14 +127,14 @@ void mkl_symbolic(
 
       Kokkos::Impl::Timer copy_time;
       const int max_integer = 2147483647;
-      if (entriesB.dimension_0() > max_integer|| entriesA.dimension_0() > max_integer){
+      if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
         throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
         return;
       }
       a_xadj_v = int_temp_work_view_t("tmpa", m + 1);
-      a_xadj = (int *) a_xadj_v.ptr_on_device();
+      a_xadj = (int *) a_xadj_v.data();
       b_xadj_v = int_temp_work_view_t("tmpb", n + 1);
-      b_xadj = (int *) b_xadj_v.ptr_on_device();
+      b_xadj = (int *) b_xadj_v.data();
 
       KokkosKernels::Impl::copy_vector<
           in_row_index_view_type,
@@ -152,12 +152,12 @@ void mkl_symbolic(
     }
 
 
-    int *a_adj = (int *)entriesA.ptr_on_device();
-    int *b_adj = (int *)entriesB.ptr_on_device();
+    int *a_adj = (int *)entriesA.data();
+    int *b_adj = (int *)entriesB.data();
 
 
 
-    std::vector <value_type> tmp_values (KOKKOSKERNELS_MACRO_MAX(entriesB.dimension_0(), entriesA.dimension_0()));
+    std::vector <value_type> tmp_values (KOKKOSKERNELS_MACRO_MAX(entriesB.extent(0), entriesA.extent(0)));
     value_type *ptmp_values = &(tmp_values[0]);
     value_type *a_ew = ptmp_values;
     value_type *b_ew = ptmp_values;
@@ -423,8 +423,8 @@ void mkl_symbolic(
 
       if (Kokkos::Impl::is_same<size_type, int>::value){
 
-        a_xadj = (int *)row_mapA.ptr_on_device();
-        b_xadj = (int *)row_mapB.ptr_on_device();
+        a_xadj = (int *)row_mapA.data();
+        b_xadj = (int *)row_mapB.data();
       }
       else {
 
@@ -433,14 +433,14 @@ void mkl_symbolic(
 
         Kokkos::Impl::Timer copy_time;
         const int max_integer = 2147483647;
-        if (entriesB.dimension_0() > max_integer|| entriesA.dimension_0() > max_integer){
+        if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
           throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
           return;
         }
         a_xadj_v = int_temp_work_view_t("tmpa", m + 1);
-        a_xadj = (int *) a_xadj_v.ptr_on_device();
+        a_xadj = (int *) a_xadj_v.data();
         b_xadj_v = int_temp_work_view_t("tmpb", n + 1);
-        b_xadj = (int *) b_xadj_v.ptr_on_device();
+        b_xadj = (int *) b_xadj_v.data();
 
         KokkosKernels::Impl::copy_vector<
             in_row_index_view_type,
@@ -458,13 +458,13 @@ void mkl_symbolic(
       }
 
 
-      int *a_adj = (int *)entriesA.ptr_on_device();
-      int *b_adj = (int *)entriesB.ptr_on_device();
+      int *a_adj = (int *)entriesA.data();
+      int *b_adj = (int *)entriesB.data();
 
 
  
-      const value_type *a_ew = valuesA.ptr_on_device();
-      const value_type *b_ew = valuesB.ptr_on_device();
+      const value_type *a_ew = valuesA.data();
+      const value_type *b_ew = valuesB.data();
 
 
       sparse_matrix_t A;

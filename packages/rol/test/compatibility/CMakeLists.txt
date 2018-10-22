@@ -1,6 +1,6 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SharedPtr
+  stacktrace 
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1

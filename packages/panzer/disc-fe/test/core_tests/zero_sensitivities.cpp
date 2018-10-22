@@ -89,7 +89,7 @@ namespace panzer {
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type c) const
     {
-      const size_type num_pts = a_.dimension_1();
+      const size_type num_pts = a_.extent(1);
       for (size_type pt = 0; pt < num_pts; ++pt) {
 	panzer::zeroSensitivities(a_(c,pt));
       }
@@ -109,7 +109,7 @@ namespace panzer {
     KOKKOS_INLINE_FUNCTION
     void operator () (const size_type c) const
     {
-      const size_type num_pts = a_.dimension_1();
+      const size_type num_pts = a_.extent(1);
       for (size_type pt = 0; pt < num_pts; ++pt) {
 	panzer::zeroSensitivities(a_(c,pt));
       }
@@ -175,7 +175,7 @@ namespace panzer {
       }
       
       // Compute
-      Kokkos::parallel_for(a.dimension_0(),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
+      Kokkos::parallel_for(a.extent(0),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
       PHX::Device::fence();
       
       // Check

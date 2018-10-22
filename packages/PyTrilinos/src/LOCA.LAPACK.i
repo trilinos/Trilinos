@@ -61,9 +61,8 @@ LOCA.LAPACK supports the following classes:
         docstring = %loca_lapack_docstring) LAPACK
 
 %{
-// LOCA includes
-#include "LOCA.H"
-#include "LOCA_LAPACK.H"
+// LOCA include files
+#include "PyTrilinos_LOCA_Headers.hpp"
 %}
 
 // Ignore/renames
@@ -78,6 +77,6 @@ LOCA.LAPACK supports the following classes:
 %import "NOX_LAPACK_Interface.H"
 %import "NOX_LAPACK_Group.H"
 
-// LOCA interface includes
+// LOCA interface include files
 %include "LOCA_LAPACK_Interface.H"
 %include "LOCA_LAPACK_Group.H"

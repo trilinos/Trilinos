@@ -44,13 +44,13 @@
 #ifndef ROL_DEVIATIONMEASUREINFO_HPP
 #define ROL_DEVIATIONMEASUREINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
 
 template<class Real>
-inline void DeviationMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void DeviationMeasureInfo(ROL::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
                             std::vector<Real> &upper, bool &isBoundActivated,
                             const bool printToStream = false,
@@ -71,13 +71,13 @@ inline void DeviationMeasureInfo(Teuchos::ParameterList &parlist, std::string &n
     upper.resize(nStatistic,ROL_INF<Real>());
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::DeviationMeasureInfo): Invalid deviation measure " << name << "!");
   }
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

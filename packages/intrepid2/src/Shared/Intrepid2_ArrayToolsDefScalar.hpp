@@ -77,7 +77,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cl,
                       const ordinal_type pt) const {
-        const auto val = _inputLeft(cl , pt%_inputLeft.dimension(1));
+        const auto val = _inputLeft(cl , pt%_inputLeft.extent(1));
         
         //const ordinal_type cp[2] = { cl, pt };
         //ViewAdapter<2,outputViewType> out(cp, _output);
@@ -101,7 +101,7 @@ namespace Intrepid2 {
       void operator()(const ordinal_type cl,
                       const ordinal_type bf,
                       const ordinal_type pt) const {
-        const auto val = _inputLeft(cl , pt%_inputLeft.dimension(1));
+        const auto val = _inputLeft(cl , pt%_inputLeft.extent(1));
 
         //const ordinal_type cfp[3] = { cl, bf, pt };
         //ViewAdapter<3,outputViewType> out(cfp, _output);
@@ -143,13 +143,13 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 3, 4, or 5.");
         INTREPID2_TEST_FOR_EXCEPTION( outputFields.rank() != inputFields.rank(), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input and output fields containers must have the same rank.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(0) != inputData.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(0) != inputData.extent(0), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(1) != inputFields.dimension(2) &&
-                                  inputData.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(1) != inputFields.extent(2) &&
+                                  inputData.extent(1) != 1, std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree, or first data dimension must be 1!");
         for (size_type i=0;i<inputFields.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(i) != outputFields.dimension(i), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(i) != outputFields.extent(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::scalarMultiplyDataField): inputFields dimension (i) does not match to the dimension (i) of outputFields");
         }
       }
@@ -158,13 +158,13 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Input fields container must have rank 2, 3, or 4.");
         INTREPID2_TEST_FOR_EXCEPTION( outputFields.rank() != (inputFields.rank()+1), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): The rank of the input fields container must be one less than the rank of the output fields container.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(1) != inputFields.dimension(1) &&
-                                  inputData.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(1) != inputFields.extent(1) &&
+                                  inputData.extent(1) != 1, std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): First dimensions of fields input container and data input container (number of integration points) must agree or first data dimension must be 1!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(0) != outputFields.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputData.extent(0) != outputFields.extent(0), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataField): Zeroth dimensions of fields output container and data input containers (number of integration domains) must agree!");
         for (size_type i=0;i<inputFields.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(i) != outputFields.dimension(i+1), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputFields.extent(i) != outputFields.extent(i+1), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::scalarMultiplyDataField): inputFields dimension (i) does not match to the dimension (i+1) of outputFields");
         }
       }
@@ -178,9 +178,9 @@ namespace Intrepid2 {
     typedef typename ExecSpace< typename inputDataViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const ordinal_type
-      C = outputFields.dimension(0),
-      F = outputFields.dimension(1),
-      P = outputFields.dimension(2);
+      C = outputFields.extent(0),
+      F = outputFields.extent(1),
+      P = outputFields.extent(2);
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
         < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
@@ -191,18 +191,18 @@ namespace Intrepid2 {
     if (equalRank) 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,true,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,true,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       }
     else 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,false,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputFieldViewType,inputDataViewType,inputFieldViewType,false,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
+        Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields) );
       }
   }
 
@@ -228,13 +228,13 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 2, 3, or 4.");
         INTREPID2_TEST_FOR_EXCEPTION( outputData.rank() != inputDataRight.rank(), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input and output data containers must have the same rank.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.dimension(0) != inputDataLeft.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.extent(0) != inputDataLeft.extent(0), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions (number of integration domains) of the left and right data input containers must agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(1) != inputDataRight.dimension(1) &&
-                                  inputDataLeft.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(1) != inputDataRight.extent(1) &&
+                                  inputDataLeft.extent(1) != 1, std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): First dimensions of the left and right data input containers (number of integration points) must agree, or first dimension of the left data input container must be 1!");
         for (size_type i=0;i<inputDataRight.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.dimension(i) != outputData.dimension(i), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.extent(i) != outputData.extent(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::scalarMultiplyDataData): inputDataRight dimension (i) does not match to the dimension (i) of outputData");
         }
       } else {
@@ -242,13 +242,13 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): Right input data container must have rank 1, 2, or 3.");
         INTREPID2_TEST_FOR_EXCEPTION( outputData.rank() != (inputDataRight.rank()+1), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): The rank of the right input data container must be one less than the rank of the output data container.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(1) != inputDataRight.dimension(0)  &&
-                                  inputDataLeft.dimension(1) != 1, std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(1) != inputDataRight.extent(0)  &&
+                                  inputDataLeft.extent(1) != 1, std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimension of the right input data container and first dimension of the left data input container (number of integration points) must agree or first dimension of the left data input container must be 1!");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(0) != outputData.dimension(0), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.extent(0) != outputData.extent(0), std::invalid_argument,
                                   ">>> ERROR (ArrayTools::scalarMultiplyDataData): Zeroth dimensions of data output and left data input containers (number of integration domains) must agree!");
         for (size_type i=0;i<inputDataRight.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.dimension(i) != outputData.dimension(i+1), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.extent(i) != outputData.extent(i+1), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::scalarMultiplyDataData): inputDataRight dimension (i) does not match to the dimension (i+1) of outputData");
         }
       }
@@ -262,8 +262,8 @@ namespace Intrepid2 {
     typedef typename ExecSpace< typename inputDataLeftViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const ordinal_type
-      C = outputData.dimension(0),
-      P = outputData.dimension(1);
+      C = outputData.extent(0),
+      P = outputData.extent(1);
     
     using range_policy_type = Kokkos::Experimental::MDRangePolicy
       < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
@@ -274,18 +274,18 @@ namespace Intrepid2 {
     if (equalRank) 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,true,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,true,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       }
     else 
       if (reciprocal) {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,false,true> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       } else {
         typedef FunctorArrayTools::F_scalarMultiply<outputDataViewType,inputDataLeftViewType,inputDataRightViewType,false,false> FunctorType;
-        Kokkos::Experimental::md_parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
+        Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight) );
       }
   }
   

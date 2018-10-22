@@ -91,7 +91,7 @@ namespace Intrepid2{
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell) const {        
         const ordinal_type numNodesPerSide = _sideMap(0);
-        const ordinal_type spaceDim        = _cubPoints.dimension(1);
+        const ordinal_type spaceDim        = _cubPoints.extent(1);
 
         // compute side centers
         typename cubPointViewType::value_type val[3] = {};

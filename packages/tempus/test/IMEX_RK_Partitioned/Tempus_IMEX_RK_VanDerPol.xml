@@ -113,6 +113,7 @@
   <ParameterList name="General IMEX RK">
 
       <Parameter name="Stepper Type" type="string" value="General Partitioned IMEX RK"/>
+      <Parameter name="overall order" type="int" value="2"/>
       <ParameterList name ="IMEX-RK Explicit Stepper">
           <Parameter name="Stepper Type" type="string" value="General ERK"/>
           <ParameterList name="Tableau">

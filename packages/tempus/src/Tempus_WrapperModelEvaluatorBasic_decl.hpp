@@ -79,6 +79,9 @@ public:
     Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const
       { return appModel_->create_W_op(); }
 
+    Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > create_W_prec() const
+      { return appModel_->create_W_prec(); }
+
     Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     get_W_factory() const { return appModel_->get_W_factory(); }
 

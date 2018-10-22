@@ -176,6 +176,7 @@ cmake \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
   -D MueLu_ENABLE_Experimental:BOOL=ON \
   -D MueLu_ENABLE_Kokkos_Refactor:BOOL=ON \
+  -D MueLu_ENABLE_Epetra:BOOL=OFF \
 -D Trilinos_ENABLE_NOX=ON \
   -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Panzer=ON \

@@ -172,14 +172,14 @@ private:
 
 public:
   // Constructor
-  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist, 
+  ScalarMinimizationLineSearch( ROL::ParameterList &parlist, 
     const ROL::Ptr<ScalarMinimization<Real> > &sm = ROL::nullPtr,
     const ROL::Ptr<Bracketing<Real> > &br = ROL::nullPtr,
     const ROL::Ptr<ScalarFunction<Real> > &sf  = ROL::nullPtr )
     : LineSearch<Real>(parlist) {
     Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
-    Teuchos::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
-    Teuchos::ParameterList &list  = list0.sublist("Line-Search Method");
+    ROL::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
+    ROL::ParameterList &list  = list0.sublist("Line-Search Method");
     // Get Bracketing Method
     if( br == ROL::nullPtr ) {
       br_ = ROL::makePtr<Bracketing<Real>>();
@@ -191,7 +191,7 @@ public:
     std::string type = list.get("Type","Brent's");
     Real tol         = list.sublist(type).get("Tolerance",oem10);
     int niter        = list.sublist(type).get("Iteration Limit",1000);
-    Teuchos::ParameterList plist;
+    ROL::ParameterList plist;
     plist.sublist("Scalar Minimization").set("Type",type);
     plist.sublist("Scalar Minimization").sublist(type).set("Tolerance",tol);
     plist.sublist("Scalar Minimization").sublist(type).set("Iteration Limit",niter);
@@ -208,7 +208,7 @@ public:
         sm_ = ROL::makePtr<GoldenSectionScalarMinimization<Real>>(plist);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
           ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
       }
     }

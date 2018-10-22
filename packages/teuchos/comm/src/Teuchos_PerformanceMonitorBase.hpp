@@ -95,6 +95,21 @@ namespace Teuchos
                      Array<std::string>& globalNames,
                      const ECounterSetOp setOp);
 
+  /**
+   * merge for unsorted lists.  New entries are at the bottom of the list
+   * @param localNames - The calling MPI process' list of (local)
+   * counter names.
+   * @param globalNames - Global list of names
+   * @param setOp If Intersection, globalNames on output
+   *   contains the intersection of all sets of counter names.  If
+   *   Union, globalNames on output contains the union of all sets of
+   *   counter names.
+   */
+  void
+  unsortedMergePair(const Array<std::string>& localNames,
+                    Array<std::string>& globalNames,
+                    const ECounterSetOp setOp);
+
   /// \class PerformanceMonitorBase
   ///
   /// \brief Common capabilities for collecting and reporting
@@ -222,7 +237,7 @@ namespace Teuchos
         // out of memory for storing callbacks).  We could throw an
         // exception here in that case, but I think it's better just
         // to let the minor memory leak happen.
-        (void) atexit (freeTableFormat);
+        static_cast<void>( atexit(freeTableFormat) );
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
         format_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"
@@ -305,7 +320,7 @@ namespace Teuchos
         // out of memory for storing callbacks).  We could throw an
         // exception here in that case, but I think it's better just
         // to let the minor memory leak happen.
-        (void) atexit (freeCounters);
+        static_cast<void>( atexit(freeCounters) );
       }
       TEUCHOS_TEST_FOR_EXCEPTION(
         counters_ == NULL, std::logic_error, "Teuchos::PerformanceMonitorBase::"

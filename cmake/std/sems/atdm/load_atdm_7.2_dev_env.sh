@@ -3,7 +3,7 @@ module purge
 module load sems-env
 module load atdm-env
 module load sems-python/2.7.9
-module load atdm-cmake/3.10.1
+module load atdm-cmake/3.11.1
 module load sems-git/2.10.1
 module load atdm-gcc/7.2.0
 module load atdm-openmpi/1.6.5/atdm

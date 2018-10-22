@@ -151,7 +151,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Finest.SetLevelID(0);  // must be level 0 for NullspaceFactory
     Finest.Set("A", A);
 
-    Finest.SetFactoryManager( rcp( new FactoryManager() ));
+    RCP<FactoryManager> factMngr = rcp( new FactoryManager() );
+    factMngr->SetKokkosRefactor(false);
+    Finest.SetFactoryManager(factMngr);
 
     CoupledAggregationFactory CoupledAggFact;
     Finest.Request(CoupledAggFact);

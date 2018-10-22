@@ -94,7 +94,7 @@ LOCA::MultiPredictor::Restart::~Restart()
 
 LOCA::MultiPredictor::Restart::Restart(
                  const LOCA::MultiPredictor::Restart& source,
-                 NOX::CopyType type) :
+                 NOX::CopyType /* type */) :
   globalData(source.globalData),
   predictor(source.predictor)
 {
@@ -123,10 +123,10 @@ LOCA::MultiPredictor::Restart::clone(NOX::CopyType type) const
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Restart::compute(
-          bool baseOnSecant, const std::vector<double>& stepSize,
-          LOCA::MultiContinuation::ExtendedGroup& grp,
-          const LOCA::MultiContinuation::ExtendedVector& prevXVec,
-          const LOCA::MultiContinuation::ExtendedVector& xVec)
+          bool /* baseOnSecant */, const std::vector<double>& /* stepSize */,
+          LOCA::MultiContinuation::ExtendedGroup& /* grp */,
+          const LOCA::MultiContinuation::ExtendedVector& /* prevXVec */,
+          const LOCA::MultiContinuation::ExtendedVector& /* xVec */)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
     globalData->locaUtils->out() <<

@@ -45,7 +45,7 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_MatrixIO.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
@@ -66,7 +66,6 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::Vector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -87,7 +86,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      return Tpetra::getDefaultComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -105,7 +104,8 @@ namespace {
     typedef Tpetra::Map<> map_type;
     typedef map_type::local_ordinal_type LO;
     typedef map_type::global_ordinal_type GO;
-    typedef Tpetra::CrsMatrix<double, LO, GO> crs_matrix_type;
+    typedef Tpetra::CrsMatrix<> crs_matrix_type;
+    typedef typename crs_matrix_type::scalar_type SC;
 
     // create a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -119,9 +119,9 @@ namespace {
       RCP<const map_type> rng = Tpetra::createUniformContigMap<LO, GO>(1,comm);
       node = rng->getNode (); // save the Node instance for readHBMatrix
       RCP<const map_type> dom = Tpetra::createUniformContigMap<LO, GO>(4,comm);
-      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<double, LO, GO>(rng);
+      RCP<crs_matrix_type> A = Tpetra::createCrsMatrix<SC, LO, GO>(rng);
       if (myImageID == 0) {
-        A->insertGlobalValues( 0, Teuchos::tuple<GO>(0,1,2,3), Teuchos::tuple<double>(1.0,3.0,4.0,9.0) );
+        A->insertGlobalValues( 0, Teuchos::tuple<GO>(0,1,2,3), Teuchos::tuple<SC>(1.0,3.0,4.0,9.0) );
       }
       A->fillComplete(dom,rng);
       testMatrix = A;
@@ -137,7 +137,7 @@ namespace {
     TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
     if (success) {
       Teuchos::ArrayView<const LO>    rowinds1, rowinds2;
-      Teuchos::ArrayView<const double> rowvals1, rowvals2;
+      Teuchos::ArrayView<const SC> rowvals1, rowvals2;
 
       const LO lclNumRows = testMatrix->getNodeNumRows ();
       for (LO r = 0; r < lclNumRows; ++r) {
@@ -184,6 +184,7 @@ namespace {
 #if 1
     typedef Tpetra::Map<>::local_ordinal_type LO;
     typedef Tpetra::Map<>::global_ordinal_type GO;
+    typedef Tpetra::Vector<>::scalar_type SC;
 #else
     typedef int LO;
     // this still has to be bigger than LO
@@ -204,8 +205,8 @@ namespace {
     TEST_EQUALITY_CONST( mapImportOut  == mapOut, false );
     // create import, vectors from these maps
     RCP<const Import<LO,GO> > import = Tpetra::createImport(mapImportIn, mapImportOut);
-    RCP<Vector<double,LO,GO> > vecIn = Tpetra::createVector<double>(mapIn);
-    RCP<Vector<double,LO,GO> > vecOut = Tpetra::createVector<double>(mapOut);
+    RCP<Vector<SC,LO,GO> > vecIn = Tpetra::createVector<SC>(mapIn);
+    RCP<Vector<SC,LO,GO> > vecOut = Tpetra::createVector<SC>(mapOut);
     // do the import; under the bug, this should throw an exception
     TEST_NOTHROW( vecOut->doImport( *vecIn, *import, Tpetra::REPLACE ) )
     // All procs fail if any proc fails

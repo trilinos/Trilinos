@@ -72,7 +72,7 @@ NOX::LAPACK::Vector::Vector(int N, double *v) :
 }
 
 NOX::LAPACK::Vector::Vector(const NOX::LAPACK::Vector& source,
-                NOX::CopyType type) :
+                NOX::CopyType /* type */) :
   n(source.n),
   x(source.x)
 {
@@ -85,6 +85,7 @@ NOX::LAPACK::Vector::~Vector()
 NOX::Abstract::Vector&
 NOX::LAPACK::Vector::operator=(const std::vector<double>& source)
 {
+  n = source.size();
   x = source;
   return *this;
 }
@@ -98,6 +99,7 @@ NOX::LAPACK::Vector::operator=(const NOX::Abstract::Vector& source)
 NOX::Abstract::Vector&
 NOX::LAPACK::Vector::operator=(const NOX::LAPACK::Vector& source)
 {
+  n = source.n;
   x = source.x;
   return *this;
 }

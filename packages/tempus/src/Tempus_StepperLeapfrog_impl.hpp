@@ -98,6 +98,18 @@ void StepperLeapfrog<Scalar>::setObserver(
 }
 
 template<class Scalar>
+void StepperLeapfrog<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperLeapfrog::initialize()\n");
+
+  this->setParameterList(this->stepperPL_);
+  this->setObserver();
+}
+
+template<class Scalar>
 void StepperLeapfrog<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -105,6 +117,14 @@ void StepperLeapfrog<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperLeapfrog::takeStep()");
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperLeapfrog<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for Leapfrog.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+
     typedef Thyra::ModelEvaluatorBase MEB;
     stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -182,7 +202,7 @@ void StepperLeapfrog<Scalar>::takeStep(
       workingState->setIsSynced(false);
     }
 
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

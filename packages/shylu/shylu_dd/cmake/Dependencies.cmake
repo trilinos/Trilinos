@@ -3,7 +3,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #
   # New ShyLU subpackages:
   BDDC                  bddc              EX       OPTIONAL
-  FROSch                frosch            EX       OPTIONAL
+  FROSch                frosch            PT       REQUIRED
   Core                  core              EX       OPTIONAL
   Common                common            ST       OPTIONAL
   )

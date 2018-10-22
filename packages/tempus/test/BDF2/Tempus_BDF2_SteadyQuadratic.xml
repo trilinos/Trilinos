@@ -1,4 +1,4 @@
-<ParameterList name="BackwardEuler_SteadyQuadratic">
+<ParameterList name="BDF2_SteadyQuadratic">
   <ParameterList name="SteadyQuadraticModel">
     <Parameter name="Coeff b" type="double" value="1.0"/>
   </ParameterList>

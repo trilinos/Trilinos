@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,9 +39,9 @@
 extern "C" {
 #endif
 
-long init_rand_port(long seed);
-long get_init_rand_port(void);
-long genr_rand_port(long init_rand);
+long   init_rand_port(long seed);
+long   get_init_rand_port(void);
+long   genr_rand_port(long init_rand);
 long   rand_port(void);
 double rand_rect_port(void);
 

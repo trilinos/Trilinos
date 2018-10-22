@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,7 +49,7 @@ void connect_enforce(struct vtx_data **graph,       /* data structure for graph 
                      int               nsets_tot,   /* total number sets created */
                      int *             total_move,  /* total number of vertices moved */
                      int *             max_move     /* largest connected component moved */
-                     )
+)
 {
   struct vtx_data **subgraph;           /* data structure for domain graph */
   int               subnvtxs;           /* number of vertices in a domain */

@@ -52,7 +52,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 
 #include <Epetra_CrsMatrix.h>
@@ -93,7 +93,7 @@ namespace {
 
   using Amesos2::Util::to_teuchos_comm;
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = false;
 

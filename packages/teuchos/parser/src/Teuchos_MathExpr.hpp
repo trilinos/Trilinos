@@ -23,8 +23,8 @@ enum {
   PROD_AND_DECAY,
   PROD_ADD_SUB_DECAY,
   PROD_MUL_DIV_DECAY,
-  PROD_POW_DECAY,
   PROD_NEG_DECAY,
+  PROD_POW_DECAY,
   PROD_TERNARY,
   PROD_OR,
   PROD_AND,
@@ -100,6 +100,9 @@ class SymbolSetReader : public Reader {
 };
 
 std::set<std::string> get_variables_used(std::string const& expr);
+std::set<std::string> get_symbols_used(std::string const& expr);
+
+Reader* new_calc_reader();
 
 }  // end namespace MathExpr
 

@@ -123,6 +123,7 @@ namespace MueLu {
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -156,6 +157,7 @@ namespace MueLu {
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
+  "<Parameter name=\"hierarchy label\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -190,6 +192,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: use interface aggregation\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output filename\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
@@ -216,6 +219,8 @@ namespace MueLu {
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
+  "<Parameter name=\"gmg: interpolation order\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"gmg: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=\"\"/>"
@@ -231,6 +236,7 @@ namespace MueLu {
   "<Parameter name=\"emin: pattern\" type=\"string\" value=\"AkPtent\"/>"
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: enable\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: partitioner\" type=\"string\" value=\"zoltan2\"/>"
   "<ParameterList name=\"repartition: params\"/>"
@@ -452,6 +458,8 @@ namespace MueLu {
       
          ("parameterlist: syntax","parameterlist: syntax")
       
+         ("hierarchy label","hierarchy label")
+      
          ("smoother: pre or post","smoother: pre or post")
       
          ("smoother: type","smoother: type")
@@ -520,6 +528,8 @@ namespace MueLu {
       
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
       
+         ("aggregation: use interface aggregation","aggregation: use interface aggregation")
+      
          ("aggregation: export visualization data","aggregation: export visualization data")
       
          ("aggregation: output filename","aggregation: output filename")
@@ -572,6 +582,10 @@ namespace MueLu {
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
       
+         ("gmg: interpolation order","gmg: interpolation order")
+      
+         ("gmg: build coarse coordinates","gmg: build coarse coordinates")
+      
          ("transfer: params","transfer: params")
       
          ("pcoarsen: element","pcoarsen: element")
@@ -601,6 +615,8 @@ namespace MueLu {
          ("emin: pattern order","emin: pattern order")
       
          ("tentative: calculate qr","tentative: calculate qr")
+      
+         ("tentative: build coarse coordinates","tentative: build coarse coordinates")
       
          ("repartition: enable","repartition: enable")
       

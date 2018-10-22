@@ -51,9 +51,9 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -77,13 +77,13 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Teuchos::DefaultComm<int>::getComm();
+    = ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   bool print = (iprint>0); // && !(comm->getRank());
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (print)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* INITIALIZE OPTIMIZATION PROBLEM ***************************/
     /*************************************************************************/
-    Teuchos::ParameterList SOLlist;
+    ROL::ParameterList SOLlist;
     SOLlist.sublist("SOL").set("Stochastic Component Type","Risk Averse");
     SOLlist.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     SOLlist.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
@@ -249,9 +249,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
+    
     // RUN OPTIMIZATION
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
     zp->zero();

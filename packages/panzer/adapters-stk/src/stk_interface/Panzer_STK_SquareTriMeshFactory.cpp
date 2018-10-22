@@ -85,7 +85,45 @@ Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk::Paral
    machRank_ = stk::parallel_machine_rank(parallelMach);
    machSize_ = stk::parallel_machine_size(parallelMach);
 
-   if(xProcs_==-1) {
+   if (xProcs_ == -1 && yProcs_ == -1) {
+     // copied from galeri
+     xProcs_ = yProcs_ = Teuchos::as<int>(pow(Teuchos::as<double>(machSize_), 0.5));
+
+     if (xProcs_ * yProcs_ != Teuchos::as<int>(machSize_))  {
+       // Simple method to find a set of processor assignments
+       xProcs_ = yProcs_ = 1;
+
+       // This means that this works correctly up to about maxFactor^2
+       // processors.
+       const int maxFactor = 100;
+
+       int ProcTemp = machSize_;
+       int factors[maxFactor];
+       for (int jj = 0; jj < maxFactor; jj++) factors[jj] = 0;
+       for (int jj = 2; jj < maxFactor; jj++) {
+         bool flag = true;
+         while (flag) {
+           int temp = ProcTemp/jj;
+           if (temp*jj == ProcTemp) {
+             factors[jj]++;
+             ProcTemp = temp;
+
+           } else {
+             flag = false;
+           }
+         }
+       }
+       xProcs_ = ProcTemp;
+       for (int jj = maxFactor-1; jj > 0; jj--) {
+         while (factors[jj] != 0) {
+           if      (xProcs_ <= yProcs_) xProcs_ = xProcs_*jj;
+           else                         yProcs_ = yProcs_*jj;
+           factors[jj]--;
+         }
+       }
+     }
+
+   } else if(xProcs_==-1) {
       // default x only decomposition
       xProcs_ = machSize_; 
       yProcs_ = 1;

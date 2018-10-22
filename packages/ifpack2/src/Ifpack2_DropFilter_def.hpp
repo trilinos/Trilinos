@@ -229,7 +229,7 @@ size_t DropFilter<MatrixType>::getNodeNumEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+size_t DropFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal /* globalRow */) const
 {
   throw std::runtime_error("Ifpack2::DropFilter does not implement getNumEntriesInGlobalRow.");
 }
@@ -239,20 +239,6 @@ template<class MatrixType>
 size_t DropFilter<MatrixType>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
 {
   return NumEntries_[localRow];
-}
-
-//==========================================================================
-template<class MatrixType>
-global_size_t DropFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-//==========================================================================
-template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
 }
 
 //==========================================================================
@@ -278,20 +264,6 @@ bool DropFilter<MatrixType>::hasColMap() const
 
 //==========================================================================
 template<class MatrixType>
-bool DropFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-//==========================================================================
-template<class MatrixType>
-bool DropFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
-}
-
-//==========================================================================
-template<class MatrixType>
 bool DropFilter<MatrixType>::isLocallyIndexed() const
 {
   return A_->isLocallyIndexed();
@@ -313,10 +285,10 @@ bool DropFilter<MatrixType>::isFillComplete() const
 
 //==========================================================================
 template<class MatrixType>
-void DropFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                                                  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                                                  const Teuchos::ArrayView<Scalar> &Values,
-                                                  size_t &NumEntries) const
+void DropFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
+                                                  const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
+                                                  const Teuchos::ArrayView<Scalar> &/* Values */,
+                                                  size_t &/* NumEntries */) const
 {
   throw std::runtime_error("Ifpack2::DropFilter does not implement getGlobalRowCopy.");
 }
@@ -357,18 +329,18 @@ void DropFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
 
 //==========================================================================
 template<class MatrixType>
-void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayView<const Scalar> &values) const
+void DropFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
+                                                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
+                                                  Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::DropFilter: does not support getGlobalRowView.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayView<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayView<const Scalar> &values) const
+void DropFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
+                                                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
+                                                 Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::DropFilter: does not support getLocalRowView.");
 }
@@ -383,14 +355,14 @@ void DropFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal
 
 //==========================================================================
 template<class MatrixType>
-void DropFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void DropFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::DropFilter does not support leftScale.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void DropFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void DropFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::DropFilter does not support rightScale.");
 }
@@ -400,8 +372,8 @@ template<class MatrixType>
 void DropFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                                        Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                                        Teuchos::ETransp mode,
-                                       Scalar alpha,
-                                       Scalar beta) const
+                                       Scalar /* alpha */,
+                                       Scalar /* beta */) const
 {
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   // Note: The localized maps mean the matvec is trivial (and has no import)

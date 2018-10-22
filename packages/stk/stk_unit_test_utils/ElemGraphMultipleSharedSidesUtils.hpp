@@ -76,7 +76,7 @@ public:
     {
         if (bulkData.parallel_size() <= 2)
         {
-            stk::mesh::put_field(coordField, meta.universal_part());
+            stk::mesh::put_field_on_mesh(coordField, meta.universal_part(), nullptr);
             make_mesh_2_elems_connected_through_multiple_sides(nodeIDs, sharedNodeIds);
         }
     }

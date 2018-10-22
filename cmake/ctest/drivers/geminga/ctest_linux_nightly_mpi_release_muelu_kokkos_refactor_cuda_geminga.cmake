@@ -96,6 +96,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor_Use_By_Default:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
 )

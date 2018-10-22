@@ -51,6 +51,7 @@
 
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcpFromRef;
 
 Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
@@ -71,56 +72,63 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   NumFunsToCall_(0),
   SolverType_(PCG),
   PrecondType_(Euclid),
-  UsePreconditioner_(false),
-  NiceRowMap_(true)
+  UsePreconditioner_(false)
 {
   IsSolverSetup_ = new bool[1];
   IsPrecondSetup_ = new bool[1];
   IsSolverSetup_[0] = false;
   IsPrecondSetup_[0] = false;
   MPI_Comm comm = GetMpiComm();
-  int ilower = A_->RowMatrixRowMap().MinMyGID();
-  int iupper = A_->RowMatrixRowMap().MaxMyGID();
-  // Need to check if the RowMap is the way Hypre expects (if not more difficult)
-  std::vector<int> ilowers; ilowers.resize(Comm().NumProc());
-  std::vector<int> iuppers; iuppers.resize(Comm().NumProc());
-  int myLower[1]; myLower[0] = ilower;
-  int myUpper[1]; myUpper[0] = iupper;
-  Comm().GatherAll(myLower, &ilowers[0], 1);
-  Comm().GatherAll(myUpper, &iuppers[0], 1);
-  for(int i = 0; i < Comm().NumProc()-1; i++){
-    NiceRowMap_ = (NiceRowMap_ && iuppers[i]+1 == ilowers[i+1]);
+  // Check that RowMap and RangeMap are the same.  While this could handle the
+  // case where RowMap and RangeMap are permutations, other Ifpack PCs don't
+  // handle this either.
+  if (!A_->RowMatrixRowMap().SameAs(A_->OperatorRangeMap())) {
+    IFPACK_CHK_ERRV(-1);
   }
-  if(!NiceRowMap_){
-    ilower = (A_->NumGlobalRows() / Comm().NumProc())*Comm().MyPID();
-    iupper = (A_->NumGlobalRows() / Comm().NumProc())*(Comm().MyPID()+1)-1;
-    if(Comm().MyPID() == Comm().NumProc()-1){
-      iupper = A_-> NumGlobalRows()-1;
-    }
+  // Hypre expects the RowMap to be Linear.
+  if (A_->RowMatrixRowMap().LinearMap()) {
+    // note these are non-owning pointers, they are deleted by A_'s destructor
+    GloballyContiguousRowMap_ = rcpFromRef(A_->RowMatrixRowMap());
+    GloballyContiguousColMap_ = rcpFromRef(A_->RowMatrixColMap());
+  } else {  
+    // Must create GloballyContiguous RowMap (which is a permutation of A_'s
+    // RowMap) and the corresponding permuted ColumnMap.
+    //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+    //           via RowMap.LID()       via GloballyContiguousRowMap.GID()
+    GloballyContiguousRowMap_ = rcp(new Epetra_Map(A_->RowMatrixRowMap().NumGlobalElements(),
+            A_->RowMatrixRowMap().NumMyElements(), 0, Comm()));
+    // Column map requires communication
+    Epetra_Import importer(A_->RowMatrixColMap(), A_->RowMatrixRowMap());
+    Epetra_IntVector MyGIDsHYPRE(A_->RowMatrixRowMap());
+    for (int i=0; i!=A_->RowMatrixRowMap().NumMyElements(); ++i)
+      MyGIDsHYPRE[i] = GloballyContiguousRowMap_->GID(i);
+    // import the HYPRE GIDs
+    Epetra_IntVector ColGIDsHYPRE(A_->RowMatrixColMap());
+    IFPACK_CHK_ERRV(ColGIDsHYPRE.Import(MyGIDsHYPRE, importer, Insert, 0));
+    // Make a HYPRE numbering-based column map.
+    GloballyContiguousColMap_ = rcp(new Epetra_Map(
+        A_->RowMatrixColMap().NumGlobalElements(),
+        ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, Comm()));
   }
-
   // Next create vectors that will be used when ApplyInverse() is called
+  int ilower = GloballyContiguousRowMap_->MinMyGID();
+  int iupper = GloballyContiguousRowMap_->MaxMyGID();
+  // X in AX = Y
   IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
-
+  XVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_));
+  XLocal_ = hypre_ParVectorLocalVector(XVec_);
+  // Y in AX = Y
   IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
   IFPACK_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
-
-  XVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_));
-  XLocal_ = hypre_ParVectorLocalVector(XVec_);
-
   YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
   YLocal_ = hypre_ParVectorLocalVector(YVec_);
-
-  // amk November 24, 2015: This previously created a map that Epetra does not consider
-  // to be contiguous.  hypre doesn't like that, so I changed it.
-  MySimpleMap_ = rcp(new Epetra_Map(A_->NumGlobalRows(), iupper-ilower+1, 0, Comm()));
 } //Constructor
 
 //==============================================================================
@@ -143,28 +151,27 @@ void Ifpack_Hypre::Destroy(){
 //==============================================================================
 int Ifpack_Hypre::Initialize(){
   Time_.ResetStartTime();
+  // Create the Hypre matrix and copy values.  Note this uses values (which
+  // Initialize() shouldn't do) but it doesn't care what they are (for
+  // instance they can be uninitialized data even).  It should be possible to
+  // set the Hypre structure without copying values, but this is the easiest
+  // way to get the structure.
   MPI_Comm comm = GetMpiComm();
-  int ilower = MySimpleMap_->MinMyGID();
-  int iupper = MySimpleMap_->MaxMyGID();
+  int ilower = GloballyContiguousRowMap_->MinMyGID();
+  int iupper = GloballyContiguousRowMap_->MaxMyGID();
   IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
   IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
   IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
-  for(int i = 0; i < A_->NumMyRows(); i++){
-    int numElements;
-    IFPACK_CHK_ERR(A_->NumMyRowEntries(i,numElements));
-    std::vector<int> indices; indices.resize(numElements);
-    std::vector<double> values; values.resize(numElements);
-    int numEntries;
-    IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
-    for(int j = 0; j < numEntries; j++){
-      indices[j] = A_->RowMatrixColMap().GID(indices[j]);
+  CopyEpetraToHypre();
+  IFPACK_CHK_ERR(SetSolverType(SolverType_));
+  IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+  CallFunctions();
+  if(UsePreconditioner_){
+    if(SolverPrecondPtr_ != NULL){
+      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
     }
-    int GlobalRow[1];
-    GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
-    IFPACK_CHK_ERR(HYPRE_IJMatrixAddToValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
   }
-  IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
-  IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+  // set flags
   IsInitialized_=true;
   NumInitialize_ = NumInitialize_ + 1;
   InitializeTime_ = InitializeTime_ + Time_.ElapsedTime();
@@ -260,14 +267,8 @@ int Ifpack_Hypre::Compute(){
     IFPACK_CHK_ERR(Initialize());
   }
   Time_.ResetStartTime();
-  IFPACK_CHK_ERR(SetSolverType(SolverType_));
-  IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
-  CallFunctions();
-  if(UsePreconditioner_){
-    if(SolverPrecondPtr_ != NULL){
-      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
-    }
-  }
+  CopyEpetraToHypre();
+  // Hypre Setup must be called after matrix has values
   if(SolveOrPrec_ == Solver){
     IFPACK_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
     IsSolverSetup_[0] = true;
@@ -294,21 +295,6 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   if(IsComputed() == false){
     IFPACK_CHK_ERR(-1);
   }
-  // These are hypre requirements
-  // hypre needs A, X, and Y to have the same contiguous distribution
-  // NOTE: Maps are only considered to be contiguous if they were generated using a
-  // particular constructor.  Otherwise, LinearMap() will not detect whether they are
-  // actually contiguous.
-  if(!X.Map().LinearMap() || !Y.Map().LinearMap()) {
-    std::cerr << "ERROR: X and Y must have contiguous maps.\n";
-    IFPACK_CHK_ERR(-1);
-  }
-  if(!X.Map().PointSameAs(*MySimpleMap_) ||
-     !Y.Map().PointSameAs(*MySimpleMap_)) {
-    std::cerr << "ERROR: X, Y, and A must have the same distribution.\n";
-    IFPACK_CHK_ERR(-1);
-  }
-
   Time_.ResetStartTime();
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
@@ -329,7 +315,7 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
     }
     // Temporarily make a pointer to data in Hypre for end
     double *XTemp = XLocal_->data;
-    // Replace data in Hypre vectors with epetra values
+    // Replace data in Hypre vectors with Epetra data
     XLocal_->data = XValues;
     double *YTemp = YLocal_->data;
     YLocal_->data = YValues;
@@ -404,7 +390,7 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
         new_values[i] = YValues[i];
         new_indices[i] = i;
       }
-      IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]));
+      IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, new_values.data(), new_indices.data()));
       delete[] YValues;
     }
     XLocal_->data = XTemp;
@@ -416,11 +402,10 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
 //==============================================================================
 std::ostream& Ifpack_Hypre::Print(std::ostream& os) const{
   using std::endl;
-
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
-    os << "Ifpack_Hypre: " << Label () << endl << endl;
+    os << "Ifpack_Hypre: " << Label() << endl << endl;
     os << "Using " << Comm().NumProc() << " processors." << endl;
     os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
     os << "Global number of nonzeros        = " << A_->NumGlobalNonzeros() << endl;
@@ -623,5 +608,27 @@ int Ifpack_Hypre::CreatePrecond(){
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
 } //CreatePrecond()
+
+
+//==============================================================================
+int Ifpack_Hypre::CopyEpetraToHypre(){
+  for(int i = 0; i < A_->NumMyRows(); i++){
+    int numElements;
+    IFPACK_CHK_ERR(A_->NumMyRowEntries(i,numElements));
+    std::vector<int> indices; indices.resize(numElements);
+    std::vector<double> values; values.resize(numElements);
+    int numEntries;
+    IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, values.data(), indices.data()));
+    for(int j = 0; j < numEntries; j++){
+      indices[j] = GloballyContiguousColMap_->GID(indices[j]);
+    }
+    int GlobalRow[1];
+    GlobalRow[0] = GloballyContiguousRowMap_->GID(i);
+    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, indices.data(), values.data()));
+  }
+  IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+  return 0;
+} //CopyEpetraToHypre()
 
 #endif // HAVE_HYPRE && HAVE_MPI

@@ -46,7 +46,6 @@
 
 #include "ROL_ConstraintManager.hpp"
 #include "ROL_SlacklessObjective.hpp"
-#include "ROL_RandomVector.hpp"
 
 // Stochastic Includes
 #include "ROL_SampleGenerator.hpp"
@@ -73,42 +72,42 @@ namespace ROL {
 template<class Real>
 class OptimizationProblem {
 private:
-  ROL::Ptr<Objective<Real> >                     INPUT_obj_;
-  ROL::Ptr<Vector<Real> >                        INPUT_sol_;
-  ROL::Ptr<BoundConstraint<Real> >               INPUT_bnd_;
-  std::vector<ROL::Ptr<Constraint<Real> > >      INPUT_econ_;
-  std::vector<ROL::Ptr<Vector<Real> > >          INPUT_emul_;
-  std::vector<ROL::Ptr<Constraint<Real> > >      INPUT_icon_;
-  std::vector<ROL::Ptr<Vector<Real> > >          INPUT_imul_;
-  std::vector<ROL::Ptr<BoundConstraint<Real> > > INPUT_ibnd_;
+  Ptr<Objective<Real>>                    INPUT_obj_;
+  Ptr<Vector<Real>>                       INPUT_sol_;
+  Ptr<BoundConstraint<Real>>              INPUT_bnd_;
+  std::vector<Ptr<Constraint<Real>>>      INPUT_econ_;
+  std::vector<Ptr<Vector<Real>>>          INPUT_emul_;
+  std::vector<Ptr<Constraint<Real>>>      INPUT_icon_;
+  std::vector<Ptr<Vector<Real>>>          INPUT_imul_;
+  std::vector<Ptr<BoundConstraint<Real>>> INPUT_ibnd_;
 
-  ROL::Ptr<Objective<Real> >                     INTERMEDIATE_obj_;
-  ROL::Ptr<Vector<Real> >                        INTERMEDIATE_sol_;
-  ROL::Ptr<BoundConstraint<Real> >               INTERMEDIATE_bnd_;
-  std::vector<ROL::Ptr<Constraint<Real> > >      INTERMEDIATE_econ_;
-  std::vector<ROL::Ptr<Vector<Real> > >          INTERMEDIATE_emul_;
-  std::vector<ROL::Ptr<Constraint<Real> > >      INTERMEDIATE_icon_;
-  std::vector<ROL::Ptr<Vector<Real> > >          INTERMEDIATE_imul_;
-  std::vector<ROL::Ptr<BoundConstraint<Real> > > INTERMEDIATE_ibnd_;
+  Ptr<Objective<Real>>                    INTERMEDIATE_obj_;
+  Ptr<Vector<Real>>                       INTERMEDIATE_sol_;
+  Ptr<BoundConstraint<Real>>              INTERMEDIATE_bnd_;
+  std::vector<Ptr<Constraint<Real>>>      INTERMEDIATE_econ_;
+  std::vector<Ptr<Vector<Real>>>          INTERMEDIATE_emul_;
+  std::vector<Ptr<Constraint<Real>>>      INTERMEDIATE_icon_;
+  std::vector<Ptr<Vector<Real>>>          INTERMEDIATE_imul_;
+  std::vector<Ptr<BoundConstraint<Real>>> INTERMEDIATE_ibnd_;
 
-  ROL::Ptr<SampleGenerator<Real> >               vsampler_;
-  ROL::Ptr<SampleGenerator<Real> >               gsampler_;
-  ROL::Ptr<SampleGenerator<Real> >               hsampler_;
-  std::vector<ROL::Ptr<SampleGenerator<Real> > > exsampler_;
-  std::vector<ROL::Ptr<BatchManager<Real> > >    ecbman_;
-  std::vector<ROL::Ptr<SampleGenerator<Real> > > ixsampler_;
-  std::vector<ROL::Ptr<BatchManager<Real> > >    icbman_;
+  Ptr<SampleGenerator<Real>>              vsampler_;
+  Ptr<SampleGenerator<Real>>              gsampler_;
+  Ptr<SampleGenerator<Real>>              hsampler_;
+  std::vector<Ptr<SampleGenerator<Real>>> exsampler_;
+  std::vector<Ptr<BatchManager<Real>>>    ecbman_;
+  std::vector<Ptr<SampleGenerator<Real>>> ixsampler_;
+  std::vector<Ptr<BatchManager<Real>>>    icbman_;
 
-  Teuchos::RCP<Teuchos::ParameterList>               parlistObj_;
-  std::vector<Teuchos::RCP<Teuchos::ParameterList> > parlistCon_;
+  Ptr<ParameterList>                      parlistObj_;
+  std::vector<Ptr<ParameterList>>         parlistCon_;
 
-  ROL::Ptr<Objective<Real> >       obj_;
-  ROL::Ptr<Vector<Real> >          sol_;
-  ROL::Ptr<BoundConstraint<Real> > bnd_;
-  ROL::Ptr<Constraint<Real> >      con_;
-  ROL::Ptr<Vector<Real> >          mul_;
+  Ptr<Objective<Real>>       obj_;
+  Ptr<Vector<Real>>          sol_;
+  Ptr<BoundConstraint<Real>> bnd_;
+  Ptr<Constraint<Real>>      con_;
+  Ptr<Vector<Real>>          mul_;
 
-  ROL::Ptr<ConstraintManager<Real> > conManager_;
+  Ptr<ConstraintManager<Real>> conManager_;
 
   EProblem problemType_;
 
@@ -119,22 +118,22 @@ private:
   std::vector<bool> needRiskLessIcon_;
   bool              isStochastic_;
 
-  void initialize( const ROL::Ptr<Objective<Real> >                     &obj,
-                   const ROL::Ptr<Vector<Real> >                        &x,
-                   const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                   const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                   const std::vector<ROL::Ptr<Vector<Real> > >          &emul,
-                   const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                   const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                   const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd ) {
+  void initialize( const Ptr<Objective<Real>>                    &obj,
+                   const Ptr<Vector<Real>>                       &x,
+                   const Ptr<BoundConstraint<Real>>              &bnd,
+                   const std::vector<Ptr<Constraint<Real>>>      &econ,
+                   const std::vector<Ptr<Vector<Real>>>          &emul,
+                   const std::vector<Ptr<Constraint<Real>>>      &icon,
+                   const std::vector<Ptr<Vector<Real>>>          &imul,
+                   const std::vector<Ptr<BoundConstraint<Real>>> &ibnd ) {
     if (!isInitialized_) {
       int esize = static_cast<int>(econ.size());
       int isize = static_cast<int>(icon.size());
-      std::vector<ROL::Ptr<Constraint<Real> > >      cvec;
-      std::vector<ROL::Ptr<Vector<Real> > >          lvec;
-      std::vector<ROL::Ptr<BoundConstraint<Real> > > bvec;
+      std::vector<Ptr<Constraint<Real>>>      cvec;
+      std::vector<Ptr<Vector<Real>>>          lvec;
+      std::vector<Ptr<BoundConstraint<Real>>> bvec;
       for (int i = 0; i < esize; ++i) {
-        if ( econ[i] != ROL::nullPtr ) {
+        if ( econ[i] != nullPtr ) {
           if (isStochastic_) {
             cvec.push_back(setRiskLessCon(econ[i],needRiskLessEcon_[i]));
           }
@@ -142,11 +141,11 @@ private:
             cvec.push_back(econ[i]);
           }
           lvec.push_back(emul[i]);
-          bvec.push_back(ROL::nullPtr);
+          bvec.push_back(nullPtr);
         }
       }
       for (int i = 0; i < isize; ++i) {
-        if ( icon[i] != ROL::nullPtr ) {
+        if ( icon[i] != nullPtr ) {
           if (isStochastic_) {
             cvec.push_back(setRiskLessCon(icon[i],needRiskLessIcon_[i]));
           }
@@ -158,12 +157,12 @@ private:
         }
       }
  
-      conManager_ = ROL::makePtr<ConstraintManager<Real>>(cvec,lvec,bvec,x,bnd);
+      conManager_ = makePtr<ConstraintManager<Real>>(cvec,lvec,bvec,x,bnd);
       con_        = conManager_->getConstraint();
       mul_        = conManager_->getMultiplier();
       sol_        = conManager_->getOptVector();
       bnd_        = conManager_->getBoundConstraint();
-      ROL::Ptr<Objective<Real> > obj0;
+      Ptr<Objective<Real>> obj0;
       if (isStochastic_) {
         obj0 = setRiskLessObj(obj,needRiskLessObj_);
       }
@@ -171,14 +170,14 @@ private:
         obj0 = obj;
       }
       if ( conManager_->hasInequality() ) {
-        obj_      = ROL::makePtr<SlacklessObjective<Real>>(obj0);
+        obj_      = makePtr<SlacklessObjective<Real>>(obj0);
       }
       else {
         obj_      = obj0;
       }
 
       if ( conManager_->isNull() ) {
-        if( bnd_ == ROL::nullPtr || !bnd_->isActivated() ) {  // Type-U
+        if( bnd_ == nullPtr || !bnd_->isActivated() ) {  // Type-U
           problemType_ = TYPE_U;        
         }
         else { // Type-B
@@ -186,7 +185,7 @@ private:
         }
       }
       else {
-        if( bnd_ == ROL::nullPtr || !bnd_->isActivated() ) { // Type-E
+        if( bnd_ == nullPtr || !bnd_->isActivated() ) { // Type-E
           problemType_ = TYPE_E;     
         }
         else { // Type-EB
@@ -197,25 +196,25 @@ private:
     }
   }
 
-  const ROL::Ptr<Constraint<Real> > setRiskLessCon(const ROL::Ptr<Constraint<Real> > &con, const bool needRiskLess) const {
+  const Ptr<Constraint<Real>> setRiskLessCon(const Ptr<Constraint<Real>> &con, const bool needRiskLess) const {
     if (needRiskLess) {
-      return ROL::makePtr<RiskLessConstraint<Real>>(con);
+      return makePtr<RiskLessConstraint<Real>>(con);
     }
     else {
       return con;
     }
   }
 
-  const ROL::Ptr<Objective<Real> > setRiskLessObj(const ROL::Ptr<Objective<Real> > &obj, const bool needRiskLess) const {
+  const Ptr<Objective<Real>> setRiskLessObj(const Ptr<Objective<Real>> &obj, const bool needRiskLess) const {
     if (needRiskLess) {
-      return ROL::makePtr<RiskLessObjective<Real>>(obj);
+      return makePtr<RiskLessObjective<Real>>(obj);
     }
     else {
       return obj;
     }
   }
 
-  std::vector<Real> computeSampleMean(const ROL::Ptr<SampleGenerator<Real> > &sampler) const {
+  std::vector<Real> computeSampleMean(const Ptr<SampleGenerator<Real>> &sampler) const {
     // Compute mean value of inputs and set parameter in objective
     int dim = sampler->getMyPoint(0).size(), nsamp = sampler->numMySamples();
     std::vector<Real> loc(dim), mean(dim), pt(dim);
@@ -238,40 +237,40 @@ private:
       needRiskLessObj_ = true;
       needRiskLessEcon_.clear(); needRiskLessEcon_.resize(econSize,true);
       needRiskLessIcon_.clear(); needRiskLessIcon_.resize(iconSize,true);
-      parlistObj_ = ROL::nullPtr;
-      parlistCon_.clear(); parlistCon_.resize(iconSize,ROL::nullPtr);
+      parlistObj_ = nullPtr;
+      parlistCon_.clear(); parlistCon_.resize(iconSize,nullPtr);
 
-      exsampler_.clear(); exsampler_.resize(econSize,ROL::nullPtr);
-      ecbman_.clear();    ecbman_.resize(econSize,ROL::nullPtr);
+      exsampler_.clear(); exsampler_.resize(econSize,nullPtr);
+      ecbman_.clear();    ecbman_.resize(econSize,nullPtr);
 
-      ixsampler_.clear(); ixsampler_.resize(iconSize,ROL::nullPtr);
-      icbman_.clear();    icbman_.resize(iconSize,ROL::nullPtr);
+      ixsampler_.clear(); ixsampler_.resize(iconSize,nullPtr);
+      icbman_.clear();    icbman_.resize(iconSize,nullPtr);
 
       isStochastic_ = true;
     }
   }
 
-  void buildRiskVec(ROL::Ptr<Vector<Real> > &x) {
+  void buildRiskVec(Ptr<Vector<Real>> &x) {
     // Build risk vector and risk bound constraint
     INTERMEDIATE_sol_
-      = ROL::makePtr<RiskVector<Real>>(parlistObj_,parlistCon_,x);
-    if (parlistObj_ != ROL::nullPtr) {
+      = makePtr<RiskVector<Real>>(parlistObj_,parlistCon_,x);
+    if (parlistObj_ != nullPtr) {
       Real statObj = parlistObj_->sublist("SOL").get("Initial Statistic",1.0);
-      ROL::dynamicPtrCast<RiskVector<Real> >(INTERMEDIATE_sol_)->setStatistic(statObj,0);
+      dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->setStatistic(statObj,0);
     }
     int nc = INPUT_icon_.size();
     for (int i = 0; i < nc; ++i) {
-      if (parlistCon_[i] != ROL::nullPtr) {
+      if (parlistCon_[i] != nullPtr) {
         Real statCon = parlistCon_[i]->sublist("SOL").get("Initial Statistic",1.0);
-        ROL::dynamicPtrCast<RiskVector<Real> >(INTERMEDIATE_sol_)->setStatistic(statCon,1,i);
+        dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->setStatistic(statCon,1,i);
       }
     }
   }
 
-  void buildRiskBnd(ROL::Ptr<BoundConstraint<Real> > &bnd) {
-    if ( INPUT_bnd_ != ROL::nullPtr ) {
+  void buildRiskBnd(Ptr<BoundConstraint<Real>> &bnd) {
+    if ( INPUT_bnd_ != nullPtr ) {
       INTERMEDIATE_bnd_
-        = ROL::makePtr<RiskBoundConstraint<Real>>(parlistObj_,parlistCon_,bnd);
+        = makePtr<RiskBoundConstraint<Real>>(parlistObj_,parlistCon_,bnd);
     }
   }
 
@@ -283,14 +282,14 @@ public:
    : isInitialized_(false), isStochastic_(false) {}
 
   // Complete option constructor [1]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &emul,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                       const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd )
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const std::vector<Ptr<Constraint<Real>>>      &econ,
+                       const std::vector<Ptr<Vector<Real>>>          &emul,
+                       const std::vector<Ptr<Constraint<Real>>>      &icon,
+                       const std::vector<Ptr<Vector<Real>>>          &imul,
+                       const std::vector<Ptr<BoundConstraint<Real>>> &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
       INPUT_econ_(econ), INPUT_emul_(emul),
       INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd_(ibnd),
@@ -299,43 +298,43 @@ public:
       INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd_(ibnd),
       isInitialized_(false), isStochastic_(false) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const ROL::Ptr<Constraint<Real> >                    &econ,
-                       const ROL::Ptr<Vector<Real> >                        &emul,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                       const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd )
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const Ptr<Constraint<Real>>                   &econ,
+                       const Ptr<Vector<Real>>                       &emul,
+                       const std::vector<Ptr<Constraint<Real>>>      &icon,
+                       const std::vector<Ptr<Vector<Real>>>          &imul,
+                       const std::vector<Ptr<BoundConstraint<Real>>> &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
       INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd_(ibnd),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd_(ibnd),
       isInitialized_(false), isStochastic_(false) {
-    std::vector<ROL::Ptr<Constraint<Real> > > econ0(1,econ);
-    std::vector<ROL::Ptr<Vector<Real> > >     emul0(1,emul);
+    std::vector<Ptr<Constraint<Real>>> econ0(1,econ);
+    std::vector<Ptr<Vector<Real>>>     emul0(1,emul);
     INPUT_econ_ = econ0;
     INPUT_emul_ = emul0;
     INTERMEDIATE_econ_ = econ0;
     INTERMEDIATE_emul_ = emul0;
   }
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &emul,
-                       const ROL::Ptr<Constraint<Real> >                    &icon,
-                       const ROL::Ptr<Vector<Real> >                        &imul,
-                       const ROL::Ptr<BoundConstraint<Real> >               &ibnd )
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const std::vector<Ptr<Constraint<Real>>>      &econ,
+                       const std::vector<Ptr<Vector<Real>>>          &emul,
+                       const Ptr<Constraint<Real>>                   &icon,
+                       const Ptr<Vector<Real>>                       &imul,
+                       const Ptr<BoundConstraint<Real>>              &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
       INPUT_econ_(econ), INPUT_emul_(emul),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       INTERMEDIATE_econ_(econ), INTERMEDIATE_emul_(emul),
       isInitialized_(false), isStochastic_(false) {
-    std::vector<ROL::Ptr<Constraint<Real> > >      icon0(1,icon);
-    std::vector<ROL::Ptr<Vector<Real> > >          imul0(1,imul);
-    std::vector<ROL::Ptr<BoundConstraint<Real> > > ibnd0(1,ibnd);
+    std::vector<Ptr<Constraint<Real>>>      icon0(1,icon);
+    std::vector<Ptr<Vector<Real>>>          imul0(1,imul);
+    std::vector<Ptr<BoundConstraint<Real>>> ibnd0(1,ibnd);
     INPUT_icon_ = icon0;
     INPUT_imul_ = imul0;
     INPUT_ibnd_ = ibnd0;
@@ -344,22 +343,22 @@ public:
     INTERMEDIATE_ibnd_ = ibnd0;
   }
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const ROL::Ptr<Constraint<Real> >                    &econ,
-                       const ROL::Ptr<Vector<Real> >                        &emul,
-                       const ROL::Ptr<Constraint<Real> >                    &icon,
-                       const ROL::Ptr<Vector<Real> >                        &imul,
-                       const ROL::Ptr<BoundConstraint<Real> >               &ibnd )
+  OptimizationProblem( const Ptr<Objective<Real>>                     &obj,
+                       const Ptr<Vector<Real>>                        &x,
+                       const Ptr<BoundConstraint<Real>>               &bnd,
+                       const Ptr<Constraint<Real>>                    &econ,
+                       const Ptr<Vector<Real>>                        &emul,
+                       const Ptr<Constraint<Real>>                    &icon,
+                       const Ptr<Vector<Real>>                        &imul,
+                       const Ptr<BoundConstraint<Real>>               &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       isInitialized_(false), isStochastic_(false) {
-    std::vector<ROL::Ptr<Constraint<Real> > >      econ0(1,econ);
-    std::vector<ROL::Ptr<Vector<Real> > >          emul0(1,emul);
-    std::vector<ROL::Ptr<Constraint<Real> > >      icon0(1,icon);
-    std::vector<ROL::Ptr<Vector<Real> > >          imul0(1,imul);
-    std::vector<ROL::Ptr<BoundConstraint<Real> > > ibnd0(1,ibnd);
+    std::vector<Ptr<Constraint<Real>>>      econ0(1,econ);
+    std::vector<Ptr<Vector<Real>>>          emul0(1,emul);
+    std::vector<Ptr<Constraint<Real>>>      icon0(1,icon);
+    std::vector<Ptr<Vector<Real>>>          imul0(1,imul);
+    std::vector<Ptr<BoundConstraint<Real>>> ibnd0(1,ibnd);
     INPUT_econ_ = econ0;
     INPUT_emul_ = emul0;
     INPUT_icon_ = icon0;
@@ -373,117 +372,117 @@ public:
   }
 
   // No bound constuctor [2]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &emul,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                       const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd )
-    : OptimizationProblem( obj, x, ROL::nullPtr, econ, emul, icon, imul, ibnd ) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const std::vector<Ptr<Constraint<Real>>>      &econ,
+                       const std::vector<Ptr<Vector<Real>>>          &emul,
+                       const std::vector<Ptr<Constraint<Real>>>      &icon,
+                       const std::vector<Ptr<Vector<Real>>>          &imul,
+                       const std::vector<Ptr<BoundConstraint<Real>>> &ibnd )
+    : OptimizationProblem( obj, x, nullPtr, econ, emul, icon, imul, ibnd ) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<Constraint<Real> >                    &econ,
-                       const ROL::Ptr<Vector<Real> >                        &emul,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                       const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd )
-    : OptimizationProblem( obj, x, ROL::nullPtr, econ, emul, icon, imul, ibnd) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<Constraint<Real>>                   &econ,
+                       const Ptr<Vector<Real>>                       &emul,
+                       const std::vector<Ptr<Constraint<Real>>>      &icon,
+                       const std::vector<Ptr<Vector<Real>>>          &imul,
+                       const std::vector<Ptr<BoundConstraint<Real>>> &ibnd )
+    : OptimizationProblem( obj, x, nullPtr, econ, emul, icon, imul, ibnd) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &emul,
-                       const ROL::Ptr<Constraint<Real> >                    &icon,
-                       const ROL::Ptr<Vector<Real> >                        &imul,
-                       const ROL::Ptr<BoundConstraint<Real> >               &ibnd )
-    : OptimizationProblem( obj, x, ROL::nullPtr, econ, emul, icon, imul, ibnd) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const std::vector<Ptr<Constraint<Real>>>      &econ,
+                       const std::vector<Ptr<Vector<Real>>>          &emul,
+                       const Ptr<Constraint<Real>>                   &icon,
+                       const Ptr<Vector<Real>>                       &imul,
+                       const Ptr<BoundConstraint<Real>>              &ibnd )
+    : OptimizationProblem( obj, x, nullPtr, econ, emul, icon, imul, ibnd) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<Constraint<Real> >                    &econ,
-                       const ROL::Ptr<Vector<Real> >                        &emul,
-                       const ROL::Ptr<Constraint<Real> >                    &icon,
-                       const ROL::Ptr<Vector<Real> >                        &imul,
-                       const ROL::Ptr<BoundConstraint<Real> >               &ibnd )
-    : OptimizationProblem( obj, x, ROL::nullPtr, econ, emul, icon, imul, ibnd) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<Constraint<Real>>                   &econ,
+                       const Ptr<Vector<Real>>                       &emul,
+                       const Ptr<Constraint<Real>>                   &icon,
+                       const Ptr<Vector<Real>>                       &imul,
+                       const Ptr<BoundConstraint<Real>>              &ibnd )
+    : OptimizationProblem( obj, x, nullPtr, econ, emul, icon, imul, ibnd) {}
 
   // No inequality constraint [3]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &emul )
-    : OptimizationProblem( obj, x, bnd, econ, emul, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr ) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const std::vector<Ptr<Constraint<Real>>>      &econ,
+                       const std::vector<Ptr<Vector<Real>>>          &emul )
+    : OptimizationProblem( obj, x, bnd, econ, emul, nullPtr, nullPtr, nullPtr ) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const ROL::Ptr<Constraint<Real> >                    &econ,
-                       const ROL::Ptr<Vector<Real> >                        &emul )
-    : OptimizationProblem( obj, x, bnd, econ, emul, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const Ptr<Constraint<Real>>                   &econ,
+                       const Ptr<Vector<Real>>                       &emul )
+    : OptimizationProblem( obj, x, bnd, econ, emul, nullPtr, nullPtr, nullPtr) {}
 
   // No equality constraint [4]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                       const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd )
-    : OptimizationProblem( obj, x, bnd, ROL::nullPtr, ROL::nullPtr, icon, imul, ibnd ) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const std::vector<Ptr<Constraint<Real>>>      &icon,
+                       const std::vector<Ptr<Vector<Real>>>          &imul,
+                       const std::vector<Ptr<BoundConstraint<Real>>> &ibnd )
+    : OptimizationProblem( obj, x, bnd, nullPtr, nullPtr, icon, imul, ibnd ) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd,
-                       const ROL::Ptr<Constraint<Real> >                    &icon,
-                       const ROL::Ptr<Vector<Real> >                        &imul,
-                       const ROL::Ptr<BoundConstraint<Real> >               &ibnd )
-    : OptimizationProblem( obj, x, bnd, ROL::nullPtr, ROL::nullPtr, icon, imul, ibnd) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd,
+                       const Ptr<Constraint<Real>>                   &icon,
+                       const Ptr<Vector<Real>>                       &imul,
+                       const Ptr<BoundConstraint<Real>>              &ibnd )
+    : OptimizationProblem( obj, x, bnd, nullPtr, nullPtr, icon, imul, ibnd) {}
 
   // No inequality or bound constraint [5]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &econ,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &emul )
-    : OptimizationProblem( obj, x, ROL::nullPtr, econ, emul, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr ) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const std::vector<Ptr<Constraint<Real>>>      &econ,
+                       const std::vector<Ptr<Vector<Real>>>          &emul )
+    : OptimizationProblem( obj, x, nullPtr, econ, emul, nullPtr, nullPtr, nullPtr ) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<Constraint<Real> >                    &econ,
-                       const ROL::Ptr<Vector<Real> >                        &emul )
-    : OptimizationProblem( obj, x, ROL::nullPtr, econ, emul, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<Constraint<Real>>                   &econ,
+                       const Ptr<Vector<Real>>                       &emul )
+    : OptimizationProblem( obj, x, nullPtr, econ, emul, nullPtr, nullPtr, nullPtr) {}
 
   // No equality or bound constraint [6]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const std::vector<ROL::Ptr<Constraint<Real> > >      &icon,
-                       const std::vector<ROL::Ptr<Vector<Real> > >          &imul,
-                       const std::vector<ROL::Ptr<BoundConstraint<Real> > > &ibnd )
-    : OptimizationProblem( obj, x, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, icon, imul, ibnd ) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const std::vector<Ptr<Constraint<Real>>>      &icon,
+                       const std::vector<Ptr<Vector<Real>>>          &imul,
+                       const std::vector<Ptr<BoundConstraint<Real>>> &ibnd )
+    : OptimizationProblem( obj, x, nullPtr, nullPtr, nullPtr, icon, imul, ibnd ) {}
 
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<Constraint<Real> >                    &icon,
-                       const ROL::Ptr<Vector<Real> >                        &imul,
-                       const ROL::Ptr<BoundConstraint<Real> >               &ibnd )
-    : OptimizationProblem( obj, x, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, icon, imul, ibnd) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<Constraint<Real>>                   &icon,
+                       const Ptr<Vector<Real>>                       &imul,
+                       const Ptr<BoundConstraint<Real>>              &ibnd )
+    : OptimizationProblem( obj, x, nullPtr, nullPtr, nullPtr, icon, imul, ibnd) {}
 
   // Bound constrained problem [7]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> >                     &obj,
-                       const ROL::Ptr<Vector<Real> >                        &x,
-                       const ROL::Ptr<BoundConstraint<Real> >               &bnd )
-    : OptimizationProblem( obj, x, bnd, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr ) {}
+  OptimizationProblem( const Ptr<Objective<Real>>                    &obj,
+                       const Ptr<Vector<Real>>                       &x,
+                       const Ptr<BoundConstraint<Real>>              &bnd )
+    : OptimizationProblem( obj, x, bnd, nullPtr, nullPtr, nullPtr, nullPtr, nullPtr ) {}
 
   // Unconstrained problem [8]
-  OptimizationProblem( const ROL::Ptr<Objective<Real> > &obj,
-                       const ROL::Ptr<Vector<Real> >    &x ) :
-     OptimizationProblem( obj, x, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr, ROL::nullPtr ) {} 
+  OptimizationProblem( const Ptr<Objective<Real>> &obj,
+                       const Ptr<Vector<Real>>    &x ) :
+     OptimizationProblem( obj, x, nullPtr, nullPtr, nullPtr, nullPtr, nullPtr, nullPtr ) {} 
 
   /* Get methods */
 
-  virtual ROL::Ptr<Objective<Real> > getObjective(void) {
-    if ( INTERMEDIATE_obj_ == ROL::nullPtr ) {
+  virtual Ptr<Objective<Real>> getObjective(void) {
+    if ( INTERMEDIATE_obj_ == nullPtr ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getObjective: No objective inputed!");
     }
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
@@ -492,8 +491,8 @@ public:
     return obj_;
   }
 
-  virtual ROL::Ptr<Vector<Real> > getSolutionVector(void) {
-    if ( INTERMEDIATE_sol_ == ROL::nullPtr ) {
+  virtual Ptr<Vector<Real>> getSolutionVector(void) {
+    if ( INTERMEDIATE_sol_ == nullPtr ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionVector: No solution vector inputed!");
     }
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
@@ -502,21 +501,21 @@ public:
     return sol_;
   }
 
-  virtual ROL::Ptr<BoundConstraint<Real> > getBoundConstraint(void) {
+  virtual Ptr<BoundConstraint<Real>> getBoundConstraint(void) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
     return bnd_;
   }
 
-  virtual ROL::Ptr<Constraint<Real> > getConstraint(void) {
+  virtual Ptr<Constraint<Real>> getConstraint(void) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
     return con_;
   }
 
-  virtual ROL::Ptr<Vector<Real> > getMultiplierVector(void) {
+  virtual Ptr<Vector<Real>> getMultiplierVector(void) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
@@ -543,14 +542,14 @@ public:
 
       @param[in]    sampler  is the SampleGenerator defining the distribution of the auxiliary parameter
   */
-  void setMeanValueObjective(const ROL::Ptr<SampleGenerator<Real> > &sampler) {
+  void setMeanValueObjective(const Ptr<SampleGenerator<Real>> &sampler) {
     initStochastic();
     // Set objective function samplers
     vsampler_ = sampler;
     gsampler_ = sampler;
     hsampler_ = sampler;
     // Construct risk-averse/probabilistic objective function
-    if ( vsampler_ == ROL::nullPtr ) {
+    if ( vsampler_ == nullPtr ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setMeanValueObjective: Objective function value sampler is null!");
     }
     else {
@@ -577,28 +576,28 @@ public:
       @param[in]    hsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the Hessian
       @param[in]    storage   whether or not to store the sampled value and gradient
   */
-  void setRiskNeutralObjective(const ROL::Ptr<SampleGenerator<Real> > &vsampler,
-                               const ROL::Ptr<SampleGenerator<Real> > &gsampler = ROL::nullPtr,
-                               const ROL::Ptr<SampleGenerator<Real> > &hsampler = ROL::nullPtr,
+  void setRiskNeutralObjective(const Ptr<SampleGenerator<Real>> &vsampler,
+                               const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
+                               const Ptr<SampleGenerator<Real>> &hsampler = nullPtr,
                                const bool storage = true) {
     initStochastic();
     // Set objective function samplers
     vsampler_ = vsampler;
     gsampler_ = gsampler;
     hsampler_ = hsampler;
-    if ( gsampler == ROL::nullPtr ) {
+    if ( gsampler == nullPtr ) {
       gsampler_ = vsampler_;
     }
-    if ( hsampler == ROL::nullPtr ) {
+    if ( hsampler == nullPtr ) {
       hsampler_ = gsampler_;
     }
     // Construct risk-averse/probabilistic objective function
-    if ( vsampler_ == ROL::nullPtr ) {
+    if ( vsampler_ == nullPtr ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setRiskNeutralObjective: Objective function value sampler is null!");
     }
     else {
       INTERMEDIATE_obj_
-        = ROL::makePtr<RiskNeutralObjective<Real>>(INPUT_obj_,vsampler_,gsampler_,hsampler_,storage);
+        = makePtr<RiskNeutralObjective<Real>>(INPUT_obj_,vsampler_,gsampler_,hsampler_,storage);
     }
     // Set vector and bound constraint
     buildRiskVec(INPUT_sol_);
@@ -619,30 +618,30 @@ public:
       @param[in]    gsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the gradient
       @param[in]    hsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the Hessian
   */
-  void setRiskAverseObjective(Teuchos::ParameterList &parlist,
-                              const ROL::Ptr<SampleGenerator<Real> > &vsampler,
-                              const ROL::Ptr<SampleGenerator<Real> > &gsampler = ROL::nullPtr,
-                              const ROL::Ptr<SampleGenerator<Real> > &hsampler = ROL::nullPtr) {
+  void setRiskAverseObjective(ParameterList &parlist,
+                              const Ptr<SampleGenerator<Real>> &vsampler,
+                              const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
+                              const Ptr<SampleGenerator<Real>> &hsampler = nullPtr) {
     initStochastic();
     // Set objective function samplers
     vsampler_ = vsampler;
     gsampler_ = gsampler;
     hsampler_ = hsampler;
-    if ( gsampler == ROL::nullPtr ) {
+    if ( gsampler == nullPtr ) {
       gsampler_ = vsampler_;
     }
-    if ( hsampler == ROL::nullPtr ) {
+    if ( hsampler == nullPtr ) {
       hsampler_ = gsampler_;
     }
     // Construct risk-averse/probabilistic objective function
-    if ( vsampler_ == ROL::nullPtr ) {
+    if ( vsampler_ == nullPtr ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setRiskAverseObjective: Objective function value sampler is null!");
     }
     else {
       needRiskLessObj_ = false;
-      parlistObj_      = ROL::makePtrFromRef(parlist);
+      parlistObj_      = makePtrFromRef(parlist);
       INTERMEDIATE_obj_
-        = ROL::makePtr<StochasticObjective<Real>>(INPUT_obj_,parlist,vsampler_,gsampler_,hsampler_);
+        = makePtr<StochasticObjective<Real>>(INPUT_obj_,parlist,vsampler_,gsampler_,hsampler_);
     }
     // Set vector and bound constraint
     buildRiskVec(INPUT_sol_);
@@ -651,10 +650,10 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticObjective(Teuchos::ParameterList &parlist,
-                              const ROL::Ptr<SampleGenerator<Real> > &vsampler,
-                              const ROL::Ptr<SampleGenerator<Real> > &gsampler = ROL::nullPtr,
-                              const ROL::Ptr<SampleGenerator<Real> > &hsampler = ROL::nullPtr) {
+  void setStochasticObjective(ParameterList &parlist,
+                              const Ptr<SampleGenerator<Real>> &vsampler,
+                              const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
+                              const Ptr<SampleGenerator<Real>> &hsampler = nullPtr) {
     // Determine Stochastic Objective Type
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
     if ( type == "Risk Neutral" ) {
@@ -682,10 +681,10 @@ public:
   }
 
   /* Equality Constraint */
-  void setMeanValueEquality(const ROL::Ptr<SampleGenerator<Real> > &sampler, const int index = 0) {
+  void setMeanValueEquality(const Ptr<SampleGenerator<Real>> &sampler, const int index = 0) {
     initStochastic();
     exsampler_[index] = sampler;
-    if ( INPUT_econ_[index] != ROL::nullPtr && sampler != ROL::nullPtr ) {
+    if ( INPUT_econ_[index] != nullPtr && sampler != nullPtr ) {
       std::vector<Real> mean = computeSampleMean(sampler);
       INTERMEDIATE_econ_[index] = INPUT_econ_[index];
       INTERMEDIATE_econ_[index]->setParameter(mean);
@@ -701,17 +700,17 @@ public:
     isInitialized_ = false;
   }
 
-  void setRiskNeutralEquality(const ROL::Ptr<SampleGenerator<Real> > &xsampler,
-                              const ROL::Ptr<BatchManager<Real> >    &cbman,
+  void setRiskNeutralEquality(const Ptr<SampleGenerator<Real>> &xsampler,
+                              const Ptr<BatchManager<Real>>    &cbman,
                               const int index = 0) {
     initStochastic();
     exsampler_[index] = xsampler;
     ecbman_[index]    = cbman;
-    if ( INPUT_econ_[index] != ROL::nullPtr
-         &&        xsampler != ROL::nullPtr
-         &&           cbman != ROL::nullPtr ) {
+    if ( INPUT_econ_[index] != nullPtr
+         &&        xsampler != nullPtr
+         &&           cbman != nullPtr ) {
       INTERMEDIATE_econ_[index]
-        = ROL::makePtr<RiskNeutralConstraint<Real>>(INPUT_econ_[index],xsampler,cbman);
+        = makePtr<RiskNeutralConstraint<Real>>(INPUT_econ_[index],xsampler,cbman);
       INTERMEDIATE_emul_[index] = INPUT_emul_[index];
     }
     else {
@@ -724,21 +723,21 @@ public:
     isInitialized_ = false;
   }
 
-  void setAlmostSureEquality(const ROL::Ptr<SampleGenerator<Real> > &sampler,
+  void setAlmostSureEquality(const Ptr<SampleGenerator<Real>> &sampler,
                              const int index = 0) {
     initStochastic();
     exsampler_[index] = sampler;
-    if ( INPUT_econ_[index] != ROL::nullPtr && sampler != ROL::nullPtr ) {
+    if ( INPUT_econ_[index] != nullPtr && sampler != nullPtr ) {
       int nsamp = sampler->numMySamples();
       INTERMEDIATE_econ_[index]
-        = ROL::makePtr<AlmostSureConstraint<Real>>(sampler,INPUT_econ_[index]);
-      std::vector<ROL::Ptr<Vector<Real> > > emul(nsamp,ROL::nullPtr);
+        = makePtr<AlmostSureConstraint<Real>>(sampler,INPUT_econ_[index]);
+      std::vector<Ptr<Vector<Real>>> emul(nsamp,nullPtr);
       for (int j = 0; j < nsamp; ++j) {
         emul[j] = INPUT_emul_[index]->clone();
         emul[j]->set(*INPUT_emul_[index]);
       }
       INTERMEDIATE_emul_[index]
-        = ROL::makePtr<DualSimulatedVector<Real>>(emul, sampler->getBatchManager(), sampler);
+        = makePtr<DualSimulatedVector<Real>>(emul, sampler->getBatchManager(), sampler);
     }
     else {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetAlmostSureEquality: Either SampleGenerator or Constraint is NULL!");
@@ -751,16 +750,16 @@ public:
   }
 
 
-  void setStochasticEquality(std::vector<Teuchos::ParameterList> &parlist,
-                             const std::vector<ROL::Ptr<SampleGenerator<Real> > > &xsampler,
-                             const std::vector<ROL::Ptr<BatchManager<Real> > > &cbman) {
+  void setStochasticEquality(std::vector<ParameterList> &parlist,
+                             const std::vector<Ptr<SampleGenerator<Real>>> &xsampler,
+                             const std::vector<Ptr<BatchManager<Real>>> &cbman) {
     initStochastic();
     int nc = static_cast<int>(INPUT_econ_.size());
     if ( nc != static_cast<int>(xsampler.size()) || nc != static_cast<int>(cbman.size()) ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticEquality: Constraint vector and SampleGenerator vector are not the same size!");
     }
     for (int i = 0; i < nc; ++i) {
-      if (xsampler[i] != ROL::nullPtr) {
+      if (xsampler[i] != nullPtr) {
         std::string type = parlist[i].sublist("SOL").get("Stochastic Component Type","Risk Neutral");
         if ( type == "Risk Neutral" ) {
           setRiskNeutralEquality(xsampler[i],cbman[i],i);
@@ -787,21 +786,21 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticEquality(Teuchos::ParameterList &parlist,
-                             const ROL::Ptr<SampleGenerator<Real> > &xsampler,
-                             const ROL::Ptr<BatchManager<Real> > &cbman) {
-    std::vector<Teuchos::ParameterList> cparlist(1,parlist);
-    std::vector<ROL::Ptr<SampleGenerator<Real> > > cxsampler(1,xsampler);
-    std::vector<ROL::Ptr<BatchManager<Real> > > ccbman(1,cbman);
+  void setStochasticEquality(ParameterList &parlist,
+                             const Ptr<SampleGenerator<Real>> &xsampler,
+                             const Ptr<BatchManager<Real>> &cbman) {
+    std::vector<ParameterList> cparlist(1,parlist);
+    std::vector<Ptr<SampleGenerator<Real>>> cxsampler(1,xsampler);
+    std::vector<Ptr<BatchManager<Real>>> ccbman(1,cbman);
     setStochasticEquality(cparlist,cxsampler,ccbman);
   }
 
   /* Inequality constraint */
-  void setMeanValueInequality(const ROL::Ptr<SampleGenerator<Real> > &sampler,
+  void setMeanValueInequality(const Ptr<SampleGenerator<Real>> &sampler,
                               const int index = 0) {
     initStochastic();
     ixsampler_[index] = sampler;
-    if ( INPUT_icon_[index] != ROL::nullPtr && sampler != ROL::nullPtr ) {
+    if ( INPUT_icon_[index] != nullPtr && sampler != nullPtr ) {
       std::vector<Real> mean = computeSampleMean(sampler);
       INTERMEDIATE_icon_[index] = INPUT_icon_[index];
       INTERMEDIATE_icon_[index]->setParameter(mean);
@@ -818,17 +817,17 @@ public:
     isInitialized_ = false;
   }
 
-  void setRiskNeutralInequality(const ROL::Ptr<SampleGenerator<Real> > &xsampler,
-                                const ROL::Ptr<BatchManager<Real> >    &cbman,
+  void setRiskNeutralInequality(const Ptr<SampleGenerator<Real>> &xsampler,
+                                const Ptr<BatchManager<Real>>    &cbman,
                                 const int index = 0) {
     initStochastic();
     ixsampler_[index] = xsampler;
     icbman_[index]    = cbman;
-    if ( INPUT_icon_[index] != ROL::nullPtr
-         &&    xsampler     != ROL::nullPtr
-         &&       cbman     != ROL::nullPtr ) {
+    if ( INPUT_icon_[index] != nullPtr
+         &&    xsampler     != nullPtr
+         &&       cbman     != nullPtr ) {
       INTERMEDIATE_icon_[index]
-        = ROL::makePtr<RiskNeutralConstraint<Real>>(INPUT_icon_[index],xsampler,cbman);
+        = makePtr<RiskNeutralConstraint<Real>>(INPUT_icon_[index],xsampler,cbman);
       INTERMEDIATE_ibnd_[index] = INPUT_ibnd_[index];
       INTERMEDIATE_imul_[index] = INPUT_imul_[index];
     }
@@ -842,16 +841,16 @@ public:
     isInitialized_ = false;
   }
 
-  void setRiskAverseInequality(Teuchos::ParameterList &parlist,
-                               const ROL::Ptr<SampleGenerator<Real> > &sampler,
+  void setRiskAverseInequality(ParameterList &parlist,
+                               const Ptr<SampleGenerator<Real>> &sampler,
                                const int index = 0) {
     initStochastic();
     ixsampler_[index] = sampler;
-    if ( INPUT_icon_[index] != ROL::nullPtr && sampler != ROL::nullPtr ) {
+    if ( INPUT_icon_[index] != nullPtr && sampler != nullPtr ) {
       needRiskLessIcon_[index] = false;
-      parlistCon_[index]       = ROL::makePtrFromRef(parlist);
+      parlistCon_[index]       = makePtrFromRef(parlist);
       INTERMEDIATE_icon_[index]
-        = ROL::makePtr<StochasticConstraint<Real>>(INPUT_icon_[index],sampler,parlist,index);
+        = makePtr<StochasticConstraint<Real>>(INPUT_icon_[index],sampler,parlist,index);
       INTERMEDIATE_ibnd_[index] = INPUT_ibnd_[index];
       INTERMEDIATE_imul_[index] = INPUT_imul_[index];
     }
@@ -865,23 +864,23 @@ public:
     isInitialized_ = false;
   }
 
-  void setAlmostSureInequality(const ROL::Ptr<SampleGenerator<Real> > &sampler,
+  void setAlmostSureInequality(const Ptr<SampleGenerator<Real>> &sampler,
                                const int index = 0) {
     initStochastic();
     ixsampler_[index] = sampler;
-    if ( INPUT_icon_[index] != ROL::nullPtr && sampler != ROL::nullPtr ) {
+    if ( INPUT_icon_[index] != nullPtr && sampler != nullPtr ) {
       int nsamp = sampler->numMySamples();
       INTERMEDIATE_icon_[index]
-        = ROL::makePtr<AlmostSureConstraint<Real>>(sampler, INPUT_icon_[index]);
-      std::vector<ROL::Ptr<Vector<Real> > > imul(nsamp,ROL::nullPtr);
+        = makePtr<AlmostSureConstraint<Real>>(sampler, INPUT_icon_[index]);
+      std::vector<Ptr<Vector<Real>>> imul(nsamp,nullPtr);
       for (int j = 0; j < nsamp; ++j) {
         imul[j] = INPUT_imul_[index]->clone();
         imul[j]->set(*INPUT_imul_[index]);
       }
       INTERMEDIATE_imul_[index]
-        = ROL::makePtr<DualSimulatedVector<Real>>(imul, sampler->getBatchManager(), sampler);
+        = makePtr<DualSimulatedVector<Real>>(imul, sampler->getBatchManager(), sampler);
       INTERMEDIATE_ibnd_[index]
-        = ROL::makePtr<SimulatedBoundConstraint<Real>>(sampler, INPUT_ibnd_[index]);
+        = makePtr<SimulatedBoundConstraint<Real>>(sampler, INPUT_ibnd_[index]);
     }
     else {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetAlmostSureInequality: Either Constraint or SampleGenerator is NULL!");
@@ -893,16 +892,16 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticInequality(std::vector<Teuchos::ParameterList> &parlist,
-                               const std::vector<ROL::Ptr<SampleGenerator<Real> > > &xsampler,
-                               const std::vector<ROL::Ptr<BatchManager<Real> > >    &cbman) {
+  void setStochasticInequality(std::vector<ParameterList> &parlist,
+                               const std::vector<Ptr<SampleGenerator<Real>>> &xsampler,
+                               const std::vector<Ptr<BatchManager<Real>>>    &cbman) {
     initStochastic();
     int nc = static_cast<int>(INPUT_icon_.size());
     if ( nc != static_cast<int>(xsampler.size()) || nc != static_cast<int>(cbman.size()) ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticInequality: Constraint vector and SampleGenerator vector are not the same size!");
     }
     for (int i = 0; i < nc; ++i) {
-      if ( xsampler[i] != ROL::nullPtr ) {
+      if ( xsampler[i] != nullPtr ) {
         std::string type = parlist[i].sublist("SOL").get("Stochastic Component Type","Risk Neutral");
         if ( type == "Risk Neutral" ) {
           setRiskNeutralInequality(xsampler[i],cbman[i],i);
@@ -937,12 +936,12 @@ public:
     isInitialized_ = false;
   }
 
-  void setStochasticInequality(Teuchos::ParameterList &parlist,
-                               const ROL::Ptr<SampleGenerator<Real> > &xsampler,
-                               const ROL::Ptr<BatchManager<Real> > &cbman) {
-    std::vector<Teuchos::ParameterList> cparlist(1,parlist);
-    std::vector<ROL::Ptr<SampleGenerator<Real> > > cxsampler(1,xsampler);
-    std::vector<ROL::Ptr<BatchManager<Real> > > ccbman(1,cbman);
+  void setStochasticInequality(ParameterList &parlist,
+                               const Ptr<SampleGenerator<Real>> &xsampler,
+                               const Ptr<BatchManager<Real>> &cbman) {
+    std::vector<ParameterList> cparlist(1,parlist);
+    std::vector<Ptr<SampleGenerator<Real>>> cxsampler(1,xsampler);
+    std::vector<Ptr<BatchManager<Real>>> ccbman(1,cbman);
     setStochasticInequality(cparlist,cxsampler,ccbman);
   }
 
@@ -979,6 +978,42 @@ public:
     return val;
   }
 
+  std::vector<Real> getObjectiveStatistic(void) const {
+    try {
+      Ptr<std::vector<Real>> stat
+        = dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->getStatistic();
+      if (stat != nullPtr) {
+        return *stat;
+      }
+      else {
+        std::vector<Real> empty;
+        return empty;
+      }
+    }
+    catch (std::exception &e) {
+      std::vector<Real> empty;
+      return empty;
+    }
+  }
+
+  std::vector<Real> getConstraintStatistic(const int index = 0) const {
+    try {
+      Ptr<std::vector<Real>> stat
+        = dynamicPtrCast<RiskVector<Real>>(INTERMEDIATE_sol_)->getStatistic(1,index);
+      if (stat != nullPtr) {
+        return *stat;
+      }
+      else {
+        std::vector<Real> empty;
+        return empty;
+      }
+    }
+    catch (std::exception &e) {
+      std::vector<Real> empty;
+      return empty;
+    }
+  }
+
   void reset(void) {
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
@@ -994,7 +1029,7 @@ public:
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
-    if (obj_ != ROL::nullPtr) {
+    if (obj_ != nullPtr) {
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking vector operations in optimization vector space X." << std::endl;
@@ -1011,7 +1046,7 @@ public:
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
-    if (obj_ != ROL::nullPtr) {
+    if (obj_ != nullPtr) {
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking objective function." << std::endl;
@@ -1028,7 +1063,7 @@ public:
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
-    if(con_ != ROL::nullPtr) {
+    if(con_ != nullPtr) {
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking vector operations in constraint multiplier space C*." << std::endl;
@@ -1047,7 +1082,7 @@ public:
     initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
-    if(con_ != ROL::nullPtr) {
+    if(con_ != nullPtr) {
       outStream << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
 
       outStream << "Checking equality constraint." << std::endl;
@@ -1065,12 +1100,12 @@ public:
                INTERMEDIATE_econ_,INTERMEDIATE_emul_,
                INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
 
-    ROL::Ptr<Vector<Real> > x, y, u, v;
+    Ptr<Vector<Real>> x, y, u, v;
     try {
-      x = sol_->clone(); RandomizeVector(*x);
-      y = sol_->clone(); RandomizeVector(*y);
-      u = sol_->clone(); RandomizeVector(*u);
-      v = sol_->clone(); RandomizeVector(*v);
+      x = sol_->clone(); x->randomize();
+      y = sol_->clone(); y->randomize();
+      u = sol_->clone(); u->randomize();
+      v = sol_->clone(); v->randomize();
 
       checkSolutionVector(*x,*y,*u,outStream);
       checkObjective(*x,*u,*v,outStream,numSteps,order);
@@ -1079,13 +1114,13 @@ public:
 //      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::check: Elementwise is not implemented for optimization space vectors");
     }
 
-    if(con_ != ROL::nullPtr) {
-      ROL::Ptr<Vector<Real> > c, l, w, q;
+    if(con_ != nullPtr) {
+      Ptr<Vector<Real>> c, l, w, q;
       try {
-        c = mul_->dual().clone(); RandomizeVector(*c);
-        l = mul_->clone();        RandomizeVector(*l);
-        w = mul_->clone();        RandomizeVector(*w);
-        q = mul_->clone();        RandomizeVector(*q);   
+        c = mul_->dual().clone(); c->randomize();
+        l = mul_->clone();        l->randomize();
+        w = mul_->clone();        w->randomize();
+        q = mul_->clone();        q->randomize();
 
         checkMultiplierVector(*w,*q,*l,outStream);
         checkConstraint(*x,*u,*v,*c,*l,outStream,numSteps,order);

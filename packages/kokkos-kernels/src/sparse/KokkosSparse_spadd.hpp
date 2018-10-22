@@ -288,9 +288,9 @@ namespace Experimental {
     SortEntriesFunctor(const CrowptrsT Crowptrs_, CcolindsT Ccolinds_, CcolindsT ABperm_) :
       Crowptrs(Crowptrs_),
       Ccolinds(Ccolinds_),
-      CcolindsAux("C colind aux", Ccolinds_.dimension_0()),
+      CcolindsAux("C colind aux", Ccolinds_.extent(0)),
       ABperm(ABperm_),
-      ABpermAux("AB perm aux", ABperm_.dimension_0())
+      ABpermAux("AB perm aux", ABperm_.extent(0))
     {}
     KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
@@ -300,8 +300,8 @@ namespace Experimental {
       size_type rowEnd = Crowptrs(i + 1);
       size_type rowNum = rowEnd - rowStart;
       radixSortKeysAndValues<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
-        (Ccolinds.ptr_on_device() + rowStart, CcolindsAux.ptr_on_device() + rowStart,
-         ABperm.ptr_on_device() + rowStart, ABpermAux.ptr_on_device() + rowStart, rowNum);
+        (Ccolinds.data() + rowStart, CcolindsAux.data() + rowStart,
+         ABperm.data() + rowStart, ABpermAux.data() + rowStart, rowNum);
     }
     CrowptrsT Crowptrs;
     CcolindsT Ccolinds;
@@ -377,7 +377,7 @@ namespace Experimental {
     KOKKOS_INLINE_FUNCTION void
     operator() (const size_type& i, value_type& update, const bool fin) const
     {
-      size_type n = input.dimension_0();
+      size_type n = input.extent(0);
       value_type curVal = (i < n) ? input(i) : 0;
       if(fin)
       {
@@ -427,7 +427,7 @@ namespace Experimental {
     //symbolic just needs to compute c_rowmap
     //easy for sorted, but for unsorted is easiest to just compute the whole sum
     auto addHandle = handle->get_spadd_handle();
-    auto nrows = a_rowmap.dimension_0() - 1;
+    auto nrows = a_rowmap.extent(0) - 1;
     typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
     if(addHandle->is_input_sorted())
     {
@@ -479,8 +479,8 @@ namespace Experimental {
         sortEntries(c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
       Kokkos::parallel_for(range_type(0, nrows), sortEntries);
       execution_space::fence();
-      clno_nnz_view_t_ a_pos("A entry positions", a_entries.dimension_0());
-      clno_nnz_view_t_ b_pos("B entry positions", b_entries.dimension_0());
+      clno_nnz_view_t_ a_pos("A entry positions", a_entries.extent(0));
+      clno_nnz_view_t_ b_pos("B entry positions", b_entries.extent(0));
       //merge the entries and compute Apos/Bpos, as well as Crowcounts
       {
         clno_row_view_t_ c_rowcounts("C row counts", nrows);
@@ -714,7 +714,7 @@ namespace Experimental {
         "add_symbolic: C scalar type must not be const");
     typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
     auto addHandle = kernel_handle->get_spadd_handle();
-    auto nrows = a_rowmap.dimension_0() - 1;
+    auto nrows = a_rowmap.extent(0) - 1;
     if(addHandle->is_input_sorted())
     {
       SortedNumericSumFunctor<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,

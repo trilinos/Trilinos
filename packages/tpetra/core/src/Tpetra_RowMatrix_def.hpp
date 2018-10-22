@@ -42,11 +42,12 @@
 #ifndef TPETRA_ROWMATRIX_DEF_HPP
 #define TPETRA_ROWMATRIX_DEF_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Map.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_RowGraph.hpp"
 
 namespace Tpetra {
+namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~RowMatrix() {}
@@ -619,6 +620,7 @@ namespace Tpetra {
     return static_cast<LocalOrdinal> (0);
   }
 
+} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -628,8 +630,7 @@ namespace Tpetra {
 //
 
 #define TPETRA_ROWMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
-  \
-  template class RowMatrix< SCALAR , LO , GO , NODE >;
+  namespace Classes { template class RowMatrix< SCALAR , LO , GO , NODE >; }
 
 
 #endif // TPETRA_ROWMATRIX_DEF_HPP

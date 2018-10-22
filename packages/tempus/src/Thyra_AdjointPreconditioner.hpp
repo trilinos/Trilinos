@@ -29,29 +29,24 @@ public:
   /** \brief Construct to uninitialized. */
   AdjointPreconditioner() {}
 
-  /** \brief . */
   void nonconstInitialize(
     const RCP<PreconditionerBase<Scalar> > &prec) {
     validateInitialize(prec);
     prec_ = prec;
   }
 
-  /** \brief . */
   void initialize(
     const RCP<const PreconditionerBase<Scalar> > &prec) {
     validateInitialize(prec);
     prec_ = prec;
   }
 
-  /** \brief . */
   RCP<PreconditionerBase<Scalar> >
   getNonconstPreconditioner() { return prec_.getNonconstObj(); }
 
-  /** \brief . */
   RCP<const PreconditionerBase<Scalar> >
   getPreconditioner() const { return prec_.getConstObj(); }
 
-  /** \brief . */
   void uninitialize() {
     prec_.uninitialize();
   }
@@ -61,40 +56,31 @@ public:
   /** @name Overridden from PreconditionerBase */
   //@{
 
-  /** \brief . */
   bool isLeftPrecOpConst() const
   { return prec_.getConstObj()->isLeftPrecOpConst(); }
 
-  /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstLeftPrecOp()
   { return nonconstAdjoint(prec_.getNonconstObj()->getNonconstLeftPrecOp()); }
 
-  /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp() const
   { return adjoint(prec_.getConstObj()->getLeftPrecOp()); }
 
-  /** \brief . */
   bool isRightPrecOpConst() const
   { return prec_.getConstObj()->isRightPrecOpConst(); }
 
-  /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstRightPrecOp()
   { return nonconstAdjoint(prec_.getNonconstObj()->getNonconstRightPrecOp()); }
 
-  /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getRightPrecOp() const
   { return adjoint(prec_.getConstObj()->getRightPrecOp()); }
 
-  /** \brief . */
   bool isUnspecifiedPrecOpConst() const
   { return prec_.getConstObj()->isUnspecifiedPrecOpConst(); }
 
-  /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> > getNonconstUnspecifiedPrecOp()
   { return nonconstAdjoint(
       prec_.getNonconstObj()->getNonconstUnspecifiedPrecOp()); }
 
-  /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getUnspecifiedPrecOp() const
   { return adjoint(prec_.getNonconstObj()->getUnspecifiedPrecOp()); }
 

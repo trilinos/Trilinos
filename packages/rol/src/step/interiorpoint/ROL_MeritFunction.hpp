@@ -72,7 +72,7 @@ class MeritFunction : public Objective<Real> {
   typedef Constraint<Real>    EQCON;
   typedef InequalityConstraint<Real>  INCON;
 
-  typedef Teuchos::ParameterList      PLIST;
+  typedef ROL::ParameterList      PLIST;
 
 
   typedef typename PV::size_type      uint;

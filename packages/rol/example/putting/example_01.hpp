@@ -46,7 +46,7 @@
            example_01.
 */
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -655,7 +655,7 @@ public:
     ROL::Ptr<ROL::LinearOperator<Real> > precond
       = ROL::makePtr<Precond>();
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("General").sublist("Krylov").set("Type","GMRES");
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-8);
     parlist.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
@@ -676,7 +676,7 @@ public:
     ROL::Ptr<ROL::LinearOperator<Real> > precond
       = ROL::makePtr<Precond>();
 
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     parlist.sublist("General").sublist("Krylov").set("Type","GMRES");
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-8);
     parlist.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);

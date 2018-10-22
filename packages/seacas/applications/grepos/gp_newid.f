@@ -1,4 +1,4 @@
-C Copyright(C) 2011 National Technology & Engineering Solutions of
+C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -50,7 +50,7 @@ C=======================================================================
          RETURN
       END IF
 
-C ... Check for existance of new id in old list - not allowed
+C ... Check for existence of new id in old list - not allowed
 
       IF (NUMID .LE. 0) RETURN
 

@@ -88,7 +88,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   PartitionerType_ ("linear"),
   NumSweeps_ (1),
   NumLocalBlocks_(0),
-  containerType_ ("Dense"),
+  containerType_ ("TriDi"),
   PrecType_ (Ifpack2::Details::JACOBI),
   ZeroStartingSolution_ (true),
   hasBlockCrsMatrix_ (false),
@@ -145,15 +145,18 @@ getValidParameters () const
   validParams->set("Amesos2",dummyList);
   validParams->sublist("Amesos2").disableRecursiveValidation();
   validParams->set("Amesos2 solver name", "KLU2");
-  
+
   Teuchos::ArrayRCP<int> tmp;
   validParams->set("partitioner: map", tmp);
 
   validParams->set("partitioner: line detection threshold",(double)0.0);
   validParams->set("partitioner: PDE equations",(int)1);
-  Teuchos::RCP<Tpetra::MultiVector<> > dummy;
+  Teuchos::RCP<Tpetra::MultiVector<double,
+                                   typename MatrixType::local_ordinal_type,
+                                   typename MatrixType::global_ordinal_type,
+                                   typename MatrixType::node_type> > dummy;
   validParams->set("partitioner: coordinates",dummy);
-  
+
   return validParams;
 }
 
@@ -174,6 +177,13 @@ setParameters (const Teuchos::ParameterList& List)
     // If its value does not match the currently registered Container types,
     // the ContainerFactory will throw with an informative message.
     containerType_ = List.get<std::string> ("relaxation: container");
+    // Intercept more human-readable aliases for the *TriDi containers
+    if(containerType_ == "Tridiagonal") {
+      containerType_ = "TriDi";
+    }
+    if(containerType_ == "Block Tridiagonal") {
+      containerType_ = "BlockTriDi";
+    }
   }
 
   if (List.isParameter ("relaxation: type")) {
@@ -274,7 +284,7 @@ setParameters (const Teuchos::ParameterList& List)
     }
   }
 
-  std::string defaultContainer = "Dense";
+  std::string defaultContainer = "TriDi";
   if(std::is_same<ContainerType, Container<MatrixType> >::value)
   {
     //Generic container template parameter, container type specified in List
@@ -412,9 +422,9 @@ size_t BlockRelaxation<MatrixType,ContainerType>::getNodeSmootherComplexity() co
   // Relaxation methods cost roughly one apply + one block-diagonal inverse per iteration
   // NOTE: This approximates all blocks as dense, which may overstate the cost if you have a sparse (or banded) container.
   size_t block_nnz = 0;
-  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) 
+  for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i)
     block_nnz += Partitioner_->numRowsInPart(i) *Partitioner_->numRowsInPart(i);
-    
+
   return block_nnz + A_->getNodeNumEntries();
 }
 
@@ -467,7 +477,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   {
     auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
     auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
-    if (X_lcl_host.ptr_on_device () == Y_lcl_host.ptr_on_device ()) {
+    if (X_lcl_host.data () == Y_lcl_host.data ()) {
       X_copy = rcp (new MV (X, Teuchos::Copy));
     } else {
       X_copy = rcpFromRef (X);
@@ -609,7 +619,7 @@ initialize ()
     TEUCHOS_TEST_FOR_EXCEPTION
       (hasBlockCrsMatrix_, std::runtime_error,
        "Ifpack2::BlockRelaxation::initialize: "
-       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");      
+       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
 
     // weight of each vertex
     W_ = rcp (new vector_type (A_->getRowMap ()));
@@ -676,7 +686,7 @@ ExtractSubmatricesStructure ()
   std::string containerType = ContainerType::getName ();
   if (containerType == "Generic") {
     // ContainerType is Container<row_matrix_type>.  Thus, we need to
-    // get the container name from the parameter list.  We use "Dense"
+    // get the container name from the parameter list.  We use "TriDi"
     // as the default container type.
     containerType = containerType_;
   }

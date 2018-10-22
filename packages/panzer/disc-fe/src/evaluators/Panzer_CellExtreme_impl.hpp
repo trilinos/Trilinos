@@ -69,7 +69,7 @@ CellExtreme(
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
   quad_order = ir->cubature_degree;
 
-  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
+  Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   extreme = PHX::MDField<ScalarT>( p.get<std::string>("Extreme Name"), dl_cell);
   scalar = PHX::MDField<const ScalarT,Cell,IP>( p.get<std::string>("Field Name"), ir->dl_scalar);
 
@@ -106,17 +106,9 @@ void
 CellExtreme<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(extreme,fm);
-  this->utils.setFieldData(scalar,fm);
-  
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
-
-  num_qp = scalar.dimension(1);
-
+  num_qp = scalar.extent(1);
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 

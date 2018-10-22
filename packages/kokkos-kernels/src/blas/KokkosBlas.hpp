@@ -62,4 +62,7 @@
 
 
 #include<KokkosBlas2_gemv.hpp>
+
+
+#include<KokkosBlas3_gemm.hpp>
 #endif

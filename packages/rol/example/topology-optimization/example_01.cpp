@@ -51,9 +51,8 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #include <iostream>
@@ -65,6 +64,7 @@
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_StdBoundConstraint.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
@@ -488,8 +488,8 @@ public:
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix( ROL::makePtrFromRef(K) );
-    solver.setVectors( ROL::makePtrFromRef(U), ROL::makePtrFromRef(F) );
+    solver.setMatrix( Teuchos::rcpFromRef(K) );
+    solver.setVectors( Teuchos::rcpFromRef(U), Teuchos::rcpFromRef(F) );
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -555,8 +555,8 @@ public:
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(ROL::makePtrFromRef(K));
-    solver.setVectors(ROL::makePtrFromRef(U),ROL::makePtrFromRef(F));
+    solver.setMatrix(Teuchos::rcpFromRef(K));
+    solver.setVectors(Teuchos::rcpFromRef(U),Teuchos::rcpFromRef(F));
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -622,8 +622,8 @@ public:
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(ROL::makePtrFromRef(K));
-    solver.setVectors(ROL::makePtrFromRef(U), ROL::makePtrFromRef(F));
+    solver.setMatrix(Teuchos::rcpFromRef(K));
+    solver.setVectors(Teuchos::rcpFromRef(U), Teuchos::rcpFromRef(F));
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -1038,7 +1038,7 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -1069,8 +1069,7 @@ int main(int argc, char *argv[]) {
     int   maxit     = 100;   // Maximum number of iterations (e.g., 500).
     // Read optimization input parameter list.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     // Initialize ROL::Ptrs.
     ROL::Ptr<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj;   // Reduced objective.

@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -58,15 +58,15 @@ using Teuchos::rcp;
 
 // Author: Clark R. Dohrmann
 namespace bddc {
-  
-template <class SX, class SM, class LO, class GO> 
+
+template <class SX, class SM, class LO, class GO>
   class WeightsBDDC
 {
 public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::Map<>::node_type                                Node;
   typedef Tpetra::Map<LO,GO,Node>                                 Map;
   typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
   typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
@@ -127,7 +127,7 @@ private:
 
   void determineEquivAndWeightTypes()
   {
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
     m_equivType.resize(m_numSub);
     m_weightType.resize(m_numSub);
@@ -136,9 +136,9 @@ private:
       m_equivType[i].resize(numEquiv);
       m_weightType[i].resize(numEquiv);
       for (LO j=0; j<numEquiv; j++) {
-	LO equiv = subdomainEquivClasses[i][j];
-	m_equivType[i][j] = m_Partition->getEquivType(equiv);
-	m_weightType[i][j] = getWeightType(m_equivType[i][j]);
+        LO equiv = subdomainEquivClasses[i][j];
+        m_equivType[i][j] = m_Partition->getEquivType(equiv);
+        m_weightType[i][j] = getWeightType(m_equivType[i][j]);
       }
     }
   }
@@ -166,12 +166,12 @@ private:
     for (LO i=0; i<m_numSub; i++) {
       LO numEquiv = m_Subdomain[i]->getNumEquiv();
       for (LO j=0; j<numEquiv; j++) {
-	if (m_weightType[i][j] == DELUXE) deluxeFlag = 1;
+        if (m_weightType[i][j] == DELUXE) deluxeFlag = 1;
       }
     }
     LO deluxeFlagMax;
-    Teuchos::reduceAll<int, LO> (*m_Comm, Teuchos::REDUCE_MAX, 1, 
-				 &deluxeFlag, &deluxeFlagMax);
+    Teuchos::reduceAll<int, LO> (*m_Comm, Teuchos::REDUCE_MAX, 1,
+                                 &deluxeFlag, &deluxeFlagMax);
     if (deluxeFlagMax == 0) return;
     // calculate equivalence class Schur complements
     deluxeWeights.resize(m_numSub);
@@ -183,24 +183,24 @@ private:
       deluxeWeights[i].resize(numEquiv);
       LO localDofB = 0;
       for (LO j=0; j<numEquiv; j++) {
-	const LO* equivDofsGlobal = &m_subBoundaryDofs[i][localDofB];
-	LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
-	if (m_weightType[i][j] == bddc::DELUXE) {
-	  std::vector<SX> & Sc = deluxeWeights[i][j];
-	  m_Subdomain[i]->calculateSchurComplement(j, Sc);
-	  columns.resize(numEquivDofs);
-	  for (LO k=0; k<numEquivDofs; k++) {
-	    columns[k] = equivDofsGlobal[k];
-	  }
-	  for (LO k=0; k<numEquivDofs; k++) {
-	    LO row = equivDofsGlobal[k];
-	    if (rowFlag[row] == false) {
-	      rowFlag[row] = true;
-	      ScGraph->insertLocalIndices(row, Teuchos::ArrayView<LO>(columns));
-	    }
-	  }
-	}
-	localDofB += numEquivDofs;
+        const LO* equivDofsGlobal = &m_subBoundaryDofs[i][localDofB];
+        LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
+        if (m_weightType[i][j] == bddc::DELUXE) {
+          std::vector<SX> & Sc = deluxeWeights[i][j];
+          m_Subdomain[i]->calculateSchurComplement(j, Sc);
+          columns.resize(numEquivDofs);
+          for (LO k=0; k<numEquivDofs; k++) {
+            columns[k] = equivDofsGlobal[k];
+          }
+          for (LO k=0; k<numEquivDofs; k++) {
+            LO row = equivDofsGlobal[k];
+            if (rowFlag[row] == false) {
+              rowFlag[row] = true;
+              ScGraph->insertLocalIndices(row, Teuchos::ArrayView<LO>(columns));
+            }
+          }
+        }
+        localDofB += numEquivDofs;
       }
     }
     ScGraph->fillComplete(m_dofMapB1to1, m_dofMapB1to1);
@@ -212,23 +212,23 @@ private:
       LO numEquiv = m_Subdomain[i]->getNumEquiv();
       LO localDofB = 0;
       for (LO j=0; j<numEquiv; j++) {
-	const LO* equivDofsGlobal = &m_subBoundaryDofs[i][localDofB];
-	LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
-	std::vector<SX> & ScSub = deluxeWeights[i][j];
-	if (ScSub.size() > 0) {
-	  values.resize(numEquivDofs);
-	  indices.resize(numEquivDofs);
-	  for (LO k=0; k<numEquivDofs; k++) {
-	    for (LO m=0; m<numEquivDofs; m++) {
-	      values[m] = ScSub[k+m*numEquivDofs];
-	      indices[m] = equivDofsGlobal[m];
-	    }
-	    LO row = equivDofsGlobal[k];
-	    Sc.sumIntoLocalValues(row, Teuchos::ArrayView<LO>(indices),
-				  Teuchos::ArrayView<SX>(values));
-	  }
-	}
-	localDofB += numEquivDofs;
+        const LO* equivDofsGlobal = &m_subBoundaryDofs[i][localDofB];
+        LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
+        std::vector<SX> & ScSub = deluxeWeights[i][j];
+        if (ScSub.size() > 0) {
+          values.resize(numEquivDofs);
+          indices.resize(numEquivDofs);
+          for (LO k=0; k<numEquivDofs; k++) {
+            for (LO m=0; m<numEquivDofs; m++) {
+              values[m] = ScSub[k+m*numEquivDofs];
+              indices[m] = equivDofsGlobal[m];
+            }
+            LO row = equivDofsGlobal[k];
+            Sc.sumIntoLocalValues(row, Teuchos::ArrayView<LO>(indices),
+                                  Teuchos::ArrayView<SX>(values));
+          }
+        }
+        localDofB += numEquivDofs;
       }
     }
     Sc.fillComplete(m_dofMapB1to1, m_dofMapB1to1);
@@ -246,36 +246,36 @@ private:
       LO numEquiv = m_Subdomain[i]->getNumEquiv();
       LO localDofB = 0;
       for (LO j=0; j<numEquiv; j++) {
-	const LO* equivDofsGlobal = &m_subBoundaryDofs[i][localDofB];
-	LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
-	std::vector<SX> & ScSub = deluxeWeights[i][j];
-	if (ScSub.size() > 0) {
-	  Teuchos::ArrayView<const LO> Indices;
-	  Teuchos::ArrayView<const SX> Values;
-	  ScEquiv.resize(numEquivDofs*numEquivDofs);
-	  for (LO k=0; k<numEquivDofs; k++) {
-	    globalToLocalMap[equivDofsGlobal[k]] = k;
-	  }
-	  for (LO k=0; k<numEquivDofs; k++) {
-	    LO row = equivDofsGlobal[k];
-	    ScSum.getLocalRowView(row, Indices, Values);
-	    assert (Indices.size() == numEquivDofs);
-	    for (LO m=0; m<numEquivDofs; m++) {
-	      LO localCol = globalToLocalMap[Indices[m]];
-	      assert (localCol != -1);
-	      ScEquiv[k+localCol*numEquivDofs] = Values[m];
-	    }
-	  }
-	  for (LO k=0; k<numEquivDofs; k++) {
-	    globalToLocalMap[equivDofsGlobal[k]] = -1;
-	  }
-	  Teuchos::LAPACK<int, SX> LAPACK;
-	  int INFO(0), N(numEquivDofs);
-	  std::vector<int> IPIV(N);
-	  LAPACK.GESV(N, N, &ScEquiv[0], N, &IPIV[0], &deluxeWeights[i][j][0], 
-		      N, &INFO);
-	}
-	localDofB += numEquivDofs;
+        const LO* equivDofsGlobal = &m_subBoundaryDofs[i][localDofB];
+        LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
+        std::vector<SX> & ScSub = deluxeWeights[i][j];
+        if (ScSub.size() > 0) {
+          Teuchos::ArrayView<const LO> Indices;
+          Teuchos::ArrayView<const SX> Values;
+          ScEquiv.resize(numEquivDofs*numEquivDofs);
+          for (LO k=0; k<numEquivDofs; k++) {
+            globalToLocalMap[equivDofsGlobal[k]] = k;
+          }
+          for (LO k=0; k<numEquivDofs; k++) {
+            LO row = equivDofsGlobal[k];
+            ScSum.getLocalRowView(row, Indices, Values);
+            assert (Indices.size() == numEquivDofs);
+            for (LO m=0; m<numEquivDofs; m++) {
+              LO localCol = globalToLocalMap[Indices[m]];
+              assert (localCol != -1);
+              ScEquiv[k+localCol*numEquivDofs] = Values[m];
+            }
+          }
+          for (LO k=0; k<numEquivDofs; k++) {
+            globalToLocalMap[equivDofsGlobal[k]] = -1;
+          }
+          Teuchos::LAPACK<int, SX> LAPACK;
+          int INFO(0), N(numEquivDofs);
+          std::vector<int> IPIV(N);
+          LAPACK.GESV(N, N, &ScEquiv[0], N, &IPIV[0], &deluxeWeights[i][j][0],
+                      N, &INFO);
+        }
+        localDofB += numEquivDofs;
       }
     }
   }
@@ -283,43 +283,43 @@ private:
   void determineEquivWeights
     (std::vector< std::vector< std::vector<SX> > > & deluxeWeights)
   {
-    const std::vector< std::vector<LO> > & subdomainEquivClasses = 
+    const std::vector< std::vector<LO> > & subdomainEquivClasses =
       m_Partition->getSubdomainEquivClasses();
     const std::vector<LO> & equivCard = m_Partition->getEquivCardinality();
     for (LO i=0; i<m_numSub; i++) {
       LO numEquiv = m_Subdomain[i]->getNumEquiv();
-      std::vector< std::vector<LO> > rowBeginWeight(numEquiv), 
-	columnsWeight(numEquiv);
+      std::vector< std::vector<LO> > rowBeginWeight(numEquiv),
+        columnsWeight(numEquiv);
       std::vector< std::vector<SX> > valuesWeight(numEquiv);
       const LO* equivDofsGlobal = &m_subBoundaryDofs[i][0];
       for (LO j=0; j<numEquiv; j++) {
-	LO equiv = subdomainEquivClasses[i][j];
-	LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
-	if (m_weightType[i][j] == CARDINALITY) {
-	  setCardinalityWeights(i, j, rowBeginWeight[j], columnsWeight[j],
-				valuesWeight[j], equivCard[equiv]);
-	}
-	else if (m_weightType[i][j] == STIFFNESS) {
-	  setStiffnessWeights(i, j, rowBeginWeight[j], columnsWeight[j],
-			      valuesWeight[j], equivDofsGlobal);
-	}
-	else {
-	  setDeluxeWeights(i, j, rowBeginWeight[j], columnsWeight[j],
-			   valuesWeight[j], deluxeWeights[i][j]);
-	}
-	equivDofsGlobal += numEquivDofs;
+        LO equiv = subdomainEquivClasses[i][j];
+        LO numEquivDofs = m_Subdomain[i]->getNumEquivDofs(j);
+        if (m_weightType[i][j] == CARDINALITY) {
+          setCardinalityWeights(i, j, rowBeginWeight[j], columnsWeight[j],
+                                valuesWeight[j], equivCard[equiv]);
+        }
+        else if (m_weightType[i][j] == STIFFNESS) {
+          setStiffnessWeights(i, j, rowBeginWeight[j], columnsWeight[j],
+                              valuesWeight[j], equivDofsGlobal);
+        }
+        else {
+          setDeluxeWeights(i, j, rowBeginWeight[j], columnsWeight[j],
+                           valuesWeight[j], deluxeWeights[i][j]);
+        }
+        equivDofsGlobal += numEquivDofs;
       }
       m_Subdomain[i]->setEquivalenceClassWeightMatrices
-	(rowBeginWeight, columnsWeight, valuesWeight);
+        (rowBeginWeight, columnsWeight, valuesWeight);
     }
   }
 
-  void setCardinalityWeights(LO sub, 
-			     LO equiv, 
-			     std::vector<LO> & rowBeginWeight, 
-			     std::vector<LO> & columnsWeight,
-			     std::vector<SX> & valuesWeight, 
-			     LO equivCard)
+  void setCardinalityWeights(LO sub,
+                             LO equiv,
+                             std::vector<LO> & rowBeginWeight,
+                             std::vector<LO> & columnsWeight,
+                             std::vector<SX> & valuesWeight,
+                             LO equivCard)
   {
     LO numEquivDofs = m_Subdomain[sub]->getNumEquivDofs(equiv);
     rowBeginWeight.resize(numEquivDofs+1, 0);
@@ -332,12 +332,12 @@ private:
     }
   }
 
-  void setStiffnessWeights(LO sub, 
-			   LO equiv, 
-			   std::vector<LO> & rowBeginWeight, 
-			   std::vector<LO> & columnsWeight,
-			   std::vector<SX> & valuesWeight,
-			   const LO* equivDofsGlobal)
+  void setStiffnessWeights(LO sub,
+                           LO equiv,
+                           std::vector<LO> & rowBeginWeight,
+                           std::vector<LO> & columnsWeight,
+                           std::vector<SX> & valuesWeight,
+                           const LO* equivDofsGlobal)
   {
     LO numEquivDofs = m_Subdomain[sub]->getNumEquivDofs(equiv);
     rowBeginWeight.resize(numEquivDofs+1, 0);
@@ -354,12 +354,12 @@ private:
     }
   }
 
-  void setDeluxeWeights(LO sub, 
-			LO equiv, 
-			std::vector<LO> & rowBeginWeight, 
-			std::vector<LO> & columnsWeight,
-			std::vector<SX> & valuesWeight,
-			std::vector<SX> & deluxeWeights)
+  void setDeluxeWeights(LO sub,
+                        LO equiv,
+                        std::vector<LO> & rowBeginWeight,
+                        std::vector<LO> & columnsWeight,
+                        std::vector<SX> & valuesWeight,
+                        std::vector<SX> & deluxeWeights)
   {
     LO numEquivDofs = m_Subdomain[sub]->getNumEquivDofs(equiv);
     LO numTerms = numEquivDofs*numEquivDofs;
@@ -370,9 +370,9 @@ private:
     numTerms = 0;
     for (LO i=0; i<numEquivDofs; i++) {
       for (LO j=0; j<numEquivDofs; j++) {
-	columnsWeight[numTerms] = j;
-	valuesWeight[numTerms] = deluxeWeights[i+j*numEquivDofs];
-	numTerms++;
+        columnsWeight[numTerms] = j;
+        valuesWeight[numTerms] = deluxeWeights[i+j*numEquivDofs];
+        numTerms++;
       }
       rowBeginWeight[i+1] = numTerms;
     }
@@ -389,8 +389,8 @@ private:
       m_Subdomain[i]->applyWeights(&x[0], applyTranspose, &Wx[0]);
       assert (m_subBoundaryDofs[i].size() == numSubDofB);
       for (LO j=0; j<numSubDofB; j++) {
-	LO dofB = m_subBoundaryDofs[i][j];
-	sumWeightsB[dofB] += Wx[j];
+        LO dofB = m_subBoundaryDofs[i][j];
+        sumWeightsB[dofB] += Wx[j];
       }
     }
     MV SumWeightsB(m_dofMapB, 1);
@@ -408,7 +408,7 @@ private:
     }
     SM maxErrorAll;
     Teuchos::reduceAll<int, SM>(*m_Comm, Teuchos::REDUCE_MAX, 1,
-				&maxError, &maxErrorAll);
+                                &maxError, &maxErrorAll);
     return maxErrorAll;
   }
 
@@ -417,4 +417,4 @@ private:
 } // namespace bddc
 
 #endif // WEIGHTSBDDC_H
-  
+

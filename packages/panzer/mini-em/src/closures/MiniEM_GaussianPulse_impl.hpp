@@ -21,6 +21,7 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
   ir_degree = ir.cubature_degree;
+  ir_dim = ir.spatial_dimension;
 
   current = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
   this->addEvaluatedField(current);
@@ -45,15 +46,29 @@ void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
 
   double time = workset.time;
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < current.extent_int(1); ++point) {
-      const ScalarT& x = coords(cell,point,0);
-      const ScalarT& y = coords(cell,point,1);
-      const ScalarT& z = coords(cell,point,2);
-      const ScalarT  r = std::sqrt((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5));
-      current(cell,point,0) = 0.0;
-      current(cell,point,1) = 0.0;
-      current(cell,point,2) = std::exp(-r*r/alpha/alpha)*std::exp(-(time-2.0*beta)*(time-2.0*beta)/beta/beta);
+  const ScalarT factor = std::exp(-(time-2.0*beta)*(time-2.0*beta)/beta/beta);
+  const ScalarT scale = 1.0/alpha/alpha;
+  if (ir_dim == 3) {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+      for (int point = 0; point < current.extent_int(1); ++point) {
+        const ScalarT& x = coords(cell,point,0);
+        const ScalarT& y = coords(cell,point,1);
+        const ScalarT& z = coords(cell,point,2);
+        const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5);
+        current(cell,point,0) = 0.0;
+        current(cell,point,1) = 0.0;
+        current(cell,point,2) = std::exp(-r2*scale)*factor;
+      }
+    }
+  } else {
+    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+      for (int point = 0; point < current.extent_int(1); ++point) {
+        const ScalarT& x = coords(cell,point,0);
+        const ScalarT& y = coords(cell,point,1);
+        const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5);
+        current(cell,point,0) = 0.0;
+        current(cell,point,1) = std::exp(-r2*scale)*factor;
+      }
     }
   }
 }

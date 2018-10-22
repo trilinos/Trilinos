@@ -74,6 +74,8 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
+
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -84,6 +86,14 @@ namespace MueLu {
       sizeOfAllocatedLevelMultiVectors_(0)
   {
     AddLevel(rcp(new Level));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const std::string& label)
+    : Hierarchy()
+  {
+    setObjectLabel(label);
+    Levels_[0]->setObjectLabel(label);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -102,6 +112,14 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Hierarchy(const RCP<Matrix>& A, const std::string& label)
+    : Hierarchy(A)
+  {
+    setObjectLabel(label);
+    Levels_[0]->setObjectLabel(label);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddLevel(const RCP<Level>& level) {
     int levelID = LastLevelID() + 1; // ID of the inserted level
 
@@ -115,6 +133,7 @@ namespace MueLu {
     level->setlib(lib_);
 
     level->SetPreviousLevel( (levelID == 0) ? Teuchos::null : Levels_[LastLevelID() - 1] );
+    level->setObjectLabel(this->getObjectLabel());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -230,8 +249,16 @@ namespace MueLu {
                                                                    const RCP<const FactoryManagerBase> nextLevelManager) {
     // Use PrintMonitor/TimerMonitor instead of just a FactoryMonitor to print "Level 0" instead of Hierarchy(0)
     // Print is done after the requests for next coarse level
-    TimeMonitor m1(*this, this->ShortClassName() + ": " + "Setup (total)");
-    TimeMonitor m2(*this, this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError,
+                               "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) "
+                               "must be built before calling this function.");
+
+    Level& level = *Levels_[coarseLevelID];
+
+    std::string label        = FormattingHelper::getColonLabel(level.getObjectLabel());
+    TimeMonitor m1(*this, label + this->ShortClassName() + ": " + "Setup (total)");
+    TimeMonitor m2(*this, label + this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
 
     // TODO: pass coarseLevelManager by reference
     TEUCHOS_TEST_FOR_EXCEPTION(coarseLevelManager == Teuchos::null, Exceptions::RuntimeError,
@@ -239,12 +266,6 @@ namespace MueLu {
 
     typedef MueLu::TopRAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TopRAPFactory;
     typedef MueLu::TopSmootherFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TopSmootherFactory;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(LastLevelID() < coarseLevelID, Exceptions::RuntimeError,
-                               "MueLu::Hierarchy:Setup(): level " << coarseLevelID << " (specified by coarseLevelID argument) "
-                               "must be built before calling this function.");
-
-    Level& level = *Levels_[coarseLevelID];
 
     if (levelManagers_.size() < coarseLevelID+1)
       levelManagers_.resize(coarseLevelID+1);
@@ -807,14 +828,18 @@ namespace MueLu {
     // manually before/after a recursive call to Iterate. A side artifact to
     // this approach is that the counts for intermediate level timers are twice
     // the counts for the finest and coarsest levels.
-    std::string prefix       = this->ShortClassName() + ": ";
+
+    RCP<Level>    Fine = Levels_[startLevel];
+
+    std::string label        = FormattingHelper::getColonLabel(Fine->getObjectLabel());
+    std::string prefix       = label + this->ShortClassName() + ": ";
     std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
     std::string levelSuffix1 = " (level=" + toString(startLevel+1) + ")";
 
     RCP<Monitor>     iterateTime;
     RCP<TimeMonitor> iterateTime1;
     if (startLevel == 0)
-      iterateTime  = rcp(new Monitor(*this, "Solve", (nIts == 1) ? None : Runtime0, Timings0));
+      iterateTime  = rcp(new Monitor(*this, "Solve", label, (nIts == 1) ? None : Runtime0, Timings0));
     else
       iterateTime1 = rcp(new TimeMonitor(*this, prefix + "Solve (total, level=" + toString(startLevel) + ")", Timings0));
 
@@ -823,7 +848,6 @@ namespace MueLu {
 
     bool zeroGuess = InitialGuessIsZero;
 
-    RCP<Level>    Fine = Levels_[startLevel];
     RCP<Operator> A    = Fine->Get< RCP<Operator> >("A");
     using namespace Teuchos;
     RCP<Time> CompCoarse  = Teuchos::TimeMonitor::getNewCounter(prefix + "Coarse: Computational Time");
@@ -856,7 +880,7 @@ namespace MueLu {
       // We calculate the residual only if we want to print it out, or if we
       // want to stop once we achive the tolerance
       Teuchos::Array<MagnitudeType> rn;
-      rn = Utilities::ResidualNorm(*A, X, B);
+      rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
       if (tol > 0) {
         bool passed = true;
@@ -1046,7 +1070,7 @@ namespace MueLu {
         // We calculate the residual only if we want to print it out, or if we
         // want to stop once we achive the tolerance
         Teuchos::Array<MagnitudeType> rn;
-        rn = Utilities::ResidualNorm(*A, X, B);
+        rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
         prevNorm = curNorm;
         curNorm  = rn[0];
@@ -1200,10 +1224,12 @@ namespace MueLu {
       }
 
       if (!aborted) {
+        std::string label = Levels_[0]->getObjectLabel();
         std::ostringstream oss;
-        oss << "\n--------------------------------------------------------------------------------\n" <<
-            "---                            Multigrid Summary                             ---\n"
-            "--------------------------------------------------------------------------------" << std::endl;
+        oss << std::setfill(' ');
+        oss << "\n--------------------------------------------------------------------------------\n";
+        oss << "---                            Multigrid Summary "  << std::setw(28) << std::left << label << "---\n";
+        oss << "--------------------------------------------------------------------------------" << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
@@ -1310,13 +1336,22 @@ namespace MueLu {
     std::map<const FactoryBase*, BoostVertex>                                     vindices;
     typedef std::map<std::pair<BoostVertex,BoostVertex>, std::string> emap; emap  edges;
 
+    static int call_id=0;
+
+    RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
+    int rank = A->getDomainMap()->getComm()->getRank();
+
+    //    printf("[%d] CMS: ----------------------\n",rank);
     for (int i = dumpLevel_; i <= dumpLevel_+1 && i < GetNumLevels(); i++) {
       edges.clear();
       Levels_[i]->UpdateGraph(vindices, edges, dp, graph);
 
       for (emap::const_iterator eit = edges.begin(); eit != edges.end(); eit++) {
         std::pair<BoostEdge, bool> boost_edge = boost::add_edge(eit->first.first, eit->first.second, graph);
-        boost::put("label", dp, boost_edge.first, eit->second);
+	//	printf("[%d] CMS:   Hierarchy, adding edge (%d->%d) %d\n",rank,(int)eit->first.first,(int)eit->first.second,(int)boost_edge.second);
+	// Because xdot.py views 'Graph' as a keyword
+	if(eit->second==std::string("Graph")) boost::put("label", dp, boost_edge.first, std::string("Graph_"));
+        else boost::put("label", dp, boost_edge.first, eit->second);
         if (i == dumpLevel_)
           boost::put("color", dp, boost_edge.first, std::string("red"));
         else
@@ -1324,7 +1359,7 @@ namespace MueLu {
       }
     }
 
-    // add legend
+#if 0
     std::ostringstream legend;
     legend << "< <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\"> \
                <TR><TD COLSPAN=\"2\">Legend</TD></TR> \
@@ -1332,9 +1367,12 @@ namespace MueLu {
                </TABLE> >";
     BoostVertex boost_vertex = boost::add_vertex(graph);
     boost::put("label", dp, boost_vertex, legend.str());
+#endif
 
-    std::ofstream out(dumpFile_.c_str());
+    std::ofstream out(dumpFile_.c_str() +std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
+    out.close();
+    call_id++;
 #else
     GetOStream(Errors) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
 #endif

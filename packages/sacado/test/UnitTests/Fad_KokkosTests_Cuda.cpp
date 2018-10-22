@@ -34,7 +34,12 @@
 
 #include "Kokkos_Core.hpp"
 
-// Instantiate tests for Cuda device
+// Instantiate tests for Cuda device.  We can only test DFad is UVM is enabled.
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
+#define SACADO_TEST_DFAD 1
+#else
+#define SACADO_TEST_DFAD 0
+#endif
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_D( Cuda )
 
@@ -101,15 +106,15 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // Initialize Cuda
-  Kokkos::HostSpace::execution_space::initialize();
-  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
-  Kokkos::Cuda::print_configuration(std::cout);
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finalize Cuda
-  Kokkos::HostSpace::execution_space::finalize();
-  Kokkos::Cuda::finalize();
+  Kokkos::finalize();
 
   return res;
 }

@@ -287,12 +287,14 @@ int main (int argc, char ** argv){
 
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
+  const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
+  const int device_id = 0;
+  Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
+
 #if !defined (KOKKOS_ENABLE_CUDA)
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
   if (params.use_openmp) {
-
-    Kokkos::OpenMP::initialize( params.use_openmp );
 	  Kokkos::OpenMP::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_triangle
@@ -305,7 +307,6 @@ int main (int argc, char ** argv){
         params
         );
 #endif
-    Kokkos::OpenMP::finalize();
   }
 
 #endif
@@ -314,8 +315,6 @@ int main (int argc, char ** argv){
 
 #if defined( KOKKOS_ENABLE_CUDA1 )
   if (params.use_cuda) {
-    Kokkos::HostSpace::execution_space::initialize();
-    Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( 0 ) );
     Kokkos::Cuda::print_configuration(std::cout);
 #ifdef KOKKOSKERNELS_MULTI_MEM
     KokkosKernels::Experiment::run_multi_mem_triangle
@@ -328,16 +327,13 @@ int main (int argc, char ** argv){
         params
         );
 #endif 
-
-    Kokkos::Cuda::finalize();
-    Kokkos::HostSpace::execution_space::finalize();
   }
 
 #endif
 
+  Kokkos::finalize();
 
   return 0;
-
 }
 
 

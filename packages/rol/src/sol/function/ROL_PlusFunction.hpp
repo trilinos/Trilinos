@@ -62,9 +62,9 @@ public:
     param_ = ((param <= 0) ? 1.e-2 : param);
   }
 
-  PlusFunction(Teuchos::ParameterList &parlist) {
+  PlusFunction(ROL::ParameterList &parlist) {
     Real param(1.e-1), zero(0), one(1);
-    Teuchos::ParameterList pfList;
+    ROL::ParameterList pfList;
     if (parlist.isSublist("Plus Function")) {
       param = parlist.sublist("Plus Function").get("Smoothing Parameter",1.);
       pfList = parlist.sublist("Plus Function");

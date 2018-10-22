@@ -50,9 +50,9 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 
 typedef double RealT; 
@@ -70,14 +70,14 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
     outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
+  ROL::nullstream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
 //  RealT errtol = std::sqrt(ROL::ROL_THRESHOLD<RealT>());
@@ -142,9 +142,9 @@ int main(int argc, char *argv[]) {
     // Create bound constraint
     ROL::Bounds<RealT>  bc(lo,up);
 
-    Teuchos::ParameterList logList;
-    Teuchos::ParameterList quadList;
-    Teuchos::ParameterList dwellList;
+    ROL::ParameterList logList;
+    ROL::ParameterList quadList;
+    ROL::ParameterList dwellList;
 
     logList.sublist("Barrier Function").set("Type","Logarithmic");
     quadList.sublist("Barrier Function").set("Type","Quadratic");

@@ -96,7 +96,7 @@ namespace ZOO {
       ROL::Ptr<const vector> xp = getVector<XPrim>(x); 
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective value): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective value): "
                                                                    "Primal vector x must be of length 2.");
 
       Real x1 = (*xp)[0];
@@ -114,11 +114,11 @@ namespace ZOO {
       ROL::Ptr<vector> gp = getVector<XDual>(g); 
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective gradient): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective gradient): "
                                                                    " Primal vector x must be of length 2."); 
 
       n = gp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective gradient): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective gradient): "
                                                                    "Gradient vector g must be of length 2."); 
 
       Real x1 = (*xp)[0];
@@ -138,15 +138,15 @@ namespace ZOO {
       ROL::Ptr<vector> hvp = getVector<XDual>(hv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective hessVec): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective hessVec): "
                                                                    "Primal vector x must be of length 2."); 
 
       n = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective hessVec): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective hessVec): "
                                                                    "Input vector v must be of length 2."); 
 
       n = hvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective hessVec): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, objective hessVec): "
                                                                    "Output vector hv must be of length 2."); 
 
       Real v1 = (*vp)[0];
@@ -194,11 +194,11 @@ namespace ZOO {
       ROL::Ptr<vector> cp = getVector<CPrim>(c);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint value): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint value): "
                                                                    "Primal vector x must be of length 2.");
 
       uint m = cp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (m != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint value): "
+      ROL_TEST_FOR_EXCEPTION( (m != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint value): "
                                                                    "Constraint vector c must be of length 1.");
 
       Real x1 = (*xp)[0];
@@ -217,14 +217,14 @@ namespace ZOO {
       ROL::Ptr<vector> jvp = getVector<CPrim>(jv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyJacobian): "
                                                                    "Primal vector x must be of length 2.");
 
       uint d = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyJacobian): "
                                                                    "Input vector v must be of length 2.");
       d = jvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyJacobian): "
                                                                    "Output vector jv must be of length 1.");
       
       Real x1 = (*xp)[0];
@@ -246,15 +246,15 @@ namespace ZOO {
       ROL::Ptr<vector> ajvp = getVector<XDual>(ajv);
 
       uint n = xp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointJacobian): "
                                                                    "Primal vector x must be of length 2.");
 
       uint d = vp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointJacobian): "
                                                                    "Input vector v must be of length 1.");
 
       d = ajvp->size();
-      TEUCHOS_TEST_FOR_EXCEPTION( (d != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointJacobian): "
+      ROL_TEST_FOR_EXCEPTION( (d != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointJacobian): "
                                                                    "Output vector ajv must be of length 2.");
       
       Real x1 = (*xp)[0];
@@ -284,18 +284,18 @@ namespace ZOO {
         ROL::Ptr<vector> ahuvp = getVector<XDual>(ahuv);
 
         uint n = xp->size();
-        TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
+        ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
                                                                      "Primal vector x must be of length 2.");
 
         n = vp->size();
-        TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
+        ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
                                                                      "Direction vector v must be of length 2.");
 
         n = ahuvp->size();
-        TEUCHOS_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
+        ROL_TEST_FOR_EXCEPTION( (n != 2), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
                                                                      "Output vector ahuv must be of length 2.");
         uint d = up->size();
-        TEUCHOS_TEST_FOR_EXCEPTION( (d != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
+        ROL_TEST_FOR_EXCEPTION( (d != 1), std::invalid_argument, ">>> ERROR (ROL_ParaboloidCircle, constraint applyAdjointHessian): "
                                                                      "Dual constraint vector u must be of length 1.");
         
         Real v1 = (*vp)[0];
@@ -334,7 +334,7 @@ namespace ZOO {
       return makePtr<XPrim>(x0p);
     }
 
-    Ptr<Vector<Real>> getSolution(void) const {
+    Ptr<Vector<Real>> getSolution(const int i = 0) const {
       uint n = 2;
       // Get solution.
       Real zero(0), one(1);

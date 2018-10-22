@@ -117,12 +117,7 @@ lib stk_usecases_mesh_lib
 exe stk_usecases_edge_face_skin
   :
     $(stk_usecases-root)/app/create_edge_face_skin/create_edge_face_skin.cpp
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_util//stk_util_environment
-    /sierra/stk_util//stk_util_parallel
-    /sierra/stk_util//stk_util_util
     /sierra/stk_io//stk_io
-    /tpl/boost-program-options//boost_program_options
   : <tag>@sierra-exec-tag
   ;
 
@@ -152,12 +147,7 @@ exe stk_usecases_mesh
   :
     $(stk_usecases-root)/mesh/MeshUseCaseMain.cpp
     stk_usecases_mesh_lib
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_mesh//stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_environment
-    /sierra/stk_util//stk_util_util
-    /tpl/boost-program-options//boost_program_options
   : <tag>@sierra-exec-tag
   ;
 
@@ -166,14 +156,9 @@ exe stk_transfer_use_cases
     $(stk_usecases-root)/transfer/UseCaseMain.cpp
     [ glob $(stk_usecases-root)/transfer/*.cpp ]
     /sierra/stk_transfer//stk_transfer
-    /tpl/operating_system//pthread
-    /sierra/stk_io//stk_io
+    /sierra/stk_search//stk_search
     /sierra/stk_io//stk_io_util
-    /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_diag
-    /tpl/operating_system//pthread
-    /tpl/trilinos//shards
     /tpl/trilinos//intrepid
   : <tag>@sierra-exec-tag
   ;
@@ -181,15 +166,7 @@ exe stk_transfer_use_cases
 exe stk_app_driver
   :
     [ glob $(stk_usecases-root)/app/examples/*.cpp ]
-    /sierra/stk_mesh//stk_mesh_base
-    /sierra/stk_util//stk_util_parallel
-    /sierra/stk_util//stk_util_util
     /sierra/stk_io//stk_io_util
-    /sierra/stk_io//stk_io
-    /sierra/seacas//ioss
-    /sierra/seacas//ioinit
-    /tpl/trilinos//shards
-    /tpl/boost-program-options//boost_program_options
   : <tag>@sierra-exec-tag
   ;
 

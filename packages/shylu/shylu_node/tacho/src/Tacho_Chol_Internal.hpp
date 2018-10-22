@@ -26,7 +26,7 @@ namespace Tacho {
         static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
 
         int r_val = 0;              
-        const ordinal_type m = A.dimension_0();
+        const ordinal_type m = A.extent(0);
         if (m > 0) 
           LapackTeam<value_type>::potrf(member, 
                                         ArgUplo::param,

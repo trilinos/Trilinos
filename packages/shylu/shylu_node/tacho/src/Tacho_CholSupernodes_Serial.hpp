@@ -87,8 +87,8 @@ namespace Tacho {
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
               ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
 
-            TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.dimension_0()) != n ||
-                                 static_cast<ordinal_type>(ABR.dimension_1()) != n,
+            TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
+                                 static_cast<ordinal_type>(ABR.extent(1)) != n,
                                  "ABR dimension does not match to supernodes");
             Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
               ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
@@ -371,7 +371,7 @@ namespace Tacho {
         value_type *ptr = s.buf; 
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.dimension_1();
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -416,7 +416,7 @@ namespace Tacho {
         const ordinal_type 
           sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
 
-        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        const ordinal_type m = xB.extent(0), n = xB.extent(1);
         TACHO_TEST_FOR_ABORT(m != (cur.n-cur.m), "# of rows in xB does not match to super blocksize in sid");
         
 #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)        
@@ -491,7 +491,7 @@ namespace Tacho {
         value_type *ptr = s.buf;
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.dimension_1();
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -535,7 +535,7 @@ namespace Tacho {
 
         const auto &s = info.supernodes(sid);
 
-        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        const ordinal_type m = xB.extent(0), n = xB.extent(1);
         TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
 
         const ordinal_type goffset = s.gid_col_begin + s.m;
@@ -637,7 +637,7 @@ namespace Tacho {
 
         {
           const ordinal_type n = s.n - s.m;
-          const ordinal_type nrhs = info.x.dimension_1();
+          const ordinal_type nrhs = info.x.extent(1);
           const size_type bufsize_required = n*nrhs*sizeof(value_type);
 
           TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
@@ -676,7 +676,7 @@ namespace Tacho {
         const auto &s = info.supernodes(sid);        
         {
           const ordinal_type n = s.n - s.m;
-          const ordinal_type nrhs = info.x.dimension_1();
+          const ordinal_type nrhs = info.x.extent(1);
           const ordinal_type bufsize_required = n*nrhs*sizeof(value_type);
           
           TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 

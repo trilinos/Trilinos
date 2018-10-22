@@ -55,8 +55,8 @@
 
 LOCA::Eigensolver::DefaultStrategy::DefaultStrategy(
     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) :
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& /* topParams */,
+    const Teuchos::RCP<Teuchos::ParameterList>& /* eigenParams */) :
   globalData(global_data)
 {
 }
@@ -67,11 +67,11 @@ LOCA::Eigensolver::DefaultStrategy::~DefaultStrategy()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::DefaultStrategy::computeEigenvalues(
-         NOX::Abstract::Group& group,
-         Teuchos::RCP< std::vector<double> >& evals_r,
-         Teuchos::RCP< std::vector<double> >& evals_i,
-         Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
-             Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i)
+         NOX::Abstract::Group& /* group */,
+         Teuchos::RCP< std::vector<double> >& /* evals_r */,
+         Teuchos::RCP< std::vector<double> >& /* evals_i */,
+         Teuchos::RCP< NOX::Abstract::MultiVector >& /* evecs_r */,
+             Teuchos::RCP< NOX::Abstract::MultiVector >& /* evecs_i */)
 {
   // Print a warning that this eigensolver strategy doesn't do anything
   globalData->locaErrorCheck->printWarning(

@@ -71,7 +71,7 @@ public:
     // Temporary vars needed by test macros
     auto& out = std::cout;
     int success = 0;
-    
+
     TEST_EQUALITY(this->cellStartIndex(workset), expectedStartIndex_);
     TEST_EQUALITY(this->cellEndIndex(workset), expectedEndIndex_);
     TEST_EQUALITY(success, 0);
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(domain_interface, base)
   worksetNeeds.addBasis(basisDescriptor);
   worksetNeeds.addIntegrator(integrationDescriptor);
 
-  WorksetDescriptor worksetDescriptor("eblock-0_0", WorksetDescriptor::FULL,true,false);
+  WorksetDescriptor worksetDescriptor("eblock-0_0", WorksetSizeType::ALL_ELEMENTS,true,false);
 
   WorksetFactory worksetFactory(mesh);
 

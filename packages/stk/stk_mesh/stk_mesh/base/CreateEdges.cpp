@@ -54,7 +54,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.tcc"    // for topology::num_nodes
 #include "stk_topology/topology_type.tcc"  // for topology::topology_type
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 
 namespace stk {

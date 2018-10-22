@@ -57,11 +57,13 @@
 
 #include <algorithm>
 #include <complex>
+#include <exception>
 #include <string>
 #include <sstream>
 #include <limits>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_TestForException.hpp>
+#include <type_traits>
+#include <ROL_stacktrace.hpp>
+#include "ROL_ScalarTraits.hpp"
 #include <ROL_Ptr.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_config.h>
@@ -86,8 +88,8 @@ namespace ROL {
   /** \brief  Platform-dependent machine epsilon.
    */
   template<class Real>
-  inline Real ROL_EPSILON(void) { return std::abs(Teuchos::ScalarTraits<Real>::eps()); }
-  //static const Real ROL_EPSILON<Real>() = std::abs(Teuchos::ScalarTraits<Real>::eps());
+  inline Real ROL_EPSILON(void) { return std::abs(ROL::ScalarTraits<Real>::eps()); }
+  //static const Real ROL_EPSILON<Real>() = std::abs(ROL::ScalarTraits<Real>::eps());
 
   /** \brief  Tolerance for various equality tests.
    */
@@ -97,7 +99,7 @@ namespace ROL {
   /** \brief  Platform-dependent maximum double.
    */
   template<class Real>
-  inline Real ROL_OVERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmax()); }
+  inline Real ROL_OVERFLOW(void) { return std::abs(ROL::ScalarTraits<Real>::rmax()); }
 
   template<class Real>
   inline Real ROL_INF(void) { return 0.1*ROL_OVERFLOW<Real>(); }
@@ -108,7 +110,7 @@ namespace ROL {
   /** \brief  Platform-dependent minimum double.
    */
   template<class Real>
-  inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
+  inline Real ROL_UNDERFLOW(void) { return std::abs(ROL::ScalarTraits<Real>::rmin()); }
 
   /** \brief Enum for algorithm termination.
    */
@@ -116,6 +118,7 @@ namespace ROL {
     EXITSTATUS_CONVERGED = 0,
     EXITSTATUS_MAXITER,
     EXITSTATUS_STEPTOL,
+    EXITSTATUS_NAN,
     EXITSTATUS_USERDEFINED,
     EXITSTATUS_LAST
   };
@@ -123,11 +126,12 @@ namespace ROL {
   inline std::string EExitStatusToString(EExitStatus tr) {
     std::string retString;
     switch(tr) {
-      case EXITSTATUS_CONVERGED:   retString = "Converged";                break;
-      case EXITSTATUS_MAXITER:     retString = "Iteration Limit Exceeded"; break;
-      case EXITSTATUS_STEPTOL:     retString = "Step Tolerance Met";       break;
-      case EXITSTATUS_USERDEFINED: retString = "User Defined";             break;
-      case EXITSTATUS_LAST:        retString = "Last Type (Dummy)";        break;
+      case EXITSTATUS_CONVERGED:   retString = "Converged";                          break;
+      case EXITSTATUS_MAXITER:     retString = "Iteration Limit Exceeded";           break;
+      case EXITSTATUS_STEPTOL:     retString = "Step Tolerance Met";                 break;
+      case EXITSTATUS_NAN:         retString = "Step and/or Gradient Returned NaN";  break;
+      case EXITSTATUS_USERDEFINED: retString = "User Defined";                       break;
+      case EXITSTATUS_LAST:        retString = "Last Type (Dummy)";                  break;
       default:                     retString = "INVALID EExitStatus";
     }
     return retString;
@@ -554,6 +558,7 @@ namespace ROL {
     KRYLOV_CG = 0,
     KRYLOV_CR,
     KRYLOV_GMRES,
+    KRYLOV_MINRES,
     KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
@@ -564,6 +569,7 @@ namespace ROL {
       case KRYLOV_CG:          retString = "Conjugate Gradients"; break;
       case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
       case KRYLOV_GMRES:       retString = "GMRES";               break;
+      case KRYLOV_MINRES:      retString = "MINRES";              break;
       case KRYLOV_USERDEFINED: retString = "User Defined";        break;
       case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
       default:                 retString = "INVALID EKrylov";
@@ -974,14 +980,29 @@ Real rol_cast(const Element &val) {
 
 namespace Exception {
 
-class NotImplemented : public Teuchos::ExceptionBase {
+class NotImplemented : public std::logic_error {
 public:
   NotImplemented( const std::string& what_arg ) :
-    Teuchos::ExceptionBase(what_arg) {}
+    std::logic_error(what_arg) {}
 
 
 }; // class NotImplemented
  
+
+#if __cplusplus >= 201402L // using C++14
+
+using std::enable_if_t;
+
+#else // No C++14
+
+template<bool B, class T=void>
+using enable_if_t = typename std::enable_if<B,T>::type;
+
+#endif
+
+
+
+
 
 } // namespace Exception
 
@@ -1051,7 +1072,7 @@ public:
   \endcode
 
   \subsection step_qs_sec Step 3: Choose optimization algorithm.
-  ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
+  ---  with @b ROL::ParameterList settings in the variable @b parlist.
 
   \code
       ROL::Algorithm<RealT> algo("Line Search",parlist);
@@ -1174,6 +1195,11 @@ public:
  *  @ingroup stochastic_group
  * \brief ROL's risk measure implementations.
 */ 
+
+/** @defgroup dynamic_group Dynamic functions
+ *  @ingroup interface_group
+ *  \brief ROL's interfaces for time-dependent constraints and objectives
+ */
 
 /** @defgroup examples_group Examples
  *  \brief ROL's examples

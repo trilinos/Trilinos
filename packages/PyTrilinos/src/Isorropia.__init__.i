@@ -42,48 +42,8 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package   = "PyTrilinos.Isorropia",
-	autodoc   = "1") __init__
-
-%{
-// PyTrilinos configuration
-#include "PyTrilinos_config.h"
-
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-
-// Isorropia includes
-#include "Isorropia_Version.hpp"
-#include "Isorropia_Operator.hpp"
-#include "Isorropia_Colorer.hpp"
-#include "Isorropia_Partitioner.hpp"
-#include "Isorropia_Partitioner2D.hpp"
-#include "Isorropia_Redistributor.hpp"
-#include "Isorropia_CostDescriber.hpp"
-#include "Isorropia_Orderer.hpp"
-#include "Isorropia_LevelScheduler.hpp"
-
-// Local includes
-#define NO_IMPORT_ARRAY
-#include "numpy_include.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-%}
-
-// General ignore directives
-%ignore operator<<;
-%ignore *::operator=;
-%ignore *::operator[];
-
-// Ensure that python modules can be found from the current
-// directory. Use of %pythonbegin requires us to put the module
-// docstring here.
-%pythonbegin
-{
-"""
+%define %isorropia_docstring
+"
 PyTrilinos.Isorropia is the python interface to the Trilinos
 partitioning and load balancing package Isorropia:
 
@@ -91,12 +51,39 @@ partitioning and load balancing package Isorropia:
 
 The purpose of Isorropia is to ....
 
-"""
+"
+%enddef
 
-import os
-import sys
-sys.path.insert(0, os.path.split(__file__)[0])
-}
+%define %isorropia_import_code
+"
+from . import ___init__
+"
+%enddef
+
+%module(package      = "PyTrilinos.Isorropia",
+	autodoc      = "1",
+        moduleimport = %isorropia_import_code,
+        docstring    = %isorropia_docstring) __init__
+
+%{
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// Isorropia include files
+#include "PyTrilinos_Isorropia_Headers.hpp"
+
+// Local include files
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
+%}
+
+// PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
+// General ignore directives
+%ignore operator<<;
+%ignore *::operator=;
+%ignore *::operator[];
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -152,8 +139,6 @@ __version__ = Isorropia_Version().split()[3]
 //////////////////////////////////////
 // Isorropia::Partitioner2D support //
 //////////////////////////////////////
-//%teuchos_rcp(Isorropia::Partitioner2D)
-//%include "Isorropia_Partitioner2D.hpp"
 
 //////////////////////////////////////
 // Isorropia::Redistributor support //
@@ -182,14 +167,11 @@ __version__ = Isorropia_Version().split()[3]
 // Isorropia namespace imports
 
 // Allow import from the current directory
+#ifdef HAVE_PYTRILINOS_EPETRA
 %pythoncode
 %{
-import sys, os.path as op
-thisDir = op.dirname(op.abspath(__file__))
-if not thisDir   in sys.path: sys.path.append(thisDir  )
-del sys, op
-
 # Epetra namespace
 __all__ = ['Epetra']
 import IsorropiaEpetra as Epetra
 %}
+#endif

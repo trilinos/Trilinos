@@ -198,8 +198,8 @@ public:
     // Set up vector scaling
     scale_ = makePtr<std::vector<Real>>(n_,0);
     (*scale_)[0] = static_cast<Real>(1.e-4);
-    (*scale_)[1] = static_cast<Real>(1.e-2);
-    (*scale_)[2] = static_cast<Real>(1);
+    (*scale_)[1] = static_cast<Real>(1.e-3);
+    (*scale_)[2] = static_cast<Real>(0.5);
   }
 
   Ptr<Objective<Real>> getObjective(void) const {
@@ -216,7 +216,7 @@ public:
     return makePtr<PrimalScaledStdVector<Real>>(x0p,scale_);
   }
 
-  Ptr<Vector<Real>> getSolution(void) const {
+  Ptr<Vector<Real>> getSolution(const int i = 0) const {
     // Get Solution
     Ptr<std::vector<Real> > xp = makePtr<std::vector<Real>>(n_,0);
     (*xp)[0] = static_cast<Real>(50);

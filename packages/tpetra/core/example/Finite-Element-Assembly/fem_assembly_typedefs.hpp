@@ -46,10 +46,11 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_FEMultiVector.hpp>
 
 namespace TpetraExamples {
 
-typedef double Scalar;
 
 // Get LocalOrdinal & GlobalOrdinal from Map defaults.
 typedef Tpetra::Map<>::local_ordinal_type  local_ordinal_t;
@@ -62,8 +63,11 @@ typedef Kokkos::View<global_ordinal_t*, execution_space_t> global_ordinal_view_t
 
 typedef typename Tpetra::Map<>             map_t;
 typedef typename Tpetra::CrsGraph<>        graph_t;
+typedef typename Tpetra::CrsMatrix<>::scalar_type Scalar;
 typedef typename Tpetra::CrsMatrix<Scalar> matrix_t;
 typedef typename Tpetra::Export<>          export_t;
+typedef typename Tpetra::MultiVector<Scalar> multivector_t;
+typedef typename Tpetra::FEMultiVector<Scalar> fe_multivector_t;
 
 // NOTE: Arrays are hardwired for QUAD4
 typedef Kokkos::View<local_ordinal_t*[4], execution_space_t>  local_ordinal_2d_array_t;

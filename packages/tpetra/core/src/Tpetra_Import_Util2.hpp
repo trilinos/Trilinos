@@ -54,15 +54,10 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
-
-// Tpetra::CrsMatrix uses the functions below in its implementation.
-// To avoid a circular include issue, only include the declarations
-// for CrsMatrix.  We will include the definition after the functions
-// here have been defined.
-#include "Tpetra_CrsMatrix_decl.hpp"
 
 namespace Tpetra {
 namespace Import_Util {
@@ -140,7 +135,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   ///   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
   ///   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
   ///   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
-  /// Precondition: 
+  /// Precondition:
   ///  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
   ///  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
   ///  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
@@ -153,7 +148,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
                                      const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& transferForMigratingData,
                                      bool useReverseModeForMigration,
                                      Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> & owningPIDs);
- 
+
 } // namespace Import_Util
 } // namespace Tpetra
 
@@ -249,9 +244,9 @@ public:
 
   KOKKOS_FUNCTION void operator() (const size_t i) const
   {
-    const size_t nnz = ind_.dimension_0 ();
+    const size_t nnz = ind_.extent (0);
     const size_t start = ptr_(i);
-    const bool permute_values_array = val_.dimension_0() > 0;
+    const bool permute_values_array = val_.extent(0) > 0;
 
     if (start < nnz) {
       const size_t NumEntries = ptr_(i+1) - start;
@@ -294,10 +289,10 @@ public:
     // Code copied from  Epetra_CrsMatrix::SortEntries()
     // NOTE: This should not be taken as a particularly efficient way to sort
     // rows of matrices in parallel.  But it is correct, so that's something.
-    if (ptr.dimension_0 () == 0) {
+    if (ptr.extent (0) == 0) {
       return; // no rows, so nothing to sort
     }
-    const size_t NumRows = ptr.dimension_0 () - 1;
+    const size_t NumRows = ptr.extent (0) - 1;
 
     typedef size_t index_type; // what this function was using; not my choice
     typedef typename ValuesType::execution_space execution_space;
@@ -333,7 +328,7 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
 {
   // Generate dummy values array
   typedef typename colind_array_type::execution_space execution_space;
-  typedef typename CrsMatrix<>::impl_scalar_type scalar_type;
+  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_type;
   typedef typename Kokkos::View<scalar_type*, execution_space> scalar_view_type;
   scalar_view_type CRS_vals;
   sortCrsEntries<rowptr_array_type, colind_array_type,
@@ -670,7 +665,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 //   MapAo     = useReverseModeForOwnership ? transferThatDefinesOwnership.getSourceMap() : transferThatDefinesOwnership.getTargetMap();
 //   MapAm     = useReverseModeForMigration ? transferThatDefinesMigration.getTargetMap() : transferThatDefinesMigration.getSourceMap();
 //   VectorMap = useReverseModeForMigration ? transferThatDefinesMigration.getSourceMap() : transferThatDefinesMigration.getTargetMap();
-// Precondition: 
+// Precondition:
 //  1) MapAo.isSameAs(*MapAm)                      - map compatibility between transfers
 //  2) VectorMap->isSameAs(*owningPIDs->getMap())  - map compabibility between transfer & vector
 //  3) OwningMap->isOneToOne()                     - owning map is 1-to-1
@@ -697,13 +692,13 @@ void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdina
   TEUCHOS_TEST_FOR_EXCEPTION(!OwningMap->isOneToOne(),std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");
 #endif
 
-  int rank = OwningMap->getComm()->getRank();  
+  int rank = OwningMap->getComm()->getRank();
   // Generate "A" vector and fill it with owning information.  We can read this from transferThatDefinesOwnership w/o communication
   // Note:  Due to the 1-to-1 requirement, several of these options throw
   Tpetra::Vector<int,LocalOrdinal,GlobalOrdinal,Node> temp(MapAo);
   const import_type* ownAsImport = dynamic_cast<const import_type*> (&transferThatDefinesOwnership);
-  const export_type* ownAsExport = dynamic_cast<const export_type*> (&transferThatDefinesOwnership);  
-  
+  const export_type* ownAsExport = dynamic_cast<const export_type*> (&transferThatDefinesOwnership);
+
   Teuchos::ArrayRCP<int> pids    = temp.getDataNonConst();
   Teuchos::ArrayView<int> v_pids = pids();
   if(ownAsImport && useReverseModeForOwnership)       {TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Tpetra::Import_Util::getTwoTransferOwnershipVector owner must be 1-to-1");}
@@ -728,10 +723,5 @@ void getTwoTransferOwnershipVector(const ::Tpetra::Details::Transfer<LocalOrdina
 
 } // namespace Import_Util
 } // namespace Tpetra
-
-// We can include the definitions for Tpetra::CrsMatrix now that the above
-// functions have been defined.  For ETI, this isn't necessary, so we just
-// including the generated hpp
-#include "Tpetra_CrsMatrix.hpp"
 
 #endif // TPETRA_IMPORT_UTIL_HPP

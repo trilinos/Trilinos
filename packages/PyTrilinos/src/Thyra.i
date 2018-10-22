@@ -63,15 +63,16 @@ experimental, and at this time is inoperable.
 // the C++ wrapper source file.  Anything that is %include-ed later
 // needs to be #include-ed here.
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
 
-// Thyra includes
-#include "Teuchos_Range1D.hpp"
-#include "Teuchos_VerbosityLevel.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
+
+// Thyra include files
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -95,7 +96,7 @@ namespace std
 class logic_error;
 }
 
-// Thyra interface imports and includes
+// Thyra interface imports and include files
 #define TEMPLATE_FRIENDS_NOT_SUPPORTED
 %import  "Teuchos_ConfigDefs.hpp"
 %import  "Teuchos_Range1D.hpp"

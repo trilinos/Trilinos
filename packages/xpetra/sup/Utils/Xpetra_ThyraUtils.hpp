@@ -622,7 +622,7 @@ public:
     return thyraOp;
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif
   }
 
@@ -660,7 +660,7 @@ public:
     return thyraOp;
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif
   }
 

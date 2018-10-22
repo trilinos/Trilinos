@@ -80,12 +80,8 @@
 #include <ostream>
 #include <sstream>
 #include <fstream>
-using namespace std;
 using std::string;
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::bad_alloc;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -173,7 +169,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         throw "File " + paramFileName + " cannot be opened.";
     }
     comm->broadcast(0, size, inp);
-    istringstream inParam(inp);
+    std::istringstream inParam(inp);
     string str;
     getline (inParam,str);
     while (!inParam.eof()){
@@ -361,9 +357,9 @@ tMVector_t* makeMeshCoordinates(
 
   if (rank == 0){
     if (diff > .01)
-      cout << "Warning: Difference " << diff*100 << " percent" << endl;
-    cout << "Mesh size: " << xdim << "x" << ydim << "x" <<
-      zdim << ", " << num << " vertices." << endl;
+      std::cout << "Warning: Difference " << diff*100 << " percent" << std::endl;
+    std::cout << "Mesh size: " << xdim << "x" << ydim << "x" <<
+      zdim << ", " << num << " vertices." << std::endl;
   }
 
   // Divide coordinates.
@@ -436,12 +432,12 @@ tMVector_t* makeMeshCoordinates(
 }
 
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
   // MEMORY_CHECK(true, "Before initializing MPI");
 
-  Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   DOTS dots;
@@ -449,7 +445,7 @@ int main(int argc, char *argv[])
   MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
   if (rank==0)
-    cout << "Number of processes: " << nprocs << endl;
+    std::cout << "Number of processes: " << nprocs << std::endl;
 
   // Default values
   zgno_t numGlobalCoords = 1000;
@@ -509,17 +505,17 @@ int main(int argc, char *argv[])
   commandLine.setOption("objective", &objective,  doc.c_str());
 
   CommandLineProcessor::EParseCommandLineReturn rc =
-    commandLine.parse(argc, argv);
+    commandLine.parse(narg, arg);
 
 
 
   if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
-      if (rank==0) cout << "PASS" << endl;
+      if (rank==0) std::cout << "PASS" << std::endl;
       return 1;
     }
     else {
-      if (rank==0) cout << "FAIL" << endl;
+      if (rank==0) std::cout << "FAIL" << std::endl;
       return 0;
     }
   }
@@ -536,14 +532,14 @@ int main(int argc, char *argv[])
       comm->barrier();
       for (int p=0; p < nprocs; p++){
           if (p==rank){
-              cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
+              std::cout << "Rank " << rank << ", " << numLocalCoords << "coords" << std::endl;
               const zscalar_t *x = coordinates->getData(0).getRawPtr();
               const zscalar_t *y = coordinates->getData(1).getRawPtr();
               const zscalar_t *z = coordinates->getData(2).getRawPtr();
               for (zlno_t i=0; i < numLocalCoords; i++)
-                  cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
+                  std::cout << " " << x[i] << " " << y[i] << " " << z[i] << std::endl;
           }
-          cout.flush();
+          std::cout.flush();
           comm->barrier();
       }
 #endif
@@ -637,7 +633,7 @@ int main(int argc, char *argv[])
   // Now call Zoltan to partition the problem.
 
   float ver;
-  int aok = Zoltan_Initialize(argc, argv, &ver);
+  int aok = Zoltan_Initialize(narg, arg, &ver);
 
   if (aok != 0){
     printf("Zoltan_Initialize failed\n");

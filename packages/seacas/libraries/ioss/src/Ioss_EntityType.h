@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -54,5 +54,6 @@ namespace Ioss {
     STRUCTUREDBLOCK = 8192,
     INVALID_TYPE    = 16384
   };
+  constexpr int entityTypeCount = 14;
 } // namespace Ioss
 #endif

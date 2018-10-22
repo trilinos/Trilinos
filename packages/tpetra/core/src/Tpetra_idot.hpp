@@ -203,7 +203,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
           auto Y_j_2d = Y_j->template getLocalView<dev_memory_space> ();
           auto Y_j_1d = subview (Y_j_2d, rowRange, 0);
           typename decltype (Y_j_1d_h)::non_const_type
-            Y_j_1d_h_nc ("Y_j_1d_h", Y_j_1d.dimension_0 ());
+            Y_j_1d_h_nc ("Y_j_1d_h", Y_j_1d.extent (0));
           deep_copy (Y_j_1d_h_nc, Y_j_1d);
           Y_j_1d_h = Y_j_1d_h_nc;
         }
@@ -223,7 +223,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
           auto Y_j_2d_h = Y_j->template getLocalView<host_memory_space> ();
           auto Y_j_1d_h = subview (Y_j_2d_h, rowRange, 0);
           typename decltype (Y_j_1d)::non_const_type
-            Y_j_1d_nc ("Y_j_1d", Y_j_1d_h.dimension_0 ());
+            Y_j_1d_nc ("Y_j_1d", Y_j_1d_h.extent (0));
           deep_copy (Y_j_1d_nc, Y_j_1d_h);
           Y_j_1d = Y_j_1d_nc;
         }
@@ -244,7 +244,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
       if (Y_copyToHost) {
         auto Y_lcl = Y.template getLocalView<dev_memory_space> ();
         typename decltype (Y_lcl_h)::non_const_type
-          Y_lcl_h_nc ("Y_lcl_h", Y_lcl.dimension_0 (), Y_numVecs);
+          Y_lcl_h_nc ("Y_lcl_h", Y_lcl.extent (0), Y_numVecs);
         deep_copy (Y_lcl_h_nc, Y_lcl);
         Y_lcl_h = Y_lcl_h_nc;
       }
@@ -273,7 +273,7 @@ lclDotRaw (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* const resul
       if (Y_copyToDev) {
         auto Y_lcl_h = Y.template getLocalView<host_memory_space> ();
         typename decltype (Y_lcl)::non_const_type
-          Y_lcl_nc ("Y_lcl", Y_lcl_h.dimension_0 (), Y_numVecs);
+          Y_lcl_nc ("Y_lcl", Y_lcl_h.extent (0), Y_numVecs);
         deep_copy (Y_lcl_nc, Y_lcl_h);
         Y_lcl = Y_lcl_nc;
       }
@@ -418,7 +418,7 @@ idot (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* resultRaw,
     result_dev_view_type lclResult = needCopy ?
       result_dev_view_type ("lclResult", numVecs) :
       gblResult;
-    Details::lclDotRaw (lclResult.ptr_on_device (), X, Y, resultOnDevice);
+    Details::lclDotRaw (lclResult.data (), X, Y, resultOnDevice);
     return iallreduce (lclResult, gblResult, ::Teuchos::REDUCE_SUM, *comm);
   }
   else {
@@ -426,7 +426,7 @@ idot (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* resultRaw,
     result_host_view_type lclResult = needCopy ?
       result_host_view_type ("lclResult", numVecs) :
       gblResult;
-    Details::lclDotRaw (lclResult.ptr_on_device (), X, Y, resultOnDevice);
+    Details::lclDotRaw (lclResult.data (), X, Y, resultOnDevice);
     return iallreduce (lclResult, gblResult, ::Teuchos::REDUCE_SUM, *comm);
   }
 }
@@ -504,7 +504,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
   result_view_type lclResult = needCopy ?
     result_view_type ("lclResult") :
     gblResult;
-  Details::lclDotRaw (lclResult.ptr_on_device (), X, Y, resultOnDevice);
+  Details::lclDotRaw (lclResult.data (), X, Y, resultOnDevice);
   return iallreduce (lclResult, gblResult, ::Teuchos::REDUCE_SUM, *comm);
 }
 
@@ -617,9 +617,9 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
   constexpr bool resultOnDevice = true; // 'result' is a device View
   result_view_type gblResult = result;
   result_view_type lclResult = needCopy ?
-    result_view_type ("lclResult", result.dimension_0 ()) :
+    result_view_type ("lclResult", result.extent (0)) :
     gblResult;
-  Details::lclDotRaw (lclResult.ptr_on_device (), X, Y, resultOnDevice);
+  Details::lclDotRaw (lclResult.data (), X, Y, resultOnDevice);
   return iallreduce (lclResult, gblResult, ::Teuchos::REDUCE_SUM, *comm);
 }
 

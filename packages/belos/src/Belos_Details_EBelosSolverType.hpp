@@ -43,8 +43,7 @@
 #define BELOS_DETAILS_EBELOSSOLVERTYPE_HPP
 
 /// \file Belos_Details_EBelosSolverType.hpp
-/// \brief Declaration of Belos::Details::EBelosSolverType enum, and
-///   associated functions.
+/// \brief Declaration of alias functions for solver names.
 
 #include <string>
 #include <utility>
@@ -60,42 +59,6 @@ namespace Teuchos {
 namespace Belos {
 namespace Details {
 
-/// \enum EBelosSolverType
-/// \brief 1-to-1 enumeration of all supported SolverManager subclasses.
-///
-/// This enum is an implementation detail of SolverFactory.  Users of
-/// SolverFactory should not refer to this enum or rely on the symbols
-/// or integer values therein.  We declare it here for later use by
-/// SolverFactory.
-///
-/// Belos developers who have implemented a new solver (i.e., a new
-/// subclass of SolverManager) and who want to make the solver
-/// available through the SolverFactory should first add a new enum
-/// symbol corresponding to their solver to the end of the list.  They
-/// should then follow the instructions provided in the SolverFactory
-/// documentation.
-///
-/// SolverFactory was written to be independent of the actual enum
-/// values, so Belos developers are allowed to rearrange the symbols.
-enum EBelosSolverType {
-  SOLVER_TYPE_BLOCK_GMRES = 0,
-  SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
-  SOLVER_TYPE_BLOCK_CG,
-  SOLVER_TYPE_PSEUDO_BLOCK_CG,
-  SOLVER_TYPE_GCRODR,
-  SOLVER_TYPE_RCG,
-  SOLVER_TYPE_MINRES,
-  SOLVER_TYPE_LSQR,
-  SOLVER_TYPE_STOCHASTIC_CG,
-  SOLVER_TYPE_TFQMR,
-  SOLVER_TYPE_PSEUDO_BLOCK_TFQMR,
-  SOLVER_TYPE_GMRES_POLY,
-  SOLVER_TYPE_PCPG,
-  SOLVER_TYPE_FIXED_POINT,
-  SOLVER_TYPE_BICGSTAB,
-  SOLVER_TYPE_UPPER_BOUND // put nothing after this!!!
-};
-
 /// \brief Number of Belos solvers supported for any linear algebra
 ///   implementation ("generically").
 ///
@@ -103,21 +66,6 @@ enum EBelosSolverType {
 /// <i>names</i>, since we may accept multiple names ("aliases") for
 /// some solvers.
 int numSupportedSolvers ();
-
-/// \brief Map from canonical solver name to solver enum value.
-///
-/// Access the keys to get the list of canonical solver names.
-///
-/// \note To Belos developers: If you add a new solver, start with the
-///   documentation of Details::EBelosSolverType for instructions.
-///   Each new solver needs a canonical name (a string), which is a
-///   key into this map.  The map from canonical name to enum value is
-///   set up in the SolverFactory constructor.  The
-///   Details::makeSolverManagerFromEnum function in turn takes the
-///   enum value and parameter list, and returns an instance of the
-///   appropriate subclass of SolverManager.
-EBelosSolverType
-getEnumFromCanonicalName (const std::string& canonicalName);
 
 /// \brief Get the candidate canonical name for a given candidate
 ///   alias.

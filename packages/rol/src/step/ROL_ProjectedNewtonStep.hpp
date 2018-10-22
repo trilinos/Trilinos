@@ -74,15 +74,15 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a ProjectedNewtonStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  ProjectedNewtonStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
+  ProjectedNewtonStep( ROL::ParameterList &parlist, const bool computeObj = true )
     : Step<Real>(), gp_(ROL::nullPtr), d_(ROL::nullPtr),
       verbosity_(0), computeObj_(computeObj), useProjectedGrad_(false) {
     // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     useProjectedGrad_ = Glist.get("Projected Gradient Criticality Measure", false);
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
   }

@@ -84,12 +84,20 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
-    RCP<const Map>   rowMap   = A->getRowMap();
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
+    RCP<const Map>   rowMap;
+    if(bA != Teuchos::null) {
+      // Extracting the full the row map here...
+      RCP<const Map> bArowMap = bA->getRowMap();
+      RCP<const BlockedMap> bRowMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(bArowMap);
+      rowMap = bRowMap->getFullMap();
+    } else {
+      rowMap = A->getRowMap();
+    }
 
     typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
     RCP<double_multivector_type> Coords   = Get< RCP<double_multivector_type> >(level, "Coordinates");
     size_t           dim      = Coords->getNumVectors();
-
     int numParts = Get<int>(level, "number of partitions");
 
     if (numParts == 1 || numParts == -1) {
@@ -130,8 +138,8 @@ namespace MueLu {
 
     zoltanObj_->Set_Param("num_global_partitions", toString(numParts));
 
-    zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) &*A);
-    zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) &*A);
+    zoltanObj_->Set_Num_Obj_Fn(GetLocalNumberOfRows,      (void *) A.getRawPtr());
+    zoltanObj_->Set_Obj_List_Fn(GetLocalNumberOfNonzeros, (void *) A.getRawPtr());
     zoltanObj_->Set_Num_Geom_Fn(GetProblemDimension,      (void *) &dim);
     zoltanObj_->Set_Geom_Multi_Fn(GetProblemGeometry,     (void *) Coords.get());
 

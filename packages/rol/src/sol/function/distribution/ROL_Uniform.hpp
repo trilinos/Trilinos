@@ -45,7 +45,7 @@
 #define ROL_UNIFORM_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Uniform(const Real lo = 0., const Real up = 1.)
     : a_((lo < up) ? lo : up), b_((up > lo) ? up : lo) {}
 
-  Uniform(Teuchos::ParameterList &parlist) {
+  Uniform(ROL::ParameterList &parlist) {
     a_ = parlist.sublist("SOL").sublist("Distribution").sublist("Uniform").get("Lower Bound",0.);
     b_ = parlist.sublist("SOL").sublist("Distribution").sublist("Uniform").get("Upper Bound",1.);
     Real tmp = a_;

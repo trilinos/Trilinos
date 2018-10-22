@@ -953,6 +953,18 @@ setInitialState(Scalar t0,
 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+void Piro::TempusSolver<Scalar>::
+#endif
+setInitialGuess(Teuchos::RCP< const Thyra::VectorBase<Scalar> > initial_guess) 
+{
+   fwdStateStepper->setInitialGuess(initial_guess); 
+}
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #else
 template <typename Scalar>

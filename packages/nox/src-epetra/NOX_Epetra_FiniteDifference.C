@@ -480,14 +480,14 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 }
 
 bool FiniteDifference::computePreconditioner(const Epetra_Vector& x,
-                         Epetra_Operator& Prec,
-                         Teuchos::ParameterList* precParams)
+                         Epetra_Operator& /* Prec */,
+                         Teuchos::ParameterList* /* precParams */)
 {
   return computeJacobian(x, *this);
 }
 
 Teuchos::RCP<Epetra_CrsMatrix> FiniteDifference::
-createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x)
+createGraphAndJacobian(Interface::Required& /* i */, const Epetra_Vector& x)
 {
 
   const Epetra_BlockMap& map = fo.Map();

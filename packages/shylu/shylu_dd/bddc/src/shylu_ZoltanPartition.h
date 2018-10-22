@@ -15,8 +15,7 @@
 #include <mpi.h>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"  
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -36,21 +35,20 @@ enum PartitionOption{
 namespace bddc {
 
 template <class LO,
-	  class GO> class ZoltanPartition
+          class GO> class ZoltanPartition
 {
 public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::Map<>::node_type                                Node;
   typedef Tpetra::Map<LO,GO,Node>                                 Map;
   typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
   typedef Tpetra::Export<LO,GO,Node>                              Export;
   typedef Tpetra::Import<LO,GO,Node>                              Import;
-  
+
   ZoltanPartition(RCP<const CrsGraph> Graph,
-		  RCP< Teuchos::ParameterList > Parameters) :
+                  RCP< Teuchos::ParameterList > Parameters) :
   m_Graph(Graph),
     m_Parameters(Parameters),
     m_Comm(GetMPIComm()),
@@ -63,12 +61,12 @@ public:
   }
 
   ZoltanPartition(LO numRows,
-		  const LO* rowBegin,
-		  const LO* columns,
-		  const double* coords,
-		  const GO* globalIDs,
-		  MPI_Comm Comm,
-		  RCP< Teuchos::ParameterList > Parameters) :
+                  const LO* rowBegin,
+                  const LO* columns,
+                  const double* coords,
+                  const GO* globalIDs,
+                  MPI_Comm Comm,
+                  RCP< Teuchos::ParameterList > Parameters) :
   m_Graph(Teuchos::null),
     m_Parameters(Parameters),
     m_Comm(Comm),
@@ -95,13 +93,13 @@ public:
     if (m_LBMethod == GRAPH) {
       numEntries = m_ConnBegin[m_numMyObjects];
       if (m_edgeWeights.size() == 0) {
-	m_edgeWeights.resize(numEntries, 1); 
+        m_edgeWeights.resize(numEntries, 1);
       }
       m_vertexWeights.resize(m_numMyObjects, 1);
     }
     else {
       if (m_vertexWeights.size() == 0) {
-	m_vertexWeights.resize(m_numMyObjects, 1);
+        m_vertexWeights.resize(m_numMyObjects, 1);
       }
     }
   }
@@ -136,12 +134,12 @@ public:
     ZOLTAN_ID_PTR exportLocalIds;
     int *exportProcs;
     int *exportToPart;
-    
+
     int rc = m_zz->LB_Partition
       (changes, numGidEntries, numLidEntries,
        numImport, importGlobalIds, importLocalIds, importProcs, importToPart,
        numExport, exportGlobalIds, exportLocalIds, exportProcs, exportToPart);
-    
+
     if (rc != ZOLTAN_OK) {
       printf("Partitioning failed on process %d\n", m_MyPID);
       delete m_zz;
@@ -157,12 +155,12 @@ public:
 
     delete m_zz;
     Zoltan::LB_Free_Part(&importGlobalIds, &importLocalIds, &importProcs,
-			 &importToPart);
+                         &importToPart);
     Zoltan::LB_Free_Part(&exportGlobalIds, &exportLocalIds, &exportProcs,
-			 &exportToPart);
+                         &exportToPart);
   }
 
-  LO getNumMyObjects() 
+  LO getNumMyObjects()
   {
     return m_numMyObjects;
   }
@@ -199,23 +197,23 @@ public:
   void getVertexWeights(float* & vertexWeights) {
     vertexWeights = &m_vertexWeights[0];
   }
-  
-  static int getNumberOfObjects(void *data, 
-				int *ierr)
+
+  static int getNumberOfObjects(void *data,
+                                int *ierr)
   {
     ZoltanPartition *objs = (ZoltanPartition *)data;
     *ierr = ZOLTAN_OK;
     return objs->getNumMyObjects();
   }
 
-  static void getObjectList(void *data, 
-			    int sizeGID, 
-			    int sizeLID,
-			    ZOLTAN_ID_PTR globalID, 
-			    ZOLTAN_ID_PTR localID,
-			    int wgt_dim, 
-			    float *obj_wgts, 
-			    int *ierr)
+  static void getObjectList(void *data,
+                            int sizeGID,
+                            int sizeLID,
+                            ZOLTAN_ID_PTR globalID,
+                            ZOLTAN_ID_PTR localID,
+                            int wgt_dim,
+                            float *obj_wgts,
+                            int *ierr)
   {
     if ((sizeGID != 1) || (sizeLID != 1) || wgt_dim != 1) {
       *ierr = ZOLTAN_FATAL;
@@ -233,22 +231,22 @@ public:
     *ierr = ZOLTAN_OK;
   }
 
-  static int getSpatialDimension(void *data, 
-				 int *ierr)
+  static int getSpatialDimension(void *data,
+                                 int *ierr)
   {
     *ierr = ZOLTAN_OK;
     return 3;
   }
 
-  static void getCoordinates(void *data, 
-			     int sizeGID, 
-			     int sizeLID,
-			     int num_obj,
-			     ZOLTAN_ID_PTR globalID, 
-			     ZOLTAN_ID_PTR localID,
-			     int num_dim,
-			     double* coordinates,
-			     int *ierr)
+  static void getCoordinates(void *data,
+                             int sizeGID,
+                             int sizeLID,
+                             int num_obj,
+                             ZOLTAN_ID_PTR globalID,
+                             ZOLTAN_ID_PTR localID,
+                             int num_dim,
+                             double* coordinates,
+                             int *ierr)
   {
     if ((sizeGID != 1) || (sizeLID != 1) || (num_dim != 3)) {
       *ierr = ZOLTAN_FATAL;
@@ -259,20 +257,20 @@ public:
     int numMyObjects = objs->getNumMyObjects();
     for (int i=0; i<num_obj; i++) {
       for (int j=0; j<num_dim; j++) {
-	coordinates[num_dim*i+j] = xyz[j*numMyObjects+localID[i]];
+        coordinates[num_dim*i+j] = xyz[j*numMyObjects+localID[i]];
       }
     }
     *ierr = ZOLTAN_OK;
   }
 
-  static void getNumEdges(void *data, 
-			  int sizeGID, 
-			  int sizeLID,
-			  int num_obj,
-			  ZOLTAN_ID_PTR globalID, 
-			  ZOLTAN_ID_PTR localID,
-			  int *numEdges, 
-			  int *ierr)
+  static void getNumEdges(void *data,
+                          int sizeGID,
+                          int sizeLID,
+                          int num_obj,
+                          ZOLTAN_ID_PTR globalID,
+                          ZOLTAN_ID_PTR localID,
+                          int *numEdges,
+                          int *ierr)
   {
     ZoltanPartition *objs = (ZoltanPartition *)data;
     int n = objs->getNumMyObjects();
@@ -289,18 +287,18 @@ public:
     *ierr = ZOLTAN_OK;
   }
 
-  static void getEdgeList(void *data, 
-			  int sizeGID, 
-			  int sizeLID,
-			  int num_obj, 
-			  ZOLTAN_ID_PTR globalID, 
-			  ZOLTAN_ID_PTR localID,
-			  int *num_edges,
-			  ZOLTAN_ID_PTR nborGID, 
-			  int *nborProc,
-			  int wgt_dim, 
-			  float *ewgts, 
-			  int *ierr)
+  static void getEdgeList(void *data,
+                          int sizeGID,
+                          int sizeLID,
+                          int num_obj,
+                          ZOLTAN_ID_PTR globalID,
+                          ZOLTAN_ID_PTR localID,
+                          int *num_edges,
+                          ZOLTAN_ID_PTR nborGID,
+                          int *nborProc,
+                          int wgt_dim,
+                          float *ewgts,
+                          int *ierr)
   {
     ZoltanPartition *objs = (ZoltanPartition *)data;
     int n = objs->getNumMyObjects();
@@ -319,9 +317,9 @@ public:
     for (int i=0; i<num_obj; i++) {
       int idx = localID[i];
       for (int j=Conn2[idx]; j<Conn2[idx+1]; j++) {
-	nborGID[j] = ConnectivityGlobal[j];
-	nborProc[j] = ConnectivityOwners[j];
-	ewgts[j] = edgeWeights[j];
+        nborGID[j] = ConnectivityGlobal[j];
+        nborProc[j] = ConnectivityOwners[j];
+        ewgts[j] = edgeWeights[j];
       }
     }
   }
@@ -355,11 +353,11 @@ private:
       m_objectGIDs[i] = RowMap->getNodeElementList()[i];
       m_Graph->getLocalRowView(i, Indices);
       for (int j=0; j<Indices.size(); j++) {
-	assert (ColPIDs[Indices[j]] != nodeNotOnAnyProcessors);
-	m_ConnOwners[numEntries] = ColPIDs[Indices[j]];
-	m_ConnGlobal[numEntries] = ColGIDs[Indices[j]];
-	m_ConnLocal[numEntries] = Indices[j];
-	numEntries++;
+        assert (ColPIDs[Indices[j]] != nodeNotOnAnyProcessors);
+        m_ConnOwners[numEntries] = ColPIDs[Indices[j]];
+        m_ConnGlobal[numEntries] = ColGIDs[Indices[j]];
+        m_ConnLocal[numEntries] = Indices[j];
+        numEntries++;
       }
       m_ConnBegin[i+1] = numEntries;
       count[i] = Indices.size();
@@ -369,9 +367,9 @@ private:
   }
 
   void ConstructGraphEntitiesForZoltan(LO numRows,
-				       const LO* rowBegin,
-				       const LO* columns,
-				       const GO* globalIDs)
+                                       const LO* rowBegin,
+                                       const LO* columns,
+                                       const GO* globalIDs)
   {
     LO numMyRows = numRows;
     m_objectGIDs.resize(numMyRows);
@@ -387,13 +385,13 @@ private:
       m_ConnBegin.resize(numMyRows+1);
       numEntries = 0;
       for (LO i=0; i<numMyRows; i++) {
-	for (LO j=rowBegin[i]; j<rowBegin[i+1]; j++) {
-	  m_ConnOwners[numEntries] = 0;
-	  m_ConnGlobal[numEntries] = columns[j];
-	  m_ConnLocal[numEntries] = columns[j];
-	  numEntries++;
-	}
-	m_ConnBegin[i+1] = numEntries;
+        for (LO j=rowBegin[i]; j<rowBegin[i+1]; j++) {
+          m_ConnOwners[numEntries] = 0;
+          m_ConnGlobal[numEntries] = columns[j];
+          m_ConnLocal[numEntries] = columns[j];
+          numEntries++;
+        }
+        m_ConnBegin[i+1] = numEntries;
       }
     }
   }
@@ -412,7 +410,7 @@ private:
     /*
     if (m_MyPID == 0) {
       std::cout << "Zoltan version = " << version << std::endl;
-    } 
+    }
     */
     m_LBMethod = GRAPH;
     std::string aString = m_Parameters->get("LB Method", "Graph");
@@ -457,7 +455,7 @@ private:
       break;
     }
     //
-    // register Zoltan query functions 
+    // register Zoltan query functions
     //
     m_zz->Set_Num_Obj_Fn(ZoltanPartition::getNumberOfObjects, this);
     m_zz->Set_Obj_List_Fn(ZoltanPartition::getObjectList, this);
@@ -470,7 +468,7 @@ private:
   MPI_Comm GetMPIComm()
   {
     RCP<const Teuchos::Comm<int> > comm = m_Graph->getComm();
-    const Teuchos::MpiComm<int>* mpiComm = 
+    const Teuchos::MpiComm<int>* mpiComm =
       dynamic_cast<const Teuchos::MpiComm<int>* > (&(*comm));
     return *(mpiComm->getRawMpiComm());
   }
@@ -484,7 +482,7 @@ private:
   Tpetra::global_size_t m_IGO;
   enum PartitionOption m_inputGraphType, m_LBMethod, m_graphPackage,
     m_outputOption;
-  int m_numParts, m_numMyObjects, m_numMyHyperEdges, m_MyPID, 
+  int m_numParts, m_numMyObjects, m_numMyHyperEdges, m_MyPID,
     m_numProc;
   std::vector<LO> m_ConnOwners, m_ConnLocal, m_ConnBegin;
   std::vector<GO> m_objectGIDs, m_hyperEdgeGIDs, m_ConnGlobal,

@@ -89,7 +89,6 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Isorropia", True),
   ("Kokkos", True),
   ("Komplex", True),
-  ("MeshingGenie", False),
   ("Mesquite", True),
   ("ML", True),
   ("Moertel", True),

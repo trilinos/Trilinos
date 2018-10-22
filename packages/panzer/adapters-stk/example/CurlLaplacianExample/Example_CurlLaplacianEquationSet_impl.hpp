@@ -54,8 +54,8 @@
 #include "Panzer_BasisIRLayout.hpp"
 
 // include evaluators here
-#include "Panzer_Integrator_BasisTimesScalar.hpp"
-#include "Panzer_Integrator_GradBasisDotVector.hpp"
+#include "Panzer_Integrator_BasisTimesVector.hpp"
+#include "Panzer_Integrator_CurlBasisDotVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_Sum.hpp"
 #include "Panzer_Constant.hpp"
@@ -164,19 +164,16 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // Diffusion Operator: Assembles \int \nabla T \cdot \nabla v
   {
-    double thermal_conductivity = 1.0;
-
-    ParameterList p("Diffusion Residual");
-    p.set("Residual Name", "RESIDUAL_EFIELD_DIFFUSION_OP");
-    p.set("Value Name", "CURL_EFIELD"); // this field is constructed by the panzer library
-    p.set("Test Field Name", "EFIELD"); 
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", -thermal_conductivity);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_CurlBasisDotVector<EvalT,panzer::Traits>(p));
-
+    using panzer::EvaluatorStyle;
+    using panzer::Integrator_CurlBasisDotVector;
+    using panzer::Traits;
+    using PHX::Evaluator;
+    using std::string;
+    string resName("RESIDUAL_EFIELD"), valName("CURL_EFIELD");
+    double thermalConductivity(1.0), multiplier(-thermalConductivity);
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_CurlBasisDotVector<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
+      resName, valName, *basis, *ir, multiplier));
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -218,13 +215,12 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     std::vector<std::string> sum_names;
     
     // these are the names of the residual values to sum together
-    sum_names.push_back("RESIDUAL_EFIELD_DIFFUSION_OP");
     sum_names.push_back("RESIDUAL_EFIELD_MASS_OP");
     sum_names.push_back("RESIDUAL_EFIELD_SOURCE_OP");
     if (this->buildTransientSupport())
       sum_names.push_back("RESIDUAL_EFIELD_TRANSIENT_OP");
 
-    this->buildAndRegisterResidualSummationEvalautor(fm,"EFIELD",sum_names);
+    this->buildAndRegisterResidualSummationEvaluator(fm,"EFIELD",sum_names);
   }
 
 }

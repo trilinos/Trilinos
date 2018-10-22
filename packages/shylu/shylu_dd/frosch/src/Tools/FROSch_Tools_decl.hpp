@@ -48,29 +48,70 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
-
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+#include <Zoltan2_MatrixAdapter.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#endif
 namespace FROSch {
+    
+    enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
+    
+    enum NullSpace {LaplaceNullSpace=0,LinearElasticityNullSpace=1};
     
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildUniqueMap(const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > map);
     
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix,
+                                                                                  Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps);
+
     template <class SC,class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepeatedMap(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix);
     
     template <class SC,class LO,class GO,class NO>
     int ExtendOverlapByOneLayer(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
                                 Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &overlappingMap);
+
+//    template <class SC,class LO,class GO,class NO>
+//    int ExtendOverlapByOneLayerBlock(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &overlappingMatrix,
+//                                     Teuchos::ArrayRCP<<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &overlappingMapBlocks);
     
     template <class LO,class GO,class NO>
-    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &mapVector,
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > AssembleMaps(Teuchos::ArrayView<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector,
                                                       Teuchos::ArrayRCP<Teuchos::ArrayRCP<LO> > &partMappings);
     
     template <class LO,class GO,class NO>
-    int BuildDofMaps(Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
-                     unsigned dofsPerNO,
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > MergeMaps(Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVector);
+    
+    template <class LO,class GO,class NO>
+    int BuildDofMaps(const Teuchos::RCP<Xpetra::Map<LO,GO,NO> > map,
+                     unsigned dofsPerNode,
                      unsigned dofOrdering,
-                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedNodesMap,
-                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &repeatedDofMaps);
+                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
+                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps);
+
+    template <class LO,class GO,class NO>
+    int BuildDofMapsVec(const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVec,
+                        Teuchos::ArrayRCP<unsigned> dofsPerNodeVec,
+                        Teuchos::ArrayRCP<FROSch::DofOrdering> dofOrderingVec,
+                        Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &nodesMapVec,
+                        Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > >&dofMapsVec);
+    
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromDofMaps(const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps,
+                                                             unsigned dofsPerNode,
+                                                             unsigned dofOrdering);
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildMapFromNodeMap(Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
+                                                             unsigned dofsPerNode,
+                                                             unsigned dofOrdering);
+    
+    template <class LO,class GO,class NO>
+    Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > BuildSubMaps(Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > &fullMap,
+                                                                          Teuchos::ArrayRCP<GO> maxSubGIDVec);
     
     template <class SC,class LO,class GO,class NO>
     Teuchos::ArrayRCP<GO> FindOneEntryOnly(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix);
@@ -82,6 +123,60 @@ namespace FROSch {
     template<class T>
     inline void sortunique(T &v);
     
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(Teuchos::RCP<const Xpetra::MultiVector<SC,LO,GO,NO> > multiVector,
+                                                                        Teuchos::ArrayView<unsigned> zero = Teuchos::ArrayView<unsigned>());
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
+                                                                   unsigned nullSpaceType,
+                                                                   Teuchos::RCP<Xpetra::Map<LO,GO,NO> > repeatedMap,
+                                                                   unsigned dofsPerNode,
+                                                                   Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > dofsMaps,
+                                                                   Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nodeList = Teuchos::null);
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
+                                                         const Epetra_BlockMap &map,
+                                                         Teuchos::RCP<const Teuchos::Comm<int> > comm);
+
+
+    template <class SC, class LO, class GO, class NO>
+    Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
+                                                               Epetra_CrsMatrix &matrix,
+                                                               Teuchos::RCP<const Teuchos::Comm<int> > comm);
+
+
+    template <class SC, class LO,class GO, class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
+                                                                    Epetra_MultiVector &vector,
+                                                                    Teuchos::RCP<const Teuchos::Comm<int> > comm);
+
+    
+    template <class SC, class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ExtractCoordinatesFromParameterList(Teuchos::ParameterList& paramList);
+    
+    
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ExtractRepeatedMapFromParameterList(Teuchos::ParameterList& paramList, std::string nameMap="RepeatedMap");
+    
+
+    template <class LO,class GO,class NO>
+    Teuchos::RCP<Epetra_Map> ConvertToEpetra(const Xpetra::Map<LO,GO,NO> &map,
+                                             Teuchos::RCP<Epetra_Comm> epetraComm);
+    
+    
+    template <class SC, class LO,class GO, class NO>
+    Teuchos::RCP<Epetra_MultiVector > ConvertToEpetra(Xpetra::MultiVector<SC,LO,GO,NO> &vector,
+                                                                    Teuchos::RCP<Epetra_Comm> epetraComm);
+    
+    
+    template <class LO>
+    Teuchos::Array<LO> GetIndicesFromString(std::string string);
+
+    
+    template <class SC, class LO,class GO,class NO>
+    int RepartionMatrixZoltan2(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &crsMatrix, Teuchos::RCP<Teuchos::ParameterList> parameterList);
 }
 
 #endif

@@ -130,7 +130,7 @@ public:
                              const Vector<Real> &simVec,
                              const Vector<Real> &optVec,
                              const Vector<Real> &conVec,
-                             Teuchos::ParameterList &parlist)
+                             ROL::ParameterList &parlist)
     : obj_(obj), penaltyParameter_(penaltyParameter),
       fval_(0), nfval_(0), ngval_(0), isValueComputed_(false),
       isGradient1Computed_(false), isGradient2Computed_(false) {
@@ -140,7 +140,7 @@ public:
     dualSimVector_  = simVec.dual().clone();
     dualOptVector_  = optVec.dual().clone();
 
-    Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
+    ROL::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
     scaleLagrangian_  = sublist.get("Use Scaled Augmented Lagrangian", false);
     int HessianApprox = sublist.get("Level of Hessian Approximation",  0);
 

@@ -111,7 +111,7 @@ namespace Teuchos {
 
 //Explicitly instantiating these templates for windows due to an issue with
 //resolving them when linking dlls.
-#ifdef _WIN32
+#ifdef _MSC_VER
 #  ifdef HAVE_TEUCHOS_COMPLEX
      template BLAS<long int, std::complex<float> >;
      template BLAS<long int, std::complex<double> >;

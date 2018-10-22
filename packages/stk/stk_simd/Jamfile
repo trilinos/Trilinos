@@ -48,12 +48,12 @@ project votd
     <architecture>nehalem:<define>USE_STK_SIMD_SSE
     <architecture>sandybridge:<define>USE_STK_SIMD_AVX
     <architecture>haswell:<define>USE_STK_SIMD_AVX
-    <architecture>knc:<define>USE_STK_SIMD_NONE
+    <architecture>skylake:<define>USE_STK_SIMD_AVX512
     <architecture>knl:<define>USE_STK_SIMD_AVX512
     <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
     <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE
     <architecture>cray,<toolset>cray:<define>USE_STK_SIMD_NONE
-    <cuda>on:<define>KOKKOS_CUDA_USE_LAMBDA=1
+    <cuda>on:<define>KOKKOS_ENABLE_CUDA_LAMBDA=1
   : usage-requirements
     <include>$(stk_simd-root)
     <define>USE_STK_SIMD_AUTO
@@ -62,7 +62,7 @@ project votd
     <architecture>nehalem:<define>USE_STK_SIMD_SSE
     <architecture>sandybridge:<define>USE_STK_SIMD_AVX
     <architecture>haswell:<define>USE_STK_SIMD_AVX
-    <architecture>knc:<define>USE_STK_SIMD_NONE
+    <architecture>skylake:<define>USE_STK_SIMD_AVX512
     <architecture>knl:<define>USE_STK_SIMD_AVX512
     <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
     <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE

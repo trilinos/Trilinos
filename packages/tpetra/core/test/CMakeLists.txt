@@ -14,6 +14,7 @@ ADD_SUBDIRECTORIES(
   CrsMatrix
   Directory
   Distributor
+  FEMultiVector
   HashTable
   ImportExport
   ImportExport2
@@ -25,7 +26,6 @@ ADD_SUBDIRECTORIES(
   MultiVectorFiller
   Node
   PerformanceCGSolve
-  Platform
   Sort
   Utils
   RowMatrixTransposer

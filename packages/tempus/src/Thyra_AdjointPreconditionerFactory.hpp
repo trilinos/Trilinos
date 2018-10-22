@@ -31,29 +31,24 @@ public:
   /** \brief Construct to uninitialized. */
   AdjointPreconditionerFactory() {}
 
-  /** \brief . */
   void nonconstInitialize(
     const RCP<PreconditionerFactoryBase<Scalar> > &prec_fac) {
     validateInitialize(prec_fac);
     prec_fac_ = prec_fac;
   }
 
-  /** \brief . */
   void initialize(
     const RCP<const PreconditionerFactoryBase<Scalar> > &prec_fac) {
     validateInitialize(prec_fac);
     prec_fac_ = prec_fac;
   }
 
-  /** \brief . */
   RCP<PreconditionerFactoryBase<Scalar> >
   getNonconstPreconditionerFactory() { return prec_fac_.getNonconstObj(); }
 
-  /** \brief . */
   RCP<const PreconditionerFactoryBase<Scalar> >
   getPreconditionerFactory() const { return prec_fac_.getConstObj(); }
 
-  /** \brief . */
   void uninitialize() {
     prec_fac_.uninitialize();
   }
@@ -61,7 +56,6 @@ public:
   /** \name Overridden from Teuchos::Describable. */
   //@{
 
-  /** \brief . */
   std::string description() const
   {
     std::ostringstream oss;
@@ -81,31 +75,26 @@ public:
   /** @name Overridden from ParameterListAcceptor (simple forwarding functions) */
   //@{
 
-  /** \brief . */
   void setParameterList(RCP<ParameterList> const& paramList)
   {
     prec_fac_.getNonconstObj()->setParameterList(paramList);
   }
 
-  /** \brief . */
   RCP<ParameterList> getNonconstParameterList()
   {
     return prec_fac_.getNonconstObj()->getNonconstParameterList();
   }
 
-  /** \brief . */
   RCP<ParameterList> unsetParameterList()
   {
     return prec_fac_.getNonconstObj()->unsetParameterList();
   }
 
-  /** \brief . */
   RCP<const ParameterList> getParameterList() const
   {
     return prec_fac_.getConstObj()->getParameterList();
   }
 
-  /** \brief . */
   RCP<const ParameterList> getValidParameters() const
   {
     return prec_fac_.getConstObj()->getValidParameters();
@@ -118,16 +107,13 @@ public:
   /** @name Overridden from PreconditionerFactoryBase */
   //@{
 
-  /** \brief . */
   bool isCompatible(const LinearOpSourceBase<Scalar> &fwdOpSrc) const
   { return prec_fac_.getConstObj()->isCompatible(fwdOpSrc); }
 
-  /** \brief . */
    RCP<PreconditionerBase<Scalar> > createPrec() const
   { return nonconstAdjointPreconditioner(
       prec_fac_.getConstObj()->createPrec()); }
 
-  /** \brief . */
   void initializePrec(
     const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     PreconditionerBase<Scalar> *precOp,
@@ -148,7 +134,6 @@ public:
       supportSolveUse);
   }
 
-  /** \brief . */
   void uninitializePrec(
     PreconditionerBase<Scalar> *precOp,
     RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,

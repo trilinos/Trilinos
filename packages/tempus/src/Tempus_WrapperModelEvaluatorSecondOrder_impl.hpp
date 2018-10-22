@@ -106,9 +106,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     case NEWMARK_IMPLICIT_DFORM: {
       // Setup initial condition
-      // Create and populate inArgs
-      MEB::InArgs<Scalar> appInArgs = appModel_->createInArgs();
-
+      // Populate inArgs
       RCP<Thyra::VectorBase<Scalar> const>
       d = inArgs.get_x();
 

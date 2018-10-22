@@ -34,6 +34,7 @@
 #include <stk_mesh/base/FindRestriction.hpp>
 #include <stddef.h>                     // for size_t
 #include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stk_mesh/base/Bucket.hpp>     // for has_superset
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <string>                       // for operator<<, char_traits
 #include <vector>                       // for vector, etc
@@ -41,7 +42,7 @@
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsg
 
 namespace stk {
 namespace mesh {
@@ -108,6 +109,23 @@ const FieldBase::Restriction& find_restriction(const FieldBase& field,
       for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
         const Selector& selector = it->selector();
         if (selector(part)) {
+          return *it;
+        }
+      }
+  }
+
+  return empty_field_restriction();
+}
+
+const FieldBase::Restriction& find_restriction(const FieldBase& field,
+                                               const Bucket & bucket)
+{
+  if(static_cast<unsigned>(field.entity_rank()) == bucket.entity_rank())
+  {
+      const std::vector<FieldBase::Restriction> & restrictions = field.restrictions();
+      for(std::vector<FieldBase::Restriction>::const_iterator it=restrictions.begin(), it_end=restrictions.end(); it != it_end; ++it) {
+        const Selector& selector = it->selector();
+        if (selector(bucket)) {
           return *it;
         }
       }

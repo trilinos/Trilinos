@@ -242,6 +242,10 @@ void verbose_print_topology(std::ostream &out, topology t)
 
 }
 
+bool is_solid_element(stk::topology t)
+{
+    return t.rank()==stk::topology::ELEM_RANK && !t.is_shell() && t.dimension()==3;
+}
 } //namespace stk
 
 

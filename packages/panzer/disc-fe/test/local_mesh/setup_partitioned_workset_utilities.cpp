@@ -66,7 +66,7 @@
 namespace panzer {
 
 using LO=int;
-using GO=int;
+using GO=panzer::Ordinal64;
 
 TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 {
@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
   {
     panzer::LocalMeshInfo<LO,GO> empty_mesh;
 
-    panzer::WorksetDescriptor description("block",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Test bad descriptors
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::EMPTY,true);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::CLASSIC_MODE,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   }
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::SPECIAL,true);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::NO_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
     TEST_THROW(buildPartitionedWorksets(*mesh_info, description, needs),std::logic_error);
   }
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::FULL,false);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,false);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -130,7 +130,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Non-existant block
   {
-    panzer::WorksetDescriptor description("block32",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -147,7 +147,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Non-existant sideset
   {
-    panzer::WorksetDescriptor description("block32","sideset0",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block32","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset32",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0","sideset32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset1",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0","sideset1",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Existing block partition
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -214,7 +214,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Existing sideset partition
   {
-    panzer::WorksetDescriptor description("block0","sideset0",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block0","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);
@@ -233,7 +233,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
     TEST_EQUALITY(workset.numVirtualCells(),1);
   }
   {
-    panzer::WorksetDescriptor description("block1","sideset2",panzer::WorksetDescriptor::FULL,true);
+    panzer::WorksetDescriptor description("block1","sideset2",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     panzer::WorksetNeeds needs;
     needs.addBasis(basis);
     needs.addIntegrator(integrator);

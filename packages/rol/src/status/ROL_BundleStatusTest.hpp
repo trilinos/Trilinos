@@ -60,7 +60,7 @@ public:
 
   virtual ~BundleStatusTest() {}
 
-  BundleStatusTest( Teuchos::ParameterList &parlist ) {
+  BundleStatusTest( ROL::ParameterList &parlist ) {
     Real em6(1e-6);
     tol_      = parlist.sublist("Step").sublist("Bundle").get("Epsilon Solution Tolerance", em6);
     max_iter_ = parlist.sublist("Status Test").get("Iteration Limit", 100);

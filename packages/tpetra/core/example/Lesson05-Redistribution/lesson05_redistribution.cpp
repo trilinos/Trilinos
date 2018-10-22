@@ -46,12 +46,9 @@
 \ref Tpetra_Lesson05 explains this example in detail.
 */
 
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Version.hpp>
 #include <iostream>
 
 // Timer for use in example().
@@ -128,8 +125,7 @@ createMatrix (const Teuchos::RCP<const typename CrsMatrixType::map_type>& map)
 
 void
 example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-         std::ostream& out,
-         std::ostream& err)
+         std::ostream& out)
 {
   using std::endl;
   using Teuchos::ParameterList;
@@ -140,13 +136,11 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   typedef Tpetra::global_size_t GST;
 
   // Set up Tpetra typedefs.
-  typedef double scalar_type;
-  typedef Tpetra::CrsMatrix<scalar_type> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<> crs_matrix_type;
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
 
-  // Print out the Tpetra software version information.
-  out << Tpetra::version () << endl << endl;
+  const int myRank = comm->getRank ();
 
   // The global number of rows in the matrix A to create.  We scale
   // this relative to the number of (MPI) processes, so that no matter
@@ -156,9 +150,11 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // Construct a Map that is global (not locally replicated), but puts
   // all the equations on MPI Proc 0.
+  if (myRank == 0) {
+    out << "Construct Process 0 Map" << endl;
+  }
   RCP<const map_type> procZeroMap;
   {
-    const int myRank = comm->getRank ();
     const size_t numLocalIndices = (myRank == 0) ? numGlobalIndices : 0;
     procZeroMap = rcp (new map_type (numGlobalIndices, numLocalIndices,
                                      indexBase, comm));
@@ -166,11 +162,17 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // Construct a Map that puts approximately the same number of
   // equations on each processor.
+  if (myRank == 0) {
+    out << "Construct global Map" << endl;
+  }
   RCP<const map_type> globalMap =
     rcp (new map_type (numGlobalIndices, indexBase, comm,
                        Tpetra::GloballyDistributed));
 
   // Create a sparse matrix using procZeroMap.
+  if (myRank == 0) {
+    out << "Create sparse matrix using Process 0 Map" << endl;
+  }
   RCP<const crs_matrix_type> A = createMatrix<crs_matrix_type> (procZeroMap);
 
   //
@@ -185,6 +187,9 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // use an Export.  We do not allow redistribution using Import or
   // Export if neither source nor target Map is one-to-one.
   RCP<crs_matrix_type> B;
+  if (myRank == 0) {
+    out << "Redistribute sparse matrix" << endl;
+  }
   {
     // We created exportTimer in main().  It's a global timer.
     // Actually starting and stopping the timer is local, but
@@ -222,37 +227,31 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 int
 main (int argc, char *argv[])
 {
-  using Teuchos::RCP;
-  using Teuchos::Time;
   using Teuchos::TimeMonitor;
 
-  Teuchos::oblackholestream blackHole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  {
+    auto comm = Tpetra::getDefaultComm ();
+    const int myRank = comm->getRank ();
+    // const int numProcs = comm->getSize ();
 
-  const int myRank = comm->getRank ();
-  // const int numProcs = comm->getSize ();
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
-  std::ostream& err = (myRank == 0) ? std::cerr : blackHole;
+    // Make global timer for sparse matrix redistribution.
+    // We will use (start and stop) this timer in example().
+    exportTimer =
+      TimeMonitor::getNewCounter ("Sparse matrix redistribution");
+    example (comm, std::cout); // Run the whole example.
 
-  // Make global timer for sparse matrix redistribution.
-  // We will use (start and stop) this timer in example().
-  exportTimer = TimeMonitor::getNewCounter ("Sparse matrix redistribution");
+    // Summarize global performance timing results, for all timers
+    // created using TimeMonitor::getNewCounter().
+    TimeMonitor::summarize (std::cout);
 
-  example (comm, out, err); // Run the whole example.
+    // Make sure that the timer goes away before main() exits.
+    exportTimer = Teuchos::null;
 
-  // Summarize global performance timing results, for all timers
-  // created using TimeMonitor::getNewCounter().
-  TimeMonitor::summarize (out);
-
-  // Make sure that the timer goes away before main() exits.
-  exportTimer = Teuchos::null;
-
-  // This tells the Trilinos test framework that the test passed.
-  if (myRank == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+    // This tells the Trilinos test framework that the test passed.
+    if (myRank == 0) {
+      std::cout << "End Result: TEST PASSED" << std::endl;
+    }
   }
-
   return 0;
 }

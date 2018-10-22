@@ -83,21 +83,15 @@ example subdirectory of the PyTrilinos package:
 	docstring = %ifpack_docstring) IFPACK
 
 %{
-// System includes
+// System include files
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -106,28 +100,14 @@ example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 #endif
 
-// PyTrilinos utility code
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_Epetra_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// IFPACK includes
-#include "Ifpack.h"
-#include "Ifpack_Version.h"
-#include "Ifpack_Utils.h"
-#include "Ifpack_Preconditioner.h"
-#include "Ifpack_IC.h"
-#include "Ifpack_ICT.h"
-#include "Ifpack_ILU.h"
-#include "Ifpack_ILUT.h"
-#include "Ifpack_PointRelaxation.h"
-#include "Ifpack_Amesos.h"
+// Epetra include files
+#include "PyTrilinos_Epetra_Headers.hpp"
 
+// IFPACK include files
+#include "PyTrilinos_IFPACK_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration
@@ -204,7 +184,8 @@ example subdirectory of the PyTrilinos package:
 // IFPACK_Version support //
 ////////////////////////////
 %include "Ifpack_Version.h"
-%pythoncode %{
+%pythoncode
+%{
 Version = Ifpack_Version
 __version__ = Version().split()[3]
 %}

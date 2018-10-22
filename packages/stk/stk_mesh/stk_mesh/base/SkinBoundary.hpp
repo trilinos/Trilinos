@@ -47,7 +47,10 @@ namespace stk { namespace mesh {
  *
  */
 void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto);
-void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, stk::mesh::Selector* air);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after March 1st 2018
+STK_DEPRECATED void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, const stk::mesh::Selector* air);
+#endif // STK_HIDE_DEPRECATED_CODE
+void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, const stk::mesh::Selector& air);
 void create_interior_block_boundary_sides(BulkData&, const Selector& blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto);
 void create_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto, bool connect_faces_to_edges);
 

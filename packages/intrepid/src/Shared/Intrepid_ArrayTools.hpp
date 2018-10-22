@@ -55,7 +55,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_Assert.hpp"
 #include <Intrepid_KokkosRank.hpp>
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 #include "Kokkos_Core.hpp"
 #include <impl/Kokkos_Timer.hpp>
 #endif
@@ -682,7 +682,7 @@ namespace Intrepid {
                                                ArrayInDataLeft &  inputDataLeft,
                                                ArrayInDataRight & inputDataRight,
                                                const bool               reciprocal=false);*/
-#ifdef HAVE_INTREPID_KOKKOSCORE
+#ifdef INTREPID_OLD_KOKKOS_CODE
 /*
     template<class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight, class Layout, class MemorySpace>
         static void scalarMultiplyDataDataTemp(Kokkos::View<ArrayOutData,Layout,MemorySpace> &     outputData,
@@ -1132,7 +1132,7 @@ namespace Intrepid {
 } // end namespace Intrepid
 
 // include templated definitions
-// #ifdef HAVE_INTREPID_KOKKOSCORE
+// #ifdef INTREPID_OLD_KOKKOS_CODE
 // #include <Intrepid_ArrayToolsDefScalar_Kokkos.hpp>
 // #endif
 #include <Intrepid_ArrayToolsDefContractions.hpp>

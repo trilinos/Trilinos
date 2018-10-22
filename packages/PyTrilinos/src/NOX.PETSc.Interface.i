@@ -66,27 +66,21 @@ NOX.Epetra.Interface provides the following user-level class:
 	docstring    = %nox_petsc_interface_docstring) Interface
 
 %{
-// PyTrilinos includes
+// PyTrilinos include files
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 
-// NumPy includes
+// NumPy include files
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// Teuchos includes
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-// #include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
 // PETSc include
 #include "petsc.h"
 
-// NOX::Petsc::Interface includes
+// NOX::Petsc::Interface include files
 #include "NOX_Petsc_Interface.H"
 %}
 

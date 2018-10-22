@@ -466,6 +466,8 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC one = STS::one();
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   // =========================================================================
   // Parameters initialization
@@ -568,7 +570,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     }
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
 
     if (matrixType == "Elasticity2D" ||
@@ -660,21 +662,11 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
       // =========================================================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-      bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
 
       RCP<Hierarchy> H;
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-      RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
-#endif
       A->SetMaxEigenvalueEstimate(-one);
 
-      if (useAMGX) {
-#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
-        aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
-#endif
-      } else {
-        H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
-      }
+      H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
       comm->barrier();
       tm = Teuchos::null;
 

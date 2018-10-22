@@ -921,7 +921,7 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
 }/*end ML_Operator_WrapEpetraCrsMatrix*/
 
 // ================================================ ====== ==== ==== ==
-// Thie provides a lightweight wrap of an ML_Operator in Epetra.  The Epetra
+// This provides a lightweight wrap of an ML_Operator in Epetra.  The Epetra
 // object needs to be setup correctly beforehand or else this will have
 // disasterous consequences.  We assume that the ML_Operator will persist until
 // after the Epetra_CrsMatrix is destroyed, if this is set in View mode.

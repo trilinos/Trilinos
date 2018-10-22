@@ -106,7 +106,7 @@ private:
 
   void checkInputs(void) const {
     Real zero(0);
-    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::KLDivergence): Threshold must be positive!");
   }
 
@@ -128,9 +128,9 @@ public:
       within the "KL Divergence" sublist should have the following parameters
       \li "Threshold" (greater than 0)
   */
-  KLDivergence(Teuchos::ParameterList &parlist)
+  KLDivergence(ROL::ParameterList &parlist)
     : RandVarFunctional<Real>(), firstResetKLD_(true) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("KL Divergence");
     eps_ = list.get<Real>("Threshold");
     checkInputs();

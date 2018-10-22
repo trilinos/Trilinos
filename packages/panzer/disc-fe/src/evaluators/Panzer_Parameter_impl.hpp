@@ -75,22 +75,13 @@ Parameter(const std::string parameter_name,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 void Parameter<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* worksets */,
-		      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(target_field,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-void Parameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
   //std::cout << "ROGER ParamValue = " << param->getValue() << std::endl;
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
-	 pt < target_field.dimension(1); ++pt) {
+	 pt < target_field.extent(1); ++pt) {
       target_field(cell,pt) = param->getValue();
     }
   }

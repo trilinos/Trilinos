@@ -227,7 +227,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   return 0;
 }
 
-int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int MatrixFree::ApplyInverse(const Epetra_MultiVector& /* X */, Epetra_MultiVector& /* Y */) const
 {
   utils.out() << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
        << std::endl;
@@ -273,7 +273,7 @@ const Epetra_Map& MatrixFree::OperatorRangeMap() const
   return *epetraMap;
 }
 
-bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& /* Jac */)
 {
   // Since we have no explicit Jacobian we set our currentX to the
   // incoming value and evaluate the RHS.  When the Jacobian is applied,

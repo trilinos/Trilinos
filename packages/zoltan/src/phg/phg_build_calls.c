@@ -1285,7 +1285,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     if (zz->Obj_Weight_Dim > 0){
       wgts =
         (float *)ZOLTAN_MALLOC(sizeof(float) * zhg->nObj * zhg->objWeightDim);
-      if ((zhg->nObj * zhg->objWeightDim) && !wgts){
+      if (zhg->nObj && zhg->objWeightDim && !wgts){
         MEMORY_ERROR;
       }
 

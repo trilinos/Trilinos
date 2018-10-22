@@ -97,8 +97,8 @@ namespace Tacho {
       //A.convertGraph(_nnz, _rptr, _cidx);
 
       int ierr = 0;
-      ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
-      ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
+      ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(_rptr.data());
+      ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(_cidx.data());
 
       if (seed != GraphHelper::DefaultRandomSeed) {
         SCOTCH_randomSeed(seed);
@@ -137,10 +137,10 @@ namespace Tacho {
       int ierr = 0;
 
       // pointers for global graph ordering
-      ordinal_type *perm  = _perm.ptr_on_device();
-      ordinal_type *peri  = _peri.ptr_on_device();
-      ordinal_type *range = _range.ptr_on_device();
-      ordinal_type *tree  = _tree.ptr_on_device();
+      ordinal_type *perm  = _perm.data();
+      ordinal_type *peri  = _peri.data();
+      ordinal_type *range = _range.data();
+      ordinal_type *tree  = _tree.data();
 
       {
         const int level = (_level ? _level : max(1, int(log2(_m)-treecut))); // level = log2(_nnz)+10;
@@ -182,8 +182,8 @@ namespace Tacho {
       // provided blksize is greater than 0, reorder internally
       // if (treecut > 0 && minblksize > 0) {
       //   // graph array
-      //   ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
-      //   ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
+      //   ordinal_type *rptr_ptr = reinterpret_cast<ordinal_type*>(_rptr.data());
+      //   ordinal_type *cidx_ptr = reinterpret_cast<ordinal_type*>(_cidx.data());
 
       //   // create workspace in
       //   size_type_array    rptr_work = size_type_array(_label+"::Block::RowPtrArray", _m+1);
@@ -196,8 +196,8 @@ namespace Tacho {
       //   ordinal_type_array tree_work  = ordinal_type_array(_label+"::Block::TreeArray", _m);
 
       //   // scotch input
-      //   ordinal_type *rptr_blk = reinterpret_cast<ordinal_type*>(rptr_work.ptr_on_device());
-      //   ordinal_type *cidx_blk = reinterpret_cast<ordinal_type*>(cidx_work.ptr_on_device());
+      //   ordinal_type *rptr_blk = reinterpret_cast<ordinal_type*>(rptr_work.data());
+      //   ordinal_type *cidx_blk = reinterpret_cast<ordinal_type*>(cidx_work.data());
 
       //   size_type nnz = 0;
       //   rptr_blk[0] = nnz;
@@ -222,10 +222,10 @@ namespace Tacho {
       //     // scotch output
       //     ordinal_type cblk_blk = 0;
 
-      //     ordinal_type *perm_blk  = perm_work.ptr_on_device()  + ibegin;
-      //     ordinal_type *peri_blk  = peri_work.ptr_on_device()  + ibegin;
-      //     ordinal_type *range_blk = range_work.ptr_on_device() + ibegin;
-      //     ordinal_type *tree_blk  = tree_work.ptr_on_device()  + ibegin;
+      //     ordinal_type *perm_blk  = perm_work.data()  + ibegin;
+      //     ordinal_type *peri_blk  = peri_work.data()  + ibegin;
+      //     ordinal_type *range_blk = range_work.data() + ibegin;
+      //     ordinal_type *tree_blk  = tree_work.data()  + ibegin;
 
       //     // if each blk is greater than the given minblksize, reorder internally
       //     if (m > minblksize) {

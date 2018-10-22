@@ -42,13 +42,14 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 330
     )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_DEFAULT
-    ctest_linux_nightly_mpi_release_muelu_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  #JHU: 2018-Apr-11 migrated to enigma
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  OPENMPI-1.10.1_RELEASE_DEFAULT
+  #  ctest_linux_nightly_mpi_release_muelu_geminga.cmake
+  #  CTEST_INSTALLER_TYPE release
+  #  RUN_SERIAL
+  #  TIMEOUT_MINUTES 330
+  #  )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI-1.10.1_RELEASE_COMPLEX_DEFAULT
@@ -67,21 +68,23 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 330
     )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_NO-SERIAL_OPENMP_EXPERIMENTAL
-    ctest_linux_nightly_mpi_release_muelu_no_serial_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  #JHU 2018-Apr-11 migrated to enigma
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  OPENMPI-1.10.1_RELEASE_NO-SERIAL_OPENMP_EXPERIMENTAL
+  #  ctest_linux_nightly_mpi_release_muelu_no_serial_geminga.cmake
+  #  CTEST_INSTALLER_TYPE release
+  #  RUN_SERIAL
+  #  TIMEOUT_MINUTES 330
+  #  )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_EXPERIMENTAL
-    ctest_linux_nightly_mpi_release_muelu_no_int_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  #JHU 2018-Apr-11 migrated to enigma
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_EXPERIMENTAL
+  #  ctest_linux_nightly_mpi_release_muelu_no_int_geminga.cmake
+  #  CTEST_INSTALLER_TYPE release
+  #  RUN_SERIAL
+  #  TIMEOUT_MINUTES 330
+  #  )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-SERIAL_OPENMP_EXPERIMENTAL
@@ -91,21 +94,23 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 330
     )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
-    ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  #JHU 2018-Apr-12 migrated to enigma
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  OPENMPI-1.10.1_RELEASE_NO-INT_NO-SERIAL_OPENMP_EXPERIMENTAL
+  #  ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_geminga.cmake
+  #  CTEST_INSTALLER_TYPE release
+  #  RUN_SERIAL
+  #  TIMEOUT_MINUTES 330
+  #  )
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_NO-INT_OPENMP_EXPERIMENTAL
-    ctest_linux_nightly_mpi_release_muelu_no_int_openmp_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  #JHU 2018-Apr-12 migrated to enigma
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  OPENMPI-1.10.1_RELEASE_NO-INT_OPENMP_EXPERIMENTAL
+  #  ctest_linux_nightly_mpi_release_muelu_no_int_openmp_geminga.cmake
+  #  CTEST_INSTALLER_TYPE release
+  #  RUN_SERIAL
+  #  TIMEOUT_MINUTES 330
+  #  )
 
   # Misc tests
   if(RUN_HEAVY_MEMORY_TESTS)
@@ -224,6 +229,14 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
     TRILINOS_DRIVER_ADD_DASHBOARD(
       OPENMPI-1.8.7_RELEASE_KOKKOS-REFACTOR_CUDA-8.0.44
       ctest_linux_nightly_mpi_release_muelu_kokkos_refactor_cuda_geminga.cmake
+      CTEST_INSTALLER_TYPE release
+      RUN_SERIAL
+      TIMEOUT_MINUTES 420
+      )
+
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      RELEASE_AMGX_CUDA-8.0.44
+      ctest_linux_nightly_mpi_release_muelu_amgx_cuda_geminga.cmake
       CTEST_INSTALLER_TYPE release
       RUN_SERIAL
       TIMEOUT_MINUTES 420

@@ -195,7 +195,7 @@ void SparseContainer<MatrixType,InverseType>::
 applyImpl (inverse_mv_type& X,
            inverse_mv_type& Y,
            int blockIndex,
-           int stride,
+           int /* stride */,
            Teuchos::ETransp mode,
            InverseScalar alpha,
            InverseScalar beta) const
@@ -243,7 +243,7 @@ apply (HostView& X,
 
   // Tpetra::MultiVector specialization corresponding to InverseType.
   Details::MultiVectorLocalGatherScatter<mv_type, inverse_mv_type> mvgs;
-  size_t numVecs = X.dimension_1();
+  size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::apply: "
@@ -251,10 +251,10 @@ apply (HostView& X,
     "You may call the apply() method as many times as you want after calling "
     "compute() once, but you must have called compute() at least once.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_1() != Y.dimension_1(), std::runtime_error,
+    X.extent(1) != Y.extent(1), std::runtime_error,
     "Ifpack2::SparseContainer::apply: X and Y have different numbers of "
-    "vectors.  X has " << X.dimension_1()
-    << ", but Y has " << Y.dimension_1() << ".");
+    "vectors.  X has " << X.extent(1)
+    << ", but Y has " << Y.extent(1) << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do
@@ -335,7 +335,7 @@ weightedApply (HostView& X,
                HostView& Y,
                HostView& D,
                int blockIndex,
-               int stride,
+               int /* stride */,
                Teuchos::ETransp mode,
                scalar_type alpha,
                scalar_type beta) const
@@ -365,7 +365,7 @@ weightedApply (HostView& X,
   typedef Tpetra::Vector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode> inverse_vector_type;
 
   Details::MultiVectorLocalGatherScatter<mv_type, inverse_mv_type> mvgs;
-  const size_t numVecs = X.dimension_1();
+  const size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! IsComputed_, std::runtime_error, "Ifpack2::SparseContainer::"
@@ -374,10 +374,10 @@ weightedApply (HostView& X,
     "after calling compute() once, but you must have called compute() at least "
     "once.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_1() != Y.dimension_1(), std::runtime_error,
+    X.extent(1) != Y.extent(1), std::runtime_error,
     "Ifpack2::SparseContainer::weightedApply: X and Y have different numbers "
-    "of vectors.  X has " << X.dimension_1() << ", but Y has "
-    << Y.dimension_1() << ".");
+    "of vectors.  X has " << X.extent(1) << ", but Y has "
+    << Y.extent(1) << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do

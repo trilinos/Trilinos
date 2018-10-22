@@ -72,6 +72,7 @@ struct SideSetEntry
 };
 
 typedef std::vector<SideSetEntry> SideSet;
+typedef std::vector<SideSet*> SideSetVector;
 
 }
 }

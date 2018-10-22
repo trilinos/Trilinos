@@ -87,30 +87,17 @@ Convection(
 template<typename EvalT, typename Traits>
 void
 Convection<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(conv,fm);
-  this->utils.setFieldData(a,fm);
-  this->utils.setFieldData(grad_x,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-Convection<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
   typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
   
   for (panzer::index_t cell = 0; cell < workset.num_cells; ++cell) {    
-    for (size_type point = 0; point < conv.dimension(1); ++point) {
+    for (size_type point = 0; point < conv.extent(1); ++point) {
       
       conv(cell,point) = 0.0;
 	
-      for (size_type dim = 0; dim < a.dimension(2); ++dim)
+      for (size_type dim = 0; dim < a.extent(2); ++dim)
 	conv(cell,point) += a(cell,point,dim) * grad_x(cell,point,dim);
       
       conv(cell,point) *= multiplier;

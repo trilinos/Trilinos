@@ -31,22 +31,22 @@ namespace Tempus {
  * PID = Proportional-Integral-Derivative Controller
  * \f[
  *      (\Delta t)_{n+1} =
- *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \epsilon_{n-1}^{k_2 / p} \epsilon_{n-2}^{-k_3 / p} \right)
+ *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p} \epsilon_{n-1}^{k_2 / p} \epsilon_{n-2}^{-k_3 / p} \right)
  * \f]
  *
  * PI = Proportional-Integral Controller
  * \f[
  *      (\Delta t)_{n+1} =
- *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \epsilon_{n-1}^{k_2 / p} \right)
+ *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p} \epsilon_{n-1}^{k_2 / p} \right)
  * \f]
  *
  * I = Integral Controller
  * \f[
  *      (\Delta t)_{n+1} =
- *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p) \right)
+ *      (\Delta t)_n \left( \epsilon_n ^{-k_1 / p} \right)
  * \f]
  *
- * where \f$\epsilon_n \f$ is the error at time step \f$n$\f
+ * where \f$\epsilon_n \f$ is the error at time step \f$n\f$.
  *
  * Appropriate for Explicit Methods
  */
@@ -84,7 +84,6 @@ public:
      // assumes the embedded solution is the low order solution
      int order = metaData->getOrder() - 1;
      Scalar dt = metaData->getDt();
-     Teuchos::RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
      //bool printChanges = solutionHistory->getVerbLevel() !=
         //Teuchos::as<int>(Teuchos::VERB_NONE);
 
@@ -128,7 +127,8 @@ public:
      // new (optimal) suggested time step
      dt = beta * dt;
 
-     if (stepperState->stepperStatus_ == Status::PASSED) {
+     if (workingState->getSolutionStatus() == Status::PASSED or
+         workingState->getSolutionStatus() == Status::WORKING) {
         if(lastStepRejected_){
            dt = std::min(dt, metaData->getDt());
         } else {

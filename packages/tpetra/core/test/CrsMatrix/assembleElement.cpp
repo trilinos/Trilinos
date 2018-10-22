@@ -41,7 +41,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -105,8 +105,8 @@ namespace TpetraTest {
 
     if (i == 0) {
       const ordinal_type retval =
-        crsMatrixAssembleElement_sortedLinear (A_, x_, lids_.ptr_on_device (),
-                                               sortPerm_.ptr_on_device (),
+        crsMatrixAssembleElement_sortedLinear (A_, x_, lids_.data (),
+                                               sortPerm_.data (),
                                                rhs_, lhs_, forceAtomic_,
                                                checkInputIndices_);
       result_() = retval;
@@ -154,11 +154,11 @@ namespace { // (anonymous)
                                             const typename RhsViewType::const_type& expectedVectorValues,
                                             const typename SparseMatrixType::values_type::const_type& expectedMatrixValues,
                                             const bool forceAtomic =
-#ifdef KOKKOS_HAVE_SERIAL
+#ifdef KOKKOS_ENABLE_SERIAL
                                             ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::value,
-#else // NOT KOKKOS_HAVE_SERIAL
+#else // NOT KOKKOS_ENABLE_SERIAL
                                             false,
-#endif // KOKKOS_HAVE_SERIAL
+#endif // KOKKOS_ENABLE_SERIAL
                                             const bool checkInputIndices = true)
   {
     static_assert (Kokkos::Impl::is_view<VectorViewType>::value,
@@ -181,15 +181,15 @@ namespace { // (anonymous)
     typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION
-      (expectedVectorValues.dimension_0 () != x.dimension_0 (),
+      (expectedVectorValues.extent (0) != x.extent (0),
        std::invalid_argument,
-       "expectedVectorValues.dimension_0() = " << expectedVectorValues.dimension_0 ()
-       << " != x.dimension_0() = " << x.dimension_0 () << ".");
+       "expectedVectorValues.extent(0) = " << expectedVectorValues.extent (0)
+       << " != x.extent(0) = " << x.extent (0) << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (expectedMatrixValues.dimension_0 () != A.values.dimension_0 (),
+      (expectedMatrixValues.extent (0) != A.values.extent (0),
        std::invalid_argument,
-       "expectedMatrixValues.dimension_0() = " << expectedMatrixValues.dimension_0 ()
-       << " != A.values.dimension_0() = " << A.values.dimension_0 () << ".");
+       "expectedMatrixValues.extent(0) = " << expectedMatrixValues.extent (0)
+       << " != A.values.extent(0) = " << A.values.extent (0) << ".");
 
     functor_type functor (A, x, lids, sortPerm, rhs, lhs, forceAtomic, checkInputIndices);
     // It's a "parallel" loop with one loop iteration.  The point is
@@ -216,10 +216,10 @@ namespace { // (anonymous)
     Teuchos::OSTab tab1 (out);
 
     out << "Create Map just to initialize Kokkos correctly" << endl;
-    auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    auto comm = Tpetra::getDefaultComm ();
     map_type mapToInitKokkos (Tpetra::global_size_t (100), 0, comm);
 
-    const bool execSpaceInitd = DT::execution_space::is_initialized ();
+    const bool execSpaceInitd = Kokkos::is_initialized ();
     TEST_ASSERT( execSpaceInitd );
     if (! execSpaceInitd) {
       out << "Tpetra::Map failed to initialize Kokkos execution space \""
@@ -255,15 +255,15 @@ namespace { // (anonymous)
           }
         }
         out << "Element matrix (lhs): [";
-        for (LO i = 0; i < static_cast<LO> (lhs_h.dimension_0 ()); ++i) {
-          for (LO j = 0; j < static_cast<LO> (lhs_h.dimension_1 ()); ++j) {
+        for (LO i = 0; i < static_cast<LO> (lhs_h.extent (0)); ++i) {
+          for (LO j = 0; j < static_cast<LO> (lhs_h.extent (1)); ++j) {
             constexpr int width = Kokkos::ArithTraits<SC>::is_complex ? 7 : 3;
             out << std::setw (width) << lhs_h(i,j);
-            if (j + LO (1) < static_cast<LO> (lhs_h.dimension_1 ())) {
+            if (j + LO (1) < static_cast<LO> (lhs_h.extent (1))) {
               out << " ";
             }
           }
-          if (i + LO (1) < static_cast<LO> (lhs_h.dimension_0 ())) {
+          if (i + LO (1) < static_cast<LO> (lhs_h.extent (0))) {
             out << endl;
           }
         }
@@ -277,7 +277,7 @@ namespace { // (anonymous)
       {
         auto rhs_h = Kokkos::create_mirror_view (rhs_d);
         SC curVal = ONE;
-        for (LO i = 0; i < static_cast<LO> (rhs_h.dimension_0 ()); ++i) {
+        for (LO i = 0; i < static_cast<LO> (rhs_h.extent (0)); ++i) {
           rhs_h(i) = -curVal;
           curVal = curVal + ONE;
         }
@@ -459,9 +459,9 @@ namespace { // (anonymous)
         auto ptr = Kokkos::create_mirror_view (A.graph.row_map);
         Kokkos::deep_copy (ptr, A.graph.row_map);
         out << "ptr: [";
-        for (LO k = 0; k < static_cast<LO> (ptr.dimension_0 ()); ++k) {
+        for (LO k = 0; k < static_cast<LO> (ptr.extent (0)); ++k) {
           out << ptr(k);
-          if (k + LO (1) < static_cast<LO> (ptr.dimension_0 ())) {
+          if (k + LO (1) < static_cast<LO> (ptr.extent (0))) {
             out << ",";
           }
         }
@@ -469,9 +469,9 @@ namespace { // (anonymous)
         auto ind = Kokkos::create_mirror_view (A.graph.entries);
         Kokkos::deep_copy (ind, A.graph.entries);
         out << "ind: [";
-        for (offset_type k = 0; k < static_cast<offset_type> (ind.dimension_0 ()); ++k) {
+        for (offset_type k = 0; k < static_cast<offset_type> (ind.extent (0)); ++k) {
           out << ind(k);
-          if (k + offset_type (1) < static_cast<offset_type> (ind.dimension_0 ())) {
+          if (k + offset_type (1) < static_cast<offset_type> (ind.extent (0))) {
             out << ",";
           }
         }
@@ -479,9 +479,9 @@ namespace { // (anonymous)
         auto val = Kokkos::create_mirror_view (A.values);
         Kokkos::deep_copy (val, A.values);
         out << "val: [";
-        for (offset_type k = 0; k < static_cast<offset_type> (val.dimension_0 ()); ++k) {
+        for (offset_type k = 0; k < static_cast<offset_type> (val.extent (0)); ++k) {
           out << val(k);
-          if (k + offset_type (1) < static_cast<offset_type> (val.dimension_0 ())) {
+          if (k + offset_type (1) < static_cast<offset_type> (val.extent (0))) {
             out << ",";
           }
         }
@@ -521,10 +521,10 @@ namespace { // (anonymous)
         Kokkos::deep_copy (A_val_h, A.values);
         auto val_h = Kokkos::create_mirror_view (expectedMatrixValues);
         Kokkos::deep_copy (val_h, expectedMatrixValues);
-        TEST_EQUALITY( A_val_h.dimension_0 (), val_h.dimension_0 () );
-        if (A_val_h.dimension_0 () == val_h.dimension_0 ()) {
+        TEST_EQUALITY( A_val_h.extent (0), val_h.extent (0) );
+        if (A_val_h.extent (0) == val_h.extent (0)) {
           bool same = true;
-          const offset_type len = A_val_h.dimension_0 ();
+          const offset_type len = A_val_h.extent (0);
           for (offset_type k = 0; k < len; ++k) {
             if (A_val_h(k) != val_h(k)) {
               same = false;
@@ -557,10 +557,10 @@ namespace { // (anonymous)
         Kokkos::deep_copy (b_h, b);
         auto b_exp_h = Kokkos::create_mirror_view (expectedVectorValues);
         Kokkos::deep_copy (b_exp_h, expectedVectorValues);
-        TEST_EQUALITY( b_h.dimension_0 (), b_exp_h.dimension_0 () );
-        if (b_h.dimension_0 (), b_exp_h.dimension_0 ()) {
+        TEST_EQUALITY( b_h.extent (0), b_exp_h.extent (0) );
+        if (b_h.extent (0), b_exp_h.extent (0)) {
           bool same = true;
-          const offset_type len = b_h.dimension_0 ();
+          const offset_type len = b_h.extent (0);
           for (offset_type k = 0; k < len; ++k) {
             if (b_h(k) != b_exp_h(k)) {
               same = false;
@@ -571,20 +571,20 @@ namespace { // (anonymous)
         }
         out << "Actual output b  : [";
         for (offset_type k = 0;
-             k < static_cast<offset_type> (b_h.dimension_0 ()); ++k) {
+             k < static_cast<offset_type> (b_h.extent (0)); ++k) {
           out << b_h(k);
           if (k + offset_type (1) <
-              static_cast<offset_type> (b_h.dimension_0 ())) {
+              static_cast<offset_type> (b_h.extent (0))) {
             out << ",";
           }
         }
         out << "]" << endl;
         out << "Expected output b: [";
         for (offset_type k = 0;
-             k < static_cast<offset_type> (b_exp_h.dimension_0 ()); ++k) {
+             k < static_cast<offset_type> (b_exp_h.extent (0)); ++k) {
           out << b_exp_h(k);
           if (k + offset_type (1) <
-              static_cast<offset_type> (b_exp_h.dimension_0 ())) {
+              static_cast<offset_type> (b_exp_h.extent (0))) {
             out << ",";
           }
         }

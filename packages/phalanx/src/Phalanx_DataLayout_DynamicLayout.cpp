@@ -138,7 +138,7 @@ void PHX::Layout::names(std::vector<std::string>& names) const
 }
 
 //**********************************************************************
-void PHX::Layout::print(std::ostream& os, int offset) const
+void PHX::Layout::print(std::ostream& os, int /* offset */) const
 {
   os << m_identifier << "(";
   for (size_t i=0; i < m_extents.size(); ++i) {

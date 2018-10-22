@@ -106,7 +106,7 @@ public:
   }
   
   ROL::Ptr<V> basis(const int i) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( i >= 1 || i < 0,
+    ROL_TEST_FOR_EXCEPTION( i >= 1 || i < 0,
                                 std::invalid_argument,
                                 "Error: Basis index must be between 0 and vector dimension." );
     return ROL::makePtr<SingletonVector>(1);
@@ -126,8 +126,15 @@ public:
     return value_;
   }
 
-  void setScalar( const Real &C ) {
+  void setScalar( const Real C ) {
     value_ = C;
+  }
+
+  void randomize( const Real l=0.0, const Real u=1.0 ) {
+    Real a = (u-l);
+    Real b = l;
+    Real x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
+    value_ = a*x + b;
   }
 
   void print( std::ostream& os ) const {

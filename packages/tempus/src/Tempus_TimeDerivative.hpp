@@ -24,7 +24,7 @@ namespace Tempus {
  *  requires definition of the time derivatives during the iterations of
  *  the nonlinear solve. Note that if the Stepper solves for a time
  *  derivative, e.g., \f$\ddot{x}\f$ for the Newmark-\f$\beta\f$ methods,
- *  definitions for \f$x\f$ and \f$\dot{x} are required in the function
+ *  definitions for \f$x\f$ and \f$\dot{x}\f$ are required in the function
  *  compute().  This interface defines the calling function to compute
  *  those derivatives and/or state.
  */

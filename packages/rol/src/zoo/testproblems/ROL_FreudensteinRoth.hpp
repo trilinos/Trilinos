@@ -168,13 +168,25 @@ public:
     return makePtr<StdVector<Real>>(x0p);
   }
 
-  Ptr<Vector<Real>> getSolution(void) const {
+  Ptr<Vector<Real>> getSolution(const int i = 0) const {
     // Problem dimension
     int n = 2;
     // Get Solution
     Ptr<std::vector<Real> > xp = makePtr<std::vector<Real>>(n,0.0);
-    (*xp)[0] = 5.0; (*xp)[1] = 4.0;
+    if (i == 0) {
+      (*xp)[0] = 5.0; (*xp)[1] = 4.0;
+    }
+    else if (i == 1) {
+      (*xp)[0] = 11.412779; (*xp)[1] = -0.896805;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::FreudensteinRoth : The index i must be between 0 and 1!");
+    }
     return makePtr<StdVector<Real>>(xp);
+  }
+
+  int getNumSolutions(void) const {
+    return 2;
   }
 };
 

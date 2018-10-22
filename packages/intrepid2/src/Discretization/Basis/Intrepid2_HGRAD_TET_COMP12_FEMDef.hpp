@@ -175,7 +175,7 @@ namespace Intrepid2 {
 
         // initialize output 
         for (auto i=0;i<10;++i) 
-          output(i) = 0.0;
+          output.access(i) = 0.0;
         
         const auto subtet = getLocalSubTet( r, s, t );
         
@@ -186,80 +186,80 @@ namespace Intrepid2 {
           typename inputPointViewType::value_type aux = 0.0;
           switch (subtet) {
           case 0:
-            output(0) = 1. - 2. * (r + s + t);
-            output(4) = 2. * r;
-            output(6) = 2. * s;
-            output(7) = 2. * t;
+            output.access(0) = 1. - 2. * (r + s + t);
+            output.access(4) = 2. * r;
+            output.access(6) = 2. * s;
+            output.access(7) = 2. * t;
             break;
           case 1:
-            output(1) = 2. * r - 1.;
-            output(4) = 2. - 2. * (r + s + t);
-            output(5) = 2. * s;
-            output(8) = 2. * t;
+            output.access(1) = 2. * r - 1.;
+            output.access(4) = 2. - 2. * (r + s + t);
+            output.access(5) = 2. * s;
+            output.access(8) = 2. * t;
             break;
           case 2:
-            output(2) = 2. * s - 1.;
-            output(5) = 2. * r;
-            output(6) = 2. - 2. * (r + s + t);
-            output(9) = 2. * t;
+            output.access(2) = 2. * s - 1.;
+            output.access(5) = 2. * r;
+            output.access(6) = 2. - 2. * (r + s + t);
+            output.access(9) = 2. * t;
             break;
           case 3:
-            output(3) = 2. * t - 1.;
-            output(7) = 2. - 2. * (r + s + t);
-            output(8) = 2. * r;
-            output(9) = 2. * s;
+            output.access(3) = 2. * t - 1.;
+            output.access(7) = 2. - 2. * (r + s + t);
+            output.access(8) = 2. * r;
+            output.access(9) = 2. * s;
             break;
           case 4:
-            output(4) = 1. - 2. * (s + t);
-            output(5) = 2. * (r + s) - 1.;
-            output(8) = 2. * (r + t) - 1.;
+            output.access(4) = 1. - 2. * (s + t);
+            output.access(5) = 2. * (r + s) - 1.;
+            output.access(8) = 2. * (r + t) - 1.;
             aux = 2. - 4. * r;
             break;
           case 5:
-            output(5) = 2. * (r + s) - 1.;
-            output(8) = 2. * (r + t) - 1.;
-            output(9) = 2. * (s + t) - 1.;
+            output.access(5) = 2. * (r + s) - 1.;
+            output.access(8) = 2. * (r + t) - 1.;
+            output.access(9) = 2. * (s + t) - 1.;
             aux = 4. - 4. * (r + s + t);
             break;
           case 6:
-            output(7) = 1. - 2. * (r + s);
-            output(8) = 2. * (r + t) - 1.;
-            output(9) = 2. * (s + t) - 1.;
+            output.access(7) = 1. - 2. * (r + s);
+            output.access(8) = 2. * (r + t) - 1.;
+            output.access(9) = 2. * (s + t) - 1.;
             aux = 2. - 4. * t;
             break;
           case 7:
-            output(4) = 1. - 2. * (s + t);
-            output(7) = 1. - 2. * (r + s);
-            output(8) = 2. * (r + t) - 1.;
+            output.access(4) = 1. - 2. * (s + t);
+            output.access(7) = 1. - 2. * (r + s);
+            output.access(8) = 2. * (r + t) - 1.;
             aux = 4. * s;
             break;
           case 8:
-            output(4) = 1. - 2. * (s + t);
-            output(5) = 2. * (r + s) - 1.;
-            output(6) = 1. - 2. * (r + t);
+            output.access(4) = 1. - 2. * (s + t);
+            output.access(5) = 2. * (r + s) - 1.;
+            output.access(6) = 1. - 2. * (r + t);
             aux = 4. * t;
             break;
           case 9:
-            output(5) = 2. * (r + s) - 1.;
-            output(6) = 1. - 2. * (r + t);
-            output(9) = 2. * (s + t) - 1.;
+            output.access(5) = 2. * (r + s) - 1.;
+            output.access(6) = 1. - 2. * (r + t);
+            output.access(9) = 2. * (s + t) - 1.;
             aux = 2. - 4. * s;
             break;
           case 10:
-            output(6) = 1. - 2. * (r + t);
-            output(7) = 1. - 2. * (r + s);
-            output(9) = 2. * (s + t) - 1.;
+            output.access(6) = 1. - 2. * (r + t);
+            output.access(7) = 1. - 2. * (r + s);
+            output.access(9) = 2. * (s + t) - 1.;
             aux = 4. * r;
             break;
           case 11:
-            output(4) = 1. - 2. * (s + t);
-            output(6) = 1. - 2. * (r + t);
-            output(7) = 1. - 2. * (r + s);
+            output.access(4) = 1. - 2. * (s + t);
+            output.access(6) = 1. - 2. * (r + t);
+            output.access(7) = 1. - 2. * (r + s);
             aux = 4. * (r + s + t) - 2.;
             break;
           }
           for (auto i=4;i<10;++i)
-            output(i) += aux/6.0;
+            output.access(i) += aux/6.0;
         }
         break;
       }
@@ -268,45 +268,45 @@ namespace Intrepid2 {
         const typename inputPointViewType::value_type s = input(1);
         const typename inputPointViewType::value_type t = input(2);
         
-        output(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
-        output(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
-        output(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
-        output(1,0) = -0.375 + (5*r)/2.;
-        output(1,1) = 0.;
-        output(1,2) = 0.;
-        output(2,0) = 0.;
-        output(2,1) = -0.375 + (5*s)/2.;
-        output(2,2) = 0.;
-        output(3,0) = 0.;
-        output(3,1) = 0.;
-        output(3,2) = -0.375 + (5*t)/2.;
-        output(4,0) = (-35*(-1 + 2*r + s + t))/12.;
-        output(4,1) = (-4 - 35*r + 5*s + 10*t)/12.;
-        output(4,2) = (-4 - 35*r + 10*s + 5*t)/12.;
-        output(5,0) = (-1 + 5*r + 40*s - 5*t)/12.;
-        output(5,1) = (-1 + 40*r + 5*s - 5*t)/12.;
-        output(5,2) = (-5*(-1 + r + s + 2*t))/12.;
-        output(6,0) = (-4 + 5*r - 35*s + 10*t)/12.;
-        output(6,1) = (-35*(-1 + r + 2*s + t))/12.;
-        output(6,2) = (-4 + 10*r - 35*s + 5*t)/12.;
-        output(7,0) = (-4 + 5*r + 10*s - 35*t)/12.;
-        output(7,1) = (-4 + 10*r + 5*s - 35*t)/12.;
-        output(7,2) = (-35*(-1 + r + s + 2*t))/12.;
-        output(8,0) = (-1 + 5*r - 5*s + 40*t)/12.;
-        output(8,1) = (-5*(-1 + r + 2*s + t))/12.;
-        output(8,2) = (-1 + 40*r - 5*s + 5*t)/12.;
-        output(9,0) = (-5*(-1 + 2*r + s + t))/12.;
-        output(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
-        output(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
+        output.access(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
+        output.access(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
+        output.access(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
+        output.access(1,0) = -0.375 + (5*r)/2.;
+        output.access(1,1) = 0.;
+        output.access(1,2) = 0.;
+        output.access(2,0) = 0.;
+        output.access(2,1) = -0.375 + (5*s)/2.;
+        output.access(2,2) = 0.;
+        output.access(3,0) = 0.;
+        output.access(3,1) = 0.;
+        output.access(3,2) = -0.375 + (5*t)/2.;
+        output.access(4,0) = (-35*(-1 + 2*r + s + t))/12.;
+        output.access(4,1) = (-4 - 35*r + 5*s + 10*t)/12.;
+        output.access(4,2) = (-4 - 35*r + 10*s + 5*t)/12.;
+        output.access(5,0) = (-1 + 5*r + 40*s - 5*t)/12.;
+        output.access(5,1) = (-1 + 40*r + 5*s - 5*t)/12.;
+        output.access(5,2) = (-5*(-1 + r + s + 2*t))/12.;
+        output.access(6,0) = (-4 + 5*r - 35*s + 10*t)/12.;
+        output.access(6,1) = (-35*(-1 + r + 2*s + t))/12.;
+        output.access(6,2) = (-4 + 10*r - 35*s + 5*t)/12.;
+        output.access(7,0) = (-4 + 5*r + 10*s - 35*t)/12.;
+        output.access(7,1) = (-4 + 10*r + 5*s - 35*t)/12.;
+        output.access(7,2) = (-35*(-1 + r + s + 2*t))/12.;
+        output.access(8,0) = (-1 + 5*r - 5*s + 40*t)/12.;
+        output.access(8,1) = (-5*(-1 + r + 2*s + t))/12.;
+        output.access(8,2) = (-1 + 40*r - 5*s + 5*t)/12.;
+        output.access(9,0) = (-5*(-1 + 2*r + s + t))/12.;
+        output.access(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
+        output.access(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
         break;
       }
       case OPERATOR_MAX: {
-        const ordinal_type jend = output.dimension(1);
-        const ordinal_type iend = output.dimension(0);
+        const ordinal_type jend = output.extent(1);
+        const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (auto i=0;i<iend;++i)
-            output(i, j) = 0.0;
+            output.access(i, j) = 0.0;
         break;
       }
       default: {
@@ -329,7 +329,7 @@ namespace Intrepid2 {
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSize = inputPoints.extent(0);
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
       switch (operatorType) {

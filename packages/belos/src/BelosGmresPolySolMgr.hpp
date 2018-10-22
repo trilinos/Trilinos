@@ -190,6 +190,11 @@ public:
 
   //! Destructor.
   virtual ~GmresPolySolMgr() {};
+
+  //! clone for Inverted Injection (DII)
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
+    return Teuchos::rcp(new GmresPolySolMgr<ScalarType,MV,OP>);
+  }
   //@}
 
   //! @name Accessor methods
@@ -197,17 +202,17 @@ public:
 
   /*! \brief Get current linear problem being solved for in this object.
    */
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+  const LinearProblem<ScalarType,MV,OP>& getProblem() const override {
     return *problem_;
   }
 
   /*! \brief Get a parameter list containing the valid parameters for this object.
    */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   /*! \brief Get a parameter list containing the current parameters for this object.
    */
-  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
 
   /*! \brief Return the timers for this object.
    *
@@ -219,14 +224,14 @@ public:
   }
 
   //! Get the iteration count for the most recent call to \c solve().
-  int getNumIters() const {
+  int getNumIters() const override {
     return numIters_;
   }
 
   /*! \brief Return whether a loss of accuracy was detected by this solver during the most current solve.
       \note This flag will be reset the next time solve() is called.
    */
-  bool isLOADetected() const { return loaDetected_; }
+  bool isLOADetected() const override { return loaDetected_; }
 
   //@}
 
@@ -234,10 +239,10 @@ public:
   //@{
 
   //! Set the linear problem that needs to be solved.
-  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; isSTSet_ = false; }
+  void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) override { problem_ = problem; isSTSet_ = false; }
 
   //! Set the parameters the solver manager should use to solve the linear problem.
-  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
   //@}
   //! @name Reset methods
@@ -251,7 +256,7 @@ public:
   /// This clears out the stored coefficients, so that the next call
   /// to solve() actually computes a full block GMRES solve, instead
   /// of just reusing the coefficients from the first solve.
-  void reset( const ResetType type ) {
+  void reset( const ResetType type ) override {
     if ((type & Belos::Problem) && ! problem_.is_null ()) {
       problem_->setProblem ();
       isPolyBuilt_ = false;  // Rebuild the GMRES polynomial
@@ -279,7 +284,7 @@ public:
    *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
    *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
    */
-  ReturnType solve();
+  ReturnType solve() override;
 
   //@}
 
@@ -287,7 +292,7 @@ public:
   //@{
 
   /** \brief Method to return description of the hybrid block GMRES solver manager */
-  std::string description() const;
+  std::string description() const override;
 
   //@}
 
@@ -320,24 +325,21 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> params_;
 
   // Default solver values.
-  static const MagnitudeType polytol_default_;
-  static const MagnitudeType convtol_default_;
-  static const MagnitudeType orthoKappa_default_;
-  static const int maxDegree_default_;
-  static const int maxRestarts_default_;
-  static const int maxIters_default_;
-  static const bool strictConvTol_default_;
-  static const bool showMaxResNormOnly_default_;
-  static const int blockSize_default_;
-  static const int numBlocks_default_;
-  static const int verbosity_default_;
-  static const int outputStyle_default_;
-  static const int outputFreq_default_;
-  static const std::string impResScale_default_;
-  static const std::string expResScale_default_;
-  static const std::string label_default_;
-  static const std::string orthoType_default_;
-  static const Teuchos::RCP<std::ostream> outputStream_default_;
+  static constexpr int maxDegree_default_ = 25;
+  static constexpr int maxRestarts_default_ = 20;
+  static constexpr int maxIters_default_ = 1000;
+  static constexpr bool strictConvTol_default_ = false;
+  static constexpr bool showMaxResNormOnly_default_ = false;
+  static constexpr int blockSize_default_ = 1;
+  static constexpr int numBlocks_default_ = 300;
+  static constexpr int verbosity_default_ = Belos::Errors;
+  static constexpr int outputStyle_default_ = Belos::General;
+  static constexpr int outputFreq_default_ = -1;
+  static constexpr const char * impResScale_default_ = "Norm of RHS";
+  static constexpr const char * expResScale_default_ = "Norm of RHS";
+  static constexpr const char * label_default_ = "Belos";
+  static constexpr const char * orthoType_default_ = "DGKS";
+  static constexpr std::ostream * outputStream_default_ = &std::cout;
 
   // Current solver values.
   MagnitudeType polytol_, convtol_, orthoKappa_;
@@ -367,73 +369,12 @@ private:
 };
 
 
-// Default solver values.
-template<class ScalarType, class MV, class OP>
-const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType
-GmresPolySolMgr<ScalarType,MV,OP>::polytol_default_ = 1e-12;
-
-template<class ScalarType, class MV, class OP>
-const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType
-GmresPolySolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
-
-template<class ScalarType, class MV, class OP>
-const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType
-GmresPolySolMgr<ScalarType,MV,OP>::orthoKappa_default_ =
-  -Teuchos::ScalarTraits<MagnitudeType>::one();
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::maxDegree_default_ = 25;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const bool GmresPolySolMgr<ScalarType,MV,OP>::strictConvTol_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const bool GmresPolySolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
-
-template<class ScalarType, class MV, class OP>
-const int GmresPolySolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
-
-template<class ScalarType, class MV, class OP>
-const std::string GmresPolySolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of RHS";
-
-template<class ScalarType, class MV, class OP>
-const std::string GmresPolySolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of RHS";
-
-template<class ScalarType, class MV, class OP>
-const std::string GmresPolySolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
-
-template<class ScalarType, class MV, class OP>
-const std::string GmresPolySolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
-
-template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream>
-GmresPolySolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcpFromRef (std::cout);
-
-
 template<class ScalarType, class MV, class OP>
 GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   outputStream_ (outputStream_default_),
-  polytol_ (polytol_default_),
-  convtol_ (convtol_default_),
-  orthoKappa_ (orthoKappa_default_),
+  polytol_ (DefaultSolverParameters::polyTol),
+  convtol_ (DefaultSolverParameters::convTol),
+  orthoKappa_ (DefaultSolverParameters::orthoKappa),
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
@@ -464,9 +405,9 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                  const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_ (problem),
   outputStream_ (outputStream_default_),
-  polytol_ (polytol_default_),
-  convtol_ (convtol_default_),
-  orthoKappa_ (orthoKappa_default_),
+  polytol_ (DefaultSolverParameters::polyTol),
+  convtol_ (DefaultSolverParameters::convTol),
+  orthoKappa_ (DefaultSolverParameters::orthoKappa),
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
@@ -509,52 +450,55 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
   if (validPL_.is_null ()) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList ();
-    pl->set("Polynomial Tolerance", polytol_default_,
+
+    // The static_cast is to resolve an issue with older clang versions which
+    // would cause the constexpr to link fail. With c++17 the problem is resolved.
+    pl->set("Polynomial Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::polyTol),
       "The relative residual tolerance that used to construct the GMRES polynomial.");
-    pl->set("Maximum Degree", maxDegree_default_,
+    pl->set("Maximum Degree", static_cast<int>(maxDegree_default_),
       "The maximum degree allowed for any GMRES polynomial.");
-    pl->set("Convergence Tolerance", convtol_default_,
+    pl->set("Convergence Tolerance", static_cast<MagnitudeType>(DefaultSolverParameters::convTol),
       "The relative residual tolerance that needs to be achieved by the\n"
       "iterative solver in order for the linear system to be declared converged." );
-    pl->set("Maximum Restarts", maxRestarts_default_,
+    pl->set("Maximum Restarts", static_cast<int>(maxRestarts_default_),
       "The maximum number of restarts allowed for each\n"
       "set of RHS solved.");
-    pl->set("Maximum Iterations", maxIters_default_,
+    pl->set("Maximum Iterations", static_cast<int>(maxIters_default_),
       "The maximum number of block iterations allowed for each\n"
       "set of RHS solved.");
-    pl->set("Num Blocks", numBlocks_default_,
+    pl->set("Num Blocks", static_cast<int>(numBlocks_default_),
       "The maximum number of blocks allowed in the Krylov subspace\n"
       "for each set of RHS solved.");
-    pl->set("Block Size", blockSize_default_,
+    pl->set("Block Size", static_cast<int>(blockSize_default_),
       "The number of vectors in each block.  This number times the\n"
       "number of blocks is the total Krylov subspace dimension.");
-    pl->set("Verbosity", verbosity_default_,
+    pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Style", outputStyle_default_,
+    pl->set("Output Style", static_cast<int>(outputStyle_default_),
       "What style is used for the solver information outputted\n"
       "to the output stream.");
-    pl->set("Output Frequency", outputFreq_default_,
+    pl->set("Output Frequency", static_cast<int>(outputFreq_default_),
       "How often convergence information should be outputted\n"
       "to the output stream.");
-    pl->set("Output Stream", outputStream_default_,
+    pl->set("Output Stream", Teuchos::rcp(outputStream_default_,false),
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
-    pl->set("Strict Convergence", strictConvTol_default_,
+    pl->set("Strict Convergence", static_cast<bool>(strictConvTol_default_),
       "After polynomial is applied, whether solver should try to achieve\n"
       "the relative residual tolerance.");
-    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
+    pl->set("Show Maximum Residual Norm Only", static_cast<bool>(showMaxResNormOnly_default_),
       "When convergence information is printed, only show the maximum\n"
       "relative residual norm when the block size is greater than one.");
-    pl->set("Implicit Residual Scaling", impResScale_default_,
+    pl->set("Implicit Residual Scaling", static_cast<const char *>(impResScale_default_),
       "The type of scaling used in the implicit residual convergence test.");
-    pl->set("Explicit Residual Scaling", expResScale_default_,
+    pl->set("Explicit Residual Scaling", static_cast<const char *>(expResScale_default_),
       "The type of scaling used in the explicit residual convergence test.");
-    pl->set("Timer Label", label_default_,
+    pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
-    pl->set("Orthogonalization", orthoType_default_,
+    pl->set("Orthogonalization", static_cast<const char *>(orthoType_default_),
       "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
-    pl->set("Orthogonalization Constant",orthoKappa_default_,
+    pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
     validPL_ = pl;
@@ -673,7 +617,14 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check which orthogonalization constant to use.
   if (params->isParameter("Orthogonalization Constant")) {
-    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
 
     // Update parameter in our list.
     params_->set("Orthogonalization Constant",orthoKappa_);
@@ -746,7 +697,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for polynomial convergence tolerance
   if (params->isParameter("Polynomial Tolerance")) {
-    polytol_ = params->get("Polynomial Tolerance",polytol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      polytol_ = params->get ("Polynomial Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      polytol_ = params->get ("Polynomial Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Polynomial Tolerance", polytol_);
@@ -754,7 +711,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+    if (params->isType<MagnitudeType> ("Convergence Tolerance")) {
+      convtol_ = params->get ("Convergence Tolerance",
+                              static_cast<MagnitudeType> (DefaultSolverParameters::convTol));
+    }
+    else {
+      convtol_ = params->get ("Convergence Tolerance", DefaultSolverParameters::convTol);
+    }
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);

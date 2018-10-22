@@ -39,7 +39,7 @@
 // ***********************************************************************
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 
@@ -90,8 +90,7 @@ namespace {
     out << "Test SetBlock with index vector: Y(:, [1,2]) := X(:, [0,1])"
         << endl;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     RCP<const Map<> > map (new Map<> (INV, numLclRows, indexBase, comm));
     const GST numGblRows = map->getGlobalNumElements ();
 
@@ -213,8 +212,7 @@ namespace {
     out << "Test SetBlock with Range1D: Y(:, [1,2]) := X(:, [0,1])"
         << endl;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     RCP<const Map<> > map (new Map<> (INV, numLclRows, indexBase, comm));
     const GST numGblRows = map->getGlobalNumElements ();
 
@@ -352,8 +350,7 @@ namespace {
     const size_t numCols = 3;
     const GO indexBase = 1; // just for a change
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     RCP<const Map<> > map (new Map<> (INV, numLclRows, indexBase, comm));
     const GST numGblRows = map->getGlobalNumElements ();
 
@@ -443,8 +440,7 @@ namespace {
 
     out << "Test SetBlock by imitating AnasaziMVOPTester.hpp" << endl;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     RCP<const Map<> > map (new Map<> (INV, numLclRows, indexBase, comm));
     const GST numGblRows = map->getGlobalNumElements ();
 

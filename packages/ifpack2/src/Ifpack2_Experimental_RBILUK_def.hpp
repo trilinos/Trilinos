@@ -613,7 +613,7 @@ void RBILUK<MatrixType>::compute ()
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), currentVal, dmatInverse,
                                     STS::zero (), matTmp);
 #endif
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (matTmp.ptr_on_device ()), blockSize_);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
 
@@ -638,7 +638,7 @@ void RBILUK<MatrixType>::compute ()
               Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*> (kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (multiplier.data ()), reinterpret_cast<impl_scalar_type*> (uumat.data ()), reinterpret_cast<impl_scalar_type*> (kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -659,7 +659,7 @@ void RBILUK<MatrixType>::compute ()
               Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), kkval);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(kkval.data ()), blockSize_, -STM::one(), STM::one());
             }
             else {
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
@@ -672,7 +672,7 @@ void RBILUK<MatrixType>::compute ()
               Tpetra::Experimental::GEMM ("N", "N", magnitude_type(-STM::one ()), multiplier, uumat,
                                           STM::one (), diagModBlock);
 #endif
-              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
+              //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.data ()), reinterpret_cast<impl_scalar_type*>(uumat.data ()), reinterpret_cast<impl_scalar_type*>(diagModBlock.data ()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -731,7 +731,7 @@ void RBILUK<MatrixType>::compute ()
         Tpetra::Experimental::GEMM ("N", "N", STS::one (), dmat, currentVal,
                                     STS::zero (), matTmp);
 #endif
-        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(currentVal.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(matTmp.ptr_on_device ()), blockSize_);
+        //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.data ()), reinterpret_cast<impl_scalar_type*>(currentVal.data ()), reinterpret_cast<impl_scalar_type*>(matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::Experimental::COPY (matTmp, currentVal);
       }

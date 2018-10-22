@@ -46,10 +46,10 @@
 
 #include "ROL_Types.hpp"
 #include "ROL_Step.hpp"
+#include "ROL_LAPACK.hpp"
+#include "ROL_LinearAlgebra.hpp"
 #include <sstream>
 #include <iomanip>
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 /** \class ROL::CompositeStep
     \brief Implements the computation of optimization steps
@@ -147,13 +147,13 @@ public:
 
   virtual ~CompositeStep() {}
 
-  CompositeStep( Teuchos::ParameterList & parlist ) : Step<Real>() {
+  CompositeStep( ROL::ParameterList & parlist ) : Step<Real>() {
     //ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     flagCG_ = 0;
     flagAC_ = 0;
     iterCG_ = 0;
 
-    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
+    ROL::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
 
     //maxiterOSS_  = steplist.sublist("Optimality System Solver").get("Iteration Limit", 50);
     tolOSS_      = steplist.sublist("Optimality System Solver").get("Nominal Relative Tolerance", 1e-8);
@@ -798,9 +798,9 @@ public:
 
       // Check nonorthogonality, one-norm of (WR*R/diag^2 - I)
       if (orthocheck) {
-        Teuchos::SerialDenseMatrix<int,Real> Wrr(iterCG_,iterCG_);  // holds matrix Wrs'*rs
-        Teuchos::SerialDenseMatrix<int,Real> T(iterCG_,iterCG_);    // holds matrix T=(1/diag)*Wrs'*rs*(1/diag)
-        Teuchos::SerialDenseMatrix<int,Real> Tm1(iterCG_,iterCG_);  // holds matrix Tm1=T-I
+        ROL::LA::Matrix<Real> Wrr(iterCG_,iterCG_);  // holds matrix Wrs'*rs
+        ROL::LA::Matrix<Real> T(iterCG_,iterCG_);    // holds matrix T=(1/diag)*Wrs'*rs*(1/diag)
+        ROL::LA::Matrix<Real> Tm1(iterCG_,iterCG_);  // holds matrix Tm1=T-I
         for (int i=0; i<iterCG_; i++) {
           for (int j=0; j<iterCG_; j++) {
             Wrr(i,j)  = (Wrs[i])->dot(*rs[j]);
@@ -812,7 +812,7 @@ public:
           }
         }
         if (Tm1.normOne() >= tol_ortho) {
-          Teuchos::LAPACK<int,Real> lapack;
+          ROL::LAPACK<int,Real> lapack;
           std::vector<int>          ipiv(iterCG_);
           int                       info;
           std::vector<Real>         work(3*iterCG_);

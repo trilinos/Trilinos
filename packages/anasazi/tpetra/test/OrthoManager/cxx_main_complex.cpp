@@ -59,12 +59,12 @@
 #include "AnasaziTpetraAdapter.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
 #include <Trilinos_Util_iohb.h>
+#include "MySDMHelpers.hpp"
 
 #include <complex>
 
@@ -105,13 +105,12 @@ int main(int argc, char *argv[])
 {
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
-  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
 
   int info = 0;
   int MyPID = 0;
 
-  RCP< const Teuchos::Comm<int> > comm = 
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP< const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   MyPID = rank(*comm);
 
@@ -287,8 +286,8 @@ int main(int argc, char *argv[])
       // it should require randomization, as 
       // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
@@ -315,12 +314,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
 
       MyOM->stream(Errors) << " normalize(): testing on rank-1 multivector " << endl;
@@ -345,8 +346,8 @@ int main(int argc, char *argv[])
       // and 
       // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
       SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-      C1.random();
-      C2.random();
+      Anasazi::randomSDM(C1);
+      Anasazi::randomSDM(C2);
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
@@ -373,12 +374,14 @@ int main(int argc, char *argv[])
       // rank-1
       RCP<MV> one = MVT::Clone(*S,1);
       MVT::MvRandom(*one);
+      SerialDenseMatrix<int,ST> scaleS(sizeS,1);
+      Anasazi::randomSDM(scaleS);
       // put multiple of column 0 in columns 0:sizeS-1
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
         RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-        MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+        MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
       }
 
       MyOM->stream(Errors) << " projectAndNormalize(): testing on rank-1 multivector " << endl;
@@ -505,9 +508,9 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
@@ -551,9 +554,9 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
-        B->random();
+        Anasazi::randomSDM(*B);
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
@@ -707,7 +710,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
       // copies of S,MS
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
-      B->random();
+      Anasazi::randomSDM(*B);
       // run test
       ret = OM->normalize(*Scopy,B);
       sout << "normalize() returned rank " << ret << endl;
@@ -867,7 +870,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
       for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+        Anasazi::randomSDM(*C[i]);
       }
       // run test
       OM->project(*Scopy,theX,C);
@@ -888,7 +891,7 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
         for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
+          Anasazi::randomSDM(*C[i]);
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );

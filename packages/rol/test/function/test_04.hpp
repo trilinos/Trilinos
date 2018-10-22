@@ -50,7 +50,6 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_TeuchosBatchManager.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 

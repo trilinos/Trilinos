@@ -48,11 +48,13 @@
 #define ROL_UNUSED(x) (void) x
 
 #include <ostream>
+#include <vector>
+#include <algorithm>
 
 #include "ROL_Elementwise_Function.hpp"
 
 #include "ROL_Ptr.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 /** @ingroup la_group
     \class ROL::Vector
@@ -227,20 +229,20 @@ public:
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     ROL_UNUSED(f);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
     ROL_UNUSED(f);
     ROL_UNUSED(x);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     ROL_UNUSED(r);
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+    ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }
 
@@ -262,6 +264,23 @@ public:
     this->applyUnary(Elementwise::Fill<Real>(C));
   }
 
+  /** \brief Set vector to be uniform random between [l,u].
+
+             @param[in]      l     is a the lower bound.
+             @param[in]      u     is a the upper bound.
+
+             On return the components of \f$\mathtt{*this}\f$ are uniform
+             random numbers on the interval \f$[l,u]\f$.
+       	     The default implementation uses #applyUnary methods for the
+       	     computation. Please overload if a more efficient implementation is
+             needed.
+
+             ---
+  */
+  virtual void randomize( const Real l = 0.0, const Real u = 1.0 ) {
+    Elementwise::UniformlyRandom<Real> ur(l,u);
+    this->applyUnary(ur);
+  }
 
   /** \brief Verify vector-space methods.
 
@@ -301,7 +320,7 @@ public:
     int width =  94;
     std::vector<Real> vCheck;
 
-    Teuchos::oblackholestream bhs; // outputs nothing
+    ROL::nullstream bhs; // outputs nothing
 
     ROL::Ptr<std::ostream> pStream;
     if (printToStream) {
@@ -311,7 +330,7 @@ public:
     }
 
     // Save the format state of the original pStream.
-    Teuchos::oblackholestream oldFormatState, headerFormatState;
+    ROL::nullstream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
     ROL::Ptr<Vector> v    = this->clone();
@@ -319,7 +338,6 @@ public:
     ROL::Ptr<Vector> xtmp = x.clone();
     ROL::Ptr<Vector> ytmp = y.clone();
 
-    //*pStream << "\n************ Begin verification of linear algebra.\n\n";
     *pStream << "\n" << std::setw(width) << std::left << std::setfill('*') << "********** Begin verification of linear algebra. " << "\n\n";
     headerFormatState.copyfmt(*pStream);
 
@@ -370,7 +388,7 @@ public:
 
     // Additivity of dot (inner) product.
     xtmp->set(x);
-    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max(std::abs(this->dot(*xtmp)), std::max(std::abs(this->dot(x)), std::abs(this->dot(y)))));
+    xtmp->plus(y); vCheck.push_back(std::abs(this->dot(*xtmp) - this->dot(x) - this->dot(y))/std::max({static_cast<Real>(std::abs(this->dot(*xtmp))), static_cast<Real>(std::abs(this->dot(x))), static_cast<Real>(std::abs(this->dot(y))), one}));
     *pStream << std::setw(width) << std::left << "Additivity of dot (inner) product. Consistency error: " << " " << vCheck.back() << "\n";
 
     // Consistency of scalar multiplication and norm.

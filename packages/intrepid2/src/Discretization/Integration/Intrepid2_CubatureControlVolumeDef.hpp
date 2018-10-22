@@ -101,24 +101,24 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cellCoords must have rank 3 of (C,P,D).");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0) != cellCoords.dimension(0) ||
-                                  cubPoints.dimension(0) != cubWeights.dimension(0), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(0) != cellCoords.extent(0) ||
+                                  cubPoints.extent(0) != cubWeights.extent(0), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(0) are not consistent, numCells");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(1) != cellCoords.dimension(1) ||
-                                  cubPoints.dimension(1) != cubWeights.dimension(1), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(1) != cellCoords.extent(1) ||
+                                  cubPoints.extent(1) != cubWeights.extent(1), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(1) are not consistent, numNodesPerCell");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
-                                  static_cast<ordinal_type>(cubPoints.dimension(2)) != getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.extent(2) != cellCoords.extent(2) ||
+                                  static_cast<ordinal_type>(cubPoints.extent(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
 
     // get array dimensions
-    const ordinal_type numCells = cellCoords.dimension(0);
-    const ordinal_type numNodesPerCell = cellCoords.dimension(1);
-    const ordinal_type spaceDim = cellCoords.dimension(2);
+    const ordinal_type numCells = cellCoords.extent(0);
+    const ordinal_type numNodesPerCell = cellCoords.extent(1);
+    const ordinal_type spaceDim = cellCoords.extent(2);
 
     const ordinal_type numNodesPerSubcv = subcvCellTopo_.getNodeCount();
     tempPointViewType subcvCoords("CubatureControlVolume::subcvCoords_",
@@ -127,7 +127,7 @@ namespace Intrepid2 {
                                    cellCoords,
                                    primaryCellTopo_);
 
-    const ordinal_type numSubcvPoints = subcvCubaturePoints_.dimension(0);
+    const ordinal_type numSubcvPoints = subcvCubaturePoints_.extent(0);
     tempPointViewType subcvJacobian("CubatureControlVolume::subcvJacobian_",
                                     numCells, numNodesPerCell, numSubcvPoints, spaceDim, spaceDim);
     

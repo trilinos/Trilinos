@@ -49,9 +49,9 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_ParameterList.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -75,13 +75,13 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int>> comm
-    = Teuchos::DefaultComm<int>::getComm();
+    = ROL::toPtr(Teuchos::DefaultComm<int>::getComm());
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   bool print = (iprint>0);
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (print)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE RISK-AVERSE OPTIMIZATION PROBLEM ***************/
     /*************************************************************************/
     RealT order = 2.0, threshold = -0.85*(1.0-x);
-    Teuchos::RCP<Teuchos::ParameterList> bpoelist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::Ptr<ROL::ParameterList> bpoelist = ROL::makePtr<ROL::ParameterList>();
     bpoelist->sublist("SOL").set("Store Sampled Value and Gradient",true);
     bpoelist->sublist("SOL").set("Stochastic Component Type","Probability");
     bpoelist->sublist("SOL").sublist("Probability").set("Name","bPOE");
@@ -195,9 +195,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
+    auto parlist = ROL::getParametersFromXmlFile( filename );
     // RUN OPTIMIZATION
     ROL::OptimizationSolver<RealT> solver(problem,*parlist);
     solver.solve(*outStream);

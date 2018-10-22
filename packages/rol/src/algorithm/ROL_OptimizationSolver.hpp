@@ -48,7 +48,7 @@
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_CombinedStatusTest.hpp"
 
-#include "Teuchos_oblackholestream.hpp"
+#include "ROL_Stream.hpp"
 
 /** \class ROL::OptimizationSolver
     \brief Provides a simplified interface for solving a wide range of
@@ -94,7 +94,7 @@ public:
       ---
   */
   OptimizationSolver( OptimizationProblem<Real> &opt,
-                      Teuchos::ParameterList &parlist ) {
+                      ROL::ParameterList &parlist ) {
 
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();
@@ -204,11 +204,15 @@ public:
 
   /** \brief Solve optimization problem with no iteration output.
 
+      @param[in] status          is a user-defined StatusTest
+      @param[in] combineStatus   if true, the user-defined StatusTest will be combined with the default StatusTest
+
       ---
   */
-  int solve(void) {
-    Teuchos::oblackholestream bhs;
-    return solve(bhs);
+  int solve(const ROL::Ptr<StatusTest<Real> > &status = ROL::nullPtr,
+            const bool combineStatus = true) {
+    ROL::nullstream bhs;
+    return solve(bhs,status,combineStatus);
   }
 
   /** \brief Solve optimization problem.
@@ -247,7 +251,7 @@ public:
         output_ = algo_->run(*x_,*g_,*l_,*c_,*obj_,*con_,*bnd_,true,outStream);
       break;
       case TYPE_LAST:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           "Error in OptimizationSolver::solve() : Unsupported problem type");
       break;
     }
@@ -305,6 +309,18 @@ public:
     else if( stepType_ == STEP_INTERIORPOINT ) {
       ROL::dynamicPtrCast<InteriorPoint::PenalizedObjective<Real> >(obj_)->updatePenalty(pen_);
     }
+  }
+
+  /** \brief Grab step name (after check for consistency).
+
+      @param[out] stepname   Name of step
+
+      This function returns the algorithmic step name.
+
+      ---
+  */
+  std::string getStepName(void) const {
+    return stepname_;
   }
 
 }; // class OptimizationSolver

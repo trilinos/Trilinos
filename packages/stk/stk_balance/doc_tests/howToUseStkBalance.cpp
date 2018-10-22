@@ -201,6 +201,7 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithParmetis)
 //BEGINParmeticSearchSettings
 class ParmetisWithSearchSettings : public ParmetisSettings
 {
+    using ParmetisSettings::getToleranceForFaceSearch;
     virtual bool includeSearchResultsInGraph() const { return true; }
     virtual double getToleranceForFaceSearch() const { return 0.0001; }
     virtual double getVertexWeightMultiplierForVertexInSearch() const { return 6.0; }
@@ -282,7 +283,7 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
         stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
-        stk::mesh::put_field(weightField, get_meta().universal_part());
+        stk::mesh::put_field_on_mesh(weightField, get_meta().universal_part(), nullptr);
         setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
         set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
@@ -299,7 +300,7 @@ TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLo
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
         stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
-        stk::mesh::put_field(weightField, get_meta().locally_owned_part());
+        stk::mesh::put_field_on_mesh(weightField, get_meta().locally_owned_part(), nullptr);
         setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
         set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
@@ -474,10 +475,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithFields)
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
         stk::mesh::Field<double> &weightField1 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights1");
-        stk::mesh::put_field(weightField1, get_meta().universal_part());
+        stk::mesh::put_field_on_mesh(weightField1, get_meta().universal_part(), nullptr);
 
         stk::mesh::Field<double> &weightField2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights2");
-        stk::mesh::put_field(weightField2, get_meta().universal_part());
+        stk::mesh::put_field_on_mesh(weightField2, get_meta().universal_part(), nullptr);
 
         setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
 

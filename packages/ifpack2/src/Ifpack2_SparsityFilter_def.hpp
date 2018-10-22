@@ -224,7 +224,7 @@ size_t SparsityFilter<MatrixType>::getNodeNumEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const
+size_t SparsityFilter<MatrixType>::getNumEntriesInGlobalRow(GlobalOrdinal /* globalRow */) const
 {
   throw std::runtime_error("Ifpack2::SparsityFilter does not implement getNumEntriesInGlobalRow.");
 }
@@ -234,20 +234,6 @@ template<class MatrixType>
 size_t SparsityFilter<MatrixType>::getNumEntriesInLocalRow(LocalOrdinal localRow) const
 {
   return NumEntries_[localRow];
-}
-
-//==========================================================================
-template<class MatrixType>
-global_size_t SparsityFilter<MatrixType>::getGlobalNumDiags() const
-{
-  return A_->getGlobalNumDiags();
-}
-
-//==========================================================================
-template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNodeNumDiags() const
-{
-  return A_->getNodeNumDiags();
 }
 
 //==========================================================================
@@ -273,20 +259,6 @@ bool SparsityFilter<MatrixType>::hasColMap() const
 
 //==========================================================================
 template<class MatrixType>
-bool SparsityFilter<MatrixType>::isLowerTriangular() const
-{
-  return A_->isLowerTriangular();
-}
-
-//==========================================================================
-template<class MatrixType>
-bool SparsityFilter<MatrixType>::isUpperTriangular() const
-{
-  return A_->isUpperTriangular();
-}
-
-//==========================================================================
-template<class MatrixType>
 bool SparsityFilter<MatrixType>::isLocallyIndexed() const
 {
   return A_->isLocallyIndexed();
@@ -308,10 +280,10 @@ bool SparsityFilter<MatrixType>::isFillComplete() const
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                                                  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                                                  const Teuchos::ArrayView<Scalar> &Values,
-                                                  size_t &NumEntries) const
+void SparsityFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
+                                                  const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
+                                                  const Teuchos::ArrayView<Scalar> &/* Values */,
+                                                  size_t &/* NumEntries */) const
 {
   throw std::runtime_error("Ifpack2::SparsityFilter does not implement getGlobalRowCopy.");
 }
@@ -377,18 +349,18 @@ void SparsityFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayView<const Scalar> &values) const
+void SparsityFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
+                                                  Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
+                                                  Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::SparsityFilter: does not support getGlobalRowView.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayView<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayView<const Scalar> &values) const
+void SparsityFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
+                                                 Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
+                                                 Teuchos::ArrayView<const Scalar> &/* values */) const
 {
   throw std::runtime_error("Ifpack2::SparsityFilter: does not support getLocalRowView.");
 }
@@ -403,14 +375,14 @@ void SparsityFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrd
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void SparsityFilter<MatrixType>::leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::SparsityFilter does not support leftScale.");
 }
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x)
+void SparsityFilter<MatrixType>::rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& /* x */)
 {
   throw std::runtime_error("Ifpack2::SparsityFilter does not support rightScale.");
 }
@@ -420,8 +392,8 @@ template<class MatrixType>
 void SparsityFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                                        Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
                                        Teuchos::ETransp mode,
-                                       Scalar alpha,
-                                       Scalar beta) const
+                                       Scalar /* alpha */,
+                                       Scalar /* beta */) const
 {
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   // Note: The localized maps mean the matvec is trivial (and has no import)

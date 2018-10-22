@@ -186,9 +186,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Timer final summaries
     globalTimeMonitor = Teuchos::null; // stop this timer before summary
 
-    if (printTimings)
+    if (printTimings) {
       Teuchos::TimeMonitor::summarize();
-
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+      Teuchos::TimeMonitor::getStackedTimer()->report(std::cout,comm);
+#endif
+    }
     success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

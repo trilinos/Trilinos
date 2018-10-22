@@ -54,8 +54,16 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "KokkosCompat_View.hpp"
 #include "KokkosBlas1_nrm2w_squared.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 namespace Tpetra {
+namespace Classes {
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Vector ()
+    : base_type ()
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -248,7 +256,7 @@ namespace Tpetra {
 
     if (! comm.is_null () && this->isDistributed ()) {
       // Assume that MPI can access device memory.
-      reduceAll<int, mag_type> (*comm, REDUCE_SUM, 1, lclNrm.ptr_on_device (),
+      reduceAll<int, mag_type> (*comm, REDUCE_SUM, 1, lclNrm.data (),
                                 &gblNrm);
       gblNrm = ATM::sqrt (gblNrm * OneOverN);
     }
@@ -274,20 +282,6 @@ namespace Tpetra {
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     this->describeImpl (out, "Tpetra::Vector", verbLevel);
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
-  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
-  {
-    // The 2-argument copy constructor with second argument =
-    // Teuchos::Copy does a deep copy of its input.
-    Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> dst (src, Teuchos::Copy);
-
-    // The Kokkos refactor version of Vector has view semantics, so
-    // returning the Vector directly, rather than through RCP, only
-    // does a shallow copy.
-    return dst;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -330,6 +324,23 @@ namespace Tpetra {
     return Teuchos::rcp_const_cast<V> (this->offsetView (subMap, offset));
   }
 
+} // namespace Classes
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+  createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
+  {
+    using vec_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    // The 2-argument copy constructor with second argument =
+    // Teuchos::Copy does a deep copy of its input.
+    vec_type dst (src, Teuchos::Copy);
+
+    // The Kokkos refactor version of Vector has view semantics, so
+    // returning the Vector directly, rather than through RCP, only
+    // does a shallow copy.
+    return dst;
+  }
+
 } // namespace Tpetra
 
 /// \macro TPETRA_VECTOR_INSTANT
@@ -341,7 +352,9 @@ namespace Tpetra {
 ///
 /// \warning This macro must be invoked within the Tpetra namespace!
 #define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  template class Vector< SCALAR , LO , GO , NODE >; \
+  namespace Classes { \
+    template class Vector< SCALAR , LO , GO , NODE >; \
+  } \
   template Vector< SCALAR , LO , GO , NODE > createCopy (const Vector< SCALAR , LO , GO , NODE >& src);
 
 #endif // TPETRA_VECTOR_DEF_HPP

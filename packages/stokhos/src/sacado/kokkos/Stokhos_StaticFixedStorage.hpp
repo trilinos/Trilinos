@@ -46,6 +46,7 @@
 #include "Stokhos_MemoryTraits.hpp"
 
 #include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_Cuda.hpp"
 
 #include "Sacado_Traits.hpp"
 #include "Stokhos_KokkosTraits.hpp"
@@ -279,7 +280,7 @@ namespace Stokhos {
 
   };
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 
   //! Statically allocated storage class
   /*!

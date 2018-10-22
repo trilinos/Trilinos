@@ -113,7 +113,7 @@ ParameterList createValidMainPL()
   // that accepts an 'int', a 'double' or a 'std::string' value!
   typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
   Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
-    linesearchMaxItersValiator = rcp(
+    linesearchMaxItersValidator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
         Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, // Not used here!
         AcceptedTypes(false).allowInt(true).allowDouble(true).allowString(true)
@@ -122,12 +122,11 @@ ParameterList createValidMainPL()
   PL_Main_valid.sublist("Line Search").sublist("Polynomial").set(
     "Max Iters",3
     ,"The maximum number of inner linear search iterations allowed."
-    ,linesearchMaxItersValiator
+    ,linesearchMaxItersValidator
     );
 
   // Create a validator for the parameter "Direction"->"Newton"->"Linear Solver"->"Tol"
   // that accepts a 'double' or a 'std::string' value!
-  typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
   Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
     linSolveTolValidator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
@@ -140,6 +139,22 @@ ParameterList createValidMainPL()
       "Tol", double(1e-5)
       ,"Select the linear solve tolerance"
     ,linSolveTolValidator
+    );
+
+  // Create a validator for the parameter "Elements"
+  // that accepts an 'int', a 'long long' or a 'std::string' value!
+  Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
+    elementsValidator = rcp(
+      new Teuchos::AnyNumberParameterEntryValidator(
+        Teuchos::AnyNumberParameterEntryValidator::PREFER_LONG_LONG, // Not used here!
+        AcceptedTypes(false).allowInt(true).allowLongLong(true).allowString(true)
+        )
+      );
+  typedef long long LL;
+  PL_Main_valid.set(
+      "Elements", LL(72057594037927936ll) // 2^56
+      ,"Number of finite elements to generate"
+    ,elementsValidator
     );
 
   return PL_Main_valid;
@@ -687,9 +702,11 @@ TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesWithEmpty )
   ParameterList A;
   ParameterList B;
   TEST_ASSERT( haveSameValues(A,B) );
-  A.set("Hello","World");
+  A.set("a",1);
   TEST_ASSERT( !haveSameValues(A,B) );
-  B.set("Hello","World");
+  A.set("b",2);
+  B.set("a",1);
+  B.set("b",2);
   TEST_ASSERT( haveSameValues(A,B) );
 }
 
@@ -701,6 +718,36 @@ TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesDifferentSublistNames )
   A.sublist("Smith").set("People",4);
   B.sublist("Jones").set("People",4);
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesSortedReversedOrder )
+{
+  ParameterList A, B;
+  A.set("a",1);
+  A.set("b",2);
+  // Create second list with the same entries but different order
+  B.set("b",2);
+  B.set("a",1);
+  TEST_ASSERT( haveSameValuesSorted(A,B) );
+  B.set("c",3);
+  TEST_ASSERT( !haveSameValuesSorted(A,B) ); // check for length
+}
+
+
+TEUCHOS_UNIT_TEST( ParameterList, haveSameValuesSortedNested)
+{
+  ParameterList A, B;
+  ParameterList &asublist = A.sublist("A");
+  asublist.set("a",1);
+  asublist.set("b",2);
+  ParameterList &bsublist = B.sublist("A");
+  bsublist.set("a",1);
+  bsublist.set("b",2);
+  TEST_ASSERT( haveSameValuesSorted(A,B) );
+  asublist.set("c",3);
+  bsublist.set("c",4);
+  TEST_ASSERT( !haveSameValuesSorted(A,B) );
 }
 
 

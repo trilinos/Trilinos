@@ -104,41 +104,41 @@ void mkl2phase_symbolic(
     int_persistent_work_view_t a_xadj_v, b_xadj_v;
 
     const int max_integer = 2147483647;
-    if (entriesB.dimension_0() > max_integer|| entriesA.dimension_0() > max_integer){
+    if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
       throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
       return;
     }
 
 
 
-    int *a_adj = (int *)entriesA.ptr_on_device();
-    int *b_adj = (int *)entriesB.ptr_on_device();
+    int *a_adj = (int *)entriesA.data();
+    int *b_adj = (int *)entriesB.data();
 
-    int *a_xadj = (int *)row_mapA.ptr_on_device();
-    int *b_xadj = (int *)row_mapB.ptr_on_device();
-    int *c_xadj = (int *)row_mapC.ptr_on_device();
+    int *a_xadj = (int *)row_mapA.data();
+    int *b_xadj = (int *)row_mapB.data();
+    int *c_xadj = (int *)row_mapC.data();
 
     if (handle->mkl_convert_to_1base)
     {
       handle->persistent_a_xadj = int_persistent_work_view_t("tmpa", m + 1);
       handle->persistent_b_xadj = int_persistent_work_view_t("tmpb", n + 1);
       handle->persistent_c_xadj = int_persistent_work_view_t("tmpc", m + 1);
-      int_persistent_work_view_t a_plus_one ("a_plus_one", entriesA.dimension_0());
-      int_persistent_work_view_t b_plus_one ("b_plus_one", entriesB.dimension_0());
+      int_persistent_work_view_t a_plus_one ("a_plus_one", entriesA.extent(0));
+      int_persistent_work_view_t b_plus_one ("b_plus_one", entriesB.extent(0));
       handle->persistent_a_adj = a_plus_one;
       handle->persistent_b_adj = b_plus_one;
 
       KokkosKernels::Impl::kk_a_times_x_plus_b< int_persistent_work_view_t, in_row_index_view_type,   int, int, MyExecSpace>(m + 1,  handle->persistent_a_xadj, row_mapA,  1, 1);
       KokkosKernels::Impl::kk_a_times_x_plus_b< int_persistent_work_view_t, bin_row_index_view_type,   int, int, MyExecSpace>(n + 1, handle->persistent_b_xadj, row_mapB,  1, 1);
-      KokkosKernels::Impl::kk_a_times_x_plus_b<   int_persistent_work_view_t, in_nonzero_index_view_type, int, int, MyExecSpace>(entriesA.dimension_0(), a_plus_one, entriesA,  1, 1);
-      KokkosKernels::Impl::kk_a_times_x_plus_b< int_persistent_work_view_t, bin_nonzero_index_view_type,  int, int, MyExecSpace>(entriesB.dimension_0(), b_plus_one, entriesB,  1, 1);
+      KokkosKernels::Impl::kk_a_times_x_plus_b<   int_persistent_work_view_t, in_nonzero_index_view_type, int, int, MyExecSpace>(entriesA.extent(0), a_plus_one, entriesA,  1, 1);
+      KokkosKernels::Impl::kk_a_times_x_plus_b< int_persistent_work_view_t, bin_nonzero_index_view_type,  int, int, MyExecSpace>(entriesB.extent(0), b_plus_one, entriesB,  1, 1);
 
 
-      a_adj = (int *)handle->persistent_a_adj.ptr_on_device();
-      b_adj = (int *)handle->persistent_b_adj.ptr_on_device();
-      a_xadj = handle->persistent_a_xadj.ptr_on_device();
-      b_xadj = handle->persistent_b_xadj.ptr_on_device();
-      c_xadj = handle->persistent_c_xadj.ptr_on_device();
+      a_adj = (int *)handle->persistent_a_adj.data();
+      b_adj = (int *)handle->persistent_b_adj.data();
+      a_xadj = handle->persistent_a_xadj.data();
+      b_xadj = handle->persistent_b_xadj.data();
+      c_xadj = handle->persistent_c_xadj.data();
     }
 
     
@@ -240,28 +240,28 @@ void mkl2phase_symbolic(
     if (Kokkos::Impl::is_same<idx, int>::value){
 
 
-      int *a_xadj = (int *)row_mapA.ptr_on_device();
-      int *b_xadj = (int *)row_mapB.ptr_on_device();
-      int *c_xadj = (int *)row_mapC.ptr_on_device();
+      int *a_xadj = (int *)row_mapA.data();
+      int *b_xadj = (int *)row_mapB.data();
+      int *c_xadj = (int *)row_mapC.data();
 
-      int *a_adj = (int *)entriesA.ptr_on_device();
-      int *b_adj = (int *)entriesB.ptr_on_device();
+      int *a_adj = (int *)entriesA.data();
+      int *b_adj = (int *)entriesB.data();
       
 
-      const value_type *a_ew = valuesA.ptr_on_device();
-      const value_type *b_ew = valuesB.ptr_on_device();
+      const value_type *a_ew = valuesA.data();
+      const value_type *b_ew = valuesB.data();
 
       if (handle->mkl_convert_to_1base)
       {
         int_persistent_work_view_t a_xadj_v, b_xadj_v, c_xadj_v;
-        a_xadj = (int *) handle->persistent_a_xadj.ptr_on_device();
-        b_xadj = (int *) handle->persistent_b_xadj.ptr_on_device();
-        c_xadj = (int *) handle->persistent_c_xadj.ptr_on_device();
+        a_xadj = (int *) handle->persistent_a_xadj.data();
+        b_xadj = (int *) handle->persistent_b_xadj.data();
+        c_xadj = (int *) handle->persistent_c_xadj.data();
         int_persistent_work_view_t a_plus_one =  handle->persistent_a_adj;
         int_persistent_work_view_t b_plus_one =  handle->persistent_b_adj;
 
-        a_adj = (int *)a_plus_one.ptr_on_device();
-        b_adj = (int *)b_plus_one.ptr_on_device();
+        a_adj = (int *)a_plus_one.data();
+        b_adj = (int *)b_plus_one.data();
       }
 
 
@@ -286,7 +286,7 @@ void mkl2phase_symbolic(
       std::cout << "B" << std::endl;
       KokkosKernels::Impl::print_1Dview(row_mapB);
       KokkosKernels::Impl::print_1Dview(entriesB);
-      std::cout << "c:" << "entriesC:" << entriesC.dimension_0() << std::endl;
+      std::cout << "c:" << "entriesC:" << entriesC.extent(0) << std::endl;
       KokkosKernels::Impl::print_1Dview(row_mapC);
 */
       Kokkos::Impl::Timer timer1;
@@ -296,7 +296,7 @@ void mkl2phase_symbolic(
         mkl_scsrmultcsr(&trans, &request, &sort, &mklm, &mkln, &mklk,
                       (float *)a_ew, a_adj, a_xadj,
                       (float *)b_ew, b_adj, b_xadj,
-                      (float *)valuesC.ptr_on_device(), entriesC.ptr_on_device(), c_xadj,
+                      (float *)valuesC.data(), entriesC.data(), c_xadj,
                       &nzmax, &info
                       );
         mkl_free_buffers();
@@ -306,7 +306,7 @@ void mkl2phase_symbolic(
         mkl_dcsrmultcsr(&trans, &request, &sort, &mklm, &mkln, &mklk,
                       (double *)a_ew, a_adj, a_xadj,
                       (double *)b_ew, b_adj, b_xadj,
-                      (double *)valuesC.ptr_on_device(), entriesC.ptr_on_device(), c_xadj,
+                      (double *)valuesC.data(), entriesC.data(), c_xadj,
                       &nzmax, &info
                       );
         mkl_free_buffers();
@@ -321,7 +321,7 @@ void mkl2phase_symbolic(
 
       if (handle->mkl_convert_to_1base)
       {
-        KokkosKernels::Impl::kk_a_times_x_plus_b< cin_nonzero_index_view_type, cin_nonzero_index_view_type,  int, int, MyExecSpace>(entriesC.dimension_0(), entriesC, entriesC,  1, -1);
+        KokkosKernels::Impl::kk_a_times_x_plus_b< cin_nonzero_index_view_type, cin_nonzero_index_view_type,  int, int, MyExecSpace>(entriesC.extent(0), entriesC, entriesC,  1, -1);
       }
     }
     else {

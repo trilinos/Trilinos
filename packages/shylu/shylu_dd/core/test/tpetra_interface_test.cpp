@@ -8,9 +8,8 @@
 
 //Tperta
 #ifdef HAVE_SHYLU_DDCORE_TPETRA
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -31,10 +30,8 @@
 
 // Teuchos includes
 #ifdef HAVE_SHYLU_DDCORE_TPETRA
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 #endif
 
 // EpetraExt includes
@@ -79,8 +76,8 @@ using namespace std;
 int main(int argc, char** argv)
 {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
-  Teuchos::RCP <const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard mpiSession(&argc, &argv);
+  Teuchos::RCP <const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
     int myPID = comm->getRank();
   if(myPID == 0)
     {
@@ -124,7 +121,7 @@ int main(int argc, char** argv)
   b->randomize();
   x->randomize();
 
-    cout << "num_vector: " << b->getNumVectors() << " " 
+    cout << "num_vector: " << b->getNumVectors() << " "
        << x->getNumVectors() << endl;
   cout << "length: " << b->getGlobalLength() << " "
        << x->getGlobalLength() << endl;
@@ -184,7 +181,7 @@ int main(int argc, char** argv)
   cout << " \n\n--------------------BIG BREAK --------------\n\n";
   Teuchos::writeParameterListToXmlOStream(*pLUList, std::cout);
 
-  cout << "num_vector: " << b->getNumVectors() << " " 
+  cout << "num_vector: " << b->getNumVectors() << " "
        << x->getNumVectors() << endl;
   cout << "length: " << b->getGlobalLength() << " "
        << x->getGlobalLength() << endl;

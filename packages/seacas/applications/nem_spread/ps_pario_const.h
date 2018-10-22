@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -87,8 +87,8 @@ extern struct Parallel_IO PIO_Info;
 
 extern char Par_Nem_File_Name[]; /* The parallel nemesis file name */
 
-int  read_pexoII_info(const char *);
-void gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
+int         read_pexoII_info(const char *);
+void        gen_disk_map(struct Parallel_IO *pio_info, int proc_info[], int proc, int nproc);
 std::string gen_par_filename(const char *scalar_fname, int proc_for, int nprocs);
-void add_fname_ext(char *cOrigFile, const char *cExt);
+void        add_fname_ext(char *cOrigFile, const char *cExt);
 #endif

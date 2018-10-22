@@ -199,7 +199,7 @@ public:
     return makePtr<StdVector<Real>>(x0p);
   }
 
-  Ptr<Vector<Real>> getSolution( void ) const {
+  Ptr<Vector<Real>> getSolution( const int i = 0 ) const {
     Ptr<std::vector<Real> > xp = makePtr<std::vector<Real>>(2);
     (*xp)[0] = 3.0;
     (*xp)[1] = std::sqrt(3.0);

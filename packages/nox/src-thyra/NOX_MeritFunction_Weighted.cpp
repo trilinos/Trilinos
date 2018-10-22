@@ -84,7 +84,7 @@ const std::string& NOX::Thyra::WeightedMeritFunction::name() const
   return name_;
 }
 
-std::ostream& NOX::Thyra::WeightedMeritFunction::print(std::ostream& os, int indent) const
+std::ostream& NOX::Thyra::WeightedMeritFunction::print(std::ostream& os, int /* indent */) const
 {
   return os;
 }
@@ -242,8 +242,8 @@ computeQuadraticModel(const NOX::Abstract::Vector& dir,
 }
 
 void NOX::Thyra::WeightedMeritFunction::
-computeQuadraticMinimizer(const NOX::Abstract::Group &grp,
-              NOX::Abstract::Vector &result) const
+computeQuadraticMinimizer(const NOX::Abstract::Group &/* grp */,
+              NOX::Abstract::Vector &/* result */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                  "NOX::Thyra::WeightedMeritFunction::computeQuadraticMinimizer() method has not been implemented yet!");

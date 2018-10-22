@@ -101,11 +101,6 @@ namespace panzer {
         const Teuchos::ParameterList& p);
 
       void
-      postRegistrationSetup(
-        typename Traits::SetupData d,
-        PHX::FieldManager<Traits>& fm);
-
-      void
       evaluateFields(
         typename Traits::EvalData d);
 
@@ -129,14 +124,6 @@ namespace panzer {
      xcoord = PHX::MDField<ScalarT,Cell,NODE>("x-coord",p.get<Teuchos::RCP<PHX::DataLayout> >("Data Layout"));
      this->addEvaluatedField(xcoord);
   }
-
-  template<typename EvalT, typename Traits>
-  void
-  XCoordinate<EvalT, Traits>::
-  postRegistrationSetup(
-    typename Traits::SetupData  /* sd */,
-    PHX::FieldManager<Traits>&  fm)
-  { this->utils.setFieldData(xcoord,fm); }
 
   template<typename EvalT, typename Traits>
   void

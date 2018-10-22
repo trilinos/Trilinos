@@ -1,7 +1,7 @@
 #include <mex.h>
 #include <matrix.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <complex>
 
 
@@ -78,7 +78,7 @@ void mexFunction
 	Ax[i] = complex<double>(Axr[i], Axi[i]);
       }
 
-    Basker::Basker <mwIndex, complex<double> > mybasker;
+    BaskerClassicNS::BaskerClassic <mwIndex, complex<double> > mybasker;
     mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
     mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
     mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);

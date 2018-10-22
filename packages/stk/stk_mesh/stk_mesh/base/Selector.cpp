@@ -40,7 +40,7 @@
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/MetaData.hpp"       // for Part
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 
 
 namespace stk {

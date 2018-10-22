@@ -637,7 +637,7 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
   T
   error = 1.0;
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   T
   prev_eigenvalue = DBL_MAX;
 #else

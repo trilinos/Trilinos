@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,6 +40,7 @@
 #include <Ioss_PropertyManager.h>
 #include <algorithm>
 #include <assert.h>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -56,12 +57,7 @@ namespace Ioss {
   class BlockDecompositionData
   {
   public:
-    BlockDecompositionData()
-        : zone_(0), section_(0), fileSectionOffset(0), id_(0), fileCount(0), iossCount(0),
-          globalCount(0), zoneNodeOffset(0), topologyType("unknown"), nodesPerEntity(0),
-          attributeCount(0), localIossOffset(0)
-    {
-    }
+    BlockDecompositionData() = default;
 
     const std::string &name() const { return name_; }
     int                zone() const { return zone_; }
@@ -71,25 +67,25 @@ namespace Ioss {
     size_t             ioss_count() const { return iossCount; }
     size_t             global_count() const { return globalCount; }
 
-    std::string name_;
-    int         zone_;
-    int         section_;
+    std::string name_{};
+    int         zone_{0};
+    int         section_{0};
 
-    size_t  fileSectionOffset; // In partial read, where start
-    int64_t id_;
-    size_t  fileCount;
-    size_t  iossCount;
-    size_t  globalCount;
+    size_t  fileSectionOffset{0}; // In partial read, where start
+    int64_t id_{0};
+    size_t  fileCount{0};
+    size_t  iossCount{0};
+    size_t  globalCount{0};
 
-    size_t      zoneNodeOffset;
-    std::string topologyType;
-    int         nodesPerEntity;
-    int         attributeCount;
+    size_t      zoneNodeOffset{0};
+    std::string topologyType{"unknown"};
+    int         nodesPerEntity{0};
+    int         attributeCount{0};
 
     // maps from file-block data to ioss-block data
     // The local_map.size() elements starting at localIossOffset are local.
     // ioss[localIossOffset+i] = file[local_map[i]];
-    size_t           localIossOffset;
+    size_t           localIossOffset{0};
     std::vector<int> localMap;
 
     // Maps from file-block data to export list.
@@ -108,11 +104,15 @@ namespace Ioss {
   class SetDecompositionData
   {
   public:
-    SetDecompositionData()
-        : id_(0), zone_(0), section_(0), fileCount(0), root_(0), parentBlockIndex(0),
-          distributionFactorValsPerEntity(-1), distributionFactorCount(0),
-          distributionFactorValue(0.0), distributionFactorConstant(false)
+    SetDecompositionData()                             = default;
+    SetDecompositionData(const SetDecompositionData &) = delete;
+    SetDecompositionData(SetDecompositionData &&)      = default;
+
+    ~SetDecompositionData()
     {
+      if (setComm_ != MPI_COMM_NULL) {
+        MPI_Comm_free(&setComm_);
+      }
     }
 
     const std::string &name() const { return name_; }
@@ -127,19 +127,21 @@ namespace Ioss {
     std::vector<size_t> entitylist_map;
     std::vector<bool>   hasEntities; // T/F if this set exists on processor p
 
-    std::string name_;
-    int64_t     id_;
-    int         zone_;
-    int         section_;
-    size_t      fileCount; // Number of nodes in nodelist for file decomposition
-    int         root_;     // Lowest number processor that has nodes for this nodest
-    std::string topologyType;
-    size_t      parentBlockIndex;
+    std::string name_{};
+    int64_t     id_{0};
+    int         zone_{0};
+    int         section_{0};
+    size_t      fileCount{0}; // Number of nodes in nodelist for file decomposition
+    int         root_{0};     // Lowest number processor that has nodes for this nodest
+    std::string topologyType{};
+    size_t      parentBlockIndex{0};
 
-    int    distributionFactorValsPerEntity; // number of df / element or node. -1 if nonconstant.
-    size_t distributionFactorCount;
-    double distributionFactorValue;    // If distributionFactorConstant == true, the constant value
-    bool   distributionFactorConstant; // T if all distribution factors the same value.
+    int distributionFactorValsPerEntity{-1}; // number of df / element or node. -1 if nonconstant.
+    size_t distributionFactorCount{0};
+    double distributionFactorValue{
+        0.0}; // If distributionFactorConstant == true, the constant value
+    MPI_Comm setComm_{MPI_COMM_NULL};
+    bool     distributionFactorConstant{false}; // T if all distribution factors the same value.
   };
 
   template <typename INT> class Decomposition
@@ -262,20 +264,20 @@ namespace Ioss {
     std::string m_method;
 
     // Values for the file decomposition
-    int    m_spatialDimension;
-    size_t m_globalElementCount;
-    size_t m_elementCount;
-    size_t m_elementOffset;
-    size_t m_importPreLocalElemIndex;
+    int    m_spatialDimension{3};
+    size_t m_globalElementCount{0};
+    size_t m_elementCount{0};
+    size_t m_elementOffset{0};
+    size_t m_importPreLocalElemIndex{0};
 
-    size_t m_globalNodeCount;
-    size_t m_nodeCount;
-    size_t m_nodeOffset;
-    size_t m_importPreLocalNodeIndex;
+    size_t m_globalNodeCount{0};
+    size_t m_nodeCount{0};
+    size_t m_nodeOffset{0};
+    size_t m_importPreLocalNodeIndex{0};
 
-    bool m_retainFreeNodes;
-    bool m_showProgress;
-    bool m_showHWM;
+    bool m_retainFreeNodes{true};
+    bool m_showProgress{false};
+    bool m_showHWM{false};
 
     std::vector<double> m_centroids;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
@@ -356,8 +358,8 @@ namespace Ioss {
     std::vector<INT> m_nodeDist;
 
     // Note that nodeGTL is a sorted vector.
-    std::vector<INT> nodeGTL;   // Convert from global index to local index (1-based)
+    std::vector<INT>   nodeGTL; // Convert from global index to local index (1-based)
     std::map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
   };
-}
+} // namespace Ioss
 #endif

@@ -11,6 +11,7 @@
     <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
 
     <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
+
     <Parameter name="smoother: type" type="string" value="Chebyshev"/>
     <Parameter name="smoother: Chebyshev alpha" type="double" value="30.0"/>
 
@@ -36,12 +37,16 @@
 
   <ParameterList name="MueLu">
 
+    <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
     <Parameter name="refmaxwell: mode" type="string" value="additive"/>
     <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
     <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
 
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+
+    <Parameter name="rap: fix zero diagonals" type="bool" value="true"/>
+
     <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
     <ParameterList name="smoother: params">
       <Parameter name="chebyshev: degree" type="int" value="2"/>

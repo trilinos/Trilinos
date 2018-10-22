@@ -127,6 +127,9 @@
 
 namespace Teuchos {
 
+// Forward declaration
+class StackedTimer;
+
 /// \typedef stat_map_type
 /// \brief Global statistics collected from timer data.
 ///
@@ -608,6 +611,14 @@ public:
   //! Default parameters (with validators) for report().
   static RCP<const ParameterList> getValidReportParameters ();
 
+  /// \brief Sets the StackedTimer that the TimeMonitor will use to insert timings into.
+  ///
+  /// \param t [in] StackedTimer object the TimeMonitor should insert timings into.
+  static void setStackedTimer(const Teuchos::RCP<Teuchos::StackedTimer>& t);
+
+  /// Returns the StackedTimer used by the TimeMonitor.
+  static const Teuchos::RCP<Teuchos::StackedTimer>& getStackedTimer();
+
  private:
   /// \brief Valid output formats for report().
   ///
@@ -719,6 +730,9 @@ public:
   /// \note Keeping this helps us avoid keeping the whole
   ///   ParameterList around.
   static bool setParams_;
+
+  //! Stacked timer for optional injetion of timing from TimeMontior enabled objects.
+  static Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_; 
 };
 
 

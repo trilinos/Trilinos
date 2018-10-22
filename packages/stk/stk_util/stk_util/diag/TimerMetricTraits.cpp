@@ -174,7 +174,7 @@ std::string
 MetricTraits<HeapAlloc>::format(
   MetricTraits<HeapAlloc>::Type         count)
 {
-  return formatMemorySize(count);
+  return format_memory_size(count);
 }
 
 } // namespace diag

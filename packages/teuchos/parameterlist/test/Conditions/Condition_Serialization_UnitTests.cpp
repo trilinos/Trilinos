@@ -265,12 +265,10 @@ NUMBER_PARAM_TYPE_TEST(long)
 NUMBER_PARAM_TYPE_TEST(ulong)
 NUMBER_PARAM_TYPE_TEST(float)
 NUMBER_PARAM_TYPE_TEST(double)
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int llint;
 typedef unsigned long long int ullint;
 NUMBER_PARAM_TYPE_TEST(llint)
 NUMBER_PARAM_TYPE_TEST(ullint)
-#endif
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, BoolLogicConditionSerialization, BinCondition){
   ConditionXMLConverterDB::printKnownConverters(out);

@@ -56,9 +56,8 @@
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 int
@@ -75,25 +74,21 @@ main (int argc, char *argv[])
   typedef double                           ST;
   typedef Teuchos::ScalarTraits<ST>       STS;
   typedef STS::magnitudeType               MT;
-  typedef Tpetra::Operator<ST,int>         OP;
-  typedef Tpetra::MultiVector<ST,int>      MV;
+  typedef Tpetra::Operator<ST>             OP;
+  typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
   typedef MV::node_type             node_type;
 
   typedef Teuchos::CommandLineProcessor   CLP;
 
-
-
-  Teuchos::GlobalMPISession mpisess (&argc, &argv, &cout);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   bool success = false;
   bool verbose = false;
   try {
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<node_type> node =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<node_type> node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor
@@ -143,9 +138,9 @@ main (int argc, char *argv[])
     //
     // Get the data from the HB file and build the Map,Matrix
     //
-    RCP<Tpetra::CrsMatrix<ST,int> > A;
+    RCP<Tpetra::CrsMatrix<ST> > A;
     Tpetra::Utils::readHBMatrix (filename, comm, node, A);
-    RCP<const Tpetra::Map<int> > map = A->getDomainMap ();
+    RCP<const Tpetra::Map<> > map = A->getDomainMap ();
 
     // Create initial vectors
     RCP<MV> B, X;

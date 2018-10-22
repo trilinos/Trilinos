@@ -47,7 +47,6 @@
 #ifndef PACKAGES_MUELU_SRC_REBALANCING_MUELU_REPARTITIONHEURISTICFACTORY_DEF_HPP_
 #define PACKAGES_MUELU_SRC_REBALANCING_MUELU_REPARTITIONHEURISTICFACTORY_DEF_HPP_
 
-
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -83,7 +82,7 @@ namespace MueLu {
     SET_VALID_ENTRY("repartition: max imbalance");
 #undef  SET_VALID_ENTRY
 
-    validParamList->set< RCP<const FactoryBase> >("A",         Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
 
     return validParamList;
   }
@@ -109,16 +108,16 @@ namespace MueLu {
       targetRowsPerProcess = minRowsPerProcess;
 
     RCP<const FactoryBase> Afact = GetFactory("A");
-    if(Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
+    if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
        Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
-       Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null)
+       Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null) {
       GetOStream(Warnings) <<
         "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \
         "be a RAPFactory or a SubBlockAFactory providing the non-rebalanced matrix information! " \
         "It specifically must not be of type Rebalance(Blocked)AcFactory or similar. " \
-        "Please check the input. Make also sure that \"number of partitions\" is provided to" \
-        "the Interface class and the RepartitionFactory instance." << std::endl;
-
+        "Please check the input. Make also sure that \"number of partitions\" is provided to " \
+        "the Interface class and the RepartitionFactory instance.  Instead, we have a "<<Afact->description() << std::endl;
+    }
     // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -216,14 +215,19 @@ namespace MueLu {
     // is used. The "number of partitions" variable serves as basic communication between the RepartitionFactory (which
     // requests a certain number of partitions) and the *Interface classes which call the underlying partitioning algorithms
     // and produce the "Partition" array with the requested number of partitions.
-    int numPartitions;
-    if (Teuchos::as<GO>(A->getGlobalNumRows()) < targetRowsPerProcess) {
-      // System is too small, migrate it to a single processor
-      numPartitions = 1;
+    const auto globalNumRows = Teuchos::as<GO>(A->getGlobalNumRows());
+    int numPartitions = 1;
+    if (globalNumRows >= targetRowsPerProcess) {
+      // Make sure that each CPU thread has approximately targetRowsPerProcess
 
-    } else {
-      // Make sure that each processor has approximately targetRowsPerProcess
-      numPartitions = A->getGlobalNumRows() / targetRowsPerProcess;
+      int thread_per_mpi_rank = 1;
+#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
+      using execution_space = typename Node::device_type::execution_space;
+      if (std::is_same<execution_space, Kokkos::OpenMP>::value)
+        thread_per_mpi_rank = execution_space::concurrency();
+#endif
+
+      numPartitions = std::max(Teuchos::as<int>(globalNumRows / (targetRowsPerProcess * thread_per_mpi_rank)), 1);
     }
     numPartitions = std::min(numPartitions, comm->getSize());
 

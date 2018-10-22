@@ -99,7 +99,7 @@ public:
     const LocalOrderingSolution<lno_t> *localSoln,
     const GlobalOrderingSolution<gno_t> *globalSoln)
   {
-    RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
+    Teuchos::RCP<const Comm<int> > problemComm = Tpetra::getDefaultComm();
     sharedConstructor(ia, p, problemComm, localSoln, globalSoln);
   }
 
@@ -307,7 +307,7 @@ void EvaluateOrdering<Adapter>::sharedConstructor(
   const GlobalOrderingSolution<gno_t> *globalSoln)
 {
   RCP<const Comm<int> > problemComm = (comm == Teuchos::null) ?
-    DefaultComm<int>::getComm() : comm;
+    Tpetra::getDefaultComm() : comm;
 
   RCP<Environment> env;
   try{

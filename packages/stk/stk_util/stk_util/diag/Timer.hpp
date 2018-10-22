@@ -42,14 +42,12 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for string
 #include <vector>                       // for vector
+
 namespace sierra { namespace Diag { class TimerParser; } }
 namespace stk { namespace diag { class Timer; } }
 namespace stk { namespace diag { class TimerImpl; } }
 namespace stk { namespace diag { class TimerSet; } }
 namespace stk { namespace diag { class Writer; } }
-
-
-
 
 
 ///
@@ -77,7 +75,6 @@ MetricsMask getEnabledTimerMetricsMask();
  *
  * @param timer_mask    a <b>MetricsMask</b> value to set the timer enable bit
  *        mask to.
- *
  */
 void setEnabledTimerMetricsMask(MetricsMask timer_mask);
 
@@ -86,7 +83,6 @@ void setEnabledTimerMetricsMask(MetricsMask timer_mask);
  * metric values with the current time.
  *
  * @param root_timer      a <b>Timer</b> reference to the root timer.
- *
  */
 void updateRootTimer(Timer root_timer);
 
@@ -116,7 +112,6 @@ void deleteRootTimer(Timer timer);
 /**
  * @brief Class <b>TimerSet</b> implements a set of timer classifications.  A time classification
  * consists of a bit mask set TimerMask
- *
  */
 class TimerSet
 {
@@ -156,7 +151,6 @@ public:
    *
    * @param timer_mask    a <b>TimerMask</b> value to set the timer enable bit
    *        mask to.
-   *
    */
   void setEnabledTimerMask(TimerMask timer_mask) {
     m_enabledTimerMask = timer_mask;
@@ -168,7 +162,6 @@ public:
    *
    * @param timer_mask    a <b>TimerMask</b> value to test the enable timer
    *        bit mask against.
-   *
    */
   bool shouldRecord(TimerMask timer_mask) const {
     return (timer_mask == 0 || (m_enabledTimerMask & timer_mask));
@@ -202,7 +195,6 @@ public:
    * time/count is accumlated to the total.  The total time/count can be stored in the
    * checkpoint member variable.  The total can be retrieved as either absolute time/count
    * the diffence from the checkpoint value.
-   *
    */
   template <typename T>
   struct Metric
@@ -234,7 +226,6 @@ public:
     /**
      * Member function <b>checkpoint</b> checkpoints the metrics by storing the
      * total time in the checkpoint value.
-     *
      */
     void checkpoint() const {
       m_checkpoint = m_accumulatedLap;
@@ -311,7 +302,6 @@ public:
    *        the timer.
    *
    * @param parent    a <b>Timer</b> value of the parent timer.
-   *
    */
   Timer(const std::string &name, const Timer parent);
 
@@ -325,7 +315,6 @@ public:
    *
    * @param timer_set    a <b>TimerSet</b> value of the timer set used to interpret the
    *                            TimerMask's of this and children timers.
-   *
    */
   Timer(const std::string &name, const Timer parent, const TimerSet &timer_set);
 
@@ -338,7 +327,6 @@ public:
    * @param timer_mask    a <b>TimerMask</b> value which enables this timer.
    *
    * @param parent    a <b>Timer</b> value of the parent timer.
-   *
    */
   Timer(const std::string &name, TimerMask timer_mask, const Timer parent);
 
@@ -354,7 +342,6 @@ public:
    *
    * @param timer_set    a <b>TimerSet</b> value of the timer set used to interpret the
    *                            TimerMask's of this and children timers.
-   *
    */
   Timer(const std::string &name, TimerMask timer_mask, const Timer parent, const TimerSet &timer_set);
 
@@ -525,15 +512,9 @@ private:
 public:
   /**
    * Destroys a <b>TimeBlock</b> instance.  Stops the timer if is has been started.
-   *
    */
   virtual ~TimeBlock() {
-    try {
-      if (m_started)
-        m_timer.stop();
-    }
-    catch (...) {
-    }
+    if (m_started) m_timer.stop();
   }
 
   /**
@@ -763,30 +744,14 @@ int getTimeFormat();
  *
  * @param width		a <b>size_t</b> value to set for the maximum width for
  *				names displayed in the timer output table.
- *
  */
 void setTimerNameMaxWidth(size_t width);
 
-/**
- * @brief Member function <b>getTimeNameMaxWidth</b> returns the width to use for the
- * name cell of the table display.
- *
- * @return			a <b>size_t</b> value of the width to use for the name
- *				cell of the table display.
- */
-size_t getTimerNameMaxWidth();
-
 stk::diag::MetricTraits<stk::diag::CPUTime>::Type getCPULapTime(Timer timer);
-
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type getCPUAccumulatedLapTime(Timer timer);
-
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type getSierraCPUTime();
 stk::diag::MetricTraits<stk::diag::CPUTime>::Type getSierraWallTime();
-
 
 /**
  * @brief Class <b>TimerParser</b> implements the bit mask parser for the timer's bit masks.
- *
  */
 class TimerParser : public OptionMaskParser
 {

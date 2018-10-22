@@ -41,7 +41,7 @@
 //@HEADER
  */
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #ifdef KOKKOSKERNELS_HAVE_OUTER
 #include<parallel/multiseq_selection.h>
 #include<parallel/multiway_merge.h>
@@ -54,7 +54,7 @@ namespace KokkosSparse{
 
 namespace Impl{
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 #ifdef KOKKOSKERNELS_HAVE_OUTER
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
@@ -170,11 +170,11 @@ void KokkosSPGEMM
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     sort_triplets(triplet_view_t triplets, size_t num_triplets){
 
-  //std::sort (triplets.ptr_on_device(), triplets.ptr_on_device() + num_triplets);
+  //std::sort (triplets.data(), triplets.data() + num_triplets);
   typedef typename triplet_view_t::value_type element_t;
   __gnu_parallel::parallel_sort_mwms<false,true,element_t*>
-  (triplets.ptr_on_device(),
-      triplets.ptr_on_device()+num_triplets,
+  (triplets.data(),
+      triplets.data()+num_triplets,
       std::less<element_t>(), this->concurrency);
 }
 
@@ -198,8 +198,8 @@ void KokkosSPGEMM
 
 
   for (size_t i = 0; i < num_blocks; ++i){
-    seqs[i].first = triplets[i].ptr_on_device();
-    seqs[i].second = triplets[i].ptr_on_device() + triplets[i].dimension_0();
+    seqs[i].first = triplets[i].data();
+    seqs[i].second = triplets[i].data() + triplets[i].extent(0);
   }
 
   __gnu_parallel::multiway_merge
@@ -208,7 +208,7 @@ void KokkosSPGEMM
   //uint64_t,
   //std::less<element_t> >
   (seqs.begin(),seqs.end(),
-      output_triplets.ptr_on_device(),
+      output_triplets.data(),
       overall_size,std::less<element_t>());
 
 }
@@ -597,7 +597,7 @@ void KokkosSPGEMM
   //TRANSPOSE MATRIX
   ////////////////////
   //get the suggested vectorlane size based on the execution space, and average number of nnzs per row.
-  int suggested_vector_size = this->handle->get_suggested_vector_size(b_row_cnt, entriesB.dimension_0());
+  int suggested_vector_size = this->handle->get_suggested_vector_size(b_row_cnt, entriesB.extent(0));
   //get the suggested team size.
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   //get the chunk size suggested by the handle.
@@ -606,8 +606,8 @@ void KokkosSPGEMM
   //step-1 tranpose the first matrix.
   Kokkos::Impl::Timer timer1, timer_all;
   row_lno_temp_work_view_t transpose_col_xadj ("transpose_col_xadj", b_row_cnt + 1);
-  nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::ViewAllocateWithoutInitializing("transpose_col_adj"), entriesA.dimension_0());
-  scalar_temp_work_view_t tranpose_vals (Kokkos::ViewAllocateWithoutInitializing("transpose_col_values"), entriesA.dimension_0());
+  nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::ViewAllocateWithoutInitializing("transpose_col_adj"), entriesA.extent(0));
+  scalar_temp_work_view_t tranpose_vals (Kokkos::ViewAllocateWithoutInitializing("transpose_col_values"), entriesA.extent(0));
 
   KokkosKernels::Impl::transpose_matrix
   <const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,

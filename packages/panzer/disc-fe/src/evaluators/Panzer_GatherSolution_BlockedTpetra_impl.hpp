@@ -90,7 +90,7 @@ panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,No
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : gidIndexer_(indexer)
+  : globalIndexer_(indexer)
   , has_tangent_fields_(false)
 {
   typedef std::vector< std::vector<std::string> > vvstring;
@@ -142,27 +142,44 @@ GatherSolution_BlockedTpetra(
 // **********************************************************************
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
-  fieldIds_.resize(gatherFields_.size());
+  const Workset & workset_0 = (*d.worksets_)[0];
+  const std::string blockId = this->wda(workset_0).block_id;
 
+  fieldIds_.resize(gatherFields_.size());
+  fieldOffsets_.resize(gatherFields_.size());
+  fieldGlobalIndexers_.resize(gatherFields_.size());
+  productVectorBlockIndex_.resize(gatherFields_.size());
+  int maxElementBlockGIDCount = -1;
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
     const std::string& fieldName = indexerNames_[fd];
-    fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
+    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+    fieldGlobalIndexers_[fd] = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+    fieldIds_[fd] = fieldGlobalIndexers_[fd]->getFieldNum(fieldName); // Field number in the sub-global-indexer
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
+    const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+    fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("GatherSolution_BlockedTpetra(Residual):fieldOffsets",offsets.size());
+    auto hostFieldOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+    for(std::size_t i=0; i < offsets.size(); ++i)
+      hostFieldOffsets(i) = offsets[i];
+    Kokkos::deep_copy(fieldOffsets_[fd],hostFieldOffsets);
+    PHX::Device::fence();
+
+    maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
   }
 
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
-  }
+  // We will use one workset lid view for all fields, but has to be
+  // sized big enough to hold the largest elementBlockGIDCount in the
+  // ProductVector.
+  worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("GatherSolution_BlockedTpetra(Residual):worksetLIDs",
+                                                gatherFields_[0].extent(0),
+                                                maxElementBlockGIDCount);
 
   indexerNames_.clear();  // Don't need this anymore
 }
@@ -181,68 +198,44 @@ template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   using Teuchos::RCP;
-   using Teuchos::ArrayRCP;
-   using Teuchos::ptrFromRef;
-   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::VectorBase;
+  using Thyra::ProductVectorBase;
+  
+  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  
+  RCP<ProductVectorBase<ScalarT>> thyraBlockSolution;
+  if (useTimeDerivativeSolutionVector_)
+    thyraBlockSolution = rcp_dynamic_cast<ProductVectorBase<ScalarT>>(blockedContainer_->get_dxdt(),true);
+  else
+    thyraBlockSolution = rcp_dynamic_cast<ProductVectorBase<ScalarT>>(blockedContainer_->get_x(),true);
+  
+  // Loop over gathered fields
+  int currentWorksetLIDSubBlock = -1;
+  for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size(); fieldIndex++) {
+    // workset LIDs only change for different sub blocks 
+    if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
+      fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_); 
+      currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
+    }
 
-   using Thyra::VectorBase;
-   using Thyra::SpmdVectorBase;
-   using Thyra::ProductVectorBase;
+    const auto& tpetraSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<ScalarT,LO,GO,NodeT>>(thyraBlockSolution->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+    const auto& kokkosSolution = tpetraSolution.template getLocalView<PHX::mem_space>();
 
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setShowProcRank(true);
-   out.setOutputToRootOnly(-1);
+    // Class data fields for lambda capture
+    const auto& fieldOffsets = fieldOffsets_[fieldIndex];
+    const auto& worksetLIDs = worksetLIDs_;
+    const auto& fieldValues = gatherFields_[fieldIndex];
 
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
-
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
-
-   Teuchos::RCP<ProductVectorBase<double> > x;
-   if (useTimeDerivativeSolutionVector_)
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
-   else
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
-
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      LO cellLocalId = localCellIds[worksetCellIndex];
-
-      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId);
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const MapType> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
-
-         LIDs[i] = x_map->getLocalElement(GIDs[i].second);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+      for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+        const int lid = worksetLIDs(cell,fieldOffsets(basis));
+        fieldValues(cell,basis) = kokkosSolution(lid,0);        
       }
+    });
+  }
 
-      // loop over the fields to be gathered
-      Teuchos::ArrayRCP<const double> local_x;
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int indexerId = gidIndexer_->getFieldBlock(fieldNum);
-
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
-         block_x->getLocalData(ptrFromRef(local_x));
-
-         const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = local_x[lid];
-         }
-      }
-   }
 }
 
 // **********************************************************************
@@ -307,7 +300,7 @@ GatherSolution_BlockedTpetra(
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
@@ -317,15 +310,6 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
     // get field ID from DOF manager
     const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
-
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
-  }
-
-  if (has_tangent_fields_) {
-    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd)
-      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i)
-        this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
   indexerNames_.clear();  // Don't need this anymore
@@ -425,23 +409,18 @@ panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,No
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
-  : gidIndexer_(indexer)
+  : globalIndexer_(indexer)
 {
-  // typedef std::vector< std::vector<std::string> > vvstring;
-
   GatherSolution_Input input;
   input.setParameterList(p);
 
   const std::vector<std::string> & names      = input.getDofNames();
   Teuchos::RCP<const panzer::PureBasis> basis = input.getBasis();
-  // const vvstring & tangent_field_names        = input.getTangentNames();
 
   indexerNames_                    = input.getIndexerNames();
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
   globalDataKey_                   = input.getGlobalDataKey();
 
-  // gatherSeedIndex_                 = input.getGatherSeedIndex();
-  // sensitivitiesName_               = input.getSensitivitiesName();
   disableSensitivities_            = !input.firstSensitivitiesAvailable();
 
   gatherFields_.resize(names.size());
@@ -470,24 +449,58 @@ GatherSolution_BlockedTpetra(
 // **********************************************************************
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm)
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
+  const Workset & workset_0 = (*d.worksets_)[0];
+  const std::string blockId = this->wda(workset_0).block_id;
+
   fieldIds_.resize(gatherFields_.size());
-
+  fieldOffsets_.resize(gatherFields_.size());
+  productVectorBlockIndex_.resize(gatherFields_.size());
+  int maxElementBlockGIDCount = -1;
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-    // get field ID from DOF manager
-    //std::string fieldName = gatherFields_[fd].fieldTag().name();
-    const std::string& fieldName = indexerNames_[fd];
-    fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
 
-    // setup the field data object
-    this->utils.setFieldData(gatherFields_[fd],fm);
+    const std::string fieldName = indexerNames_[fd];
+    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+    const auto& subGlobalIndexer = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+    fieldIds_[fd] = subGlobalIndexer->getFieldNum(fieldName); // Field number in the sub-global-indexer
+
+    const std::vector<int>& offsets = subGlobalIndexer->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+    fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("GatherSolution_BlockedTpetra(Jacobian):fieldOffsets",offsets.size());
+    auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+    for (std::size_t i=0; i < offsets.size(); ++i)
+      hostOffsets(i) = offsets[i];
+    Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+    maxElementBlockGIDCount = std::max(subGlobalIndexer->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+    PHX::Device::fence();
   }
 
+  // We will use one workset lid view for all fields, but has to be
+  // sized big enough to hold the largest elementBlockGIDCount in the
+  // ProductVector.
+  worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
+                                                gatherFields_[0].extent(0),
+                                                maxElementBlockGIDCount);
+
+  // Compute the block offsets
+  const auto& blockGlobalIndexers = globalIndexer_->getFieldDOFManagers();
+  const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
+  blockOffsets_ = Kokkos::View<LO*,PHX::Device>("GatherSolution_BlockedTpetra(Jacobian):blockOffsets_",
+                                                numBlocks+1); // Number of blocks, plus a sentinel
+  const auto hostBlockOffsets = Kokkos::create_mirror_view(blockOffsets_);
+  for (int blk=0;blk<numBlocks;++blk) {
+    int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
+    hostBlockOffsets(blk) = blockOffset;
+  }
+  blockOffsets_(numBlocks) = blockOffsets_(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
+  Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
+
   indexerNames_.clear();  // Don't need this anymore
+  PHX::Device::fence();
 }
 
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
@@ -503,83 +516,63 @@ template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   using Teuchos::RCP;
-   using Teuchos::ArrayRCP;
-   using Teuchos::ptrFromRef;
-   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::VectorBase;
+  using Thyra::ProductVectorBase;
 
-   using Thyra::VectorBase;
-   using Thyra::SpmdVectorBase;
-   using Thyra::ProductVectorBase;
+  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  
+  RealType seedValue = RealType(0.0);
+  RCP<ProductVectorBase<double>> blockedSolution;
+  if (useTimeDerivativeSolutionVector_) {
+    blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
+    seedValue = workset.alpha;
+  }
+  else {
+    blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
+    seedValue = workset.beta;
+  }
 
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
+  // turn off sensitivies: this may be faster if we don't expand the term
+  // but I suspect not because anywhere it is used the full complement of
+  // sensitivies will be needed anyway.
+  if(disableSensitivities_)
+    seedValue = 0.0;
 
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  const int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
 
-   double seed_value = 0.0;
-   Teuchos::RCP<ProductVectorBase<double> > x;
-   if (useTimeDerivativeSolutionVector_) {
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
-     seed_value = workset.alpha;
-   }
-   else {
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
-     seed_value = workset.beta;
-   }
+  // Loop over fields to gather
+  int currentWorksetLIDSubBlock = -1;
+  for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size(); fieldIndex++) {
+    // workset LIDs only change if in different sub blocks 
+    if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
+      const auto& blockIndexer = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fieldIndex]];
+      blockIndexer->getElementLIDs(localCellIds,worksetLIDs_); 
+      currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
+    }
 
-   // turn off sensitivies: this may be faster if we don't expand the term
-   // but I suspect not because anywhere it is used the full complement of
-   // sensitivies will be needed anyway.
-   if(disableSensitivities_)
-      seed_value = 0.0;
+    const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
+    const auto& subblockSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(blockedSolution->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
+    const auto kokkosSolution = subblockSolution.template getLocalView<PHX::mem_space>();
 
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
+    // Class data fields for lambda capture
+    const Kokkos::View<const int*,PHX::Device> fieldOffsets = fieldOffsets_[fieldIndex];
+    const Kokkos::View<const LO**,PHX::Device> worksetLIDs = worksetLIDs_;
+    const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
+    const Kokkos::View<const LO*,PHX::Device> blockOffsets = blockOffsets_;
+    const int blockStart = blockOffsets(blockRowIndex);
+    const int numDerivatives = blockOffsets(numFieldBlocks);
 
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      LO cellLocalId = localCellIds[worksetCellIndex];
-
-      gidIndexer_->getElementGIDs(cellLocalId,GIDs,blockId);
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const MapType> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
-
-         LIDs[i] = x_map->getLocalElement(GIDs[i].second);
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+      for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+        const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
+        fieldValues(cell,basis) = ScalarT(numDerivatives,kokkosSolution(rowLID,0));
+        fieldValues(cell,basis).fastAccessDx(blockStart+fieldOffsets(basis)) = seedValue;
       }
+    });
 
-      // loop over the fields to be gathered
-      Teuchos::ArrayRCP<const double> local_x;
-      for(std::size_t fieldIndex=0;
-          fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int indexerId = gidIndexer_->getFieldBlock(fieldNum);
-
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
-         block_x->getLocalData(ptrFromRef(local_x));
-
-         const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-
-            // set the value and seed the FAD object
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(GIDs.size(), local_x[lid]);
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
-         }
-      }
-   }
+  }
 }
 
 // **********************************************************************

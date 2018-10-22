@@ -29,6 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     Import/Xpetra_EpetraImport.cpp
     Export/Xpetra_EpetraExport.cpp
     MultiVector/Xpetra_EpetraMultiVector.cpp
+    MultiVector/Xpetra_EpetraIntMultiVector.cpp
     CrsGraph/Xpetra_EpetraCrsGraph.cpp
     CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
     Vector/Xpetra_EpetraVector.cpp

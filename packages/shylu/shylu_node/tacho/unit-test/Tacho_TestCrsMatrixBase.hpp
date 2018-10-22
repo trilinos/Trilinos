@@ -82,9 +82,9 @@ TEST( CrsMatrixBase, constructor ) {
   EXPECT_EQ(Bh.NumCols(), 0);
   EXPECT_EQ(size_t(Bh.NumNonZeros()), size_t(0));
 
-  EXPECT_EQ(size_t(Bh.RowPtr().dimension_0()), size_t(0));
-  EXPECT_EQ(size_t(Bh.Cols().dimension_0()), size_t(0));
-  EXPECT_EQ(size_t(Bh.Values().dimension_0()), size_t(0));
+  EXPECT_EQ(size_t(Bh.RowPtr().extent(0)), size_t(0));
+  EXPECT_EQ(size_t(Bh.Cols().extent(0)), size_t(0));
+  EXPECT_EQ(size_t(Bh.Values().extent(0)), size_t(0));
 
   EXPECT_TRUE(Bh.RowPtr().data() == NULL);
   EXPECT_TRUE(Bh.Cols().data() == NULL);

@@ -214,15 +214,15 @@ bool check_assembly(const VectorType& analytic_residual,
 
   fbuf << test_name << ":" << std::endl;
 
-  if (host_analytic_residual.dimension_0() != host_fad_residual.dimension_0()) {
+  if (host_analytic_residual.extent(0) != host_fad_residual.extent(0)) {
     fbuf << "Analytic residual dimension "
-         << host_analytic_residual.dimension_0()
+         << host_analytic_residual.extent(0)
          << " does not match Fad residual dimension "
-         << host_fad_residual.dimension_0() << std::endl;
+         << host_fad_residual.extent(0) << std::endl;
     success = false;
   }
   else {
-    const size_t num_node = host_analytic_residual.dimension_0();
+    const size_t num_node = host_analytic_residual.extent(0);
     for (size_t i=0; i<num_node; ++i) {
       success = success && compareValues(
         host_analytic_residual(i), "analytic residual",
@@ -238,15 +238,15 @@ bool check_assembly(const VectorType& analytic_residual,
   Kokkos::deep_copy( host_analytic_jacobian, analytic_jacobian );
   Kokkos::deep_copy( host_fad_jacobian, fad_jacobian );
 
-  if (host_analytic_jacobian.dimension_0() != host_fad_jacobian.dimension_0()) {
+  if (host_analytic_jacobian.extent(0) != host_fad_jacobian.extent(0)) {
     fbuf << "Analytic Jacobian dimension "
-         << host_analytic_jacobian.dimension_0()
+         << host_analytic_jacobian.extent(0)
          << " does not match Fad Jacobian dimension "
-         << host_fad_jacobian.dimension_0() << std::endl;
+         << host_fad_jacobian.extent(0) << std::endl;
     success = false;
   }
   else {
-    const size_t num_entry = host_analytic_jacobian.dimension_0();
+    const size_t num_entry = host_analytic_jacobian.extent(0);
     for (size_t i=0; i<num_entry; ++i) {
       success = success && compareValues(
         host_analytic_jacobian(i), "analytic Jacobian",

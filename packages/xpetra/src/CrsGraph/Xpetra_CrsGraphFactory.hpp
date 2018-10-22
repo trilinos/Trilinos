@@ -87,6 +87,21 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
+
+    //! Constructor specifying column Map and number of entries in each row.
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
   };
 
 // we need the Epetra specialization only if Epetra is enabled
@@ -121,6 +136,23 @@ namespace Xpetra {
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
 
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
+#endif
+
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsGraphT<int, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
+
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+
   };
 #endif
 
@@ -151,6 +183,22 @@ namespace Xpetra {
 
       if (map->lib() == UseEpetra)
         return rcp( new EpetraCrsGraphT<long long, Node>(map, NumVectors, pftype) );
+
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
+#endif
+
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsGraphT<long long, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype, plist) );
 
       XPETRA_FACTORY_END;
       TEUCHOS_UNREACHABLE_RETURN(null);

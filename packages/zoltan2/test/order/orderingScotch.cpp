@@ -53,12 +53,10 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 using Teuchos::RCP;
-using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 // Program to demonstrate use of Zoltan2 to order a TPetra matrix
@@ -240,7 +238,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
                  "Print messages and results.");
 
   if (rank == 0 ) {
-    cout << "Starting everything" << endl;
+    std::cout << "Starting everything" << std::endl;
   }
 
   //////////////////////////////////
@@ -298,9 +296,9 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
   RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (rank == 0) {
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+    std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
+         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
+         << "NumProcs = " << comm->getSize() << std::endl;
   }
 
   ////// Create a vector to use with the matrix.
@@ -329,7 +327,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
                                                           comm);
 
     if( rank == 0 ) {
-      cout << "Going to solve" << endl;
+      std::cout << "Going to solve" << std::endl;
     }
     problem.solve();
 
@@ -340,7 +338,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
       problem.getLocalOrderingSolution();
 
     if( rank == 0 ) {
-      cout << "Going to get results" << endl;
+      std::cout << "Going to get results" << std::endl;
     }
 
   #ifdef MDM // Temp debugging code all of which can be removed for final
@@ -378,7 +376,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     }
 
     if (outputFile != "") {
-      ofstream permFile;
+      std::ofstream permFile;
 
       // Write permutation (0-based) to file
       // each process writes local perm to a separate file
@@ -387,22 +385,22 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
       fname << outputFile << "." << comm->getSize() << "." << rank;
       permFile.open(fname.str().c_str());
       for (size_t i=0; i<checkLength; i++){
-        permFile << " " << checkPerm[i] << endl;
+        permFile << " " << checkPerm[i] << std::endl;
       }
       permFile.close();
     }
 
     // Validate that checkPerm is a permutation
     if (rank == 0 ) {
-      cout << "Checking permutation" << endl;
+      std::cout << "Checking permutation" << std::endl;
     }
-    
+
     testReturn = soln->validatePerm();
     if (testReturn) return testReturn;
 
     // Validate the inverse permutation.
     if (rank == 0 ) {
-      cout << "Checking inverse permutation" << endl;
+      std::cout << "Checking inverse permutation" << std::endl;
     }
     for (size_t i=0; i< checkLength; i++){
       testReturn = (checkInvPerm[checkPerm[i]] != z2TestLO(i));
@@ -411,7 +409,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
 
     // Validate NumBlocks
     if (rank == 0 ) {
-      cout << "Checking num blocks" << endl;
+      std::cout << "Checking num blocks" << std::endl;
     }
     testReturn = !((NumBlocks > 0) && (NumBlocks<z2TestLO(checkLength)));
     if (testReturn) return testReturn;
@@ -419,7 +417,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     // Validate RangeTab.
     // Should be monitonically increasing, RT[0] = 0; RT[NumBlocks+1]=nVtx;
     if (rank == 0 ) {
-      cout << "Checking range" << endl;
+      std::cout << "Checking range" << std::endl;
     }
     testReturn = RangeTab[0];
     if (testReturn) return testReturn;
@@ -432,7 +430,7 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     // TODO How do we validate TreeTab?
     //      TreeTab root has -1, other values < NumBlocks
     if (rank == 0 ) {
-      cout << "Going to compute the bandwidth" << endl;
+      std::cout << "Going to compute the bandwidth" << std::endl;
     }
 
     // Compute original and permuted bandwidth
@@ -440,8 +438,8 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
     z2TestLO permutedBandwidth = computeBandwidth(origMatrix, checkPerm);
 
     if (rank == 0 ) {
-      cout << "Original Bandwidth: " << originalBandwidth << endl;
-      cout << "Permuted Bandwidth: " << permutedBandwidth << endl;
+      std::cout << "Original Bandwidth: " << originalBandwidth << std::endl;
+      std::cout << "Permuted Bandwidth: " << permutedBandwidth << std::endl;
     }
 
     if(permutedBandwidth >= originalBandwidth) {
@@ -470,9 +468,8 @@ int mainExecute(int narg, char** arg, RCP<const Teuchos::Comm<int> > comm)
 
 int main(int narg, char** arg)
 {
-  Teuchos::GlobalMPISession mpiSession(&narg, &arg, NULL);
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int result = mainExecute(narg, arg, comm);
 

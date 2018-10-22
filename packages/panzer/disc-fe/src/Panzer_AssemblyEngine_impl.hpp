@@ -47,6 +47,7 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include <sstream>
 
 //===========================================================================
 //===========================================================================
@@ -353,9 +354,15 @@ evaluateBCs(const panzer::BCType bc_type,
 
       // Only process bcs of the appropriate type (neumann or dirichlet)
       if (bc.bcType() == bc_type) {
+        std::ostringstream timerName;
+        timerName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier();
+        PANZER_FUNC_TIME_MONITOR(timerName.str());
 
         // Loop over local faces
         for (std::map<unsigned,PHX::FieldManager<panzer::Traits> >::const_iterator side = bc_fm.begin(); side != bc_fm.end(); ++side) {
+          std::ostringstream timerSideName;
+          timerSideName << "panzer::AssemblyEngine::evaluateBCs: " << bc.identifier() << ", side=" << side->first;
+          PANZER_FUNC_TIME_MONITOR(timerSideName.str());
 
           // extract field manager for this side  
           unsigned local_side_index = side->first;

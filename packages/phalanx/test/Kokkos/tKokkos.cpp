@@ -85,7 +85,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      for (int ip = 0; ip < static_cast<int>(rho_.dimension_1()); ++ip) {
+      for (int ip = 0; ip < static_cast<int>(rho_.extent(1)); ++ip) {
 	rho_(i,ip) = k_ * P_(i,ip) / T_(i,ip);
       }
     }
@@ -174,7 +174,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      for (int ip = 0; ip < static_cast<int>(rho_.dimension_1()); ++ip) {
+      for (int ip = 0; ip < static_cast<int>(rho_.extent(1)); ++ip) {
 	rho_(i,ip) = k_(0) * P_(i,ip) / T_(i,ip);
       }
     }
@@ -322,8 +322,8 @@ namespace phalanx_test {
     using execution_space = PHX::exec_space;
     using memory_space = PHX::Device::memory_space;
     using policy_type = Kokkos::TaskScheduler<execution_space>;
-    const unsigned memory_capacity = 3 * sizeof(TaskDep<execution_space>);    
-    policy_type policy(memory_space(),memory_capacity);    
+    const unsigned memory_span = 3 * sizeof(TaskDep<execution_space>);    
+    policy_type policy(memory_space(),memory_span);    
     auto f1 = policy.host_spawn(TaskDep<execution_space>(policy,3),Kokkos::TaskSingle);
     auto f2 = policy.host_spawn(TaskDep<execution_space>(policy,2,f1),Kokkos::TaskSingle, f1);
     auto f3 = policy.host_spawn(TaskDep<execution_space>(policy,1,f2),Kokkos::TaskSingle, f2);
@@ -352,7 +352,7 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      const int ip_size = static_cast<int>(view_.dimension_1());
+      const int ip_size = static_cast<int>(view_.extent(1));
       for (int ip = 0; ip < ip_size; ++ip) {
 	view_(i,ip) = k_;
       }
@@ -450,10 +450,10 @@ namespace phalanx_test {
     TaskWrap<execution_space,ComputeRho<double,execution_space>> n3(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
 
     // Assign memory pool size
-    //const unsigned memory_capacity = sizeof(n1) + sizeof(n2) + sizeof(n3);
-    //const unsigned memory_capacity = n1.taskSize() + n2.taskSize() + n3.taskSize();
-    const unsigned memory_capacity = 1000000;
-    policy_type policy(memory_space(),memory_capacity);
+    //const unsigned memory_span = sizeof(n1) + sizeof(n2) + sizeof(n3);
+    //const unsigned memory_span = n1.taskSize() + n2.taskSize() + n3.taskSize();
+    const unsigned memory_span = 1000000;
+    policy_type policy(memory_space(),memory_span);
 
     // test that dependent_futures can leave scope
     {
@@ -571,11 +571,11 @@ namespace phalanx_test {
     // Create a DynRankView from a compiletime View
     {
       Kokkos::View<double**,PHX::Device> d("d",100,4);
-      Kokkos::DynRankView<double,PHX::Device,Kokkos::MemoryUnmanaged> e(d.ptr_on_device(),100,4);
+      Kokkos::DynRankView<double,PHX::Device,Kokkos::MemoryUnmanaged> e(d.data(),100,4);
       TEST_EQUALITY(d.extent(0),e.extent(0));
       TEST_EQUALITY(d.extent(1),e.extent(1));
 
-      // Interesting. ptr_on_device returns pointer before first
+      // Interesting. data returns pointer before first
       // touch. Would have expected test failure below since memory
       // not allocated yet.
       
@@ -848,7 +848,7 @@ namespace phalanx_test {
     using DefaultDevLayout = PHX::exec_space::array_layout;
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
 #else
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;

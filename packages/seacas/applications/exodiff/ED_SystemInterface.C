@@ -47,16 +47,15 @@ namespace {
   {
     SMART_ASSERT(!str_val.empty());
 
-    char *endptr;
-    errno      = 0;
-    double val = strtod(str_val.c_str(), &endptr);
-
-    if (errno == ERANGE) {
-      ERROR(" Overflow or underflow occured when trying"
-            << " to parse command line tolerance.  Aborting...\n");
+    double val = 0;
+    try {
+      val = std::stod(str_val);
+    }
+    catch (...) {
+      ERROR(" Problem converting the string '"
+            << str_val << "' to a double value while parsing tolerance.  Aborting...\n");
       exit(1);
     }
-    errno = 0;
 
     if (val < 0.0) {
       ERROR(" Parsed a negative value \"" << val << "\".  Aborting...\n");
@@ -70,7 +69,7 @@ namespace {
     if (fname.empty()) {
       return 0;
     }
-    std::ifstream file_check(fname.c_str(), std::ios::in);
+    std::ifstream file_check(fname, std::ios::in);
     if (file_check.fail()) {
       return 0;
     }
@@ -178,7 +177,7 @@ namespace {
       SMART_ASSERT(!subtok.empty());
 
       errno     = 0;
-      int ival1 = atoi(subtok.c_str());
+      int ival1 = std::stoi(subtok);
       SMART_ASSERT(errno == 0);
 
       if (ival1 < 1) {
@@ -192,7 +191,7 @@ namespace {
       subtok = extract_token(tok, "-");
       if (!subtok.empty()) {
         errno     = 0;
-        int ival2 = atoi(subtok.c_str());
+        int ival2 = std::stoi(subtok);
         SMART_ASSERT(errno == 0);
 
         if (ival2 < 1) {
@@ -231,7 +230,7 @@ namespace {
         SMART_ASSERT(!subtok.empty());
 
         errno     = 0;
-        int ival1 = atoi(subtok.c_str());
+        int ival1 = std::stoi(subtok);
         SMART_ASSERT(errno == 0);
 
         exclude_steps[num_excluded_steps++] = ival1;
@@ -239,7 +238,7 @@ namespace {
         subtok = extract_token(tok, "-");
         if (!subtok.empty()) {
           errno     = 0;
-          int ival2 = atoi(subtok.c_str());
+          int ival2 = std::stoi(subtok);
           SMART_ASSERT(errno == 0);
 
           for (int i = ival1 + 1; i <= ival2; ++i) {
@@ -253,31 +252,7 @@ namespace {
   }
 } // namespace
 
-SystemInterface::SystemInterface()
-    : quiet_flag(false), show_all_diffs(false), output_type(ABSOLUTE), map_flag(USE_FILE_IDS),
-      nsmap_flag(true), ssmap_flag(true), short_block_check(true), nocase_var_names(true),
-      summary_flag(false), ignore_maps(false), ignore_nans(false), ignore_dups(false),
-      ignore_attributes(false), ignore_sideset_df(false), ints_64_bits(false), coord_sep(false),
-      exit_status_switch(true), dump_mapping(false), show_unmatched(false),
-      noSymmetricNameCheck(false), allowNameMismatch(false), doL1Norm(false), doL2Norm(false),
-      pedantic(false), interpolating(false), by_name(false), coord_tol(ABSOLUTE, 1.0e-6, 0.0),
-      time_tol(RELATIVE, 1.0e-6, 1.0e-15), final_time_tol(RELATIVE, 0.0, 0.0), time_step_offset(0),
-      time_step_start(1), time_step_stop(-1), time_step_increment(1),
-      max_number_of_names(DEFAULT_MAX_NUMBER_OF_NAMES), default_tol(RELATIVE, 1.0e-6, 0.0),
-      glob_var_do_all_flag(false), node_var_do_all_flag(false), elmt_var_do_all_flag(false),
-      elmt_att_do_all_flag(false), ns_var_do_all_flag(false), ss_var_do_all_flag(false),
-      command_file("")
-{
-  glob_var_default = default_tol;
-  node_var_default = default_tol;
-  elmt_var_default = default_tol;
-  elmt_att_default = default_tol;
-  ns_var_default   = default_tol;
-  ss_var_default   = default_tol;
-  ss_df_tol        = default_tol;
-
-  enroll_options();
-}
+SystemInterface::SystemInterface() { enroll_options(); }
 
 SystemInterface::~SystemInterface() = default;
 
@@ -427,6 +402,8 @@ void SystemInterface::enroll_options()
                   "Don't compare element attribute values.", nullptr);
   options_.enroll("ignore_sideset_df", GetLongOption::NoValue,
                   "Don't compare sideset distribution factors.", nullptr);
+  options_.enroll("ignore_steps", GetLongOption::NoValue,
+                  "Don't compare any transient data; compare mesh only.", nullptr);
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
   options_.enroll("nosymmetric_name_check", GetLongOption::NoValue,
@@ -479,7 +456,7 @@ void SystemInterface::enroll_options()
                   "\t\tThis option allows the maximum number to be changed.",
                   "1000");
   options_.enroll("use_old_floor", GetLongOption::NoValue,
-                  "use the older defintion of the floor tolerance.\n"
+                  "use the older definition of the floor tolerance.\n"
                   "\t\tOLD: ignore if |a-b| < floor.\n"
                   "\t\tNEW: ignore if |a| < floor && |b| < floor.",
                   nullptr);
@@ -556,8 +533,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cerr << "\n"
-              << "Copyright(C) 2008 National Technology & Engineering Solutions\n"
+    std::cout << "\n"
+              << "Copyright(C) 2008-2017 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -604,14 +581,16 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         // Check for additional unknown arguments...
-        std::cerr << trmclr::red << "\nexodiff: ERROR: Too many file arguments specified."
-                  << "\n         Probably caused by options following filenames which is no longer "
-                     "allowed."
-                  << "\n         Unknown options are: ";
+        std::ostringstream out;
+        out << "\nexodiff: ERROR: Too many file arguments specified."
+            << "\n         Probably caused by options following filenames which is no longer "
+               "allowed."
+            << "\n         Unknown options are: ";
         while (option_index < argc) {
-          std::cerr << "'" << argv[option_index++] << "' ";
+          out << "'" << argv[option_index++] << "' ";
         }
-        std::cerr << "\n\n" << trmclr::normal;
+        out << "\n\n";
+        ERR_OUT(out);
         return false;
       }
     }
@@ -710,7 +689,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         }
         else {
           // Try to convert to integer...
-          explicit_steps.first = strtol(tokens[0].c_str(), nullptr, 0);
+          explicit_steps.first = std::stoi(tokens[0]);
         }
 
         if (case_strcmp(tokens[1], "last") == 0) {
@@ -718,7 +697,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         }
         else {
           // Try to convert to integer...
-          explicit_steps.second = strtol(tokens[1].c_str(), nullptr, 0);
+          explicit_steps.second = std::stoi(tokens[1]);
         }
       }
       else {
@@ -819,6 +798,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
   if (options_.retrieve("ignore_dups") != nullptr) {
     ignore_dups = true;
+  }
+  if (options_.retrieve("ignore_steps") != nullptr) {
+    ignore_steps = true;
   }
   if (options_.retrieve("64-bit") != nullptr) {
     ints_64_bits = true;
@@ -946,7 +928,7 @@ void SystemInterface::Parse_Command_File()
 {
   int default_tol_specified = 0;
 
-  std::ifstream cmd_file(command_file.c_str(), std::ios::in);
+  std::ifstream cmd_file(command_file, std::ios::in);
   SMART_ASSERT(cmd_file.good());
 
   char        line[256];
@@ -1016,7 +998,7 @@ void SystemInterface::Parse_Command_File()
         std::string tok = extract_token(xline, " \n\t=");
         if (tok != "" && tok[0] != '#') {
           errno   = 0;
-          int tmp = atoi(tok.c_str());
+          int tmp = std::stoi(tok);
           SMART_ASSERT(errno == 0);
           if (tmp > 0) {
             Set_Max_Names(tmp);
@@ -1122,7 +1104,7 @@ void SystemInterface::Parse_Command_File()
         }
         else {
           errno            = 0;
-          time_step_offset = atoi(tok.c_str());
+          time_step_offset = std::stoi(tok);
           SMART_ASSERT(errno == 0);
         }
       }
@@ -1620,9 +1602,10 @@ namespace {
         if (idx >= max_names) {
           ERROR("Number of names in tabbed list is larger "
                 "than current limit of "
-                << max_names << ".  To increase, use \"-maxnames <int>\" on the "
-                                "command line or \"MAX NAMES <int>\" in the command "
-                                "file.  Aborting...\n");
+                << max_names
+                << ".  To increase, use \"-maxnames <int>\" on the "
+                   "command line or \"MAX NAMES <int>\" in the command "
+                   "file.  Aborting...\n");
           exit(1);
         }
 

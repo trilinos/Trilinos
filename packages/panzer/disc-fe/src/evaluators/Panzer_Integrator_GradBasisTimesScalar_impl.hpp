@@ -64,7 +64,7 @@ Integrator_GradBasisTimesScalar(
   // TODO: Get all of the panzer modules to read in const integration rules and basisIRlayouts
   Teuchos::RCP<const BasisIRLayout> basis_layout = p.get< Teuchos::RCP<BasisIRLayout> >("Basis").getConst();
   Teuchos::RCP<const panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR").getConst();
-  _num_dims = ir->dl_vector->dimension(2);
+  _num_dims = ir->dl_vector->extent(2);
 
   Teuchos::RCP<const PureBasis> basis = basis_layout->getBasis();
   _basis_name = basis_layout->name();
@@ -120,26 +120,15 @@ void
 Integrator_GradBasisTimesScalar<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
-
-  for (auto & residual : _residuals){
-    this->utils.setFieldData(residual,fm);
-  }
-
-  this->utils.setFieldData(_scalar,fm);
-
-  for (auto & field : _field_multipliers){
-    this->utils.setFieldData(field,fm);
-  }
-
-  _num_basis_nodes = _residuals[0].dimension(1);
-  _num_quadrature_points = _scalar.dimension(1);
+  _num_basis_nodes = _residuals[0].extent(1);
+  _num_quadrature_points = _scalar.extent(1);
 
   _basis_index = panzer::getBasisIndex(_basis_name, (*sd.worksets_)[0], this->wda);
 
   // TODO: figure out a clean way of cloning _vector
-  _tmp = Kokkos::createDynRankView(_residuals[0].get_static_view(),"tmp",_scalar.dimension(0), _num_quadrature_points);
+  _tmp = Kokkos::createDynRankView(_residuals[0].get_static_view(),"tmp",_scalar.extent(0), _num_quadrature_points);
 }
 
 //**********************************************************************

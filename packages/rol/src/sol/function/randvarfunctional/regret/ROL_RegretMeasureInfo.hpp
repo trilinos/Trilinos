@@ -44,13 +44,13 @@
 #ifndef ROL_REGRETINFO_HPP
 #define ROL_REGRETINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
 
 template<class Real>
-inline void RegretMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void RegretMeasureInfo(ROL::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
                             std::vector<Real> &upper, bool &isBoundActivated,
                             const bool printToStream = false,
@@ -58,24 +58,24 @@ inline void RegretMeasureInfo(Teuchos::ParameterList &parlist, std::string &name
   name = parlist.sublist("SOL").sublist("Regret Measure").get<std::string>("Name");
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
-  if ( name == "Mean Absolute Loss" ||
-       name == "Moreau-Yosida Mean Absolute Loss" ||
+  if ( name == "Mean Absolute Loss"                           ||
+       name == "Moreau-Yosida Mean Absolute Loss"             ||
        name == "Generalized Moreau-Yosida Mean Absolute Loss" ||
-       name == "Exponential" ||
-       name == "Mean L2" ||
-       name == "Truncated Mean" ||
-       name == "Log Quantile" ||
+       name == "Exponential"                                  ||
+       name == "Mean L2"                                      ||
+       name == "Truncated Mean"                               ||
+       name == "Log Quantile"                                 ||
        name == "Smoothed Worst Case" ) {
     nStatistic = 0;
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::RegretMeasureInfo): Invalid probability " << name << "!");
   }
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

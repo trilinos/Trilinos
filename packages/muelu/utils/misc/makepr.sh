@@ -34,17 +34,17 @@ REMOTE=$USER-$SHA
 # Push this branch to remote with a new name
 git push origin $CBRANCH:$REMOTE
 
-TITLE_STRING="Auto-PR for SHA $SHA"
+MESSAGE_STRING="Auto-PR for SHA $SHA"
 
 # Generate a new pull request
-MESSAGE="$*"
+TITLE_STRING="$*"
 token=$(cat $tokenfile)
 h="'Authorization: token $token'"
-CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE\"}\' https://api.github.com/repos/$fork/$repo/pulls)
+CMD=$(echo curl -i -H $h -d \'{\"title\": \"$TITLE_STRING\" , \"head\": \"$REMOTE\" ,\"base\": \"$mainBranch\", \"body\": \"$MESSAGE_STRING\"}\' https://api.github.com/repos/$fork/$repo/pulls)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 # Get the PR number
-PRN=`grep number\": $TMPFILE | cut -f2 -d:`
+PRN=`grep number\": $TMPFILE | cut -f2 -d: | cut -f1 -d, | sed 's/ *//'`
 
 if grep Created $TMPFILE > /dev/null; then
     echo "PR $PRN created successfully"
@@ -53,5 +53,15 @@ else
     exit 1
 fi
 
+# Add the AT: AUTOMERGE tag
+CMD=$(echo curl -i -H $h -d \'[\"AT: AUTOMERGE\"]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
+eval $CMD >$TMPFILE 2> $TMPFILE
+
+if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
+    echo "PR $PRN labeled as 'AT: AUTOMERGE'"
+else
+    echo "PR $PRN label failed"; 
+    exit 1
+fi
 
 rm -f $TMPFILE

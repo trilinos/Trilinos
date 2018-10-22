@@ -83,9 +83,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
-
+    
     RCP<Matrix> originalAc = Get< RCP<Matrix> >(coarseLevel, "A");
-
     RCP<const Import> rebalanceImporter = Get< RCP<const Import> >(coarseLevel, "Importer");
 
     if (rebalanceImporter != Teuchos::null) {
@@ -103,14 +102,13 @@ namespace MueLu {
         }
         // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
         XpetraList.set("Timer Label","MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
-        rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
+	rebalancedAc = MatrixFactory::Build(originalAc, *rebalanceImporter, *rebalanceImporter, targetMap, targetMap, rcp(&XpetraList,false));
 
         if (!rebalancedAc.is_null())
           rebalancedAc->SetFixedBlockSize(originalAc->GetFixedBlockSize());
 
         Set(coarseLevel, "A", rebalancedAc);
       }
-
       if (!rebalancedAc.is_null() && IsPrint(Statistics2)) {
         int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
 

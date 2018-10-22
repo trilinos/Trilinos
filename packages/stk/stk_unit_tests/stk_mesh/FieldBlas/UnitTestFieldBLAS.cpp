@@ -52,7 +52,7 @@
 #include <string>
 #include <complex>
 #include <vector>
-
+#include <limits>
 #include <sstream>
 
 template<class A>
@@ -110,15 +110,15 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
     stk::mesh::MetaData &meta_data = io.meta_data();
 
     field1 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field1");
-    stk::mesh::put_field(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
+    stk::mesh::put_field_on_mesh(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
     fieldBase1 = field1;
 
     field2 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field2");
-    stk::mesh::put_field(*field2,field2->mesh_meta_data().universal_part(),&initial_value2);
+    stk::mesh::put_field_on_mesh(*field2,field2->mesh_meta_data().universal_part(),&initial_value2);
     fieldBase2 = field2;
 
     field3 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field3");
-    stk::mesh::put_field(*field3,field3->mesh_meta_data().universal_part(),&initial_value3);
+    stk::mesh::put_field_on_mesh(*field3,field3->mesh_meta_data().universal_part(),&initial_value3);
     fieldBase3 = field3;
 
     io.populate_bulk_data();
@@ -1863,15 +1863,15 @@ BLASFixture3d<A>::BLASFixture3d(A* init1_input, A* init2_input, A* init3_input)
     stk::mesh::MetaData &meta_data = io.meta_data();
 
     field1 = &meta_data.declare_field<stk::mesh::Field<A,stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field1");
-    stk::mesh::put_field(*field1,field1->mesh_meta_data().universal_part(),init1);
+    stk::mesh::put_field_on_mesh(*field1,field1->mesh_meta_data().universal_part(),init1);
     fieldBase1 = field1;
 
     field2 = &meta_data.declare_field<stk::mesh::Field<A,stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field2");
-    stk::mesh::put_field(*field2,field2->mesh_meta_data().universal_part(),init2);
+    stk::mesh::put_field_on_mesh(*field2,field2->mesh_meta_data().universal_part(),init2);
     fieldBase2 = field2;
 
     field3 = &meta_data.declare_field<stk::mesh::Field<A,stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "field3");
-    stk::mesh::put_field(*field3,field3->mesh_meta_data().universal_part(),init3);
+    stk::mesh::put_field_on_mesh(*field3,field3->mesh_meta_data().universal_part(),init3);
     fieldBase3 = field3;
 
     io.populate_bulk_data(); // THIS IS THE SLOW LINE

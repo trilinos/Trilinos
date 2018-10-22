@@ -145,7 +145,7 @@ namespace Intrepid2 {
 
       z(0) = -one;
 
-      auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
+      auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.extent(0)));      
       JacobiZeros(z_plus_1, np-1, alpha, beta+1);
 
       Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
@@ -214,7 +214,7 @@ namespace Intrepid2 {
       z(0)    = -one;
       z(np-1) =  one;
 
-      auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
+      auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.extent(0)));      
       JacobiZeros(z_plus_1, np-2, alpha+one, beta+one);
 
       Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
@@ -293,8 +293,8 @@ namespace Intrepid2 {
       pd(0) = pow(-one,np-1)*GammaFunction(np+beta+one);
       pd(0) /= GammaFunction(np)*GammaFunction(beta+two);
 
-      auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.dimension(0)));
-      auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
+      auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.extent(0)));
+      auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.extent(0)));
 
       JacobiPolynomialDerivative(np-1, z_plus_1, pd_plus_1, np-1, alpha, beta+1);
       for(ordinal_type i = 1; i < np; ++i)
@@ -380,8 +380,8 @@ namespace Intrepid2 {
       pd(0)  = two*pow(-one,np)*GammaFunction(np + beta);
       pd(0) /= GammaFunction(np - one)*GammaFunction(beta + two);
 
-      auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.dimension(0)));
-      auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
+      auto pd_plus_1 = Kokkos::subview(pd, Kokkos::pair<ordinal_type,ordinal_type>(1, pd.extent(0)));
+      auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.extent(0)));
 
       JacobiPolynomialDerivative(np-2, z_plus_1, pd_plus_1, np-2, alpha+1, beta+1);
       for (ordinal_type i = 1; i < np-1; ++i) 

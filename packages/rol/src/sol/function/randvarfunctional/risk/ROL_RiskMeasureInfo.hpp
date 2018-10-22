@@ -44,13 +44,13 @@
 #ifndef ROL_RISKMEASUREINFO_HPP
 #define ROL_RISKMEASUREINFO_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
 
 template<class Real>
-inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
+inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
                             std::vector<Real> &upper, bool &isBoundActivated,
                             const bool printToStream = false,
@@ -65,6 +65,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
        name == "Generalized Moreau-Yosida CVaR" ||
        name == "Log Quantile"                   ||
        name == "Smoothed Worst Case"            ||
+       name == "Safety Margin"                  ||
+       name == "Log Exponential"                ||
        name == "Truncated Mean" ) {
     nStatistic = 1;
     lower.resize(nStatistic,ROL_NINF<Real>());
@@ -89,10 +91,10 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     upper.resize(nStatistic,ROL_INF<Real>());
   }
   else if ( name == "Mixed CVaR" ) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed CVaR");
-    Teuchos::Array<Real> prob
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
+    std::vector<Real> prob
+      = ROL::getArrayFromStringParameter<Real>(list,"Probability Array");
     nStatistic = prob.size();
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
@@ -100,7 +102,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   else if ( name == "Second Order CVaR"       ||
             name == "Chebyshev Spectral Risk" ||
             name == "Spectral Risk" ) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist(name);
     nStatistic = list.get("Number of Quadrature Points",5);
     lower.resize(nStatistic,ROL_NINF<Real>());
@@ -114,18 +116,18 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     nStatistic = 0;
   }
   else if ( name == "Convex Combination Risk Measure" ) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Convex Combination Risk Measure");
     // Get convex combination parameters
-    Teuchos::Array<Real> lambda
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
+    std::vector<Real> lambda
+      = ROL::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
     // Build risk measures
     std::vector<std::string> riskString;
-    for (typename Teuchos::Array<Real>::size_type i = 0; i < lambda.size(); ++i) {
+    for (typename std::vector<Real>::size_type i = 0; i < lambda.size(); ++i) {
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
-      Teuchos::ParameterList &ilist = list.sublist(si);
+      ROL::ParameterList &ilist = list.sublist(si);
       std::string namei = ilist.get<std::string>("Name");
       riskString.push_back(namei);
     }
@@ -136,6 +138,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
            riskString[i] == "Generalized Moreau-Yosida CVaR" ||
            riskString[i] == "Log Quantile"                   ||
            riskString[i] == "Smoothed Worst Case"            ||
+           riskString[i] == "Safety Margin"                  ||
+           riskString[i] == "Log Exponential"                ||
            riskString[i] == "Truncated Mean" ) {
         nStatistic += 1;
         lower.push_back(ROL_NINF<Real>());
@@ -160,11 +164,11 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
         upper.push_back(ROL_INF<Real>()); upper.push_back(ROL_INF<Real>());
       }
       else if ( riskString[i] == "Mixed CVaR" ) {
-        Teuchos::ParameterList &MQlist = list.sublist("Mixed CVaR");
-        Teuchos::Array<Real> prob
-          = Teuchos::getArrayFromStringParameter<Real>(MQlist,"Probability Array");
+        ROL::ParameterList &MQlist = list.sublist("Mixed CVaR");
+        std::vector<Real> prob
+          = ROL::getArrayFromStringParameter<Real>(MQlist,"Probability Array");
         nStatistic += prob.size();
-        for (typename Teuchos::Array<Real>::size_type j = 0; j < prob.size(); ++j) {
+        for (typename std::vector<Real>::size_type j = 0; j < prob.size(); ++j) {
           lower.push_back(ROL_NINF<Real>());
           upper.push_back(ROL_INF<Real>());
         }
@@ -172,7 +176,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       else if ( riskString[i] == "Second Order CVaR"       ||
                 riskString[i] == "Chebyshev Spectral Risk" ||
                 riskString[i] == "Spectral Risk" ) {
-        Teuchos::ParameterList &SQlist = list.sublist(riskString[i]);
+        ROL::ParameterList &SQlist = list.sublist(riskString[i]);
         int nSQQstat = SQlist.get("Number of Quadrature Points",5);
         nStatistic += nSQQstat;
         for (int j = 0; j < nSQQstat; ++j) {
@@ -188,19 +192,19 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
         nStatistic += 0;
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
           ">>> (ROL::RiskMeasureInfo): Invalid risk measure " << riskString[i] << "!");
       }
     }
   }
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::RiskMeasureInfo): Invalid risk measure " << name << "!");
   }
 
   // Print Information
   if ( printToStream ) {
-    Teuchos::oblackholestream oldFormatState;
+    ROL::nullstream oldFormatState;
     oldFormatState.copyfmt(outStream);
 
     outStream << std::endl;

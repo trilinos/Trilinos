@@ -68,7 +68,7 @@ namespace KokkosBatched {
 #pragma unroll
 #endif
             for (int j=0;j<jend;++j)
-              b1t[j*bs1] /= alpha11;
+              b1t[j*bs1] = b1t[j*bs1] / alpha11;
           }
           
           for (int i=0;i<iend;++i)
@@ -189,7 +189,7 @@ namespace KokkosBatched {
 #pragma unroll
 #endif
             for (int j=0;j<n;++j)
-              b1t[j*bs1] /= alpha11;
+              b1t[j*bs1] = b1t[j*bs1] / alpha11;
           }
           for (int i=0;i<iend;++i)
                 

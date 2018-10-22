@@ -50,6 +50,7 @@
 #include "ROL_Bundle.hpp"
 
 #include "ROL_Ptr.hpp"
+#include "ROL_LAPACK.hpp" 
 
 #include <vector>
 #include <limits.h> 
@@ -58,9 +59,7 @@
 #include <math.h> 
 #include <algorithm> // TT: std::find
 
-#include "Teuchos_SerialDenseMatrix.hpp" 
-#include "Teuchos_SerialDenseVector.hpp" 
-#include "Teuchos_LAPACK.hpp" 
+#include "ROL_LinearAlgebra.hpp"
 
 #define EXACT 1
 #define TABOO_LIST 1
@@ -77,7 +76,7 @@ namespace ROL {
 template<class Real>
 class Bundle_TT : public Bundle<Real> {
 private: 
-  Teuchos::LAPACK<int, Real> lapack_; // TT
+  ROL::LAPACK<int, Real> lapack_; // TT
 
   int QPStatus_;           // QP solver status
   int maxind_;             // maximum integer value
@@ -107,15 +106,15 @@ private:
   std::vector<int> taboo_; // list of "taboo" items
   std::vector<int> base_;  // base
 
-  Teuchos::SerialDenseMatrix<int, Real> L_;
-  Teuchos::SerialDenseMatrix<int, Real> Id_;
-  Teuchos::SerialDenseVector<int, Real> tempv_;
-  Teuchos::SerialDenseVector<int, Real> tempw1_;
-  Teuchos::SerialDenseVector<int, Real> tempw2_;
-  Teuchos::SerialDenseVector<int, Real> lh_;
-  Teuchos::SerialDenseVector<int, Real> lj_;
-  Teuchos::SerialDenseVector<int, Real> z1_;
-  Teuchos::SerialDenseVector<int, Real> z2_;
+  LA::Matrix<Real> L_;
+  LA::Matrix<Real> Id_;
+  LA::Vector<Real> tempv_;
+  LA::Vector<Real> tempw1_;
+  LA::Vector<Real> tempw2_;
+  LA::Vector<Real> lh_;
+  LA::Vector<Real> lj_;
+  LA::Vector<Real> z1_;
+  LA::Vector<Real> z2_;
 
   Real GiGj(const int i, const int j) const {
     return (Bundle<Real>::subgradient(i)).dot(Bundle<Real>::subgradient(j));
@@ -168,15 +167,15 @@ private:
     }
     unsigned dd = ind1;
     for (unsigned n=ind1+1; n<=ind2; ++n){
-      Teuchos::SerialDenseMatrix<int, Real> Id_n(Teuchos::Copy,Id_,currSize_,currSize_);
+      LA::Matrix<Real> Id_n(LA::Copy,Id_,currSize_,currSize_);
       Id_n(dd,dd) = zero; Id_n(dd,n) = one;
       Id_n(n,dd)  = one;  Id_n(n,n)  = zero;
-      Teuchos::SerialDenseMatrix<int, Real> prod(currSize_,currSize_);
+      LA::Matrix<Real> prod(currSize_,currSize_);
       if( !trans ) {
-        prod.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,Id_n,L_,zero);
+        prod.multiply(LA::ETransp::NO_TRANS,LA::ETransp::NO_TRANS,one,Id_n,L_,zero);
       }
       else {
-        prod.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,L_,Id_n,zero);
+        prod.multiply(LA::ETransp::NO_TRANS,LA::ETransp::NO_TRANS,one,L_,Id_n,zero);
       }
       L_ = prod;
       dd++;
@@ -464,7 +463,7 @@ private:
   }// end deleteSubgradFromBase()
   
   // TT: solving triangular system for TT algorithm
-  void solveSystem(int size, char tran, Teuchos::SerialDenseMatrix<int,Real> &L, Teuchos::SerialDenseVector<int,Real> &v){
+  void solveSystem(int size, char tran, LA::Matrix<Real> &L, LA::Vector<Real> &v){
     int info;
     if( L.numRows()!=size )
       std::cout << "Error: Wrong size matrix!" << std::endl;
@@ -479,7 +478,7 @@ private:
   }
 
   // TT: check that inequality constraints are satisfied for dual variables
-  bool isFeasible(Teuchos::SerialDenseVector<int,Real> &v, const Real &tol){
+  bool isFeasible(LA::Vector<Real> &v, const Real &tol){
     bool feas = true;
     for(int i=0;i<v.numRows();i++){
       if(v[i]<-tol){
@@ -547,7 +546,7 @@ private:
               L = | L_B'   0 | \ currSize
                   | l_h^T  0 | /
             */
-            Teuchos::SerialDenseMatrix<int,Real> LBprime( Teuchos::Copy,L_,currSize_-1,currSize_-1);     
+            LA::Matrix<Real> LBprime( LA::Copy,L_,currSize_-1,currSize_-1);     
             lh_.size(currSize_-1); // initialize to zeros;
             lhz1_ = zero;
             lhz2_ = zero;
@@ -591,7 +590,7 @@ private:
                L = | l_h^T 0 0 | | currSize
                    | l_j^T 0 0 | /
             */
-            Teuchos::SerialDenseMatrix<int,Real> LBprime( Teuchos::Copy,L_,currSize_-2,currSize_-2 );
+            LA::Matrix<Real> LBprime( LA::Copy,L_,currSize_-2,currSize_-2 );
                lj_.size(currSize_-2); // initialize to zeros;
             lh_.size(currSize_-2); // initialize to zeros;
             ljz1_ = zero;
@@ -801,7 +800,7 @@ private:
         for (unsigned i=0; i<zsize; ++i){
           lh_[i] = GiGj(entering_,base_[i]);
         }
-        Teuchos::SerialDenseMatrix<int,Real> LBprime( Teuchos::Copy,L_,zsize,zsize);      
+        LA::Matrix<Real> LBprime( LA::Copy,L_,zsize,zsize);      
         solveSystem(zsize,'N',LBprime,lh_); // lh = (L_B^{-1})*(G_B^T*g_h)
         for (unsigned i=0; i<zsize; ++i){
           lhz1_ += lh_[i]*z1_[i];

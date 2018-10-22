@@ -52,7 +52,7 @@
 #include "ROL_BisectionScalarMinimization.hpp"
 #include "ROL_GoldenSectionScalarMinimization.hpp"
 #include "ROL_ScalarFunction.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_Ptr.hpp"
 #include <iostream>
 
@@ -66,7 +66,7 @@ private:
 public:
   virtual ~ScalarMinimizationTest(void) {}
 
-  ScalarMinimizationTest(Teuchos::ParameterList &parlist) {
+  ScalarMinimizationTest(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("Scalar Minimization").get("Type","Brent's");
     if ( type == "Brent's" ) {
       algo_ = ROL::makePtr<BrentsScalarMinimization<Real>>(parlist);
@@ -78,7 +78,7 @@ public:
       algo_ = ROL::makePtr<GoldenSectionScalarMinimization<Real>>(parlist);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> (ROL::ScalarMinimizationTest): Undefined ScalarMinimization type!");
     }
   }

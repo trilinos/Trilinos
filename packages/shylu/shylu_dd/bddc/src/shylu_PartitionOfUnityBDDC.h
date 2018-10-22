@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -51,10 +51,8 @@
 #include "shylu_enumsBDDC.h"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"  
+#include "Teuchos_ParameterList.hpp"
 
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -68,15 +66,15 @@ using Teuchos::rcp;
 namespace bddc {
 
 template <class SX,
-	  class SM,
-	  class LO,
-	  class GO> class PartitionOfUnity
+          class SM,
+          class LO,
+          class GO> class PartitionOfUnity
 {
  public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+  typedef Tpetra::Map<>::node_type                                Node;
   typedef Tpetra::Map<LO,GO,Node>                                 Map;
   typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
   typedef Tpetra::Export<LO,GO,Node>                              Export;
@@ -87,16 +85,16 @@ template <class SX,
   }
 
   PartitionOfUnity(LO numNodes,
-		   const GO* nodeGlobalIDs,
-		   const std::vector< std::vector<LO> > & subNodeBegin,
-		   const std::vector< std::vector<LO> > & subNodes,
-		   LO** subRowBegin,
-		   LO** subColumns,
-		   SX** subValues,
-		   LO spatialDim,
-		   RCP<Teuchos::ParameterList> & Parameters,
-		   RCP<const Teuchos::Comm<int> > Comm) :
-  m_numNodes(numNodes), 
+                   const GO* nodeGlobalIDs,
+                   const std::vector< std::vector<LO> > & subNodeBegin,
+                   const std::vector< std::vector<LO> > & subNodes,
+                   LO** subRowBegin,
+                   LO** subColumns,
+                   SX** subValues,
+                   LO spatialDim,
+                   RCP<Teuchos::ParameterList> & Parameters,
+                   RCP<const Teuchos::Comm<int> > Comm) :
+  m_numNodes(numNodes),
     m_nodeGlobalIDs(nodeGlobalIDs),
     m_subNodeBegin(subNodeBegin),
     m_subNodes(subNodes),
@@ -150,7 +148,7 @@ template <class SX,
     return m_equivCard;
   }
 
-  const std::vector<GO> & getGlobalIDs() const 
+  const std::vector<GO> & getGlobalIDs() const
   {
     return m_nodeGlobalIDsCoarse;
   }
@@ -175,7 +173,7 @@ template <class SX,
     return equivType;
   }
 
-  const std::vector< std::vector<LO> > & getEquivClassSubdomains() const 
+  const std::vector< std::vector<LO> > & getEquivClassSubdomains() const
   {
     return m_equivClassSubdomains;
   }
@@ -198,12 +196,12 @@ template <class SX,
   }
 
  private:
-  void determineAdjacentNodes(LO & numAdjNodes, 
-			      std::vector<LO> & adjNodes, 
-			      std::vector<bool> & nodeFlag,
-			      std::vector< std::vector<LO> > & subDofNodes,
-			      LO sub, 
-			      LO node) const
+  void determineAdjacentNodes(LO & numAdjNodes,
+                              std::vector<LO> & adjNodes,
+                              std::vector<bool> & nodeFlag,
+                              std::vector< std::vector<LO> > & subDofNodes,
+                              LO sub,
+                              LO node) const
   {
     const LO* rowBegin = m_subRowBegin[sub];
     const LO* columns = m_subColumns[sub];
@@ -213,15 +211,15 @@ template <class SX,
     const std::vector<LO> & subNodes = m_subNodes[sub];
     for (LO i=nodeBegin[node]; i<nodeBegin[node+1]; i++) {
       for (LO j=rowBegin[i]; j<rowBegin[i+1]; j++) {
-	LO col = columns[j];
-	LO node2 = subNodes[dofNodes[col]];
-	if (std::abs(values[j]) > 0) {
-	  if (nodeFlag[node2] == false) {
-	    nodeFlag[node2] = true;
-	    adjNodes[numAdjNodes] = node2;
-	    numAdjNodes++;
-	  }
-	}
+        LO col = columns[j];
+        LO node2 = subNodes[dofNodes[col]];
+        if (std::abs(values[j]) > 0) {
+          if (nodeFlag[node2] == false) {
+            nodeFlag[node2] = true;
+            adjNodes[numAdjNodes] = node2;
+            numAdjNodes++;
+          }
+        }
       }
     }
   }
@@ -235,8 +233,8 @@ template <class SX,
       const std::vector<LO> & subNodes = m_subNodes[i];
       LO numNodes = m_subNodes[i].size();
       for (LO j=0; j<numNodes; j++) {
-	LO node = subNodes[j];
-	if (nodeBegin[j+1] > nodeBegin[j]) m_nodeIsActive[node] = true;
+        LO node = subNodes[j];
+        if (nodeBegin[j+1] > nodeBegin[j]) m_nodeIsActive[node] = true;
       }
     }
   }
@@ -245,8 +243,8 @@ template <class SX,
   {
     int numSub = m_subNodes.size();
     int numSubScan;
-    Teuchos::scan<int, int> (*m_Comm, Teuchos::REDUCE_SUM, 1, &numSub, 
-			     &numSubScan);
+    Teuchos::scan<int, int> (*m_Comm, Teuchos::REDUCE_SUM, 1, &numSub,
+                             &numSubScan);
     m_startingSub = numSubScan - numSub;
   }
 
@@ -259,15 +257,15 @@ template <class SX,
     for (int i=0; i<numSub; i++) {
       subGIDs[i] = m_startingSub + i;
       for (size_t j=0; j<m_subNodes[i].size(); j++) {
-	nodeSubdomains[m_subNodes[i][j]].push_back(i);
+        nodeSubdomains[m_subNodes[i][j]].push_back(i);
       }
     }
     Teuchos::ArrayRCP<size_t> count(m_numNodes);
     for (LO i=0; i<m_numNodes; i++) count[i] = nodeSubdomains[i].size();
-    RCP<const Map> nodeMap = 
-      rcp(new Map(m_IGO, 
-		  Teuchos::ArrayView<const GO>(m_nodeGlobalIDs,m_numNodes), 
-		  0, m_Comm));
+    RCP<const Map> nodeMap =
+      rcp(new Map(m_IGO,
+                  Teuchos::ArrayView<const GO>(m_nodeGlobalIDs,m_numNodes),
+                  0, m_Comm));
     RCP<const Map> colMap =
       rcp( new Map(m_IGO, Teuchos::ArrayView<GO>(subGIDs), 0, m_Comm) );
     CrsGraph nodeSubs(nodeMap, colMap, count, Tpetra::StaticProfile);
@@ -290,8 +288,8 @@ template <class SX,
       LO numSubNode = Indices.size();
       nodeSubdomains[i].resize(numSubNode);
       for (LO j=0; j<numSubNode; j++) {
-	nodeSubdomains[i][j] = 
-	  nodeSubsAll.getColMap()->getGlobalElement(Indices[j]);
+        nodeSubdomains[i][j] =
+          nodeSubsAll.getColMap()->getGlobalElement(Indices[j]);
       }
       std::sort(nodeSubdomains[i].begin(), nodeSubdomains[i].end());
     }
@@ -308,11 +306,11 @@ template <class SX,
       LO numDof = m_subNodeBegin[i][numNode];
       subDofNodes[i].resize(numDof);
       for (LO j=0; j<numNode; j++) {
-	LO node = m_subNodes[i][j];
-	subsForNodes[node].push_back(std::make_pair(i, j));
-	for (LO k=m_subNodeBegin[i][j]; k<m_subNodeBegin[i][j+1]; k++) {
-	  subDofNodes[i][k] = j;
-	}
+        LO node = m_subNodes[i][j];
+        subsForNodes[node].push_back(std::make_pair(i, j));
+        for (LO k=m_subNodeBegin[i][j]; k<m_subNodeBegin[i][j+1]; k++) {
+          subDofNodes[i][k] = j;
+        }
       }
     }
     std::vector<bool> nodeFlag(m_numNodes, false);
@@ -321,15 +319,15 @@ template <class SX,
     for (LO i=0; i<m_numNodes; i++) {
       LO numAdjNodes(0);
       for (size_t j=0; j<subsForNodes[i].size(); j++) {
-	LO sub = subsForNodes[i][j].first;
-	LO node = subsForNodes[i][j].second;
-	determineAdjacentNodes(numAdjNodes, adjNodes, nodeFlag, subDofNodes, 
-			       sub, node);
+        LO sub = subsForNodes[i][j].first;
+        LO node = subsForNodes[i][j].second;
+        determineAdjacentNodes(numAdjNodes, adjNodes, nodeFlag, subDofNodes,
+                               sub, node);
       }
       nodeConnectivity[i].resize(numAdjNodes);
       for (LO j=0; j<numAdjNodes; j++) {
-	nodeConnectivity[i][j] = adjNodes[j];
-	nodeFlag[adjNodes[j]] = false;
+        nodeConnectivity[i][j] = adjNodes[j];
+        nodeFlag[adjNodes[j]] = false;
       }
     }
   }
@@ -356,7 +354,7 @@ template <class SX,
   {
     if (m_constructAdjacencyGraph == false) return;
     LO numSub = m_subNodes.size();
-    std::vector< std::vector< std::pair<LO, enum EquivType> > > 
+    std::vector< std::vector< std::pair<LO, enum EquivType> > >
       allConnections(numSub);
     determineAllSubdomainConnections(nodeSubdomains, allConnections);
     std::vector< std::vector<GO> > subdomainAdjacencies(numSub);
@@ -369,28 +367,28 @@ template <class SX,
     }
     RCP<const Map> subMap =
       rcp( new Map(m_IGO, Teuchos::ArrayView<GO>(subdomainGIDs), 0, m_Comm) );
-    m_subdomainConnectivity = 
+    m_subdomainConnectivity =
       rcp( new CrsGraph(subMap, count, Tpetra::StaticProfile) );
     for (LO i=0; i<numSub; i++) {
       m_subdomainConnectivity->insertGlobalIndices
-	(subdomainGIDs[i], Teuchos::ArrayView<GO>(subdomainAdjacencies[i]));
+        (subdomainGIDs[i], Teuchos::ArrayView<GO>(subdomainAdjacencies[i]));
     }
     m_subdomainConnectivity->fillComplete();
   }
 
   void equivalenceClasses(std::vector< std::vector<LO> > & nodeSubdomains,
-			  std::vector< std::vector<LO> > & nodeConnectivity,
-			  std::vector<int> & component)
+                          std::vector< std::vector<LO> > & nodeConnectivity,
+                          std::vector<int> & component)
   {
     std::vector< std::pair<double, LO> > subEncoding(m_numNodes);
     for (LO i=0; i<m_numNodes; i++) {
       LO numSub = nodeSubdomains[i].size();
       double sum = 0;
-      if ((numSub > 1) &&	(m_nodeIsActive[i] == true)) {
-	for (LO j=0; j<numSub; j++) {
-	  sum += sqrt(double(nodeSubdomains[i][j]+
-			     sqrt(double(7))*component[i]+1.7));
-	}
+      if ((numSub > 1) &&       (m_nodeIsActive[i] == true)) {
+        for (LO j=0; j<numSub; j++) {
+          sum += sqrt(double(nodeSubdomains[i][j]+
+                             sqrt(double(7))*component[i]+1.7));
+        }
       }
       subEncoding[i] = std::make_pair(sum, i);
     }
@@ -401,8 +399,8 @@ template <class SX,
       currentVal = subEncoding[i].first;
       localNodes[i] = subEncoding[i].second;
       if (fabs(currentVal-previousVal) > tol) {
-	start.push_back(i);
-	previousVal = currentVal;
+        start.push_back(i);
+        previousVal = currentVal;
       }
     }
     start.push_back(m_numNodes);
@@ -411,7 +409,7 @@ template <class SX,
     for (LO i=0; i<numEquivClasses; i++) {
       m_equivClasses[i].resize(start[i+1]-start[i]);
       for (LO j=start[i]; j<start[i+1]; j++) {
-	m_equivClasses[i][j-start[i]] = localNodes[j];
+        m_equivClasses[i][j-start[i]] = localNodes[j];
       }
       sortByGlobalIDs(m_equivClasses[i]);
     }
@@ -428,15 +426,15 @@ template <class SX,
       LO node = m_equivClasses[i][0];
       const std::vector<LO> & subs = nodeSubdomains[node];
       for (size_t j=0; j<subs.size(); j++) {
-	LO localSub = subs[j] - m_startingSub;
-	if ((localSub >= 0) && (localSub < numSub)) {
-	  for (size_t k=0; k<subs.size(); k++) {
-	    if (subs[k] != subs[j]) {
-	      allConnections[localSub].push_back
-		(std::make_pair(subs[k], equivT));
-	    }
-	  }
-	}
+        LO localSub = subs[j] - m_startingSub;
+        if ((localSub >= 0) && (localSub < numSub)) {
+          for (size_t k=0; k<subs.size(); k++) {
+            if (subs[k] != subs[j]) {
+              allConnections[localSub].push_back
+                (std::make_pair(subs[k], equivT));
+            }
+          }
+        }
       }
     }
   }
@@ -466,24 +464,24 @@ template <class SX,
       int previousSub = -1;
       std::vector<int> subBegin;
       for (size_t j=0; j<allConnections[i].size(); j++) {
-	if (allConnections[i][j].first != previousSub) {
-	  subBegin.push_back(j);
-	  previousSub = allConnections[i][j].first;
-	}
+        if (allConnections[i][j].first != previousSub) {
+          subBegin.push_back(j);
+          previousSub = allConnections[i][j].first;
+        }
       }
       subBegin.push_back(allConnections[i].size());
       int numSub2 = subBegin.size() - 1;
       for (int j=0; j<numSub2; j++) {
-	std::vector<int> countEquivType(3, 0);
-	for (int k=subBegin[j]; k<subBegin[j+1]; k++) {
-	  countEquivType[allConnections[i][k].second]++;
-	}
-	bool isAdjacent = checkAdjacency(countEquivType);
-	if (isAdjacent == true) {
-	  int index = subBegin[j];
-	  GO adjSubdomain = allConnections[i][index].first;
-	  subdomainAdjacencies[i].push_back(adjSubdomain);
-	}
+        std::vector<int> countEquivType(3, 0);
+        for (int k=subBegin[j]; k<subBegin[j+1]; k++) {
+          countEquivType[allConnections[i][k].second]++;
+        }
+        bool isAdjacent = checkAdjacency(countEquivType);
+        if (isAdjacent == true) {
+          int index = subBegin[j];
+          GO adjSubdomain = allConnections[i][index].first;
+          subdomainAdjacencies[i].push_back(adjSubdomain);
+        }
       }
     }
   }
@@ -539,10 +537,10 @@ template <class SX,
       const std::vector<LO> & subs = nodeSubdomains[node];
       m_equivCard[i] = subs.size();
       for (size_t j=0; j<subs.size(); j++) {
-	LO localSub = subs[j] - m_startingSub;
-	if ((localSub >= 0) && (localSub < numSub)) {
-	  m_subdomainEquivClasses[localSub].push_back(i);
-	}
+        LO localSub = subs[j] - m_startingSub;
+        if ((localSub >= 0) && (localSub < numSub)) {
+          m_subdomainEquivClasses[localSub].push_back(i);
+        }
       }
     }
   }
@@ -561,30 +559,30 @@ template <class SX,
       for (LO j=0; j<numEquivNodes; j++) nodeMap[equivNodes[j]] = j;
       A2.resize(numEquivNodes+1, 0);
       for (LO j=0; j<numEquivNodes; j++) {
-	LO node1 = equivNodes[j];
-	for (size_t k=0; k<nodeConnectivity[node1].size(); k++) {
-	  LO node2 = nodeMap[nodeConnectivity[node1][k]];
-	  if (node2 != -1) {
-	    A1.push_back(node2);
-	    numTerms++;
-	  }
-	}
-	A2[j+1] = numTerms;
+        LO node1 = equivNodes[j];
+        for (size_t k=0; k<nodeConnectivity[node1].size(); k++) {
+          LO node2 = nodeMap[nodeConnectivity[node1][k]];
+          if (node2 != -1) {
+            A1.push_back(node2);
+            numTerms++;
+          }
+        }
+        A2[j+1] = numTerms;
       }
       for (LO j=0; j<numEquivNodes; j++) nodeMap[equivNodes[j]] = -1;
       int *componentEQ(0);
       determineComponents(&A1[0], &A2[0], numEquivNodes, componentEQ);
       for (LO j=0; j<numEquivNodes; j++) {
-	component[equivNodes[j]] = componentEQ[j];
+        component[equivNodes[j]] = componentEQ[j];
       }
       delete [] componentEQ;
     }
   }
 
-  void determineComponents(LO *A1, 
-			   LO *A2, 
-			   LO N, 
-			   LO* & component) const
+  void determineComponents(LO *A1,
+                           LO *A2,
+                           LO N,
+                           LO* & component) const
   {
     LO i;
     component = new LO[N];
@@ -592,33 +590,33 @@ template <class SX,
     componentsFunction(A1, A2, N, component);
   }
 
-  void componentsFunction(LO *A1, 
-			  LO *A2, 
-			  LO N, 
-			  LO* component) const
+  void componentsFunction(LO *A1,
+                          LO *A2,
+                          LO N,
+                          LO* component) const
   {
     LO i, comp_num;
     comp_num = 0;
     for (i=0; i<N; i++) {
       if (component[i] == -1) {
-	depthFirstSearch(i, comp_num, component, A1, A2);
-	comp_num++;
+        depthFirstSearch(i, comp_num, component, A1, A2);
+        comp_num++;
       }
     }
   }
 
-  void depthFirstSearch(const LO v, 
-			const LO comp_num, 
-			LO* component,
-			LO* A1, 
-			LO* A2) const
+  void depthFirstSearch(const LO v,
+                        const LO comp_num,
+                        LO* component,
+                        LO* A1,
+                        LO* A2) const
   {
     LO i, adj_vertex;
     component[v] = comp_num;
     for (i=A2[v]; i<A2[v+1]; i++) {
       adj_vertex = A1[i];
-      if (component[adj_vertex] == -1) 
-	depthFirstSearch(adj_vertex, comp_num, component, A1, A2);
+      if (component[adj_vertex] == -1)
+        depthFirstSearch(adj_vertex, comp_num, component, A1, A2);
     }
   }
 
@@ -647,10 +645,10 @@ template <class SX,
       const std::vector<LO> & subs = nodeSubdomains[node];
       subsForEquiv[i].resize(subs.size());
       for (size_t j=0; j<subs.size(); j++) {
-	LO sub = subs[j];
-	LO localSub = findEntry(uniqueSubs, sub);
-	subsForEquiv[i][j] = localSub;
-	equivsForSub[localSub].push_back(i);
+        LO sub = subs[j];
+        LO localSub = findEntry(uniqueSubs, sub);
+        subsForEquiv[i][j] = localSub;
+        equivsForSub[localSub].push_back(i);
       }
     }
     // determine number of active ancestors for each equivalence class
@@ -660,25 +658,25 @@ template <class SX,
       LO sub = subsForEquiv[i][0];
       LO numSubEquiv = subsForEquiv[i].size();
       for (size_t j=0; j<equivsForSub[sub].size(); j++) {
-	LO equiv = equivsForSub[sub][j];
-	bool isActive = isActiveEquiv(equiv);
-	if (isActive == false) continue;
-	LO numSubEquiv2 = subsForEquiv[equiv].size();
-	if (numSubEquiv2 <= numSubEquiv) continue;
-	for (LO k=0; k<numSubEquiv2; k++) {
-	  subFlag[subsForEquiv[equiv][k]] = true;
-	}
-	bool isAncestor = true;
-	for (LO k=0; k<numSubEquiv; k++) {
-	  if (subFlag[subsForEquiv[i][k]] == false) {
-	    isAncestor = false;
-	    break;
-	  }
-	}
-	for (LO k=0; k<numSubEquiv2; k++) {
-	  subFlag[subsForEquiv[equiv][k]] = false;
-	}
-	if (isAncestor == true) m_numActiveAncestors[i]++;
+        LO equiv = equivsForSub[sub][j];
+        bool isActive = isActiveEquiv(equiv);
+        if (isActive == false) continue;
+        LO numSubEquiv2 = subsForEquiv[equiv].size();
+        if (numSubEquiv2 <= numSubEquiv) continue;
+        for (LO k=0; k<numSubEquiv2; k++) {
+          subFlag[subsForEquiv[equiv][k]] = true;
+        }
+        bool isAncestor = true;
+        for (LO k=0; k<numSubEquiv; k++) {
+          if (subFlag[subsForEquiv[i][k]] == false) {
+            isAncestor = false;
+            break;
+          }
+        }
+        for (LO k=0; k<numSubEquiv2; k++) {
+          subFlag[subsForEquiv[equiv][k]] = false;
+        }
+        if (isAncestor == true) m_numActiveAncestors[i]++;
       }
     }
   }
@@ -692,8 +690,8 @@ template <class SX,
     return false;
   }
 
-  LO findEntry(std::vector<LO> & vector, 
-	       LO value) const
+  LO findEntry(std::vector<LO> & vector,
+               LO value) const
   {
     auto iter = std::lower_bound(vector.begin(), vector.end(), value);
     assert (iter != vector.end());
@@ -709,7 +707,7 @@ template <class SX,
   LO **m_subRowBegin,  **m_subColumns;
   SX **m_subValues;
   LO m_spatialDim;
-  bool m_constructAdjacencyGraph, m_addCorners, m_useCorners, m_useEdges, 
+  bool m_constructAdjacencyGraph, m_addCorners, m_useCorners, m_useEdges,
     m_useFaces;
   RCP<const Teuchos::Comm<int> > m_Comm;
   Tpetra::global_size_t m_IGO;
@@ -728,4 +726,4 @@ template <class SX,
 } // namespace bddc
 
 #endif // PARTITIONOFUNITYBDDC_H
-  
+

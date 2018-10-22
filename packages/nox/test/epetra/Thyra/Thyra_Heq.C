@@ -245,8 +245,8 @@ int main(int argc, char *argv[])
     // 2. Number of iterations
     int numIterations = 0;
     const int *numItersPtr = nullptr;
-    if (numItersPtr = Teuchos::getParameterPtr<int>(
-        solver->getList().sublist("Output"), "Nonlinear Iterations") ) 
+    if ( nullptr != (numItersPtr = Teuchos::getParameterPtr<int>(
+                        solver->getList().sublist("Output"), "Nonlinear Iterations")) ) 
     {
       numIterations = *numItersPtr;
     } 

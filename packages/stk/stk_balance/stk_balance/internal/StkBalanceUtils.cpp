@@ -18,19 +18,22 @@ int getNumSharedNodesBetweenElements(const ::stk::mesh::BulkData& stkMeshBulkDat
                                      const ::stk::mesh::Entity element1,
                                      const ::stk::mesh::Entity element2)
 {
-    std::set<stk::mesh::Entity> nodes1(stkMeshBulkData.begin_nodes(element1), stkMeshBulkData.end_nodes(element1));
-    std::set<stk::mesh::Entity> nodes2(stkMeshBulkData.begin_nodes(element2), stkMeshBulkData.end_nodes(element2));
+    const stk::mesh::Entity* nodes1 = stkMeshBulkData.begin_nodes(element1);
+    int numNodes1 = stkMeshBulkData.num_nodes(element1);
+    const stk::mesh::Entity* nodes2 = stkMeshBulkData.begin_nodes(element2);
+    int numNodes2 = stkMeshBulkData.num_nodes(element2);
 
-    size_t max = std::max(nodes1.size(), nodes2.size());
-    std::vector<stk::mesh::Entity> result(max);
+    int numShared = 0;
+    for(int i1=0; i1<numNodes1; ++i1) {
+        for(int i2=0; i2<numNodes2; ++i2) {
+            if (nodes1[i1] == nodes2[i2]) {
+                ++numShared;
+                break;
+            }
+        }
+    }
 
-    std::vector<stk::mesh::Entity>::iterator it=std::set_intersection (nodes1.begin(),
-                                                                       nodes1.end(),
-                                                                       nodes2.begin(),
-                                                                       nodes2.end(),
-                                                                       result.begin());
-
-    return it - result.begin();
+    return numShared;
 }
 
 std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const std::string& baseFilename)
@@ -67,7 +70,7 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
     double minZ = *std::min_element(&coords[2 * numNodes], &coords[3 * numNodes]);
     stk::balance::internal::StkBox faceBox(minX - eps, minY - eps, minZ - eps, maxX + eps, maxY + eps, maxZ + eps);
     stk::balance::internal::StkMeshIdent id(elementId, stkMeshBulkData.parallel_rank());
-    faceBoxes.push_back(std::make_pair(faceBox, id));
+    faceBoxes.emplace_back(faceBox, id);
 }
 
 const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& meta_data, const std::string& coordinateFieldName)
@@ -80,18 +83,14 @@ const stk::mesh::FieldBase * get_coordinate_field(const stk::mesh::MetaData& met
 
 void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, stk::balance::internal::BoxVectorWithStkId &faceBoxes, const stk::mesh::Selector& searchSelector)
 {
-    stkMeshBulkData.initialize_face_adjacent_element_graph();
-    stk::mesh::ElemElemGraph& elemElemGraph = stkMeshBulkData.get_face_adjacent_element_graph();
-    stk::mesh::Selector airSelector = !searchSelector;
-    stk::mesh::SkinMeshUtil skinMesh(elemElemGraph, searchSelector, &airSelector);
-    std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
+    std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData, searchSelector, !searchSelector);
+    stk::mesh::EntityVector sideNodes;
     for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
     {
         stk::mesh::Entity sidesetElement = sidesetEntry.element;
         stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
-        stk::mesh::EntityVector sideNodes;
         stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement, stkMeshBulkData.mesh_meta_data().side_rank(), sidesetSide, sideNodes);
-        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord, sideNodes);
+        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord, sideNodes.data(), sideNodes.size());
         addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps, stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
 }
@@ -117,7 +116,7 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const Balanc
                 int val2 = stkMeshBulkData.parallel_rank();
                 stk::balance::internal::StkMeshIdent id(val1, val2);
 
-                boxes.push_back(std::make_pair(box, id));
+                boxes.emplace_back(box, id);
             }
         }
     }

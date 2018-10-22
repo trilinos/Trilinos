@@ -137,7 +137,7 @@ public:
 
 
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Unknown problem number.");
+        ROL_TEST_FOR_EXCEPTION(true,std::logic_error,"Unknown problem number.");
       break;
     }
     return np;

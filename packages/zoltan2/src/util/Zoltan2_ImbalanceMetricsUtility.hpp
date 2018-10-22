@@ -563,7 +563,7 @@ void printImbalanceMetrics(
   part_t targetNumParts, 
   part_t numExistingParts, 
   part_t numNonemptyParts, 
-  const ArrayView<RCP<BaseClassMetrics<scalar_t>>> &infoList)
+  const ArrayView<RCP<BaseClassMetrics<scalar_t> > > &infoList)
 {
   printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, 
                                                 numExistingParts,

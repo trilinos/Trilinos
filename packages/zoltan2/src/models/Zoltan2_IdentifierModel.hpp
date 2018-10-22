@@ -50,8 +50,8 @@
 #ifndef _ZOLTAN2_IDENTIFIERMODEL_HPP_
 #define _ZOLTAN2_IDENTIFIERMODEL_HPP_
 
-#include <Zoltan2_Model.hpp>
 #include <Zoltan2_Adapter.hpp>
+#include <Zoltan2_Model.hpp>
 #include <Zoltan2_StridedData.hpp>
 
 namespace Zoltan2 {
@@ -129,7 +129,6 @@ public:
   inline size_t getGlobalNumObjects() const {return getGlobalNumIdentifiers();}
 
 private:
-
   gno_t numGlobalIdentifiers_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
@@ -155,8 +154,8 @@ template <typename Adapter>
     &numGlobalIdentifiers_);
 
   // Get the number of weights
-  // Use max number of weights over all processes as nUserWeights_
   int tmp = ia->getNumWeightsPerID();
+  // Use max number of weights over all processes as nUserWeights_
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1,
       &tmp, &nUserWeights_);
 

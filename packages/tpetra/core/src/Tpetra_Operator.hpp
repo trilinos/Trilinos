@@ -42,12 +42,15 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#include <Tpetra_MultiVector_decl.hpp>
+#include <Tpetra_Operator_fwd.hpp>
+#include <Tpetra_MultiVector_fwd.hpp>
+#include <Tpetra_Map_fwd.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 namespace Tpetra {
+namespace Classes {
   /// \class Operator
   /// \brief Abstract interface for operators (e.g., matrices and
   ///   preconditioners).
@@ -136,6 +139,7 @@ namespace Tpetra {
     return false;
   }
 
-} // Tpetra namespace
+} // namespace Classes
+} // namespace Tpetra
 
 #endif // TPETRA_OPERATOR_HPP

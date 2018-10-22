@@ -1,3 +1,5 @@
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/vector)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_01
   SOURCES example_01.cpp

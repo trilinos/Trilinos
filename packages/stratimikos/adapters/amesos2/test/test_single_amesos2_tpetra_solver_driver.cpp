@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -46,19 +46,20 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "Tpetra_Core.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 
 int main(int argc, char* argv[])
 {
-  
+
   using Teuchos::CommandLineProcessor;
 
   bool success = true;
   bool verbose = true;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  auto comm = Tpetra::getDefaultComm();
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -68,7 +69,7 @@ int main(int argc, char* argv[])
     //
     // Read options from command-line
     //
-    
+
     std::string     matrixFile             = "";
     std::string     solverType             = "";
     int             numRhs                 = 1;
@@ -112,11 +113,12 @@ int main(int argc, char* argv[])
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
         ,&amesos2LOWSFPL
         ,verbose?&*out:0
+        ,comm
         );
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
-  
+
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";

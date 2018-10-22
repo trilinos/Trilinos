@@ -47,7 +47,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 
 #include "Amesos2_MultiVecAdapter.hpp"
 #include "Amesos2_Util.hpp"
@@ -76,7 +76,6 @@ namespace {
 
   using Tpetra::global_size_t;
   using Tpetra::MultiVector;
-  using Tpetra::DefaultPlatform;
   using Tpetra::Map;
 
   using Amesos2::MultiVecAdapter;
@@ -91,7 +90,7 @@ namespace {
   using Amesos2::GLOBALLY_REPLICATED;
 
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   bool testMpi = false;
 
@@ -108,7 +107,7 @@ namespace {
   {
     RCP<const Comm<int> > ret;
     if( testMpi ){
-      ret = DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     } else {
       ret = rcp(new Teuchos::SerialComm<int>());
     }

@@ -89,7 +89,7 @@ Ptr<T> makePtrFromRef( T& obj ) {
   return Teuchos::rcpFromRef(obj);
 }
 
-template< class T, class U > 
+template<class T, class U> 
 inline
 Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
   return Teuchos::rcp_static_cast<T>(r);
@@ -110,13 +110,37 @@ Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
 template<class T>
 inline
 const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.ptr();
+  return x.get();
 }
 
 template<class T>
 inline
 T* getRawPtr( const Ptr<T>& x ) {
-  return x.ptr();
+  return x.get();
+}
+
+template<class T>
+inline
+int getCount( const Ptr<T>& x ) {
+  return x.strong_count();
+}
+
+template<class T>
+inline
+bool is_nullPtr( const Ptr<T>& x ) {
+  return x.is_null();
+}
+
+template<typename T>
+inline 
+Ptr<T> toPtr( const Ptr<T>& ptr ) { 
+  return ptr;
+}
+
+template<typename T>
+inline 
+Ptr<const T> toPtr( const Ptr<const T>& ptr ) { 
+  return ptr;
 }
 
 template<class T>

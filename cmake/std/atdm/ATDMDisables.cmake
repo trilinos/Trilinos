@@ -42,7 +42,7 @@ SET(ATDM_SE_PACKAGE_DISABLES
   SEACASGen3D
   SEACASGenshell
   SEACASGrepos
-  SEACASGrope
+  SEACASExplore
   SEACASMapvarlib
   SEACASMapvar
   SEACASMapvar-kd

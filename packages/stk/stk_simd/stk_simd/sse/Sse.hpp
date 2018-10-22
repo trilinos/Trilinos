@@ -3,6 +3,8 @@
 #ifndef STK_SIMD_SSE_H
 #define STK_SIMD_SSE_H
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
+
 #include <emmintrin.h>
 #include <stdio.h>
 #include <cmath>
@@ -15,7 +17,6 @@ constexpr int nfloats  = 4;
 }
 }
 
-// IWYU pragma: begin_exports
 #include "./SseDouble.hpp"
 #include "./SseFloat.hpp"
 #include "./SseBool.hpp"
@@ -28,7 +29,6 @@ constexpr int nfloats  = 4;
 #include "./SseFloatOperators.hpp"
 #include "./SseFloatLoadStore.hpp"
 #include "./SseFloatMath.hpp"
-// IWYU pragma: end_exports
 
 namespace stk {
 namespace simd {

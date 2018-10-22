@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -95,7 +95,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
                        Problem_Description *    prob,   /* Structure for various problem params */
                        Solver_Description *     solver, /* Structure for eigen solver params */
                        Weight_Description<INT> *weight  /* Structure for weighting graph */
-                       )
+)
 {
   int   opt_let, iret, el_blk, wgt, max_dim = 0, i;
   char *sub_opt = nullptr, *value = nullptr, *cptr = nullptr, *cptr2 = nullptr;
@@ -134,12 +134,12 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     /* case over the option letter */
     switch (opt_let) {
     case 'v':
-      /* Should an ouput visualization file be output */
+      /* Should an output visualization file be output */
       prob->vis_out = 1;
       break;
 
     case 'y':
-      /* Should an ouput visualization file be output */
+      /* Should an output visualization file be output */
       prob->vis_out = 2;
       break;
 
@@ -171,6 +171,14 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
        * elemental decompositions
        */
       prob->face_adj = 1;
+      break;
+
+    case 'C':
+      /*
+       * detect vertical columns of elements and ensure that
+       * elements of a columns are all in one partition
+       */
+      prob->fix_columns = 1;
       break;
 
     case 'p':
@@ -383,7 +391,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
             machine->type = HCUBE;
             max_dim       = 1;
           }
-        /* fall thru */
+          /* fall through */
 
         case MESH:
           if (machine->type < 0) {
@@ -393,7 +401,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
 
           cptr = value; /* want to set this for both mesh and hcube */
 
-        /* fall thru */
+          /* fall through */
 
         case CLUSTER:
           if (machine->type < 0) /* so, get the number of boxes */
@@ -876,8 +884,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               }
             }
             else {
-              sprintf(ctemp, "FATAL: unknown LB method \"%s\" specified in command"
-                             " file",
+              sprintf(ctemp,
+                      "FATAL: unknown LB method \"%s\" specified in command"
+                      " file",
                       cptr);
               Gen_Error(0, ctemp);
               return 0;
@@ -1236,6 +1245,11 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               problem->face_adj = 1;
             }
           }
+          /* Check if element columns are to be detected and fixed so
+           * that all elements of a column are in the same partition */
+          else if (strstr(cptr, "fix_columns")) {
+            problem->fix_columns = 1;
+          }
           /* Check to see if looking for global mechanisms */
           else if (strstr(cptr, "global_mech")) {
             if (problem->global_mech < 0) {
@@ -1303,8 +1317,9 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
         /* Generate an error, but continue reading for an unknown key */
         strip_string(inp_copy, " #\t");
         if (strlen(inp_copy) > 5) {
-          sprintf(ctemp, "WARNING: don't know how to process line: \n%s\nin command"
-                         " file, ignored",
+          sprintf(ctemp,
+                  "WARNING: don't know how to process line: \n%s\nin command"
+                  " file, ignored",
                   inp_copy);
           Gen_Error(1, ctemp);
         }
@@ -1433,6 +1448,17 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     Gen_Error(1, "WARNING: adjacency with elemental decomposition");
     Gen_Error(1, "WARNING: face definition turned off");
     prob->face_adj = 0;
+  }
+
+  /*
+   * Detecting columns and fixing their partitioning only makes sense
+   * with an elemental decomposition
+   */
+  if (prob->type != ELEMENTAL && prob->fix_columns) {
+    Gen_Error(1, "WARNING: can only use fix columns options");
+    Gen_Error(1, "WARNING: with elemental decomposition");
+    Gen_Error(1, "WARNING: fix columns option turned off");
+    prob->fix_columns = 0;
   }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -1690,8 +1716,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * not exist in the specified file.
      */
     if (weight->exo_vindx <= 0) {
-      sprintf(ctemp, "FATAL: requested weighting variable %s not found in ExodusII"
-                     " file",
+      sprintf(ctemp,
+              "FATAL: requested weighting variable %s not found in ExodusII"
+              " file",
               weight->exo_varname.c_str());
       Gen_Error(0, ctemp);
       return 0;
@@ -1716,7 +1743,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if ((weight->type & EL_BLK) && (weight->ow_read)) {
     if (weight->elemblk.size() > 1) {
       /* start by sorting the two arrays by the element block number */
-      sort2(weight->elemblk.size(), TOPTR(weight->elemblk), TOPTR(weight->elemblk_wgt));
+      sort2(weight->elemblk.size(), weight->elemblk.data(), weight->elemblk_wgt.data());
 
       /* now loop through, and make sure that we don't have multiple values */
       for (cnt = 1; cnt < (int)weight->elemblk.size(); cnt++) {
@@ -1755,6 +1782,8 @@ namespace {
     printf(" -f\t\tuse face definition of adjacency\n");
     printf(" -p\t\tuse partial definition of adjacency: \n");
     printf("   \t\trequire only 3 matching quad face nodes\n");
+    printf(" -C\tavoid splitting vertical element columns\n");
+    printf("   \t\tacross partitions\n");
     printf(" -h\t\tusage information\n");
     printf(" -a ascii file\tget info from ascii input file name\n");
   }

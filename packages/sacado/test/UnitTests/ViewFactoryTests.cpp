@@ -328,8 +328,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     Kokkos::View<double*> a("a",5*3);
     using b_type = Kokkos::View<double**,Kokkos::MemoryUnmanaged>;
     b_type b = createViewWithType<b_type>(a,a.data(),5,3);
-    TEST_EQUALITY(b.dimension_0(),5);
-    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(b.extent(0),5);
+    TEST_EQUALITY(b.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),0);
   }
 
@@ -338,8 +338,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     Kokkos::View<FadType*> a("a",5*3,derivative_dim_plus_one);
     using b_type = Kokkos::View<FadType**,Kokkos::MemoryUnmanaged>;
     b_type b = createViewWithType<b_type>(a,a.data(),5,3);
-    TEST_EQUALITY(b.dimension_0(),5);
-    TEST_EQUALITY(b.dimension_1(),3);
+    TEST_EQUALITY(b.extent(0),5);
+    TEST_EQUALITY(b.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
   }
 
@@ -360,8 +360,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(is_b_layout_stride,true);
     TEST_EQUALITY(is_c_default_layout,true);
     TEST_EQUALITY(c.rank(),2);
-    TEST_EQUALITY(c.dimension_0(),5);
-    TEST_EQUALITY(c.dimension_1(),3);
+    TEST_EQUALITY(c.extent(0),5);
+    TEST_EQUALITY(c.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),0);
   }
 
@@ -382,8 +382,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(is_b_layout_stride,true);
     TEST_EQUALITY(is_c_default_layout,true);
     TEST_EQUALITY(c.rank(),2);
-    TEST_EQUALITY(c.dimension_0(),5);
-    TEST_EQUALITY(c.dimension_1(),3);
+    TEST_EQUALITY(c.extent(0),5);
+    TEST_EQUALITY(c.extent(1),3);
     TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
   }
 

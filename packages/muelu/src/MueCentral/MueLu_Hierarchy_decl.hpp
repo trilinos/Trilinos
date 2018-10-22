@@ -126,9 +126,14 @@ namespace MueLu {
 
     //! Default constructor.
     Hierarchy();
+    //! Constructor that labels the hierarchy.
+    Hierarchy(const std::string& label);
 
     //! Constructor
     Hierarchy(const RCP<Matrix> & A);
+
+    //! Constructor
+    Hierarchy(const RCP<Matrix> & A, const std::string& label);
 
     //! Destructor.
     virtual ~Hierarchy() { }

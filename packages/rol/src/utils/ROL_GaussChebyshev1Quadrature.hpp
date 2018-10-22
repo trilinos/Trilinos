@@ -107,7 +107,7 @@ public:
 private:
   void buildQuadrature(std::vector<Real> &pts, std::vector<Real> &wts) const {
     pts.resize(nQuad_); wts.resize(nQuad_);
-    Real sum(0), pi(Teuchos::ScalarTraits<Real>::pi()), two(2), one(1), n = static_cast<Real>(nQuad_);
+    Real sum(0), pi(ROL::ScalarTraits<Real>::pi()), two(2), one(1), n = static_cast<Real>(nQuad_);
     for (int i = 0; i < nQuad_; ++i) {
       pts[i] = std::cos((two*static_cast<Real>(i+1)-one)*pi/(two*n));
       wts[i] = pi/n;

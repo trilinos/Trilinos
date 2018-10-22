@@ -85,11 +85,11 @@ public:
     uint nvec2 = Hv_part.numVectors();
     uint nblks = blocks_->size();
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (nvec1 != nvec2), std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( (nvec1 != nvec2), std::invalid_argument,
                                 ">>> ERROR (ROL_BlockOperator, apply): "
                                 "Mismatch between input and output number of subvectors.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION( (nblks != nvec1*nvec2 ) , std::invalid_argument, 
+    ROL_TEST_FOR_EXCEPTION( (nblks != nvec1*nvec2 ) , std::invalid_argument, 
                                 ">>> ERROR (ROL_BlockOperator, apply): "
                                 "Block operator dimension mismatch."); 
 

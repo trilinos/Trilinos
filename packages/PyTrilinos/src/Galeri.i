@@ -80,19 +80,13 @@ example subdirectory of the PyTrilinos package:
 	docstring = %galeri_docstring) Galeri
 
 %{
-// System includes
+// System include files
 #include <sstream>
 
-// Configuration includes
+// Configuration include files
 #include "PyTrilinos_config.h"
-#ifdef HAVE_INTTYPES_H
-#undef HAVE_INTTYPES_H
-#endif
-#ifdef HAVE_STDINT_H
-#undef HAVE_STDINT_H
-#endif
 
-// Epetra includes
+// Epetra include files
 #ifdef HAVE_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
@@ -101,22 +95,11 @@ example subdirectory of the PyTrilinos package:
 #include "numpy_include.hpp"
 #endif
 
-// Teuchos includes
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "PyTrilinos_Teuchos_Util.hpp"
+// Teuchos include files
+#include "PyTrilinos_Teuchos_Headers.hpp"
 
-// Galeri includes
-#include "Galeri_Version.h"
-#include "Galeri_Utils.h"
-#include "Galeri_Maps.h"
-#include "Galeri_CrsMatrices.h"
-#include "Galeri_VbrMatrices.h"
-#include "Galeri_ReadHB.h"
+// Galeri include files
+#include "PyTrilinos_Galeri_Headers.hpp"
 %}
 
 // Include PyTrilinos configuration

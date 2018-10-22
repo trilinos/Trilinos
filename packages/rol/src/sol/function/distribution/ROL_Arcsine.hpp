@@ -45,7 +45,7 @@
 #define ROL_ARCSINE_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Arcsine(const Real a = 0., const Real b = 1.)
     : a_(std::min(a,b)), b_(std::max(a,b)) {}
 
-  Arcsine(Teuchos::ParameterList &parlist) {
+  Arcsine(ROL::ParameterList &parlist) {
     a_ = parlist.sublist("SOL").sublist("Distribution").sublist("Arcsine").get("Lower Bound",0.);
     b_ = parlist.sublist("SOL").sublist("Distribution").sublist("Arcsine").get("Upper Bound",1.);
     Real tmp = a_;
@@ -69,21 +69,21 @@ public:
 
   Real evaluatePDF(const Real input) const {
     return ((input <= a_) ? 0. : ((input >= b_) ? 0. : 
-             1./(Teuchos::ScalarTraits<Real>::pi()*std::sqrt((input-a_)*(b_-input)))));
+             1./(ROL::ScalarTraits<Real>::pi()*std::sqrt((input-a_)*(b_-input)))));
   }
 
   Real evaluateCDF(const Real input) const {
     return ((input <= a_) ? 0. : ((input >= b_) ? 1. : 
-             2./Teuchos::ScalarTraits<Real>::pi() * asin(std::sqrt((input-a_)/(b_-a_)))));
+             2./ROL::ScalarTraits<Real>::pi() * asin(std::sqrt((input-a_)/(b_-a_)))));
   }
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+    ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
       ">>> ERROR (ROL::Arcsine): Arcsine integrateCDF not implemented!");
     return ((input < 0.5*(a_+b_)) ? 0.0 : input);
   }
 
   Real invertCDF(const Real input) const {
-    Real x = std::pow(std::sin(0.5*Teuchos::ScalarTraits<Real>::pi()*input),2);
+    Real x = std::pow(std::sin(0.5*ROL::ScalarTraits<Real>::pi()*input),2);
     return x*(b_-a_) + a_;
   }
 
@@ -94,7 +94,7 @@ public:
       case 1: val = mean;                             break;
       case 2: val = std::pow(b_-a_,2)/8. + mean*mean; break;
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+        ROL_TEST_FOR_EXCEPTION( true, std::invalid_argument,
           ">>> ERROR (ROL::Arcsine): Arcsine moment not implemented for m > 2!");
     }
     return val;

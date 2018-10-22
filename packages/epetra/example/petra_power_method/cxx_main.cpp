@@ -49,6 +49,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Util.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #ifdef EPETRA_MPI
@@ -211,10 +212,10 @@ int main(int argc, char *argv[])
     int numvals = A.NumGlobalEntries(0);
     std::vector<double> Rowvals(numvals);
     std::vector<int> Rowinds(numvals);
-    A.ExtractGlobalRowCopy(0, numvals, numvals, &Rowvals[0], &Rowinds[0]); // Get A[0,0]
+    A.ExtractGlobalRowCopy(0, numvals, numvals, Epetra_Util_data_ptr(Rowvals), Epetra_Util_data_ptr(Rowinds)); // Get A[0,0]
     for (i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
 
-    A.ReplaceGlobalValues(0, numvals, &Rowvals[0], &Rowinds[0]);
+    A.ReplaceGlobalValues(0, numvals, Epetra_Util_data_ptr(Rowvals), Epetra_Util_data_ptr(Rowinds));
   }
 
   // Iterate (again)

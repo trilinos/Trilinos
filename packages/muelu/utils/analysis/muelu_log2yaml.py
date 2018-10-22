@@ -1,9 +1,9 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 import yaml
 from log import Log
 import logging
 import re
-from transitions import Machine, logger
+from transitions import Machine
 
 class MueLuLog(Log):
     """Log parser of MueLu logs."""
@@ -19,7 +19,8 @@ class MueLuLog(Log):
 
     def run(self, filename):
         """We skip all timer outputs until the last one"""
-        logger.setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger('transitions').setLevel(logging.WARNING)
 
         machine = self
         M = Machine(model=machine, states=self.states, transitions=self.transitions, initial='none')

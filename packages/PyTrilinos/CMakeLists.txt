@@ -62,8 +62,8 @@ SET(PyTrilinos_VERSION 12.13)
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
-APPEND_SET(PyTrilinos_PACKAGES Teuchos)
-APPEND_SET(PyTrilinos_MODULES  Teuchos)
+APPEND_SET(PyTrilinos_PACKAGES Teuchos    )
+APPEND_SET(PyTrilinos_MODULES  Teuchos    )
 
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)
@@ -93,7 +93,9 @@ ENDIF(PyTrilinos_ENABLE_EpetraExt)
 IF(PyTrilinos_ENABLE_Isorropia)
   APPEND_SET(PyTrilinos_PACKAGES Isorropia         )
   APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__)
-  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra  )
+  IF(PyTrilinos_ENABLE_Epetra)
+    Append_SET(PyTrilinos_MODULES Isorropia.Epetra)
+  ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_Pliris)
@@ -194,8 +196,9 @@ FIND_PACKAGE(PythonInclude REQUIRED)
 # Python module numpy is required
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
-# Simple wrapper interface generator (SWIG) is required
-SET(SWIG_VERSION_FLOOR   3.0.0)
+# Simple wrapper interface generator (SWIG) is required. SWIG 3.0.11
+# is required to support the %module(moduleimport=...) option
+SET(SWIG_VERSION_FLOOR   3.0.11)
 FIND_PACKAGE(SWIG REQUIRED)
 IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
   MESSAGE(FATAL_ERROR
@@ -224,7 +227,7 @@ IF(NOX_ENABLE_PETSC)
 ENDIF(NOX_ENABLE_PETSC)
 
 # Print the enabled PyTrilinos packages
-MESSAGE(STATUS "Enabled PyTrilinos modules:")
+MESSAGE(STATUS "Enabled PyTrilinos packages:")
 MESSAGE(STATUS "    ${PyTrilinos_PACKAGES}")
 
 # Determine the PyTrilinos default installation directory prefix.  If

@@ -96,11 +96,6 @@ class DummyFieldEvaluator
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -131,13 +126,6 @@ DummyFieldEvaluator(
 template<typename EvalT, typename Traits>
 void
 DummyFieldEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{ this->utils.setFieldData(fieldValue,fm); }
-template<typename EvalT, typename Traits>
-void
-DummyFieldEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
 { 
@@ -160,11 +148,6 @@ class RefCoordEvaluator
 
     RefCoordEvaluator(
       const Teuchos::ParameterList& p);
-
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
 
     void
     evaluateFields(
@@ -198,13 +181,6 @@ RefCoordEvaluator(
   std::string n = "RefCoordEvaluator: " + name;
   this->setName(n);
 }
-template<typename EvalT, typename Traits>
-void
-RefCoordEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{ this->utils.setFieldData(fieldValue,fm); }
 template<typename EvalT, typename Traits>
 void
 RefCoordEvaluator<EvalT, Traits>::

@@ -40,7 +40,6 @@
 //@HEADER
 */
 
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -51,7 +50,7 @@
 
 #include "Ifpack2_Parameters.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 
 #include "build_problem.hpp"
@@ -66,7 +65,7 @@ process_command_line (bool& printedHelp,
 
 int main (int argc, char* argv[])
 {
-  Teuchos::GlobalMPISession mpisess(&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   bool success = true;
 
@@ -78,17 +77,17 @@ int main (int argc, char* argv[])
     Teuchos::Time timer("total");
     timer.start();
 
-    Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm =
+      Tpetra::getDefaultComm();
 
     typedef double Scalar;
-    typedef Tpetra::Map<>::local_ordinal_type LO;
-    typedef Tpetra::Map<>::global_ordinal_type GO;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
-    typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
-    typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLinProb;
-    typedef Belos::SolverManager<Scalar,TMV,TOP>   BSolverMgr;
+    typedef Tpetra::Map<>::local_ordinal_type    LO;
+    typedef Tpetra::Map<>::global_ordinal_type   GO;
+    typedef Tpetra::Map<>::node_type             Node;
+    typedef Tpetra::MultiVector<Scalar,LO,GO>    TMV;
+    typedef Tpetra::Operator<Scalar,LO,GO>       TOP;
+    typedef Belos::LinearProblem<Scalar,TMV,TOP> BLinProb;
+    typedef Belos::SolverManager<Scalar,TMV,TOP> BSolverMgr;
 
     //Just get one parameter from the command-line: the name of an xml file
     //to get parameters from.

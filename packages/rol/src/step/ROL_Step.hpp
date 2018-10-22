@@ -51,7 +51,7 @@
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_Types.hpp"
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::Step

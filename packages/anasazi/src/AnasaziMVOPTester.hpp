@@ -862,8 +862,8 @@ namespace Anasazi {
       std::vector<MagType> normsB1(p), normsB2(p),
                            normsC1(p), normsC2(p),
                            normsD1(p), normsD2(p);
-      ScalarType alpha = SCT::random(),
-                  beta = SCT::random();
+      ScalarType alpha = 0.5 * SCT::one(),
+                  beta = 0.33 * SCT::one();
 
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,p);
@@ -1051,6 +1051,8 @@ namespace Anasazi {
     {
       const int p = 7, q = 5;
       Teuchos::RCP<MV> B, C;
+      Teuchos::RCP<MV> Vp, Vq;
+
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
@@ -1058,12 +1060,18 @@ namespace Anasazi {
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
 
+      // Create random SDM that is synchronized across processors.
+      Vp = MVT::Clone(*A,p);
+      Vq = MVT::Clone(*A,q);
+      MVT::MvRandom(*Vp);
+      MVT::MvRandom(*Vq);
+      MVT::MvTransMv( one, *Vp, *Vq, SDM );
+
       // Test 1: alpha==0, SDM!=0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1089,7 +1097,9 @@ namespace Anasazi {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
+      MVT::MvRandom(*Vp);
+      MVT::MvRandom(*Vq);
+      MVT::MvTransMv( one, *Vp, *Vq, SDM );
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1187,6 +1197,7 @@ namespace Anasazi {
     {
       const int p = 5, q = 7;
       Teuchos::RCP<MV> B, C;
+      Teuchos::RCP<MV> Vp, Vq;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
@@ -1194,12 +1205,18 @@ namespace Anasazi {
       B = MVT::Clone(*A,p);
       C = MVT::Clone(*A,q);
 
+      // Create random SDM that is synchronized across processors.
+      Vp = MVT::Clone(*A,p);
+      Vq = MVT::Clone(*A,q);
+      MVT::MvRandom(*Vp);
+      MVT::MvRandom(*Vq);
+      MVT::MvTransMv( one, *Vp, *Vq, SDM );
+
       // Test 5: alpha==0, SDM!=0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
@@ -1225,7 +1242,9 @@ namespace Anasazi {
       MVT::MvRandom(*C);
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
-      SDM.random();
+      MVT::MvRandom(*Vp);
+      MVT::MvRandom(*Vq);
+      MVT::MvTransMv( one, *Vp, *Vq, SDM );
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);

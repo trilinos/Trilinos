@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,9 @@
 
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
+#include <Ioss_Hex8.h>
 #include <Ioss_Utils.h>
+#include <Ioss_Wedge6.h>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -85,7 +87,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
@@ -169,7 +171,7 @@ int main(int argc, char *argv[])
   create_sph(in_file, in_type, out_file, out_type, globals);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef HAVE_MPI
+#ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -182,7 +184,7 @@ namespace {
            << "...or: " << prog << " command_file\n"
            << "       version: " << version << "\n\n"
            << "\tConverts all HEX element blocks to SPHERE element blocks\n"
-           << "\tand creates a nodeset for each element block containg the node at the center of "
+           << "\tand creates a nodeset for each element block containing the node at the center of "
               "the sphere.\n"
            << "\tignores all other element block types and deletes all existing nodesets.\n"
            << "Options:\n"
@@ -258,17 +260,17 @@ namespace {
     // that will be the number of output element and nodes in the
     // sphere mesh.
     size_t                                      sph_node_count = 0;
-    Ioss::ElementBlockContainer                 ebs            = region.get_element_blocks();
+    const Ioss::ElementBlockContainer &         ebs            = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator I              = ebs.begin();
     while (I != ebs.end()) {
       Ioss::ElementBlock *eb = *I;
       ++I;
       std::string type = eb->get_property("topology_type").get_string();
-      if (type == "hex8") {
-        sph_node_count += eb->get_property("entity_count").get_int();
+      if (type == Ioss::Hex8::name) {
+        sph_node_count += eb->entity_count();
 
         // Add the element block...
-        int                 num_elem = eb->get_property("entity_count").get_int();
+        int                 num_elem = eb->entity_count();
         std::string         name     = eb->name();
         Ioss::ElementBlock *ebn =
             new Ioss::ElementBlock(output_region.get_database(), name, "sphere", num_elem);
@@ -313,12 +315,10 @@ namespace {
 
     std::vector<double> centroids(spatial_dimension * sph_node_count);
 
-    Ioss::ElementBlockContainer eb_out = output_region.get_element_blocks();
-
     I             = ebs.begin();
     size_t offset = 0;
     while (I != ebs.end()) {
-      if ((*I)->get_property("topology_type").get_string() == "hex8") {
+      if ((*I)->get_property("topology_type").get_string() == Ioss::Hex8::name) {
 
         std::vector<double> volume;
         std::vector<double> radius;
@@ -340,7 +340,7 @@ namespace {
         }
 
         // Connectivity for the sphere element blocks is just their local element location
-        size_t           num_elem = output_eb->get_property("entity_count").get_int();
+        size_t           num_elem = output_eb->entity_count();
         std::vector<int> connectivity(num_elem);
         for (size_t i = 0; i < num_elem; i++) {
           connectivity[i] = offset + 1 + i;
@@ -352,7 +352,7 @@ namespace {
 
         output_ns->put_field_data("ids", connectivity);
 
-        offset += output_eb->get_property("entity_count").get_int();
+        offset += output_eb->entity_count();
       }
       ++I;
     }
@@ -503,7 +503,7 @@ namespace {
                   double scale_factor)
   {
     const double     one12th = 1.0 / 12.0;
-    size_t           nelem   = block->get_property("entity_count").get_int();
+    size_t           nelem   = block->entity_count();
     std::vector<int> connectivity;
     block->get_field_data("connectivity_raw", connectivity);
 

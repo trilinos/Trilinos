@@ -58,6 +58,7 @@
 # Define the Trilinos packages
 #
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  TrilinosFrameworkTests  commonTools/framework           PT
   Gtest                 commonTools/gtest                 PT
   ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
@@ -137,7 +138,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
   Mesquite              packages/mesquite                 ST
-  MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
@@ -186,9 +186,8 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Pamgen Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(STK Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(SEACAS Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
-
+TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)

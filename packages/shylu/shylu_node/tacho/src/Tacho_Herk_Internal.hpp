@@ -35,9 +35,9 @@ namespace Tacho {
         static_assert(std::is_same<value_type,value_type_c>::value,
                       "A and C do not have the same value type.");
         
-        const ordinal_type n = C.dimension_0();
+        const ordinal_type n = C.extent(0);
         const ordinal_type
-          k = (std::is_same<ArgTrans,Trans::NoTranspose>::value ? A.dimension_1() : A.dimension_0());
+          k = (std::is_same<ArgTrans,Trans::NoTranspose>::value ? A.extent(1) : A.extent(0));
         
         if (n > 0 && k > 0) 
           BlasTeam<value_type>::herk(member,

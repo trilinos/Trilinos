@@ -287,13 +287,13 @@ applyImplBlockCrs (HostViewLocal& X,
   using Teuchos::rcpFromRef;
 
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
-  const size_t numRows = X.dimension_0();
-  const size_t numVecs = X.dimension_1();
+  const size_t numRows = X.extent(0);
+  const size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    static_cast<size_t> (X.dimension_0 ()) != static_cast<size_t> (diagBlocks_[blockIndex].numRows ()),
+    static_cast<size_t> (X.extent (0)) != static_cast<size_t> (diagBlocks_[blockIndex].numRows ()),
     std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
-    "different number of rows than block matrix (" << X.dimension_0() << " resp. "
+    "different number of rows than block matrix (" << X.extent(0) << " resp. "
     << diagBlocks_[blockIndex].numRows() << ").  Please report this bug to "
     "the Ifpack2 developers.");
 
@@ -324,11 +324,11 @@ applyImplBlockCrs (HostViewLocal& X,
       Y_tmp = ptr(&Y);
     }
     else {
-      Y_tmp = ptr (new HostViewLocal ("", X.dimension_0(), X.dimension_1()));
+      Y_tmp = ptr (new HostViewLocal ("", X.extent(0), X.extent(1)));
       Kokkos::deep_copy(*Y_tmp, X);
       deleteYT = true;
     }
-    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->ptr_on_device();
+    local_scalar_type* const Y_ptr = (local_scalar_type*) Y_tmp->data();
     int INFO = 0;
     const char trans =
       (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
@@ -348,9 +348,9 @@ applyImplBlockCrs (HostViewLocal& X,
       "failed with INFO = " << INFO << " != 0.");
 
     if (beta != STS::zero ()) {
-      for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t i = 0; i < Y.extent(0); i++)
       {
-        for(size_t j = 0; j < Y.dimension_1(); j++)
+        for(size_t j = 0; j < Y.extent(1); j++)
         {
           Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
           Y(i, j) += alpha * (*Y_tmp)(i, j);
@@ -381,17 +381,17 @@ applyImpl (HostViewLocal& X,
   using Teuchos::rcpFromRef;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_0 () != Y.dimension_0 (),
+    X.extent (0) != Y.extent (0),
     std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
-    "incompatible dimensions (" << X.dimension_0 () << " resp. "
-    << Y.dimension_0 () << ").  Please report this bug to "
+    "incompatible dimensions (" << X.extent (0) << " resp. "
+    << Y.extent (0) << ").  Please report this bug to "
     "the Ifpack2 developers.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_1 () != Y.dimension_1(),
+    X.extent (1) != Y.extent(1),
     std::logic_error, "Ifpack2::DenseContainer::applyImpl: X and Y have "
-    "incompatible numbers of vectors (" << X.dimension_1 () << " resp. "
-    << Y.dimension_1 () << ").  Please report this bug to "
+    "incompatible numbers of vectors (" << X.extent (1) << " resp. "
+    << Y.extent (1) << ").  Please report this bug to "
     "the Ifpack2 developers.");
 
   if(this->hasBlockCrs_) {
@@ -400,22 +400,22 @@ applyImpl (HostViewLocal& X,
   }
 
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
-  size_t numVecs = X.dimension_1();
+  size_t numVecs = X.extent(1);
   if(alpha == STS::zero()) { // don't need to solve the linear system
     if(beta == STS::zero()) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
       // any Inf or NaN values in Y (rather than multiplying them by
       // zero, resulting in NaN values).
-      for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t i = 0; i < Y.extent(0); i++)
       {
-        for(size_t j = 0; j < Y.dimension_1(); j++)
+        for(size_t j = 0; j < Y.extent(1); j++)
           Y(i, j) = STS::zero();
       }
     }
     else // beta != 0
-      for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t i = 0; i < Y.extent(0); i++)
       {
-        for(size_t j = 0; j < Y.dimension_1(); j++)
+        for(size_t j = 0; j < Y.extent(1); j++)
           Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
       }
   }
@@ -431,11 +431,11 @@ applyImpl (HostViewLocal& X,
       Y_tmp = ptr (&Y);
     }
     else {
-      Y_tmp = ptr (new HostViewLocal ("", Y.dimension_0(), Y.dimension_1()));
+      Y_tmp = ptr (new HostViewLocal ("", Y.extent(0), Y.extent(1)));
       Kokkos::deep_copy(*Y_tmp, X);
       deleteYT = true;
     }
-    local_scalar_type* Y_ptr = (local_scalar_type*) Y_tmp->ptr_on_device();
+    local_scalar_type* Y_ptr = (local_scalar_type*) Y_tmp->data();
     int INFO = 0;
     int* blockIpiv = (int*) ipiv_.getRawPtr() + this->partitionIndices_[blockIndex] * this->bcrsBlockSize_;
     const char trans =
@@ -454,9 +454,9 @@ applyImpl (HostViewLocal& X,
       "failed with INFO = " << INFO << " != 0.");
 
     if (beta != STS::zero ()) {
-      for(size_t i = 0; i < Y.dimension_0(); i++)
+      for(size_t i = 0; i < Y.extent(0); i++)
       {
-        for(size_t j = 0; j < Y.dimension_1(); j++)
+        for(size_t j = 0; j < Y.extent(1); j++)
           Y(i, j) = Y(i, j) * (local_impl_scalar_type) beta + (local_impl_scalar_type) alpha * (*Y_tmp)(i, j);
       }
     }
@@ -496,11 +496,11 @@ applyBlockCrs (HostView& XIn,
     "compute() method before you may call this method.  You may call "
     "apply() as many times as you want after calling compute() once, "
     "but you must have called compute() at least once first.");
-  const size_t numVecs = XIn.dimension_1 ();
+  const size_t numVecs = XIn.extent (1);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    numVecs != YIn.dimension_1 (), std::runtime_error,
+    numVecs != YIn.extent (1), std::runtime_error,
     prefix << "X and Y have different numbers of vectors (columns).  X has "
-    << XIn.dimension_1 () << ", but Y has " << YIn.dimension_1 () << ".");
+    << XIn.extent (1) << ", but Y has " << YIn.extent (1) << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do
@@ -608,7 +608,7 @@ apply (HostView& X,
     applyBlockCrs(X,Y,blockIndex,stride,mode,alpha,beta);
     return;
   }
-  const size_t numVecs = X.dimension_1();
+  const size_t numVecs = X.extent(1);
 
   // The local operator might have a different Scalar type than
   // MatrixType.  This means that we might have to convert X and Y to
@@ -623,9 +623,9 @@ apply (HostView& X,
     "apply() as many times as you want after calling compute() once, "
     "but you must have called compute() at least once first.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_1 () != Y.dimension_1 (), std::runtime_error,
+    X.extent (1) != Y.extent (1), std::runtime_error,
     prefix << "X and Y have different numbers of vectors (columns).  X has "
-    << X.dimension_1 () << ", but Y has " << Y.dimension_1 () << ".");
+    << X.extent (1) << ", but Y has " << Y.extent (1) << ".");
 
   if (numVecs == 0) {
     return; // done! nothing to do
@@ -728,12 +728,12 @@ weightedApply (HostView& X,
     "weightedApply() as many times as you want after calling compute() once, "
     "but you must have called compute() at least once first.");
 
-  const size_t numVecs = X.dimension_1();
+  const size_t numVecs = X.extent(1);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.dimension_1() != Y.dimension_1(), std::runtime_error,
+    X.extent(1) != Y.extent(1), std::runtime_error,
     prefix << "X and Y have different numbers of vectors (columns).  X has "
-    << X.dimension_1() << ", but Y has " << Y.dimension_1() << ".");
+    << X.extent(1) << ", but Y has " << Y.extent(1) << ".");
 
   if(numVecs == 0) {
     return; // done! nothing to do

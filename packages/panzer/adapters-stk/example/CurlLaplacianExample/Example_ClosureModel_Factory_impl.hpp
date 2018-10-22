@@ -49,8 +49,6 @@
 
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Integrator_CurlBasisDotVector.hpp"
-#include "Panzer_Integrator_BasisTimesVector.hpp"
 #include "Panzer_ScalarToVector.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_Sum.hpp"

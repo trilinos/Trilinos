@@ -1,4 +1,4 @@
-C Copyright (c) 2007 National Technology & Engineering Solutions
+C Copyright (c) 2007-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -67,7 +67,9 @@ C                      Internal node IDs
 C   --   FACNPS - IN - array containing the distribtion factors
 C                      for all node sets
 
-      INTEGER NTXT, NUMNPS, LNPSNL, LNPSDF
+      IMPLICIT NONE
+      INTEGER NTXT, NUMNPS, LNPSNL, LNPSDF, IDS, OFF
+      INTEGER INS, INE, INPS, NL
       INTEGER IDNPS(*)
       INTEGER NNNPS(*)
       INTEGER NDNPS(*)
@@ -86,13 +88,27 @@ C                      for all node sets
 
          INS = IXNNPS(INPS)
          INE = IXNNPS(INPS) + NNNPS(INPS) - 1
-         if (ins .le. ine)
-     &      WRITE (NTXT, 10020) (LTNNPS(NL), FACNPS(NL), NL=INS,INE)
+
+         if (ndnps(inps) .ne. 0) then
+            IDS = IXDNPS(INPS)
+            OFF = IDS - INS
+            if (NNNPS(INPS) .NE. NDNPS(INPS)) then
+               call prterr('FATAL',
+     $             'Number of df in nodeset does not match node count')
+            end if
+            if (ins .le. ine)
+     &        WRITE (NTXT, 10020)
+     $           (LTNNPS(NL), FACNPS(NL+OFF), NL=INS,INE)
+         else
+            if (ins .le. ine)
+     &           WRITE (NTXT, 10010) (LTNNPS(NL), NL=INS,INE)
+         endif
 
   100 CONTINUE
 
       RETURN
 10000 FORMAT (3I10, 6X, A)
 10005 FORMAT (A, I10)
+10010 FORMAT (I10)
 10020 FORMAT (I10, 2X, 1pE16.7)
       END

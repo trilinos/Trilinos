@@ -45,14 +45,14 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
 #include <FROSch_SumOperator_def.hpp>
+#include <FROSch_MultiplicativeOperator_def.hpp>
+#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
 #include <FROSch_GDSWCoarseOperator_def.hpp>
 #include <FROSch_RGDSWCoarseOperator_def.hpp>
+#include <FROSch_IPOUHarmonicCoarseOperator_def.hpp>
 
-namespace FROSch {
-    
-    enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
+namespace FROSch {        
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -68,31 +68,46 @@ namespace FROSch {
         typedef Teuchos::RCP<Map> MapPtr;
         typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
+        typedef Teuchos::ArrayRCP<MapPtrVecPtr> MapPtrVecPtr2D;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
         
         typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
         
         typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
         typedef Teuchos::RCP<SumOperator<SC,LO,GO,NO> > SumOperatorPtr;
+        typedef Teuchos::RCP<MultiplicativeOperator<SC,LO,GO,NO> > MultiplicativeOperatorPtr;
+        typedef Teuchos::RCP<OverlappingOperator<SC,LO,GO,NO> > OverlappingOperatorPtr;
         typedef Teuchos::RCP<AlgebraicOverlappingOperator<SC,LO,GO,NO> > AlgebraicOverlappingOperatorPtr;
+        typedef Teuchos::RCP<CoarseOperator<SC,LO,GO,NO> > CoarseOperatorPtr;
         typedef Teuchos::RCP<GDSWCoarseOperator<SC,LO,GO,NO> > GDSWCoarseOperatorPtr;
         typedef Teuchos::RCP<RGDSWCoarseOperator<SC,LO,GO,NO> > RGDSWCoarseOperatorPtr;
+        typedef Teuchos::RCP<IPOUHarmonicCoarseOperator<SC,LO,GO,NO> > IPOUHarmonicCoarseOperatorPtr;
+        
+        typedef unsigned UN;
         
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
-        typedef Teuchos::ArrayRCP<SCVecPtr> SCVecPtr2D;
+
+        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
         
+        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
+        
+        typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
+        
+        typedef Teuchos::Array<GO>          GOVec;
+        typedef Teuchos::Array<GOVec>       GOVec2D;
         
         SchwarzPreconditioner(ParameterListPtr parameterList,
                               CommPtr comm);
         
         virtual ~SchwarzPreconditioner();
         
-        virtual int initialize() = 0;
+        virtual int initialize(bool useDefaultParameters = true) = 0;
         
         virtual int compute() = 0;
         

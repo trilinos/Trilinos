@@ -48,7 +48,7 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <MatrixMarket_Tpetra.hpp>
 
 #include <Teuchos_Array.hpp>
@@ -172,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
 
   // Get the default communicator.
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int numProcs = comm->getSize ();
   const int myRank = comm->getRank ();
 
@@ -643,7 +643,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
 
   // Get the default communicator.
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   const int numProcs = comm->getSize ();
   const int myRank = comm->getRank ();
 

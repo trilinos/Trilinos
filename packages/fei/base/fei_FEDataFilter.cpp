@@ -2117,8 +2117,6 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
     ERReturn(-1);
   }
 
-  NodeCommMgr& nodeCommMgr = problemStructure_->getNodeCommMgr();
-
   //Traverse the node list, checking if nodes have the specified field.
   //If so, put the answers in the results list.
 

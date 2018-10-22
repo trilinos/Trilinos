@@ -135,7 +135,7 @@ namespace Xpetra {
 #  endif
 #  if defined(HAVE_MUELU_INST_FLOAT_INT_INT) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_INT)
       inst_ = Xpetra::FLOAT_INT_INT;  // set default
-      instOptionValues[nInstOptions] = Xpetra::FLOAT_INT_LONGINT;
+      instOptionValues[nInstOptions] = Xpetra::FLOAT_INT_INT;
       instOptionNames[nInstOptions] = "FLOAT_INT_INT";
       nInstOptions++;
 #  endif

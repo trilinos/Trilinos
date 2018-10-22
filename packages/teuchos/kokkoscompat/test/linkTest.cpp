@@ -49,7 +49,7 @@
 
 // CMakeList.txt is not set up for compiling Cuda
 // so choose an appropriate non-cuda device:
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
 typedef Kokkos::HostSpace::execution_space TestDevice ;
 #else
 typedef Kokkos::DefaultExecutionSpace TestDevice ;
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, NoInteraction ) {
 
   typedef Kokkos::View<double*, TestDevice> ka_view_type;
   ka_view_type y ("y", numElts);
-  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<TestDevice> (y));
+  Kokkos::parallel_for (y.extent (0), FillFunctor<TestDevice> (y));
   TestDevice::finalize();
 }
 
@@ -136,14 +136,10 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
 
   const size_type numElts = 10;
   ka_view_type y ("y", numElts);
-  Kokkos::parallel_for (y.dimension_0 (), FillFunctor<TestDevice> (y));
+  Kokkos::parallel_for (y.extent (0), FillFunctor<TestDevice> (y));
 
-  // It's possible to get the View's raw pointer because we know its
-  // layout.  Not every kind of View necessarily implements the
-  // ptr_on_device() method, but certainly Views in HostSpace memory with
-  // left or right (Fortran or C) layout implement this method.
-  double* const y_raw = y.ptr_on_device ();
-  const size_type y_size = static_cast<size_type> (y.dimension_0 ());
+  double* const y_raw = y.data ();
+  const size_type y_size = static_cast<size_type> (y.extent (0));
 
   Teuchos::ArrayView<double> y_view (y_raw, y_size);
   TEST_EQUALITY_CONST( y_view.size(), y_size );
@@ -180,7 +176,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
   // subview with the desired dimensions.
   ka_view_type x_view (x.getRawPtr (), x.size ());
 
-  TEST_EQUALITY( x.size(), static_cast<size_type>(x_view.dimension_0()) );
+  TEST_EQUALITY( x.size(), static_cast<size_type>(x_view.extent(0)) );
   for (size_type k = 0; k < x.size (); ++k) {
     TEST_EQUALITY( x_view[k], x[k] );
   }
@@ -189,7 +185,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ViewOfArrayView ) {
   // x.getRawPtr() returns double*.
   ka_const_view_type x_view_const ( (const double*) x.getRawPtr (), x.size ());
 
-  TEST_EQUALITY( x.size(), static_cast<size_type>(x_view_const.dimension_0()) );
+  TEST_EQUALITY( x.size(), static_cast<size_type>(x_view_const.extent(0)) );
   for (size_type k = 0; k < x.size (); ++k) {
     TEST_EQUALITY( x_view_const[k], x[k] );
   }
@@ -214,8 +210,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
 
   ka_view_type X ("X", stride, numCols);
   ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
-  TEST_EQUALITY(X_view.dimension_0(), numRows);
-  TEST_EQUALITY(X_view.dimension_1(), numCols);
+  TEST_EQUALITY(X_view.extent(0), numRows);
+  TEST_EQUALITY(X_view.extent(1), numCols);
 
   // Test that the strides of X_view are correct, for int.  Kokkos
   // Array templates the stride() method on the integer type of the
@@ -244,9 +240,9 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP1D_of_2DView ) {
   // View's raw pointer, but still defers to the View for memory
   // management.
 
-  Teuchos::ArrayRCP<double> Y_values (X.ptr_on_device (), 0, stride*numCols, Deallocator<double, ka_view_type> (X), true);
-  TEST_EQUALITY(Y_values.getRawPtr(), X.ptr_on_device());
-  TEST_EQUALITY(Y_values.getRawPtr(), X_view.ptr_on_device());
+  Teuchos::ArrayRCP<double> Y_values (X.data (), 0, stride*numCols, Deallocator<double, ka_view_type> (X), true);
+  TEST_EQUALITY(Y_values.getRawPtr(), X.data());
+  TEST_EQUALITY(Y_values.getRawPtr(), X_view.data());
   TEST_EQUALITY(Y_values.size(), stride*numCols);
 
   TestDevice::finalize();
@@ -277,8 +273,8 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   ka_view_type X ("X", stride, numCols);
   ka_view_type X_view = Kokkos::subview (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
   TEST_EQUALITY( & X(0,0) , & X_view(0,0) );
-  TEST_EQUALITY(X_view.dimension_0(), numRows);
-  TEST_EQUALITY(X_view.dimension_1(), numCols);
+  TEST_EQUALITY(X_view.extent(0), numRows);
+  TEST_EQUALITY(X_view.extent(1), numCols);
 
   // Test that the strides of X_view are correct, for size_t.
   {
@@ -294,12 +290,12 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 
   // Make a 2-D "view" (array of arrays) of X_view.  This is how we
   // will implement Tpetra::MultiVector methods like get2dView.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Y_2D (X_view.dimension_1 ());
-  for (size_t j = 0; j < static_cast<size_t> (X_view.dimension_1 ()); ++j) {
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Y_2D (X_view.extent (1));
+  for (size_t j = 0; j < static_cast<size_t> (X_view.extent (1)); ++j) {
     ka_view_type X_j = Kokkos::subview (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
     TEST_EQUALITY( & X_view(0,j) , & X_j(0,0) );
-    TEST_EQUALITY(static_cast<size_t>(X_j.dimension_0()), numRows);
-    TEST_EQUALITY_CONST(X_j.dimension_1(), 1);
+    TEST_EQUALITY(static_cast<size_t>(X_j.extent(0)), numRows);
+    TEST_EQUALITY_CONST(X_j.extent(1), 1);
 
     // Test that the strides of X_j are correct.
     {
@@ -320,7 +316,7 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
     // X_j, and doesn't actually deallocate memory.  That way, the
     // ArrayRCP can use the View's raw pointer, but still defers to
     // the View for memory management.
-    Teuchos::ArrayRCP<double> Y_j (X_j.ptr_on_device (), 0, numRows, Deallocator<double, ka_view_type> (X_j), true);
+    Teuchos::ArrayRCP<double> Y_j (X_j.data (), 0, numRows, Deallocator<double, ka_view_type> (X_j), true);
     Y_2D[j] = Y_j;
   }
   TestDevice::finalize();

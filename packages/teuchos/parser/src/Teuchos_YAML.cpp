@@ -57,8 +57,8 @@ Language::Productions make_productions() {
   prods[PROD_SCALAR_QUOTED]("scalar") >> "scalar_quoted";
   prods[PROD_MAP_SCALAR_RAW]("map_scalar") >> "scalar_head", "scalar_tail*", "map_scalar_escaped*";
   prods[PROD_MAP_SCALAR_QUOTED]("map_scalar") >> "scalar_quoted";
-  prods[PROD_SCALAR_DQUOTED]("scalar_quoted") >> "\"", "dquoted*", "descape*", "\"";
-  prods[PROD_SCALAR_SQUOTED]("scalar_quoted") >> "'", "squoted*", "sescape*", "'";
+  prods[PROD_SCALAR_DQUOTED]("scalar_quoted") >> "\"", "dquoted*", "descape*", "\"", "WS*";
+  prods[PROD_SCALAR_SQUOTED]("scalar_quoted") >> "'", "squoted*", "sescape*", "'", "WS*";
   prods[PROD_SCALAR_HEAD_OTHER]("scalar_head") >> "OTHERCHAR";
   prods[PROD_SCALAR_HEAD_DOT]("scalar_head") >> ".", "OTHERCHAR";
   prods[PROD_SCALAR_HEAD_DASH]("scalar_head") >> "-", "OTHERCHAR";

@@ -65,7 +65,7 @@ public:
   virtual ~GoldenSection() {}
 
   // Constructor
-  GoldenSection( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) {
+  GoldenSection( ROL::ParameterList &parlist ) : LineSearch<Real>(parlist) {
     Real oem8(1.e-8);
     tol_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Bracketing Tolerance",oem8);
     btls_ = ROL::makePtr<BackTracking<Real>>(parlist);

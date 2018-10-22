@@ -110,7 +110,7 @@ namespace ROL {
 template<class Real> 
 class PrimalDualInteriorPointResidual : public Constraint<Real> {
 
-  typedef Teuchos::ParameterList     PL;
+  typedef ROL::ParameterList     PL;
 
   typedef Vector<Real>               V;
   typedef PartitionedVector<Real>    PV;
@@ -142,7 +142,7 @@ private:
   const ROL::Ptr<const V> maskL_;   
   const ROL::Ptr<const V> maskU_;
 
-  Teuchos::RPC<V> scratch_;
+  ROL::Ptr<V> scratch_;
 
   const ROL::Ptr<PENALTY> penalty_;
   const ROL::Ptr<OBJ>     obj_;

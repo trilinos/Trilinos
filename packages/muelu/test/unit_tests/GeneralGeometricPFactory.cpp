@@ -409,7 +409,8 @@ namespace MueLuTests {
     // problemParamList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList,
+                                                                                           map);
     RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace
@@ -615,7 +616,8 @@ namespace MueLuTests {
     // problemParamList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList,
+                                                                                           map);
     RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace
@@ -936,7 +938,7 @@ namespace MueLuTests {
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
-    Array<LO> coarse_inds(8);
+    std::vector<LO> coarse_inds(8);
     if(comm->getSize() == 1) {
       coarse_inds[0] =  0;
       coarse_inds[1] =  1;
@@ -1041,7 +1043,7 @@ namespace MueLuTests {
     coarse_data[coarse_inds[5]] = 4;
     coarse_data[coarse_inds[6]] = 0;
     coarse_data[coarse_inds[7]] = 9;
-
+    
     P2Crs->apply(*vector3, *vector2, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
 
@@ -1091,7 +1093,7 @@ namespace MueLuTests {
   } // End LocalLexicographicLinear
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LocalLexicographicConstant, Scalar,
-                                    LocalOrdinal, GlobalOrdinal, Node)
+      LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -1166,7 +1168,8 @@ namespace MueLuTests {
     // problemParamList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList,
+                                                                                           map);
     RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace

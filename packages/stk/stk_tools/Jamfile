@@ -71,6 +71,8 @@ explicit install-targets ;
 alias install-targets
   : stk_block_extractor
     stk_tools_utest
+    stk_tools_integration_tester
+    stk_tools_pmesh_unit_tester
   ;
 
 #
@@ -122,9 +124,14 @@ exe stk_tools_utest
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_clone/*.cpp ]
     stk_tools_lib
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_tools_integration_tester
+  :
+    [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/*.cpp ]
+    stk_tools_lib
+    /sierra/stk_unit_test_utils//stk_unit_main
   : <tag>@sierra-exec-tag
   ;
 
@@ -145,3 +152,35 @@ lib stk_tools_lib
         <file>$(stk_tools-root)/lib/libstk_tools_lib.a
     ]
   ;
+
+lib stk_pmesh_lib
+  : 
+    [ ifdevbuild
+        $(stk_tools-root)/stk_tools/pmesh_lib/makeparfiles.C
+    ]
+    /sierra/stk_io//stk_io
+    /sierra/stk_io//stk_io_util
+    /sierra/seacas//nemesis
+  :
+    [ ifuserbuild
+        <file>$(stk_tools-root)/lib/libpmesh_lib.a
+    ]
+    [ ifdevbuild
+        <include>$(stk_tools-root-inc)/stk_tools/pmesh_lib
+    ]
+  :
+  :
+    <include>$(stk_tools-root-inc)/stk_tools/pmesh_lib
+  ;
+
+exe stk_tools_pmesh_unit_tester
+  :
+    [ glob
+      $(stk_tools-root)/stk_tools/pmesh_lib/UnitTest/*.C
+    ]
+    stk_pmesh_lib
+    /tpl/gtest//gtest
+  :
+    <tag>@sierra-exec-tag
+  ;
+

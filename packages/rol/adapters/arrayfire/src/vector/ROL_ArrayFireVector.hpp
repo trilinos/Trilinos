@@ -122,7 +122,7 @@ public:
     }
 
     ROL::Ptr<ROL::Vector<Real> > clone () const   {
-        return(ROL::makePtr<ArrayFireVector<Real, Element>(Teuchos::ROL::makePtr<af::array(afVector->dims(0), afVector->type>>())));
+        return(ROL::makePtr<ArrayFireVector<Real, Element>(ROL::makePtr<af::array(afVector->dims(0), afVector->type>>())));
     }
 
     ROL::Ptr<const af::array> getVector () const {

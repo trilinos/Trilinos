@@ -81,6 +81,8 @@ int main(int argc, char *argv[]) {
   typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO>     XTCRS;
   typedef Xpetra::Matrix<SC,LO,GO,NO>              XMAT;
   typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO>       XWRAP;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   typedef Belos::OperatorT<TMV>                    TOP;
   typedef Belos::OperatorTraits<SC,TMV,TOP>        TOPT;
@@ -120,7 +122,7 @@ int main(int argc, char *argv[]) {
     RCP<TimeMonitor> tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
     Teuchos::ParameterList pl = matrixParameters.GetParameterList();
-    RCP<MultiVector> coordinates;
+    RCP<RealValuedMultiVector> coordinates;
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", pl.get("nx", nx));
     galeriList.set("ny", pl.get("ny", ny));
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
     RCP<const Map> map;
 
     map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("1D", map, matrixParameters.GetParameterList());
 
     RCP<const Tpetra::Map<LO, GO, NO> > tmap = Xpetra::toTpetra(map);
 

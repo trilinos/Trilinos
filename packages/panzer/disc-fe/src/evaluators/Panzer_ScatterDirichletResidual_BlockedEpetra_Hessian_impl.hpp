@@ -116,7 +116,7 @@ template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 postRegistrationSetup(typename TRAITS::SetupData /* d */,
-                      PHX::FieldManager<TRAITS>& fm) 
+                      PHX::FieldManager<TRAITS>& /* fm */)
 {
   indexerIds_.resize(scatterFields_.size());
   subFieldIds_.resize(scatterFields_.size());
@@ -128,16 +128,10 @@ postRegistrationSetup(typename TRAITS::SetupData /* d */,
 
     indexerIds_[fd]  = getFieldBlock(fieldName,rowIndexers_);
     subFieldIds_[fd] = rowIndexers_[indexerIds_[fd]]->getFieldNum(fieldName);
-
-    // fill field data object
-    this->utils.setFieldData(scatterFields_[fd],fm);
-
-    if (checkApplyBC_)
-      this->utils.setFieldData(applyBC_[fd],fm);
   }
 
   // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].dimension(1);
+  num_nodes = scatterFields_[0].extent(1);
   num_eq = scatterFields_.size();
 }
 

@@ -53,7 +53,7 @@
 namespace ROL {
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RandVarFunctionalFactory(Teuchos::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real> > RandVarFunctionalFactory(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
     if (type == "Risk Averse") {
       return RiskMeasureFactory<Real>(parlist);
@@ -71,7 +71,7 @@ namespace ROL {
       return ProbabilityFactory<Real>(parlist);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+      ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::RandVarFunctionalFactory): Invalid random variable functional type!");
     }
   }

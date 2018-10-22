@@ -214,11 +214,12 @@ namespace MueLu {
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
 
-    void SetupSchwarz       (Level& currentLevel);
-    void SetupChebyshev     (Level& currentLevel);
-    void SetupLineSmoothing (Level& currentLevel);
-    void SetupTopological   (Level& currentLevel);
-    void SetupGeneric       (Level& currentLevel);
+    void SetupSchwarz         (Level& currentLevel);
+    void SetupChebyshev       (Level& currentLevel);
+    void SetupLineSmoothing   (Level& currentLevel);
+    void SetupBlockRelaxation (Level& currentLevel);
+    void SetupTopological     (Level& currentLevel);
+    void SetupGeneric         (Level& currentLevel);
 
   private:
 

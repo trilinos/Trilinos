@@ -129,7 +129,6 @@ namespace {
   using Tpetra::Map;
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
   using Tpetra::GloballyDistributed;
 
   using Tpetra::createContigMapWithNode;
@@ -217,8 +216,9 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   {
-    typedef Tpetra::Map<LO, GO, Node> map_type;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
+    using vec_type = Tpetra::Vector<Scalar, LO, GO, Node>;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
@@ -231,6 +231,24 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    // Test the default constructors of MultiVector and Vector.
+    {
+      MV defaultConstructedMultiVector;
+      auto dcmv_map = defaultConstructedMultiVector.getMap ();
+      TEST_ASSERT( dcmv_map.get () != nullptr );
+      if (dcmv_map.get () != nullptr) {
+	TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
+		       Tpetra::global_size_t (0) );
+      }
+      vec_type defaultConstructedVector;
+      auto dcv_map = defaultConstructedVector.getMap ();
+      TEST_ASSERT( dcv_map.get () != nullptr );
+      if (dcv_map.get () != nullptr) {
+	TEST_EQUALITY( dcv_map->getGlobalNumElements (),
+		       Tpetra::global_size_t (0) );
+      }
+    }
 
     RCP<MV> mvec;
     TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
@@ -1661,15 +1679,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
-      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X1_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X1_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X2_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1714,15 +1732,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
-      TEST_EQUALITY( X1_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X1_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY( X1_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X1_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY_CONST( X2_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X2_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1768,15 +1786,15 @@ namespace {
       auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
-      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X2_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X1_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X2_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -1821,15 +1839,15 @@ namespace {
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
-      TEST_EQUALITY( X2_local.ptr_on_device (), X_local.ptr_on_device () );
+      TEST_EQUALITY( X2_local.data (), X_local.data () );
 
       // Make sure the local dimensions of X1 are correct.
-      TEST_EQUALITY_CONST( X1_local.dimension_0 (), static_cast<size_t> (0) );
-      TEST_EQUALITY( X1_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY_CONST( X1_local.extent (0), static_cast<size_t> (0) );
+      TEST_EQUALITY( X1_local.extent (1), X_local.extent (1) );
 
       // Make sure the local dimensions of X2 are correct.
-      TEST_EQUALITY( X2_local.dimension_0 (), X_local.dimension_0 () );
-      TEST_EQUALITY( X2_local.dimension_1 (), X_local.dimension_1 () );
+      TEST_EQUALITY( X2_local.extent (0), X_local.extent (0) );
+      TEST_EQUALITY( X2_local.extent (1), X_local.extent (1) );
 
       // Make sure that nothing bad happens on deallocation.
       try {
@@ -2976,9 +2994,10 @@ namespace {
     // Verify that the default Scalar type is double.  We can't put
     // the std::is_same expression in the macro, since it has a comma
     // (commas separate arguments in a macro).
-    const bool defaultScalarIsDouble =
-      std::is_same<scalar_type, double>::value;
-    TEST_ASSERT( defaultScalarIsDouble );
+    const bool defaultScalarMatchesTpetra =
+      std::is_same<scalar_type, 
+                   Tpetra::Details::DefaultTypes::scalar_type>::value;
+    TEST_ASSERT( defaultScalarMatchesTpetra );
 
     // Verify that the default LocalOrdinal type is the same as Map's
     // default LocalOrdinal type.  This assumes that all of Map's
@@ -3100,16 +3119,16 @@ namespace {
     //     X.template getLocalView<typename host_view_type::execution_space> ();
 
     //   if (comm->getRank () == 0) {
-    //     TEST_EQUALITY( X_dev.dimension_0 (), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-    //     TEST_EQUALITY( X_host.dimension_0 (), static_cast<size_t> (0) );
-    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_dev.extent (0), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_dev.extent (1), numCols );
+    //     TEST_EQUALITY( X_host.extent (0), static_cast<size_t> (0) );
+    //     TEST_EQUALITY( X_host.extent (1), numCols );
     //   }
     //   else { // my rank is not zero
-    //     TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
-    //     TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-    //     TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
-    //     TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //     TEST_EQUALITY( X_dev.extent (0), lclNumRows );
+    //     TEST_EQUALITY( X_dev.extent (1), numCols );
+    //     TEST_EQUALITY( X_host.extent (0), lclNumRows );
+    //     TEST_EQUALITY( X_host.extent (1), numCols );
     //   }
     // }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
@@ -3142,10 +3161,10 @@ namespace {
     //   host_view_type X_host =
     //     X.template getLocalView<typename host_view_type::execution_space> ();
 
-    //   TEST_EQUALITY( X_dev.dimension_0 (), lclNumRows );
-    //   TEST_EQUALITY( X_dev.dimension_1 (), numCols );
-    //   TEST_EQUALITY( X_host.dimension_0 (), lclNumRows );
-    //   TEST_EQUALITY( X_host.dimension_1 (), numCols );
+    //   TEST_EQUALITY( X_dev.extent (0), lclNumRows );
+    //   TEST_EQUALITY( X_dev.extent (1), numCols );
+    //   TEST_EQUALITY( X_host.extent (0), lclNumRows );
+    //   TEST_EQUALITY( X_host.extent (1), numCols );
     // }
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
@@ -3768,7 +3787,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4131,7 +4150,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4207,6 +4226,7 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
     typedef Tpetra::global_size_t GST;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
 
     out << "Tpetra::MultiVector: Test MultiVector dimensions when ALL "
       "processes have zero rows" << endl;
@@ -4215,7 +4235,7 @@ namespace {
     int gblSuccess = 1;
     std::ostringstream errStrm; // for error collection
 
-    RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -4318,6 +4338,44 @@ namespace {
     SUBVIEWSOMEZEROROWS_REPORT_GLOBAL_ERR( "reportedGblNumRows != gblNumRows" );
   }
 
+  // Swap test
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, Swap, LO , GO , Scalar , Node ) {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    typedef Tpetra::global_size_t GST;
+
+    Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
+    Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    const int numProcs = comm->getSize ();
+
+    // Create a Map that puts nothing on Process 0 and something on
+    // the other processes.
+    const size_t lclNumRows = 4;
+    const GST gblNumRows = GST (numProcs * lclNumRows);
+    const GO indexBase = 0;
+    RCP<const map_type> map = rcp (new map_type (gblNumRows, indexBase, comm));
+
+    size_t numCols = 3;
+    MV Xo (map, numCols), Yo (map, numCols), Xn (map, numCols), Yn (map, numCols);
+
+    // Comparison vectors (unswapped)
+    Xo.putScalar(ZERO); Yo.putScalar(ONE);
+
+    // Swapping vectors (swapped)
+    Yn.putScalar(ZERO); Xn.putScalar(ONE);
+    Xn.swap(Yn);
+
+    // Compare
+    TEST_COMPARE_FLOATING_ARRAYS(Xo.get1dView(),Xn.get1dView(),testingTol<Scalar>() * errorTolSlack);
+    TEST_COMPARE_FLOATING_ARRAYS(Yo.get1dView(),Yn.get1dView(),testingTol<Scalar>() * errorTolSlack);
+
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -4357,7 +4415,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ViewCtor          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;

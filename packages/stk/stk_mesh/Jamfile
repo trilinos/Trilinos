@@ -122,13 +122,8 @@ exe stk_mesh_utest
            $(stk_mesh-root)/../stk_unit_tests/stk_mesh/entity_sorting/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_mesh_base
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/stk_io//stk_io
     stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
-    /mpi//mpi
   : <tag>@sierra-exec-tag
     <include>$(stk_mesh-root)/../stk_unit_tests/stk_mesh
   ;
@@ -137,13 +132,8 @@ exe stk_mesh_utest_field_blas
   :
     [ glob $(stk_mesh-root)/../stk_unit_tests/stk_mesh/FieldBlas/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_mesh_base
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/stk_io//stk_io
     stk_mesh_fixtures
     /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
-    /mpi//mpi
   : <tag>@sierra-exec-tag
     <include>$(stk_mesh-root)/../stk_unit_tests/stk_mesh
   ;
@@ -153,13 +143,7 @@ exe stk_mesh_docs_tests
   :
     [ glob $(stk_mesh-root)/../stk_doc_tests/stk_mesh/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_mesh_base
-    /sierra/stk_io//stk_io
-    /sierra/stk_util//stk_util_use_case
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
   : <tag>@sierra-exec-tag
     <include>$(stk_mesh-root)/../stk_doc_tests/stk_mesh
   ;

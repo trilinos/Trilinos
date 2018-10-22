@@ -85,6 +85,9 @@ public:
   void refine(void);
   void setSamples(bool inConstructor = false);
   void printIndexSet(void) const;
+  int numGlobalSamples(void) const {
+    return npts_;
+  }
 }; // class SparseGridGenerator
 
 } // namespace ROL

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,6 +35,12 @@
 // concatenates EXODUS/GENESIS output from parallel processors to a single file
 
 #include <algorithm>
+#include <cfloat>
+#include <climits>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -46,18 +52,18 @@
 #include <utility>
 #include <vector>
 
-#include <cfloat>
-#include <climits>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-
 #include "smart_assert.h"
 
-#include <string>
-#include <utility>
-#include <vector>
+#include <exodusII.h>
+#ifdef PARALLEL_AWARE_EXODUS
+#ifndef DISABLE_PARALLEL_EPU
+#define ENABLE_PARALLEL_EPU 1
+#endif
+#endif
+
+#if ENABLE_PARALLEL_EPU
+#include <mpi.h>
+#endif
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -78,8 +84,6 @@ using StringVector = std::vector<std::string>;
 #include "EP_Variables.h"
 #include "EP_Version.h"
 
-#include <exodusII.h>
-
 #if EX_API_VERS_NODOT <= 467
 #error "Requires exodusII version 4.68 or later"
 #endif
@@ -88,10 +92,64 @@ using StringVector = std::vector<std::string>;
 #include "add_to_log.h"
 #endif
 
+// The main program templated to permit float/double transfer.
+template <typename T, typename INT>
+int epu(Excn::SystemInterface &interface, int start_part, int part_count, int cycle, T /* dummy */,
+        INT int_size_dummy);
+
+class mpi
+{
+public:
+  mpi(int argc, char *argv[])
+  {
+#if ENABLE_PARALLEL_EPU
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &epu_proc_count);
+#endif
+  }
+
+  ~mpi()
+  {
+#if ENABLE_PARALLEL_EPU
+    MPI_Finalize();
+#endif
+  }
+
+  int rank{0};
+  int epu_proc_count{1};
+};
+
 using ExodusIdVector = std::vector<ex_entity_id>;
 
 extern double seacas_timer();
 namespace {
+  struct my_numpunct : std::numpunct<char>
+  {
+  protected:
+    char        do_thousands_sep() const override { return ','; }
+    std::string do_grouping() const override { return "\3"; }
+  };
+
+  unsigned int debug_level = 0;
+  const float  FILL_VALUE  = FLT_MAX;
+  int          rank        = 0;
+  std::string  tsFormat    = "[%H:%M:%S] ";
+
+  std::string time_stamp(const std::string &format);
+  std::string format_time(double seconds);
+  int         get_width(int max_value);
+
+  void LOG(const std::string message)
+  {
+    if (debug_level & 1) {
+      std::cout << time_stamp(tsFormat);
+    }
+    if (rank == 0) {
+      std::cout << message;
+    }
+  }
+
   void exodus_error(int lineno)
   {
     std::ostringstream errmsg;
@@ -99,13 +157,15 @@ namespace {
            << " in file epu.C. Please report to gdsjaar@sandia.gov if you need help.";
 
     ex_err(nullptr, nullptr, EX_PRTLASTMSG);
-    std::cerr << errmsg.str() << "\n";
-    exit(EXIT_FAILURE);
+    throw std::runtime_error(errmsg.str());
   }
 
-  std::string time_stamp(const std::string &format);
-  std::string format_time(double seconds);
-  int get_width(int max_value);
+  template <typename T> void clear(std::vector<T> &vec)
+  {
+    vec.clear();
+    vec.shrink_to_fit();
+    SMART_ASSERT(vec.capacity() == 0);
+  }
 
   ex_entity_type exodus_object_type(Excn::ObjectType &epu_type)
   {
@@ -150,18 +210,23 @@ namespace {
     }
     return true;
   }
-} // namespace
 
-std::string tsFormat = "[%H:%M:%S] ";
+  // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
+  template <typename T> size_t unique(std::vector<T> &out)
+  {
+    if (out.empty())
+      return 0;
+    size_t pos  = 1;
+    T      oldv = out[0];
+    for (size_t i = 1; i < out.size(); ++i) {
+      T newv   = out[i];
+      out[pos] = newv;
+      pos += (newv != oldv);
+      oldv = newv;
+    }
+    return pos;
+  }
 
-// prototypes
-
-// The main program templated to permit float/double transfer.
-template <typename T, typename INT>
-int epu(Excn::SystemInterface &interface, int start_part, int part_count, int cycle, T /* dummy */,
-        INT int_size_dummy);
-
-namespace {
   void compress_white_space(char *str);
   void add_info_record(char *info_record, int size);
   void put_global_info(const Excn::Mesh &global);
@@ -282,28 +347,32 @@ namespace {
   int case_compare(const std::string &s1, const std::string &s2);
 } // namespace
 
-unsigned int debug_level = 0;
-const float  FILL_VALUE  = FLT_MAX;
-
 using namespace Excn;
 
 int main(int argc, char *argv[])
 {
-#if defined(__LIBCATAMOUNT__)
-  setlinebuf(stderr);
-#endif
+  mpi my_mpi(argc, argv);
+  rank = my_mpi.rank;
+
   try {
     time_t begin_time = time(nullptr);
-    SystemInterface::show_version();
-
-    SystemInterface interface;
-    bool            ok = interface.parse_options(argc, argv);
-
-    if (!ok) {
-      std::cerr << "\nERROR: (EPU) Problems parsing command line arguments.\n\n";
-      exit(EXIT_FAILURE);
+    SystemInterface::show_version(rank);
+    if (rank == 0) {
+#if ENABLE_PARALLEL_EPU
+      std::cout << "\tParallel Capability Enabled.\n";
+#else
+      std::cout << "\tParallel Capability Not Enabled.\n";
+#endif
     }
 
+    SystemInterface interface(rank);
+    bool            execute = interface.parse_options(argc, argv);
+
+    if (!execute) {
+      return EXIT_SUCCESS;
+    }
+
+    // Debug Options: (can be or'd together)
     //   1 -- time stamp
     //   2 -- check nodal variable consistency
     //   4 -- Element Blocks
@@ -311,7 +380,6 @@ int main(int argc, char *argv[])
     //  16 -- Sidesets
     //  32 -- Nodesets
     //  64 -- exodus verbose.
-
     debug_level = interface.debug();
 
     if ((debug_level & 64) != 0u) {
@@ -327,78 +395,154 @@ int main(int argc, char *argv[])
     int part_count = interface.part_count();
     if (part_count <= 1) {
       std::cout << "INFO: Only one processor or part, no concatenation needed.\n";
-      exit(EXIT_SUCCESS);
-    }
-
-    int cycle = interface.cycle();
-    if (interface.subcycle() >= 0) {
-      start_part = 0;
-      int cycles = interface.subcycle();
-      if (cycles > 0) {
-        // use the specified number of cycles...
-        part_count = (processor_count + cycles - 1) / cycles;
-        if (cycle >= 0) {
-          start_part = cycle * part_count;
-        }
-      }
-
-      // Sanity check...
-      if (part_count < 1) {
-        std::cerr << "ERROR: (EPU) The subcycle specification results in less than 1 part per "
-                     "cycle which is not allowd.\n";
-        exit(EXIT_FAILURE);
-      }
-      interface.subcycle((processor_count + part_count - 1) / part_count);
-
-      if (start_part + part_count > processor_count) {
-        part_count = processor_count - start_part;
-      }
+      return (EXIT_SUCCESS);
     }
 
     int error = 0;
-    if (cycle < 0) {
-      cycle = 0;
-    }
-    while (start_part < processor_count) {
+    if (my_mpi.epu_proc_count > 1) {
+      interface.subcycle(my_mpi.epu_proc_count);
 
-      if (start_part + part_count > processor_count) {
-        part_count = processor_count - start_part;
+      int per_proc = processor_count / my_mpi.epu_proc_count;
+      int extra    = processor_count % my_mpi.epu_proc_count;
+
+      part_count = per_proc + (rank < extra ? 1 : 0);
+
+      if (rank < extra) {
+        start_part = (per_proc + 1) * rank;
+      }
+      else {
+        start_part = (per_proc + 1) * extra + per_proc * (rank - extra);
       }
 
-      SMART_ASSERT(part_count > 0);
       SMART_ASSERT(start_part + part_count <= processor_count);
 
-      if (!ExodusFile::initialize(interface, start_part, part_count)) {
-        std::cerr << "ERROR: (EPU) Problem initializing input and/or output files.\n";
-        exit(EXIT_FAILURE);
+      if (!ExodusFile::initialize(interface, start_part, part_count, rank, false)) {
+        throw std::runtime_error("ERROR: (EPU) Problem initializing input and/or output files.\n");
       }
 
       if (ExodusFile::io_word_size() == 4) { // Reals are floats
         if (interface.int64()) {
-          error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0),
+          error = epu(interface, start_part, part_count, rank, static_cast<float>(0.0),
                       static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0), 0);
+          error = epu(interface, start_part, part_count, rank, static_cast<float>(0.0), 0);
         }
       }
       else { // Reals are doubles
         if (interface.int64()) {
-          error = epu(interface, start_part, part_count, cycle++, 0.0, static_cast<int64_t>(0));
+          error = epu(interface, start_part, part_count, rank, 0.0, static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, cycle++, 0.0, 0);
+          error = epu(interface, start_part, part_count, rank, 0.0, 0);
         }
       }
 
-      start_part += part_count;
       ExodusFile::close_all();
-      if (interface.subcycle() < 0 || (interface.subcycle() > 0 && interface.cycle() >= 0)) {
-        break;
+#if ENABLE_PARALLEL_EPU
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    }
+    else {
+      int max_open_file = ExodusFile::get_free_descriptor_count();
+
+      // Only used to test the auto subcycle without requiring thousands of files...
+      if (interface.max_open_files() > 0) {
+        max_open_file = interface.max_open_files();
+      }
+
+      if (interface.is_auto() && interface.subcycle() < 0 && processor_count > max_open_file &&
+          part_count == processor_count && interface.cycle() == -1) {
+        // Rule of thumb -- number of subcycles = cube_root(processor_count);
+        // if that value > max_open_file, then use square root.
+        // if that is still too large, just do no subcycles... and implement
+        // a recursive subcycling capabilty at some point...
+        int sub_cycle_count = (int)(std::pow(processor_count, 1.0 / 3) + 0.9);
+        if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) > max_open_file) {
+          sub_cycle_count = (int)std::sqrt(processor_count);
+        }
+
+        if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) < max_open_file) {
+          interface.subcycle(sub_cycle_count);
+          if (rank == 0) {
+            std::cout << "\tAutomatically activating subcyle mode\n\tNumber of processors ("
+                      << processor_count << ") exceeds open file limit (" << max_open_file << ").\n"
+                      << "\tUsing --subcycle=" << sub_cycle_count << "\n\n";
+          }
+          interface.subcycle_join(true);
+        }
+      }
+
+      int cycle = interface.cycle();
+      if (interface.subcycle() >= 0) {
+        start_part = 0;
+        int cycles = interface.subcycle();
+        if (cycles > 0) {
+          // use the specified number of cycles...
+          part_count = (processor_count + cycles - 1) / cycles;
+          if (cycle >= 0) {
+            start_part = cycle * part_count;
+          }
+        }
+
+        // Sanity check...
+        if (part_count < 1) {
+          throw std::runtime_error(
+              "ERROR: (EPU) The subcycle specification results in less than 1 part per "
+              "cycle which is not allowed.\n");
+        }
+        interface.subcycle((processor_count + part_count - 1) / part_count);
+
+        if (start_part + part_count > processor_count) {
+          part_count = processor_count - start_part;
+        }
+      }
+
+      if (cycle < 0) {
+        cycle = 0;
+      }
+      while (start_part < processor_count) {
+
+        if (start_part + part_count > processor_count) {
+          part_count = processor_count - start_part;
+        }
+
+        SMART_ASSERT(part_count > 0);
+        SMART_ASSERT(start_part + part_count <= processor_count);
+
+        if (!ExodusFile::initialize(interface, start_part, part_count, cycle, false)) {
+          throw std::runtime_error(
+              "ERROR: (EPU) Problem initializing input and/or output files.\n");
+        }
+
+        if (ExodusFile::io_word_size() == 4) { // Reals are floats
+          if (interface.int64()) {
+            error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0),
+                        static_cast<int64_t>(0));
+          }
+          else {
+            error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0), 0);
+          }
+        }
+        else { // Reals are doubles
+          if (interface.int64()) {
+            error = epu(interface, start_part, part_count, cycle++, 0.0, static_cast<int64_t>(0));
+          }
+          else {
+            error = epu(interface, start_part, part_count, cycle++, 0.0, 0);
+          }
+        }
+
+        start_part += part_count;
+        ExodusFile::close_all();
+        if (interface.subcycle() < 0 || (interface.subcycle() > 0 && interface.cycle() >= 0)) {
+          break;
+        }
       }
     }
 
-    if (interface.subcycle() > 0 && interface.cycle() < 0 && interface.subcycle_join()) {
+    if (interface.subcycle() > 0 && interface.cycle() < 0 && interface.subcycle_join() &&
+        rank == 0) {
       // Now, join the subcycled parts into a single file...
       start_part = 0;
       part_count = interface.subcycle();
@@ -408,9 +552,8 @@ int main(int argc, char *argv[])
       interface.step_max(INT_MAX);
       interface.step_interval(1);
 
-      if (!ExodusFile::initialize(interface, start_part, part_count)) {
-        std::cerr << "ERROR: (EPU) Problem initializing input and/or output files.\n";
-        exit(EXIT_FAILURE);
+      if (!ExodusFile::initialize(interface, start_part, part_count, 0, true)) {
+        throw std::runtime_error("ERROR: (EPU) Problem initializing input and/or output files.\n");
       }
 
       if (ExodusFile::io_word_size() == 4) { // Reals are floats
@@ -430,16 +573,23 @@ int main(int argc, char *argv[])
           error = epu(interface, start_part, part_count, 0, 0.0, 0);
         }
       }
+
+      if (error == 0 && !interface.keep_temporary()) {
+        ExodusFile::unlink_temporary_files();
+      }
     }
 
 #ifndef _WIN32
     time_t end_time = time(nullptr);
-    add_to_log(argv[0], static_cast<int>(end_time - begin_time));
+    if (rank == 0) {
+      add_to_log(argv[0], static_cast<int>(end_time - begin_time));
+    }
 #endif
     return (error);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: (EPU) Standard exception: " << e.what() << '\n';
+    std::cerr << e.what() << '\n';
+    return EXIT_FAILURE;
   }
 }
 
@@ -449,9 +599,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 {
   SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
 
-  std::cout << "\nIO Word sizes: " << sizeof(T) << " bytes floating point and " << sizeof(INT)
-            << " bytes integer.\n";
-
+  if (rank == 0) {
+    std::cout << "\nIO Word sizes: " << sizeof(T) << " bytes floating point and " << sizeof(INT)
+              << " bytes integer.\n";
+  }
   int p; // file counter p=0..part_count-1
 
   auto mytitle = new char[MAX_LINE_LENGTH + 1];
@@ -472,11 +623,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   int error = 0;
 
-  if (debug_level & 1) {
-    std::cout << time_stamp(tsFormat);
-  }
-  std::cout << "\n**** READ LOCAL (GLOBAL) INFO ****" << '\n';
-
+  LOG("\n**** READ LOCAL (GLOBAL) INFO ****\n");
   std::string title0;
 
   // EPU assumes IDS are always passed through the API as 64-bit ints.
@@ -526,8 +673,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     else {
       SMART_ASSERT(global.dimensionality == local_mesh[p].dimensionality);
       SMART_ASSERT(global.count(EBLK) == local_mesh[p].count(EBLK));
-      SMART_ASSERT(global.count(NSET) == local_mesh[p].count(NSET));
-      SMART_ASSERT(global.count(SSET) == local_mesh[p].count(SSET));
+      if (!interface.omit_nodesets()) {
+        SMART_ASSERT(global.count(NSET) == local_mesh[p].count(NSET));
+      }
+      if (!interface.omit_sidesets()) {
+        SMART_ASSERT(global.count(SSET) == local_mesh[p].count(SSET));
+      }
     }
 
     local_node_to_global[p].resize(local_mesh[p].nodeCount);
@@ -568,11 +719,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     std::vector<INT> global_node_map;
     build_reverse_node_map(local_node_to_global, local_mesh, &global, part_count, global_node_map);
 
-    if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
-    }
-    std::cout << "Finished reading/writing Global Info\n";
-
+    LOG("Finished reading/writing Global Info\n");
     if (interface.output_shared_nodes()) {
       // Get list of all shared nodes...
       std::vector<std::vector<INT>> shared(part_count);
@@ -591,16 +738,18 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
         }
       }
 
-      std::cout << "Node Sharing information: (Part:Local Node Id)\n";
-      for (size_t i = 0; i < global_node_map.size(); i++) {
-        if (num_shared[i] > 1) {
-          std::cout << "Global Node " << i + 1 << ": ";
-          for (int pc = 0; pc < part_count; pc++) {
-            if (shared[pc][i] >= 1) {
-              std::cout << "\t" << pc << ":" << shared[pc][i];
+      if (rank == 0) {
+        std::cout << "Node Sharing information: (Part:Local Node Id)\n";
+        for (size_t i = 0; i < global_node_map.size(); i++) {
+          if (num_shared[i] > 1) {
+            std::cout << "Global Node " << i + 1 << ": ";
+            for (int pc = 0; pc < part_count; pc++) {
+              if (shared[pc][i] >= 1) {
+                std::cout << "\t" << pc << ":" << shared[pc][i];
+              }
             }
+            std::cout << "\n";
           }
-          std::cout << "\n";
         }
       }
     }
@@ -619,10 +768,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     /************************************************************************/
     // Get Side sets
     if (!interface.omit_sidesets()) {
-      if (debug_level & 1) {
-        std::cout << time_stamp(tsFormat);
-      }
-      std::cout << "\n**** GET SIDE SETS *****\n";
+      LOG("\n**** GET SIDE SETS *****\n");
       get_sideset_metadata(part_count, sidesets, glob_ssets);
       if (global.count(SSET) != glob_ssets.size()) {
         std::cerr << "\nWARNING: Invalid sidesets will not be written to output database.\n";
@@ -633,10 +779,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     /************************************************************************/
     // Get Node sets
     if (!interface.omit_nodesets()) {
-      if (debug_level & 1) {
-        std::cout << time_stamp(tsFormat);
-      }
-      std::cout << "\n**** GET NODE SETS *****\n";
+      LOG("\n**** GET NODE SETS *****\n");
       get_nodesets(part_count, global.nodeCount, local_node_to_global, nodesets, glob_nsets,
                    float_or_double);
       if (global.count(NSET) != glob_nsets.size()) {
@@ -648,12 +791,40 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     /************************************************************************/
     // Start writing the output file...
 
-    if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
-    }
-    std::cout << "\n**** BEGIN WRITING OUTPUT FILE *****\n";
+    LOG("\n**** BEGIN WRITING OUTPUT FILE *****\n");
     CommunicationMetaData comm_data;
 
+    if (!interface.int64()) {
+      int64_t twoBill = 1;
+      twoBill <<= 31;
+      int64_t fourBill = 1;
+      fourBill <<= 32;
+      // Check whether output mesh requires 64-bit integers...
+      if (global.nodeCount >= twoBill || global.elementCount >= twoBill) {
+        throw std::runtime_error("\n\nERROR: (EPU) Output file requires 64-bit integers. You must "
+                                 "rerun epu with the -64 option.\n\n");
+      }
+
+      if (!interface.use_netcdf4()) {
+        // Check size required to store coordinates and connectivity
+        if (global.nodeCount * 8 >= fourBill) {
+          std::cerr
+              << "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n";
+          interface.set_use_netcdf4();
+        }
+
+        for (auto block : glob_blocks) {
+          int64_t element_count = block.entity_count();
+          int64_t nnpe          = block.nodesPerElement;
+          if (element_count * nnpe * 4 >= fourBill) {
+            std::cerr
+                << "\nINFO: Output file requires NetCDF-4 format. Setting this automatically.\n\n";
+            interface.set_use_netcdf4();
+            break;
+          }
+        }
+      }
+    }
     // Create the output file...
     ExodusFile::create_output(interface, cycle);
 
@@ -679,9 +850,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (interface.append()) {
       bool matches = exodus.check_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);
       if (!matches) {
-        std::cerr << "\n\nERROR: (EPU) Current mesh dimensions do not match "
-                  << "the mesh dimensions in the file being appended to.\n\n";
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("\n\nERROR: (EPU) Current mesh dimensions do not match "
+                                 "the mesh dimensions in the file being appended to.\n\n");
       }
     }
     else {
@@ -695,23 +865,17 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
       // c.2.  Write Global Node Number Map
       if (global.needNodeMap) {
-        if (debug_level & 1) {
-          std::cout << time_stamp(tsFormat);
-        }
-        std::cout << "Writing global node number map...\n";
-        error = ex_put_id_map(ExodusFile::output(), EX_NODE_MAP, TOPTR(global_node_map));
+        LOG("Writing global node number map...\n");
+        error = ex_put_id_map(ExodusFile::output(), EX_NODE_MAP, global_node_map.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
       }
 
       if (global.needElementMap) {
-        if (debug_level & 1) {
-          std::cout << time_stamp(tsFormat);
-        }
-        std::cout << "Writing out master global elements information...\n";
+        LOG("Writing out master global elements information...\n");
         if (!global_element_map.empty()) {
-          error = ex_put_id_map(ExodusFile::output(), EX_ELEM_MAP, TOPTR(global_element_map));
+          error = ex_put_id_map(ExodusFile::output(), EX_ELEM_MAP, global_element_map.data());
           if (error < 0) {
             exodus_error(__LINE__);
           }
@@ -730,26 +894,15 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // ************************************************************************
   // 2. Get Coordinate Info.
   if (!interface.append()) {
-    if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
-    }
-    std::cout << "\n\n**** GET COORDINATE INFO ****\n";
-
+    LOG("\n\n**** GET COORDINATE INFO ****\n");
     get_put_coordinates(global, part_count, local_mesh, local_node_to_global, (T)0.0);
-
-    if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
-    }
-    std::cout << "Wrote coordinate information...\n";
+    LOG("Wrote coordinate information...\n");
   }
+
   // ####################TRANSIENT DATA SECTION###########################
   // ***********************************************************************
   // 9. Get Variable Information and names
-
-  if (debug_level & 1) {
-    std::cout << time_stamp(tsFormat);
-  }
-  std::cout << "\n**** GET VARIABLE INFORMATION AND NAMES ****" << '\n';
+  LOG("\n**** GET VARIABLE INFORMATION AND NAMES ****\n");
 
   //  I. read number of variables for each type.
   //  NOTE: it is assumed that every processor has the same global, nodal,
@@ -810,8 +963,8 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (!interface.append()) {
       error = ex_put_all_var_param(
           ExodusFile::output(), global_vars.count(OUT), nodal_vars.count(OUT),
-          element_vars.count(OUT), TOPTR(elem_truth_table), nodeset_vars.count(OUT),
-          TOPTR(global.truthTable[NSET]), sideset_vars.count(OUT), TOPTR(global.truthTable[SSET]));
+          element_vars.count(OUT), elem_truth_table.data(), nodeset_vars.count(OUT),
+          global.truthTable[NSET].data(), sideset_vars.count(OUT), global.truthTable[SSET].data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -842,11 +995,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   int time_step;
   int num_time_steps = 0;
 
-  if (debug_level & 1) {
-    std::cout << time_stamp(tsFormat);
-  }
-  std::cout << "\n**** GET TRANSIENT NODAL, GLOBAL, AND ELEMENT DATA VALUES ****\n";
-
+  LOG("\n**** GET TRANSIENT NODAL, GLOBAL, AND ELEMENT DATA VALUES ****\n");
   // Stage I: Get the number_of_time_steps information
 
   bool differ = false;
@@ -869,7 +1018,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
               << "         Using minimum count of " << num_time_steps << "\n\n";
   }
   else {
-    std::cout << "\nNumber of time steps on input databases = " << num_time_steps << "\n\n";
+    if (rank == 0) {
+      std::cout << "\nNumber of time steps on input databases = " << num_time_steps << "\n\n";
+    }
   }
 
   std::vector<T> global_values(global_vars.count(IN));
@@ -946,8 +1097,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (debug_level & 1) {
       std::cout << time_stamp(tsFormat);
     }
-    std::cout << "\tTransferring step " << ts_min << " to step " << ts_max << " by " << ts_step
-              << '\n';
+    if (rank == 0) {
+      std::cout << "\tTransferring step " << ts_min << " to step " << ts_max << " by " << ts_step
+                << '\n';
+    }
   }
 
   // Determine how many steps will be written...
@@ -973,8 +1126,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       }
 
       if (min_time_to_write != -DBL_MAX) {
-        std::cout << "\tAppend Mode: Skipping " << time_step - (ts_min - 1)
-                  << " input steps to align times with already written steps on output file.\n\n";
+        if (rank == 0) {
+          std::cout << "\tAppend Mode: Skipping " << time_step - (ts_min - 1)
+                    << " input steps to align times with already written steps on output file.\n\n";
+        }
         min_time_to_write = -DBL_MAX;
       }
 
@@ -1007,10 +1162,12 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       // information
       if (global_vars.count(OUT) > 0) {
         if (debug_level & 1) {
-          std::cout << time_stamp(tsFormat) << "Global Variables...\n";
+          if (rank == 0) {
+            std::cout << time_stamp(tsFormat) << "Global Variables...\n";
+          }
         }
         error = ex_get_var(id, time_step + 1, EX_GLOBAL, 0, 0, global_vars.count(),
-                           TOPTR(global_values));
+                           global_values.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -1022,7 +1179,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
           }
         }
         error = ex_put_var(ExodusFile::output(), time_step_out, EX_GLOBAL, 1, 0,
-                           global_vars.count(OUT), TOPTR(output_global_values));
+                           global_vars.count(OUT), output_global_values.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -1033,7 +1190,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
           for (p = 1; p < part_count; p++) {
             ExodusFile idp(p);
             error = ex_get_var(idp, time_step + 1, EX_GLOBAL, 0, 0, global_vars.count(IN),
-                               TOPTR(proc_global_values));
+                               proc_global_values.data());
             if (error < 0) {
               exodus_error(__LINE__);
             }
@@ -1060,7 +1217,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Nodal Values...
     if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat) << "Nodal Variables...\n";
+      if (rank == 0) {
+        std::cout << time_stamp(tsFormat) << "Nodal Variables...\n";
+      }
     }
     if (debug_level & 2) {
       for (int i = 0; i < nodal_vars.count(OUT); i++) {
@@ -1075,7 +1234,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
         size_t node_count = local_mesh[p].nodeCount;
         for (int i = 0; i < nodal_vars.count(IN); i++) {
           if (nodal_vars.index_[i] > 0) {
-            error = ex_get_var(id, time_step + 1, EX_NODAL, i + 1, 0, node_count, TOPTR(values));
+            error = ex_get_var(id, time_step + 1, EX_NODAL, i + 1, 0, node_count, values.data());
             if (error < 0) {
               exodus_error(__LINE__);
             }
@@ -1094,7 +1253,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
               }
             }
 
-            T *local_nodal_values  = TOPTR(values);
+            T *local_nodal_values  = values.data();
             T *global_nodal_values = &master_nodal_values[i_out][0];
             if (interface.sum_shared_nodes()) {
               // sum values into master nodal value information. Note
@@ -1130,7 +1289,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // ========================================================================
     // Extracting element transient variable data
     if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat) << "Element Variables...\n";
+      if (rank == 0) {
+        std::cout << time_stamp(tsFormat) << "Element Variables...\n";
+      }
     }
     if (debug_level & 4) {
       clear_master_values(element_vars, global, glob_blocks, master_element_values);
@@ -1156,7 +1317,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     // Extracting sideset transient variable data
     if (!interface.omit_nodesets()) {
       if (debug_level & 1) {
-        std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
+        if (rank == 0) {
+          std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
+        }
       }
       if (debug_level & 16) {
         clear_master_values(sideset_vars, global, glob_ssets, master_sideset_values);
@@ -1176,7 +1339,9 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       // ========================================================================
       // Extracting nodeset transient variable data
       if (debug_level & 1) {
-        std::cout << time_stamp(tsFormat) << "Nodeset Variables...\n";
+        if (rank == 0) {
+          std::cout << time_stamp(tsFormat) << "Nodeset Variables...\n";
+        }
       }
       if (debug_level & 32) {
         clear_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values);
@@ -1192,20 +1357,19 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       }
     }
     // ========================================================================
-    ex_update(ExodusFile::output());
-
     if (debug_level & 1) {
       std::cout << time_stamp(tsFormat);
     }
 
     if (subcycles > 2) {
-      std::cout << cycle + 1 << "/" << subcycles << " ";
+      if (rank == 0) {
+        std::cout << cycle + 1 << "/" << subcycles << " ";
+      }
     }
 
     std::ios::fmtflags f(std::cout.flags());
     std::cout << "Wrote step " << std::setw(2) << time_step + 1 << ", time " << std::scientific
               << std::setprecision(4) << time_val;
-
     double cur_time            = seacas_timer();
     double elapsed             = cur_time - start_time;
     double time_per_step       = elapsed / time_step_out;
@@ -1213,7 +1377,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     double estimated_remaining = time_per_step * (output_steps - time_step_out);
     std::cout << "\t\t[" << std::fixed << std::setw(5) << std::setprecision(1) << percentage_done
               << "%, Elapsed=" << format_time(elapsed)
-              << ", ETA=" << format_time(estimated_remaining) << "]\n";
+              << ", ETA=" << format_time(estimated_remaining) << "]\r";
     if (debug_level & 1) {
       std::cout << "\n";
     }
@@ -1230,15 +1394,14 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   deallocate_master_values(nodeset_vars, global, master_nodeset_values);
 
   /*************************************************************************/
-  // EXIT program
+  // FINALIZE program
   if (debug_level & 1) {
     std::cout << time_stamp(tsFormat);
   }
   if (subcycles > 2) {
     std::cout << cycle + 1 << "/" << subcycles << " ";
   }
-
-  std::cout << "******* END *******\n";
+  std::cout << "\n******* END *******\n";
   return (0);
 }
 
@@ -1255,14 +1418,14 @@ namespace {
     std::vector<char> tags(num_frames);
 
     int error =
-        ex_get_coordinate_frames(id, &num_frames, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+        ex_get_coordinate_frames(id, &num_frames, ids.data(), coordinates.data(), tags.data());
     if (error < 0) {
       exodus_error(__LINE__);
     }
 
     // Now output to the combined file...
     error =
-        ex_put_coordinate_frames(id_out, num_frames, TOPTR(ids), TOPTR(coordinates), TOPTR(tags));
+        ex_put_coordinate_frames(id_out, num_frames, ids.data(), coordinates.data(), tags.data());
     if (error < 0) {
       exodus_error(__LINE__);
     }
@@ -1383,7 +1546,7 @@ namespace {
     get_put_coordinate_names(ExodusFile(0), ExodusFile::output(), global.dimensionality);
 
     // Write out coordinate information
-    error = ex_put_coord(ExodusFile::output(), TOPTR(x), TOPTR(y), TOPTR(z));
+    error = ex_put_coord(ExodusFile::output(), x.data(), y.data(), z.data());
     if (error < 0) {
       exodus_error(__LINE__);
     }
@@ -1402,7 +1565,7 @@ namespace {
     if (error < 0) {
       exodus_error(__LINE__);
     }
-    std::cout << "Wrote coordinate names..." << '\n';
+    LOG("Wrote coordinate names...\n");
 
     free_name_array(coordinate_names, dimensionality);
   }
@@ -1418,7 +1581,7 @@ namespace {
     std::vector<T> local_y(num_nodes);
     std::vector<T> local_z(num_nodes);
 
-    error = ex_get_coord(id, TOPTR(local_x), TOPTR(local_y), TOPTR(local_z));
+    error = ex_get_coord(id, local_x.data(), local_y.data(), local_z.data());
     if (error < 0) {
       exodus_error(__LINE__);
     }
@@ -1515,14 +1678,15 @@ namespace {
   void get_element_blocks(int part_count, const std::vector<Mesh> &local_mesh, const Mesh &global,
                           std::vector<std::vector<Block>> &blocks, std::vector<Block> &glob_blocks)
   {
-    std::cout << "\n\n**** GET BLOCK INFORMATION (INCL. ELEMENT ATTRIBUTES) ****\n";
-    ;
+    LOG("\n\n**** GET BLOCK INFORMATION (INCL. ELEMENT ATTRIBUTES) ****\n");
 
     for (int ip = 0; ip < part_count; ip++) {
       blocks[ip].resize(local_mesh[ip].count(EBLK));
     }
 
-    std::cout << "Global block count = " << global.count(EBLK) << '\n';
+    if (rank == 0) {
+      std::cout << "Global block count = " << global.count(EBLK) << '\n';
+    }
 
     ExodusIdVector block_id(global.count(EBLK));
 
@@ -1530,7 +1694,7 @@ namespace {
     for (int p = 0; p < part_count; p++) {
       ExodusFile id(p);
 
-      error = ex_get_ids(id, EX_ELEM_BLOCK, TOPTR(block_id));
+      error = ex_get_ids(id, EX_ELEM_BLOCK, block_id.data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -1539,9 +1703,10 @@ namespace {
       if (p > 0) {
         for (size_t b = 0; b < global.count(EBLK); b++) {
           if (blocks[0][b].id != block_id[b]) {
-            std::cerr << "ERROR: (EPU) The internal element block id ordering for part " << p
-                      << "\n       is not consistent with the ordering for part 0." << '\n';
-            exit(EXIT_FAILURE);
+            std::ostringstream errmsg;
+            errmsg << "ERROR: (EPU) The internal element block id ordering for part " << p
+                   << "\n       is not consistent with the ordering for part 0." << '\n';
+            throw std::runtime_error(errmsg.str());
           }
         }
       }
@@ -1551,7 +1716,7 @@ namespace {
       }
       else {
         if (p == 0) {
-          std::cout << "\nGetting element block info.\n";
+          LOG("\nGetting element block info.\n");
         }
       }
 
@@ -1569,7 +1734,7 @@ namespace {
         }
 
         std::vector<char> name(Excn::ExodusFile::max_name_length() + 1);
-        error = ex_get_name(id, EX_ELEM_BLOCK, block_id[b], TOPTR(name));
+        error = ex_get_name(id, EX_ELEM_BLOCK, block_id[b], name.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -1647,10 +1812,7 @@ namespace {
     auto linkage    = new INT *[global_num_blocks];
     auto attributes = new T *[global_num_blocks];
 
-    if (debug_level & 1) {
-      std::cout << time_stamp(tsFormat);
-    }
-    std::cout << "\nReading and Writing element connectivity & attributes\n";
+    LOG("\nReading and Writing element connectivity & attributes\n");
 
     for (int b = 0; b < global_num_blocks; b++) {
 
@@ -1701,7 +1863,7 @@ namespace {
           std::vector<INT> local_linkage(maximum_nodes);
 
           ex_entity_id bid = blocks[p][b].id;
-          error = ex_get_conn(id, EX_ELEM_BLOCK, bid, TOPTR(local_linkage), nullptr, nullptr);
+          error = ex_get_conn(id, EX_ELEM_BLOCK, bid, local_linkage.data(), nullptr, nullptr);
           if (error < 0) {
             std::cerr << "ERROR: (EPU) Cannot get element block connectivity for block " << bid
                       << " on part " << p + start_part << ".\n";
@@ -1730,7 +1892,7 @@ namespace {
             size_t         max_attr = blocks[p][b].entity_count() * blocks[p][b].attributeCount;
             std::vector<T> local_attr(max_attr);
 
-            error = ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, TOPTR(local_attr));
+            error = ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, local_attr.data());
             if (error < 0) {
               exodus_error(__LINE__);
             }
@@ -1804,7 +1966,7 @@ namespace {
       size_t offset = 0;
       for (int p = 0; p < part_count; p++) {
         ExodusFile id(p);
-        error = ex_get_id_map(id, EX_ELEM_MAP, TOPTR(global_element_numbers[p]));
+        error = ex_get_id_map(id, EX_ELEM_MAP, global_element_numbers[p].data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -1837,7 +1999,9 @@ namespace {
     // at global_element_map.size() == global_element_map.size();
     bool is_contiguous = global_element_map.empty() ||
                          ((size_t)global_element_map.back() == global_element_map.size());
-    std::cout << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    if (rank == 0) {
+      std::cout << "Element id map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    }
 
   // Create the map that maps from a local processor element to the
   // global map. This combines the mapping local processor element to
@@ -1887,7 +2051,7 @@ namespace {
       for (int p = 0; p < part_count; p++) {
         size_t element_count = local_mesh[p].elementCount;
         element_map.resize(element_count);
-        int error = ex_get_id_map(ExodusFile(p), EX_ELEM_MAP, TOPTR(element_map));
+        int error = ex_get_id_map(ExodusFile(p), EX_ELEM_MAP, element_map.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -1939,12 +2103,13 @@ namespace {
             goto REMAP;
           }
           else {
-            std::cerr << "ERROR: (EPU) The element ids for element block " << glob_blocks[b].id
-                      << " are not consistent." << '\n';
-            std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id
-                      << " min/max id = " << min_id + 1 << "/" << max_id + 1
-                      << " size = " << glob_blocks[b].entity_count() << "\n";
-            exit(EXIT_FAILURE);
+            std::ostringstream errmsg;
+            errmsg << "ERROR: (EPU) The element ids for element block " << glob_blocks[b].id
+                   << " are not consistent." << '\n'
+                   << "Block " << b << ", Id = " << glob_blocks[b].id
+                   << " min/max id = " << min_id + 1 << "/" << max_id + 1
+                   << " size = " << glob_blocks[b].entity_count() << "\n";
+            throw std::runtime_error(errmsg.str());
           }
         }
       }
@@ -1966,7 +2131,7 @@ namespace {
     // Append all local node maps to the global node map.
     // Sort the global node map
     // Remove duplicates.
-    // Position withing map is now the map...
+    // Position within map is now the map...
     // When building the local-proc node to global id, use binary_search...
 
     // Global node map and count.
@@ -1983,7 +2148,7 @@ namespace {
     int    error  = 0;
     for (int p = 0; p < part_count; p++) {
       ExodusFile id(p);
-      error = ex_get_id_map(id, EX_NODE_MAP, TOPTR(global_node_numbers[p]));
+      error = ex_get_id_map(id, EX_NODE_MAP, global_node_numbers[p].data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -1994,8 +2159,8 @@ namespace {
 
     // Now, sort the global_node_map array and remove duplicates...
     std::sort(global_node_map.begin(), global_node_map.end());
-    global_node_map.erase(std::unique(global_node_map.begin(), global_node_map.end()),
-                          global_node_map.end());
+    global_node_map.resize(unique(global_node_map));
+    global_node_map.shrink_to_fit();
 
     size_t total_num_nodes = global_node_map.size();
     global->nodeCount      = total_num_nodes;
@@ -2006,7 +2171,9 @@ namespace {
     // at global_node_map.size() == global_node_map.size();
     bool is_contiguous =
         global_node_map.empty() || ((size_t)global_node_map.back() == global_node_map.size());
-    std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    if (rank == 0) {
+      std::cout << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
+    }
 
     // Create the map the maps from a local processor node to the
     // global map. This combines the mapping local processor node to
@@ -2087,8 +2254,8 @@ namespace {
         nfield = 1;
       }
 
-      std::cout << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
-      {
+      if (rank == 0) {
+        std::cout << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
         int i    = 0;
         int ifld = 1;
         std::cout << "\t";
@@ -2205,8 +2372,9 @@ namespace {
           }
         }
         if (!found) {
-          std::cerr << "ERROR: (EPU) Variable '" << elem.first << "' is not valid." << '\n';
-          exit(EXIT_FAILURE);
+          std::ostringstream errmsg;
+          errmsg << "ERROR: (EPU) Variable '" << elem.first << "' is not valid." << '\n';
+          throw std::runtime_error(errmsg.str());
         }
       }
       // Count non-zero entries in var_index;
@@ -2230,20 +2398,22 @@ namespace {
   {
     // Write out Global info
 
-    std::cout << " Title: " << global.title.c_str() << "\n\n";
-    std::cout << " Number of coordinates per node       =" << std::setw(12) << global.dimensionality
-              << "\n";
-    std::cout << " Number of nodes                      =" << std::setw(12) << global.nodeCount
-              << "\n";
-    std::cout << " Number of elements                   =" << std::setw(12) << global.elementCount
-              << "\n";
-    std::cout << " Number of element blocks             =" << std::setw(12) << global.count(EBLK)
-              << "\n\n";
-    std::cout << " Number of nodal point sets           =" << std::setw(12) << global.count(NSET)
-              << "\n";
-    std::cout << " Number of element side sets          =" << std::setw(12) << global.count(SSET)
-              << "\n\n";
-
+    if (rank == 0) {
+      std::cout.imbue(std::locale(std::locale(), new my_numpunct));
+      std::cout << " Title: " << global.title << "\n\n";
+      std::cout << " Number of coordinates per node       =" << std::setw(15)
+                << global.dimensionality << "\n";
+      std::cout << " Number of nodes                      =" << std::setw(15) << global.nodeCount
+                << "\n";
+      std::cout << " Number of elements                   =" << std::setw(15) << global.elementCount
+                << "\n";
+      std::cout << " Number of element blocks             =" << std::setw(15) << global.count(EBLK)
+                << "\n\n";
+      std::cout << " Number of nodal point sets           =" << std::setw(15) << global.count(NSET)
+                << "\n";
+      std::cout << " Number of element side sets          =" << std::setw(15) << global.count(SSET)
+                << "\n\n";
+    }
     int id_out = ExodusFile::output();
     get_put_qa(ExodusFile(0), id_out);
   }
@@ -2265,7 +2435,7 @@ namespace {
 
       // Get the ids for these
       ids.resize(ns_count);
-      int error = ex_get_ids(id, EX_NODE_SET, TOPTR(ids));
+      int error = ex_get_ids(id, EX_NODE_SET, ids.data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -2299,7 +2469,7 @@ namespace {
       auto IE = set_ids.end();
 
       // Get the ids again so we can map current order back to file order...
-      int error = ex_get_ids(id, EX_NODE_SET, TOPTR(ids));
+      int error = ex_get_ids(id, EX_NODE_SET, ids.data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -2315,7 +2485,7 @@ namespace {
         i++;
       }
 
-      error = ex_get_sets(id, set_ids.size(), TOPTR(sets));
+      error = ex_get_sets(id, set_ids.size(), sets.data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -2326,7 +2496,7 @@ namespace {
         nodesets[p][iset].dfCount   = sets[iset].num_distribution_factor;
 
         std::vector<char> name(Excn::ExodusFile::max_name_length() + 1);
-        error = ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, TOPTR(name));
+        error = ex_get_name(id, EX_NODE_SET, nodesets[p][iset].id, name.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -2394,12 +2564,12 @@ namespace {
             ns_nodes.resize(size);
             ns_df.resize(size);
 
-            int error = ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, TOPTR(ns_nodes), nullptr);
+            int error = ex_get_set(id, EX_NODE_SET, nodesets[p][ns].id, ns_nodes.data(), nullptr);
             if (error < 0) {
               exodus_error(__LINE__);
             }
             if (nodesets[p][ns].dfCount > 0) {
-              ex_get_set_dist_fact(id, EX_NODE_SET, nodesets[p][ns].id, TOPTR(ns_df));
+              ex_get_set_dist_fact(id, EX_NODE_SET, nodesets[p][ns].id, ns_df.data());
             }
             else {
               std::fill(ns_df.begin(), ns_df.end(), 1.0);
@@ -2455,7 +2625,7 @@ namespace {
             NodeSet<INT> &nset   = nodesets[p][ns];
             size_t        nnodes = nset.entity_count();
             nset.nodeOrderMap.resize(nnodes);
-            int error = ex_get_set(id, EX_NODE_SET, nset.id, TOPTR(nset.nodeOrderMap), nullptr);
+            int error = ex_get_set(id, EX_NODE_SET, nset.id, nset.nodeOrderMap.data(), nullptr);
             if (error < 0) {
               exodus_error(__LINE__);
             }
@@ -2485,23 +2655,20 @@ namespace {
     }
     for (auto &glob_set : glob_sets) {
       int error =
-          ex_put_set(exoid, EX_NODE_SET, glob_set.id, TOPTR(glob_set.nodeSetNodes), nullptr);
+          ex_put_set(exoid, EX_NODE_SET, glob_set.id, glob_set.nodeSetNodes.data(), nullptr);
       if (error < 0) {
         exodus_error(__LINE__);
       }
       if (glob_set.dfCount > 0) {
-        error = ex_put_set_dist_fact(exoid, EX_NODE_SET, glob_set.id, TOPTR(glob_set.distFactors));
+        error = ex_put_set_dist_fact(exoid, EX_NODE_SET, glob_set.id, glob_set.distFactors.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
       }
 
       // Done with the memory; clear out the vector containing the bulk data nodes and distFactors.
-      std::vector<INT>().swap(glob_set.nodeSetNodes);
-      DistVector().swap(glob_set.distFactors);
-
-      SMART_ASSERT(glob_set.nodeSetNodes.empty());
-      SMART_ASSERT(glob_set.distFactors.empty());
+      clear(glob_set.nodeSetNodes);
+      clear(glob_set.distFactors);
 
       if (debug_level & 32) {
         glob_set.dump();
@@ -2525,7 +2692,7 @@ namespace {
 
         // Get the ids for these
         ids.resize(ss_count);
-        int error = ex_get_ids(id, EX_SIDE_SET, TOPTR(ids));
+        int error = ex_get_ids(id, EX_SIDE_SET, ids.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -2562,7 +2729,7 @@ namespace {
         auto IE = set_ids.end();
 
         // Get the ids again so we can map current order back to file order...
-        int error = ex_get_ids(id, EX_SIDE_SET, TOPTR(ids));
+        int error = ex_get_ids(id, EX_SIDE_SET, ids.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -2578,7 +2745,7 @@ namespace {
           j++;
         }
 
-        error = ex_get_sets(id, set_ids.size(), TOPTR(exosets));
+        error = ex_get_sets(id, set_ids.size(), exosets.data());
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -2730,12 +2897,9 @@ namespace {
     }
 
     for (auto &glob_sset : glob_ssets) {
-      std::vector<INT>().swap(glob_sset.elems);
-      std::vector<INT>().swap(glob_sset.sides);
-      DistVector().swap(glob_sset.distFactors);
-      SMART_ASSERT(glob_sset.elems.empty());
-      SMART_ASSERT(glob_sset.sides.empty());
-      SMART_ASSERT(glob_sset.distFactors.empty());
+      clear(glob_sset.elems);
+      clear(glob_sset.sides);
+      clear(glob_sset.distFactors);
     }
   }
 
@@ -2759,7 +2923,7 @@ namespace {
         }
       }
       int error = ex_put_var(id_out, step, EX_ELEM_BLOCK, variable, glob_blocks[b].id,
-                             glob_blocks[b].entity_count(), TOPTR(proc));
+                             glob_blocks[b].entity_count(), proc.data());
       if (error < 0) {
         exodus_error(__LINE__);
       }
@@ -2849,16 +3013,18 @@ namespace {
         }
 
         if (block == -1) {
-          std::cerr << "ERROR: (EPU) User-specified block id of " << variable_name.second
-                    << " for variable '" << variable_name.first << "' does not exist.\n";
-          exit(EXIT_FAILURE);
+          std::ostringstream errmsg;
+          errmsg << "ERROR: (EPU) User-specified block id of " << variable_name.second
+                 << " for variable '" << variable_name.first << "' does not exist.\n";
+          throw std::runtime_error(errmsg.str());
         }
 
         int truth_table_loc = block * vars.count(OUT) + out_position;
         if (global.truthTable[vars.objectType][truth_table_loc] == 0) {
-          std::cerr << "ERROR: (EPU) Variable '" << variable_name.first
-                    << "' does not exist on block " << variable_name.second << ".\n";
-          exit(EXIT_FAILURE);
+          std::ostringstream errmsg;
+          errmsg << "ERROR: (EPU) Variable '" << variable_name.first << "' does not exist on block "
+                 << variable_name.second << ".\n";
+          throw std::runtime_error(errmsg.str());
         }
         else {
           global.truthTable[vars.objectType][truth_table_loc] = 1;
@@ -2905,7 +3071,7 @@ namespace {
           // is the only variable...
           local[p].truthTable[object_type].resize(input_truth_table_length);
           int error = ex_get_truth_table(id, vars.type(), global.count(object_type), vars.count(IN),
-                                         TOPTR(local[p].truthTable[object_type]));
+                                         local[p].truthTable[object_type].data());
           if (error < 0) {
             exodus_error(__LINE__);
           }
@@ -2972,10 +3138,10 @@ namespace {
 
   void add_info_record(char *info_record, int size)
   {
-// Add 'uname' output to the passed in character string.
-// Maximum size of string is 'size' (not including terminating nullptr)
-// This is used as information data in the concatenated results file
-// to help in tracking when/where/... the file was created
+    // Add 'uname' output to the passed in character string.
+    // Maximum size of string is 'size' (not including terminating nullptr)
+    // This is used as information data in the concatenated results file
+    // to help in tracking when/where/... the file was created
 
 #ifdef _WIN32
     std::string info                                      = "EPU: ";
@@ -2999,7 +3165,7 @@ namespace {
       str << osvi.szCSDVersion;
       DWORD build = osvi.dwBuildNumber & 0xFFFF;
       str << " (Build " << build << ")";
-      os += str.str().c_str();
+      os += str.str();
     }
     info += os;
     const char *sinfo = info.c_str();
@@ -3245,7 +3411,7 @@ namespace {
 
               if (local_mesh[p].truthTable[vars.objectType][input_truth_table_loc] > 0) {
                 error = ex_get_var(id, time_step + 1, exodus_object_type(vars.objectType), i + 1,
-                                   local_sets[p][b].id, entity_count, TOPTR(values));
+                                   local_sets[p][b].id, entity_count, values.data());
                 if (error < 0) {
                   exodus_error(__LINE__);
                 }
