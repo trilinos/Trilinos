@@ -146,7 +146,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable Xpetra code refactored to use Kokkos."
-  Kokkos_Refactor_On_By_Default)
+  ${Kokkos_Refactor_On_By_Default})
 
 #
 #
