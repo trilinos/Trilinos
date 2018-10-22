@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
         
         
-        int MyPID=Comm.MyPID();
+        int MyPID=TeuchosComm->getRank();
         switch (MyPID){
             case 0:
                 NumMyElements = 6;
@@ -288,6 +288,8 @@ int main(int argc, char *argv[])
         
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseEpetra,-1,FEelements(),0,TeuchosComm);
         
+        //Mapg->describe(*fancy,Teuchos::VERB_EXTREME);
+        
         
         Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> >
         NodeEleList  = Xpetra::MultiVectorFactory<GO,LO,GO,NO>::Build(Mapg,3);
@@ -295,6 +297,9 @@ int main(int argc, char *argv[])
             for(int j = 0;j<3;j++)
                 NodeEleList->replaceLocalValue(i,j,NodesInElement.at(i).at(j));
         }
+        
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"NodeEleList\n";
     
     switch( MyPID ) {
         case 0:
@@ -377,17 +382,52 @@ int main(int argc, char *argv[])
             E.at(7).at(0) = 22; E.at(7).at(1) = 30;  E.at(7).at(2) = 31;  E.at(7).at(3) = 31;
             break;
     }
-      
-        Teuchos::RCP<Xpetra::Matrix<GO,LO,GO,NO> >
-        connection  = Xpetra::MatrixFactory<GO,LO,GO,NO>::Build(Mapg,4);
-        for(int i = 0;i<8;i++){
-            for(int j = 0;j<3;j++)
-                connection->replaceLocalValues(i,j,E.at(i).at(j));
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"E\n";
+        
+        Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> >
+        conV  = Xpetra::MultiVectorFactory<GO,LO,GO,NO>::Build(Mapg,4);
+        
+        Teuchos::ArrayRCP<const GO> conVarray;
+        std::vector<std::vector<GO> > vecCon (4);
+        std::vector<LO> c(4);
+        Teuchos::RCP<const std::vector<GO> > vecSave;
+        for(int j = 0;j<4;j++){
+            c.at(j) = j;
+            for(int i = 0;i<8;i++)
+            conV->replaceLocalValue(i,j,E.at(i).at(j));
+            conVarray = conV->getData(j);
+            vecSave = get_std_vector(conVarray);
+            vecCon.at(j) = *vecSave;
         }
+        //Teuchos::RCP<Xpetra::CrsMatrixWrap<GO,LO,GO> > conWrap (Mapg,4);
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"Wrap\n";
+    
+        /*std::vector<LO> e(4);
+        std::vector<LO> c(4);
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"vector\n";
+        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> >
+        connection  = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(Mapg,4);
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"crs Matrix\n";
+        for(int i = 0;i<8;i++){
+            for(int k = 0;k<4;k++){
+                e.at(k) = E.at(i).at(k);
+                c.at(k) = k;
+            }
+            Teuchos::ArrayView<GO> con (e);
+            connection->replaceLocalValues(i,c,e);
+        }
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"connection\n";*/
         
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>
-        (connection,NodeEleList,parameterList);
         
+        //Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>
+        //const(connection,NodeEleList,parameterList);
+        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        if(MyPID == 0) cout<<"Zoltan\n";
     
     
         

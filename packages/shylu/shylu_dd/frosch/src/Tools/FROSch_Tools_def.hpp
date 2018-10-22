@@ -901,7 +901,7 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Crs
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg  = Xpetra::MapFactory<LO,GO,NO>::Build(connection->getMap(),1);
     
     //Fill Graph -> Needs make better -> Insert one row at once
-     Teuchos::RCP<Xpetra::CrsGraph<GO,GO,NO> > Xgraph = Xpetra::CrsGraphFactory<GO,GO,NO>::Build(Mapg,connection->getNumVectors());
+     Teuchos::RCP<Xpetra::CrsGraph<GO,GO,NO> > Xgraph = Xpetra::CrsGraphFactory<GO,GO,NO>::Build(Mapg,connection->getGlobalNumCols());
     LO localRows = connection->getRowMap()->getNodeNumElements();
     GO a;
     Teuchos::ArrayView< const LO>  indices;
