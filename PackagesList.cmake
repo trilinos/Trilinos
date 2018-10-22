@@ -76,6 +76,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCORECmds             SCOREC/mds                        ST
   SCORECparma           SCOREC/parma                      ST
   SCORECspr             SCOREC/spr                        ST
+  Avatar                packages/avatar                   EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
   GlobiPack             packages/globipack                PT
@@ -158,6 +159,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpumi)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Avatar)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MOOCHO)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Sundance)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(CTrilinos)
