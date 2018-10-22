@@ -43,9 +43,7 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_CommHelpers.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 
 namespace Anasazi{
 
@@ -53,23 +51,7 @@ namespace Anasazi{
 template <class ScalarType>
 void randomSDM( Teuchos::SerialDenseMatrix<int, ScalarType>& matrix )
 {
-  Teuchos::RCP<const Teuchos::Comm<int> >
-    comm = Teuchos::DefaultComm<int>::getComm();
-
-  const int procRank = rank(*comm);
-
-  // Construct a separate serial dense matrix and synchronize it to get around
-  // input matrices that are subviews of a larger matrix.
-  Teuchos::SerialDenseMatrix<int, ScalarType> newMatrix( matrix.numRows(), matrix.numCols() );
-  if (procRank == 0)
-    newMatrix.random();
-  else
-    newMatrix.putScalar( Teuchos::ScalarTraits<ScalarType>::zero() );
-
-  broadcast(*comm, 0, matrix.numRows()*matrix.numCols(), newMatrix.values());
-
-  // Assign the synchronized matrix to the input.
-  matrix.assign( newMatrix );
+  Teuchos::randomSyncedMatrix( matrix );
 } 
 
 }

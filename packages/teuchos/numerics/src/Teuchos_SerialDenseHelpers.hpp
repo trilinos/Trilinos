@@ -55,6 +55,9 @@
 #include "Teuchos_SerialBandDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 
+#include "Teuchos_CommHelpers.hpp"
+#include "Teuchos_DefaultComm.hpp"
+
 namespace Teuchos {
 
 /*! \relates SerialSymDenseMatrix
@@ -114,11 +117,11 @@ void symMatTripleProduct( ETransp transw, const ScalarType alpha, const SerialSy
 
     // B = W^T*A*W
     if (isBUpper) {
-      for (int j=0; j<B_nrowcols; ++j)
+      for (OrdinalType j=0; j<B_nrowcols; ++j)
 	blas.GEMV( transw, W_nrows, j+1, one, W.values(), W.stride(), AW[j], 1, zero, &B(0,j), 1 );
     }
     else {
-      for (int j=0; j<B_nrowcols; ++j)
+      for (OrdinalType j=0; j<B_nrowcols; ++j)
 	blas.GEMV( transw, W_nrows, B_nrowcols-j, one, W[j], W.stride(), AW[j], 1, zero, &B(j,j), 1 );
     }
   }
@@ -131,13 +134,13 @@ void symMatTripleProduct( ETransp transw, const ScalarType alpha, const SerialSy
 
     // B = W*A*W^T
     if (isBUpper) {
-      for (int j=0; j<B_nrowcols; ++j)
-	for (int i=0; i<=j; ++i)
+      for (OrdinalType j=0; j<B_nrowcols; ++j)
+	for (OrdinalType i=0; i<=j; ++i)
 	  blas.GEMV( transw, 1, A_nrowcols, one, &AW(i,0), AW.stride(), &W(j,0), W.stride(), zero, &B(i,j), 1 );
     }
     else {
-      for (int j=0; j<B_nrowcols; ++j)
-	for (int i=j; i<B_nrowcols; ++i)
+      for (OrdinalType j=0; j<B_nrowcols; ++j)
+	for (OrdinalType i=j; i<B_nrowcols; ++i)
 	  blas.GEMV( transw, 1, A_nrowcols, one, &AW(i,0), AW.stride(), &W(j,0), W.stride(), zero, &B(i,j), 1 );
     }
   }
@@ -181,6 +184,34 @@ bool setCol( const SerialDenseVector<OrdinalType, ScalarType>& v,
 
   return true;
 }
+
+/*! \related SerialDenseMatrix
+  \brief A templated, non-member, helper function for generating a random SerialDenseMatrix that is synchronized in parallel.
+
+  \param A - [in/out] SerialDenseMatrix to be filled with random numbers that are the same across processors
+*/
+template <typename OrdinalType, typename ScalarType>
+void randomSyncedMatrix( Teuchos::SerialDenseMatrix<OrdinalType, ScalarType>& A )
+{
+  Teuchos::RCP<const Teuchos::Comm<OrdinalType> >
+    comm = Teuchos::DefaultComm<OrdinalType>::getComm();
+
+  const OrdinalType procRank = rank(*comm);
+
+  // Construct a separate serial dense matrix and synchronize it to get around
+  // input matrices that are subviews of a larger matrix.
+  Teuchos::SerialDenseMatrix<OrdinalType, ScalarType> newMatrix( A.numRows(), A.numCols() );
+  if (procRank == 0)
+    newMatrix.random();
+  else
+    newMatrix.putScalar( Teuchos::ScalarTraits<ScalarType>::zero() );
+
+  broadcast(*comm, 0, A.numRows()*A.numCols(), newMatrix.values());
+
+  // Assign the synchronized matrix to the input.
+  A.assign( newMatrix );
+}
+
 
 /*! \relates SerialBandDenseMatrix
   \brief A templated, non-member, helper function for converting a SerialDenseMatrix to a SerialBandDenseMatrix.
