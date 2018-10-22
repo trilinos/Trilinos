@@ -48,22 +48,23 @@
 
 namespace Tpetra {
 
-
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
             const Teuchos::RCP<const crs_graph_type>& offRankGraph,
-            const Teuchos::RCP<Teuchos::ParameterList>& params)
+            const Teuchos::RCP<Teuchos::ParameterList>& params):crs_matrix_type(graph)
 {
 }
 
 
+#if 0
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 {
+
 }
+#endif
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -81,6 +82,7 @@ sumIntoGlobalValues(const GlobalOrdinal globalRow,
                     const Teuchos::ArrayView<const Scalar>& vals,
                     const bool atomic)
 {
+  return 0;
 }
 
 
@@ -93,6 +95,7 @@ sumIntoGlobalValues(const GlobalOrdinal globalRow,
                     const GlobalOrdinal cols[],
                     const bool atomic)
 {
+  return 0;
 }
 
 
@@ -136,6 +139,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 {
+  return *this;
 }
 
 

@@ -359,12 +359,11 @@ class FECrsMatrix :
 
 
   private:
-
-
+#if 0
     // We forbid copy construction by declaring this method private
     // and not implementing it.
     FECrsMatrix (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
-
+#endif
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
