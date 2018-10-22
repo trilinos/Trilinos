@@ -85,6 +85,8 @@ APPEND_SET(HEADERS
   Tools/FROSch_SubdomainSolver_def.hpp
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
+  Tools/FROSch_ConfigDefs.hpp
+  Tools/FROSch_config.hpp
 )
 
 # Set sources
