@@ -72,8 +72,11 @@ SET(CTEST_TEST_TYPE Experimental)
 SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
-
 SET(Trilinos_PACKAGES TrilinosCouplings MueLu Avatar)
+
+# Make sure I get the right branch of Avatar
+SET(Trilinos_EXTRAREPOS_BRANCH library-ize-dt)
+
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
