@@ -311,7 +311,7 @@ namespace {
         else {
           for (size_t i = 1; i < name_id.size(); i++) {
             // Convert string to integer...
-            int id = strtoul(name_id[i].c_str(), nullptr, 0);
+            int id = std::stoi(name_id[i]);
             (*variable_list).push_back(std::make_pair(var_name, id));
           }
         }

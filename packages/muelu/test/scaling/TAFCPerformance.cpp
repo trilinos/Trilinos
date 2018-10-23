@@ -231,6 +231,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
 
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================

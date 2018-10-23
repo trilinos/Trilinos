@@ -47,16 +47,15 @@ namespace {
   {
     SMART_ASSERT(!str_val.empty());
 
-    char *endptr;
-    errno      = 0;
-    double val = strtod(str_val.c_str(), &endptr);
-
-    if (errno == ERANGE) {
-      ERROR(" Overflow or underflow occurred when trying"
-            << " to parse command line tolerance.  Aborting...\n");
+    double val = 0;
+    try {
+      val = std::stod(str_val);
+    }
+    catch (...) {
+      ERROR(" Problem converting the string '"
+            << str_val << "' to a double value while parsing tolerance.  Aborting...\n");
       exit(1);
     }
-    errno = 0;
 
     if (val < 0.0) {
       ERROR(" Parsed a negative value \"" << val << "\".  Aborting...\n");
@@ -178,7 +177,7 @@ namespace {
       SMART_ASSERT(!subtok.empty());
 
       errno     = 0;
-      int ival1 = atoi(subtok.c_str());
+      int ival1 = std::stoi(subtok);
       SMART_ASSERT(errno == 0);
 
       if (ival1 < 1) {
@@ -192,7 +191,7 @@ namespace {
       subtok = extract_token(tok, "-");
       if (!subtok.empty()) {
         errno     = 0;
-        int ival2 = atoi(subtok.c_str());
+        int ival2 = std::stoi(subtok);
         SMART_ASSERT(errno == 0);
 
         if (ival2 < 1) {
@@ -231,7 +230,7 @@ namespace {
         SMART_ASSERT(!subtok.empty());
 
         errno     = 0;
-        int ival1 = atoi(subtok.c_str());
+        int ival1 = std::stoi(subtok);
         SMART_ASSERT(errno == 0);
 
         exclude_steps[num_excluded_steps++] = ival1;
@@ -239,7 +238,7 @@ namespace {
         subtok = extract_token(tok, "-");
         if (!subtok.empty()) {
           errno     = 0;
-          int ival2 = atoi(subtok.c_str());
+          int ival2 = std::stoi(subtok);
           SMART_ASSERT(errno == 0);
 
           for (int i = ival1 + 1; i <= ival2; ++i) {
@@ -999,7 +998,7 @@ void SystemInterface::Parse_Command_File()
         std::string tok = extract_token(xline, " \n\t=");
         if (tok != "" && tok[0] != '#') {
           errno   = 0;
-          int tmp = atoi(tok.c_str());
+          int tmp = std::stoi(tok);
           SMART_ASSERT(errno == 0);
           if (tmp > 0) {
             Set_Max_Names(tmp);
@@ -1105,7 +1104,7 @@ void SystemInterface::Parse_Command_File()
         }
         else {
           errno            = 0;
-          time_step_offset = atoi(tok.c_str());
+          time_step_offset = std::stoi(tok);
           SMART_ASSERT(errno == 0);
         }
       }

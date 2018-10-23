@@ -37,6 +37,8 @@ my_double get_average(const std::vector<my_double>& data, int num_repeat)
 
 TEST_F(NGP_Kokkos, calculate_average)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
     size_t size_data = stk::unit_test_util::get_command_line_option<size_t>("-s", 2);
     std::vector<my_double> data(size_data);
     for(size_t i=0;i<data.size();++i)
@@ -59,6 +61,7 @@ TEST_F(NGP_Kokkos, calculate_average)
     my_double sum = (num_items*(num_items-1))/2.0;
     my_double gold_ave = sum/data.size();
     EXPECT_NEAR(gold_ave, average, 0.0000001);
+  }
 }
 
 #if defined(KOKKOS_HAVE_CUDA)
@@ -215,6 +218,9 @@ void run_it_flat()
 
 TEST_F(NGP_Kokkos, view_of_views_flat)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
     run_it_flat();
+  }
 }
 

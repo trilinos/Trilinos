@@ -73,7 +73,7 @@ C   --   Uses NUMNP, NUMEL, NVARNP, NVAREL, NVARGL of /DBNUMS/
 
       CHARACTER*20 STR
 
-      IF (MMNUM .GT. 0) THEN
+      IF (MMNUM .GT. 1) THEN
          OLDMIN = XMIN
          OLDMAX = XMAX
       END IF

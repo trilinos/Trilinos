@@ -169,7 +169,6 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
 {
   int   exoid;
   int   status;
-  int   dimid;
   int   old_fill;
   int   lio_ws;
   int   filesiz = 1;
@@ -561,33 +560,6 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
       ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-  }
-
-  /* define some dimensions and variables */
-
-  /* create string length dimension */
-  if ((status = nc_def_dim(exoid, DIM_STR, (MAX_STR_LENGTH + 1), &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define string length in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* The name string length dimension is delayed until the ex_put_init function
-   */
-
-  /* create line length dimension */
-  if ((status = nc_def_dim(exoid, DIM_LIN, (MAX_LINE_LENGTH + 1), &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define line length in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
-  }
-
-  /* create number "4" dimension; must be of type long */
-  if ((status = nc_def_dim(exoid, DIM_N4, 4L, &dimid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number \"4\" dimension in file id %d",
-             exoid);
-    ex_err(__func__, errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
   }
 
   {

@@ -198,8 +198,8 @@ struct MyApp {
         os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;
 
         std::vector<double> init_vec = {0,0,0};
-        stk::mesh::put_field(centroid, meta.universal_part(), init_vec.data());
-        stk::mesh::put_field(hostCentroid, meta.universal_part(), init_vec.data());
+        stk::mesh::put_field_on_mesh(centroid, meta.universal_part(), init_vec.data());
+        stk::mesh::put_field_on_mesh(hostCentroid, meta.universal_part(), init_vec.data());
     
         bulk = new stk::mesh::BulkData(meta, MPI_COMM_WORLD);
     

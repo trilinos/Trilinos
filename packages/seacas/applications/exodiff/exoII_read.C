@@ -68,7 +68,7 @@ ExoII_Read<INT>::ExoII_Read()
 }
 
 template <typename INT>
-ExoII_Read<INT>::ExoII_Read(const char *fname)
+ExoII_Read<INT>::ExoII_Read(const std::string &fname)
     : file_name(fname), file_id(-1), // value of -1 indicates file not open
       num_nodes(0), dimension(0), num_elmts(0), num_elmt_blocks(0), num_node_sets(0),
       num_side_sets(0), db_version(0.0), api_version(0.0), io_word_size(0), eblocks(nullptr),

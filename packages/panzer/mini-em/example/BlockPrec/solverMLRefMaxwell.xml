@@ -16,6 +16,7 @@
           <Parameter name="Num Blocks" type="int" value="40"/>
           <Parameter name="Flexible Gmres" type="bool" value="true"/>
           <Parameter name="Timer Label" type="string" value="GMRES block system"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
         </ParameterList>
         <ParameterList name="Pseudo Block GMRES">
           <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
@@ -43,7 +44,7 @@
         <ParameterList name="Maxwell">
           <Parameter name="Type" type="string" value="Full Maxwell Preconditioner"/>
           <Parameter name="Use refMaxwell" type="bool" value="true"/>
-          <Parameter name="Use as preconditioner" type="bool" value="true"/>
+          <Parameter name="Use as preconditioner" type="bool" value="false"/>
           <Parameter name="Debug" type="bool" value="false"/>
           <Parameter name="Dump" type="bool" value="false"/>
           <Parameter name="Use discrete gradient" type="bool" value="true"/>
@@ -51,72 +52,85 @@
 
           <ParameterList name="Q_B Solve">
             <Parameter name="Type" type="string" value="Belos"/>
-            <Parameter name="Solver Type" type="string" value="Block CG"/>
+            <Parameter name="Solver Type" type="string" value="Pseudo Block CG"/>
             <ParameterList name="Solver Types">
-              <ParameterList name="Block CG">
+              <ParameterList name="Pseudo Block CG">
                 <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
-                <Parameter name="Orthogonalization" type="string" value="ICGS"/>
                 <Parameter name="Maximum Iterations" type="int" value="100"/>
                 <Parameter name="Timer Label" type="string" value="CG Q_B"/>
                 <Parameter name="Output Frequency" type="int" value="1"/>
                 <Parameter name="Output Style" type="int" value="1"/>
                 <Parameter name="Verbosity" type="int" value="33"/>
+                <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="none"/>
+              <Parameter name="Verbosity Level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
 
           <ParameterList name="Q_B Preconditioner">
-            <Parameter name="Prec Type" type="string" value="ML"/>
+            <Parameter name="Prec Type" type="string" value="Ifpack"/>
             <ParameterList name="Prec Types">
-              <ParameterList name="ML">
-                <ParameterList name="ML Settings">
-                  <Parameter name="ML output" type="int" value="10"/>
-                  <Parameter name="ML label" type="string" value="Q_B"/>
-                  <Parameter name="coarse: max size" type="int" value="2500"/>
-                  <Parameter name="aggregation: smoothing sweeps" type="int" value="0"/>
-                  <Parameter name="aggregation: threshold" type="double" value="0.0"/>
-
-                  <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-                  <Parameter name="smoother: sweeps" type="int" value="2"/>
-                  <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
-                  <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
-
-                  <Parameter name="repartition: enable" type="int" value="1"/>
-                  <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
-                  <Parameter name="repartition: start level" type="int" value="2"/>
-                  <Parameter name="repartition: min per proc" type="int" value="800"/>
-                  <Parameter name="repartition: max min ratio" type="double" value="1.1"/>
-                  <Parameter name="repartition: Zoltan dimensions" type="int" value="3"/>
-                </ParameterList>
-
-                <ParameterList name="Required Parameters">
-                  <Parameter name="x-coordinates" type="string" value="B_face"/>
-                  <Parameter name="y-coordinates" type="string" value="B_face"/>
-                  <Parameter name="z-coordinates" type="string" value="B_face"/>
+              <ParameterList name="Ifpack">
+                <Parameter name="Prec Type" type="string" value="point relaxation"/>
+                <ParameterList name="Ifpack Settings">
+                  <Parameter name="relaxation: type" type="string" value="Jacobi"/>
+                  <Parameter name="relaxation: sweeps" type="int" value="1"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
 
+          <!-- <ParameterList name="Q_B Preconditioner"> -->
+          <!--   <Parameter name="Prec Type" type="string" value="ML"/> -->
+          <!--   <ParameterList name="Prec Types"> -->
+          <!--     <ParameterList name="ML"> -->
+          <!--       <ParameterList name="ML Settings"> -->
+          <!--         <Parameter name="ML output" type="int" value="10"/> -->
+          <!--         <Parameter name="ML label" type="string" value="Q_B"/> -->
+          <!--         <Parameter name="coarse: max size" type="int" value="2500"/> -->
+          <!--         <Parameter name="aggregation: smoothing sweeps" type="int" value="0"/> -->
+          <!--         <Parameter name="aggregation: threshold" type="double" value="0.0"/> -->
+
+          <!--         <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/> -->
+          <!--         <Parameter name="smoother: sweeps" type="int" value="2"/> -->
+          <!--         <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/> -->
+          <!--         <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/> -->
+
+          <!--         <Parameter name="repartition: enable" type="int" value="1"/> -->
+          <!--         <Parameter name="repartition: partitioner" type="string" value="Zoltan"/> -->
+          <!--         <Parameter name="repartition: start level" type="int" value="2"/> -->
+          <!--         <Parameter name="repartition: min per proc" type="int" value="800"/> -->
+          <!--         <Parameter name="repartition: max min ratio" type="double" value="1.1"/> -->
+          <!--         <Parameter name="repartition: Zoltan dimensions" type="int" value="3"/> -->
+          <!--       </ParameterList> -->
+
+          <!--       <ParameterList name="Required Parameters"> -->
+          <!--         <Parameter name="x-coordinates" type="string" value="B_face"/> -->
+          <!--         <Parameter name="y-coordinates" type="string" value="B_face"/> -->
+          <!--         <Parameter name="z-coordinates" type="string" value="B_face"/> -->
+          <!--       </ParameterList> -->
+          <!--     </ParameterList> -->
+          <!--   </ParameterList> -->
+          <!-- </ParameterList> -->
+
           <ParameterList name="S_E Solve">
             <Parameter name="Type" type="string" value="Belos"/>
-            <Parameter name="Solver Type" type="string" value="Block CG"/>
+            <Parameter name="Solver Type" type="string" value="Pseudo Block GMRES"/>
             <ParameterList name="Solver Types">
-              <ParameterList name="Block CG">
+              <ParameterList name="Pseudo Block GMRES">
                 <Parameter name="Convergence Tolerance" type="double" value="1.0e-9"/>
-                <Parameter name="Orthogonalization" type="string" value="ICGS"/>
                 <Parameter name="Maximum Iterations" type="int" value="100"/>
                 <Parameter name="Timer Label" type="string" value="CG S_E"/>
-                <Parameter name="Output Frequency" type="int" value="1"/>
+                <Parameter name="Output Frequency" type="int" value="10"/>
                 <Parameter name="Output Style" type="int" value="1"/>
                 <Parameter name="Verbosity" type="int" value="33"/>
+                <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="VerboseObject">
-              <Parameter name="Verbosity Level" type="string" value="none"/>
+              <Parameter name="Verbosity Level" type="string" value="medium"/>
             </ParameterList>
           </ParameterList>
 
@@ -129,10 +143,10 @@
               <Parameter name="refmaxwell: mode" type="string" value="additive"/>
               <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
 
-              <!-- <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/> -->
-              <!-- <Parameter name="smoother: sweeps" type="int" value="2"/> -->
-              <!-- <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="false"/> -->
-              <!-- <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/> -->
+              <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+              <Parameter name="smoother: sweeps" type="int" value="2"/>
+              <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="false"/>
+              <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
 
               <ParameterList name="refmaxwell: 11list">
                 <Parameter name="ML output" type="int" value="10"/>
@@ -163,8 +177,7 @@
                   <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
                   <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
 
-                  <!-- Repartitioning switched off, since EdgeMatrixFreePreconditioner::BuildProlongator does not forward coordinates to the coarse level -->
-                  <Parameter name="repartition: enable" type="int" value="0"/>
+                  <Parameter name="repartition: enable" type="int" value="1"/>
                   <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
                   <Parameter name="repartition: start level" type="int" value="1"/>
                   <Parameter name="repartition: min per proc" type="int" value="800"/>
@@ -194,7 +207,7 @@
                 <Parameter name="repartition: start level" type="int" value="1"/>
                 <Parameter name="repartition: min per proc" type="int" value="800"/>
                 <Parameter name="repartition: max min ratio" type="double" value="1.1"/>
-                <Parameter name="repartition: Zoltan dimensions" type="int" value="3"/>
+                <Parameter name="repartition: Zoltan dimensions" type="int" value="1"/>
               </ParameterList>
             </ParameterList>
             <ParameterList name="Required Parameters">

@@ -572,7 +572,7 @@ TEST(ForEntityFunction, test_element_death_using_inheritance)
         stk::mesh::Part &activePart = metaData.declare_part("active", stk::topology::ELEMENT_RANK);
         auto &deathCriterionField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "deathCriterion");
         double initialDeathValue = 0.0;
-        stk::mesh::put_field(deathCriterionField, metaData.universal_part(), &initialDeathValue);
+        stk::mesh::put_field_on_mesh(deathCriterionField, metaData.universal_part(), &initialDeathValue);
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:2x2x2";
@@ -613,7 +613,7 @@ TEST(ForEntityFunction, test_element_death_using_lambdas)
         stk::mesh::Part &activePart = metaData.declare_part("active", stk::topology::ELEMENT_RANK);
         auto &deathCriterionField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "deathCriterion");
         double initialDeathValue = 0.0;
-        stk::mesh::put_field(deathCriterionField, metaData.universal_part(), &initialDeathValue);
+        stk::mesh::put_field_on_mesh(deathCriterionField, metaData.universal_part(), &initialDeathValue);
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:2x2x2";
@@ -1245,7 +1245,7 @@ TEST(ForEntityFunction, performance_test_getting_field_values_per_entity)
         stk::mesh::MetaData metaData(spatialDim);
         auto &nodeField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodeField");
         const double initValue = 1.0;
-        stk::mesh::put_field(nodeField, metaData.universal_part(), &initValue);
+        stk::mesh::put_field_on_mesh(nodeField, metaData.universal_part(), &initValue);
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
@@ -1404,13 +1404,13 @@ TEST(ForEntityFunction, performance_test_calculate_acceleration)
         stk::mesh::MetaData metaData(spatialDim);
         auto &massField = metaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "massField");
         const double initMass = 2.0;
-        stk::mesh::put_field(massField, metaData.universal_part(), &initMass);
+        stk::mesh::put_field_on_mesh(massField, metaData.universal_part(), &initMass);
         auto &forceField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "forceField");
         const double initForce[3] = {8.0, 8.0, 8.0};
-        stk::mesh::put_field(forceField, metaData.universal_part(), 3, initForce);
+        stk::mesh::put_field_on_mesh(forceField, metaData.universal_part(), 3, initForce);
         auto &accelerationField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "accelerationField");
         const double initAcceleration[3] = {0.0, 0.0, 0.0};
-        stk::mesh::put_field(accelerationField, metaData.universal_part(), 3, initAcceleration);
+        stk::mesh::put_field_on_mesh(accelerationField, metaData.universal_part(), 3, initAcceleration);
 
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
@@ -1595,7 +1595,7 @@ TEST(ForEntityFunction, performance_test_centroid_calculation_using_bucket_acces
         stk::mesh::MetaData metaData(spatialDim);
         auto &centroidField = metaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEMENT_RANK, "centroidField");
         const double initValue[3] = {0.0, 0.0, 0.0};
-        stk::mesh::put_field(centroidField, metaData.universal_part(), 3, initValue);
+        stk::mesh::put_field_on_mesh(centroidField, metaData.universal_part(), 3, initValue);
 
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 

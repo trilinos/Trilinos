@@ -92,7 +92,8 @@ namespace MueLuTests {
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
-    typedef typename RealValuedMultiVector::scalar_type real;
+    typedef typename TST::magnitudeType real;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
@@ -182,6 +183,8 @@ namespace MueLuTests {
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename TST::magnitudeType real;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR with user-supplied nullspace" << std::endl;
@@ -275,6 +278,8 @@ namespace MueLuTests {
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename TST::magnitudeType real;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -340,6 +345,8 @@ namespace MueLuTests {
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename TST::magnitudeType real;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test option that skips local QR factorizations" << std::endl;
@@ -628,6 +635,8 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
 
     typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef typename TST::magnitudeType real;
+    typedef Xpetra::MultiVector<real,LO,GO,NO> RealValuedMultiVector;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;

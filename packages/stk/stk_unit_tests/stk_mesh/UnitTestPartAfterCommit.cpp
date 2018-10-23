@@ -140,7 +140,7 @@ TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
   stk::mesh::Part& nodePart1 = stkMeshMetaData.declare_part("nodePart1");
   stk::mesh::Field<double>& nodeField1 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodeField1");
   const double initialValue = 3.14;
-  stk::mesh::put_field(nodeField1, nodePart1, &initialValue);
+  stk::mesh::put_field_on_mesh(nodeField1, nodePart1, &initialValue);
   stkMeshIoBroker.populate_bulk_data();
 
   stk::mesh::BulkData& stkMeshBulkData = stkMeshIoBroker.bulk_data();
@@ -177,7 +177,7 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
 
   stk::mesh::Field<double>& nodeField1 = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodeField1");
   const double initialValue = 3.14;
-  stk::mesh::put_field(nodeField1, firstPart, &initialValue);
+  stk::mesh::put_field_on_mesh(nodeField1, firstPart, &initialValue);
   stkMeshIoBroker.populate_bulk_data();
 
   stk::mesh::BulkData& stkMeshBulkData = stkMeshIoBroker.bulk_data();

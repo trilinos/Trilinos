@@ -2,7 +2,6 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "unittestMeshUtils.hpp"
-#include <ext/alloc_traits.h>          // for __alloc_traits<>::value_type
 #include <stddef.h>                    // for size_t
 #include <sstream>                     // for basic_ostream::operator<<, etc
 #include <stk_mesh/base/BulkData.hpp>  // for BulkData

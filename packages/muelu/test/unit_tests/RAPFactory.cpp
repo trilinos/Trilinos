@@ -87,6 +87,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
@@ -163,6 +166,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 

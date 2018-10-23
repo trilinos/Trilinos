@@ -686,7 +686,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
     }
     problem->printTimers();
 
@@ -733,7 +733,7 @@ int testFromDataFile(
 {
     int ierr = 0;
     //std::string fname("simple");
-    //cout << "running " << fname << std::endl;
+    //std::cout << "running " << fname << std::endl;
 
     UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
@@ -886,7 +886,7 @@ int testFromDataFile(
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
         std::cout << "testFromDataFile is done " << std::endl;
     }
 
@@ -946,7 +946,7 @@ int testFromSeparateDataFiles(
 )
 {
     //std::string fname("simple");
-    //cout << "running " << fname << std::endl;
+    //std::cout << "running " << fname << std::endl;
 
     int ierr = 0;
     int mR = comm->getRank();
@@ -1073,7 +1073,7 @@ int testFromSeparateDataFiles(
       rcp(new quality_t(ia,params.getRawPtr(),comm,&problem->getSolution()));
 
     if (comm->getRank() == 0){
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
         std::cout << "testFromDataFile is done " << std::endl;
     }
 
@@ -1393,12 +1393,12 @@ int main(int narg, char *arg[])
 
     catch(std::string &s){
         if (rank == 0)
-            cerr << s << std::endl;
+            std::cerr << s << std::endl;
     }
 
     catch(char * s){
         if (rank == 0)
-            cerr << s << std::endl;
+            std::cerr << s << std::endl;
     }
 
     return 0;

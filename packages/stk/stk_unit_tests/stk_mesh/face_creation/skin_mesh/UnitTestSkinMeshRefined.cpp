@@ -24,7 +24,7 @@ TEST(ElementGraph, RefinedQuad)
         stk::mesh::Part &active = meta.declare_part("active");
 
         stk::mesh::Field<double,stk::mesh::Cartesian> & node_coord = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates");
-        stk::mesh::put_field(node_coord, meta.universal_part(), 3);
+        stk::mesh::put_field_on_mesh(node_coord, meta.universal_part(), 3, nullptr);
         stk::io::put_io_part_attribute(quad_part);
         meta.commit();
 

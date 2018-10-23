@@ -183,8 +183,8 @@ void setUpMeshWithFieldOnBlock1(stk::mesh::BulkData& bulk, stk::mesh::Field<doub
 
     double init = initialValue();
     stk::mesh::Part* block1 = bulk.mesh_meta_data().get_part("block_1");
-    stk::mesh::put_field(field1, *block1, &init);
-    stk::mesh::put_field(field2, *block1, &init);
+    stk::mesh::put_field_on_mesh(field1, *block1, &init);
+    stk::mesh::put_field_on_mesh(field2, *block1, &init);
 
     stkIo.add_all_mesh_fields_as_input_fields();
     stkIo.populate_bulk_data();

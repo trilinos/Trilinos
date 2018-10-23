@@ -17,6 +17,7 @@
 #include "MiniEM_GaussianPulse.hpp"
 #include "MiniEM_InversePermeability.hpp"
 #include "MiniEM_Permittivity.hpp"
+#include "MiniEM_Conductivity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -100,8 +101,9 @@ buildClosureModels(const std::string& model_id,
       }
       if(type=="INVERSE PERMEABILITY") {
         double mu = plist.get<double>("mu");
+        std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu));
+	  rcp(new mini_em::InversePermeability<EvalT,panzer::Traits>(key,*ir,fl,mu,DoF));
 	evaluators->push_back(e);
 
         found = true;
@@ -111,6 +113,15 @@ buildClosureModels(const std::string& model_id,
         std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
 	  rcp(new mini_em::Permittivity<EvalT,panzer::Traits>(key,*ir,fl,epsilon,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="CONDUCTIVITY") {
+        double sigma = plist.get<double>("sigma");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::Conductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
 	evaluators->push_back(e);
 
         found = true;

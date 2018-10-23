@@ -138,7 +138,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
   Mesquite              packages/mesquite                 ST
-  MeshingGenie          packages/meshinggenie             EX
   TrilinosCouplings     packages/trilinoscouplings        PT
   Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST

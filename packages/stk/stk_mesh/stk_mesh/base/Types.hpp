@@ -379,25 +379,25 @@ enum Permutation
  * }
  * #endif // STK_HIDE_DEPRECATED_CODE
  */
-#ifdef STK_BUILT_IN_SIERRA
-#  ifdef STK_SHOW_DEPRECATED_WARNINGS
-#    ifndef STK_DEPRECATED
-#      if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#        define STK_DEPRECATED  __attribute__((__deprecated__))
-#      else
-#        define STK_DEPRECATED
-#      endif
+#ifdef STK_SHOW_DEPRECATED_WARNINGS
+#  ifndef STK_DEPRECATED
+#    if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#      define STK_DEPRECATED  __attribute__((__deprecated__))
+#    else
+#      define STK_DEPRECATED
 #    endif
-#    ifndef STK_DEPRECATED_MSG
-#      if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
-#        define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__ (#MSG) ))
-#      elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-#        define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__))
-#      else
-#        define STK_DEPRECATED_MSG(MSG)
-#      endif
+#  endif
+#  ifndef STK_DEPRECATED_MSG
+#    if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#      define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__ (#MSG) ))
+#    elif (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#      define STK_DEPRECATED_MSG(MSG)  __attribute__((__deprecated__))
+#    else
+#      define STK_DEPRECATED_MSG(MSG)
 #    endif
-#  else
+#  endif
+#else
+#  ifndef STK_DEPRECATED
 #    define STK_DEPRECATED
 #    define STK_DEPRECATED_MSG(MSG)
 #  endif

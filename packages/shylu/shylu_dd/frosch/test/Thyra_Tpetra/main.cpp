@@ -39,8 +39,6 @@
 // ************************************************************************
 //@HEADER
 
-//#define Tpetra_issue_1752
-
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
 
@@ -60,12 +58,12 @@
 #include <BelosOperatorT.hpp>
 #include <BelosXpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
-//#include <BelosPseudoBlockGmresSolMgr.hpp>
 
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>
 
 // Thyra includes
+#ifdef HAVE_FROSCH_THYRA
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
@@ -83,17 +81,16 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 #include <Thyra_BelosLinearOpWithSolve_def.hpp>
 #include <Thyra_BelosLinearOpWithSolveFactory_def.hpp>
-
+#include "Thyra_FROSchLinearOp_def.hpp"
+#include "Thyra_FROSchXpetraFactory_def.hpp"
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include "stratimikos_FROSchXpetra.hpp"
-
+#include <Stratimikos_FROSchXpetra.hpp>
+#endif
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
-#include "Thyra_FROSchLinearOp_def.hpp"
-#include "Thyra_FROSchXpetraFactory_def.hpp"
 #include <MueLu_Utilities_def.hpp>
 #include <MueLu_Utilities_decl.hpp>
 typedef unsigned UN;
@@ -236,6 +233,7 @@ int main(int argc, char *argv[])
 			xSolution->putScalar(0.0);
             xRightHandSide->putScalar(1.0);
             
+#ifdef HAVE_FROSCH_THYRA
             //Teuchos::RCP<Xpetra::CrsMatrix<SC, LO, GO, NO > > exA = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<int,TO>(K));
             //Teuchos::RCP<CrsMatrixWrap<SC,LO,GO> > exAWrap = Teuchos::rcp(new CrsMatrixWrap<SC,LO,GO> (exA));
             
@@ -292,6 +290,9 @@ int main(int argc, char *argv[])
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
             
+#else
+            if (Comm->MyPID()==0) cout <<"Thyra not enabled\n";
+#endif
 
             
 		}

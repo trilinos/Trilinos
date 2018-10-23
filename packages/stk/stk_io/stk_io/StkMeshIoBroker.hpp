@@ -108,10 +108,14 @@ namespace impl
           m_check_field_existence_when_creating_nodesets(true), m_use_part_id_for_output(true),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
           m_appending_to_mesh(false),
+          m_has_ghosting(false),
+          m_has_adaptivity(false),
+          m_is_skin_mesh(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr), m_shared_selector(nullptr),
 	  m_multiStateSuffixes(nullptr)
       {
 	setup_output_file(filename, communicator, property_manager, type);
+	initialize_output_selectors();
       }
 
       OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
@@ -120,11 +124,15 @@ namespace impl
           m_check_field_existence_when_creating_nodesets(true), m_use_part_id_for_output(true),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
           m_appending_to_mesh(false),
+          m_has_ghosting(false),
+          m_has_adaptivity(false),
+          m_is_skin_mesh(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr), m_shared_selector(nullptr),
 	  m_multiStateSuffixes(nullptr)
       {
 	m_region = ioss_output_region;
 	m_mesh_defined = true;
+	initialize_output_selectors();
       }
       Teuchos::RCP<Ioss::Region> get_output_io_region() {
 	return m_region;
@@ -167,6 +175,7 @@ namespace impl
       void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_output_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
 
       bool use_nodeset_for_block_nodes_fields() const;
       void use_nodeset_for_block_nodes_fields(bool true_false);
@@ -180,6 +189,15 @@ namespace impl
       bool use_part_id_for_output() const;
       void use_part_id_for_output(bool true_false);
 
+      bool has_ghosting() const;
+      void has_ghosting(bool hasGhosting);
+
+      bool has_adaptivity() const;
+      void has_adaptivity(bool hasAdaptivity);
+
+      bool is_skin_mesh() const;
+      void is_skin_mesh(bool skinMesh);
+
       Ioss::DatabaseIO *get_output_database();
 
     private:
@@ -187,6 +205,13 @@ namespace impl
       void setup_output_file(const std::string &filename, MPI_Comm communicator,
 			     Ioss::PropertyManager &property_manager,
                              char const* type = "exodus");
+      void initialize_output_selectors()
+      {
+          m_output_selector[stk::topology::NODE_RANK].reset();
+          m_output_selector[stk::topology::EDGE_RANK].reset();
+          m_output_selector[stk::topology::FACE_RANK].reset();
+          m_output_selector[stk::topology::ELEM_RANK].reset();
+      }
 
       int m_current_output_step;
       bool m_use_nodeset_for_block_nodes_fields;
@@ -197,11 +222,14 @@ namespace impl
       bool m_fields_defined;
       bool m_non_any_global_variables_defined;
       bool m_appending_to_mesh;
+      bool m_has_ghosting;
+      bool m_has_adaptivity;
+      bool m_is_skin_mesh;
       DatabasePurpose m_db_purpose;
       const Ioss::Region* m_input_region;
       Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
       Teuchos::RCP<stk::mesh::Selector> m_shared_selector;
-      Teuchos::RCP<stk::mesh::Selector> m_output_selector;
+      Teuchos::RCP<stk::mesh::Selector> m_output_selector[stk::topology::ELEM_RANK+1];
       Teuchos::RCP<Ioss::Region> m_region;
       std::vector<stk::io::FieldAndName> m_named_fields;
 
@@ -354,8 +382,12 @@ namespace impl
       void set_shared_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_shared_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
-      void set_output_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
-      void set_output_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
+      void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, stk::mesh::Selector &my_selector);
+
+      void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
+      void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
+      void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
       Teuchos::RCP<stk::mesh::Selector> deprecated_selector();
       void deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
@@ -964,15 +996,32 @@ namespace impl
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
+                                                     stk::topology::rank_t rank,
                                                      Teuchos::RCP<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_output_selector(my_selector);
+      m_output_files[output_file_index]->set_output_selector(rank, my_selector);
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
+                                                     stk::topology::rank_t rank,
                                                      stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_output_selector(Teuchos::rcpFromRef(my_selector));
+      m_output_files[output_file_index]->set_output_selector(rank, Teuchos::rcpFromRef(my_selector));
+    }
+
+    inline void StkMeshIoBroker::set_ghosting_filter(size_t output_file_index, bool hasGhosting) {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->has_ghosting(hasGhosting);
+    }
+
+    inline void StkMeshIoBroker::set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity) {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->has_adaptivity(hasAdaptivity);
+    }
+
+    inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->is_skin_mesh(skinMesh);
     }
 
     inline Teuchos::RCP<stk::mesh::Selector> StkMeshIoBroker::deprecated_selector() {

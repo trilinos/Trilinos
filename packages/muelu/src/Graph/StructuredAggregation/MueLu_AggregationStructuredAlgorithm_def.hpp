@@ -67,7 +67,8 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const ParameterList& params, const GraphBase& graph, Aggregates& aggregates, std::vector<unsigned>& aggStat,
+  BuildAggregates(const Teuchos::ParameterList& params, const GraphBase& graph,
+                  Aggregates& aggregates, std::vector<unsigned>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
@@ -79,22 +80,21 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    std::string coupling = params.get<std::string>("aggregation: coupling");
-    const bool coupled = (coupling == "coupled" ? true : false);
+    RCP<IndexManager> geoData = aggregates.GetIndexManager();
+    const bool   coupled      = geoData->isAggregationCoupled();
     ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
-    RCP<IndexManager> geoData = aggregates.GetIndexManager();
-    Array<LO>  ghostedCoarseNodeCoarseLIDs;
-    Array<int> ghostedCoarseNodeCoarsePIDs;
-    Array<GO>  ghostedCoarseNodeCoarseGIDs;
+    Array<LO>    ghostedCoarseNodeCoarseLIDs;
+    Array<int>   ghostedCoarseNodeCoarsePIDs;
+    Array<GO>    ghostedCoarseNodeCoarseGIDs;
 
     *out << "Extract data for ghosted nodes" << std::endl;
     geoData->getGhostedNodesData(graph.GetDomainMap(), ghostedCoarseNodeCoarseLIDs,
                                  ghostedCoarseNodeCoarsePIDs, ghostedCoarseNodeCoarseGIDs);
 
-    LO rem;
+    LO rem, rate;
     Array<LO> ghostedIdx(3), coarseIdx(3);
-    LO ghostedCoarseNodeCoarseLID, aggId, rate;
+    LO ghostedCoarseNodeCoarseLID, aggId;
     *out << "Loop over fine nodes and assign them to an aggregate and a rank" << std::endl;
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       // Compute coarse ID associated with fine LID
@@ -109,9 +109,9 @@ namespace MueLu {
         } else {
           rate = geoData->getCoarseningEndRate(dim);
         }
-        if(rem > (rate / 2)) { ++coarseIdx[dim]; }
+        if(rem > (rate / 2)) {++coarseIdx[dim];}
         if(coupled && (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
-                       > geoData->getStartIndex(dim))) { --coarseIdx[dim]; }
+                       > geoData->getStartIndex(dim))) {--coarseIdx[dim];}
       }
 
       geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
@@ -124,14 +124,13 @@ namespace MueLu {
       --numNonAggregatedNodes;
 
     } // Loop over fine points
-
-  }
+  } // BuildAggregates()
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const ParameterList& params, const GraphBase& graph, RCP<IndexManager>& geoData,
-                  RCP<CrsGraph>& myGraph) const {
+  BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, RCP<CrsGraph>& myGraph,
+             RCP<const Map>& coarseCoordinatesFineMap, RCP<const Map>& coarseCoordinatesMap) const {
     Monitor m(*this, "BuildAggregates");
 
     RCP<Teuchos::FancyOStream> out;
@@ -142,35 +141,194 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    std::string coupling = params.get<std::string>("aggregation: coupling");
-    const bool coupled = (coupling == "coupled" ? true : false);
-    Array<LO>  ghostedCoarseNodeCoarseLIDs;
-    Array<int> ghostedCoarseNodeCoarsePIDs;
-    Array<GO>  ghostedCoarseNodeCoarseGIDs;
+    const bool coupled = geoData->isAggregationCoupled();
 
-    *out << "Extract data for ghosted nodes" << std::endl;
-    geoData->getGhostedNodesData(graph.GetDomainMap(), ghostedCoarseNodeCoarseLIDs,
-                                 ghostedCoarseNodeCoarsePIDs, ghostedCoarseNodeCoarseGIDs);
-
-    int numDimensions = geoData->getNumDimensions();
-    Array<LO> ghostedIdx(3,0);
-    Array<LO> coarseIdx(3,0);
-    Array<LO> ijkRem(3,0);
-
-    LO ghostedCoarseNodeCoarseLID, aggId, rate;
-    GO myGID;
-
-    bool allCoarse;
-    int numInterpolationPoints = 1 << numDimensions; // Using bit logic to compute 2^numDimensions
+    // Compute the number of coarse points needed to interpolate quantities to a fine point
+    int numInterpolationPoints = 0;
+    if(geoData->getInterpolationOrder() == 0) {
+      numInterpolationPoints = 1;
+    } else if(geoData->getInterpolationOrder() == 1) {
+      // Compute 2^numDimensions using bit logic to avoid round-off errors
+      numInterpolationPoints = 1 << geoData->getNumDimensions();
+    }
     *out << "numInterpolationPoints=" << numInterpolationPoints << std::endl;
-    Array<bool> isCoarse(numDimensions);
-    Array<LO> colIndex(geoData->getNumLocalFineNodes()*numInterpolationPoints);// also resize...
-    Array<LO> rowPtr(geoData->getNumLocalFineNodes()+1);
+
+    Array<LO> colIndex( geoData->getNumLocalCoarseNodes() + numInterpolationPoints*
+                        (geoData->getNumLocalFineNodes() - geoData->getNumLocalCoarseNodes()) );
+    Array<size_t> rowPtr(geoData->getNumLocalFineNodes()+1);
     rowPtr[0] = 0;
     ArrayRCP<size_t> nnzOnRow(geoData->getNumLocalFineNodes());
 
-    *out << "Loop over fine nodes and assign them to an aggregate and a rank" << std::endl;
+    *out << "Compute prolongatorGraph data" << std::endl;
+    if(geoData->getInterpolationOrder() == 0) {
+      ComputeGraphDataConstant(graph, geoData, numInterpolationPoints, nnzOnRow, rowPtr, colIndex);
+    } else if(geoData->getInterpolationOrder() == 1) {
+      ComputeGraphDataLinear(graph, geoData, numInterpolationPoints, nnzOnRow, rowPtr, colIndex);
+    }
+
+    // Compute graph's colMap and domainMap
+    RCP<Map> colMap, domainMap;
+    *out << "Compute domain and column maps of the CrsGraph" << std::endl;
+    if(coupled){
+      *out << "Extract data for ghosted nodes" << std::endl;
+      Array<LO>  ghostedCoarseNodeCoarseLIDs;
+      Array<int> ghostedCoarseNodeCoarsePIDs;
+      Array<GO>  ghostedCoarseNodeCoarseGIDs;
+      geoData->getGhostedNodesData(graph.GetDomainMap(), ghostedCoarseNodeCoarseLIDs,
+                                   ghostedCoarseNodeCoarsePIDs, ghostedCoarseNodeCoarseGIDs);
+
+      // In this case we specify the global number of nodes on the coarse mesh
+      // as well as the GIDs needed on rank.
+      colMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                 geoData->getNumGlobalCoarseNodes(),
+                                 ghostedCoarseNodeCoarseGIDs(),
+                                 graph.GetDomainMap()->getIndexBase(),
+                                 graph.GetDomainMap()->getComm(),
+                                 graph.GetDomainMap()->getNode());
+
+      LO coarseNodeIdx = 0;
+      Array<GO> coarseNodeCoarseGIDs, coarseNodeFineGIDs;
+      geoData->getCoarseNodesData(graph.GetDomainMap(), coarseNodeCoarseGIDs, coarseNodeFineGIDs);
+      for(LO nodeIdx = 0; nodeIdx < ghostedCoarseNodeCoarseGIDs.size(); ++nodeIdx) {
+        if(ghostedCoarseNodeCoarsePIDs[nodeIdx] == colMap->getComm()->getRank()) {
+          coarseNodeCoarseGIDs[coarseNodeIdx] = ghostedCoarseNodeCoarseGIDs[nodeIdx];
+          ++coarseNodeIdx;
+        }
+      }
+      domainMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                    geoData->getNumGlobalCoarseNodes(),
+                                    coarseNodeCoarseGIDs(),
+                                    graph.GetDomainMap()->getIndexBase(),
+                                    graph.GetDomainMap()->getComm(),
+                                    graph.GetDomainMap()->getNode());
+      coarseCoordinatesMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                               geoData->getNumGlobalCoarseNodes(),
+                                               coarseNodeCoarseGIDs(),
+                                               graph.GetDomainMap()->getIndexBase(),
+                                               graph.GetDomainMap()->getComm(),
+                                               graph.GetDomainMap()->getNode());
+      coarseCoordinatesFineMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                                   geoData->getNumGlobalCoarseNodes(),
+                                                   coarseNodeFineGIDs(),
+                                                   graph.GetDomainMap()->getIndexBase(),
+                                                   graph.GetDomainMap()->getComm(),
+                                                   graph.GetDomainMap()->getNode());
+    } else {
+      // In this case the map will compute the global number of nodes on the coarse mesh
+      // since geoData->getNumGlobalCoarseNodes() == Teuchos::OrdinalTraits<GO>::invalid()
+      // and it will assign GIDs to the local coarse nodes.
+      colMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                 geoData->getNumGlobalCoarseNodes(),
+                                 geoData->getNumLocalCoarseNodes(),
+                                 graph.GetDomainMap()->getIndexBase(),
+                                 graph.GetDomainMap()->getComm(),
+                                 graph.GetDomainMap()->getNode());
+      domainMap = colMap;
+
+      Array<GO> coarseNodeCoarseGIDs(geoData->getNumLocalCoarseNodes());
+      Array<GO> coarseNodeFineGIDs(geoData->getNumLocalCoarseNodes());
+      geoData->getCoarseNodesData(graph.GetDomainMap(), coarseNodeCoarseGIDs, coarseNodeFineGIDs);
+      coarseCoordinatesMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                               geoData->getNumGlobalCoarseNodes(),
+                                               geoData->getNumLocalCoarseNodes(),
+                                               graph.GetDomainMap()->getIndexBase(),
+                                               graph.GetDomainMap()->getComm(),
+                                               graph.GetDomainMap()->getNode());
+      coarseCoordinatesFineMap = MapFactory::Build(graph.GetDomainMap()->lib(),
+                                                   geoData->getNumGlobalCoarseNodes(),
+                                                   coarseNodeFineGIDs(),
+                                                   graph.GetDomainMap()->getIndexBase(),
+                                                   graph.GetDomainMap()->getComm(),
+                                                   graph.GetDomainMap()->getNode());
+    }
+
+    myGraph = CrsGraphFactory::Build(graph.GetDomainMap(),
+                                     colMap,
+                                     nnzOnRow,
+                                     Xpetra::DynamicProfile);
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
+      myGraph->insertLocalIndices(nodeIdx, colIndex(rowPtr[nodeIdx], nnzOnRow[nodeIdx]) );
+    }
+    myGraph->fillComplete(domainMap, graph.GetDomainMap());
+
+  } // BuildAggregates()
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
+                           const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
+                           Array<size_t>& rowPtr, Array<LO>& colIndex) const {
+
+    RCP<Teuchos::FancyOStream> out;
+    if(const char* dbg = std::getenv("MUELU_STRUCTUREDALGORITHM_DEBUG")) {
+      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setShowAllFrontMatter(false).setShowProcRank(true);
+    } else {
+      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+    }
+
+    Array<LO>    ghostedCoarseNodeCoarseLIDs;
+    Array<int>   ghostedCoarseNodeCoarsePIDs;
+    Array<GO>    ghostedCoarseNodeCoarseGIDs;
+    geoData->getGhostedNodesData(graph.GetDomainMap(), ghostedCoarseNodeCoarseLIDs,
+                                 ghostedCoarseNodeCoarsePIDs, ghostedCoarseNodeCoarseGIDs);
+
+    LO ghostedCoarseNodeCoarseLID, rem, rate;
+    Array<LO> ghostedIdx(3), coarseIdx(3);
+    for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
+      // For piece-wise constant interpolation we only get one nnz per row
+      nnzOnRow[nodeIdx] = Teuchos::as<size_t>(1);
+      rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1; // These needs to change for kokkos: rowPtr[nodeIdx + 1] = nodeIdx + 1;
+
+      // Compute coarse ID associated with fine LID
+      geoData->getFineNodeGhostedTuple(nodeIdx, ghostedIdx[0], ghostedIdx[1], ghostedIdx[2]);
+
+      for(int dim = 0; dim < 3; ++dim) {
+        coarseIdx[dim] = ghostedIdx[dim] / geoData->getCoarseningRate(dim);
+        rem    = ghostedIdx[dim] % geoData->getCoarseningRate(dim);
+        if(ghostedIdx[dim] - geoData->getOffset(dim)
+           < geoData->getLocalFineNodesInDir(dim) - geoData->getCoarseningEndRate(dim)) {
+          rate = geoData->getCoarseningRate(dim);
+        } else {
+          rate = geoData->getCoarseningEndRate(dim);
+        }
+        if(rem > (rate / 2)) {++coarseIdx[dim];}
+        if( (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
+             > geoData->getStartIndex(dim)) && geoData->isAggregationCoupled() ) {--coarseIdx[dim];}
+      }
+
+      geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
+                                       ghostedCoarseNodeCoarseLID);
+      colIndex[rowPtr[nodeIdx]] = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID]; // Here too, substitute nodeIdx for rowPtr[nodeIdx]
+    } // Loop over fine points
+
+  } // ComputeGraphDataConstant()
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
+  ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
+                         const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
+                         Array<size_t>& rowPtr, Array<LO>& colIndex) const {
+
+    RCP<Teuchos::FancyOStream> out;
+    if(const char* dbg = std::getenv("MUELU_STRUCTUREDALGORITHM_DEBUG")) {
+      out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setShowAllFrontMatter(false).setShowProcRank(true);
+    } else {
+      out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
+    }
+
+    const bool coupled       = geoData->isAggregationCoupled();
+    const int  numDimensions = geoData->getNumDimensions();
+    Array<LO> ghostedIdx(3,0);
+    Array<LO> coarseIdx(3,0);
+    Array<LO> ijkRem(3,0);
+    int rate = 0;
+
+    for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
+
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, ghostedIdx[0], ghostedIdx[1], ghostedIdx[2]);
       for(int dim=0; dim < numDimensions; dim++){
@@ -182,15 +340,15 @@ namespace MueLu {
         } else {
           rate = geoData->getCoarseningEndRate(dim);
         }
-        if(ijkRem[dim] > (rate / 2)) { ++coarseIdx[dim]; }
+        if(ijkRem[dim] > (rate / 2)) {++coarseIdx[dim];}
         if(coupled && (geoData->getStartGhostedCoarseNode(dim)*geoData->getCoarseningRate(dim)
-                       > geoData->getStartIndex(dim))) { --coarseIdx[dim]; }
+                       > geoData->getStartIndex(dim))) {--coarseIdx[dim];}
       }
-      geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2], ghostedCoarseNodeCoarseLID);
 
       // Fill Graph
       // Check if Fine node lies on Coarse Node
-      allCoarse = true;
+      bool allCoarse = true;
+      Array<bool> isCoarse(numDimensions);
       for(int dim = 0; dim < numDimensions; ++dim) {
         isCoarse[dim] = false;
         if(ijkRem[dim] == 0)
@@ -198,7 +356,7 @@ namespace MueLu {
 
         if(coupled){
           if( ghostedIdx[dim]-geoData->getOffset(dim) == geoData->getLocalFineNodesInDir(dim)-1 &&
-                  geoData->getMeshEdge(dim*2+1) )
+              geoData->getMeshEdge(dim*2+1) )
             isCoarse[dim] = true;
         } else {
           if( ghostedIdx[dim]-geoData->getOffset(dim) == geoData->getLocalFineNodesInDir(dim)-1)
@@ -209,15 +367,19 @@ namespace MueLu {
           allCoarse = false;
       }
 
-      if(allCoarse) { // Fine node lies on Coarse node
-        geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2], colIndex[rowPtr[nodeIdx]]);
+      if(allCoarse) {
+        // Fine node lies on Coarse node, easy case, we only need the LID of the coarse node.
+        geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
+                                         colIndex[rowPtr[nodeIdx]]);
         nnzOnRow[nodeIdx] = Teuchos::as<size_t>(1);
         rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1;
       } else {
+        // Harder case, we need the LIDs of all the coarse nodes contributing to the interpolation
+        // at the current node.
         nnzOnRow[nodeIdx] = Teuchos::as<size_t>( numInterpolationPoints );
         rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + Teuchos::as<LO>( numInterpolationPoints );
 
-        for(int dim = 0; dim < numDimensions; dim++) {
+        for(int dim = 0; dim < numDimensions; ++dim) {
           if(coarseIdx[dim] == geoData->getGhostedNodesInDir(dim) - 1)
             --coarseIdx[dim];
         }
@@ -235,36 +397,8 @@ namespace MueLu {
           }
         }
       }
-
     } // Loop over fine points
-
-    //Redo colMap uising colData to specify the coarse nodes and ghost nodes needed
-    Teuchos::RCP<Map> colMap;
-    if(coupled){
-      colMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                Teuchos::OrdinalTraits<GO>::invalid(),
-                ghostedCoarseNodeCoarseGIDs(),
-                graph.GetDomainMap()->getIndexBase(),
-                graph.GetDomainMap()->getComm(),
-                graph.GetDomainMap()->getNode());
-    } else {
-      colMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                Teuchos::OrdinalTraits<GO>::invalid(),
-                geoData->getNumLocalCoarseNodes(),
-                graph.GetDomainMap()->getIndexBase(),
-                graph.GetDomainMap()->getComm(),
-                graph.GetDomainMap()->getNode());
-    }
-    myGraph = CrsGraphFactory::Build(graph.GetDomainMap(),colMap,nnzOnRow,Xpetra::DynamicProfile);
-
-    for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
-      myGraph->insertLocalIndices(nodeIdx, colIndex(rowPtr[nodeIdx],nnzOnRow[nodeIdx]) );
-    }
-
-    myGraph->fillComplete();
-  }
-
-
+  } // ComputeGraphDataLinear()
 
 } // end namespace
 

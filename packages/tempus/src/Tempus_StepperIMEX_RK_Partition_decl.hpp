@@ -248,7 +248,7 @@ public:
   //@{
     /// Set both the explicit and implicit tableau from ParameterList
     virtual void setTableaus(Teuchos::RCP<Teuchos::ParameterList> pList,
-                             std::string stepperType);
+                             std::string stepperType = "");
 
     /// Set the explicit tableau from ParameterList
     virtual void setExplicitTableau(std::string stepperType,
@@ -301,10 +301,10 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-    
+
   //@}
-  
-  /// Pass initial guess to Newton solver (only relevant for implicit solvers) 
+
+  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
      {initial_guess_ = initial_guess;}
 

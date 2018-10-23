@@ -134,14 +134,6 @@ preEvaluate(typename Traits::PreEvalData d)
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
-postRegistrationSetup(typename Traits::SetupData /* d */,
-                      PHX::FieldManager<Traits>& fm)
-{
-  this->utils.setFieldData(cellIntegral_,fm);
-}
-
-template<typename EvalT, typename Traits>
-void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for(index_t i=0;i<d.num_cells;i++) {

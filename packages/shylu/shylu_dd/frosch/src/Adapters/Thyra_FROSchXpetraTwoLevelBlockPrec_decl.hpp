@@ -17,7 +17,7 @@
 #include <Xpetra_ThyraUtils.hpp>
 
 #include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
-#include "Thyra_FROSchLinearOP_def.hpp"
+#include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
 //#include "Kokkos_DefaultNode.hpp"

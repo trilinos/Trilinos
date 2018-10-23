@@ -67,10 +67,8 @@ Solution<EvalT,Traits>::Solution(const std::string& name,
 
 template <typename EvalT,typename Traits>
 void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                   PHX::FieldManager<Traits>& fm)
+                                                   PHX::FieldManager<Traits>& /* fm */)
 {
-  this->utils.setFieldData(solution,fm);
-
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 

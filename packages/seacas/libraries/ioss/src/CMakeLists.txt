@@ -63,14 +63,16 @@ TRIBITS_ADD_LIBRARY(
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    # add a target to generate API documentation with Doxygen
-   find_package(Doxygen)
-   if(DOXYGEN_FOUND)
-     add_custom_command(TARGET Ioss
-        COMMAND ${DOXYGEN_EXECUTABLE} ARGS Doxyfile
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-        COMMENT "Generating IOSS API documentation with Doxygen" VERBATIM
-      )     
-   endif(DOXYGEN_FOUND)
+   if(SEACASProj_ENABLE_DOXYGEN)
+     find_package(Doxygen)
+     if(DOXYGEN_FOUND)
+       add_custom_command(TARGET Ioss
+          COMMAND ${DOXYGEN_EXECUTABLE} ARGS Doxyfile
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+          COMMENT "Generating IOSS API documentation with Doxygen" VERBATIM
+        )     
+     endif(DOXYGEN_FOUND)
+   endif()
 endif()
 
 IF (${PACKAGE_NAME}_ENABLE_SEACASExodus)

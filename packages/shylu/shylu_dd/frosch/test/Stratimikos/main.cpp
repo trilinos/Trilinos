@@ -22,20 +22,23 @@
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>
 
+#ifdef HAVE_FROSCH_THYRA
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
+#include <Thyra_FROSch_TwoLevelPreconditionerFactory_def.hpp>
 
+#endif
+#ifdef HAVE_FROSCH_STRATIMIKOS
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Stratimikos_FROSchHelpers.hpp>
-
+#endif
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
 
-// MueLu includes
-#include <Thyra_FROSch_TwoLevelPreconditionerFactory_def.hpp>
+
 
 
 typedef unsigned UN;
@@ -163,7 +166,8 @@ int main(int argc, char *argv[])
             Comm->Barrier();
             
             fancyout<<"-------Create Null Space----------\n";
-            
+
+#ifdef HAVE_FROSCH_THYRA
             RCP<const Thyra::LinearOpBase<SC> > thyraA = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(xCrsMat
                                                                                                   );
             RCP<Thyra::MultiVectorBase<SC> >thyraX = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> >(Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
@@ -201,7 +205,9 @@ int main(int argc, char *argv[])
             bool success = false;
 
             success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
-            
+#else
+            fancyout<<"Thyra not enabled\n";
+#endif
 
         }
         MPI_Comm_free(&COMM);

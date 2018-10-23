@@ -36,7 +36,7 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
     stk::mesh::Part &quadPart = get_meta().get_topology_root_part(stk::topology::SHELL_QUAD_4);
     auto &quadField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
     double init = 0.0;
-    stk::mesh::put_field(quadField, quadPart, &init);
+    stk::mesh::put_field_on_mesh(quadField, quadPart, &init);
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
          0,2,SHELL_QUAD_4,5,6,7,8";
@@ -54,7 +54,7 @@ TEST_F(NgpHowTo, loopOverNodes)
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
     double init = 0.0;
-    stk::mesh::put_field(field, get_meta().universal_part(), &init);
+    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
     stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
 
@@ -71,7 +71,7 @@ TEST_F(NgpHowTo, loopOverFaces)
     stk::mesh::Part &facePart = get_meta().declare_part("facePart", stk::topology::FACE_RANK);
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::FACE_RANK, "myField");
     double init = 0.0;
-    stk::mesh::put_field(field, facePart, &init);
+    stk::mesh::put_field_on_mesh(field, facePart, &init);
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
     stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
 
@@ -125,7 +125,7 @@ TEST_F(NgpHowTo, exerciseAura)
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "myField");
     double init = 1.0;
-    stk::mesh::put_field(field, get_meta().universal_part(), &init);
+    stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
          1,2,HEX_8,5,6,7,8,9,10,11,12";
@@ -142,7 +142,7 @@ template <typename DataType>
 stk::mesh::Field<DataType> &create_field_with_num_states_and_init(stk::mesh::MetaData &meta, int numStates, DataType init)
 {
     auto &field = meta.declare_field<stk::mesh::Field<DataType>>(stk::topology::ELEM_RANK, "myField", numStates);
-    stk::mesh::put_field(field, meta.universal_part(), &init);
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), &init);
     return field;
 }
 

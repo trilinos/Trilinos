@@ -260,9 +260,9 @@ protected:
         stk::mesh::Part& myPart1 = get_meta().declare_part("myPart1");
         stk::mesh::Part& myPart2 = get_meta().declare_part("myPart2");
         const double initValue[] = {13, 14, 15};
-        stk::mesh::put_field(*myCoords, myPart1, 2, initValue);
-        stk::mesh::put_field(*myCoords, myPart2, 3, initValue);
-        stk::mesh::put_field(myField2, myPart1 & myPart2, 3, initValue);
+        stk::mesh::put_field_on_mesh(*myCoords, myPart1, 2, initValue);
+        stk::mesh::put_field_on_mesh(*myCoords, myPart2, 3, initValue);
+        stk::mesh::put_field_on_mesh(myField2, myPart1 & myPart2, 3, initValue);
     }
 
     void add_orphan_nodes(const unsigned numOrphansPerProc)

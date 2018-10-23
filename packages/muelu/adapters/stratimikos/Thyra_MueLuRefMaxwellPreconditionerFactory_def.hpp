@@ -303,6 +303,7 @@ namespace Thyra {
       {
         // build a new MueLu RefMaxwell preconditioner
         Teuchos::TimeMonitor tMbuild(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec build prec")));
+        paramList.set<bool>("refmaxwell: use as preconditioner", true);
         preconditioner = rcp(new MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, paramList, true));
       }
 

@@ -226,6 +226,15 @@ namespace {
   {
     Ioss::SideSet *sset = block->get_database()->get_region()->get_sideset(fam_name);
     if (sset == nullptr) {
+      if (block->get_database()->parallel_rank() == 0) {
+        IOSS_WARNING << "On block " << block->name() << ", found the boundary condition named "
+                     << boco_name << " in family " << fam_name
+                     << ". This family was not previously defined at the top-level of the file"
+                     << " which is not normal.  Check your file to make sure this does not "
+                        "incdicate a problem "
+                     << "with the mesh.\n";
+      }
+
       // Need to create a new sideset since didn't see this earlier.
       auto *db = block->get_database();
       sset     = new Ioss::SideSet(db, fam_name);
@@ -235,8 +244,17 @@ namespace {
                << block->name() << "'.\n";
         IOSS_ERROR(errmsg);
       }
-      sset->property_add(Ioss::Property("id", ibc + 1)); // Not sure this is unique id...8
-      sset->property_add(Ioss::Property("guid", db->util().generate_guid(ibc + 1)));
+      // Get all previous sidesets to make sure we set a unique id...
+      int64_t     max_id   = 0;
+      const auto &sidesets = db->get_region()->get_sidesets();
+      for (const auto &ss : sidesets) {
+        if (ss->property_exists("id")) {
+          auto id = ss->get_property("id").get_int();
+          max_id  = (id > max_id) ? id : max_id;
+        }
+      }
+      sset->property_add(Ioss::Property("id", max_id + 10));
+      sset->property_add(Ioss::Property("guid", db->util().generate_guid(max_id + 10)));
       db->get_region()->add(sset);
     }
 
@@ -251,12 +269,12 @@ namespace {
       // be split among multiple processors and the block face this is applied
       // to may not exist on this decomposed block)
       auto        bc   = Ioss::BoundaryCondition(boco_name, fam_name, range_beg, range_end);
-      std::string name = std::string(fam_name) + "/" + block->name();
+      std::string name = std::string(boco_name) + "/" + block->name();
 
       bc_subset_range(block, bc);
       if (!is_parallel_io && !bc.is_valid()) {
-        bc.m_rangeBeg = {0, 0, 0};
-        bc.m_rangeEnd = {0, 0, 0};
+        bc.m_rangeBeg = {{0, 0, 0}};
+        bc.m_rangeEnd = {{0, 0, 0}};
       }
       block->m_boundaryConditions.push_back(bc);
       auto sb =
@@ -295,6 +313,84 @@ namespace {
       errmsg << "ERROR: CGNS: StructuredBlock '" << block->name()
              << "' Did not find matching sideset with name '" << boco_name << "'";
       IOSS_ERROR(errmsg);
+    }
+  }
+
+  void sync_transient_variables_fpp(Ioss::Region *region, int myProcessor)
+  {
+    // With an fpp read, certain blocks may only be on certain
+    // processors -- This consistency is addressed elsewhere; however,
+    // if a block is not on a processor, then that block will not have
+    // any transient fields.  Need to sync across all processors such
+    // that a block has the same fields on all processors.
+    //
+    // ASSUME: A block will have the same fields in the same order on
+    // all processors on which it exists.
+    //
+    // Do the gather all metadata to proc 0; consolidate and then
+    // broadcast back...
+    // Need: 'name' and 'VariableType'.  Assume all are double and the
+    // size will be processor dependent.
+    auto &           sblocks = region->get_structured_blocks();
+    std::vector<int> fld_count;
+    fld_count.reserve(sblocks.size());
+    for (const auto &block : sblocks) {
+      fld_count.push_back(block->field_count(Ioss::Field::TRANSIENT));
+    }
+    auto par = region->get_database()->util();
+    par.global_array_minmax(fld_count, Ioss::ParallelUtils::DO_MAX);
+
+    // Determine total number of fields on all blocks...
+    int tot_fld = std::accumulate(fld_count.begin(), fld_count.end(), 0);
+    // Assuming fields are the same on all processors that have fields...
+    std::vector<char> fld_names(tot_fld * 2 * (CGNS_MAX_NAME_LENGTH + 1), 0);
+
+    size_t offset = 0;
+    for (size_t i = 0; i < sblocks.size(); i++) {
+      const auto &   block = sblocks[i];
+      Ioss::NameList fields;
+      block->field_describe(Ioss::Field::TRANSIENT, &fields);
+      if (!fields.empty()) {
+        for (const auto &field_name : fields) {
+          const Ioss::Field &field = block->get_fieldref(field_name);
+          std::string        type  = field.raw_storage()->name();
+          strncpy(&fld_names[offset], field_name.c_str(), CGNS_MAX_NAME_LENGTH);
+          offset += CGNS_MAX_NAME_LENGTH + 1;
+          strncpy(&fld_names[offset], type.c_str(), CGNS_MAX_NAME_LENGTH);
+          offset += CGNS_MAX_NAME_LENGTH + 1;
+        }
+      }
+      else {
+        offset += (CGNS_MAX_NAME_LENGTH + 1) * 2 * fld_count[i];
+      }
+    }
+
+    par.global_array_minmax(fld_names, Ioss::ParallelUtils::DO_MAX);
+
+    // Each processor now should have a consistent list of the field
+    // names.  Now need to add the missing fields to the blocks that
+    // are not 'native' to this processor...
+    //
+    for (size_t i = 0; i < sblocks.size(); i++) {
+      auto &block = sblocks[i];
+      if (block->field_count(Ioss::Field::TRANSIENT) != (size_t)fld_count[i]) {
+        // Verify that either has 0 or correct number of fields...
+        assert(block->field_count(Ioss::Field::TRANSIENT) == 0);
+
+        // Extract the field name and storage type...
+        offset = (CGNS_MAX_NAME_LENGTH + 1) * 2 * i;
+
+        for (int nf = 0; nf < fld_count[i]; nf++) {
+          std::string fld_name(&fld_names[offset]);
+          offset += CGNS_MAX_NAME_LENGTH + 1;
+          std::string fld_type(&fld_names[offset]);
+          offset += CGNS_MAX_NAME_LENGTH + 1;
+
+          block->field_add(
+              Ioss::Field(fld_name, Ioss::Field::DOUBLE, fld_type, Ioss::Field::TRANSIENT, 0));
+        }
+      }
+      assert(block->field_count(Ioss::Field::TRANSIENT) == (size_t)fld_count[i]);
     }
   }
 } // namespace
@@ -347,6 +443,17 @@ CG_ZoneType_t Iocgns::Utils::check_zone_type(int cgnsFilePtr)
     }
   }
   return common_zone_type;
+}
+
+int Iocgns::Utils::get_db_zone(const Ioss::EntityBlock *block)
+{
+  // Returns the zone of the entity as it appears on the cgns database.
+  // Usually, but not always the same as the IOSS zone...
+  // Can differ on fpp reads and maybe writes.
+  if (block->property_exists("db_zone")) {
+    return block->get_property("db_zone").get_int();
+  }
+  return block->get_property("zone").get_int();
 }
 
 size_t Iocgns::Utils::index(const Ioss::Field &field) { return field.get_index() & 0xffffffff; }
@@ -536,6 +643,7 @@ namespace {
                 zgc[j].m_ownerZone == owner_zone && zgc[j].m_donorZone == donor_zone) {
               // Found another instance of the "same" zgc...  Union the ranges
               union_zgc_range(zgc[i], zgc[j]);
+              assert(zgc[i].is_valid());
 
               // Flag the 'j' instance so it is processed only this time.
               zgc[j].m_ownerZone = -1;
@@ -692,9 +800,8 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
   // If `is_parallel` and `!is_parallel_io`, then writing file-per-processor
   bool is_parallel = region.get_database()->util().parallel_size() > 1;
   int  rank        = region.get_database()->util().parallel_rank();
-
+  int  zone        = 0;
   for (const auto &sb : structured_blocks) {
-    int      zone    = 0;
     cgsize_t size[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
     if (is_parallel_io) {
       size[3] = sb->get_property("ni_global").get_int();
@@ -716,24 +823,29 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         name += "_proc-";
         name += std::to_string(rank);
       }
-      CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CG_Structured, &zone));
-      sb->property_update("zone", zone);
-      sb->property_update("base", base);
-
-      assert(zone > 0);
-      zone_offset[zone] = zone_offset[zone - 1] + sb->get_property("cell_count").get_int();
+      int db_zone = 0;
+      CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CG_Structured, &db_zone));
+      sb->property_update("db_zone", db_zone);
 
       // Add GridCoordinates Node...
       int grid_idx = 0;
-      CGERR(cg_grid_write(file_ptr, base, zone, "GridCoordinates", &grid_idx));
+      CGERR(cg_grid_write(file_ptr, base, db_zone, "GridCoordinates", &grid_idx));
     }
+    else {
+      sb->property_update("db_zone", -1);
+    }
+    zone++;
+    assert(zone > 0);
+    zone_offset[zone] = zone_offset[zone - 1] + sb->get_property("cell_count").get_int();
+    sb->property_update("zone", zone);
+    sb->property_update("base", base);
   }
 
   if (is_parallel_io || !is_parallel) { // Only for single file output or serial...
     // Create a vector for mapping from sb_name to zone -- used to update zgc instances
     std::map<std::string, int> sb_zone;
     for (const auto &sb : structured_blocks) {
-      auto zone           = sb->get_property("zone").get_int();
+      zone                = sb->get_property("zone").get_int();
       sb_zone[sb->name()] = zone;
     }
 
@@ -760,8 +872,8 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
       continue;
     }
 
-    int         zone = sb->get_property("zone").get_int();
-    std::string name = sb->name();
+    auto        db_zone = get_db_zone(sb);
+    std::string name    = sb->name();
     if (is_parallel && !is_parallel_io) {
       name += "_proc-";
       name += std::to_string(rank);
@@ -817,12 +929,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
 
       if (is_parallel_io ||
           (bc_range[idx + 3] > 0 && bc_range[idx + 4] > 0 && bc_range[idx + 5] > 0)) {
-        CGERR(cg_boco_write(file_ptr, base, zone, bc.m_bcName.c_str(), CG_FamilySpecified,
+        CGERR(cg_boco_write(file_ptr, base, db_zone, bc.m_bcName.c_str(), CG_FamilySpecified,
                             CG_PointRange, 2, &bc_range[idx], &bc_idx));
         CGERR(
             cg_goto(file_ptr, base, name.c_str(), 0, "ZoneBC_t", 1, bc.m_bcName.c_str(), 0, "end"));
         CGERR(cg_famname_write(bc.m_famName.c_str()));
-        CGERR(cg_boco_gridlocation_write(file_ptr, base, zone, bc_idx, CG_Vertex));
+        CGERR(cg_boco_gridlocation_write(file_ptr, base, db_zone, bc_idx, CG_Vertex));
       }
       idx += 6;
     }
@@ -864,7 +976,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
           donor_range[4] -= zgc.m_donorOffset[1];
           donor_range[5] -= zgc.m_donorOffset[2];
         }
-        CGERR(cg_1to1_write(file_ptr, base, zone, connect_name.c_str(), donor_name.c_str(),
+        CGERR(cg_1to1_write(file_ptr, base, db_zone, connect_name.c_str(), donor_name.c_str(),
                             owner_range.data(), donor_range.data(), zgc.m_transform.data(),
                             &zgc_idx));
       }
@@ -973,7 +1085,8 @@ CG_ElementType_t Iocgns::Utils::map_topology_to_cgns(const std::string &name)
 
 void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
                                                  int *vertex_solution_index,
-                                                 int *cell_center_solution_index)
+                                                 int *cell_center_solution_index,
+                                                 bool is_parallel_io)
 {
   std::string c_name = "CellCenterSolutionAtStep";
   std::string v_name = "VertexSolutionAtStep";
@@ -987,9 +1100,9 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
 
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
-  auto sol_lambda = [=](Ioss::GroupingEntity *block) {
+  auto sol_lambda = [=](Ioss::EntityBlock *block) {
     int base = block->get_property("base").get_int();
-    int zone = block->get_property("zone").get_int();
+    int zone = get_db_zone(block);
     if (has_nodal_fields) {
       CGERR(cg_sol_write(file_ptr, base, zone, v_name.c_str(), CG_Vertex, vertex_solution_index));
       CGERR(
@@ -1009,7 +1122,9 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   // Use the lambda
   const auto &sblocks = region->get_structured_blocks();
   for (auto &block : sblocks) {
-    sol_lambda(block);
+    if (is_parallel_io || block->is_active()) {
+      sol_lambda(block);
+    }
   }
   // Use the lambda
   const auto &eblocks = region->get_element_blocks();
@@ -1335,7 +1450,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
                                                            Ioss::StructuredBlock *block)
 {
   int base = block->get_property("base").get_int();
-  int zone = block->get_property("zone").get_int();
+  int zone = get_db_zone(block);
 
   // Called by Parallel run reading single file only.
   // The 'cgnsFilePtr' is for the serial file on processor 0.
@@ -1459,7 +1574,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
                                                            Ioss::StructuredBlock *block)
 {
   int base = block->get_property("base").get_int();
-  int zone = block->get_property("zone").get_int();
+  int zone = get_db_zone(block);
 
   // Called by both parallel fpp and serial runs.
   // In parallel, the 'cgnsFilePtr' is specific for each processor
@@ -1526,7 +1641,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
 }
 
 void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double> &timesteps,
-                                      Ioss::Region *region, int myProcessor)
+                                      Ioss::Region *region, int myProcessor, bool is_parallel_io)
 {
   int base = 1;
   CGCHECK(cg_biter_write(cgnsFilePtr, base, "TimeIterValues", timesteps.size()));
@@ -1556,8 +1671,8 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
 
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
-  auto ziter = [=](Ioss::GroupingEntity *block) {
-    int              zone = block->get_property("zone").get_int();
+  auto ziter = [=](Ioss::EntityBlock *block) {
+    int              zone = get_db_zone(block);
     std::vector<int> indices(timesteps.size());
     bool             has_cell_center_fields = block->field_count(Ioss::Field::TRANSIENT) > 0;
     if (has_cell_center_fields || has_nodal_fields) {
@@ -1593,7 +1708,9 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
   // Use the lambda...
   const auto &sblocks = region->get_structured_blocks();
   for (auto &block : sblocks) {
-    ziter(block);
+    if (is_parallel_io || block->is_active()) {
+      ziter(block);
+    }
   }
 
   // Use the lambda...
@@ -1605,7 +1722,8 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
 
 void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<double> &timesteps,
                                             Ioss::Region *region, bool enable_field_recognition,
-                                            char suffix_separator, int myProcessor)
+                                            char suffix_separator, int myProcessor,
+                                            bool is_parallel_io)
 {
   // ==========================================
   // Add transient variables (if any) to all zones...
@@ -1614,9 +1732,9 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
 
   // Assuming that the fields on all steps are the same, but can vary
   // from zone to zone.
-  auto sol_iter = [=](Ioss::GroupingEntity *block) {
+  auto sol_iter = [=](Ioss::EntityBlock *block) {
     int b = block->get_property("base").get_int();
-    int z = block->get_property("zone").get_int();
+    int z = get_db_zone(block);
 
     int sol_count = 0;
     CGCHECK(cg_nsols(cgnsFilePtr, b, z, &sol_count));
@@ -1678,11 +1796,17 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
   if (!timesteps.empty()) {
     const auto &sblocks = region->get_structured_blocks();
     for (auto &block : sblocks) {
-      sol_iter(block);
+      if (is_parallel_io || block->is_active()) {
+        sol_iter(block);
+      }
     }
     const auto &eblocks = region->get_element_blocks();
     for (auto &block : eblocks) {
       sol_iter(block);
+    }
+    bool is_parallel = region->get_database()->util().parallel_size() > 1;
+    if (is_parallel && !is_parallel_io) {
+      sync_transient_variables_fpp(region, myProcessor);
     }
   }
 }

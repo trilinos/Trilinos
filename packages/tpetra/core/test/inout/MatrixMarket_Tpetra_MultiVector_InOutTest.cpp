@@ -398,7 +398,7 @@ main (int argc, char *argv[])
   using std::cout;
   using std::endl;
 
-  typedef double scalar_type;
+  typedef Tpetra::MultiVector<>::scalar_type scalar_type;
   typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
   typedef Tpetra::Map<>::node_type node_type;

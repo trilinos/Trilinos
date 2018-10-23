@@ -154,15 +154,16 @@ namespace {
     return std::make_pair(zname, proc);
   }
 
+#ifdef SEACAS_HAVE_MPI
   void add_zgc_fpp(int cgnsFilePtr, Ioss::StructuredBlock *block,
                    const std::map<std::string, int> &zone_name_map, int myProcessor,
                    bool isParallel)
   {
-    int base = block->get_property("base").get_int();
-    int zone = block->get_property("zone").get_int();
-
-    int nconn = 0;
-    CGCHECK(cg_n1to1(cgnsFilePtr, base, zone, &nconn));
+    int base    = block->get_property("base").get_int();
+    int zone    = block->get_property("zone").get_int();
+    int db_zone = Iocgns::Utils::get_db_zone(block);
+    int nconn   = 0;
+    CGCHECK(cg_n1to1(cgnsFilePtr, base, db_zone, &nconn));
 
     for (int ii = 0; ii < nconn; ii++) {
       char                    connectname[CGNS_MAX_NAME_LENGTH + 1];
@@ -171,7 +172,7 @@ namespace {
       std::array<cgsize_t, 6> donor_range;
       Ioss::IJK_t             transform;
 
-      CGCHECK(cg_1to1_read(cgnsFilePtr, base, zone, ii + 1, connectname, donorname, range.data(),
+      CGCHECK(cg_1to1_read(cgnsFilePtr, base, db_zone, ii + 1, connectname, donorname, range.data(),
                            donor_range.data(), transform.data()));
 
       auto        donorname_proc = decompose_name(donorname, isParallel);
@@ -208,6 +209,8 @@ namespace {
       block->m_zoneConnectivity.back().m_donorProcessor = donorname_proc.second;
     }
   }
+#endif
+
 #ifdef SEACAS_HAVE_MPI
   int adjacent_block(const SBlock &b, int ijk, std::map<int, int> &proc_block_map)
   {
@@ -367,7 +370,7 @@ namespace {
     sbc.m_face = face;
     block->m_boundaryConditions.push_back(sbc);
 
-    std::string name = sset->name() + "/" + block->name();
+    std::string name = boco_name + "/" + block->name();
 
     auto sb =
         new Ioss::SideBlock(block->get_database(), name, Ioss::Quad4::name, Ioss::Hex8::name, 0);
@@ -544,7 +547,7 @@ namespace Iocgns {
       return;
     }
 
-    Utils::finalize_database(cgnsFilePtr, m_timesteps, get_region(), myProcessor);
+    Utils::finalize_database(cgnsFilePtr, m_timesteps, get_region(), myProcessor, false);
   }
 
   int64_t DatabaseIO::node_global_to_local__(int64_t global, bool /*must_exist*/) const
@@ -780,11 +783,15 @@ namespace Iocgns {
       }
 
       block->property_add(Ioss::Property("base", base));
-      block->property_add(Ioss::Property("zone", zone));
+      if (native) {
+        block->property_add(Ioss::Property("db_zone", zone));
+      }
+      block->property_add(Ioss::Property("zone", i + 1));
       block->property_add(Ioss::Property("id", i + 1));
-      block->property_add(Ioss::Property("guid", util().generate_guid(zone)));
+      // Note that 'zone' is not consistent among processors
+      block->property_add(Ioss::Property("guid", util().generate_guid(i + 1)));
       get_region()->add(block);
-      m_zoneNameMap[zone_name] = zone;
+      m_zoneNameMap[zone_name] = i + 1;
 
       if (native) {
         // Handle zone-grid-connectivity...
@@ -910,6 +917,7 @@ namespace Iocgns {
         new Ioss::StructuredBlock(this, zname, index_dim, size[3], size[4], size[5]);
 
     block->property_add(Ioss::Property("base", base));
+    block->property_add(Ioss::Property("db_zone", zone));
     block->property_add(Ioss::Property("zone", zone));
     block->property_add(Ioss::Property("id", zone));
     block->property_add(Ioss::Property("guid", zone));
@@ -960,15 +968,47 @@ namespace Iocgns {
   {
     const auto &blocks = get_region()->get_structured_blocks();
 
+    int              proc_count = util().parallel_size();
+    std::vector<int> my_offsets;
+    std::vector<int> all_offsets;
+
+    if (proc_count > 1) {
+      my_offsets.reserve(blocks.size() * 3 * proc_count);
+      int zone = 1;
+      for (const auto &sb : blocks) {
+        assert(sb->get_property("zone").get_int() == zone++);
+        my_offsets.push_back(sb->get_property("offset_i").get_int());
+        my_offsets.push_back(sb->get_property("offset_j").get_int());
+        my_offsets.push_back(sb->get_property("offset_k").get_int());
+      }
+      util().all_gather(my_offsets, all_offsets);
+    }
+
     // If there are any Structured blocks, need to iterate them and their 1-to-1 connections
     // and update the donor_zone id for zones that had not yet been processed at the time of
     // definition...
+
+    // If parallel, then all need to update the donor offset field since that was not known
+    // at time of definition...
     for (auto &block : blocks) {
       for (auto &conn : block->m_zoneConnectivity) {
         if (conn.m_donorZone < 0) {
           auto donor_iter = m_zoneNameMap.find(conn.m_donorName);
           assert(donor_iter != m_zoneNameMap.end());
           conn.m_donorZone = (*donor_iter).second;
+        }
+        if (proc_count > 1) {
+          int         offset = (conn.m_donorProcessor * blocks.size() + (conn.m_donorZone - 1)) * 3;
+          Ioss::IJK_t donor_offset{
+              {all_offsets[offset + 0], all_offsets[offset + 1], all_offsets[offset + 2]}};
+
+          conn.m_donorOffset = donor_offset;
+          conn.m_donorRangeBeg[0] += donor_offset[0];
+          conn.m_donorRangeBeg[1] += donor_offset[1];
+          conn.m_donorRangeBeg[2] += donor_offset[2];
+          conn.m_donorRangeEnd[0] += donor_offset[0];
+          conn.m_donorRangeEnd[1] += donor_offset[1];
+          conn.m_donorRangeEnd[2] += donor_offset[2];
         }
         conn.m_donorGUID = util().generate_guid(conn.m_donorZone, conn.m_donorProcessor);
         conn.m_ownerGUID = util().generate_guid(conn.m_ownerZone, conn.m_ownerProcessor);
@@ -1104,6 +1144,7 @@ namespace Iocgns {
         eblock = new Ioss::ElementBlock(this, zone_name, element_topo, num_entity);
         eblock->property_add(Ioss::Property("base", base));
         eblock->property_add(Ioss::Property("zone", zone));
+        eblock->property_add(Ioss::Property("db_zone", zone));
         eblock->property_add(Ioss::Property("id", zone));
         eblock->property_add(Ioss::Property("guid", zone));
         eblock->property_add(Ioss::Property("section", is));
@@ -1232,7 +1273,7 @@ namespace Iocgns {
     nodeCount = num_node;
 
     Utils::add_transient_variables(cgnsFilePtr, m_timesteps, get_region(), get_field_recognition(),
-                                   get_field_separator(), myProcessor);
+                                   get_field_separator(), myProcessor, false);
   }
 
   void DatabaseIO::write_meta_data()
@@ -1267,7 +1308,7 @@ namespace Iocgns {
     const auto &blocks = get_region()->get_element_blocks();
     for (auto I = blocks.cbegin(); I != blocks.cend(); I++) {
       int base = (*I)->get_property("base").get_int();
-      int zone = (*I)->get_property("zone").get_int();
+      int zone = Iocgns::Utils::get_db_zone(*I);
 
       const auto &I_map = m_globalToBlockLocalNodeMap[zone];
 
@@ -1358,7 +1399,7 @@ namespace Iocgns {
     }
     Utils::write_flow_solution_metadata(cgnsFilePtr, get_region(), state,
                                         &m_currentVertexSolutionIndex,
-                                        &m_currentCellCenterSolutionIndex);
+                                        &m_currentCellCenterSolutionIndex, false);
 
     return true;
   }
@@ -1547,7 +1588,7 @@ namespace Iocgns {
     if (num_to_get > 0) {
 
       int                   base             = eb->get_property("base").get_int();
-      int                   zone             = eb->get_property("zone").get_int();
+      int                   zone             = Iocgns::Utils::get_db_zone(eb);
       int                   sect             = eb->get_property("section").get_int();
       cgsize_t              my_element_count = eb->entity_count();
       Ioss::Field::RoleType role             = field.get_role();
@@ -1679,7 +1720,7 @@ namespace Iocgns {
   {
     Ioss::Field::RoleType role = field.get_role();
     int                   base = sb->get_property("base").get_int();
-    int                   zone = sb->get_property("zone").get_int();
+    int                   zone = Iocgns::Utils::get_db_zone(sb);
 
     cgsize_t num_to_get = field.verify(data_size);
 
@@ -1864,7 +1905,7 @@ namespace Iocgns {
                                          void *data, size_t data_size) const
   {
     int base = sb->get_property("base").get_int();
-    int zone = sb->get_property("zone").get_int();
+    int zone = Iocgns::Utils::get_db_zone(sb);
     int sect = sb->get_property("section").get_int();
 
     ssize_t num_to_get = field.verify(data_size);
@@ -1953,7 +1994,7 @@ namespace Iocgns {
   {
     Ioss::Field::RoleType role = field.get_role();
     int                   base = sb->get_property("base").get_int();
-    int                   zone = sb->get_property("zone").get_int();
+    int                   zone = Iocgns::Utils::get_db_zone(sb);
 
     cgsize_t num_to_get = field.verify(data_size);
 
@@ -2112,6 +2153,7 @@ namespace Iocgns {
 
           CGCHECK(
               cg_zone_write(cgnsFilePtr, base, eb->name().c_str(), size, CG_Unstructured, &zone));
+          eb->property_update("db_zone", zone);
           eb->property_update("zone", zone);
           eb->property_update("id", zone);
           eb->property_update("guid", zone);
@@ -2164,7 +2206,7 @@ namespace Iocgns {
       }
       else if (role == Ioss::Field::TRANSIENT) {
         int     base                   = eb->get_property("base").get_int();
-        int     zone                   = eb->get_property("zone").get_int();
+        int     zone                   = Iocgns::Utils::get_db_zone(eb);
         double *rdata                  = static_cast<double *>(data);
         int     cgns_field             = 0;
         auto    var_type               = field.transformed_storage();
@@ -2397,7 +2439,7 @@ namespace Iocgns {
     }
 
     int     base       = parent_block->get_property("base").get_int();
-    int     zone       = parent_block->get_property("zone").get_int();
+    int     zone       = Iocgns::Utils::get_db_zone(parent_block);
     ssize_t num_to_get = field.verify(data_size);
 
     Ioss::Field::RoleType role = field.get_role();

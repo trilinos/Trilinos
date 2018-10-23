@@ -122,19 +122,11 @@ void DOF_PointValues<EvalT, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
-  this->utils.setFieldData(dof_basis,fm);
-
   if(!is_vector_basis) {
-    this->utils.setFieldData(dof_ip_scalar,fm);
-
-    // setup the pointers for the basis values data structure
     this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
     this->utils.setFieldData(basisValues->basis_scalar,fm);           
   }
   else {
-    this->utils.setFieldData(dof_ip_vector,fm);
-
-    // setup the pointers for the basis values data structure
     this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
     this->utils.setFieldData(basisValues->basis_vector,fm);           
   }
@@ -241,19 +233,11 @@ void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
 postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
-  this->utils.setFieldData(dof_basis,fm);
-
   if(!is_vector_basis) {
-    this->utils.setFieldData(dof_ip_scalar,fm);
-
-    // setup the pointers for the basis values data structure
     this->utils.setFieldData(basisValues->basis_ref_scalar,fm);      
     this->utils.setFieldData(basisValues->basis_scalar,fm);           
   }
   else {
-    this->utils.setFieldData(dof_ip_vector,fm);
-
-    // setup the pointers for the basis values data structure
     this->utils.setFieldData(basisValues->basis_ref_vector,fm);      
     this->utils.setFieldData(basisValues->basis_vector,fm);           
   }

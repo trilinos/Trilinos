@@ -120,20 +120,9 @@ ProjectToEdges(
 template<typename EvalT,typename Traits>
 void panzer::ProjectToEdges<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData  d, 
-		      PHX::FieldManager<Traits>& fm)
+		      PHX::FieldManager<Traits>& /* fm */)
 {
   orientations = d.orientations_;
-
-  // setup the field data object
-  this->utils.setFieldData(result,fm);
-  for(unsigned qp = 0; qp < vector_values.size(); ++qp)
-    this->utils.setFieldData(vector_values[qp],fm);
-  this->utils.setFieldData(tangents,fm);
-
-  if(quad_degree > 0){
-    this->utils.setFieldData(dof_orientation,fm);
-    this->utils.setFieldData(gatherFieldTangents,fm);
-  }
 
   num_pts = vector_values[0].extent(1);
   num_dim = vector_values[0].extent(2);

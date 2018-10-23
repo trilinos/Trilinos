@@ -552,6 +552,7 @@ namespace Thyra {
         }
 #endif
         // build a new MueLu RefMaxwell preconditioner
+        paramList.set<bool>("refmaxwell: use as preconditioner", true);
         preconditioner = rcp(new MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, paramList, true));
 
       } else {

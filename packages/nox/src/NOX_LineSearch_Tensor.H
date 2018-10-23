@@ -57,7 +57,6 @@
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
-#include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 // Forward declarations
@@ -65,6 +64,7 @@ namespace NOX {
   namespace Direction {
     class Tensor;
   }
+  class LineSearchCounters;
 }
 
 namespace NOX {
@@ -174,7 +174,7 @@ protected:
   NOX::LineSearch::Utils::Printing print;
 
   //! Common common counters for line searches.
-  NOX::LineSearch::Utils::Counters counter;
+  NOX::LineSearchCounters* counter;
 
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;

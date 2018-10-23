@@ -72,10 +72,20 @@ struct OutputParams
 {
 public:
     OutputParams(Ioss::Region & region, const mesh::BulkData &bulk) :
-        m_ioRegion(region),
-        m_bulkData(bulk) {}
+        m_ioRegion(&region),
+        m_bulkData(bulk)
+    {
+        initialize_output_selectors();
+    }
 
-    Ioss::Region &io_region() const {return m_ioRegion;}
+    OutputParams(const mesh::BulkData &bulk) :
+        m_ioRegion(nullptr),
+        m_bulkData(bulk)
+    {
+        initialize_output_selectors();
+    }
+
+    Ioss::Region &io_region() const { ThrowRequireMsg(m_ioRegion != nullptr, "Region is null"); return *m_ioRegion; }
     const mesh::BulkData &bulk_data() const {return m_bulkData;}
 
     const stk::mesh::Selector *get_subset_selector() const {return m_subsetSelector;}
@@ -86,9 +96,9 @@ public:
     void set_shared_selector(const stk::mesh::Selector *shared_selector) {m_sharedSelector = shared_selector;}
     bool has_shared_selector() const {return nullptr != m_sharedSelector;}
 
-    const stk::mesh::Selector *get_output_selector() const {return m_outputSelector;}
-    void set_output_selector(const stk::mesh::Selector *output_selector) {m_outputSelector = output_selector;}
-    bool has_output_selector() const {return nullptr != m_outputSelector;}
+    const stk::mesh::Selector *get_output_selector(stk::topology::rank_t rank) const {return is_valid_rank(rank) ? m_outputSelector[rank] : nullptr;}
+    void set_output_selector(stk::topology::rank_t rank, const stk::mesh::Selector *output_selector) { if(is_valid_rank(rank)) {m_outputSelector[rank] = output_selector;} }
+    bool has_output_selector(stk::topology::rank_t rank) const {return is_valid_rank(rank) ? (nullptr != m_outputSelector[rank]) : false;}
 
     bool get_sort_stk_parts_by_name() const {return m_sortStkPartsByName;}
     void set_sort_stk_parts_by_name(const bool sortStkPartsByName) {m_sortStkPartsByName = sortStkPartsByName;}
@@ -105,21 +115,43 @@ public:
     bool get_use_part_id_for_output() const {return m_usePartIdForOutput;}
     void set_use_part_id_for_output(const bool usePartIdForOutput) {m_usePartIdForOutput = usePartIdForOutput;}
 
+    bool get_has_ghosting() const {return m_hasGhosting;}
+    void set_has_ghosting(const bool hasGhosting) {m_hasGhosting = hasGhosting;}
+
+    bool get_has_adaptivity() const {return m_hasAdaptivity;}
+    void set_has_adaptivity(const bool hasAdaptivity) {m_hasAdaptivity = hasAdaptivity;}
+
+    bool get_is_skin_mesh() const {return m_isSkinMesh;}
+    void set_is_skin_mesh(const bool skinMesh) {m_isSkinMesh = skinMesh;}
+
 private:
-    Ioss::Region & m_ioRegion;
+    Ioss::Region * m_ioRegion = nullptr;
     const mesh::BulkData &m_bulkData;
     const stk::mesh::Selector *m_subsetSelector = nullptr;
     const stk::mesh::Selector *m_sharedSelector = nullptr;
-    const stk::mesh::Selector *m_outputSelector = nullptr;
+    const stk::mesh::Selector *m_outputSelector[stk::topology::ELEM_RANK+1];
     bool m_sortStkPartsByName = false;
     bool m_useNodesetForBlockNodeFields = true;
     bool m_useNodesetForSidesetNodeFields = true;
     bool m_checkFieldExistenceWhenCreatingNodesets = true;
     bool m_usePartIdForOutput = true;
+    bool m_hasGhosting = false;
+    bool m_hasAdaptivity = false;
+    bool m_isSkinMesh = false;
 
 private:
     OutputParams();
     OutputParams(const OutputParams &);
+
+    void initialize_output_selectors()
+    {
+        for (unsigned rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; rank++) {
+            m_outputSelector[rank] = nullptr;
+        }
+    }
+
+    bool is_valid_rank(stk::topology::rank_t rank) const {return ((rank >= stk::topology::NODE_RANK) && (rank <= stk::topology::ELEM_RANK)); }
+
 };
 
 }//namespace io

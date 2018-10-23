@@ -68,7 +68,7 @@
 using Teuchos::ParameterList;
 using Teuchos::ArrayRCP;
 
-typedef Zoltan2::BasicUserTypes<double> basic_user_t;
+typedef Zoltan2::BasicUserTypes<> basic_user_t;
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/

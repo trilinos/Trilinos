@@ -313,7 +313,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
     rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
 
   if (!me) {
-    metricObject->printMetrics(cout);
+    metricObject->printMetrics(std::cout);
   }
 
   //Print the stats after partitioning

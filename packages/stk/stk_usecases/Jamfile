@@ -156,6 +156,7 @@ exe stk_transfer_use_cases
     $(stk_usecases-root)/transfer/UseCaseMain.cpp
     [ glob $(stk_usecases-root)/transfer/*.cpp ]
     /sierra/stk_transfer//stk_transfer
+    /sierra/stk_search//stk_search
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_use_case
     /tpl/trilinos//intrepid

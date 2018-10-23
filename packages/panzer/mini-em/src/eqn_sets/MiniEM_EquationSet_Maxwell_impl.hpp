@@ -39,7 +39,7 @@ EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
     /*  Equations are
-     *   1/eps dE/dt = 1/mu \nabla \times B -J
+     *   eps dE/dt = 1/mu \nabla \times B - J - sigma E
      *   dB/dt = - \nabla \times E
      *
      *   in weak form
@@ -96,7 +96,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::rcp;
   // ********************
   // EField Equation
-  //  eps dE/dt = 1/mu \nabla \times B -J
+  //  eps dE/dt = 1/mu \nabla \times B - J - sigma E
   // ********************
   { 
     Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(m_Efield_dof_name);
@@ -112,6 +112,23 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("IR", ir);
       p.set("Multiplier", 1.0);
       const std::vector<std::string> fieldMultiplier = {"PERMITTIVITY"};
+      p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
+          rcp(new panzer::Integrator_BasisTimesVector<EvalT,panzer::Traits>(p));
+
+      this->template registerEvaluator<EvalT>(fm, op);
+      residual_operator_names.push_back(resid);
+    }
+    {
+      std::string resid="RESIDUAL_"+m_Efield_dof_name+"_CONDUCTIVITY";
+      ParameterList p(m_Efield_dof_name);
+      p.set("Residual Name", resid);
+      p.set("Value Name", m_Efield_dof_name);
+      p.set("Basis", basis);
+      p.set("IR", ir);
+      p.set("Multiplier", 1.0);
+      const std::vector<std::string> fieldMultiplier = {"CONDUCTIVITY"};
       p.set("Field Multipliers",Teuchos::rcpFromRef(fieldMultiplier));
 
       RCP< PHX::Evaluator<panzer::Traits> > op =

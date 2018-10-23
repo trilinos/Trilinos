@@ -98,6 +98,8 @@ namespace Ioss {
     bool defined() const { return m_defined; }
     void set_defined(bool yes_no) { m_defined = yes_no; }
 
+    bool reorders() const { return !m_reorder.empty(); }
+
   private:
     template <typename INT> void reverse_map_data(INT *data, size_t count) const;
     template <typename INT> void map_data(INT *data, size_t count) const;

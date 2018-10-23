@@ -1,23 +1,23 @@
 C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
-C    
+C
 C    * Redistributions of source code must retain the above copyright
 C       notice, this list of conditions and the following disclaimer.
-C    
+C
 C    * Redistributions in binary form must reproduce the above
 C      copyright notice, this list of conditions and the following
 C      disclaimer in the documentation and/or other materials provided
 C      with the distribution.
-C    
+C
 C    * Neither the name of NTESS nor the names of its
 C      contributors may be used to endorse or promote products derived
 C      from this software without specific prior written permission.
-C    
+C
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@ C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C    
+C
 C=======================================================================
       PROGRAM EXPLORE
 C=======================================================================
@@ -123,7 +123,7 @@ C .. Get filename from command line.  If not specified, emit error message
      *    'Syntax is: "explore [-[no]map node|element|all] filename"')
         GOTO 120
       end if
-      
+
       CALL get_argument(narg,DBNAME, LNAM)
       NDB = exopen(dbname(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
@@ -133,13 +133,13 @@ C .. Get filename from command line.  If not specified, emit error message
       END IF
 
       CALL EXOPTS(EXVRBS,IERR)
-      
+
 C ... By default, ultimately map both nodes and elements
 C     HOWEVER, in the transition time do not map either unless requested...
       mapel = .false.
       mapnd = .false.
       check = .false.
-      
+
       if (narg .gt. 1) then
         do i=1, narg-1, 2
           CALL get_argument(i+0,option, lo)
@@ -170,7 +170,7 @@ C     HOWEVER, in the transition time do not map either unless requested...
           end if
         end do
       end if
-      
+
         write (*,9999)
  9999   FORMAT(/,
      *    1x,'NOTE: This version has the option to use global',
@@ -184,7 +184,7 @@ C     HOWEVER, in the transition time do not map either unless requested...
      *    1x,'      To enable the maps and use global ids, restart',
      *    ' explore with "-map node|element|all"',//,
      *    1x,'      Notify gdsjaar@sandia.gov if bugs found')
-        
+
         if (mapel .and. mapnd) then
           WRITE (*, 10010) 'Nodes and Elements using Global Ids'
         else if (mapel) then
@@ -193,9 +193,9 @@ C     HOWEVER, in the transition time do not map either unless requested...
           WRITE (*, 10010) 'Element use Local Ids, Node Ids are Global'
         else
           WRITE (*, 10010) 'Nodes and Elements using Local Ids'
-        end if        
+        end if
 10010   FORMAT (/, 1X, 5A)
-        
+
 C   --Initialize dynamic memory
       CALL MDINIT (A)
       CALL MCINIT (C)
@@ -227,12 +227,12 @@ C   --Read the initial variables
          lessel = 0
          lessdf = 0
       end if
-      
+
       call exinq(ndb, EXDBMXUSNM, namlen, rdum, cdum, ierr)
       IF (IERR .NE. 0) GOTO 110
       call exmxnm(ndb, namlen, ierr)
       IF (IERR .NE. 0) GOTO 110
-      
+
       CALL PRINIT ('NTISC', NOUT, DBNAME, TITLE,
      &     NDIM, NUMNP, NUMEL, NELBLK,
      &     NUMNPS, LNPSNL, lnpsdf, NUMESS, LESSEL, LESSNL, LESSDF,
@@ -312,11 +312,21 @@ C ... Read element blocks
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
       CALL RDELB (NDB, NELBLK,
-     &   A(KIDELB), A(KNELB), A(KNLNK), A(KNATR), 
+     &   A(KIDELB), A(KNELB), A(KNLNK), A(KNATR),
      &   A, C, KLINK, KATRIB, KATRNM, ISEOF, C(KNMLB), C(KNMEB),
      &   NAMLEN)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
+
+C ... If NELBLK .gt. 0 and NUMEL .eq. 0, then
+C     possible reading an experimental exodus file
+C     containing only results data...
+C     Calculate NUMEL based on NUMELB entries.
+      if (NELBLK .gt. 0 .and. NUMEL .eq. 0) then
+        do i=1, NELBLK
+          numel = numel + IA(KNELB+I-1)
+        end do
+      end if
 
 C ... Read nodesets
       CALL MDRSRV ('IDNPS',  KIDNS,  NUMNPS)
@@ -357,9 +367,9 @@ C ... Read QA Information
       if (exodus) then
 C ...    Read variable names and truth table
          CALL RDNAME (A, C, NDB, KVNAMI, KVNAMO,
-     &        IXGV, IXNV, IXEV, IXNS, IXSS, 
+     &        IXGV, IXNV, IXEV, IXNS, IXSS,
      &        KIEVOK, KNSVOK, KSSVOK)
-         
+
 C ... Read in the times for all the time steps from the database
          call mdrsrv('TIMES', KTIMES, NSTEPS)
          CALL RDTIMS (NDB, A(KTIMES))
@@ -369,14 +379,14 @@ C ... Read in the times for all the time steps from the database
             WRITE (*, 10000, IOSTAT=IDUM) NSTEPS
 10000       FORMAT (1X, 'Number of time steps on the database =', I10)
          END IF
-         
+
 C ... Get the memory for the variables
          CALL MDRSRV ('VARGL', KVARGL, NVARGL)
          CALL MDRSRV ('VARNP', KVARNP, NVARNP * NUMNP)
          CALL MDRSRV ('VAREL', KVAREL, NVAREL * NUMEL)
          CALL MDRSRV ('VARNS', KVARNS, NVARNS * LNPSNL)
          CALL MDRSRV ('VARSS', KVARSS, NVARSS * LESSEL)
-         
+
       ELSE
          NSTEPS = 0
          KVARGL = 1
@@ -426,32 +436,32 @@ C   --Process commands
      &     A(KIDELB), A(KNELB), A(KLENE), A(KNLNK), A(KNATR),
      &     A(KLINK), A(KATRIB),
      &     A(KIDNS), A(KNNNS), A(KNDNPS), A(KIXNNS), A(KIXDNS),
-     $     A(KLTNNS), A(KFACNS), C(KNMNS), 
+     $     A(KLTNNS), A(KFACNS), C(KNMNS),
      &     A(KIDSS), A(KNESS), A(KNDSS), A(KIXESS), A(KIXNSS),
-     &     A(KLTESS), A(KLTSSS), A(KFACSS), C(KNMSS), 
-     &     A(KIEVOK), A(KNSVOK), A(KSSVOK), A(KTIMES), 
-     &     A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS), 
+     &     A(KLTESS), A(KLTSSS), A(KFACSS), C(KNMSS),
+     &     A(KIEVOK), A(KNSVOK), A(KSSVOK), A(KTIMES),
+     &     A(KVARGL), A(KVARNP), A(KVAREL), A(KVARNS), A(KVARSS),
      &     A(KLISNP), A(KNLISE), A(KLISEL), A(KLISNS), A(KLISSS),
      &     A(KLISGV), A(KLISNV), A(KLISEV), A(KLISMV), A(KLISSV))
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
-      
+
       GOTO 110
-      
+
  100  CONTINUE
       CALL MEMERR
       GOTO 110
-      
+
  110  CONTINUE
-      
+
       call exclos(ndb, ierr)
 
  120  CONTINUE
       IF (ANYPRT) CLOSE (NPRT, IOSTAT=IDUM)
-      
+
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
-      
+
       END
 
       subroutine iniseq(icnt, map)
@@ -461,12 +471,3 @@ C   --Process commands
       end do
       return
       end
-
-
-
-
-
-
-
-
-

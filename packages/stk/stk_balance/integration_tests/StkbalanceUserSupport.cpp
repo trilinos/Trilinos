@@ -460,8 +460,8 @@ TEST(Stkbalance, changeOptions)
     stk::mesh::Field<double> &nonContactCriteria = meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "non contact criteria");
     stk::mesh::Field<double> &contactCriteria = meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "contact criteria");
 
-    stk::mesh::put_field(nonContactCriteria, meta.universal_part(), &nonContactWeight);
-    stk::mesh::put_field(contactCriteria, meta.universal_part());
+    stk::mesh::put_field_on_mesh(nonContactCriteria, meta.universal_part(), &nonContactWeight);
+    stk::mesh::put_field_on_mesh(contactCriteria, meta.universal_part(), nullptr);
 
 
     stk::balance::BalanceSettings* balanceOptions = nullptr;

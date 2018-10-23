@@ -125,7 +125,7 @@ IF ($(TPL_ENABLE_MPI))
     TEST_3 CMND ../../../../applications/epu/epu ARGS -auto gen-shell.g.4.0
     TEST_4 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic gen-shell-ts.g gen-shell.g
     COMM mpi serial
-    FINAL_PASS_REGULAR_EXPRESSION 
+    FINAL_PASS_REGULAR_EXPRESSION
   )
 ELSE()
   TRIBITS_ADD_ADVANCED_TEST(
@@ -134,7 +134,7 @@ ELSE()
     TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell    ARGS ${IOSHELL_ARG} gen-shell.g
     TEST_4 CMND ../../../../applications/exodiff/exodiff ARGS -pedantic gen-shell-ts.g gen-shell.g
     COMM mpi serial
-    FINAL_PASS_REGULAR_EXPRESSION 
+    FINAL_PASS_REGULAR_EXPRESSION
   )
 ENDIF()
 ENDIF()
@@ -157,7 +157,7 @@ if ( CGNS_CGNSLIST_BINARY )
 else()
    find_program (CGNS_CGNSLIST_BINARY
 	     NAME cgnslist
-	     PATHS 
+	     PATHS
 	       ${CGNS_BINARY_DIR}
                ${CGNS_LIBRARY_DIRS}/../bin
                $ENV{ACCESS}/bin
@@ -173,7 +173,7 @@ if ( CGNS_CGNSDIFF_BINARY )
 else()
    find_program (CGNS_CGNSDIFF_BINARY
 	     NAME cgnsdiff
-	     PATHS 
+	     PATHS
 	       ${CGNS_BINARY_DIR}
                ${CGNS_LIBRARY_DIRS}/../bin
                $ENV{ACCESS}/bin
@@ -183,7 +183,7 @@ else()
 	        ${CGNS_DIR}/bin
 	     )
 endif()
-	     
+
 
 if ( CGNS_CGNSLIST_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(exodus64_to_unstructured_cgns
@@ -202,7 +202,7 @@ TRIBITS_ADD_ADVANCED_TEST(generated32_to_unstructured_cgns
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld generated32.cgns
      OUTPUT_FILE generated32_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated32_to_unstructured_cgns.out 
+   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated32_to_unstructured_cgns.out
   COMM mpi serial
   )
 
@@ -212,7 +212,7 @@ TRIBITS_ADD_ADVANCED_TEST(generated64_to_unstructured_cgns
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld generated64.cgns
      OUTPUT_FILE generated64_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated64_to_unstructured_cgns.out 
+   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated64_to_unstructured_cgns.out
   COMM mpi serial
   )
 
@@ -222,7 +222,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld 8-block32.cgns
      OUTPUT_FILE exodus32_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus32_to_unstructured_cgns.out 
+   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus32_to_unstructured_cgns.out
   COMM mpi serial
   )
 endif()
@@ -274,7 +274,7 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
    TEST_1 CMND ../../../../applications/exodiff/exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
-  COMM mpi 
+  COMM mpi
   )
 ELSE()
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
@@ -358,6 +358,18 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_bump
   COMM mpi serial
   )
 
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_single_fpp_single_fields
+   TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/blottner.cgns blottner-fpp.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --external blottner-fpp.cgns blottner-single.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/blottner.cgns blottner-single.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi
+  )
+
 IF (TPL_ENABLE_Pamgen)
 TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/testpamgen.i pamgen.cgns
@@ -365,11 +377,10 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
      NUM_MPI_PROCS 1-4
    TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld pamgen.cgns
      OUTPUT_FILE pamgen_to_unstructured_cgns.out
-   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out 
+   TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out
   COMM mpi serial
   )
 ENDIF(TPL_ENABLE_Pamgen)
 endif()
 
 ENDIF(TPL_ENABLE_CGNS)
-

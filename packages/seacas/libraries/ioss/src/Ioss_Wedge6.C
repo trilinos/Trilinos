@@ -68,24 +68,25 @@ namespace {
     static int       nodes_per_edge[nedge + 1];
     static int       edges_per_face[nface + 1];
   };
+
+  // Edge numbers are zero-based [0..number_edges)
+  int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
+      /* (Reference: Fmwk_StdObjMeshTopologies.C) */
+      {{0, 1}, {1, 2}, {2, 0}, {3, 4}, {4, 5}, {5, 3}, {0, 3}, {1, 4}, {2, 5}};
+
+  // Face numbers are zero-based [0..number_faces)
+  int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
+      {{0, 1, 4, 3}, {1, 2, 5, 4}, {0, 3, 5, 2}, {0, 2, 1, -1}, {3, 4, 5, -1}};
+
+  int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
+      {{0, 7, 3, 6}, {1, 8, 4, 7}, {6, 5, 8, 2}, {2, 1, 0, -1}, {3, 4, 5, -1}};
+
+  int Constants::nodes_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
+
+  int Constants::nodes_per_edge[nedge + 1] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+
+  int Constants::edges_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
 } // namespace
-// Edge numbers are zero-based [0..number_edges)
-int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-    /* (Reference: Fmwk_StdObjMeshTopologies.C) */
-    {{0, 1}, {1, 2}, {2, 0}, {3, 4}, {4, 5}, {5, 3}, {0, 3}, {1, 4}, {2, 5}};
-
-// Face numbers are zero-based [0..number_faces)
-int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    {{0, 1, 4, 3}, {1, 2, 5, 4}, {0, 3, 5, 2}, {0, 2, 1, -1}, {3, 4, 5, -1}};
-
-int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-    {{0, 7, 3, 6}, {1, 8, 4, 7}, {6, 5, 8, 2}, {2, 1, 0, -1}, {3, 4, 5, -1}};
-
-int Constants::nodes_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
-
-int Constants::nodes_per_edge[nedge + 1] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
-
-int Constants::edges_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
 
 void Ioss::Wedge6::factory()
 {

@@ -117,10 +117,6 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>& fm)
 {
   orientations = sd.orientations_;
-
-  this->utils.setFieldData(residual,fm);
-  this->utils.setFieldData(dof,fm);
-  this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 }
 

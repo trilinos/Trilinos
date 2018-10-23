@@ -25,6 +25,7 @@ APPEND_SET(SOURCES
   GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
+  IndexManager.cpp
   IntrepidPCoarsenFactory.cpp
   Level.cpp
   Memory.cpp

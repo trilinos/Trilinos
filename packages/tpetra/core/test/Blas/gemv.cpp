@@ -42,11 +42,15 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Details_gemv.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
+
+// kokkos kernels
+#include "KokkosBlas.hpp"
+#include "KokkosKernels_Utils.hpp"
+
 #include <typeinfo>
 
 namespace {
@@ -196,9 +200,9 @@ namespace {
       }
     }
 
-    const int A2_stride = Tpetra::Details::Blas::getStride2DView (A2);
-    const int x2_inc = Tpetra::Details::Blas::getStride1DView (x2);
-    const int y2_inc = Tpetra::Details::Blas::getStride1DView (y2);
+    const int A2_stride = A2.stride(1);
+    const int x2_inc = x2.stride(0);
+    const int y2_inc = y2.stride(0);
 
     constexpr int numTransOpts = 6;
     constexpr char transOpts[numTransOpts] =
@@ -270,7 +274,7 @@ namespace {
           // Whether (x,y) are (input,output) or vice versa depends on
           // whether we are exercising the transpose.
           if (isTrans) {
-            Tpetra::Details::Blas::gemv (trans, alpha, A, y, beta, x);
+            KokkosBlas::gemv(&trans, alpha, A, y, beta, x); 
             teuchosBlas.GEMV (teuchosTrans, numRows, numCols, alpha,
                               reinterpret_cast<const EntryType*> (A2.data ()),
                               A2_stride,
@@ -294,7 +298,7 @@ namespace {
             }
           }
           else {
-            Tpetra::Details::Blas::gemv (trans, alpha, A, x, beta, y);
+            KokkosBlas::gemv(&trans, alpha, A, x, beta, y); 
             teuchosBlas.GEMV (teuchosTrans, numRows, numCols, alpha,
                               reinterpret_cast<const EntryType*> (A2.data ()),
                               A2_stride,
@@ -334,7 +338,7 @@ namespace {
     typedef map_type::device_type device_type;
 
     Teuchos::OSTab tab0 (out);
-    out << "Test \"Tpetra::Details::gemv\"" << endl;
+    out << "Test \"KokkosBlas::gemv\"" << endl;
     Teuchos::OSTab tab1 (out);
 
     auto comm = Tpetra::TestingUtilities::getDefaultComm ();

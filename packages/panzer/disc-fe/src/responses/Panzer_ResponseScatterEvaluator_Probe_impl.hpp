@@ -127,14 +127,6 @@ preEvaluate(typename Traits::PreEvalData d)
 
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
-void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData /* d */,
-                      PHX::FieldManager<Traits>& fm)
-{
-  this->utils.setFieldData(field_,fm);
-}
-
-template<typename EvalT, typename Traits, typename LO, typename GO>
 bool ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
 computeBasisValues(typename Traits::EvalData d)
 {

@@ -8,7 +8,6 @@ ADD_SUBDIRECTORIES(
 #    InterfacePartitionOfUnity
     TwoLevelPreconditionerInputFiles
     Thyra_Xpetra
-    Thyra_Xpetra_Prec
     Thyra_Tpetra
     RepMap_test
 #  Thyra_Xpetra_PrecBlock

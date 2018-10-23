@@ -85,8 +85,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef SEACAS_HAVE_KOKKOS
-  Kokkos::initialize(argc, argv);
-  ON_BLOCK_EXIT(Kokkos::finalize);
+  Kokkos::ScopeGuard kokkos(argc, argv);
 #endif
 
   std::cout.imbue(std::locale(std::locale(), new my_numpunct));
@@ -139,7 +138,7 @@ int main(int argc, char *argv[])
   double end = Ioss::Utils::timer();
 
   if (rank == 0 && !interface.quiet) {
-    std::cerr << "\n\tTotal Execution time = " << end - begin << " seconds.\n";
+    std::cerr << "\n\n\tTotal Execution time = " << end - begin << " seconds.\n";
   }
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
@@ -287,6 +286,9 @@ namespace {
           region.get_property("state_count").get_int() > 0) {
         ts_count = region.get_property("state_count").get_int();
       }
+
+      // Flush interval on output database -- do not flush until end
+      properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
 
       if (interface.split_times == 0 || interface.delete_timesteps || ts_count == 0 || append ||
           interface.inputFile.size() > 1) {
@@ -447,6 +449,10 @@ namespace {
       if (interface.compose_output != "default") {
         properties.add(Ioss::Property("PARALLEL_IO_MODE", interface.compose_output));
       }
+    }
+
+    if (interface.file_per_state) {
+      properties.add(Ioss::Property("FILE_PER_STATE", "YES"));
     }
 
     if (interface.netcdf4) {

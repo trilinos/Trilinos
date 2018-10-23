@@ -104,9 +104,10 @@ bool use_case_7_driver(stk::ParallelMachine  comm,
   stk::mesh::Part & block_skin       = domain_meta_data.declare_part("skin", side_rank);
   stk::mesh::set_topology( block_skin, stk::topology::QUAD_4 );
 
-  ScalarField &domain_coord_sum_field = stk::mesh::put_field(
+  ScalarField &domain_coord_sum_field = stk::mesh::put_field_on_mesh(
                         domain_meta_data.declare_field<ScalarField>(stk::topology::NODE_RANK, data_field_name),
-                        domain_meta_data.universal_part() );
+                        domain_meta_data.universal_part(),
+                        nullptr);
   domain_meta_data.commit();
 
   domain_mesh_data.populate_bulk_data();

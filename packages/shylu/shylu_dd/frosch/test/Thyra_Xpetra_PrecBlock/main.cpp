@@ -23,6 +23,7 @@
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>
 
+#ifdef HAVE_FROSCH_THYRA
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
@@ -41,18 +42,20 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 #include <Thyra_BelosLinearOpWithSolve_def.hpp>
 #include <Thyra_BelosLinearOpWithSolveFactory_def.hpp>
-
-// Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include "Stratimikos_FROSchXpetra.hpp"
-
-// Xpetra include
-#include <Xpetra_Parameters.hpp>
-
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 
 #include "Thyra_FROSchXpetraTwoLevelBlockPrec_def.hpp"
+
+// Stratimikos includes
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include "Stratimikos_FROSchXpetra.hpp"
+#endif
+
+// Xpetra include
+#include <Xpetra_Parameters.hpp>
+
+
 #include "EpetraExt_HDF5.h"
 
 typedef unsigned UN;
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
             xRightHandSide->putScalar(1.0);
             
             Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(matrix);
-                        
+#ifdef HAVE_FROSCH_THYRA
             RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(tmpCrsWrap->getCrsMatrix());
             
             RCP<Thyra::MultiVectorBase<SC> >thyraX =
@@ -230,7 +233,9 @@ int main(int argc, char *argv[])
             
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-            
+#else
+            if (Comm->MyPID()==0) cout << "Thyra not enabled\n";
+#endif
         }
         MPI_Comm_free(&COMM);
     

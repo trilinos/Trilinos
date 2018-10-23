@@ -75,15 +75,6 @@ Parameter(const std::string parameter_name,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 void Parameter<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* worksets */,
-		      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(target_field,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-void Parameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
   //std::cout << "ROGER ParamValue = " << param->getValue() << std::endl;

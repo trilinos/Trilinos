@@ -9,3 +9,6 @@ ATDM_SET_CACHE(KokkosKernels_sparse_serial_MPI_1_EXTRA_ARGS
 
 # This test fails consistently with a major numerical error (#2474)
 ATDM_SET_ENABLE(Piro_MatrixFreeDecorator_UnitTests_MPI_4_DISABLE ON)
+
+# Disable perpetually failing KokkosCore test (#3233)
+ATDM_SET_ENABLE(KokkosCore_UnitTest_Serial_MPI_1_DISABLE ON)

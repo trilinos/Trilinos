@@ -9,12 +9,7 @@
 namespace Thyra {
     
     
-    /** \brief Concrete Thyra::LinearOpBase subclass for Xpetra::Operator.
-     *
-     * \todo Move this to Thyra??
-     *
-     * \ingroup Xpetra_Thyra_Op_Vec_adapters_grp
-     */
+    /** \brief Concrete Thyra::LinearOpBase subclass for Xpetra::Operator.**/
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
     class Node=KokkosClassic::DefaultNode::DefaultNodeType>
     class FROSchLinearOp

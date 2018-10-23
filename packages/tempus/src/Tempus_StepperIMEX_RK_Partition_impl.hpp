@@ -30,10 +30,7 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   std::string stepperType)
 {
   this->setTableaus(Teuchos::null, stepperType);
-  this->setParameterList(Teuchos::null);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -46,8 +43,6 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   this->setTableaus(pList, "Partitioned IMEX RK SSP2");
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -61,8 +56,6 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   this->setTableaus(pList, stepperType);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -373,6 +366,11 @@ void StepperIMEX_RK_Partition<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperIMEX_RK_Partition::initialize()\n");
 
+  this->setTableaus(this->stepperPL_);
+  this->setParameterList(this->stepperPL_);
+  this->setSolver();
+  this->setObserver();
+
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
   stageF_.resize(numStages);
@@ -612,10 +610,8 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
         Thyra::Vp_StV(X.ptr(), -dt*b   (i), *(stageGx_[i]));
     }
 
-    if (pass == true)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }

@@ -115,8 +115,6 @@ class SumStatic : public panzer::EvaluatorWithBaseImpl<TRAITS>,
             public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
 private:
   typedef typename EvalT::ScalarT ScalarT;
@@ -127,8 +125,6 @@ class SumStatic<EvalT,TRAITS,Tag0,void,void> : public panzer::EvaluatorWithBaseI
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
 private:
   typedef typename EvalT::ScalarT ScalarT;
@@ -192,8 +188,6 @@ class SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2> : public panzer::EvaluatorWithBaseI
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
 private:
   typedef typename EvalT::ScalarT ScalarT;

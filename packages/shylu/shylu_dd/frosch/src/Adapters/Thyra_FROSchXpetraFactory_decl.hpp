@@ -2,51 +2,54 @@
 #define THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
 
 
-// Stratimikos needs Thyra, so we don't need special guards for Thyra here
+
+//Thyra
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
-#ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
-#include "Thyra_TpetraThyraWrappers.hpp"
-#endif
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_PreconditionerFactoryBase.hpp"
 
+
+
+//Teuchos
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Time.hpp"
-
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_ThyraUtils.hpp>
-//PUT FROSch includes here
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Array.hpp"
-
-#include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
-//#include <Epetra_Version.h>
-#include <Epetra_config.h>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
+
+
+//Xpetra
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_CrsMatrix.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_ThyraUtils.hpp>
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraMap.hpp>
 
 
-//#include <FROSch_GDSWPreconditioner_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
-#include "FROSch_XpetraOperator_decl.hpp"
-#include "Thyra_FROSchLinearOP_def.hpp"
+//Epetra
+#include <Epetra_Map.h>
+#include <Epetra_MpiComm.h>
+#include <Epetra_config.h>
 
-#include "Thyra_PreconditionerFactoryBase.hpp"
+
+
+
+//FROSch
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
+#include <Thyra_FROSchLinearOp_def.hpp>
+
+
 
 #include "Kokkos_DefaultNode.hpp"
 

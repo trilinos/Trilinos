@@ -156,6 +156,10 @@ namespace Ioss {
     isParallel  = util_.parallel_size() > 1;
     myProcessor = util_.parallel_rank();
 
+    // Some operations modify DBFilename and there is a need to get
+    // back to the original filename...
+    originalDBFilename = DBFilename;
+
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and add to the 'properties' map.
     util_.add_environment_properties(properties, myProcessor == 0);
@@ -182,12 +186,12 @@ namespace Ioss {
       }
     }
 
-    if (properties.exists("SERIALIZE_IO")) {
-      int isize = properties.get("SERIALIZE_IO").get_int();
-      Ioss::SerializeIO::setGroupFactor(isize);
-      if (isize > 0) {
-        singleProcOnly = true;
-      }
+    if (properties.exists("CYCLE_COUNT")) {
+      cycleCount = properties.get("CYCLE_COUNT").get_int();
+    }
+
+    if (properties.exists("OVERLAY_COUNT")) {
+      overlayCount = properties.get("OVERLAY_COUNT").get_int();
     }
 
     {
@@ -444,7 +448,7 @@ namespace Ioss {
     for (size_t i = 1; i < group_spec.size(); i++) {
       SideSet *set = get_region()->get_sideset(group_spec[i]);
       if (set != nullptr) {
-        SideBlockContainer side_blocks = set->get_side_blocks();
+        const SideBlockContainer &side_blocks = set->get_side_blocks();
         for (auto &sbold : side_blocks) {
           size_t  side_count = sbold->entity_count();
           auto    sbnew      = new SideBlock(this, sbold->name(), sbold->topology()->name(),
@@ -486,8 +490,8 @@ namespace Ioss {
   {
     DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
 
-    bool                  first          = true;
-    ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+    bool                         first          = true;
+    const ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     for (auto block : element_blocks) {
       size_t element_count = block->entity_count();
 
@@ -580,7 +584,7 @@ namespace Ioss {
       // Set contains (parent_element, boundary_topology) pairs...
       std::set<std::pair<const ElementTopology *, const ElementTopology *>> side_topo;
 
-      ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+      const ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
       for (auto &block : element_blocks) {
         const ElementTopology *elem_type = block->topology();
@@ -628,7 +632,7 @@ namespace Ioss {
       compute_block_adjacencies();
     }
 
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+    const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
 
     // Extract the computed block adjacency information for this
@@ -671,7 +675,7 @@ namespace Ioss {
 
     blockAdjacenciesCalculated = true;
 
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+    const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
 
     if (element_blocks.size() == 1) {
@@ -942,9 +946,9 @@ namespace Ioss {
       ssize_t nnode = nb->entity_count();
       ssize_t ndim  = nb->get_property("component_degree").get_int();
 
-      Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
-      size_t                      nblock         = element_blocks.size();
-      std::vector<double>         minmax;
+      const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
+      size_t                             nblock         = element_blocks.size();
+      std::vector<double>                minmax;
       minmax.reserve(6 * nblock);
 
       for (auto &block : element_blocks) {

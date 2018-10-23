@@ -70,7 +70,7 @@
 
 
 // Disable the full set of problem statistics
-const bool use_new_problem_stats = true;
+const bool use_new_problem_stats = false;
 
 
 /*********************************************************/

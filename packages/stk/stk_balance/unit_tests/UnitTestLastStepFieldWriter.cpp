@@ -32,7 +32,7 @@ void read_and_write_mesh_with_added_field_data(const std::string& inputFilename,
     stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
 
     stk::mesh::Field<double>& nodalTestData = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, fieldName);
-    stk::mesh::put_field(nodalTestData, meta.universal_part(), &initialVal);
+    stk::mesh::put_field_on_mesh(nodalTestData, meta.universal_part(), &initialVal);
     stk::io::set_field_role(nodalTestData, Ioss::Field::TRANSIENT);
 
     stk::balance::internal::AllStepFieldWriterAutoDecomp ioHelper(bulkData, inputFilename);

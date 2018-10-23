@@ -33,6 +33,8 @@ mesh
     <Parameter name="avatar: names files" type="Array(string)" value="{avatar.names}"/>
     <Parameter name="avatar: filestem" type="Array(string)" value="{avatar}"/>
     <Parameter name="avatar: good class" type="int" value="2"/>
+    <Parameter name="avatar: heuristic" type="int" value="1"/>
+    <Parameter name="avatar: bounds file" type="Array(string)" value="{bounds.data}"/>
     <ParameterList name="avatar: muelu parameter mapping">
       <ParameterList name="param0">
         <Parameter name="muelu parameter" type="string"      value="aggregation: drop tol"/>

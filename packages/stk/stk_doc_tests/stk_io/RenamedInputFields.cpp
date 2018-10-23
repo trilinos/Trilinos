@@ -43,7 +43,7 @@ protected:
     stk::mesh::FieldBase *create_field(const std::string &name, stk::mesh::Part &part, double initVal)
     {
         stk::mesh::FieldBase *field = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, name);
-        stk::mesh::put_field(*field, part, &initVal);
+        stk::mesh::put_field_on_mesh(*field, part, &initVal);
         return field;
     }
 

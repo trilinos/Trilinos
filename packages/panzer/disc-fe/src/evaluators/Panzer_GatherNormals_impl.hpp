@@ -98,11 +98,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   orientations = d.orientations_;
-
-  // setup the field data object
-  this->utils.setFieldData(gatherFieldNormals,fm);
   this->utils.setFieldData(pointValues.jac,fm);
-
   faceNormal = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),
 					 "faceNormal",
 					 gatherFieldNormals.extent(0),

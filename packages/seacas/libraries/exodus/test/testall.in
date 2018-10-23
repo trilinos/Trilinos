@@ -254,6 +254,13 @@ echo "begin test-empty" >> test.output
 ${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
 echo "end test-empty" >> test.output
 
+echo "testwt-results - write EXPERIMENTAL file with only transient data; no mesh bulk data..."
+echo "begin testwt-results" >> test.output
+${PREFIX} ${BINDIR}/testwt-results${SUFFIX} >> test.output
+echo "end testwt-results" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test-results.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-results.dmp | tee testwt-results.res
+
 if [ "$THREAD_SAFE" == "ON" ]; then
 
 echo "test_ts_nvar - each thread writes data for a single nodal variable..."

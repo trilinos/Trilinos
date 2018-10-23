@@ -27,7 +27,8 @@ namespace mini_em {
     InversePermeability(const std::string & name,
                         const panzer::IntegrationRule & ir,
                         const panzer::FieldLayoutLibrary & fl,
-                        const double & mu_);
+                        const double & mu_,
+                        const std::string& DoF_);
                                                                         
     void evaluateFields(typename Traits::EvalData d);
 

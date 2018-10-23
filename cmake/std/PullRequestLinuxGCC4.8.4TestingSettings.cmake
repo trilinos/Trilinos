@@ -27,9 +27,5 @@ set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_4_DISABLE ON CACHE 
 set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
-# Disable A test that will not compile in 4.8.4 due to use of brace initializer lists
-set (STKUnit_tests_stk_transfer_unit_tests_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (STKUnit_tests_stk_transfer_unit_tests_EXE_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 

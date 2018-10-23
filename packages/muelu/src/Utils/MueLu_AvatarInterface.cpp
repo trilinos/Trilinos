@@ -61,6 +61,8 @@
    "avatar: decision tree files"   "{'mystem1.trees','mystem2.trees'}"
    "avatar: names files"           "{'mystem1.names','mystem2.names'}"
    "avatar: good class"            "1"
+   "avatar: heuristic" 		   "1"
+   "avatar: bounds file"           "{'bounds.data'}"
    "avatar: muelu parameter mapping"
      - "param0'
        - "muelu parameter"          "aggregation: threshold"
@@ -121,7 +123,12 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // "Good" Class ID for Avatar
   validParamList->set<int>("avatar: good class",int_dummy,"Numeric code for class Avatar considers to be good");
 
-  
+   // Which drop tol choice heuristic to use
+  validParamList->set<int>("avatar: heuristic",int_dummy,"Numeric code for which heurisitc we want to use");  
+
+  // Bounds file for extrapolation risk
+  validParamList->set<Teuchos::Array<std::string> >("avatar: bounds file",ar_dummy,"Bounds file for Avatar extrapolation risk");
+
   return validParamList;
 }
 
@@ -156,6 +163,7 @@ void AvatarInterface::Setup() {
   // Get the avatar strings (NOTE: Only exist on proc 0)
   avatarStrings_ = ReadFromFiles("avatar: decision tree files");
   namesStrings_  = ReadFromFiles("avatar: names files");
+  boundsString_ = ReadFromFiles("avatar: bounds file");
   filestem_ = params_.get<Teuchos::Array<std::string>>("avatar: filestem");
 
 
@@ -170,6 +178,8 @@ void AvatarInterface::Setup() {
 
   // Which class does Avatar consider "good"
   avatarGoodClass_ = params_.get<int>("avatar: good class");
+
+  heuristicToUse_ = params_.get<int>("avatar: heuristic");
 
   // Unpack the MueLu Mapping into something actionable
   UnpackMueLuMapping();
@@ -299,8 +309,10 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
     // For each input parameter to avatar we iterate over its allowable values and then compute the list of options which Avatar
     // views as acceptable
-    int * avatarOutput;
-    {
+    // FIXME: Find alternative to hard coding malloc size (input deck?)
+    int* predictions = (int*)malloc(8 * sizeof(int));
+    float* probabilities = (float*)malloc(3 * 8 * sizeof(float));
+
       std::string testString;
       for(int i=0; i<num_combos; i++) {
         SetIndices(i,indices);
@@ -309,17 +321,18 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
       }
 
       std::cout<<"** Avatar TestString ***\n"<<testString<<std::endl;//DEBUG
+
+      int bound_check = checkBounds(testString, boundsString_);
       
       // FIXME: Only send in first tree's string
       //int* avatar_test(Avatar_handle* a, char* test_data_file, int test_data_is_a_string);
       const int test_data_is_a_string = 1;
-      avatarOutput=avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string);
-    }
+      avatar_test(avatarHandle_,const_cast<char*>(testString.c_str()),test_data_is_a_string,predictions,probabilities);
 
     // Look at the list of acceptable combinations of options 
     std::vector<int> acceptableCombos; acceptableCombos.reserve(100);
     for(int i=0; i<num_combos; i++) {    
-      if(avatarOutput[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
+      if(predictions[i] == avatarGoodClass_) acceptableCombos.push_back(i);      
     }
     GetOStream(Runtime0)<< "MueLu::AvatarInterface: "<< acceptableCombos.size() << " acceptable option combinations found"<<std::endl;
 
@@ -330,27 +343,202 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
                            << "         An arbitrary set of options will be chosen instead"<<std::endl;    
     }
     else {
-      // As a placeholder, we'll choose the first acceptable combination.  Later we can do something smarter
-      //TODO: Look at other options to choose best possible combination
-      chosen_option_id = acceptableCombos[0];
+      // If there is only one acceptable combination, use it; 
+      // otherwise, find the parameter choice with the highest
+      // probability of success
+      if(acceptableCombos.size() == 1){
+	chosen_option_id = acceptableCombos[0];
+      } 
+      else {
+	switch (heuristicToUse_){
+	  case 1: 
+		chosen_option_id = hybrid(probabilities, acceptableCombos);
+		break;
+	  case 2: 
+		chosen_option_id = highProb(probabilities, acceptableCombos);
+		break;
+	  case 3: 
+		// Choose the first option in the list of acceptable
+		// combinations; the lowest drop tolerance among the 
+		// acceptable combinations
+		chosen_option_id = acceptableCombos[0];
+		break;
+	  case 4: 
+		chosen_option_id = lowCrash(probabilities, acceptableCombos);
+		break;
+	  case 5:
+		chosen_option_id = weighted(probabilities, acceptableCombos);
+		break;
+        }
+
+      }
+    }
+    
+    // If mesh parameters are outside bounding box, set drop tolerance
+    // to 0, otherwise use avatar recommended drop tolerance
+    if (bound_check == 0){
+      GetOStream(Runtime0) << "WARNING: Extrapolation risk detected, setting drop tolerance to 0" <<std::endl;
+      GenerateMueLuParametersFromIndex(0,avatarParams);
+    } else {
+      GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
     }
 
-    // Generate the parameterList from the chosen option
-    GenerateMueLuParametersFromIndex(chosen_option_id,avatarParams);
+    // Cleanup 
+    free(predictions);
+    free(probabilities); 
+  } 
 
-    // Cleanup
-    free(avatarOutput);
-  }
   Teuchos::updateParametersAndBroadcast(outArg(avatarParams),outArg(mueluParams),*comm_,0,overwrite);
+
 
 }
 
+int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString_) const {
+  std::stringstream ss(trialString);
+  std::vector<float> vect;
+
+  int useNewFeatures = 0;
+
+  float i;
+ 
+  while (ss >> i)
+  {
+    vect.push_back(i);
+
+    if (ss.peek() == ',')
+      ss.ignore();
+  }
+
+  std::string bounds = const_cast<char*>(boundsString_[0].c_str());
+
+  std::stringstream ssBounds(bounds);
+  std::vector<float> boundsVect;
+
+  float b;
+ 
+  while (ssBounds >> b)
+  {
+    boundsVect.push_back(b);
+
+    if (ssBounds.peek() == ',')
+      ssBounds.ignore();
+  }
+
+  if (vect.at(3) > boundsVect.at(0) || vect.at(3) < boundsVect.at(1))
+    return 0;
+ 
+  if (vect.at(4) > boundsVect.at(2) || vect.at(4) < boundsVect.at(3))
+    return 0;
+
+  if (vect.at(5) > boundsVect.at(4) || vect.at(5) < boundsVect.at(5))
+    return 0;
+ 
+  if (vect.at(6) > boundsVect.at(6) || vect.at(6) < boundsVect.at(7))
+    return 0;
+
+  if (useNewFeatures == 1){
+    if (vect.at(8) > boundsVect.at(8) || vect.at(8) < boundsVect.at(9))
+      return 0;
+
+    if (vect.at(9) > boundsVect.at(10) || vect.at(9) < boundsVect.at(11))
+      return 0;
+  }
+
+  return 1;
+}
+
+int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  float best_prob = probabilities[2];
+  float diff;
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    diff = probabilities[this_combo] - low_crash;
+     // If this parameter combination has a crash
+     // probability .2 lower than the current "best", we 
+     // will use this drop tolerance
+    if(diff < -.2){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    } 
+    // If this parameter combination has the same
+    // or slightly lower crash probability than the
+    // current best, we compare their "GOOD" probabilities 
+    else if(diff <= 0 && probabilities[this_combo + 2] > best_prob){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    }
+  }
+  return chosen_option_id;
+}
+
+int AvatarInterface::highProb(float * probabilities, std::vector<int> acceptableCombos) const{
+  float high_prob = probabilities[2];
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    // If this parameter combination has a higher "GOOD" 
+    // probability, use this combination
+    if(probabilities[this_combo + 2] > high_prob){
+      high_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x]; 
+    }
+  }
+  return chosen_option_id;
+}
+
+int AvatarInterface::lowCrash(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    // If this parameter combination has a lower "CRASH"
+    // probability, use this combination
+    if(probabilities[this_combo] < low_crash){
+      low_crash = probabilities[this_combo];
+      chosen_option_id = acceptableCombos[x]; 
+    }
+  }
+  return chosen_option_id;
+}
+
+int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptableCombos) const{
+  float low_crash = probabilities[0];
+  float best_prob = probabilities[2];
+  float diff;
+  int this_combo;
+  int chosen_option_id = acceptableCombos[0];
+  for(int x=0; x<acceptableCombos.size(); x++){
+    this_combo = acceptableCombos[x] * 3;
+    diff = probabilities[this_combo] - low_crash;
+     // If this parameter combination has a crash
+     // probability .2 lower than the current "best", we 
+     // will use this drop tolerance
+    if(diff < -.2){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    } 
+    // If this parameter combination is within .1
+    // or has a slightly lower crash probability than the
+    // current best, we compare their "GOOD" probabilities 
+    else if(diff <= .1 && probabilities[this_combo + 2] > best_prob){
+      low_crash =  probabilities[this_combo];
+      best_prob = probabilities[this_combo + 2];
+      chosen_option_id = acceptableCombos[x];
+    }
+  }
+  return chosen_option_id;
+}
 
 
-
-
-
-} // namespace MueLu
+}// namespace MueLu
 
 #endif// HAVE_MUELU_AVATAR
 

@@ -351,7 +351,8 @@ namespace {
 
     // test ABSMAX CombineMode
     // test with local and remote entries, as copyAndPermute() and unpackAndCombine() both need to be tested
-    typedef Tpetra::Vector<double,LO,GO,Node> Vec;
+    typedef Tpetra::Vector<>::scalar_type SC;
+    typedef Tpetra::Vector<SC,LO,GO,Node> Vec;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
@@ -370,7 +371,7 @@ namespace {
     // - the second will be "combined", i.e., abs(max(1.0,3.0)) = 3.0 from the dest
     auto importer = Tpetra::createImport<LO, GO, Node> (smap, dmap);
     dstVec->doImport (*srcVec,*importer,Tpetra::ABSMAX);
-    TEST_COMPARE_ARRAYS( tuple<double>(-1.0,3.0), dstVec->get1dView() )
+    TEST_COMPARE_ARRAYS( tuple<SC>(-1.0,3.0), dstVec->get1dView() )
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );

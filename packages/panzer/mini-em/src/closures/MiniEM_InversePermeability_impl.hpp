@@ -15,7 +15,8 @@ template <typename EvalT,typename Traits>
 InversePermeability<EvalT,Traits>::InversePermeability(const std::string & name,
                                                        const panzer::IntegrationRule & ir,
                                                        const panzer::FieldLayoutLibrary & fl,
-                                                       const double & mu_)
+                                                       const double & mu_,
+                                                       const std::string& DoF_)
 {
   using Teuchos::RCP;
 
@@ -27,7 +28,7 @@ InversePermeability<EvalT,Traits>::InversePermeability(const std::string & name,
   
   mu = mu_;
 
-  Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis("B_face");
+  Teuchos::RCP<const panzer::PureBasis> basis = fl.lookupBasis(DoF_);
   const std::string coordName = panzer::GatherBasisCoordinates<EvalT,Traits>::fieldName(basis->name());
   coords = PHX::MDField<const ScalarT,Cell,Point,Dim>(coordName, basis->coordinates); 
   this->addDependentField(coords);

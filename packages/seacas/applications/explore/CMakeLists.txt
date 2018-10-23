@@ -24,8 +24,9 @@ TRIBITS_ADD_EXECUTABLE(
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
 InstallSymLink(explore ${CMAKE_INSTALL_PREFIX}/bin/grope)
-install_executable(explore)
 endif()
+
+install_executable(explore)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

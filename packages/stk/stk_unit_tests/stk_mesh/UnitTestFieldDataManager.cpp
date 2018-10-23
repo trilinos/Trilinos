@@ -374,11 +374,11 @@ void initialize2Parts2Fields(stk::mesh::MetaData &meshMetaData)
 
     stk::mesh::Field<double> &field1 = meshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
     double initial_value1 = 13.13;
-    stk::mesh::put_field( field1, part1, &initial_value1);
+    stk::mesh::put_field_on_mesh( field1, part1, &initial_value1);
 
     stk::mesh::Field<double> &field2 = meshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field2");
     double initial_value2 = -3.2323;
-    stk::mesh::put_field( field2, part2, &initial_value2);
+    stk::mesh::put_field_on_mesh( field2, part2, &initial_value2);
 
     meshMetaData.commit();
 }

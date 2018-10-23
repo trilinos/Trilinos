@@ -68,6 +68,7 @@ PARALLEL_IO_MODE | mpiio, pnetcdf |
  Property              | Value  | Description
 -----------------------|--------|-----------------------------------------------------------
   FLUSH_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
+  FLUSH_INTERVAL       | int   | For non-heartbeat, the number of output steps between flushing data to disk; if 0, then no flush
   TIME_STAMP_FORMAT    | [%H:%M:%S] | Format used to format time stamp.  See strftime man page
   SHOW_TIME_STAMP      | on/off | Should the output lines be preceded by the timestamp
   PRECISION            | 0..16 [5] | Precision used for floating point output.

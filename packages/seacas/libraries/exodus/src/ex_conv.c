@@ -146,7 +146,6 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
    * \param int64_status  the flags specifying how integer values should be
    *                      stored on the database and how they should be
    *                      passes through the api functions.
-   *                      See #FileVars for more information.
    *
    * \param is_parallel   1 if parallel file; 0 if serial
    *

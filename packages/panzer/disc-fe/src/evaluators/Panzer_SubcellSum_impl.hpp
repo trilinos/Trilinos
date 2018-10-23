@@ -85,18 +85,6 @@ SubcellSum(
 template<typename EvalT, typename Traits>
 void
 SubcellSum<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(inField,fm);
-  this->utils.setFieldData(outField,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-SubcellSum<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 

@@ -214,7 +214,7 @@ C ... Find the step
           DO IELB = 1, NELBLK
             IDEB = iarray(ia(kidelb), ielb)
             NELEM = iarray(ia(knelb), ielb)
-            IF (i2array(ia(kievok), nelblk, ielb, idxflt) .eq. 1) THEN
+            IF (i2array(ia(kievok), nelblk, ielb, idxflt) .ne. 0) THEN
               call exgev(ndbin, istep, idxflt, IDEB, NELEM,
      *          a(kelvar+iel), ierr)
             ELSE

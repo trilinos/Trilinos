@@ -83,13 +83,13 @@ int main (int argc, char *argv[])
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    using Scalar = double;
     using LO = Tpetra::Map<>::local_ordinal_type;
     using GO = Tpetra::Map<>::global_ordinal_type;
     using Node = Tpetra::Map<>::node_type;
+    using MAT = Tpetra::CrsMatrix<>;
+    using Scalar = MAT::scalar_type;
     using ST = Teuchos::ScalarTraits<Scalar>;
-    using MAT = Tpetra::CrsMatrix<Scalar>;
-    //using MV = Tpetra::MultiVector<Scalar>;
+    //using MV = Tpetra::MultiVector<>;
     using IMP = Tpetra::Import<>;
 
     const GO ONE = Teuchos::OrdinalTraits<GO>::one();

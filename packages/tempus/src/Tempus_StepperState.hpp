@@ -32,8 +32,6 @@ template<class Scalar>
  *     - Metadata and SolutionHistory for a BDF method
  *   - The base class currently has the Stepper name so the Stepper can
  *     check if the StepperState is usable.
- *   - The StepperState also keeps track of the the Stepper status, i.e.,
- *     PASSED or FAILED.
  */
 class StepperState :
   public Teuchos::Describable,
@@ -42,15 +40,13 @@ class StepperState :
 {
 public:
   /// Constructor
-  StepperState(std::string name = "Default", Status stepperStatus = WORKING)
-    : stepperName_(name), stepperStatus_(stepperStatus){}
+  StepperState(std::string name = "Default") : stepperName_(name){}
 
   /// Clone copy constructor
   virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {
      Teuchos::RCP<StepperState<Scalar> > ss_out =
-       Teuchos::rcp(new StepperState<Scalar> (this->stepperName_,
-                                              this->stepperStatus_));
+       Teuchos::rcp(new StepperState<Scalar> (this->stepperName_));
      return ss_out;
   }
 
@@ -58,7 +54,6 @@ public:
   virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >& ss)
   {
      stepperName_   = ss->stepperName_;
-     stepperStatus_ = ss->stepperStatus_;
   }
 
   /// \name Overridden from Teuchos::Describable
@@ -69,14 +64,11 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const
     {
       out << description() << "::describe" << std::endl
-          << "  stepperName   = " << stepperName_ << std::endl
-          << "  stepperStatus = " << toString(stepperStatus_) << std::endl;
+          << "  stepperName   = " << stepperName_ << std::endl;
     }
   //@}
 
   std::string stepperName_;    ///< Name of the creating Stepper.
-
-  Status      stepperStatus_;  ///< The stepperStatus is used to indicate whether the Stepper has PASSED or FAILED.  WORKING is used for prior and during the Stepper.
 
 };
 } // namespace Tempus

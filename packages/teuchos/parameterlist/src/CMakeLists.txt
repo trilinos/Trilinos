@@ -23,3 +23,7 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEFINES -DTEUCHOSPARAMETERLIST_LIB_EXPORTS_MODE
   )
+
+if (WIN32)
+  target_link_libraries (teuchosparameterlist ws2_32)
+endif ()

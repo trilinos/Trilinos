@@ -113,6 +113,9 @@ namespace MueLu {
   void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     RCP<Matrix>    A      = Get<RCP<Matrix> >(level, "A");
     RCP<const Map> rowMap = A->getRowMap();
     LO blkSize  = A->GetFixedBlockSize();

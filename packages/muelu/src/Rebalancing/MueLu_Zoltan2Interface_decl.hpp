@@ -166,6 +166,9 @@ namespace MueLu {
 #undef MUELU_ZOLTAN2INTERFACE_SHORT
 #include "MueLu_UseShortNames.hpp"
   public:
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+
     Zoltan2Interface() {
       level_           = rcp(new Level());
       zoltanInterface_ = rcp(new ZoltanInterface());

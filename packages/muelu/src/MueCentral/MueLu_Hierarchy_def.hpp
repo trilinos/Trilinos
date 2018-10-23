@@ -1224,10 +1224,12 @@ namespace MueLu {
       }
 
       if (!aborted) {
+        std::string label = Levels_[0]->getObjectLabel();
         std::ostringstream oss;
-        oss << "\n--------------------------------------------------------------------------------\n" <<
-            "---                            Multigrid Summary                             ---\n"
-            "--------------------------------------------------------------------------------" << std::endl;
+        oss << std::setfill(' ');
+        oss << "\n--------------------------------------------------------------------------------\n";
+        oss << "---                            Multigrid Summary "  << std::setw(28) << std::left << label << "---\n";
+        oss << "--------------------------------------------------------------------------------" << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
