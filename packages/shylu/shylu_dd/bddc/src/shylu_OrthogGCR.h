@@ -49,8 +49,8 @@
 #include <complex>
 #include <vector>
 
-#include "shylu_PreconditionerBDDC.h"
-#include "shylu_OrthogGCR.h"
+#include "shylu_PreconditionerBase.h"
+#include "shylu_errorBDDC.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -67,7 +67,7 @@ namespace bddc {
   }
 
   OrthogGCR
-    (RCP< PreconditionerBDDC<SX,SM,LO,GO> > Preconditioner,
+    (RCP< PreconditionerBase<SX,SM,LO,GO> > Preconditioner,
      RCP<Teuchos::ParameterList> Parameters,
      LO vectorLength) :
   m_Preconditioner(Preconditioner),
@@ -207,7 +207,8 @@ namespace bddc {
   void UpdateSearchSpace(int avgNumIter)
   {
     if (m_maxNumVectors == 0) return;
-    assert (m_numVectors == m_maxNumVectors);
+    BDDC_TEST_FOR_EXCEPTION(m_numVectors != m_maxNumVectors, 
+			    std::runtime_error, "invalid m_numVectors");
     int numKeep = std::max(m_maxNumVectors/4,
 			   m_maxNumVectors - 2*avgNumIter);
     m_numVectors = numKeep;
@@ -231,7 +232,7 @@ namespace bddc {
   }
 
  private: // data
-  RCP< PreconditionerBDDC<SX,SM,LO,GO> > m_Preconditioner;
+  RCP< PreconditionerBase<SX,SM,LO,GO> > m_Preconditioner;
   RCP<Teuchos::ParameterList> m_Parameters;
   LO m_vectorLength;
   int m_numOrthogSteps, m_maxNumVectors, m_numVectors, m_numVectorsStart;

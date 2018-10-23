@@ -50,26 +50,26 @@ using Teuchos::RCP;
 
 namespace {
 
-void readInputFile(int & matrixSource,
-		   int & numElemDir1, 
-		   int & numElemDir2, 
-		   int & numElemDir3, 
-		   int & problemTypeInt,
-		   int & matrixType, 
-		   double & diagScaleFactor,
-		   int & numberOfSolves,
-		   int & precisionOption,
-		   int & directSolver);
+int setParameters(RCP<Teuchos::ParameterList> & params);
 
-int setParameters(int numElemDir1,
-		  int numElemDir2,
-		  int numElemDir3,
-		  int problemTypeInt,
-		  int matrixType,
-		  int precisionOption,
-		  int directSolver,
-		  int numProc,
-		  RCP<Teuchos::ParameterList> & Parameters);
+void printMatrix(const int numRows, 
+		 const int* rowBegin, 
+		 const int* columns,
+		 const double* values, 
+		 const char* fileName)
+{
+  std::ofstream fout;
+  fout.open(fileName);
+  for (int i=0; i<numRows; i++) {
+    for (int j=rowBegin[i]; j<rowBegin[i+1]; j++) {
+      const int col = columns[j];
+      fout << i+1 << " " << col+1 << " ";
+      fout << std::setw(23) << std::setprecision(16);
+      fout << values[j] << '\n';
+    }
+  }
+  fout.close();
+}
   
 double clockIt()
 {
@@ -99,71 +99,56 @@ float calculateError(int numRows,
 void writeTime(const char* title,
 	       double time);
 
-void readMatrix(std::vector<int> & rowBegin, 
-		std::vector<int> & columns, 
-		std::vector<double> & values);
-
 TEST(SparseSolverBDDC, Test1)
 {
-  int numProc;
+  const std::string fileName = "sparseSolverTest.xml";
   MPI_Comm Comm = MPI_COMM_WORLD;
-  MPI_Comm_size(Comm, &numProc);
-  double diagScaleFactor;
-  int numElemDir1, numElemDir2, numElemDir3, problemTypeInt, matrixType,
-    numberOfSolves, precisionOption, directSolver, matrixSource;
-  readInputFile(matrixSource, numElemDir1, numElemDir2, numElemDir3, 
-		problemTypeInt,	matrixType, diagScaleFactor, numberOfSolves, 
-		precisionOption, directSolver);
-  RCP<Teuchos::ParameterList> Parameters;
-  int returnVal = 
-    setParameters(numElemDir1, numElemDir2, numElemDir3, problemTypeInt,
-		  matrixType, precisionOption, directSolver, numProc,
-		  Parameters);
+  RCP<const Teuchos::Comm<int> > TComm = 
+    Teuchos::rcp( new Teuchos::MpiComm<int>(Comm) );
+  Teuchos::ParameterList parameters;
+  Teuchos::updateParametersFromXmlFileAndBroadcast
+    (fileName, Teuchos::Ptr<Teuchos::ParameterList>(&parameters), *TComm);
+  RCP<Teuchos::ParameterList> params = 
+    Teuchos::rcp( new Teuchos::ParameterList(parameters) );
+  int myPID;
+  MPI_Comm_rank(Comm, &myPID);
+  if (myPID > 0) return;
+  int returnVal = setParameters(params);
   if (returnVal) {
     std::cout << "Error in setParameters\n";
     return;
   }
+  MPI_Comm Comm2 = MPI_COMM_SELF;
   RCP< bddc::ProblemMaker<int,int,double,double> > Problem = 
-    rcp( new bddc::ProblemMaker<int,int,double,double>(Parameters, Comm) );
+    rcp( new bddc::ProblemMaker<int,int,double,double>(params, Comm2) );
   std::vector< std::vector<int> > subNodes, subNodeBegin, subRowBegin, 
-    subLocalDofs, subColumns, subElems;
+    subLocalDofs, subColumns;
   std::vector< std::vector<double> > subValues;
-  int numNode(0), numRows(0), *rowBegin(0), *columns(0);
-  double *values(0);
+  int *rowBegin(nullptr), *columns(nullptr);
+  double *values(nullptr);
   std::vector<int> rowBeginFile, columnsFile;
   std::vector<double> valuesFile;
-  if (matrixSource == 0) {
-    Problem->getSubDomainElements(1, 1, 1, subElems);
-    Problem->getSubDomainNodeData(subElems, subNodes, subNodeBegin,
-				  subLocalDofs);
-    Problem->getSubdomainMatrices(subElems, subNodes, subNodeBegin, 
-				  subRowBegin, subColumns, subValues);
-    Problem->addDiagonalStiffness(subRowBegin, subColumns, subValues,
-				  diagScaleFactor);
-    if (matrixType == 1) {
-      Problem->addAsymmetry(subRowBegin, subColumns, subValues);
-    }
-    numNode = Problem->getNumNode();
-    numRows = numNode*Parameters->get("numDofPerNode", 0);
-    rowBegin = subRowBegin[0].data();
-    columns = subColumns[0].data();
-    values = subValues[0].data();
+  Problem->getSubDomainNodeData(subNodes, subNodeBegin, subLocalDofs);
+  Problem->getSubdomainMatrices(subNodes, subNodeBegin, 
+				subRowBegin, subColumns, subValues);
+  if (params->get("Matrix Type", "Symmetric") == "NonSymmetric") {
+    Problem->addAsymmetry(subRowBegin, subColumns, subValues);
   }
-  else {
-    readMatrix(rowBeginFile, columnsFile, valuesFile);
-    numRows = rowBeginFile.size() - 1;
-    rowBegin = rowBeginFile.data();
-    columns = columnsFile.data();
-    values = valuesFile.data();
+  const int numRows = Problem->getNumDof();
+  rowBegin = subRowBegin[0].data();
+  columns = subColumns[0].data();
+  values = subValues[0].data();
+  if (params->get("Print Matrix", false)) {
+    printMatrix(numRows, rowBegin, columns, values, "A.dat");
   }
   int numRhs(1);
   std::vector<double> rhs(numRows*numRhs), sol(numRows*numRhs);
   for (int i=0; i<numRows*numRhs; i++) {
     rhs[i] = 0.7*rand()/RAND_MAX;
-    rhs[i] = 1;
+    //    rhs[i] = 1;
   }
   std::vector<float> rhsF, solF, valuesF;
-  if (precisionOption == 1) {
+  if (params->get("Precision", "double") == "single") {
     int numTerms = rowBegin[numRows];
     valuesF.resize(numTerms);
     for (int i=0; i<numTerms; i++) valuesF[i] = values[i];
@@ -175,10 +160,13 @@ TEST(SparseSolverBDDC, Test1)
   bddc::SolverBase<double>* Solver(0);
   bddc::SolverFactory<float> FactoryF;
   bddc::SolverBase<float>* SolverF(0);
-  if (precisionOption == 0) {
+  const int numberOfSolves = params->get("Number of Solves", 100);
+  std::cout << "Solver = " << params->get("Solver", "SuperLU") << std::endl;
+  std::cout << "number of unknowns = " << numRows << std::endl;
+  if (params->get("Precision", "double") == "double") {
     double startTime = clockIt();
     Solver = 
-      Factory.Generate(numRows, rowBegin, columns, values, *Parameters);
+      Factory.Generate(numRows, rowBegin, columns, values, *params);
     Solver->Initialize();
     double dt = clockIt() - startTime;
     writeTime("Solver(double) initialization time = ", dt);
@@ -187,7 +175,7 @@ TEST(SparseSolverBDDC, Test1)
       Solver->Solve(numRhs, rhs.data(), sol.data());
     }
     dt = clockIt() - startTime;
-    writeTime("SuperLU(double) solve time = ", dt);
+    writeTime("Solver(double) solve time = ", dt);
     double solError = calculateError(numRows, rowBegin, columns, values, 
 				     rhs, sol, numRhs);
     std::cout << "solError = " << solError << std::endl;
@@ -198,7 +186,7 @@ TEST(SparseSolverBDDC, Test1)
     double startTime = clockIt();
     SolverF = 
       FactoryF.Generate(numRows, rowBegin, columns, valuesF.data(), 
-			*Parameters);
+			*params);
     SolverF->Initialize();
     double dt = clockIt() - startTime;
     writeTime("Solver(single) initialization time = ", dt);
@@ -211,7 +199,7 @@ TEST(SparseSolverBDDC, Test1)
     float solError = calculateError(numRows, rowBegin, columns, 
 				    valuesF.data(), rhsF, solF, numRhs);
     std::cout << "solError = " << solError << std::endl;
-    EXPECT_LT(solError, 1e-5);
+    EXPECT_LT(solError, 1e-4);
     delete SolverF;
   }
 }
@@ -222,46 +210,22 @@ void writeTime(const char* title,
   std::cout << title << time << std::endl;
 }
 
-void readInputFile(int & matrixSource,
-		   int & numElemDir1, 
-		   int & numElemDir2, 
-		   int & numElemDir3, 
-		   int & problemTypeInt,
-		   int & matrixType, 
-		   double & diagScaleFactor,
-		   int & numberOfSolves,
-		   int & precisionOption,
-		   int & directSolver)
+int setParameters(RCP<Teuchos::ParameterList> & params)
 {
-  char buff[101];
-  std::ifstream fin;
-  fin.open("SparseSolverTest.inp");
-  fin >> matrixSource; fin.getline(buff,100);
-  fin >> numElemDir1; fin.getline(buff,100);
-  fin >> numElemDir2; fin.getline(buff,100);
-  fin >> numElemDir3; fin.getline(buff,100);
-  fin >> problemTypeInt; fin.getline(buff,100);
-  fin >> matrixType; fin.getline(buff,100);
-  fin >> diagScaleFactor; fin.getline(buff,100);
-  fin >> numberOfSolves; fin.getline(buff,100);
-  fin >> precisionOption; fin.getline(buff,100);
-  fin >> directSolver; fin.getline(buff,100);
-  fin.close();
-}
-
-int setParameters(int numElemDir1,
-		  int numElemDir2,
-		  int numElemDir3,
-		  int problemTypeInt,
-		  int matrixType,
-		  int precisionOption,
-		  int directSolver,
-		  int numProc,
-		  RCP<Teuchos::ParameterList> & Parameters)
-{
-  int spatialDim(3);
+  int numElemDir1 = params->get("numElemDir1", 7);
+  int numElemDir2 = params->get("numElemDir2", 7);
+  int numElemDir3 = params->get("numElemDir3", 7);
+  const std::string precisionOption = params->get("Precision Option", "double");
+  const std::string problemTypeString = 
+    params->get("Problem Type String", "Poisson-3D");
   enum bddc::ProblemType problemType = bddc::SCALARPDE;
-  if (problemTypeInt == 2) problemType = bddc::ELASTICITY;
+  if ((problemTypeString == "Elasticity-2D") ||
+      (problemTypeString == "Elasticity-3D")) problemType = bddc::ELASTICITY;
+  int spatialDim = 3;
+  if ((problemTypeString == "Poisson-2D") || 
+      (problemTypeString == "Elasticity-2D")) spatialDim = 2;  
+  params->set("Problem Type", problemType);
+  params->set("Spatial Dimension", spatialDim);
   enum bddc::AnalysisType analysisType = bddc::STANDARD;
   int numDofPerNode(0), loadDirection(0);
   numDofPerNode = 1;
@@ -269,71 +233,25 @@ int setParameters(int numElemDir1,
     numDofPerNode = spatialDim;
   }
   //  
-  Parameters = Teuchos::rcp( new Teuchos::ParameterList() );
-  Parameters->set("numDofPerNode", numDofPerNode);
-  Parameters->set("Spatial Dimension", spatialDim);
-  Parameters->set("Problem Type", problemType);
-  Parameters->set("Problem Type BDDC", problemType);
-  Parameters->set("Analysis Type", analysisType);
-  if (matrixType == 0) {
-    Parameters->set("Matrix Type", "Symmetric");
-  }
-  else {
-    Parameters->set("Matrix Type", "NonSymmetric");
-  }
-  double lengthDir1(numProc), lengthDir2(1), lengthDir3(1);
-  int numSubDir1(numProc), numSubDir2(1), numSubDir3(1);
-  Parameters->set("Length Direction 1", lengthDir1);
-  Parameters->set("Length Direction 2", lengthDir2);
-  Parameters->set("Length Direction 3", lengthDir3);
-  Parameters->set("Number of Subdomains Direction 1", numSubDir1);
-  Parameters->set("Number of Subdomains Direction 2", numSubDir2);
-  Parameters->set("Number of Subdomains Direction 3", numSubDir3);
-  Parameters->set("Number of Elements Per Subdomain Direction 1",
-		  numElemDir1);
-  Parameters->set("Number of Elements Per Subdomain Direction 2",
-		  numElemDir2);
-  Parameters->set("Number of Elements Per Subdomain Direction 3",
-		  numElemDir3);
-  Parameters->set("Apply Left Side Essential BCs", false);
-  Parameters->set("Apply Right Side Essential BCs", false);
-  Parameters->set("Load Direction", loadDirection);
-  Parameters->set("Artificial Foundation Stiffness", 0.0);
-  Parameters->set("omega", 0.0);
-  Parameters->set("Generate Constraint Equations", false);
-  if (precisionOption == 1) {
-    Parameters->set("Precision", "single");
-  }
-  else {
-    Parameters->set("Precision", "double");
-  }
-  switch (directSolver) {
-  case 0: // SuperLU
-#if defined(HAVE_SHYLU_DDBDDC_SUPERLU)
-    Parameters->set("Solver", "SuperLU");
-#else
-    std::cout << "SuperLU solver not available in this build\n";
-#endif
-    break;
-  case 1: // MKL Pardiso solver
-#if defined(HAVE_SHYLU_DDBDDC_PARDISO_MKL)
-    Parameters->set("Solver", "Pardiso");
-#else
-    std::cout << "Pardiso solver not available in this build\n";
-#endif
-    break;
-  case 2: // Tacho solver
-#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
-    Parameters->set("Solver", "Tacho");
-#else
-    std::cout << "Tacho solver not available in this build\n";
-#endif
-    break;
-  default:
-    std::cout << "Error: unavailable direct solver option\n";
-    return 1;
-    break;
-  }
+  params->set("numDofPerNode", numDofPerNode);
+  params->set("Analysis Type", analysisType);
+  double lengthDir1(1), lengthDir2(1), lengthDir3(1);
+  int numSubDir1(1), numSubDir2(1), numSubDir3(1);
+  params->set("Length Direction 1", lengthDir1);
+  params->set("Length Direction 2", lengthDir2);
+  params->set("Length Direction 3", lengthDir3);
+  params->set("Number of Subdomains Direction 1", numSubDir1);
+  params->set("Number of Subdomains Direction 2", numSubDir2);
+  params->set("Number of Subdomains Direction 3", numSubDir3);
+  params->set("Number of Elements Per Subregion Direction 1", numElemDir1);
+  params->set("Number of Elements Per Subregion Direction 2", numElemDir2);
+  params->set("Number of Elements Per Subregion Direction 3", numElemDir3);
+  params->set("Apply Left Side Essential BCs", true);
+  params->set("Apply Right Side Essential BCs", false);
+  params->set("Load Direction", loadDirection);
+  params->set("Artificial Foundation Stiffness", 0.0);
+  params->set("omega", 0.0);
+  params->set("Generate Constraint Equations", false);
   return 0;
 }
 
@@ -383,52 +301,6 @@ float calculateError(int numRows,
     }
   }
   return maxError;
-}
-
-void readMatrix(std::vector<int> & rowBegin, 
-		std::vector<int> & columns, 
-		std::vector<double> & values)
-{  
-  std::ifstream fin;
-  std::string matrixFileName = "matrix.dat";
-  fin.open(matrixFileName);
-  int row, col, rowMax(0), colMax(0), numTerms(0);
-  double value;
-  fin >> row >> col >> value;
-  while (!fin.eof()) {
-    if (row > rowMax) rowMax = row;
-    if (col > colMax) colMax = col;
-    fin >> row >> col >> value;
-    numTerms++;
-  }
-  assert (rowMax == colMax);
-  int numDof = rowMax;
-  fin.close();
-  fin.open(matrixFileName);
-  std::vector<int> count(numDof, 0);
-  for (int i=0; i<numTerms; i++) {
-    fin >> row >> col >> value;
-    count[row-1]++;
-  }
-  rowBegin.resize(numDof+1, 0);
-  for (int i=0; i<numDof; i++) {
-    rowBegin[i+1] = rowBegin[i] + count[i];
-  }
-  fin.close();
-  assert (numTerms == rowBegin[numDof]);
-  columns.resize(numTerms);
-  values.resize(numTerms);
-  count.assign(numDof, 0);
-  fin.open(matrixFileName);
-  for (int i=0; i<numTerms; i++) {
-    fin >> row >> col >> value;
-    row--; col--;
-    int index = rowBegin[row] + count[row];
-    columns[index] = col;
-    values[index] = value;
-    count[row]++;
-  }
-  fin.close();  
 }
 
 } // end namespace

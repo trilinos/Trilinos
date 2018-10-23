@@ -49,8 +49,7 @@
 #include <string.h>
 #include <vector>
 
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "shylu_BandedSolver.h"
 #include "shylu_SolverBaseBDDC.h"
 
 namespace bddc {
@@ -61,36 +60,27 @@ template <class SX>
 public:
   ~SolverLAPACK()
   {
+    delete m_Solver;
   }
+
   SolverLAPACK(int numRows,
 	       int* rowBegin,
 	       int* columns,
 	       SX* values,
 	       Teuchos::ParameterList & Parameters) :
   SolverBase<SX>(numRows, rowBegin, columns, values, Parameters)
-    {
-    }
+  {
+  }
   
   int Initialize()
   {
+    // We use a banded solver from LAPACK
     int numRows = this->m_numRows;
     const int* rowBegin = this->m_rowBegin;
     const int* columns = this->m_columns;
     const SX* values = this->m_values;
-    int INFO;
-    m_factor.resize(numRows*numRows, 0); 
-    for (int i=0; i<numRows; i++) {
-      for (int j=rowBegin[i]; j<rowBegin[i+1]; j++) {
-	int col = columns[j];
-	m_factor[numRows*col+i] = values[j]; // column-major storage
-      }
-    }
-    m_IPIV.resize(numRows);
-    Teuchos::LAPACK<int, SX> LAPACK;
-    LAPACK.GETRF(numRows, numRows, m_factor.data(), numRows, 
-		 m_IPIV.data(), &INFO);
-    assert (INFO == 0);
-    return INFO;
+    m_Solver = new BandedSolver<SX>(numRows, rowBegin, columns, values);
+    return m_Solver->initialize();
   }
 
   bool IsDirectSolver()
@@ -102,14 +92,8 @@ public:
 	       SX* Rhs, 
 	       SX* Sol)
   {
-    int numRows = this->m_numRows;
-    memcpy(Sol, Rhs, numRows*NRHS*sizeof(SX));
-    int INFO;
-    char NOTRANS = 'N';
-    Teuchos::LAPACK<int, SX> LAPACK;
-    LAPACK.GETRS(NOTRANS, numRows, NRHS, m_factor.data(), numRows, 
-		 m_IPIV.data(), Sol, numRows, &INFO);
-    assert (INFO == 0);
+    int INFO = m_Solver->solve(NRHS, Rhs, Sol);
+    BDDC_TEST_FOR_EXCEPTION(INFO != 0, std::runtime_error, "solve error");
   }
 
   bool MyExactSolver() {
@@ -117,8 +101,7 @@ public:
   }
 
 private:
-  std::vector<SX> m_factor;
-  std::vector<int> m_IPIV;
+  BandedSolver<SX>* m_Solver;
  };
   
 } // namespace bddc

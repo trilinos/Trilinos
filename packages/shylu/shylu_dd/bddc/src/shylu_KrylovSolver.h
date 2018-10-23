@@ -49,8 +49,9 @@
 #include <complex>
 #include <vector>
 
-#include "shylu_PreconditionerBDDC.h"
+#include "shylu_PreconditionerBase.h"
 #include "shylu_OrthogGCR.h"
+#include "shylu_UtilBDDC.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -69,42 +70,21 @@ public:
   }
 
   KrylovSolver
-    (RCP< PreconditionerBDDC<SX,SM,LO,GO> > Preconditioner,
+    (PreconditionerBase<SX,SM,LO,GO>* Preconditioner,
+     Teuchos::ParameterList Parameters)
+  {
+    m_Preconditioner = rcp(Preconditioner);
+    m_Parameters = rcp( new Teuchos::ParameterList(Parameters) );
+    initialize();
+  }
+
+  KrylovSolver
+    (RCP< PreconditionerBase<SX,SM,LO,GO> > Preconditioner,
      RCP<Teuchos::ParameterList> Parameters) :
   m_Preconditioner(Preconditioner),
-    m_Parameters(Parameters),
-    m_interfacePreconditioner
-    (Parameters->get("Interface Preconditioner", false)),
-    m_calculateRelativeResidualActual(false),
-    m_vectorLength(Preconditioner->NumMyRows()),
-    m_krylovLength(Preconditioner->NumMyRowsKrylov()),
-    m_maxIter
-    (Parameters->get("Maximum Iterations", 200)),
-    m_myPID(Preconditioner->MyPID()),
-    m_printFlag(m_Parameters->get("Print Summary", 0)),
-    m_numIterTotal(0),
-    m_numSolvesTotal(0),
-    m_convergenceCheckInterval
-    (Parameters->get("Convergence Check Interval", 10)),
-    m_krylovMethod(Parameters->get("Krylov Method", 0)),
-    m_estimateConditionNumber(Parameters->get("Estimate Condition Number", 0)),
-    m_solverTol(Parameters->get("Convergence Tolerance", 1e-6)),
-    m_totalTime(0),
-    m_relativeResidual(0),
-    m_relativeResidualActual(0),
-    m_originalNorm(0),
-    m_currentNorm(0),
-    m_Orthog(Teuchos::null)
+    m_Parameters(Parameters)
   {
-    if (m_printFlag > 1) m_calculateRelativeResidualActual = true;
-    if (m_myPID != 0) m_printFlag = 0;
-    reserveMemory();
-    if (m_krylovMethod == GCR) {
-      m_Orthog = Teuchos::rcp( new OrthogGCR<SX,SM,LO,GO>
-			       (m_Preconditioner,
-				m_Parameters,
-				m_krylovLength) );
-    }
+    initialize();
   }
    
   ~KrylovSolver()
@@ -121,6 +101,16 @@ public:
     return m_Orthog->getOrthogonalizationTime();
   }
 
+  int getNumIterations()
+  {
+    return m_numIter;
+  }
+
+  SM getCurrentResidual()
+  {
+    return m_currentNorm;
+  }
+
   int Solve(SX* rightHandSide,
 	    SX* solution)
   {
@@ -129,34 +119,41 @@ public:
 			      std::ios::out | std::ios::app);
     }
     double startTime = GetTime();
-    LO numIter(0);
+    m_numIter = 0;
     int solverStatus = SolveEquations(rightHandSide,
 				      solution,
-				      numIter);
+				      m_numIter);
     double endTime = GetTime();
     double deltaTime = endTime - startTime;
     m_totalTime += deltaTime;
-    m_numIterTotal += numIter;
+    m_numIterTotal += m_numIter;
     m_numSolvesTotal++;
     if (m_printFlag > 0) {
       m_outputFileKrylov << "elapsed time for this solve (seconds) = "
 			 << deltaTime << std::endl;
       m_outputFileKrylov.close();
-      OutputSolverData(deltaTime, solverStatus, numIter);
+      OutputSolverData(deltaTime, solverStatus, m_numIter);
     }
     return solverStatus;
   }
 
+  SX getMaxEigenvalue() const
+  {
+    return m_maxEigenvalue;
+  }
+
  private: // data
-  RCP< PreconditionerBDDC<SX,SM,LO,GO> > m_Preconditioner;
+  RCP< PreconditionerBase<SX,SM,LO,GO> > m_Preconditioner;
   RCP<Teuchos::ParameterList> m_Parameters;
-  bool m_interfacePreconditioner, m_calculateRelativeResidualActual;
-  LO m_vectorLength, m_krylovLength, m_maxIter, 
-    m_myPID, m_printFlag, m_numIterTotal, m_numSolvesTotal,
-    m_convergenceCheckInterval, m_krylovMethod, m_estimateConditionNumber;
-  double m_solverTol, m_totalTime, m_relativeResidual,
-    m_relativeResidualActual;
-  SM m_originalNorm, m_currentNorm;
+  bool m_interfacePreconditioner, m_calculateRelativeResidualActual,
+    m_avoidInitialStaticCondensation;
+  LO m_vectorLength, m_krylovLength, m_maxIter,
+    m_myPID, m_printFlag, m_numIter, m_numIterTotal, m_numSolvesTotal,
+    m_convergenceCheckInterval, m_krylovMethod;
+  bool m_estimateConditionNumber{false};
+  double m_solverTol{0}, m_totalTime{0}, m_relativeResidual{0};
+  double m_relativeResidualActual{0}, m_maxEigenvalue{0};
+  SM m_originalNorm{0}, m_currentNorm{0};
   std::vector<SX> 
     m_residualVector, m_deltaSol, m_Pr, m_APr, m_p, m_Ap, 
     m_rhoArray, m_betaArray, m_pApArray;
@@ -165,6 +162,45 @@ public:
   Teuchos::BLAS<int, SX> m_BLAS;
 
  private: // methods
+  void initialize()
+  {
+    initializeParameters();
+    if ((m_printFlag > 1) || 
+	m_Parameters->get("Calculate Actual Residual", false)) {
+      m_calculateRelativeResidualActual = true;
+    }
+    if (m_myPID != 0) m_printFlag = 0;
+    reserveMemory();
+    if (m_krylovMethod == GCR) {
+      m_Orthog = Teuchos::rcp( new OrthogGCR<SX,SM,LO,GO>
+			       (m_Preconditioner,
+				m_Parameters,
+				m_krylovLength) );
+    }
+  }
+
+  void initializeParameters()
+  {
+    m_interfacePreconditioner = 
+      m_Parameters->get("Interface Preconditioner", false);
+    m_calculateRelativeResidualActual = false;
+    m_avoidInitialStaticCondensation = 
+      m_Parameters->get("Avoid Initial Static Condensation", false);
+    m_vectorLength = m_Preconditioner->NumMyRows();
+    m_krylovLength = m_Preconditioner->NumMyRowsKrylov();
+    m_maxIter = m_Parameters->get("Maximum Iterations", 200);
+    m_myPID = m_Preconditioner->MyPID();
+    m_printFlag = m_Parameters->get("Print Summary", 0);
+    m_numIter = m_numIterTotal = m_numSolvesTotal = 0;
+    m_convergenceCheckInterval = 
+      m_Parameters->get("Convergence Check Interval", 50);
+    m_krylovMethod = m_Parameters->get("Krylov Method", 0);
+    m_estimateConditionNumber = 
+      m_Parameters->get("Estimate Condition Number", false);
+    m_solverTol = m_Parameters->get("Convergence Tolerance", 1e-6);
+    m_Orthog = Teuchos::null;
+  }
+
   void reserveMemory() 
   {
     m_residualVector.resize(m_vectorLength, 0);
@@ -212,9 +248,12 @@ public:
     //
     // initial corrections
     //
-    int valuesChanged  =
-      m_Preconditioner->InitialStaticCondensation(&m_residualVector[0],
-						  solution);
+    int valuesChanged(0);
+    if (m_avoidInitialStaticCondensation == false) {
+      valuesChanged  =
+	m_Preconditioner->InitialStaticCondensation(&m_residualVector[0],
+						    solution);
+    }
     if (m_krylovMethod == GCR) {
       valuesChanged += m_Orthog->ProjectionCorrection(&m_residualVector[0],
 						      &m_deltaSol[0],
@@ -234,7 +273,8 @@ public:
     }
     m_relativeResidual = m_currentNorm/m_originalNorm;
     if (m_relativeResidual <= m_solverTol) {   
-      m_Preconditioner->StaticExpansion(&m_deltaSol[0], solution); 
+      //      m_Preconditioner->StaticExpansion(&m_deltaSol[0], solution); 
+      expandSolution(&m_deltaSol[0], solution); 
       if (m_calculateRelativeResidualActual) {
 	m_currentNorm = CalculateResidualNorm(rightHandSide, solution);
 	m_relativeResidualActual = m_currentNorm/m_originalNorm;
@@ -255,7 +295,8 @@ public:
       }
       break;
     }
-    m_Preconditioner->StaticExpansion(&m_deltaSol[0], solution);
+    //    m_Preconditioner->StaticExpansion(&m_deltaSol[0], solution);
+    expandSolution(&m_deltaSol[0], solution);
     if (m_calculateRelativeResidualActual) {
       m_currentNorm = CalculateResidualNorm(rightHandSide, solution);
       m_relativeResidualActual = m_currentNorm/m_originalNorm;
@@ -267,6 +308,23 @@ public:
       }
     }
     return solverStatus;
+  }
+
+  void expandSolution(SX* deltaSolution, 
+		      SX* solution)
+  {
+    if (m_interfacePreconditioner) {
+      const bool interfaceValuesOnlyInput(true);
+      const bool useCurrentInteriorValues(false);
+      m_Preconditioner->StaticExpansion
+	(&m_deltaSol[0], interfaceValuesOnlyInput, useCurrentInteriorValues,
+	 solution);
+    }
+    else {
+      for (LO i=0; i<m_vectorLength; i++) {
+	solution[i] += deltaSolution[i];
+      }
+    }
   }
 
   SM CalculateResidualNorm(SX* rightHandSide,
@@ -285,12 +343,14 @@ public:
     SX* Pr  = m_Pr.data();
     SX* APr = m_APr.data();
     numIter = 0;
+    // matrix output for diagnostic purposes
+    outputMatrices(Pr, APr);
     //
     // GCR iterations
     //
     double previousRelativeResidual(0);
     for (int iter=0; iter<m_maxIter; iter++) {
-      m_Preconditioner->Apply(r, Pr, APr);
+      m_Preconditioner->Apply(r, Pr, APr, m_interfacePreconditioner);
       m_Orthog->StoreSearchDirection(Pr, APr);
       m_Orthog->ApplyProjection(r, m_deltaSol.data());
       m_currentNorm = m_Preconditioner->Norm2(r, m_krylovLength);
@@ -324,12 +384,14 @@ public:
     SX* Ap = m_Ap.data();
     SX rPrevDotzPrev(0), beta(0);
     numIter = 0;
+    // matrix output for diagnostic purposes
+    outputMatrices(Pr, APr);
     //
     // PCG iterations
     //
     double previousRelativeResidual(0);
     for (int iter=0; iter<m_maxIter; iter++) {
-      m_Preconditioner->Apply(r, Pr, APr);
+      m_Preconditioner->Apply(r, Pr, APr, m_interfacePreconditioner);
       SX rDotz = m_Preconditioner->DotProd(r, Pr, m_krylovLength);
       if (iter == 0) beta = 0;
       else beta = rDotz/rPrevDotzPrev;
@@ -351,8 +413,7 @@ public:
       }
       m_currentNorm = m_Preconditioner->Norm2(r, m_krylovLength);
       m_relativeResidual = m_currentNorm/m_originalNorm;
-      numIter++;
-      if (m_relativeResidual <= m_solverTol) break;
+      numIter = iter + 1;
       if (m_printFlag >= 3) {
 	m_outputFileKrylov << "PCG iteration " << (iter%m_maxIter)+1 
 			   << " of maxIter = " 
@@ -368,6 +429,36 @@ public:
     estimateConditionNumber(numIter);
     if (m_relativeResidual <= m_solverTol) return 0;
     else return -1;
+  }
+
+  void outputMatrices(SX* Pr,
+		      SX* APr)
+  {
+    const bool printOperator = 
+      m_Parameters->get("Print Operator Matrix", false);
+    const bool printPrecond = 
+      m_Parameters->get("Print Preconditioner Matrix", false);
+    const int numProc = m_Preconditioner->numProc();
+    if ((printOperator || printPrecond) && (numProc == 1)) {
+      const int N = m_krylovLength;
+      std::vector<SX> A(N*N), Minv(N*N), AMinv(N*N), rr(N);
+      for (int i=0; i<N; i++) {
+	rr.assign(N,0);
+	rr[i] = 1;
+	if (printOperator) {
+	  m_Preconditioner->ApplyFullOperator(rr.data(), Pr);
+	  memcpy(&A[i*N], Pr, N*sizeof(SX));
+	}
+	if (printPrecond) {
+	  m_Preconditioner->Apply(rr.data(), Pr, APr, m_interfacePreconditioner);
+	  memcpy(&Minv[i*N], Pr, N*sizeof(SX));
+	  memcpy(&AMinv[i*N], APr, N*sizeof(SX));
+	}
+      }
+      UtilBDDC<SX,SM>::printDenseMatrix(N, N, A.data(), "A.dat");
+      UtilBDDC<SX,SM>::printDenseMatrix(N, N, Minv.data(), "Minv.dat");
+      UtilBDDC<SX,SM>::printDenseMatrix(N, N, AMinv.data(), "AMinv.dat");
+    }
   }
 
   bool isConverging(double relativeResidual,
@@ -457,14 +548,14 @@ public:
     char COMPZ = 'N'; // calculate eigenvalues only
     SX *Z(0), *WORK(0);
     int LDZ(1);
-    Teuchos::LAPACK<int, double> LAPACK;
+    Teuchos::LAPACK<int, SX> LAPACK;
     LAPACK.STEQR(COMPZ, numRows, D, E, Z, LDZ, WORK, &INFO);
-    assert (INFO == 0);
+    BDDC_TEST_FOR_EXCEPTION(INFO != 0, std::runtime_error, "STEQR error");
   }
 
   void estimateConditionNumber(const int numIter)
   {
-    if ((m_estimateConditionNumber == 0) || (m_myPID != 0)) return;
+    if ((m_estimateConditionNumber == false) || (m_myPID != 0)) return;
     const int length = numIter + 1;
     std::vector<SX> DtriArray(length), EtriArray(length), econArray(length);
     if (numIter == 1) {

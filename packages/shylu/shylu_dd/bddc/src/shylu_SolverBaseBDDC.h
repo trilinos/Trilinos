@@ -49,7 +49,6 @@
 #include <iomanip>
 #include <ctime>
 #include <math.h>
-#include <assert.h>
 #include <sys/time.h>
 #include <mpi.h>
 
@@ -65,9 +64,9 @@ enum MatrixTypeSolver{
 template <class SX> class SolverBase 
 {
  protected: // variables
-  int m_numRows;
-  int *m_rowBegin, *m_columns;
-  SX *m_values;
+  int m_numRows{0};
+  int *m_rowBegin{nullptr}, *m_columns{nullptr};
+  SX *m_values{nullptr};
   Teuchos::ParameterList & m_Parameters;
   MPI_Comm* m_pComm;
   

@@ -68,36 +68,28 @@ namespace bddc {
 	     int* columns,
 	     SX* values,
 	     Teuchos::ParameterList & Parameters) :
-    SolverBase<SX>(numRows, rowBegin, columns, values, Parameters),
-      m_Solver() 
+    SolverBase<SX>(numRows, rowBegin, columns, values, Parameters)
   {
   }
 
   ~SolverKLU2() 
   {
-  
+    klu_free_symbolic<SX, int> (&m_Symbolic, &m_Common);
+    klu_free_numeric<SX, int> (&m_Numeric, &m_Common);
   }
 
   int Initialize()
   {
     if (this->m_numRows == 0) return 0;
-    int numRows = this m_numRows;
+    int numRows = this->m_numRows;
     int* rowBegin = this->m_rowBegin;
     int* columns = this->m_columns;
     SX* values = this->m_values;
-    klu_symbolic<SX, int> *Symbolic ;
-    klu_numeric<SX, int> *Numeric ;
-    klu_common<SX, int> Common ;
-    klu_defaults<SX, int> (&Common) ;
-    Symbolic = klu_analyze<SX, int> (numRows, rowBegin, columns, &Common) ;
-    Numeric = klu_factor<SX, int> (rowBegin, columns, values, Symbolic, 
-				   &Common) ;
-    /*
-    klu_solve<double, int> (Symbolic, Numeric, 5, 1, b, &Common) ;
-    klu_free_symbolic<double, int> (&Symbolic, &Common) ;
-    klu_free_numeric<double, int> (&Numeric, &Common) ;
-    for (i = 0 ; i < n ; i++) printf ("x [%d] = %g\n", i, b [i]) ;
-    */    
+    klu_defaults<SX, int> (&m_Common);
+    m_Symbolic = klu_analyze<SX, int> (numRows, rowBegin, columns, &m_Common);
+    m_Numeric = klu_factor<SX, int> (rowBegin, columns, values, m_Symbolic, 
+				     &m_Common);
+    return 0;
   }
 
   bool IsDirectSolver()
@@ -109,19 +101,10 @@ namespace bddc {
 	       SX* Rhs, 
 	       SX* Sol)
   {
-    if (this->m_numRows == 0) return;
-    
-    const int m = this->m_numRows;
-    /*
-    value_type_matrix x(Sol, m, NRHS);
-    value_type_matrix b(Rhs, m, NRHS);
-    
-    if (static_cast<int>(m_TempRhs.extent(0)) < m || 
-	static_cast<int>(m_TempRhs.extent(1)) < NRHS)
-      m_TempRhs = value_type_matrix("temp rhs", m, NRHS);      
-    
-    m_Solver.solve(x, b, m_TempRhs);
-    */
+    int numRows = this->m_numRows;
+    if (numRows == 0) return;
+    memcpy(Sol, Rhs, numRows*NRHS*sizeof(SX));
+    klu_solve<SX, int> (m_Symbolic, m_Numeric, numRows, NRHS, Sol, &m_Common);
   }
   
   bool MyExactSolver() 
@@ -130,6 +113,9 @@ namespace bddc {
   }
   
   private:
+  klu_symbolic<SX, int> *m_Symbolic;
+  klu_numeric<SX, int> *m_Numeric;
+  klu_common<SX, int> m_Common;
 
   };
   

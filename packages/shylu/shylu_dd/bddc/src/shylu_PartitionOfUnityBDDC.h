@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-//
+// 
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-//
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
 // ************************************************************************
 //@HEADER
 
@@ -49,15 +49,18 @@
 #include <vector>
 #include <mpi.h>
 #include "shylu_enumsBDDC.h"
+#include "shylu_UtilBDDC.h"
+#include "shylu_PComm.h"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterList.hpp"  
 
 #include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Distributor.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -66,9 +69,9 @@ using Teuchos::rcp;
 namespace bddc {
 
 template <class SX,
-          class SM,
-          class LO,
-          class GO> class PartitionOfUnity
+	  class SM,
+	  class LO,
+	  class GO> class PartitionOfUnity
 {
  public:
   //
@@ -85,37 +88,39 @@ template <class SX,
   }
 
   PartitionOfUnity(LO numNodes,
-                   const GO* nodeGlobalIDs,
-                   const std::vector< std::vector<LO> > & subNodeBegin,
-                   const std::vector< std::vector<LO> > & subNodes,
-                   LO** subRowBegin,
-                   LO** subColumns,
-                   SX** subValues,
-                   LO spatialDim,
-                   RCP<Teuchos::ParameterList> & Parameters,
-                   RCP<const Teuchos::Comm<int> > Comm) :
-  m_numNodes(numNodes),
+		   const GO* nodeGlobalIDs,
+		   const std::vector< std::vector<LO> > & subNodeBegin,
+		   const std::vector< std::vector<LO> > & subNodes,
+		   LO spatialDim,
+		   RCP<Teuchos::ParameterList> & Parameters,
+		   RCP<const Teuchos::Comm<int> > Comm,
+		   RCP<Tpetra::Distributor> & distributor,
+		   const std::vector<int> & nodeSend,
+		   const SM* xCoord=nullptr,
+		   const SM* yCoord=nullptr,
+		   const SM* zCoord=nullptr) :
+  m_numNodes(numNodes), 
     m_nodeGlobalIDs(nodeGlobalIDs),
     m_subNodeBegin(subNodeBegin),
     m_subNodes(subNodes),
-    m_subRowBegin(subRowBegin),
-    m_subColumns(subColumns),
-    m_subValues(subValues),
     m_spatialDim(spatialDim),
     m_constructAdjacencyGraph
     (Parameters->get("Construct Subdomain Adjacency Graph", false)),
-    m_addCorners(Parameters->get("Add Corners", false)),
     m_useCorners(Parameters->get("Use Corners", false)),
     m_useEdges(Parameters->get("Use Edges", false)),
     m_useFaces(Parameters->get("Use Faces", false)),
+    m_useVertexCoarseSpace(Parameters->get("Use Vertex Coarse Space", false)),
     m_Comm(Comm),
     m_IGO(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()),
     m_numNodesCoarse(0),
-    m_startingSub(0)
+    m_startingSub(0),
+    m_xCoord(xCoord),
+    m_yCoord(yCoord),
+    m_zCoord(zCoord)
   {
     determineActiveNodes();
     determineStartingSubdomain();
-    determineEquivalenceClasses();
+    determineEquivalenceClasses(distributor, nodeSend);
     //  PrintSubdomainPU();
   }
 
@@ -126,6 +131,11 @@ template <class SX,
   const std::vector< std::vector<LO> > & getSubdomainEquivClasses() const
   {
     return m_subdomainEquivClasses;
+  }
+
+  int getEquivFlag(LO equiv)
+  {
+    return m_equivFlag[equiv];
   }
 
   int getNumberOfMySubdomains() const
@@ -148,9 +158,44 @@ template <class SX,
     return m_equivCard;
   }
 
-  const std::vector<GO> & getGlobalIDs() const
+  const std::vector<GO> & getGlobalIDs() const 
   {
     return m_nodeGlobalIDsCoarse;
+  }
+
+  const std::vector< std::vector<LO> > & getCoarseNodeSubdomains() const 
+  {
+    return m_coarseNodeSubdomains;
+  }
+
+  const std::vector< std::vector<LO> > & getEquivCoarseNodes() const
+  { 
+    return m_equivCoarseNodes;
+  }
+
+  const std::vector<GO> & getEquivCoarseNodesGIDs() const
+  { 
+    return m_equivCoarseNodesGIDs;
+  }
+
+  const std::vector<LO> & getEquivCoarseNodesLIDs() const
+  { 
+    return m_equivCoarseNodesLIDs;
+  }
+
+  const std::vector<SM> & getEquivCoordX() const
+  {
+    return m_xCoordEquiv;
+  }
+
+  const std::vector<SM> & getEquivCoordY() const
+  {
+    return m_yCoordEquiv;
+  }
+
+  const std::vector<SM> & getEquivCoordZ() const
+  {
+    return m_zCoordEquiv;
   }
 
   RCP<const Teuchos::Comm<int> > getComm()
@@ -158,22 +203,36 @@ template <class SX,
     return m_Comm;
   }
 
-  enum EquivType getEquivType(LO equiv) const
+  enum EquivType getEquivType(const LO equiv) const
   {
-    LO numNodes = m_equivClasses[equiv].size();
-    LO equivCard = m_equivCard[equiv];
+    BDDC_TEST_FOR_EXCEPTION(m_numAncestors.size() != m_equivCard.size(), 
+			    std::runtime_error, "m_numAncestors size error");
+    BDDC_TEST_FOR_EXCEPTION(m_equivCard[equiv] <= 1, std::runtime_error, 
+			    "m_equivCard[equiv] must be greater than 1");
     enum EquivType equivType = FACE;
-    assert (equivCard > 1);
-    if (numNodes == 1) equivType = CORNER;
-    else if (m_spatialDim == 2) equivType = EDGE;
-    else if (m_spatialDim == 3) {
-      if (equivCard == 2) equivType = FACE;
+    if (m_equivCard[equiv] == 2) {
+      if (m_spatialDim == 2) equivType = EDGE;
+    }
+    else {
+      if (m_numAncestors[equiv] == 0) equivType = CORNER;
       else equivType = EDGE;
     }
+    /*
+    enum EquivType equivType = FACE;
+    if (m_equivClasses[equiv].size() == 1) {
+      equivType = CORNER;
+    }
+    else if (m_spatialDim == 2) {
+      equivType = EDGE;
+    }
+    else if (m_spatialDim == 3) {
+      if (m_equivCard[equiv] > 2) equivType = EDGE;
+    }
+    */
     return equivType;
   }
 
-  const std::vector< std::vector<LO> > & getEquivClassSubdomains() const
+  const std::vector< std::vector<LO> > & getEquivClassSubdomains() const 
   {
     return m_equivClassSubdomains;
   }
@@ -186,44 +245,23 @@ template <class SX,
   int getNumActiveAncestors(LO equiv) const
   {
     LO numEquiv = m_equivClasses.size();
-    assert ((equiv >= 0) && (equiv < numEquiv));
-    (void)(numEquiv);
+    const bool test = (equiv >= 0) && (equiv < numEquiv);
+    BDDC_TEST_FOR_EXCEPTION(test == false, std::runtime_error, 
+			    "equiv out of range in getNumActiveAncestors");
     return m_numActiveAncestors[equiv];
   }
 
-  RCP<const CrsGraph> getConnectivityGraph() {
-    return m_subdomainConnectivity;
+  void getConnectivityGraph(const GO* & subdomainGIDs,
+			    const GO* & subdomainConnGIDs,
+			    const GO* & subdomainConnProcs,
+			    const LO* & subdomainConnBegin) {
+    subdomainGIDs = m_subdomainGIDs.data();
+    subdomainConnGIDs = m_subdomainConnGIDs.data();
+    subdomainConnProcs = m_subdomainConnProcs.data();
+    subdomainConnBegin = m_subdomainConnBegin.data();
   }
 
  private:
-  void determineAdjacentNodes(LO & numAdjNodes,
-                              std::vector<LO> & adjNodes,
-                              std::vector<bool> & nodeFlag,
-                              std::vector< std::vector<LO> > & subDofNodes,
-                              LO sub,
-                              LO node) const
-  {
-    const LO* rowBegin = m_subRowBegin[sub];
-    const LO* columns = m_subColumns[sub];
-    const SX* values = m_subValues[sub];
-    const std::vector<LO> & nodeBegin = m_subNodeBegin[sub];
-    const std::vector<LO> & dofNodes = subDofNodes[sub];
-    const std::vector<LO> & subNodes = m_subNodes[sub];
-    for (LO i=nodeBegin[node]; i<nodeBegin[node+1]; i++) {
-      for (LO j=rowBegin[i]; j<rowBegin[i+1]; j++) {
-        LO col = columns[j];
-        LO node2 = subNodes[dofNodes[col]];
-        if (std::abs(values[j]) > 0) {
-          if (nodeFlag[node2] == false) {
-            nodeFlag[node2] = true;
-            adjNodes[numAdjNodes] = node2;
-            numAdjNodes++;
-          }
-        }
-      }
-    }
-  }
-
   void determineActiveNodes()
   {
     m_nodeIsActive.resize(m_numNodes, false);
@@ -233,8 +271,8 @@ template <class SX,
       const std::vector<LO> & subNodes = m_subNodes[i];
       LO numNodes = m_subNodes[i].size();
       for (LO j=0; j<numNodes; j++) {
-        LO node = subNodes[j];
-        if (nodeBegin[j+1] > nodeBegin[j]) m_nodeIsActive[node] = true;
+	LO node = subNodes[j];
+	if (nodeBegin[j+1] > nodeBegin[j]) m_nodeIsActive[node] = true;
       }
     }
   }
@@ -243,152 +281,245 @@ template <class SX,
   {
     int numSub = m_subNodes.size();
     int numSubScan;
-    Teuchos::scan<int, int> (*m_Comm, Teuchos::REDUCE_SUM, 1, &numSub,
-                             &numSubScan);
+    Teuchos::scan<int, int> (*m_Comm, Teuchos::REDUCE_SUM, 1, &numSub, 
+			     &numSubScan);
     m_startingSub = numSubScan - numSub;
   }
 
   void determineNodeSubdomains
-    (std::vector< std::vector<LO> > & nodeSubdomains) const
+    (RCP<Tpetra::Distributor> & distributor,
+     const std::vector<int> & nodeSend,
+     std::vector< std::vector<LO> > & nodeSubdomains,
+     std::map<GO,LO> & subProcsMap) const
   {
+    // nodeSubdomains[i] = list of subdomain globalIDs for all subdomains
+    //  (across all processors) containing node with globalID m_nodeGlobalIDs[i]
+    const LO myPID = m_Comm->getRank();
+    // mySubData[i] = list of subdomain globalIDs of all on-processor
+    //                subdomains for node with globalID m_nodeGlobalIDs[i]
+    std::vector< std::vector<GO> > mySubData(m_numNodes);
     LO numSub = m_subNodes.size();
-    std::vector<GO> subGIDs(numSub);
-    nodeSubdomains.resize(m_numNodes);
-    for (int i=0; i<numSub; i++) {
-      subGIDs[i] = m_startingSub + i;
-      for (size_t j=0; j<m_subNodes[i].size(); j++) {
-        nodeSubdomains[m_subNodes[i][j]].push_back(i);
-      }
-    }
-    Teuchos::ArrayRCP<size_t> count(m_numNodes);
-    for (LO i=0; i<m_numNodes; i++) count[i] = nodeSubdomains[i].size();
-    RCP<const Map> nodeMap =
-      rcp(new Map(m_IGO,
-                  Teuchos::ArrayView<const GO>(m_nodeGlobalIDs,m_numNodes),
-                  0, m_Comm));
-    RCP<const Map> colMap =
-      rcp( new Map(m_IGO, Teuchos::ArrayView<GO>(subGIDs), 0, m_Comm) );
-    CrsGraph nodeSubs(nodeMap, colMap, count, Tpetra::StaticProfile);
-    for (LO i=0; i<m_numNodes; i++) {
-      nodeSubs.insertLocalIndices(i, Teuchos::ArrayView<LO>(nodeSubdomains[i]));
-    }
-    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO,Node>(nodeMap);
-    nodeSubs.fillComplete(colMap, nodeMap1to1);
-    CrsGraph nodeSubs1to1(nodeMap1to1, 0);
-    Export Exporter(nodeMap, nodeMap1to1);
-    nodeSubs1to1.doExport(nodeSubs, Exporter, Tpetra::ADD);
-    nodeSubs1to1.fillComplete(colMap, nodeMap1to1);
-    Import Importer(nodeMap1to1, nodeMap);
-    CrsGraph nodeSubsAll(nodeMap, 0);
-    nodeSubsAll.doImport(nodeSubs1to1, Importer, Tpetra::INSERT);
-    nodeSubsAll.fillComplete(colMap, nodeMap1to1);
-    Teuchos::ArrayView<const LO> Indices;
-    for (LO i=0; i<m_numNodes; i++) {
-      nodeSubsAll.getLocalRowView(i, Indices);
-      LO numSubNode = Indices.size();
-      nodeSubdomains[i].resize(numSubNode);
-      for (LO j=0; j<numSubNode; j++) {
-        nodeSubdomains[i][j] =
-          nodeSubsAll.getColMap()->getGlobalElement(Indices[j]);
-      }
-      std::sort(nodeSubdomains[i].begin(), nodeSubdomains[i].end());
-    }
-  }
-
-  void determineNodeConnectivity
-    (std::vector< std::vector<LO> > & nodeConnectivity) const
-  {
-    LO numSub = m_subNodes.size();
-    std::vector< std::vector<LO> > subDofNodes(numSub);
-    std::vector< std::vector< std::pair<LO, LO> > > subsForNodes(m_numNodes);
     for (LO i=0; i<numSub; i++) {
-      LO numNode = m_subNodes[i].size();
-      LO numDof = m_subNodeBegin[i][numNode];
-      subDofNodes[i].resize(numDof);
-      for (LO j=0; j<numNode; j++) {
-        LO node = m_subNodes[i][j];
-        subsForNodes[node].push_back(std::make_pair(i, j));
-        for (LO k=m_subNodeBegin[i][j]; k<m_subNodeBegin[i][j+1]; k++) {
-          subDofNodes[i][k] = j;
-        }
+      const GO subGID = m_startingSub + i;
+      for (size_t j=0; j<m_subNodes[i].size(); j++) {
+	const LO node = m_subNodes[i][j];
+	mySubData[node].push_back(subGID);
+	if (m_constructAdjacencyGraph) {
+	  mySubData[node].push_back(myPID);
+	}
       }
     }
-    std::vector<bool> nodeFlag(m_numNodes, false);
-    std::vector<LO> adjNodes(m_numNodes);
-    nodeConnectivity.resize(m_numNodes);
+    std::vector< std::vector<GO> > unionSubData;
+    bddc::unionData<LO,GO>(m_numNodes, m_nodeGlobalIDs, nodeSend.data(),
+			   distributor, mySubData, unionSubData);
+    nodeSubdomains.resize(m_numNodes);
+    LO den(1);
+    if (m_constructAdjacencyGraph) den = 2;
     for (LO i=0; i<m_numNodes; i++) {
-      LO numAdjNodes(0);
-      for (size_t j=0; j<subsForNodes[i].size(); j++) {
-        LO sub = subsForNodes[i][j].first;
-        LO node = subsForNodes[i][j].second;
-        determineAdjacentNodes(numAdjNodes, adjNodes, nodeFlag, subDofNodes,
-                               sub, node);
-      }
-      nodeConnectivity[i].resize(numAdjNodes);
-      for (LO j=0; j<numAdjNodes; j++) {
-        nodeConnectivity[i][j] = adjNodes[j];
-        nodeFlag[adjNodes[j]] = false;
+      const LO length = unionSubData[i].size()/den;
+      nodeSubdomains[i].resize(length);
+      for (LO j=0; j<length; j++) {
+	const LO index = den*j;
+	const GO subGID = unionSubData[i][index];
+	nodeSubdomains[i][j] = subGID;
+	if (m_constructAdjacencyGraph) {
+	  auto iter = subProcsMap.find(subGID);
+	  if (iter == subProcsMap.end()) {
+	  const GO proc = unionSubData[i][index+1];
+	    subProcsMap.emplace(subGID, proc);
+	  }
+	}
       }
     }
   }
 
-  void determineEquivalenceClasses()
+  void determineEquivalenceClasses
+    (RCP<Tpetra::Distributor> & distributor,
+     const std::vector<int> & nodeSend)
   {
     std::vector< std::vector<LO> > nodeSubdomains;
-    determineNodeSubdomains(nodeSubdomains);
-    std::vector< std::vector<LO> > nodeConnectivity;
-    determineNodeConnectivity(nodeConnectivity);
-    std::vector<int> component(m_numNodes, 0);
-    equivalenceClasses(nodeSubdomains, nodeConnectivity, component);
-    determineEquivClassComponents(nodeConnectivity, component);
-    equivalenceClasses(nodeSubdomains, nodeConnectivity, component);
+    std::map<GO,LO> subProcsMap;
+    determineNodeSubdomains(distributor, nodeSend, nodeSubdomains, subProcsMap);
+    equivalenceClasses(nodeSubdomains);
     determineEquivClassGlobalIDs();
     determineEquivClassSubdomains(nodeSubdomains);
     determineSubdomainEquivClasses(nodeSubdomains);
-    determineNumActiveAncestors(nodeSubdomains);
-    constructSubdomainConnectivityGraph(nodeSubdomains);
+    std::vector< std::vector<LO> > subsForEquiv, equivsForSub;
+    determineLocalSubdomainsForEquivClasses
+      (nodeSubdomains, subsForEquiv, equivsForSub);
+    determineCoarseNodeDependencies(subsForEquiv, equivsForSub);
+    determineNumAncestors(subsForEquiv, equivsForSub, m_numAncestors);
+    const bool onlyConsiderActiveAncestors = true;
+    determineNumAncestors(subsForEquiv, equivsForSub, m_numActiveAncestors,
+			  onlyConsiderActiveAncestors);
+    constructSubdomainConnectivityGraph(nodeSubdomains, subProcsMap);
+    determineCoarseNodeSubdomains(nodeSubdomains);
+    markEquivClasses(distributor, nodeSend, nodeSubdomains);
+  }
+
+  void getAdjacentSubEquivs(const LO i,
+			    const std::vector< std::vector<LO> > & nodeSubdomains,
+			    std::vector< std::vector<LO> > & adjSubEquivs)
+  {
+    std::map<LO,LO> adjSubMap;
+    const LO mySubGID = m_startingSub + i;
+    LO numAdjSub(0);
+    for (size_t j=0; j<m_subdomainEquivClasses[i].size(); j++) {
+      const LO equiv = m_subdomainEquivClasses[i][j];
+      const LO node = m_equivClasses[equiv][0];
+      const std::vector<LO> & subs = nodeSubdomains[node];
+      for (size_t k=0; k<subs.size(); k++) {
+	const LO subGID = subs[k];
+	if (subGID != mySubGID) {
+	  auto iter = adjSubMap.find(subGID);
+	  if (iter == adjSubMap.end()) {
+	    adjSubMap.emplace(subGID, numAdjSub++);
+	  }
+	}
+      }
+    }
+    adjSubEquivs.resize(numAdjSub);
+    for (size_t j=0; j<m_subdomainEquivClasses[i].size(); j++) {
+      const LO equiv = m_subdomainEquivClasses[i][j];
+      const LO node = m_equivClasses[equiv][0];
+      const std::vector<LO> & subs = nodeSubdomains[node];
+      for (size_t k=0; k<subs.size(); k++) {
+	const LO subGID = subs[k];
+	if (subGID != mySubGID) {
+	  auto iter = adjSubMap.find(subGID);
+	  BDDC_TEST_FOR_EXCEPTION(iter == adjSubMap.end(), std::runtime_error, 
+				  "subGID not found");
+	  bool found(false);
+	  const LO localSub = iter->second;
+	  for (size_t m=0; m<adjSubEquivs[localSub].size(); m++) {
+	    if (adjSubEquivs[localSub][m] == equiv) {
+	      found = true;
+	      break;
+	    }
+	  }
+	  if (found == false) adjSubEquivs[localSub].push_back(equiv);
+	}
+      }
+    }
+  }
+
+  void markEquivClasses(RCP<Tpetra::Distributor> & distributor, 
+			const std::vector<int> & nodeSend, 
+			const std::vector< std::vector<LO> > & nodeSubdomains)
+  {
+    LO numEquiv = m_equivClasses.size();
+    m_equivFlag.resize(numEquiv, 0);
+    LO numSub = m_subNodes.size();
+    std::vector<LO> cornerEquivs;
+    for (LO i=0; i<numSub; i++) {
+      std::vector< std::vector<LO> > adjSubEquivs;
+      getAdjacentSubEquivs(i, nodeSubdomains, adjSubEquivs);
+      for (size_t j=0; j<adjSubEquivs.size(); j++) {
+	LO numFace(0), numEdge(0);
+	cornerEquivs.resize(0);
+	for (size_t k=0; k<adjSubEquivs[j].size(); k++) {
+	  const LO equiv = adjSubEquivs[j][k];
+	  const enum EquivType equivT = getEquivType(equiv);
+	  if (equivT == FACE) numFace++;
+	  if (equivT == EDGE) numEdge++;
+	  if (equivT == CORNER) cornerEquivs.push_back(equiv);
+	}
+	if ((numFace == 0) && (numEdge == 0)) {
+	  if (cornerEquivs.size() > 1) {
+	    for (size_t k=0; k<cornerEquivs.size(); k++) {
+	      m_equivFlag[cornerEquivs[k]] = 1;
+	    }
+	  }
+	}
+      }
+    }
+    // communicate data
+    std::vector<LO> nodeBeginEquiv(numEquiv+1, 0);
+    std::vector<int> nodeSendEquiv(numEquiv);
+    for (LO i=0; i<numEquiv; i++) {
+      nodeBeginEquiv[i+1] = nodeBeginEquiv[i] + 1;
+      const LO localNode = m_equivClasses[i][0];
+      nodeSendEquiv[i] = nodeSend[localNode];
+    }
+    PComm<LO,GO,int> pComm(distributor, numEquiv, nodeBeginEquiv.data(),
+
+			   m_nodeGlobalIDsCoarse.data(), nodeSendEquiv.data());
+    int* ownedVals = pComm.getOwnedPtr();
+    pComm.doExport(m_equivFlag.data(), ownedVals);
+    pComm.doImport(ownedVals, m_equivFlag.data());
+
+  }
+
+  void determineCoarseNodeSubdomains
+    (const std::vector< std::vector<LO> > & nodeSubdomains)
+  {
+    const LO numEquiv = m_equivClasses.size();
+    m_coarseNodeSubdomains.resize(numEquiv);
+    for (LO i=0; i<numEquiv; i++) {
+      const LO node = m_equivClasses[i][0];
+      m_coarseNodeSubdomains[i] = nodeSubdomains[node];
+      std::sort(m_coarseNodeSubdomains[i].begin(),
+		m_coarseNodeSubdomains[i].end());
+    }
   }
 
   void constructSubdomainConnectivityGraph
-    (std::vector< std::vector<LO> > & nodeSubdomains)
+    (const std::vector< std::vector<LO> > & nodeSubdomains,
+     const std::map<GO,LO> & subProcsMap)
   {
     if (m_constructAdjacencyGraph == false) return;
     LO numSub = m_subNodes.size();
-    std::vector< std::vector< std::pair<LO, enum EquivType> > >
+    std::vector< std::vector< std::pair<LO, enum EquivType> > > 
       allConnections(numSub);
     determineAllSubdomainConnections(nodeSubdomains, allConnections);
     std::vector< std::vector<GO> > subdomainAdjacencies(numSub);
     determineSubdomainAdjacencies(allConnections, subdomainAdjacencies);
-    std::vector<GO> subdomainGIDs(numSub);
-    Teuchos::ArrayRCP<size_t> count(numSub);
+    m_subdomainGIDs.resize(numSub);
+    m_subdomainConnBegin.resize(numSub+1, 0);
+    LO numTerms(0);
     for (LO i=0; i<numSub; i++) {
-      subdomainGIDs[i] = m_startingSub + i;
-      count[i] = subdomainAdjacencies[i].size();
+      m_subdomainGIDs[i] = m_startingSub + i;
+      numTerms += subdomainAdjacencies[i].size();
+      m_subdomainConnBegin[i+1] = numTerms;
     }
-    RCP<const Map> subMap =
-      rcp( new Map(m_IGO, Teuchos::ArrayView<GO>(subdomainGIDs), 0, m_Comm) );
-    m_subdomainConnectivity =
-      rcp( new CrsGraph(subMap, count, Tpetra::StaticProfile) );
+    m_subdomainConnGIDs.resize(numTerms);
+    m_subdomainConnProcs.resize(numTerms);
+    numTerms = 0;
     for (LO i=0; i<numSub; i++) {
-      m_subdomainConnectivity->insertGlobalIndices
-        (subdomainGIDs[i], Teuchos::ArrayView<GO>(subdomainAdjacencies[i]));
+      for (size_t j=0; j<subdomainAdjacencies[i].size(); j++) {
+	const GO subGID = subdomainAdjacencies[i][j];
+	m_subdomainConnGIDs[numTerms] = subGID;
+	auto iter = subProcsMap.find(subGID);
+	BDDC_TEST_FOR_EXCEPTION(iter == subProcsMap.end(), std::runtime_error, 
+				"subGID not found");
+	m_subdomainConnProcs[numTerms++] = iter->second;
+      }
     }
-    m_subdomainConnectivity->fillComplete();
+  }
+  /*
+  static bool myLessThan(const std::pair<GO,LO> & left,
+			 const GO right)
+  {
+    return left.first < right;
   }
 
-  void equivalenceClasses(std::vector< std::vector<LO> > & nodeSubdomains,
-                          std::vector< std::vector<LO> > & nodeConnectivity,
-                          std::vector<int> & component)
+  static bool myLessThan2(const std::pair<GO,LO> & left,
+			  const std::pair<GO,LO> & right)
+  {
+    return left.first < right.first;
+  }
+  */
+  void equivalenceClasses(const std::vector< std::vector<LO> > & nodeSubdomains)
   {
     std::vector< std::pair<double, LO> > subEncoding(m_numNodes);
+    const double sqrt7(sqrt(7.0));
     for (LO i=0; i<m_numNodes; i++) {
       LO numSub = nodeSubdomains[i].size();
       double sum = 0;
-      if ((numSub > 1) &&       (m_nodeIsActive[i] == true)) {
-        for (LO j=0; j<numSub; j++) {
-          sum += sqrt(double(nodeSubdomains[i][j]+
-                             sqrt(double(7))*component[i]+1.7));
-        }
+      if ((numSub > 1) && (m_nodeIsActive[i] == true)) {
+	for (LO j=0; j<numSub; j++) {
+	  sum += sqrt(double(nodeSubdomains[i][j]+sqrt7));
+	}
       }
       subEncoding[i] = std::make_pair(sum, i);
     }
@@ -399,8 +530,8 @@ template <class SX,
       currentVal = subEncoding[i].first;
       localNodes[i] = subEncoding[i].second;
       if (fabs(currentVal-previousVal) > tol) {
-        start.push_back(i);
-        previousVal = currentVal;
+	start.push_back(i);
+	previousVal = currentVal;
       }
     }
     start.push_back(m_numNodes);
@@ -409,34 +540,50 @@ template <class SX,
     for (LO i=0; i<numEquivClasses; i++) {
       m_equivClasses[i].resize(start[i+1]-start[i]);
       for (LO j=start[i]; j<start[i+1]; j++) {
-        m_equivClasses[i][j-start[i]] = localNodes[j];
+	m_equivClasses[i][j-start[i]] = localNodes[j];
       }
       sortByGlobalIDs(m_equivClasses[i]);
     }
   }
 
   void determineAllSubdomainConnections
-    (std::vector< std::vector<LO> > & nodeSubdomains,
+    (const std::vector< std::vector<LO> > & nodeSubdomains,
      std::vector< std::vector< std::pair<LO, enum EquivType> > > & allConnections) const
   {
     LO numSub = m_subNodes.size();
+    for (LO i=0; i<numSub; i++) {
+      const LO mySubGID = m_startingSub + i;
+      for (size_t j=0; j<m_subdomainEquivClasses[i].size(); j++) {
+	const LO equiv = m_subdomainEquivClasses[i][j];
+	const enum EquivType equivT = getEquivType(equiv);
+	const LO node = m_equivClasses[equiv][0];
+	const std::vector<LO> & subs = nodeSubdomains[node];
+	for (size_t k=0; k<subs.size(); k++) {
+	  if (subs[k] != mySubGID) {
+	    allConnections[i].push_back(std::make_pair(subs[k], equivT));
+	  }
+	}
+      }
+    }
+    /*
     LO numEquiv = m_equivClasses.size();
     for (LO i=0; i<numEquiv; i++) {
       enum EquivType equivT = getEquivType(i);
       LO node = m_equivClasses[i][0];
       const std::vector<LO> & subs = nodeSubdomains[node];
       for (size_t j=0; j<subs.size(); j++) {
-        LO localSub = subs[j] - m_startingSub;
-        if ((localSub >= 0) && (localSub < numSub)) {
-          for (size_t k=0; k<subs.size(); k++) {
-            if (subs[k] != subs[j]) {
-              allConnections[localSub].push_back
-                (std::make_pair(subs[k], equivT));
-            }
-          }
-        }
+	LO localSub = subs[j] - m_startingSub;
+	if ((localSub >= 0) && (localSub < numSub)) {
+	  for (size_t k=0; k<subs.size(); k++) {
+	    if (subs[k] != subs[j]) {
+	      allConnections[localSub].push_back
+		(std::make_pair(subs[k], equivT));
+	    }
+	  }
+	}
       }
     }
+    */
   }
 
   bool checkAdjacency(std::vector<int> & countEquivType) const
@@ -464,24 +611,24 @@ template <class SX,
       int previousSub = -1;
       std::vector<int> subBegin;
       for (size_t j=0; j<allConnections[i].size(); j++) {
-        if (allConnections[i][j].first != previousSub) {
-          subBegin.push_back(j);
-          previousSub = allConnections[i][j].first;
-        }
+	if (allConnections[i][j].first != previousSub) {
+	  subBegin.push_back(j);
+	  previousSub = allConnections[i][j].first;
+	}
       }
       subBegin.push_back(allConnections[i].size());
       int numSub2 = subBegin.size() - 1;
       for (int j=0; j<numSub2; j++) {
-        std::vector<int> countEquivType(3, 0);
-        for (int k=subBegin[j]; k<subBegin[j+1]; k++) {
-          countEquivType[allConnections[i][k].second]++;
-        }
-        bool isAdjacent = checkAdjacency(countEquivType);
-        if (isAdjacent == true) {
-          int index = subBegin[j];
-          GO adjSubdomain = allConnections[i][index].first;
-          subdomainAdjacencies[i].push_back(adjSubdomain);
-        }
+	std::vector<int> countEquivType(3, 0);
+	for (int k=subBegin[j]; k<subBegin[j+1]; k++) {
+	  countEquivType[allConnections[i][k].second]++;
+	}
+	bool isAdjacent = checkAdjacency(countEquivType);
+	if (isAdjacent == true) {
+	  int index = subBegin[j];
+	  GO adjSubdomain = allConnections[i][index].first;
+	  subdomainAdjacencies[i].push_back(adjSubdomain);
+	}
       }
     }
   }
@@ -537,97 +684,24 @@ template <class SX,
       const std::vector<LO> & subs = nodeSubdomains[node];
       m_equivCard[i] = subs.size();
       for (size_t j=0; j<subs.size(); j++) {
-        LO localSub = subs[j] - m_startingSub;
-        if ((localSub >= 0) && (localSub < numSub)) {
-          m_subdomainEquivClasses[localSub].push_back(i);
-        }
+	LO localSub = subs[j] - m_startingSub;
+	if ((localSub >= 0) && (localSub < numSub)) {
+	  m_subdomainEquivClasses[localSub].push_back(i);
+	}
       }
     }
   }
 
-  void determineEquivClassComponents
-    (std::vector< std::vector<LO> > & nodeConnectivity,
-     std::vector<int> & component)
-  {
-    LO numEquivClasses = m_equivClasses.size();
-    std::vector<LO> A1, A2, nodeMap(m_numNodes, -1);
-    for (LO i=0; i<numEquivClasses; i++) {
-      A1.resize(0);
-      const std::vector<LO> & equivNodes = m_equivClasses[i];
-      LO numEquivNodes = equivNodes.size();
-      LO numTerms = 0;
-      for (LO j=0; j<numEquivNodes; j++) nodeMap[equivNodes[j]] = j;
-      A2.resize(numEquivNodes+1, 0);
-      for (LO j=0; j<numEquivNodes; j++) {
-        LO node1 = equivNodes[j];
-        for (size_t k=0; k<nodeConnectivity[node1].size(); k++) {
-          LO node2 = nodeMap[nodeConnectivity[node1][k]];
-          if (node2 != -1) {
-            A1.push_back(node2);
-            numTerms++;
-          }
-        }
-        A2[j+1] = numTerms;
-      }
-      for (LO j=0; j<numEquivNodes; j++) nodeMap[equivNodes[j]] = -1;
-      int *componentEQ(0);
-      determineComponents(&A1[0], &A2[0], numEquivNodes, componentEQ);
-      for (LO j=0; j<numEquivNodes; j++) {
-        component[equivNodes[j]] = componentEQ[j];
-      }
-      delete [] componentEQ;
-    }
-  }
-
-  void determineComponents(LO *A1,
-                           LO *A2,
-                           LO N,
-                           LO* & component) const
-  {
-    LO i;
-    component = new LO[N];
-    for (i=0; i<N; i++) component[i] = -1;
-    componentsFunction(A1, A2, N, component);
-  }
-
-  void componentsFunction(LO *A1,
-                          LO *A2,
-                          LO N,
-                          LO* component) const
-  {
-    LO i, comp_num;
-    comp_num = 0;
-    for (i=0; i<N; i++) {
-      if (component[i] == -1) {
-        depthFirstSearch(i, comp_num, component, A1, A2);
-        comp_num++;
-      }
-    }
-  }
-
-  void depthFirstSearch(const LO v,
-                        const LO comp_num,
-                        LO* component,
-                        LO* A1,
-                        LO* A2) const
-  {
-    LO i, adj_vertex;
-    component[v] = comp_num;
-    for (i=A2[v]; i<A2[v+1]; i++) {
-      adj_vertex = A1[i];
-      if (component[adj_vertex] == -1)
-        depthFirstSearch(adj_vertex, comp_num, component, A1, A2);
-    }
-  }
-
-  void determineNumActiveAncestors
-    (std::vector< std::vector<LO> > & nodeSubdomains)
+  void determineLocalSubdomainsForEquivClasses
+    (const std::vector< std::vector<LO> > & nodeSubdomains,
+     std::vector< std::vector<LO> > & subsForEquiv,
+     std::vector< std::vector<LO> > & equivsForSub)
   {
     // first, get list of subdomains for all equivalence classes
-    LO numEquiv = m_equivClasses.size();
+    const LO numEquiv = m_equivClasses.size();
     std::vector<LO> subList;
     for (LO i=0; i<numEquiv; i++) {
-      LO node = m_equivClasses[i][0];
+      const LO node = m_equivClasses[i][0];
       const std::vector<LO> & subs = nodeSubdomains[node];
       for (size_t j=0; j<subs.size(); j++) subList.push_back(subs[j]);
     }
@@ -637,46 +711,167 @@ template <class SX,
     uniqueSubs.erase(iter, uniqueSubs.end());
     // next, determine local subdomain numbers for each equivalence class
     // and vice versa
-    LO numSub = uniqueSubs.size();
-    std::vector< std::vector<LO> > subsForEquiv(numEquiv);
-    std::vector< std::vector<LO> > equivsForSub(numSub);
+    const LO numSub = uniqueSubs.size();
+    subsForEquiv.resize(numEquiv);
+    equivsForSub.resize(numSub);
     for (LO i=0; i<numEquiv; i++) {
-      LO node = m_equivClasses[i][0];
+      const LO node = m_equivClasses[i][0];
       const std::vector<LO> & subs = nodeSubdomains[node];
       subsForEquiv[i].resize(subs.size());
       for (size_t j=0; j<subs.size(); j++) {
-        LO sub = subs[j];
-        LO localSub = findEntry(uniqueSubs, sub);
-        subsForEquiv[i][j] = localSub;
-        equivsForSub[localSub].push_back(i);
+	const LO sub = subs[j];
+	const LO localSub = findEntry(uniqueSubs, sub);
+	subsForEquiv[i][j] = localSub;
+	equivsForSub[localSub].push_back(i);
       }
     }
+  }
+
+  void determineCoarseNodeDependencies
+    (const std::vector< std::vector<LO> > & subsForEquiv,
+     const std::vector< std::vector<LO> > & equivsForSub)
+  {
+    if (m_useVertexCoarseSpace == false) return;
+    const LO numSub = equivsForSub.size();
+    std::vector<bool> subFlag(numSub, false);
+    const LO numEquiv = subsForEquiv.size();
+    std::vector<LO> equivMap(numEquiv, -1), numAncestors(numEquiv, 0);
+    // first determine coarse nodes
+    LO numCoarseNodes(0), pass(1);
+    m_equivCoarseNodes.resize(numEquiv);
+    for (LO i=0; i<numEquiv; i++) {
+      const LO sub = subsForEquiv[i][0];
+      for (size_t j=0; j<equivsForSub[sub].size(); j++) {
+	const LO equiv = equivsForSub[sub][j];
+	if (equiv != i) {
+	  decendentCheck(subFlag, i, equiv, subsForEquiv, pass, numAncestors,
+			 equivMap, m_equivCoarseNodes[i]);
+	}
+      }
+      if (numAncestors[i] == 0) {
+	equivMap[i] = numCoarseNodes;
+	m_equivCoarseNodes[i].push_back(numCoarseNodes++);
+      }
+    }
+    // determine coarse node dependencies
+    pass = 2;
+    for (LO i=0; i<numEquiv; i++) {
+      const LO sub = subsForEquiv[i][0];
+      for (size_t j=0; j<equivsForSub[sub].size(); j++) {
+	const LO equiv = equivsForSub[sub][j];
+	if (equiv != i) {
+	  decendentCheck(subFlag, i, equiv, subsForEquiv, pass, numAncestors,
+			 equivMap, m_equivCoarseNodes[i]);
+	}
+      }
+    }
+    m_equivCoarseNodesGIDs.resize(numCoarseNodes);
+    m_equivCoarseNodesLIDs.resize(numCoarseNodes);
+    m_xCoordEquiv.resize(numEquiv);
+    m_yCoordEquiv.resize(numEquiv);
+    m_zCoordEquiv.resize(numEquiv);
+    numCoarseNodes = 0;
+    for (LO i=0; i<numEquiv; i++) {
+      getEquivCoords(i, m_xCoordEquiv[i], m_yCoordEquiv[i], m_zCoordEquiv[i]);
+      if (equivMap[i] != -1) {
+	const LO coarseNode = equivMap[i];
+	m_equivCoarseNodesGIDs[coarseNode] = m_nodeGlobalIDsCoarse[i];
+	m_equivCoarseNodesLIDs[coarseNode] = i;
+      }
+    }
+  }
+
+  void getEquivCoords(const LO equiv, 
+		      SM & xCoordEquiv,
+		      SM & yCoordEquiv,
+		      SM & zCoordEquiv)
+  {
+    SM sumX(0), sumY(0), sumZ(0);
+    const LO numNodeEquiv = m_equivClasses[equiv].size();
+    for (LO i=0; i<numNodeEquiv; i++) {
+      const LO node = m_equivClasses[equiv][i];
+      sumX += m_xCoord[node];
+      sumY += m_yCoord[node];
+      sumZ += m_zCoord[node];
+    }
+    xCoordEquiv = sumX/numNodeEquiv;
+    yCoordEquiv = sumY/numNodeEquiv;
+    zCoordEquiv = sumZ/numNodeEquiv;
+  }
+
+  void decendentCheck(std::vector<bool> & subFlag, 
+		      const LO i, 
+		      const LO equiv, 
+		      const std::vector< std::vector<LO> > & subsForEquiv,
+		      const LO pass,
+		      std::vector<LO> & numAncestors,
+		      std::vector<LO> & equivMap,
+		      std::vector<LO> & equivCoarseNodes)
+  {
+    const LO numSubEquiv = subsForEquiv[i].size();
+    const LO numSubEquiv2 = subsForEquiv[equiv].size();
+    for (LO k=0; k<numSubEquiv2; k++) {
+      subFlag[subsForEquiv[equiv][k]] = true;
+    }
+    bool isaDecendent = true;
+    for (LO k=0; k<numSubEquiv; k++) {
+      if (subFlag[subsForEquiv[i][k]] == false) {
+	isaDecendent = false;
+	break;
+      }
+    }
+    for (LO k=0; k<numSubEquiv2; k++) {
+      subFlag[subsForEquiv[equiv][k]] = false;
+    }
+    if (isaDecendent) {
+      if (pass == 1) numAncestors[i]++;
+      else {
+	if (numAncestors[equiv] == 0) {
+	  const LO coarseNode = equivMap[equiv];
+	  BDDC_TEST_FOR_EXCEPTION(coarseNode == -1, std::runtime_error, 
+				  "invalid coarseNode");
+	  equivCoarseNodes.push_back(coarseNode);
+	}
+      }
+    }
+  }
+
+  void determineNumAncestors
+    (const std::vector< std::vector<LO> > & subsForEquiv,
+     const std::vector< std::vector<LO> > & equivsForSub,
+     std::vector<LO> & numAncestors,
+     const bool onlyConsiderActiveAncestors=false)
+  {
     // determine number of active ancestors for each equivalence class
-    m_numActiveAncestors.resize(numEquiv);
+    LO numEquiv = m_equivClasses.size();
+    LO numSub = equivsForSub.size();
+    numAncestors.resize(numEquiv);
     std::vector<bool> subFlag(numSub, false);
     for (LO i=0; i<numEquiv; i++) {
       LO sub = subsForEquiv[i][0];
       LO numSubEquiv = subsForEquiv[i].size();
       for (size_t j=0; j<equivsForSub[sub].size(); j++) {
-        LO equiv = equivsForSub[sub][j];
-        bool isActive = isActiveEquiv(equiv);
-        if (isActive == false) continue;
-        LO numSubEquiv2 = subsForEquiv[equiv].size();
-        if (numSubEquiv2 <= numSubEquiv) continue;
-        for (LO k=0; k<numSubEquiv2; k++) {
-          subFlag[subsForEquiv[equiv][k]] = true;
-        }
-        bool isAncestor = true;
-        for (LO k=0; k<numSubEquiv; k++) {
-          if (subFlag[subsForEquiv[i][k]] == false) {
-            isAncestor = false;
-            break;
-          }
-        }
-        for (LO k=0; k<numSubEquiv2; k++) {
-          subFlag[subsForEquiv[equiv][k]] = false;
-        }
-        if (isAncestor == true) m_numActiveAncestors[i]++;
+	LO equiv = equivsForSub[sub][j];
+	if (onlyConsiderActiveAncestors) {
+	  bool isActive = isActiveEquiv(equiv);
+	  if (isActive == false) continue;
+	}
+	LO numSubEquiv2 = subsForEquiv[equiv].size();
+	if (numSubEquiv2 <= numSubEquiv) continue;
+	for (LO k=0; k<numSubEquiv2; k++) {
+	  subFlag[subsForEquiv[equiv][k]] = true;
+	}
+	bool isAncestor = true;
+	for (LO k=0; k<numSubEquiv; k++) {
+	  if (subFlag[subsForEquiv[i][k]] == false) {
+	    isAncestor = false;
+	    break;
+	  }
+	}
+	for (LO k=0; k<numSubEquiv2; k++) {
+	  subFlag[subsForEquiv[equiv][k]] = false;
+	}
+	if (isAncestor == true) numAncestors[i]++;
       }
     }
   }
@@ -690,11 +885,12 @@ template <class SX,
     return false;
   }
 
-  LO findEntry(std::vector<LO> & vector,
-               LO value) const
+  LO findEntry(std::vector<LO> & vector, 
+	       LO value) const
   {
     auto iter = std::lower_bound(vector.begin(), vector.end(), value);
-    assert (iter != vector.end());
+    BDDC_TEST_FOR_EXCEPTION(iter == vector.end(), std::runtime_error, 
+			    "error in findEntry");
     LO index = iter - vector.begin();
     return index;
   }
@@ -704,26 +900,29 @@ template <class SX,
   const GO* m_nodeGlobalIDs;
   const std::vector< std::vector<LO> > & m_subNodeBegin;
   const std::vector< std::vector<LO> > & m_subNodes;
-  LO **m_subRowBegin,  **m_subColumns;
-  SX **m_subValues;
   LO m_spatialDim;
-  bool m_constructAdjacencyGraph, m_addCorners, m_useCorners, m_useEdges,
-    m_useFaces;
+  bool m_constructAdjacencyGraph, m_useCorners, m_useEdges, 
+    m_useFaces, m_useVertexCoarseSpace;
   RCP<const Teuchos::Comm<int> > m_Comm;
   Tpetra::global_size_t m_IGO;
   LO m_numNodesCoarse;
   int m_startingSub;
   std::vector<LO> m_equivCard;
   std::vector<bool> m_nodeIsActive;
-  std::vector< std::vector<LO> > m_equivClasses, m_subdomainEquivClasses;
-  std::vector<GO> m_nodeGlobalIDsCoarse;
+  std::vector< std::vector<LO> > m_equivClasses, m_subdomainEquivClasses,
+    m_equivCoarseNodes;
+  std::vector<GO> m_nodeGlobalIDsCoarse, m_equivCoarseNodesGIDs;
+  std::vector<SM> m_xCoordEquiv, m_yCoordEquiv, m_zCoordEquiv;
   std::vector< std::vector<LO> > m_equivClassSubdomains;
-  std::vector<LO> m_numActiveAncestors;
+  std::vector<LO> m_numAncestors, m_numActiveAncestors, m_equivCoarseNodesLIDs;
   RCP<CrsGraph> m_subdomainConnectivity;
-
+  const SM *m_xCoord, *m_yCoord, *m_zCoord;
+  std::vector<GO> m_subdomainGIDs, m_subdomainConnGIDs, m_subdomainConnProcs;
+  std::vector<LO> m_subdomainConnBegin, m_equivFlag;
+  std::vector< std::vector<LO> > m_coarseNodeSubdomains;
 };
 
 } // namespace bddc
 
 #endif // PARTITIONOFUNITYBDDC_H
-
+  

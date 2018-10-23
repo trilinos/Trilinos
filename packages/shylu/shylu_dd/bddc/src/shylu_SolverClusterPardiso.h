@@ -54,6 +54,7 @@
 #endif
 #include "shylu_SolverBaseBDDC.h"
 #include "shylu_UtilPardiso.h"
+#include "shylu_errorBDDC.h"
 
 namespace bddc {
 
@@ -80,7 +81,7 @@ public:
     m_rowBeginP(0),
     m_columnsP(0),
     m_perm(0),
-    m_matrixType(2),
+    m_matrixType(-7),
     m_valuesP(0),
     m_messageLevel(0),
     m_myPID(0),
@@ -90,7 +91,15 @@ public:
   
   int Initialize()
   {
-    assert (m_matrixType == 2); // symmetric positive definite matrix
+    std::string matrixName = 
+      this->m_Parameters.get("Pardiso Matrix Type",
+			     "Real And Symmetric Positive Definite");
+    if (matrixName == "Real And Symmetric Positive Definite") {
+      m_matrixType = 2;
+      m_matrixIsSymmetric = true;
+    }
+    BDDC_TEST_FOR_EXCEPTION(m_matrixType != 2, std::runtime_error, 
+			    "only SPD matrices supported at this time");
     int noMessage = 0;
     m_messageLevel = this->m_Parameters.get("Pardiso Message Level", 
 					    noMessage);
@@ -123,7 +132,8 @@ public:
 			  m_perm, &NRHS, m_iparam, &m_messageLevel, Rhs, Sol, 
 			  &m_fComm, &error);
 #endif
-    assert (error == 0);
+    BDDC_TEST_FOR_EXCEPTION(error != 0, std::runtime_error, 
+			    "error in cluster_sparse_solver solve");
   }
 
   bool MyExactSolver() {

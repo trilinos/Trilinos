@@ -49,10 +49,16 @@
 #include <string.h>
 
 #include "shylu_SolverBaseBDDC.h"
+#include "shylu_errorBDDC.h"
 
 typedef int int_t;
 #include "supermatrix.h"
+// the define/undef of NO below was needed because there is another
+// included header file that has NO as a typedef. slu_util.h also has
+// NO in an enum/typedef, and was causing compilation errors.
+#define NO slu_NO
 #include "slu_util.h"
+#undef NO
 
 extern "C"{
 extern void
@@ -98,6 +104,8 @@ public:
 
   ~SolverSuperLU()
   {
+    int numRows = this->m_numRows;
+    if (numRows == 0) return;
     Destroy_SuperMatrix_Store(&m_A);
     Destroy_SuperNode_Matrix(&m_L);
     Destroy_CompCol_Matrix(&m_U);
@@ -105,6 +113,7 @@ public:
 
   int Initialize()
   {
+#define NO slu_NO
     int numRows = this->m_numRows;
     if (numRows == 0) return 0;
     set_default_options(&m_options);
@@ -146,6 +155,7 @@ public:
 	      << mem_usage.total_needed/1e6 << std::endl;
     */
     return 0;
+#undef NO
   }
 
   bool IsDirectSolver()
@@ -155,6 +165,7 @@ public:
 
   void MySolve(int NRHS,
 	       SX* Rhs, 
+
 	       SX* Sol)
   {
     int numRows = this->m_numRows;
@@ -168,7 +179,8 @@ public:
     SX rpg(0), rcond(0);
     mem_usage_t mem_usage;
     solveEquations(numRows, NRHS, Rhs, Sol, stat, mem_usage, rpg, rcond, info);
-    assert (info == 0);
+    BDDC_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, 
+			    "SuperLU solveEquations error");
     StatFree(&stat);
     Destroy_SuperMatrix_Store(&m_X);
     Destroy_SuperMatrix_Store(&m_B);
@@ -268,7 +280,8 @@ private:
 	   m_equed, m_R.data(), m_C.data(), &m_L, &m_U, NULL, 0, &m_B, &m_X, 
 	   &rpg, &rcond, m_ferr.data(), m_berr.data(), &mem_usage, &stat, 
 	   &info);
-    assert (info == 0);
+    BDDC_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, 
+			    "SuperLU dgssvx error");
   }
 
   void factorMatrices(SuperLUStat_t & stat,
@@ -281,7 +294,8 @@ private:
 	   m_equed, m_R.data(), m_C.data(), &m_L, &m_U, NULL, 0, &m_B, &m_X, 
 	   &rpg, &rcond, m_ferr.data(), m_berr.data(), &mem_usage, &stat, 
 	   &info);
-    assert (info == 0);
+    BDDC_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, 
+			    "SuperLU sgssvx error");
   }
 
  };

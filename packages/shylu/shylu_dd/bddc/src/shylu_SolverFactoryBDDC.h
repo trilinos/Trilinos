@@ -49,7 +49,6 @@
 #include <iomanip>
 #include <ctime>
 #include <math.h>
-#include <assert.h>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -57,12 +56,11 @@
 #include "ShyLU_DDBDDC_config.h"
 #include "shylu_SolverBaseBDDC.h"
 #include "shylu_SolverLAPACK.h"
+#include "shylu_errorBDDC.h"
 
-/*
-#if defined(HAVE_SHYLU_DDBDDC_TRILINOSSS)
+#if defined(HAVE_SHYLU_DDBDDC_AMESOS2)
 #include "shylu_SolverKLU2.h"
 #endif
-*/
 
 #if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
 #include "shylu_SolverTacho.h"
@@ -78,6 +76,15 @@
 
 #if defined(USE_INTEL_CLUSTER_PARDISO)
 #include "shylu_SolverClusterPardiso.h"
+#endif
+
+#if defined(HAVE_SHYLU_DDBDDC_MUELU)
+#include "shylu_SolverMueLu.h"
+#endif
+
+//#define NODALAMGBDDC
+#ifdef NODALAMGBDDC
+#include "shylu_SolverNodalAMG.h"
 #endif
 
 namespace bddc {
@@ -106,8 +113,32 @@ template <class SX> class SolverFactory
 					values,
 					Parameters);
 #else
-      std::string msg("Error: SuperLU solver is not available");
-      throw msg;
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "SuperLU solver is not available");
+#endif
+    }
+    else if (solverString == "MueLu") {
+#if defined(HAVE_SHYLU_DDBDDC_MUELU)
+      SolverPtr = new SolverMueLu<SX>(numRows,
+				      rowBegin,
+				      columns,
+				      values,
+				      Parameters);
+#else
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "MueLu preconditioner is not available");
+#endif
+    }
+    else if (solverString == "KLU2") {
+#if defined(HAVE_SHYLU_DDBDDC_AMESOS2)
+      SolverPtr = new SolverKLU2<SX>(numRows,
+				     rowBegin,
+				     columns,
+				     values,
+				     Parameters);
+#else
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "KLU2 solver is not available");
 #endif
     }
     else if (solverString == "Tacho") {
@@ -118,8 +149,8 @@ template <class SX> class SolverFactory
 				      values,
 				      Parameters);
 #else
-      std::string msg("Error: Tacho solver is not available");
-      throw msg;
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "Tacho solver is not available");
 #endif
     }
     else if (solverString == "Pardiso") {
@@ -130,8 +161,8 @@ template <class SX> class SolverFactory
 					values,
 					Parameters);
 #else
-      std::string msg("Error: Pardiso solver is not available");
-      throw msg;
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "Pardiso solver is not available");
 #endif
     }
     else if (solverString == "Cluster Pardiso") {
@@ -143,8 +174,8 @@ template <class SX> class SolverFactory
 					       Parameters,
 					       pComm);
 #else
-      std::string msg("Error: Cluster Sparse solver is not available");
-      throw msg;
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "Cluster Sparse solver is not available");
 #endif
     }
     else if (solverString == "LAPACK") {
@@ -154,11 +185,23 @@ template <class SX> class SolverFactory
 				       values,
 				       Parameters);
     }
+    else if (solverString == "NodalAMG") {
+#if defined(NODALAMGBDDC)
+      SolverPtr = new SolverNodalAMG<SX>(numRows,
+					 rowBegin,
+					 columns,
+					 values,
+					 Parameters);
+#else
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "NodalAMG preconditioner is not available");
+#endif
+    }
     else {
-      std::string msg("Error: no acceptable direct bddc solver.");
-      msg += " Requested solver is ";
-      msg += solverString;
-      throw msg;
+      std::string text = "Requested solver is " + solverString;
+      std::cout << text << std::endl;
+      BDDC_TEST_FOR_EXCEPTION(1, std::runtime_error, 
+			      "solver not found");
     }
     return SolverPtr;
   }

@@ -85,7 +85,7 @@ public:
   
   int Initialize()
   {
-    assert (m_matrixType == 2); // symmetric positive definite matrix
+    setMatrixType();
     int noMessage = 0;
     m_messageLevel = this->m_Parameters.get("Pardiso Message Level", 
 					    noMessage);
@@ -111,7 +111,8 @@ public:
     pardiso((_MKL_DSS_HANDLE_t*)m_pt, &one, &one, &m_matrixType, &phase, 
 	    &n, m_valuesP, m_rowBeginP, m_columnsP, m_perm, &NRHS, m_iparam, 
 	    &m_messageLevel, Rhs, Sol, &error);
-    assert (error == 0);
+    BDDC_TEST_FOR_EXCEPTION(error != 0, std::runtime_error, 
+			    "Pardiso solve error");
   }
 
   bool MyExactSolver() {
@@ -119,6 +120,30 @@ public:
   }
 
 private:
+  void setMatrixType()
+  {
+    // Note: only consider real matrices at this time
+    std::string matrixName = 
+      this->m_Parameters.get("Pardiso Matrix Type",
+			     "Real And Symmetric Positive Definite");
+    if (matrixName == "Real And Structurally Symmetric") {
+      m_matrixType = 1;
+      m_matrixIsSymmetric = false;
+    }
+    else if (matrixName == "Real And Symmetric Positive Definite") {
+      m_matrixType = 2;
+      m_matrixIsSymmetric = true;
+    }
+    else if (matrixName == "Real And Symmetric Indefinite") {
+      m_matrixType = -2;
+      m_matrixIsSymmetric = true;
+    }
+    else if (matrixName == "Real And Nonsymmetric") {
+      m_matrixType = 11;
+      m_matrixIsSymmetric = false;
+    }
+  }
+
   int InitializePardiso(int numRows,
 			const int* rowBegin,
 			const int* columns,

@@ -52,7 +52,6 @@
 #include <algorithm>
 #include <vector>
 #include <complex>
-#include <assert.h>
 
 #include "metis.h"
 
@@ -62,6 +61,19 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include "shylu_enumsBDDC.h"
+#include "shylu_errorBDDC.h"
+
+#ifdef _OPENMP
+#include "omp.h"
+#else
+#define omp_get_max_threads() 1
+#define omp_get_thread_num() 0
+#endif
+
+//#define TENSORPRODUCTBDDC
+#ifdef TENSORPRODUCTBDDC
+#include "TensorProductBDDC.h"
+#endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -78,31 +90,66 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     m_Comm(Comm),
     m_problemType(Parameters->get("Problem Type", SCALARPDE)),
     m_analysisType(Parameters->get("Analysis Type", STANDARD)),
-    m_spatialDim(Parameters->get("Spatial Dimension", 1))
+    m_spatialDim(Parameters->get("Spatial Dimension", 1)),
+    m_readModel(false)
   {
     MPI_Comm_size(Comm, &m_numProc);
     MPI_Comm_rank(Comm, &m_myPID);
     GenerateModel();
     ApplyEssentialBCs();
-    GenerateConstraintEquations();
+    setQuadraturePoints();
+  }
+
+  ProblemMaker(RCP<Teuchos::ParameterList> Parameters,
+	       MPI_Comm Comm,
+	       const std::vector<SM> & xFile,
+	       const std::vector<SM> & yFile,
+	       const std::vector<SM> & zFile,
+	       const std::vector< std::vector<LO> > & elemConn,
+	       const std::vector<GO> & nodeGIDs,
+	       const std::vector< std::vector<LO> > & subElems,
+	       const std::vector<LO> & constrainedNodes) :
+  m_Parameters(Parameters),
+    m_Comm(Comm),
+    m_problemType(Parameters->get("Problem Type", SCALARPDE)),
+    m_analysisType(Parameters->get("Analysis Type", STANDARD)),
+    m_spatialDim(Parameters->get("Spatial Dimension", 1)),
+    m_numNode(nodeGIDs.size()),
+    m_numElem(elemConn.size()),
+    m_x(xFile),
+    m_y(yFile),
+    m_z(zFile),
+    m_nodeGIDs(nodeGIDs),
+    m_elemConn(elemConn),
+    m_readModel(true)
+  {
+    MPI_Comm_size(Comm, &m_numProc);
+    MPI_Comm_rank(Comm, &m_myPID);
+    determineNodeBegLocalDof();
+    m_subElems = subElems;
+    ApplyEssentialBCs(constrainedNodes);
+    setQuadraturePoints();
   }
 
   ~ProblemMaker()
   {
+#ifdef TENSORPRODUCTBDDC
+    delete m_TP;
+#endif
   }
 
   LO getNumNode() const {
     return m_numNode;
   }
-
+  
   LO getNumElem() const {
     return m_numElem;
   }
-
+  
   LO getNumDof() const {
     return m_nodeBegin[m_numNode];
   }
-
+  
   int getNumDofPerNode() const
   {
     switch (m_problemType) {
@@ -110,7 +157,8 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
       return 1;
       break;
     case ELASTICITY:
-      assert (m_spatialDim != 1);
+      BDDC_TEST_FOR_EXCEPTION(m_spatialDim == 1, std::runtime_error, 
+			      "spatialDim = 1 invalid for elasticity");
       return m_spatialDim;
       break;
     default:
@@ -149,86 +197,31 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     return &m_nodeGIDs[0];
   }
 
-  const LO* getRowBegin() const {
-    return &m_rowBegin[0];
-  }
-
-  const LO* getColumns() const {
-    return &m_columns[0];
-  }
-
-  const SX* getValues() const {
-    return &m_values[0];
-  }
-
   const SX* getLoadVector() const {
     return &m_loadVector[0];
   }
 
-  void printElementMatrices() const
+  void printElementMatrices(const int elem=0) const
   {
-    printElementMatrix(&m_elemStiffMatrix[0], "stiffMatrix.dat");
-    printElementMatrix(&m_elemMassMatrix[0], "massMatrix.dat");
+    std::vector<SM> elemStiffMatrix, elemMassMatrix;
+    const double E(1.0), nu(0.3);
+    getElementMatrices(m_elemConn[elem], E, nu, elemStiffMatrix, elemMassMatrix);
+    printElementMatrix(elemStiffMatrix.data(), "stiffMatrix.dat");
+    printElementMatrix(elemMassMatrix.data(), "massMatrix.dat");
   }
 
-  void printSubdomainMatrix(const char* fnameBase,
-			    int ID) const
+  void getElementMatrices(std::vector<SM> & elemStiffMatrix,
+			  std::vector<SM> & elemMassMatrix,
+			  const int elem=0)
   {
-    char fname[101];
-    sprintf(fname, "%s%d.dat", fnameBase, ID);
-    LO i, j;
-    std::ofstream fout;
-    fout.open(fname);
-    LO numDof = m_nodeBegin[m_numNode];
-    for (LO i=0; i<numDof; i++) {
-      for (LO j=m_rowBegin[i]; j<m_rowBegin[i+1]; j++) {
-	fout << i+1 << " ";
-	fout << m_columns[j]+1 << " ";
-	SM realPart, imagPart;
-	getParts(m_values[j], realPart, imagPart);
-	fout << std::setw(22) << std::setprecision(15);
-	fout << realPart;
-	if (fabs(imagPart) != 0) {
-	  fout << " " << imagPart;
-	}
-	fout << std::endl;
-      }
-    }
-    fout.close();
+    const double E(1.0), nu(0.3);
+    getElementMatrices(m_elemConn[elem], E, nu, elemStiffMatrix,
+		       elemMassMatrix);
   }
 
-  void getConstrainEquations(LO & numRowsCT,
-			     LO & numColsCT,
-			     const LO* rowsCT,
-			     const LO* colsCT,
-			     const LO* rowBeginCT,
-			     const LO* columnsCT,
-			     const SM* matrixCT) const
+  const std::vector< std::vector<LO> > getElementConnectivity() const
   {
-    numRowsCT = m_rowsCT.size();
-    numColsCT = m_colsCT.size();
-    rowsCT = &m_rowsCT[0];
-    colsCT = &m_colsCT[0];
-    rowBeginCT = &m_rowBeginCT[0];
-    columnsCT = &m_columnsCT[0];
-    matrixCT = &m_matrixCT[0];
-  }
-
-  void matrixVectorProduct(const SX* X, 
-			   int numVectors, 
-			   SX* AX) const
-  {
-    LO numDof = m_nodeBegin[m_numNode];
-    for (int j=0; j<numVectors; j++) {
-      const SX* x = &X[j*numDof];
-      SX* Ax = &AX[j*numDof];
-      for (LO i=0; i<numDof; i++) {
-	Ax[i] = 0;
-	for (LO j=m_rowBegin[i]; j<m_rowBegin[i+1]; j++) {
-	  Ax[i] += m_values[j]*x[m_columns[j]];
-	}
-      }
-    }
+    return m_elemConn;
   }
 
   SM norm2(const SX* values,
@@ -244,7 +237,8 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
   void getSubDomainElements(LO numSubDir1PerProc, 
 			    LO numSubDir2PerProc,
 			    LO numSubDir3PerProc, 
-			    std::vector< std::vector<LO> > & subElems) const
+			    std::vector< std::vector<LO> > & subElems,
+			    std::vector<LO> & subIndices) const
   {
     if (m_x.size() == 0) return;
     SM minX(m_x[0]), maxX(m_x[0]);
@@ -263,6 +257,9 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     SM Hz = (maxZ - minZ)/numSubDir3PerProc;
     LO numElems = m_elemConn.size();
     std::vector<SM> xElem(numElems), yElem(numElems), zElem(numElems);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (LO i=0; i<numElems; i++) {
       SM sumX(0), sumY(0), sumZ(0);
       LO numNodePerElem = m_elemConn[i].size();
@@ -279,23 +276,53 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     LO numSub = numSubDir1PerProc;
     if (m_spatialDim > 1) numSub *= numSubDir2PerProc;
     if (m_spatialDim == 3) numSub *= numSubDir3PerProc;
-    subElems.resize(numSub);
+    std::vector<LO> count(numSub, 0);
+    subIndices.resize(3*numSub, -1);
     for (LO i=0; i<numElems; i++) {
       LO ix = (xElem[i] - minX)/Hx;
       LO iy = (yElem[i] - minY)/Hy;
       LO iz = (zElem[i] - minZ)/Hz;
       if (m_spatialDim == 1) {
 	LO sub = ix;
-	subElems[sub].push_back(i);
+	subIndices[3*sub] = ix;
+	count[sub]++;
       }
       else if (m_spatialDim == 2) {
 	LO sub = ix + numSubDir1PerProc*iy;
-	subElems[sub].push_back(i);
+	subIndices[3*sub+0] = ix;
+	subIndices[3*sub+1] = iy;
+	count[sub]++;
       }
       else if (m_spatialDim == 3) {
 	LO sub = ix + numSubDir1PerProc*iy +
 	  numSubDir1PerProc*numSubDir2PerProc*iz;
-	subElems[sub].push_back(i);
+	subIndices[3*sub+0] = ix;
+	subIndices[3*sub+1] = iy;
+	subIndices[3*sub+2] = iz;
+	count[sub]++;
+      }
+    }
+    subElems.resize(numSub);
+    for (LO i=0; i<numSub; i++) {
+      subElems[i].resize(count[i]);
+      count[i] = 0;
+    }
+    for (LO i=0; i<numElems; i++) {
+      LO ix = (xElem[i] - minX)/Hx;
+      LO iy = (yElem[i] - minY)/Hy;
+      LO iz = (zElem[i] - minZ)/Hz;
+      if (m_spatialDim == 1) {
+	LO sub = ix;
+	subElems[sub][count[sub]++] = i;
+      }
+      else if (m_spatialDim == 2) {
+	LO sub = ix + numSubDir1PerProc*iy;
+	subElems[sub][count[sub]++] = i;
+      }
+      else if (m_spatialDim == 3) {
+	LO sub = ix + numSubDir1PerProc*iy +
+	  numSubDir1PerProc*numSubDir2PerProc*iz;
+	subElems[sub][count[sub]++] = i;
       }
     }
   }
@@ -359,8 +386,8 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
       C2[i+1] = numTerms;
     }
     std::vector<idx_t> parts(numElems);
-    int* xadj   = C2.data();
-    int* adjncy = C1.data();
+    idx_t* xadj   = C2.data();
+    idx_t* adjncy = C1.data();
     int nparts = numPartsPerSub;
     idx_t* part = parts.data();
     int edgecut, ncon(1);
@@ -388,21 +415,28 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void getSubDomainNodeData(std::vector< std::vector<LO> > & subElems, 
-			    std::vector< std::vector<LO> > & subNodes, 
+  void getSubDomainNodeData(std::vector< std::vector<LO> > & subNodes, 
 			    std::vector< std::vector<LO> > & subNodeBegin,
 			    std::vector< std::vector<LO> > & subLocalDofs) const
   {
-    LO numSub = subElems.size();
+    LO numSub = m_subElems.size();
     subNodes.resize(numSub);
     subNodeBegin.resize(numSub);
     subLocalDofs.resize(numSub);
+    std::vector<LO> countNode(numSub, 0), countDof(numSub, 0);
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
     std::vector<LO> nodeFlag(m_numNode, -1), activeNodes(m_numNode);
+#ifdef _OPENMP
+#pragma omp for
+#endif
     for (LO i=0; i<numSub; i++) {
-      LO numElem = subElems[i].size();
+      LO numElem = m_subElems[i].size();
       LO numNode(0), numDof(0);
       for (LO j=0; j<numElem; j++) {
-	LO elem = subElems[i][j];
+	LO elem = m_subElems[i][j];
 	for (size_t k=0; k<m_elemConn[elem].size(); k++) {
 	  LO node = m_elemConn[elem][k];
 	  if (nodeFlag[node] == -1) {
@@ -413,13 +447,29 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
 	  }
 	}
       }
-      subNodes[i].resize(numNode);
-      subNodeBegin[i].resize(numNode+1, 0);
-      subLocalDofs[i].resize(numDof);
       for (LO j=0; j<numNode; j++) nodeFlag[activeNodes[j]] = -1;
-      numNode = numDof = 0;
+      countNode[i] = numNode;
+      countDof[i] = numDof;
+    }
+    }
+    for (LO i=0; i<numSub; i++) {
+      subNodes[i].resize(countNode[i]);
+      subNodeBegin[i].resize(countNode[i]+1, 0);
+      subLocalDofs[i].resize(countDof[i]);
+    }
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+    std::vector<LO> nodeFlag(m_numNode, -1), activeNodes(m_numNode);
+#ifdef _OPENMP
+#pragma omp for
+#endif
+    for (LO i=0; i<numSub; i++) {
+      LO numElem = m_subElems[i].size();
+      LO numNode(0), numDof(0);
       for (LO j=0; j<numElem; j++) {
-	LO elem = subElems[i][j];
+	LO elem = m_subElems[i][j];
 	for (size_t k=0; k<m_elemConn[elem].size(); k++) {
 	  LO node = m_elemConn[elem][k];
 	  if (nodeFlag[node] == -1) {
@@ -437,34 +487,133 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
       }
       for (LO j=0; j<numNode; j++) nodeFlag[activeNodes[j]] = -1;
     }
+    }
+    const bool sortNodes = m_Parameters->get("Sort Subdomain Nodes", false);
+    if (sortNodes || (numSub == 1)) {
+      // reorder nodes in ascending order
+      for (LO i=0; i<numSub; i++) {
+	std::vector<LO> nodes = subNodes[i];
+	std::sort(nodes.begin(), nodes.end());
+	const LO numNode = nodes.size();
+	LO numDof(0);
+	for (LO j=0; j<numNode; j++) {
+	  const LO node = nodes[j];
+	  subNodes[i][j] = node;
+	  for (LO k=m_nodeBegin[node]; k<m_nodeBegin[node+1]; k++) {
+	    subLocalDofs[i][numDof++] = m_localDofs[k];
+	  }
+	  subNodeBegin[i][j+1] = numDof;
+	}
+      }
+    }
   }
 
-  void getSubdomainMatrices(std::vector< std::vector<LO> > & subElems, 
-			    std::vector< std::vector<LO> > & subNodes,
+  void adjustNodalCoords(const std::vector< std::vector<LO> > & subNodes)
+  {
+#ifdef TENSORPRODUCTBDDC
+    const bool adjustNodalCoords = 
+      m_Parameters->get("Adjust Nodal Coordinates", false);
+    if (adjustNodalCoords == false) return;
+
+    LO numElemPerSubDir1 = 
+      m_Parameters->get("Num Elems Per Sub Dir 1", 1);
+    LO numElemPerSubDir2 = 
+      m_Parameters->get("Num Elems Per Sub Dir 2", 1);
+    LO numElemPerSubDir3 = 
+      m_Parameters->get("Num Elems Per Sub Dir 3", 1);
+    if (m_spatialDim >= 2) {
+      BDDC_TEST_FOR_EXCEPTION
+	(numElemPerSubDir2 != numElemPerSubDir1, std::runtime_error, 
+	 "numElems in each direction must be same for tensor product");
+    }
+    if (m_spatialDim == 3) {
+      BDDC_TEST_FOR_EXCEPTION
+	(numElemPerSubDir3 != numElemPerSubDir1, std::runtime_error, 
+	 "numElems in each direction must be same for tensor product");
+    }
+    const int numSub = subNodes.size();
+    std::vector<double> xNew(m_numNode), yNew(m_numNode), zNew(m_numNode);
+    const int p = numElemPerSubDir1;
+    m_TP = new TensorProduct(p);
+    const std::vector<double> & xGL = m_TP->getGaussLobattoPoints();
+    for (int i=0; i<numSub; i++) {
+      double xMin(0), xMax(0), yMin(0), yMax(0), zMin(0), zMax(0);
+      getMinMaxCoords(subNodes[i], xMin, xMax, yMin, yMax, zMin, zMax);
+      const int numNode = subNodes[i].size();
+      std::vector<int> xIndex(numNode), yIndex(numNode), zIndex(numNode);
+      const double hX = (xMax - xMin)/numElemPerSubDir1;
+      const double hY = (yMax - yMin)/numElemPerSubDir2;
+      const double hZ = (zMax - zMin)/numElemPerSubDir3;
+      for (int j=0; j<numNode; j++) {
+	const int node = subNodes[i][j];
+	double x = m_x[node] - xMin + 0.0001*hX;
+	double y = m_y[node] - yMin + 0.0001*hY;
+	double z = m_z[node] - zMin + 0.0001*hZ;
+	xIndex[j] = int(x/hX);
+	if (hY > 0) yIndex[j] = int(y/hY);
+	if (hZ > 0) zIndex[j] = int(z/hZ);
+	xNew[node] = xMin + (xGL[xIndex[j]] + 1)/2 * (xMax - xMin);
+	yNew[node] = yMin + (xGL[yIndex[j]] + 1)/2 * (yMax - yMin);
+	zNew[node] = zMin + (xGL[zIndex[j]] + 1)/2 * (zMax - zMin);
+      }
+    }
+    m_x = xNew; m_y = yNew; m_z = zNew;
+#endif
+  }
+  
+#ifdef TENSORPRODUCTBDDC
+  TensorProduct* getTP() {
+    return m_TP;
+  }
+#endif
+
+  void getMinMaxCoords(const std::vector<LO> & nodes, 
+		       double & xMin, 
+		       double & xMax, 
+		       double & yMin, 
+		       double & yMax, 
+		       double & zMin, 
+		       double & zMax)
+  {
+    const int numNode = nodes.size();
+    if (numNode == 0) return;
+    xMin = m_x[nodes[0]]; xMax = m_x[nodes[0]];
+    yMin = m_y[nodes[0]]; yMax = m_y[nodes[0]];
+    zMin = m_z[nodes[0]]; zMax = m_z[nodes[0]];
+    for (int i=1; i<numNode; i++) {
+      const int node = nodes[i];
+      if (m_x[node] < xMin) xMin = m_x[node];
+      if (m_x[node] > xMax) xMax = m_x[node];
+      if (m_y[node] < yMin) yMin = m_y[node];
+      if (m_y[node] > yMax) yMax = m_y[node];
+      if (m_z[node] < zMin) zMin = m_z[node];
+      if (m_z[node] > zMax) zMax = m_z[node];
+    }
+  }
+  
+  void getSubdomainMatrices(std::vector< std::vector<LO> > & subNodes,
 			    std::vector< std::vector<LO> > & subNodeBegin,
 			    std::vector< std::vector<LO> > & subRowBegin, 
 			    std::vector< std::vector<LO> > & subColumns,
 			    std::vector< std::vector<SX> > & subValues)
   {
-    LO numSub = subElems.size();
-    subRowBegin.resize(numSub);
-    subColumns.resize(numSub);
-    subValues.resize(numSub);
+    LO numSub = m_subElems.size();
     std::vector< std::vector<LO> > nodalConn;
     determineNodalConnectivity(m_elemConn, nodalConn);
-    double omega = m_Parameters->get("omega", 0.0);
-    double betaDamping = m_Parameters->get("betaDamping", 0.0);
+    // first pass to determine memory requirements
+    std::vector<LO> numNonzeros(numSub, 0);
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
     std::vector<LO> nodeMap(m_numNode, -1);
+#ifdef _OPENMP
+#pragma omp for
+#endif
     for (LO sub=0; sub<numSub; sub++) {
       LO numNode = subNodes[sub].size();
       for (LO j=0; j<numNode; j++) nodeMap[subNodes[sub][j]] = j;
-      std::vector<LO> & nodeBegin = subNodeBegin[sub];
-      std::vector<LO> & rowBegin = subRowBegin[sub];
-      std::vector<LO> & columns = subColumns[sub];
-      std::vector<SX> & values = subValues[sub];
-      LO numDof = nodeBegin[numNode];
-      rowBegin.resize(numDof+1, 0);
-      columns.resize(0);
+      const std::vector<LO> & nodeBegin = subNodeBegin[sub];
       LO nnz(0);
       for (LO i=0; i<numNode; i++) {
 	LO node = subNodes[sub][i];
@@ -473,36 +622,114 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
 	    LO node2 = nodeMap[nodalConn[node][k]];
 	    if (node2 != -1) {
 	      for (LO m=nodeBegin[node2]; m<nodeBegin[node2+1]; m++) {
-		columns.push_back(m);
 		nnz++;
 	      }
 	    }
 	  }
-	  rowBegin[j+1] = nnz;
 	}
       }
-      std::vector<LO> imap(numDof, -1);
-      values.resize(nnz, 0);
-      std::vector<SX> rowValues(m_numDofElem);
-      LO numElem = subElems[sub].size();
+      numNonzeros[sub] = nnz;
+      for (LO j=0; j<numNode; j++) nodeMap[subNodes[sub][j]] = -1;
+    }
+    }
+    // allocate memory of std::vectors outside of parallel for region
+    subRowBegin.resize(numSub);
+    subColumns.resize(numSub);
+    subValues.resize(numSub);
+    LO maxNumDof(0);
+    for (LO sub=0; sub<numSub; sub++) {
+      LO numNode = subNodes[sub].size();
+      const std::vector<LO> & nodeBegin = subNodeBegin[sub];
+      LO numDof = nodeBegin[numNode];
+      if (numDof > maxNumDof) maxNumDof = numDof;
+      subRowBegin[sub].resize(numDof+1, 0);
+      subColumns[sub].resize(numNonzeros[sub]);
+      subValues[sub].resize(numNonzeros[sub]);
+    }
+    // determine matrix graph
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+    std::vector<LO> nodeMap(m_numNode, -1);
+#ifdef _OPENMP
+#pragma omp for
+#endif
+    for (LO sub=0; sub<numSub; sub++) {
+      LO numNode = subNodes[sub].size();
+      for (LO j=0; j<numNode; j++) nodeMap[subNodes[sub][j]] = j;
+      const std::vector<LO> & nodeBegin = subNodeBegin[sub];
+      std::vector<LO> & rowBegin = subRowBegin[sub];
+      std::vector<LO> & columns = subColumns[sub];
+      LO nnz(0);
+      for (LO i=0; i<numNode; i++) {
+	LO node = subNodes[sub][i];
+	for (LO j=nodeBegin[i]; j<nodeBegin[i+1]; j++) {
+	  //	  const int start = nnz;
+	  for (size_t k=0; k<nodalConn[node].size(); k++) {
+	    LO node2 = nodeMap[nodalConn[node][k]];
+	    if (node2 != -1) {
+	      for (LO m=nodeBegin[node2]; m<nodeBegin[node2+1]; m++) {
+		columns[nnz++] = m;
+	      }
+	    }
+	  }
+	  rowBegin[j+1] = nnz;
+	  // sort columns of row
+	  //	  std::sort(columns.begin()+start, columns.begin()+nnz);
+	}
+      }
+      for (LO j=0; j<numNode; j++) nodeMap[subNodes[sub][j]] = -1;
+    }
+    }
+    // assemble sparse matrix
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+    std::vector<LO> nodeMap(m_numNode, -1);
+    std::vector<LO> imap(maxNumDof, -1);
+    std::vector<SX> rowValues(m_numDofElem);
+#ifdef _OPENMP
+#pragma omp for
+#endif
+    for (LO sub=0; sub<numSub; sub++) {
+      LO numNode = subNodes[sub].size();
+      for (LO j=0; j<numNode; j++) nodeMap[subNodes[sub][j]] = j;
+      const std::vector<LO> & nodeBegin = subNodeBegin[sub];
+      LO numElem = m_subElems[sub].size();
+      const std::vector<LO> & rowBegin = subRowBegin[sub];
+      const std::vector<LO> & columns = subColumns[sub];
+      std::vector<SX> & values = subValues[sub];
+      std::vector<SM> elemStiffMatrix, elemMassMatrix, elementLoadVector;
+      double E, nu;
+      int propNum;
+      getMaterialProperties(sub, E, nu, propNum);
       for (LO i=0; i<numElem; i++) {
+	LO elem = m_subElems[sub][i];
+	getElementMatrices(m_elemConn[elem], E, nu, elemStiffMatrix, 
+			   elemMassMatrix);
+	determineElementLoadVector(elemMassMatrix, elementLoadVector);
 	LO elementRow(0);
-	LO elem = subElems[sub][i];
 	for (size_t j=0; j<m_elemConn[elem].size(); j++) {
 	  LO node = nodeMap[m_elemConn[elem][j]];
-	  assert (node != -1);
+	  BDDC_TEST_FOR_EXCEPTION(node == -1, std::runtime_error, 
+				  "invalid node number");
 	  for (LO k=nodeBegin[node]; k<nodeBegin[node+1]; k++) {
 	    for (LO m=rowBegin[k]; m<rowBegin[k+1]; m++) {
 	      imap[columns[m]] = m;
 	    }
 	    int elementCol(0);
-	    getElementMatrixRow(elementRow, omega, betaDamping, rowValues);
+	    getElementMatrixRow
+	      (elementRow, elemStiffMatrix, rowValues);
 	    for (size_t n=0; n<m_elemConn[elem].size(); n++) {
 	      LO node2 = nodeMap[m_elemConn[elem][n]];
-	      assert (node2 != -1);
+	      BDDC_TEST_FOR_EXCEPTION(node2 == -1, std::runtime_error, 
+				      "invalid node number");
 	      for (LO p=nodeBegin[node2]; p<nodeBegin[node2+1]; p++) {
 		LO col = p;
-		assert (imap[col] != -1);
+		BDDC_TEST_FOR_EXCEPTION(imap[col] == -1, std::runtime_error, 
+				      "invalid imap[col] number");
 		values[imap[col]] += rowValues[elementCol];
 		elementCol++;
 	      }
@@ -516,13 +743,15 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
       }
       for (LO j=0; j<numNode; j++) nodeMap[subNodes[sub][j]] = -1;
     }
+    }
   }
 
   void addDiagonalStiffness(std::vector< std::vector<LO> > & subRowBegin, 
 			    std::vector< std::vector<LO> > & subColumns,
 			    std::vector< std::vector<SX> > & subValues,
-			    SM diagScaleFactor) const
+			    const SM diagScaleFactor) const
   {
+    if (diagScaleFactor == 1) return;
     LO numSub = subRowBegin.size();
     for (LO i=0; i<numSub; i++) {
       const std::vector<LO> & rowBegin = subRowBegin[i];
@@ -556,22 +785,114 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
   }
 
  private:
+  void outputModel()
+  {
+    const bool writeModel = m_Parameters->get("Output Model", false);
+    if (writeModel == false) return;
+    BDDC_TEST_FOR_EXCEPTION(m_numProc != 1, std::runtime_error, 
+			    "numProc must be 1");
+    std::ofstream fout;
+    // coordinates
+    fout.open("coords.dat");
+    for (LO i=0; i<m_numNode; i++) {
+      fout << std::setw(23) << std::setprecision(16);
+      fout << m_x[i] << " " << m_y[i] << " " << m_z[i] << '\n';
+    }
+    fout.close();
+    // element connectivity and blockIds
+    const int numSub = m_subElems.size();
+    fout.open("elemConnAndBlocks.dat");
+    for (int i=0; i<numSub; i++) {
+      double E, nu;
+      int blockNum;
+      getMaterialProperties(i, E, nu, blockNum);
+      for (size_t j=0; j<m_subElems[i].size(); j++) {
+	const int elem = m_subElems[i][j];
+	for (size_t k=0; k<m_elemConn[elem].size(); k++) {
+	  fout << m_elemConn[elem][k]+1 << " ";
+	}
+	fout << blockNum << "\n";
+      }
+    }
+  }
+
+  void getMaterialProperties(const LO sub, 
+			     double & E, 
+			     double & nu,
+			     int & propNum)
+  {
+    const double E1 = m_Parameters->get("E1", 1.0);
+    const double nu1 = m_Parameters->get("nu1", 0.3);
+    const double E2 = m_Parameters->get("E2", 1.0);
+    const double nu2 = m_Parameters->get("nu2", 0.3);
+    const int matPropOption = m_Parameters->get("Material Property Option", 0);
+    propNum = -1;
+    if (m_readModel) {
+      BDDC_TEST_FOR_EXCEPTION(matPropOption != 0, std::runtime_error, 
+			      "matProOption must be 0");
+      propNum = 1;
+    }
+    else {
+      const LO ix = m_subIndices[3*sub+0];
+      const LO iy = m_subIndices[3*sub+1];
+      const LO iz = m_subIndices[3*sub+2];
+      if (matPropOption == 0) {
+	propNum = 1;
+      }
+      else if (matPropOption == 1) {
+	if (ix%2 == 0) propNum = 1;
+	else propNum = 2;
+      }
+      else if (matPropOption == 2) {
+	BDDC_TEST_FOR_EXCEPTION(m_spatialDim < 2, std::runtime_error, 
+			      "spatial dimension must be at least 2");
+	if ((ix+iy)%2 == 0) propNum = 1;
+	else propNum = 2;
+      }
+      else if (matPropOption == 3) {
+	BDDC_TEST_FOR_EXCEPTION(m_spatialDim != 3, std::runtime_error, 
+			      "spatial dimension must be 3");
+	if ((ix+iy+iz)%2 == 0) propNum = 1;
+	else propNum = 2;
+      }
+    }
+    if (propNum == 1) {
+      E = E1;
+      nu = nu1;
+    }
+    else {
+      E = E2;
+      nu = nu2;
+    }
+    BDDC_TEST_FOR_EXCEPTION(propNum == -1, std::runtime_error, 
+			    "invalid propNum");
+  }
+
   void GenerateModel()
   {
     switch(m_spatialDim) {
     case 1:
-      getModel1D(m_hElem, m_elemConn);
+      getModel1D(m_elemConn);
       break;
     case 2:
-      getModel2D(m_hElem, m_elemConn);
+      getModel2D(m_elemConn);
       break;
     case 3:
-      getModel3D(m_hElem, m_elemConn);
+      getModel3D(m_elemConn);
       break;
     default:
       break;
     }
-    assembleSubdomainMatrix(m_hElem, m_elemConn);
+    determineNodeBegLocalDof();
+    LO numSubDir1PerProc = m_Parameters->get
+      ("Number Subdomains Per Subregion Direction 1", 1);
+    LO numSubDir2PerProc = m_Parameters->get
+      ("Number Subdomains Per Subregion Direction 2", 1);
+    LO numSubDir3PerProc = m_Parameters->get
+      ("Number Subdomains Per Subregion Direction 3", 1);
+    getSubDomainElements(numSubDir1PerProc, numSubDir2PerProc,
+			 numSubDir3PerProc, m_subElems, m_subIndices);
+    outputModel();
   }
 
   void ApplyEssentialBCs()
@@ -588,7 +909,8 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     double xMinAll, xMaxAll;
     int err = MPI_Allreduce(&xMin, &xMinAll, 1, MPI_DOUBLE, MPI_MIN, m_Comm);
     err += MPI_Allreduce(&xMax, &xMaxAll, 1, MPI_DOUBLE, MPI_MAX, m_Comm);
-    assert (err == 0);
+    BDDC_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+			    "MPI_Allreduce error");
     double length = xMaxAll - xMinAll;
     if (m_x.size() == 0) return;
     if (m_Parameters->get("Apply Left Side Essential BCs", false)) {
@@ -597,6 +919,27 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     if (m_Parameters->get("Apply Right Side Essential BCs", false)) {
       ApplyEssentialBCs(xMaxAll, length);
     }
+  }
+
+  void ApplyEssentialBCs(const std::vector<LO> & constrainedNodes)
+  {
+    std::vector<bool> flagEBC(m_numNode, false);
+    for (size_t i=0; i<constrainedNodes.size(); i++) {
+      const LO node = constrainedNodes[i];
+      flagEBC[node] = true;
+    }
+    LO numDofActive(0);
+    std::vector<LO> nodeBeginNew(m_numNode+1, 0);
+    for (LO i=0; i<m_numNode; i++) {
+      for (LO j=m_nodeBegin[i]; j<m_nodeBegin[i+1]; j++) {
+	if (flagEBC[i] == false) {
+	  m_localDofs[numDofActive++] = m_localDofs[j];
+	}
+      }
+      nodeBeginNew[i+1] = numDofActive;
+    }
+    m_nodeBegin = nodeBeginNew;
+    m_localDofs.resize(numDofActive);
   }
 
   void ApplyEssentialBCs(const double xCoord,
@@ -614,40 +957,12 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
 	if (flagEBC) dofMap[j] = -1;
 	else {
 	  dofMap[j] = numDofActive;
-	  m_loadVector[numDofActive] = m_loadVector[j];
 	  numDofActive++;
 	}
       }
       nodeBeginNew[i+1] = numDofActive;
     }
     m_nodeBegin = nodeBeginNew;
-    m_loadVector.resize(numDofActive);
-    adjustProblemMatrix(numDof, numDofActive, dofMap);
-  }
-
-  void adjustProblemMatrix(const int numDof, 
-			   int numDofActive, 
-			   const std::vector<LO> & dofMap)
-  {
-    if (numDofActive == numDof) return;
-    std::vector<LO> rowBeginNew(numDofActive+1, 0);
-    numDofActive = 0;
-    LO numTerm(0);
-    for (LO i=0; i<numDof; i++) {
-      if (dofMap[i] != -1) {
-	for (LO j=m_rowBegin[i]; j<m_rowBegin[i+1]; j++) {
-	  LO col = dofMap[m_columns[j]];
-	  if (col != -1) {
-	    m_columns[numTerm] = col;
-	    m_values[numTerm] = m_values[j];
-	    numTerm++;
-	  }
-	}
-	numDofActive++;
-	rowBeginNew[numDofActive] = numTerm;
-      }
-    }
-    m_rowBegin = rowBeginNew;
   }
 
   void determineNodeBegLocalDof()
@@ -660,15 +975,16 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
       m_nodeBegin[i+1] = m_nodeBegin[i] + numDofPerNode;
       for (LO j=0; j<numDofPerNode; j++) {
 	m_localDofs[count] = j;
-	if (m_problemType == SCALARPDE) m_localDofs[count] = 6;
+	//	if (m_problemType == SCALARPDE) m_localDofs[count] = 6;
+	if (m_problemType == SCALARPDE) m_localDofs[count] = 0;
 	count++;
       }
     }
   }
 
-  void shapeHex8(double n1, 
-		 double n2, 
-		 double n3,
+  void shapeHex8(const double n1, 
+		 const double n2, 
+		 const double n3,
 		 double* phi,
 		 double* phi_1,
 		 double* phi_2,
@@ -711,15 +1027,48 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     phi_3[7] = -(-1+n1)*(1+n2)/8;
   }
 
-  void calculateGradientsAndJacobian(const double* x, 
-				     const double* y, 
-				     const double* z, 
-				     double eta1,
-				     double eta2,
-				     double eta3,
-				     double* phi,
-				     double* phid, 
-				     double & detJ)
+  void shapeQuad4(const double n1, 
+		  const double n2, 
+		  double* phi,
+		  double* phi_1,
+		  double* phi_2)
+  {
+    phi[0]=(1-n1)*(1-n2)/4;
+    phi[1]=(1+n1)*(1-n2)/4;
+    phi[2]=(1+n1)*(1+n2)/4;
+    phi[3]=(1-n1)*(1+n2)/4;
+    //
+    phi_1[0]=-(1-n2)/4;
+    phi_1[1]= (1-n2)/4;
+    phi_1[2]= (1+n2)/4;
+    phi_1[3]=-(1+n2)/4;
+    //
+    phi_2[0]=-(1-n1)/4;
+    phi_2[1]=-(1+n1)/4;
+    phi_2[2]= (1+n1)/4;
+    phi_2[3]= (1-n1)/4;
+  }
+
+  void shapeBar2(const double n1, 
+		 double* phi,
+		 double* phi_1)
+  {
+    phi[0]=(1-n1)/2;
+    phi[1]=(1+n1)/2;
+    //
+    phi_1[0]= -0.5;
+    phi_1[1]=  0.5;
+  }
+
+  void calculateGradientsAndJacobian3D(const double* x, 
+				       const double* y, 
+				       const double* z, 
+				       const double eta1,
+				       const double eta2,
+				       const double eta3,
+				       double* phi,
+				       double* phid, 
+				       double & detJ)
   {
     double phi_1[8], phi_2[8], phi_3[8];
     shapeHex8(eta1, eta2, eta3, phi, phi_1, phi_2, phi_3);
@@ -738,7 +1087,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     detJ = x_1*(y_2*z_3 - z_2*y_3) +
            y_1*(z_2*x_3 - x_2*z_3) +
            z_1*(x_2*y_3 - y_2*x_3);
-    int IPIV[8], NRHS(8), INFO;
+    int IPIV[3], NRHS(8), INFO;
     for (int i=0; i<NRHS; i++) {
       phid[3*i+0] = phi_1[i];
       phid[3*i+1] = phi_2[i];
@@ -748,19 +1097,67 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     LAPACK.GESV(3, NRHS, J, 3, IPIV, phid, 3, &INFO);
   }
 
-  void elemMatricesPoisson(double* x, 
-			   double* y, 
-			   double* z, 
-			   double eta1, 
-			   double eta2, 
-			   double eta3, 
-			   double E,
-			   double rho,
-			   double* dK, 
-			   double* dM)
+  void calculateGradientsAndJacobian2D(const double* x, 
+				       const double* y, 
+				       const double eta1,
+				       const double eta2,
+				       double* phi,
+				       double* phid, 
+				       double & detJ)
+  {
+    double phi_1[4], phi_2[4];
+    shapeQuad4(eta1, eta2, phi, phi_1, phi_2);
+    Teuchos::BLAS<int, double>  BLAS;
+    int INCX(1), INCY(1);
+    double x_1 = BLAS.DOT(4, phi_1, INCX, x, INCY);
+    double y_1 = BLAS.DOT(4, phi_1, INCX, y, INCY);
+    double x_2 = BLAS.DOT(4, phi_2, INCX, x, INCY);
+    double y_2 = BLAS.DOT(4, phi_2, INCX, y, INCY);
+    double J[] = {x_1, x_2, y_1, y_2};
+    detJ = x_1*y_2 - y_1*x_2;
+    int IPIV[2], NRHS(4), INFO;
+    for (int i=0; i<NRHS; i++) {
+      phid[2*i+0] = phi_1[i];
+      phid[2*i+1] = phi_2[i];
+    }
+    Teuchos::LAPACK<int, double> LAPACK;
+    LAPACK.GESV(2, NRHS, J, 2, IPIV, phid, 2, &INFO);
+  }
+
+  void calculateGradientsAndJacobian1D(const double* x, 
+				       const double eta1,
+				       double* phi,
+				       double* phid, 
+				       double & detJ)
+  {
+    double phi_1[2];
+    shapeBar2(eta1, phi, phi_1);
+    Teuchos::BLAS<int, double>  BLAS;
+    int INCX(1), INCY(1);
+    double x_1 = BLAS.DOT(2, phi_1, INCX, x, INCY);
+    double J = x_1;
+    detJ = J;
+    int IPIV[1], NRHS(2), INFO;
+    for (int i=0; i<NRHS; i++) {
+      phid[i+0] = phi_1[i];
+    }
+    Teuchos::LAPACK<int, double> LAPACK;
+    LAPACK.GESV(1, NRHS, &J, 1, IPIV, phid, 1, &INFO);
+  }
+
+  void elemMatricesPoisson3D(const double* x, 
+			     const double* y, 
+			     const double* z, 
+			     const double eta1, 
+			     const double eta2, 
+			     const double eta3, 
+			     const double E,
+			     const double rho,
+			     double* dK, 
+			     double* dM)
   {
     double phi[8], phid[24], detJ;
-    calculateGradientsAndJacobian(x, y, z, eta1, eta2, eta3, phi, phid, detJ);
+    calculateGradientsAndJacobian3D(x, y, z, eta1, eta2, eta3, phi, phid, detJ);
     double ALPHA = detJ*E; // diffusion coefficient is E
     double BETA = 0;
     Teuchos::BLAS<int, double>  BLAS;
@@ -769,6 +1166,46 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     ALPHA = detJ*rho; // density is rho
     BLAS.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, 8, 8, 1, ALPHA, phi, 8, 
 	      phi, 8, BETA, dM, 8);
+  }
+
+  void elemMatricesPoisson2D(const double* x, 
+			     const double* y, 
+			     const double eta1, 
+			     const double eta2, 
+			     const double E,
+			     const double rho,
+			     double* dK, 
+			     double* dM)
+  {
+    double phi[4], phid[8], detJ;
+    calculateGradientsAndJacobian2D(x, y, eta1, eta2, phi, phid, detJ);
+    double ALPHA = detJ*E; // diffusion coefficient is E
+    double BETA = 0;
+    Teuchos::BLAS<int, double>  BLAS;
+    BLAS.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, 4, 4, 2, ALPHA, phid, 2, 
+	      phid, 2, BETA, dK, 4);
+    ALPHA = detJ*rho; // density is rho
+    BLAS.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, 4, 4, 1, ALPHA, phi, 4, 
+	      phi, 4, BETA, dM, 4);
+  }
+
+  void elemMatricesPoisson1D(const double* x, 
+			     const double eta1, 
+			     const double E,
+			     const double rho,
+			     double* dK, 
+			     double* dM)
+  {
+    double phi[2], phid[2], detJ;
+    calculateGradientsAndJacobian1D(x, eta1, phi, phid, detJ);
+    double ALPHA = detJ*E; // diffusion coefficient is E
+    double BETA = 0;
+    Teuchos::BLAS<int, double>  BLAS;
+    BLAS.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, 2, 2, 1, ALPHA, phid, 1, 
+	      phid, 1, BETA, dK, 2);
+    ALPHA = detJ*rho; // density is rho
+    BLAS.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, 2, 2, 1, ALPHA, phi, 2, 
+	      phi, 2, BETA, dM, 2);
   }
 
   void calculateKmat(double E, 
@@ -789,20 +1226,36 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void elemMatricesElasticity(double* x, 
-			      double* y, 
-			      double* z, 
-			      double eta1, 
-			      double eta2, 
-			      double eta3, 
-			      double E,
-			      double nu,
-			      double rho,
-			      double* dK, 
-			      double* dM)
+  void calculateKmat2D(double E, 
+		       double nu, 
+		       double* Kmat)
+  {
+    const double sfac = E/(1-nu*nu);
+    Kmat[0] = sfac;
+    Kmat[1] = sfac*nu;
+    Kmat[2] = 0;
+    Kmat[3] = sfac*nu;
+    Kmat[4] = sfac;
+    Kmat[5] = 0;
+    Kmat[6] = 0;
+    Kmat[7] = 0;
+    Kmat[8] = sfac*(1 - nu)/2;
+  }
+
+  void elemMatricesElasticity3D(const double* x, 
+				const double* y, 
+				const double* z, 
+				const double eta1, 
+				const double eta2, 
+				const double eta3, 
+				const double E,
+				const double nu,
+				const double rho,
+				double* dK, 
+				double* dM)
   {
     double phi[8], phid[24], detJ;
-    calculateGradientsAndJacobian(x, y, z, eta1, eta2, eta3, phi, phid, detJ);
+    calculateGradientsAndJacobian3D(x, y, z, eta1, eta2, eta3, phi, phid, detJ);
     int i1[8], i2[8], i3[8];
     for (int i=0; i<8; i++) {
       i1[i] = 3*i + 0;
@@ -846,39 +1299,101 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void calculateElementMatrices(std::vector<LO> & nodes, 
-				std::vector<double> & K, 
-				std::vector<double> & M)
+  void elemMatricesElasticity2D(const double* x, 
+				const double* y, 
+				const double eta1, 
+				const double eta2, 
+				const double E,
+				const double nu,
+				const double rho,
+				double* dK, 
+				double* dM)
+  {
+    double phi[4], phid[8], detJ;
+    calculateGradientsAndJacobian2D(x, y, eta1, eta2, phi, phid, detJ);
+    int i1[4], i2[4];
+    for (int i=0; i<4; i++) {
+      i1[i] = 2*i + 0;
+      i2[i] = 2*i + 1;
+    }
+    double A[3*8];
+    memset(A, 0, 3*8*sizeof(double));
+    for (int i=0; i<4; i++) {
+      double row1 = phid[0+2*i];
+      double row2 = phid[1+2*i];
+      A[0+3*i1[i]] = row1;
+      A[1+3*i2[i]] = row2;
+      A[2+3*i1[i]] = row2;
+      A[2+3*i2[i]] = row1;
+    }
+    double Kmat[9];
+    calculateKmat2D(E, nu, Kmat);
+    Teuchos::BLAS<int, double>  BLAS;
+    double ALPHA = detJ;
+    double BETA = 0;
+    double KmatA[3*8];
+    BLAS.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 3, 8, 3, ALPHA, Kmat, 3, 
+	      A, 3, BETA, KmatA, 3);
+    ALPHA = 1.0;
+    BLAS.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, 8, 8, 3, ALPHA, A, 3, 
+	      KmatA, 3, BETA, dK, 8);
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<4; j++) {
+	double value = phi[i]*phi[j]*detJ;
+	dM[i1[i]+8*i1[j]] = value;
+	dM[i2[i]+8*i2[j]] = value;
+      }
+    }
+  }
+
+  void setQuadraturePoints()
+  {
+    if (m_Parameters->get("Quad Type 2 Point", 0) == 0) {
+      // standard Gauss-Legendre integration points
+      m_Aa_quad[0] = -0.577350269189626;
+      m_Aa_quad[1] =  0.577350269189626;
+    }
+    else {
+      // Gauss-Lobatto integration points
+      m_Aa_quad[0] = -1.0;
+      m_Aa_quad[1] =  1.0;
+    }
+  }
+
+  void calculateElementMatrices3D(const std::vector<LO> & nodes,
+				  const double E,
+				  const double nu,
+				  std::vector<double> & K, 
+				  std::vector<double> & M)
   {
     int numNode = nodes.size();
-    assert (numNode == 8);
+    BDDC_TEST_FOR_EXCEPTION(numNode != 8, std::runtime_error, 
+			    "numNode must be 8");
     double x[8], y[8], z[8];
     for (int i=0; i<numNode; i++) {
       x[i] = m_x[nodes[i]];
       y[i] = m_y[nodes[i]];
       z[i] = m_z[nodes[i]];
     }
-    double Aa_quad[] = {-0.577350269189626, 0.577350269189626};
     double Ha_quad[] = {1.0, 1.0};
     int numDof = 8;
     if (m_problemType == ELASTICITY) numDof = 24;
     std::vector<double> dK(numDof*numDof), dM(numDof*numDof);
     int numQuad = 2;
+    const double rho(1.0);
     for (int i=0; i<numQuad; i++) {
       for (int j=0; j<numQuad; j++) {
 	for (int k=0; k<numQuad; k++) {
-	  double eta1 = Aa_quad[i];
-	  double eta2 = Aa_quad[j];
-	  double eta3 = Aa_quad[k];
+	  double eta1 = m_Aa_quad[i];
+	  double eta2 = m_Aa_quad[j];
+	  double eta3 = m_Aa_quad[k];
 	  if (m_problemType == SCALARPDE) {
-	    double E(1.0), rho(1.0);
-	    elemMatricesPoisson(x, y, z, eta1, eta2, eta3, E, rho,
-				dK.data(), dM.data());
+	    elemMatricesPoisson3D(x, y, z, eta1, eta2, eta3, E, rho,
+				  dK.data(), dM.data());
 	  }
 	  else {
-	    double E(1.0), nu(0.3), rho(1.0);
-	    elemMatricesElasticity(x, y, z, eta1, eta2, eta3, E, nu, rho,
-				   dK.data(), dM.data());
+	    elemMatricesElasticity3D(x, y, z, eta1, eta2, eta3, E, nu, rho,
+				     dK.data(), dM.data());
 	  }
 	  for (int m=0; m<numDof*numDof; m++) {
 	    K[m] += dK[m]*Ha_quad[i]*Ha_quad[j]*Ha_quad[k];
@@ -889,54 +1404,92 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void getElementMatrices(double hElem,
-			  std::vector<LO> & nodes,
-			  std::vector<double> & elemStiffMatrix,
-			  std::vector<double> & elemMassMatrix)
+  void calculateElementMatrices2D(const std::vector<LO> & nodes, 
+				  const double E,
+				  const double nu,
+				  std::vector<double> & K, 
+				  std::vector<double> & M)
+  {
+    int numNode = nodes.size();
+    BDDC_TEST_FOR_EXCEPTION(numNode != 4, std::runtime_error, 
+			    "numNode must be 4");
+    double x[4], y[4];
+    for (int i=0; i<numNode; i++) {
+      x[i] = m_x[nodes[i]];
+      y[i] = m_y[nodes[i]];
+    }
+    double Ha_quad[] = {1.0, 1.0};
+    int numDof = 4;
+    if (m_problemType == ELASTICITY) numDof = 8;
+    std::vector<double> dK(numDof*numDof), dM(numDof*numDof);
+    int numQuad = 2;
+    const double rho(1.0);
+    for (int i=0; i<numQuad; i++) {
+      for (int j=0; j<numQuad; j++) {
+	double eta1 = m_Aa_quad[i];
+	double eta2 = m_Aa_quad[j];
+	if (m_problemType == SCALARPDE) {
+	  elemMatricesPoisson2D(x, y, eta1, eta2, E, rho,
+				dK.data(), dM.data());
+	}
+	else {
+	  elemMatricesElasticity2D(x, y, eta1, eta2, E, nu, rho,
+				   dK.data(), dM.data());
+	}
+	for (int m=0; m<numDof*numDof; m++) {
+	  K[m] += dK[m]*Ha_quad[i]*Ha_quad[j];
+	  M[m] += dM[m]*Ha_quad[i]*Ha_quad[j];
+	}
+      }
+    }
+  }
+
+  void calculateElementMatrices1D(const std::vector<LO> & nodes, 
+				  const double E,
+				  std::vector<double> & K, 
+				  std::vector<double> & M)
+  {
+    int numNode = nodes.size();
+    BDDC_TEST_FOR_EXCEPTION(numNode != 2, std::runtime_error, 
+			    "numNode must be 2");
+    double x[2];
+    for (int i=0; i<numNode; i++) {
+      x[i] = m_x[nodes[i]];
+    }
+    double Ha_quad[] = {1.0, 1.0};
+    int numDof = 2;
+    std::vector<double> dK(numDof*numDof), dM(numDof*numDof);
+    int numQuad = 2;
+    const double rho(1.0);
+    for (int i=0; i<numQuad; i++) {
+      double eta1 = m_Aa_quad[i];
+      elemMatricesPoisson1D(x, eta1, E, rho, dK.data(), dM.data());
+      for (int m=0; m<numDof*numDof; m++) {
+	K[m] += dK[m]*Ha_quad[i];
+	M[m] += dM[m]*Ha_quad[i];
+      }
+    }
+  }
+
+  void getElementMatrices(const std::vector<LO> & nodes,
+			  const double E,
+			  const double nu,
+			  std::vector<SM> & elemStiffMatrix,
+			  std::vector<SM> & elemMassMatrix)
   {
     int numDofPerNode = getNumDofPerNode();
-    int numNodePerElem = power2( m_spatialDim);
+    int numNodePerElem = power2(m_spatialDim);
     m_numDofElem = numNodePerElem*numDofPerNode;
-    elemStiffMatrix.resize(m_numDofElem*m_numDofElem, 0);
-    elemMassMatrix.resize(m_numDofElem*m_numDofElem, 0);
-    // calculate actual finite element matrices for 3D problems
-    if (m_spatialDim == 3) {
-      calculateElementMatrices(nodes, elemStiffMatrix, elemMassMatrix);
-      return;
+    elemStiffMatrix.assign(m_numDofElem*m_numDofElem, 0);
+    elemMassMatrix.assign(m_numDofElem*m_numDofElem, 0);
+    if (m_spatialDim == 1) {
+      calculateElementMatrices1D(nodes, E, elemStiffMatrix, elemMassMatrix);
     }
-    double scaleFactorMass = pow(hElem, m_spatialDim);
-    double artificialStiffness = 
-      m_Parameters->get("Artificial Foundation Stiffness", double(0));
-    for (int i=0; i<m_numDofElem; i++) {
-      int index = i+m_numDofElem*i;
-      elemMassMatrix[index] = scaleFactorMass/numNodePerElem;
-      elemStiffMatrix[index] = artificialStiffness*elemMassMatrix[index];
+    else if (m_spatialDim == 2) {
+      calculateElementMatrices2D(nodes, E, nu, elemStiffMatrix, elemMassMatrix);
     }
-    double scaleFactorStiff = pow(hElem, m_spatialDim-2);
-    switch (m_problemType) {
-    case SCALARPDE:
-      for (int i=0; i<m_numDofElem; i++) {
-	for (int j=i+1; j<m_numDofElem; j++) {
-	  elemStiffMatrix[i + i*m_numDofElem] +=  scaleFactorStiff;
-	  elemStiffMatrix[j + j*m_numDofElem] +=  scaleFactorStiff;
-	  elemStiffMatrix[i + j*m_numDofElem] += -scaleFactorStiff;
-	  elemStiffMatrix[j + i*m_numDofElem] += -scaleFactorStiff;
-	}
-      }
-      break;
-    case ELASTICITY:
-      assert (m_spatialDim != 1);
-      for (int i=0; i<numNodePerElem; i++) {
-	for (int j=0; j<numNodePerElem; j++) {
-	  if (i != j) {
-	    addElasticity(i, j, nodes, m_numDofElem, 
-			  scaleFactorStiff, elemStiffMatrix);
-	  }
-	}
-      }
-      break;
-    default:
-      break;
+    else if (m_spatialDim == 3) {
+      calculateElementMatrices3D(nodes, E, nu, elemStiffMatrix, elemMassMatrix);
     }
   }
 
@@ -982,69 +1535,6 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     dirCosine[2] = dz/L;
   }
 
-  void assembleSubdomainMatrix(double hElem,
-			       std::vector< std::vector<LO> > &elemConn)
-  {
-    std::vector< std::vector<LO> > nodalConn;
-    determineNodalConnectivity(elemConn, nodalConn);
-    determineNodeBegLocalDof();
-    if (elemConn.size() == 0) return;
-    getElementMatrices(hElem, elemConn[0], m_elemStiffMatrix, m_elemMassMatrix);
-    std::vector<SX> elementLoadVector;
-    determineElementLoadVector(elementLoadVector);
-    double omega = m_Parameters->get("omega", 0.0);
-    double betaDamping = m_Parameters->get("betaDamping", 0.0);
-    LO numDof = m_nodeBegin[m_numNode];
-    m_loadVector.resize(numDof);
-    // determine potentially non-zero columns in each row of matrix
-    m_rowBegin.resize(numDof+1, 0);
-    m_columns.resize(0);
-    LO nnz(0);
-    for (LO i=0; i<m_numNode; i++) {
-      for (LO j=m_nodeBegin[i]; j<m_nodeBegin[i+1]; j++) {
-	for (size_t k=0; k<nodalConn[i].size(); k++) {
-	  LO node2 = nodalConn[i][k];
-	  for (LO m=m_nodeBegin[node2]; m<m_nodeBegin[node2+1]; m++) {
-	    m_columns.push_back(m);
-	    nnz++;
-	  }
-	}
-	m_rowBegin[j+1] = nnz;
-      }
-    }
-    // element and force assembly
-    std::vector<LO> imap(numDof, -1);
-    m_values.resize(nnz, 0);
-    std::vector<SX> rowValues(m_numDofElem);
-    for (LO i=0; i<m_numElem; i++) {
-      LO elementRow(0);
-      for (size_t j=0; j<elemConn[i].size(); j++) {
-	LO node = elemConn[i][j];
-	for (LO k=m_nodeBegin[node]; k<m_nodeBegin[node+1]; k++) {
-	  m_loadVector[k] += elementLoadVector[k-m_nodeBegin[node]];
-	  for (LO m=m_rowBegin[k]; m<m_rowBegin[k+1]; m++) {
-	    imap[m_columns[m]] = m;
-	  }
-	  int elementCol(0);
-	  getElementMatrixRow(elementRow, omega, betaDamping, rowValues);
-	  for (size_t n=0; n<elemConn[i].size(); n++) {
-	    LO node2 = elemConn[i][n];
-	    for (LO p=m_nodeBegin[node2]; p<m_nodeBegin[node2+1]; p++) {
-	      LO col = p;
-	      assert (imap[col] != -1);
-	      m_values[imap[col]] += rowValues[elementCol];
-	      elementCol++;
-	    }
-	  }
-	  elementRow++;
-	  for (LO m=m_rowBegin[k]; m<m_rowBegin[k+1]; m++) {
-	    imap[m_columns[m]] = -1;
-	  }
-	}
-      }
-    }
-  }
-
   int estimateMaxEntriesPerRow() const
   {
     int numDofPerNode = getNumDofPerNode();
@@ -1064,29 +1554,31 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void getElementMatrixRow(int localRow, 
-			   double omega,
-			   double betaDamping,
+  void getElementMatrixRow(const int localRow, 
+			   const std::vector<SM> & elemStiffMatrix,
 			   std::vector<SX> & rowValues) const
   {
     SX a(0);
     int index;
+    rowValues.resize(m_numDofElem);
     switch(m_analysisType) {
     case STANDARD:
       for (LO i=0; i<m_numDofElem; i++) {
 	index = localRow+m_numDofElem*i;
-	rowValues[i] = getNumber(m_elemStiffMatrix[index], 0, a);
+	rowValues[i] = getNumber(elemStiffMatrix[index], 0, a);
       }
       break;
+      /*
     case HELMHOLTZA:
       for (LO i=0; i<m_numDofElem; i++) {
 	index = localRow+m_numDofElem*i;
 	rowValues[i] =  
-	  getNumber(m_elemStiffMatrix[index], 
-		    betaDamping*m_elemStiffMatrix[index]*omega, a);
-	rowValues[i] -= getNumber(m_elemMassMatrix[index]*omega*omega, 0, a);
+	  getNumber(elemStiffMatrix[index], 
+		    betaDamping*elemStiffMatrix[index]*omega, a);
+	rowValues[i] -= getNumber(elemMassMatrix[index]*omega*omega, 0, a);
       }
       break;
+      */
     default:
       break;
     }
@@ -1106,14 +1598,14 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     return std::complex<double>(realPart, imagPart);
   }
 
-  void getModel1D(double & hElem, 
-		  std::vector< std::vector<LO> > & elemConn)
+  void getModel1D(std::vector< std::vector<LO> > & elemConn)
   {
     LO numSubDir1 = m_Parameters->get("Number of Subdomains Direction 1", 1);
     double lengthDir1 = m_Parameters->get("Length Direction 1", double(1));
     LO numElemPerSubDir1 = 
-      m_Parameters->get("Number of Elements Per Subdomain Direction 1", 1);
-    assert (m_numProc >= numSubDir1);
+      m_Parameters->get("Number of Elements Per Subregion Direction 1", 1);
+    BDDC_TEST_FOR_EXCEPTION(m_numProc < numSubDir1, std::runtime_error, 
+			    "not enough processors");
     LO numActiveProc = numSubDir1;
     if (m_myPID > numActiveProc-1) {
       m_numNode = 0;
@@ -1123,7 +1615,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     m_numNode = numElemPerSubDir1+1;
     m_numElem = numElemPerSubDir1;
     double lengthSubDir1 = lengthDir1/numSubDir1;
-    hElem = lengthSubDir1/numElemPerSubDir1;
+    const double hElem = lengthSubDir1/numElemPerSubDir1;
     m_x.resize(m_numNode, 0);
     m_y.resize(m_numNode, 0);
     m_z.resize(m_numNode, 0);
@@ -1142,18 +1634,18 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
   
-  void getModel2D(double & hElem, 
-		  std::vector< std::vector<LO> > & elemConn)
+  void getModel2D(std::vector< std::vector<LO> > & elemConn)
   {
     LO numSubDir1 = m_Parameters->get("Number of Subdomains Direction 1", 1);
     LO numSubDir2 = m_Parameters->get("Number of Subdomains Direction 2", 1);
     double lengthDir1 = m_Parameters->get("Length Direction 1", double(1));
     double lengthDir2 = m_Parameters->get("Length Direction 2", double(1));
     LO numElemPerSubDir1 = 
-      m_Parameters->get("Number of Elements Per Subdomain Direction 1", 1);
+      m_Parameters->get("Number of Elements Per Subregion Direction 1", 1);
     LO numElemPerSubDir2 = 
-      m_Parameters->get("Number of Elements Per Subdomain Direction 2", 1);
-    assert (m_numProc >= numSubDir1*numSubDir2);
+      m_Parameters->get("Number of Elements Per Subregion Direction 2", 1);
+    BDDC_TEST_FOR_EXCEPTION(m_numProc < numSubDir1*numSubDir2, 
+			    std::runtime_error, "not enough processors");
     LO numActiveProc = numSubDir1*numSubDir2;
     if (m_myPID > numActiveProc-1) {
       m_numNode = 0;
@@ -1168,7 +1660,6 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     double lengthSubDir2 = lengthDir2/numSubDir2;
     double hElem1 = lengthSubDir1/numElemPerSubDir1;
     double hElem2 = lengthSubDir2/numElemPerSubDir2;
-    hElem = std::max(hElem1, hElem2);
     int i1 = m_myPID%numSubDir1;
     int i2 = m_myPID/numSubDir1;
     GO nnodeDir1All = numElemPerSubDir1*numSubDir1+1;
@@ -1200,8 +1691,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void getModel3D(double & hElem, 
-		  std::vector< std::vector<LO> > & elemConn)
+  void getModel3D(std::vector< std::vector<LO> > & elemConn)
   {
     LO numSubDir1 = m_Parameters->get("Number of Subdomains Direction 1", 1);
     LO numSubDir2 = m_Parameters->get("Number of Subdomains Direction 2", 1);
@@ -1210,12 +1700,13 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     double lengthDir2 = m_Parameters->get("Length Direction 2", double(1));
     double lengthDir3 = m_Parameters->get("Length Direction 3", double(1));
     LO numElemPerSubDir1 = 
-      m_Parameters->get("Number of Elements Per Subdomain Direction 1", 1);
+      m_Parameters->get("Number of Elements Per Subregion Direction 1", 1);
     LO numElemPerSubDir2 = 
-      m_Parameters->get("Number of Elements Per Subdomain Direction 2", 1);
+      m_Parameters->get("Number of Elements Per Subregion Direction 2", 1);
     LO numElemPerSubDir3 = 
-      m_Parameters->get("Number of Elements Per Subdomain Direction 3", 1);
-    assert (m_numProc >= numSubDir1*numSubDir2*numSubDir3);
+      m_Parameters->get("Number of Elements Per Subregion Direction 3", 1);
+    BDDC_TEST_FOR_EXCEPTION(m_numProc < numSubDir1*numSubDir2*numSubDir3, 
+			    std::runtime_error, "not enough processors");
     LO numActiveProc = numSubDir1*numSubDir2*numSubDir3;
     if (m_myPID > numActiveProc-1) {
       m_numNode = 0;
@@ -1233,8 +1724,6 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     double hElem1 = lengthSubDir1/numElemPerSubDir1;
     double hElem2 = lengthSubDir2/numElemPerSubDir2;
     double hElem3 = lengthSubDir3/numElemPerSubDir3;
-    hElem = std::max(hElem1, hElem2);
-    hElem = std::max(hElem, hElem3);
     int i1 = m_myPID%numSubDir1;
     int i3 = m_myPID/(numSubDir1*numSubDir2);
     int i2 = (m_myPID-i3*numSubDir1*numSubDir2)/numSubDir1;
@@ -1282,9 +1771,9 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
 
-  void determineNodalConnectivity(
-		  std::vector< std::vector<LO> > & elemConn,
-		  std::vector< std::vector<LO> > & nodalConn)
+  void determineNodalConnectivity
+    (const std::vector< std::vector<LO> > & elemConn,
+     std::vector< std::vector<LO> > & nodalConn)
   {
     std::vector< std::vector<LO> > nodeElements(m_numNode);
     LO numElem = elemConn.size();
@@ -1317,47 +1806,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     }
   }
   
-  void GenerateConstraintEquations()
-  {
-    //
-    // Notes: All constraints are for subdomain 2. Let u_L denote the vector of 
-    // dofs for nodes on the left side of the second subdomain. Similarly, Let 
-    // u_L+1 denote the vector of dofs for nodes one layer to the right of the 
-    // left side of the second subdomain. The constraints are u_L+1 = u_L.
-    //
-    if (m_myPID != 2) return;
-    if (!m_Parameters->get("Generate Constraint Equations", false)) {
-      return;
-    }
-    SM xMin = m_x[0];
-    std::vector<LO> leftSideNodes;
-    for (int i=0; i<m_numNode; i++) {
-      if (m_x[i] == xMin) leftSideNodes.push_back(i);
-    }
-    LO numConstraints(0);
-    m_rowBeginCT.resize(1, 0);
-    for (size_t i=0; i<leftSideNodes.size(); i++) {
-      LO node1 = leftSideNodes[i];
-      size_t numDofNode1 = m_nodeBegin[node1+1]-m_nodeBegin[node1];
-      LO node2 = node1+1;
-      size_t numDofNode2 = m_nodeBegin[node2+1]-m_nodeBegin[node2];
-      assert (numDofNode2 == numDofNode1);
-      (void)(numDofNode2);
-      for (size_t j=0; j<numDofNode1; j++) {
-	LO dof = m_nodeBegin[node1]+j;
-	m_rowsCT.push_back(dof);
-	m_matrixCT.push_back(1);
-	m_rowBeginCT.push_back(m_rowBeginCT.size());
-	LO dof2 = m_nodeBegin[node2]+j;
-	m_rowsCT.push_back(dof2);
-	m_matrixCT.push_back(-1);
-	m_colsCT.push_back(numConstraints);
-	numConstraints++;
-      }
-    }
-  }
-
-  void printElementMatrix(const SM* matrix,
+  void printElementMatrix(const double* matrix,
 			  const char* fname) const
   {
     std::ofstream fout;
@@ -1397,12 +1846,14 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     return value*std::conj(value);
   }
 
-  void determineElementLoadVector(std::vector<SX> & elementLoadVector) const
+  void determineElementLoadVector(const std::vector<SM> & elemMassMatrix,
+				  std::vector<SX> & elementLoadVector) const
   {
     int numDofPerNode = getNumDofPerNode();
     int numNodePerElem = power2(m_spatialDim);
-    assert (m_numDofElem == numNodePerElem*numDofPerNode);
-    elementLoadVector.resize(m_numDofElem);
+    BDDC_TEST_FOR_EXCEPTION(m_numDofElem != numNodePerElem*numDofPerNode, 
+			    std::runtime_error, "not enough processors");
+    elementLoadVector.assign(m_numDofElem, 0);
     int loadDirection = m_Parameters->get("Load Direction", 1);
     for (int i=0; i<numNodePerElem; i++) {
       for (int j=0; j<numDofPerNode; j++) {
@@ -1411,7 +1862,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
 	  SX rowSum(0);
 	  for (int k=0; k<m_numDofElem; k++) {
 	    LO indexElem = index+k*m_numDofElem;
-	    rowSum += m_elemMassMatrix[indexElem];
+	    rowSum += elemMassMatrix[indexElem];
 	  }
 	  elementLoadVector[index] = rowSum;
 	}
@@ -1424,16 +1875,20 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
   enum ProblemType m_problemType;
   enum AnalysisType m_analysisType;
   LO m_spatialDim;
-  int m_myPID, m_numProc, m_numDofElem;
-  LO m_numNode, m_numElem;
-  std::vector<double> m_x, m_y, m_z, m_elemStiffMatrix, m_elemMassMatrix;
-  std::vector<LO> m_nodeBegin, m_localDofs, m_rowBegin, m_columns;
+  int m_myPID{-1}, m_numProc{-1}, m_numDofElem{0};
+  LO m_numNode{0}, m_numElem{0};
+  std::vector<double> m_x, m_y, m_z;
+  std::vector<LO> m_nodeBegin, m_localDofs, m_subIndices;
   std::vector<GO> m_nodeGIDs;
-  std::vector<SX> m_values, m_loadVector;
-  std::vector<LO> m_rowsCT, m_colsCT, m_rowBeginCT, m_columnsCT;
-  std::vector<SM> m_matrixCT;
+  std::vector<SX> m_loadVector;
   std::vector< std::vector<LO> > m_elemConn;
-  double m_hElem;
+  std::vector< std::vector<LO> > m_subElems;
+  bool m_readModel{false};
+#ifdef TENSORPRODUCTBDDC
+  TensorProduct* m_TP{nullptr};
+#endif
+  double m_Aa_quad[2];
+
 };
 
 } // namespace bddc

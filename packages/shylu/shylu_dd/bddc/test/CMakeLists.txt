@@ -17,6 +17,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ShyLUBDDCDriverFiles
-    SOURCE_FILES SolverBDDCTest.inp SolverBDDCTestSimple.inp SparseSolverTest.inp
+    SOURCE_FILES sparseSolverTest.xml bddc.xml mueLu_SGS.xml elasticity3D.xml problemMaker.xml problemMakerSimple.xml
     )
 
