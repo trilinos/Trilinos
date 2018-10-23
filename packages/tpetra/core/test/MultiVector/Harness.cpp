@@ -562,52 +562,57 @@ namespace { // (anonymous)
     // only intended to expose readOnly etc., not the other functions.
     // This design should actually only return a nonowning object.
     //
-    // TODO (mfh 22 Oct 2018) Add a "zerothColumn" or "asVector"
-    // helper function that returns the first (0th) column of a Rank-2
-    // View as a Rank-1 View.  It looks like the app also needs
-    // "asMultiVector" (which would be a no-op in this case).
-    //
     // // asVector converts LocalAccess struct to actual rank-1 Kokkos::View
     // auto X_lcl = asVector (readOnly (mvec));
     // auto X_lcl_host = asVector (readOnly (mvec).on (Kokkos::HostSpace));
-    //
-    // // Or how about this?  I don't like it because readOnly etc. apply
-    // // to objects for which asVector() doesn't make sense.
-    // auto X_lcl_host2 = readOnly (mvec).on (Kokkos::HostSpace).asVector ();
-    //
-    auto X_lcl_ro = Harness::Impl::getNonowningLocalObject (Harness::Impl::getMasterLocalObject (Harness::readOnly (mvec)));
+    {
+      auto X_lcl_ro3 = Harness::getMultiVector (Harness::readOnly (mvec));
+      // Make sure X_lcl_ro3 can be assigned to the type we expect it to
+      // be.  It doesn't have to be that type, it just has to be
+      // assignable to that type.
+      Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro4 = X_lcl_ro3;
+      static_assert (decltype (X_lcl_ro3)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_ro3.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_ro3.extent (1)) == numVecs );
+    }
 
-    // Make sure X_lcl_ro can be assigned to the type we expect it to
-    // be.  It doesn't have to be that type, it just has to be
-    // assignable to that type.
-    Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
-    static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
-    TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
-    TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );    
+    // NOTE (mfh 23 Oct 2018) Don't use the commented-out interface
+    // below.  It's really only meant to be an implementation detail
+    // of withLocalAccess, which we're not using for VectorHarness.
+#if 0
+    {
+      auto X_lcl_ro = Harness::Impl::getNonowningLocalObject (Harness::Impl::getMasterLocalObject (Harness::readOnly (mvec)));
 
-    auto X_lcl_ro3 = Harness::getMultiVector (Harness::readOnly (mvec));
-    // Make sure X_lcl_ro3 can be assigned to the type we expect it to
-    // be.  It doesn't have to be that type, it just has to be
-    // assignable to that type.
-    Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro4 = X_lcl_ro3;
-    static_assert (decltype (X_lcl_ro3)::Rank == 2, "Rank is not 2");
-    TEST_ASSERT( size_t (X_lcl_ro3.extent (0)) == numLocal );
-    TEST_ASSERT( size_t (X_lcl_ro3.extent (1)) == numVecs );
+      // Make sure X_lcl_ro can be assigned to the type we expect it to
+      // be.  It doesn't have to be that type, it just has to be
+      // assignable to that type.
+      Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
+      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
+    }
+#endif // 0
+    
+    {
+      auto X_lcl_1d_ro = Harness::getVector (Harness::readOnly (vec));
+      Kokkos::View<const double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
+      static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
+    }
 
-    auto X_lcl_1d_ro = Harness::getVector (Harness::readOnly (vec));
-    Kokkos::View<const double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
-    static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
-    TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
+    {
+      auto X_lcl_1d_ro3 = Harness::getVector (Harness::writeOnly (vec));
+      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro4 = X_lcl_1d_ro3;
+      static_assert (decltype (X_lcl_1d_ro3)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_ro3.extent (0)) == numLocal );
+    }
 
-    auto X_lcl_1d_ro3 = Harness::getVector (Harness::writeOnly (vec));
-    Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro4 = X_lcl_1d_ro3;
-    static_assert (decltype (X_lcl_1d_ro3)::Rank == 1, "Rank is not 1");
-    TEST_ASSERT( size_t (X_lcl_1d_ro3.extent (0)) == numLocal );
-
-    auto X_lcl_1d_ro5 = Harness::getVector (Harness::readWrite (vec));
-    Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro6 = X_lcl_1d_ro5;
-    static_assert (decltype (X_lcl_1d_ro5)::Rank == 1, "Rank is not 1");
-    TEST_ASSERT( size_t (X_lcl_1d_ro5.extent (0)) == numLocal );
+    {
+      auto X_lcl_1d_ro5 = Harness::getVector (Harness::readWrite (vec));
+      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro6 = X_lcl_1d_ro5;
+      static_assert (decltype (X_lcl_1d_ro5)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_ro5.extent (0)) == numLocal );
+    }
   }
 } // namespace (anonymous)
 
