@@ -129,7 +129,14 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       if ( RKMethods[m] == "Implicit Midpoint" ) {
         defaultPL->set("Stepper Type", "Implicit Midpoint");
       }
-      TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+
+      bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+      if (!pass) {
+        std::cout << std::endl;
+        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+      }
+      TEST_ASSERT(pass)
     }
 
     // Test constructor IntegratorBasic(model, stepperType)
@@ -146,10 +153,14 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       if ( RKMethods[m] == "Implicit Midpoint" ) {
         defaultPL->set("Stepper Type", "Implicit Midpoint");
       }
-    //std::cout << std::endl;
-    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
-    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
-      TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+
+      bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+      if (!pass) {
+        std::cout << std::endl;
+        std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+        std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+      }
+      TEST_ASSERT(pass)
     }
   }
 }
@@ -210,6 +221,7 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
+  stepper->setInitialConditions(solutionHistory); // Make x and xDot consistent.
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -342,10 +354,10 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       // Initial Conditions
       // During the Integrator construction, the initial SolutionState
       // is set by default to model->getNominalVales().get_x().  However,
-      // the application can set it also by integrator->setInitialState.
+      // the application can set it also by integrator->initializeSolutionHistory.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
-      integrator->setInitialState(0.0, x0);
+      integrator->initializeSolutionHistory(0.0, x0);
 
       // Integrate to timeMax
       bool integratorStatus = integrator->advanceTime();
@@ -529,7 +541,7 @@ TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
    IntegratorList.push_back("Embedded_Integrator");
 
    // the embedded solution will test the following:
-   const int refIstep = 213;
+   const int refIstep = 217;
 
    for(auto integratorChoice : IntegratorList){
 

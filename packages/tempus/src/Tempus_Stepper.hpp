@@ -98,6 +98,11 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;
 
+    /// Set the initial conditions, make them consistent, and set needed memory.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
+
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
@@ -123,6 +128,60 @@ public:
 
     virtual bool isOneStepMethod() const = 0;
     virtual bool isMultiStepMethod() const = 0;
+
+    virtual void setUseFSAL(bool a) = 0;
+    virtual bool getUseFSAL() const = 0;
+
+    virtual void setICConsistency(std::string s) = 0;
+    virtual std::string getICConsistency() const = 0;
+
+    virtual void setICConsistencyCheck(bool c) = 0;
+    virtual bool getICConsistencyCheck() const = 0;
+
+    void getValidParametersBasic(Teuchos::RCP<Teuchos::ParameterList> pl) const
+    {
+      pl->set<bool>("Use FSAL", true,
+        "The First-Step-As-Last (FSAL) principle is the situation where the\n"
+        "last function evaluation, f(x^{n-1},t^{n-1}) [a.k.a. xDot^{n-1}],\n"
+        "can be used for the first function evaluation, f(x^n,t^n)\n"
+        "[a.k.a. xDot^n].  For RK methods, this applies to the stages.\n"
+        "\n"
+        "Often the FSAL priniciple can be used to save an evaluation.\n"
+        "However there are cases when it cannot be used, e.g., operator\n"
+        "splitting where other steppers/operators have modified the solution,\n"
+        "x^*, and thus require the function evaluation, f(x^*, t^{n-1}).\n"
+        "\n"
+        "It should be noted that when the FSAL priniciple can be used\n"
+        "(can set useFSAL=true), setting useFSAL=false will give the\n"
+        "same solution but at additional expense.  However, the reverse\n"
+        "is not true.  When the FSAL priniciple can not be used\n"
+        "(need to set useFSAL=false), setting useFSAL=true will produce\n"
+        "incorrect solutions.\n");
+
+      pl->set<std::string>("Initial Condition Consistency", "None",
+        "This indicates which type of consistency should be applied to\n"
+        "the initial conditions (ICs):\n\n"
+        "  'None'   - Do nothing to the ICs provided in the SolutionHistory.\n"
+        "  'Zero'   - Set the derivative of the SolutionState to zero in the\n"
+        "             SolutionHistory provided, e.g., xDot^0 = 0, or \n"
+        "             xDotDot^0 = 0.\n"
+        "  'App'    - Use the application's ICs, e.g., getNominalValues().\n"
+        "  'Consistent' - Make the initial conditions for x and xDot\n"
+        "             consistent with the governing equations, e.g.,\n"
+        "             xDot = f(x,t), and f(x, xDot, t) = 0.  For implicit\n"
+        "             ODEs, this requires a solve of f(x, xDot, t) = 0 for\n"
+        "             xDot, and another Jacobian and residual may be\n"
+        "             needed, e.g., boundary conditions on xDot may need\n"
+        "             to replace boundary conditions on x.\n"
+        "For explicit ODEs, the default is 'Consistent', because it is one\n"
+        "additional evaluation.  For implicit ODEs, the default is 'None',\n"
+        "because the application very often knows its IC and is easier and\n"
+        "cheaper than the solve for 'Consistent'.\n");
+      pl->set<bool>("Initial Condition Consistency Check", true,
+        "Check if the initial condition, x and xDot, is consistent with the\n"
+        "governing equations, xDot = f(x,t), or f(x, xDot, t) = 0.\n");
+    }
+
   //@}
 
   /// \name Functions for Steppers with subSteppers (e.g., OperatorSplit)

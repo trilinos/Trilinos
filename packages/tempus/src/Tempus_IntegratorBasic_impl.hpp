@@ -127,7 +127,7 @@ void IntegratorBasic<Scalar>::setStepperWStepper(
 /// This resets the SolutionHistory and sets the first SolutionState as the IC.
 template<class Scalar>
 void IntegratorBasic<Scalar>::
-setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
+initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -161,12 +161,15 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
     // Use state as IC
     solutionHistory_->addState(state);
   }
+
+  // Get IC from the application model via the stepper and ensure consistency.
+  stepper_->setInitialConditions(solutionHistory_);
 }
 
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::
-setInitialState(Scalar t0,
+initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0)
@@ -207,6 +210,9 @@ setInitialState(Scalar t0,
   newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
   solutionHistory_->addState(newState);
+
+  // Get IC from the application model via the stepper and ensure consistency.
+  stepper_->setInitialConditions(solutionHistory_);
 }
 
 
@@ -219,7 +225,7 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
 
   if (sh == Teuchos::null) {
     // Create default SolutionHistory, otherwise keep current history.
-    if (solutionHistory_ == Teuchos::null) setInitialState();
+    if (solutionHistory_ == Teuchos::null) initializeSolutionHistory();
   } else {
 
     TEUCHOS_TEST_FOR_EXCEPTION( sh->getNumStates() < 1,

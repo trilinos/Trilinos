@@ -45,11 +45,17 @@
     </ParameterList>
 
     <ParameterList name="Demo Stepper">
+        <Parameter name="Use FSAL" type="bool" value="false"/>
+        <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+        <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
         <Parameter name="Use Embedded" type="bool" value="false"/>
         <Parameter name="Stepper Type" type="string" value="RK Forward Euler"/>
     </ParameterList>
 
     <ParameterList name="Demo Stepper 2">
+        <Parameter name="Use FSAL" type="bool" value="false"/>
+        <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+        <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
         <Parameter name="Use Embedded" type="bool" value="false"/>
         <Parameter name="Stepper Type" type="string" value="General ERK"/>
         <ParameterList name="Tableau">
@@ -64,6 +70,9 @@
     </ParameterList>
 
     <ParameterList name="General ERK Embedded Stepper">
+        <Parameter name="Use FSAL" type="bool" value="false"/>
+        <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+        <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
         <Parameter name="Use Embedded" type="bool" value="false"/>
         <Parameter name="Stepper Type" type="string" value="General ERK"/>
         <ParameterList name="Tableau">

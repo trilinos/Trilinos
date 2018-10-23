@@ -10,7 +10,7 @@
 #define Tempus_StepperLeapfrog_decl_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_Stepper.hpp"
+#include "Tempus_StepperExplicit.hpp"
 #include "Tempus_StepperLeapfrogObserver.hpp"
 
 
@@ -66,9 +66,14 @@ namespace Tempus {
  *   - else
  *     - \f$ \dot{x}_{n+3/2} \leftarrow
  *           \dot{x}_{n+1/2} + \Delta t\, \ddot{x}_{n+1} \f$
+ *
+ *  The First-Step-As-Last (FSAL) principle is not used with Leapfrog
+ *  because of the algorithm's prescribed order of solution update.
+ *  The default is to set useFSAL=false, however useFSAL=true will also
+ *  work (i.e., no-op), but issue a warning that it will have no affect.
  */
 template<class Scalar>
-class StepperLeapfrog : virtual public Tempus::Stepper<Scalar>
+class StepperLeapfrog : virtual public Tempus::StepperExplicit<Scalar>
 {
 public:
 
@@ -84,7 +89,7 @@ public:
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return appModel_;}
+      getModel(){return this->appModel_;}
 
     virtual void setSolver(std::string solverName);
     virtual void setSolver(
@@ -99,16 +104,16 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
-
     virtual std::string getStepperType() const
-     { return stepperPL_->get<std::string>("Stepper Type"); }
+     { return this->stepperPL_->template get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -126,11 +131,6 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
-
-  virtual void setIsXDotXDotInitialized(bool tf)
-  { stepperPL_->set<bool>("Is xDotDot Initialized", int(tf)); }
-  virtual bool getIsXDotXDotInitialized() const
-  { return stepperPL_->get<bool>("Is xDotDot Initialized"); }
 
   /// \name ParameterList methods
   //@{
@@ -155,17 +155,7 @@ private:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  /// Explicit ODE ModelEvaluator
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
-
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
-
-  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
   Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 

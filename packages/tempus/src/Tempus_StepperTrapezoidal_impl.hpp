@@ -41,18 +41,18 @@ void StepperTrapezoidal<Scalar>::setObserver(
 {
   if (obs == Teuchos::null) {
     // Create default observer, otherwise keep current observer.
-    if (stepperObserver_ == Teuchos::null) {
+    if (this->stepperObserver_ == Teuchos::null) {
       stepperTrapObserver_ =
         Teuchos::rcp(new StepperTrapezoidalObserver<Scalar>());
-      stepperObserver_ =
+      this->stepperObserver_ =
         Teuchos::rcp_dynamic_cast<StepperObserver<Scalar> >
           (stepperTrapObserver_);
      }
   } else {
-    stepperObserver_ = obs;
+    this->stepperObserver_ = obs;
     stepperTrapObserver_ =
       Teuchos::rcp_dynamic_cast<StepperTrapezoidalObserver<Scalar> >
-        (stepperObserver_);
+        (this->stepperObserver_);
   }
 }
 
@@ -72,6 +72,123 @@ void StepperTrapezoidal<Scalar>::initialize()
 
 
 template<class Scalar>
+void StepperTrapezoidal<Scalar>::setInitialConditions (
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  using Teuchos::RCP;
+
+  int numStates = solutionHistory->getNumStates();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(numStates < 1, std::logic_error,
+    "Error - setInitialConditions() needs at least one SolutionState\n"
+    "        to set the initial condition.  Number of States = " << numStates);
+
+  if (numStates > 1) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperTrapezoidal::setInitialConditions()");
+    *out << "Warning -- SolutionHistory has more than one state!\n"
+         << "Setting the initial conditions on the currentState.\n"<<std::endl;
+  }
+
+  RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
+  RCP<Thyra::VectorBase<Scalar> > x = initialState->getX();
+
+  // Use x from inArgs as ICs, if needed.
+  auto inArgs = this->wrapperModel_->getNominalValues();
+  if (x == Teuchos::null) {
+    TEUCHOS_TEST_FOR_EXCEPTION( (x == Teuchos::null) &&
+      (inArgs.get_x() == Teuchos::null), std::logic_error,
+      "Error - setInitialConditions() needs the ICs from the SolutionHistory\n"
+      "        or getNominalValues()!\n");
+
+    x = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(inArgs.get_x());
+    initialState->setX(x);
+  }
+
+  // Check if we need to create an xDot.
+  if (initialState->getXDot() == Teuchos::null) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperTrapezoidal::setInitialConditions()");
+    *out << "Warning -- Trapezoidal needs xDot in the SolutionStates.\n"
+         << "  Creating xDot on the initialState.\n"<<std::endl;
+    this->setStepperXDot(initialState->getX()->clone_v());
+  }
+
+  // Perform IC Consistency
+  std::string icConsistency = this->getICConsistency();
+  if (icConsistency == "None") {
+    if (initialState->getXDot() == Teuchos::null) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "StepperBackwardEuler::setInitialConditions()");
+      *out << "Warning -- Requested IC consistency of 'None' but\n"
+           << "           initialState does not have an xDot.\n"
+           << "           Setting a 'Zero' xDot!\n" << std::endl;
+
+      Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
+    }
+  }
+  else if (icConsistency == "Zero") {
+    Thyra::assign(this->getStepperXDot(initialState).ptr(), Scalar(0.0));
+  }
+  else if (icConsistency == "App") {
+    auto xDot = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(
+                  inArgs.get_x_dot());
+    TEUCHOS_TEST_FOR_EXCEPTION(xDot == Teuchos::null, std::logic_error,
+      "Error - setInitialConditions() requested 'App' for IC consistency,\n"
+      "        but 'App' returned a null pointer for xDot!\n");
+    Thyra::assign(this->getStepperXDot(initialState).ptr(), *xDot);
+  }
+  else if (icConsistency == "Consistent") {
+    // Solve f(x, xDot,t) = 0.
+    const Scalar time = initialState->getTime();
+    const Scalar dt   = initialState->getTimeStep();
+    RCP<TimeDerivative<Scalar> > timeDer = Teuchos::null;
+    const Scalar alpha = 1.0;    // d(xDot)/d(xDot)
+    const Scalar beta  = 0.0;    // d(x   )/d(xDot)
+    RCP<ImplicitODEParameters<Scalar> > p =
+      Teuchos::rcp(new ImplicitODEParameters<Scalar>(timeDer,dt,alpha,beta,
+                                                     SOLVE_FOR_XDOT_CONST_X));
+
+    auto xDot = this->getStepperXDot(initialState);
+    const Thyra::SolveStatus<Scalar> sStatus =
+      this->solveImplicitODE(x, xDot, time, p);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED, std::logic_error,
+      "Error - Solver failed while determining the initial conditions.\n"
+      "        Solver status is "<<Thyra::toString(sStatus.solveStatus)<<".\n");
+
+  }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+      "Error - setInitialConditions() invalid IC consistency, "
+      << icConsistency << ".\n");
+  }
+
+  if (initialState->getXDot() == Teuchos::null) {
+    initialState->setXDot(this->getStepperXDot(initialState));
+    this->setStepperXDot(Teuchos::null);
+  }
+
+  // At this point, x and xDot are sync'ed or consistent
+  // at the same time level for the initialState.
+  initialState->setIsSynced(true);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( !(this->getUseFSAL()), std::logic_error,
+    "Error - The First-Step-As-Last (FSAL) principle is required\n"
+    "        for the Trapezoidal Stepper (i.e., useFSAL=true)!\n");
+//   There are at least two ways around this, but are not implemented.
+//    - Do a solve for xDotOld, xDot_{n-1}, at each time step as for the
+//      initial conditions.  This is expensive since you would be doing
+//      two solves every time step.
+//    - Use evaluateExplicitODE to get xDot_{n-1} if the application
+//      provides it.  Explicit evaluations are cheaper but requires the
+//      application to implement xDot = f(x,t).
+}
+
+
+template<class Scalar>
 void StepperTrapezoidal<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -87,7 +204,7 @@ void StepperTrapezoidal<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
@@ -95,7 +212,6 @@ void StepperTrapezoidal<Scalar>::takeStep(
     RCP<const Thyra::VectorBase<Scalar> > xDotOld = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
-    if (xDot == Teuchos::null) xDot = getXDotTemp(x);
 
     const Scalar time  = workingState->getTime();
     const Scalar dt    = workingState->getTimeStep();
@@ -128,27 +244,13 @@ void StepperTrapezoidal<Scalar>::takeStep(
     if (workingState->getXDot() != Teuchos::null)
       timeDer->compute(x, xDot);
 
-    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
-      workingState->setSolutionStatus(Status::PASSED);
-    else
-      workingState->setSolutionStatus(Status::FAILED);
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
-    stepperObserver_->observeEndTakeStep(solutionHistory, *this);
+    this->stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }
 
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-StepperTrapezoidal<Scalar>::
-getXDotTemp(Teuchos::RCP<Thyra::VectorBase<Scalar> > x)
-{
-  if (xDotTemp_ == Teuchos::null) {
-    xDotTemp_ = x->clone_v();
-    Thyra::assign(xDotTemp_.ptr(), Scalar(0.0));
-  }
-  return xDotTemp_;
-}
 
 /** \brief Provide a StepperState to the SolutionState.
  *  This Stepper does not have any special state data,
@@ -221,9 +323,12 @@ StepperTrapezoidal<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->setName("Default Stepper - " + this->description());
-  pl->set("Stepper Type", this->description());
-  pl->set("Zero Initial Guess", false);
-  pl->set("Solver Name", "",
+  pl->set<std::string>("Stepper Type", this->description());
+  this->getValidParametersBasic(pl);
+  pl->set<bool>("Initial Condition Consistency Check",
+                false);              // Default is false for this stepper.
+  pl->set<bool>       ("Zero Initial Guess", false);
+  pl->set<std::string>("Solver Name", "",
     "Name of ParameterList containing the solver specifications.");
 
   return pl;
@@ -236,13 +341,12 @@ StepperTrapezoidal<Scalar>::getDefaultParameters() const
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+  using Teuchos::rcp_const_cast;
 
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->setName("Default Stepper - " + this->description());
-  pl->set<std::string>("Stepper Type", this->description());
-  pl->set<bool>       ("Zero Initial Guess", false);
+  RCP<ParameterList> pl =
+    rcp_const_cast<ParameterList>(this->getValidParameters());
+
   pl->set<std::string>("Solver Name", "Default Solver");
-
   RCP<ParameterList> solverPL = this->defaultSolverParameters();
   pl->set("Default Solver", *solverPL);
 

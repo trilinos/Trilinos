@@ -39,10 +39,16 @@
 
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="RK Explicit 4 Stage"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
     </ParameterList>
 
     <ParameterList name="Demo Stepper 2">
       <Parameter name="Stepper Type" type="string" value="General ERK"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       <ParameterList name="Tableau">
           <Parameter name="A" type="string"
               value="0.0 0.0 0.0 0.0; 0.5 0.0 0.0 0.0; 0.0 0.5 0.0 0.0; 0.0 0.0 1.0 0.0"/>

@@ -39,6 +39,9 @@
 
     <ParameterList name="Default Stepper">
       <Parameter name="Stepper Type" type="string" value="SDIRK 5 Stage 5th order"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
 

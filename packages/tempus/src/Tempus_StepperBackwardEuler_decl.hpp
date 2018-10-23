@@ -28,6 +28,10 @@ namespace Tempus {
  *   - Solve \f$f(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0\f$ for \f$x_n\f$
  *   - \f$\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n\f$ [Optional]
  *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The default is to set useFSAL=false, however useFSAL=true will also work
+ *  but have no affect (i.e., no-op).
  */
 template<class Scalar>
 class StepperBackwardEuler :
@@ -53,13 +57,13 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-    /// Pass initial guess to Newton solver 
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -78,10 +82,6 @@ public:
   /// Compute predictor given the supplied stepper
   virtual void computePredictor(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
-  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x) const;
 
   /// \name ParameterList methods
   //@{
@@ -146,11 +146,8 @@ private:
 private:
 
   Teuchos::RCP<Stepper<Scalar> >                      predictorStepper_;
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > stepperBEObserver_;
 
-  mutable Teuchos::RCP<Thyra::VectorBase<Scalar> >    xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
 };
 
 /** \brief Time-derivative interface for Backward Euler.

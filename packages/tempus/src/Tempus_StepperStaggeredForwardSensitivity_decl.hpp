@@ -91,6 +91,10 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory){}
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -120,11 +124,21 @@ public:
               sensitivityStepper_->isOneStepMethod();}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
+    virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
+    virtual bool getUseFSAL() const {return stepperPL_->get<bool>("Use FSAL");}
+    virtual void setICConsistency(std::string s)
+      {stepperPL_->set<std::string>("Initial Condition Consistency", s);}
+    virtual std::string getICConsistency() const
+      {return stepperPL_->get<std::string>("Initial Condition Consistency");}
+    virtual void setICConsistencyCheck(bool c)
+      {stepperPL_->set<bool>("Initial Condition Consistency Check", c);}
+    virtual bool getICConsistencyCheck() const
+      {return stepperPL_->get<bool>("Initial Condition Consistency Check");}
   //@}
 
-  /// Pass initial guess to Newton solver (only relevant for explicit schemes)
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-     {initial_guess_ = initial_guess;}
+    /// Pass initial guess to Newton solver
+    virtual void setInitialGuess(
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess){}
 
   /// \name ParameterList methods
   //@{
@@ -164,7 +178,7 @@ private:
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 } // namespace Tempus

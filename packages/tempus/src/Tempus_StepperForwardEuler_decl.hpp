@@ -10,7 +10,7 @@
 #define Tempus_StepperForwardEuler_decl_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_Stepper.hpp"
+#include "Tempus_StepperExplicit.hpp"
 #include "Tempus_StepperForwardEulerObserver.hpp"
 
 
@@ -34,12 +34,26 @@ namespace Tempus {
  *
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Forward Euler is simply,
- *   - Evaluate \f$\bar{f}(x_{n-1},t_{n-1})\f$
- *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \bar{f}(x_{n-1},t_{n-1})\f$
- *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$ [Optional]
+ *   - \f$\dot{x}_{n-1} \leftarrow \bar{f}(x_{n-1},t_{n-1})\f$
+ *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}\f$
+ *
+ *  Note that \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not at the same time
+ *  level at the end of the time step (i.e., they are not sync'ed).
+ *
+ *  To have them at the same time level, we can use the First-Step-As-Last
+ *  (FSAL) principle where the function evaulation from the last time step
+ *  can be used as the first function evalulation of the current step.
+ *  For the Forward Euler, the FSAL algorithm is
+ *   - \f$x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}\f$
+ *   - \f$\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})\f$
+ *
+ *  The default for Forward Euler is to use FSAL (useFSAL=true).  Note
+ *  however that steppers in general can not use FSAL with operator
+ *  splitting as \f$\dot{x}_{n-1}\f$ will usually be modified by other
+ *  operators.
  */
 template<class Scalar>
-class StepperForwardEuler : virtual public Tempus::Stepper<Scalar>
+class StepperForwardEuler : virtual public Tempus::StepperExplicit<Scalar>
 {
 public:
 
@@ -54,53 +68,29 @@ public:
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
     virtual void setNonConstModel(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return appModel_;}
+    //virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+    //  getModel(){return this->appModel_;}
 
-    virtual void setSolver(std::string solverName);
-    virtual void setSolver(
-      Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
-    virtual void setSolver(
-        Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
-      { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions, make them consistent, and set needed memory.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-
-    virtual std::string getStepperType() const
-      { return stepperPL_->get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
     virtual Scalar getOrder() const {return 1.0;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 1.0;}
-    virtual Scalar getInitTimeStep(
-        const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
-      {return Scalar(1.0e+99);}
-
-    virtual bool isExplicit()         const {return true;}
-    virtual bool isImplicit()         const {return false;}
-    virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
-    virtual bool isOneStepMethod()   const {return true;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
-
-  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
-
-  /// Provide temporary xDot memory for Stepper if SolutionState doesn't.
-  virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotTemp(
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > x);
 
   /// \name ParameterList methods
   //@{
@@ -125,18 +115,8 @@ private:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>               stepperPL_;
-  /// Explicit ODE ModelEvaluator
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
+  Teuchos::RCP<StepperForwardEulerObserver<Scalar> >  stepperFEObserver_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
-
-  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
-  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > stepperFEObserver_;
-
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >            xDotTemp_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 };
 
 } // namespace Tempus

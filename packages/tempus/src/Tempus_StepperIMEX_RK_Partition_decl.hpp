@@ -217,6 +217,10 @@ namespace Tempus {
  *   - Solve \f$M(z_n) \dot{z}_n + F(z_n,t_n) + G(z_n,t_n) = 0\f$
  *       for \f$\dot{z}_n\f$ [Optional]
  *
+ *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK.
+ *  The default is to set useFSAL=false, and useFSAL=true will result
+ *  in an error.
+ *
  *  #### References
  *  -# Shadid, Cyr, Pawlowski, Widley, Scovazzi, Zeng, Phillips, Conde,
  *     Chuadhry, Hensinger, Fischer, Robinson, Rider, Niederhaus, Sanchez,
@@ -286,6 +290,10 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -303,10 +311,6 @@ public:
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
   //@}
-
-  /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-  virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-     {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -354,10 +358,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >            stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKPartObserver<Scalar> > stepperIMEX_RKPartObserver_;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 

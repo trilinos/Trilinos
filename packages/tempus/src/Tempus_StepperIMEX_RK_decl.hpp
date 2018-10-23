@@ -216,6 +216,10 @@ namespace Tempus {
  *           \end{array} \f]
  *  </table>
  *
+ *  The First-Step-As-Last (FSAL) principle is not valid for IMEX RK.
+ *  The default is to set useFSAL=false, and useFSAL=true will result
+ *  in an error.
+ *
  *  #### References
  *  -# Ascher, Ruuth, Spiteri, "Implicit-explicit Runge-Kutta methods for
  *     time-dependent partial differential equations", Applied Numerical
@@ -287,9 +291,9 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
-    /// Pass initial guess to Newton solver (only relevant for implicit solvers)
-    virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-       {initial_guess_ = initial_guess;}
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -354,9 +358,7 @@ protected:
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >         stepperObserver_;
   Teuchos::RCP<StepperIMEX_RKObserver<Scalar> >  stepperIMEX_RKObserver_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 

@@ -73,9 +73,18 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
       Tempus::integratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
+    stepperPL->set("Initial Condition Consistency", "None");
+    stepperPL->set("Initial Condition Consistency Check", false);
+
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -87,7 +96,13 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 }
 #endif // TEST_PARAMETERLIST
@@ -115,10 +130,16 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
   RCP<Tempus::StepperTrapezoidal<double> > stepper =
     Teuchos::rcp(new Tempus::StepperTrapezoidal<double>(model));
   //{
-  //  // Setup a linear NOX solve
+  //  // Turn on NOX output.
   //  RCP<ParameterList> sPL = stepper->getNonconstParameterList();
   //  std::string solverName = sPL->get<std::string>("Solver Name");
   //  RCP<ParameterList> solverPL = Teuchos::sublist(sPL, solverName, true);
+  //  solverPL->sublist("NOX").sublist("Printing").sublist("Output Information")
+  //           .set("Outer Iteration", true);
+  //  solverPL->sublist("NOX").sublist("Printing").sublist("Output Information")
+  //           .set("Parameters", true);
+  //  solverPL->sublist("NOX").sublist("Printing").sublist("Output Information")
+  //           .set("Details", true);
   //  stepper->setSolver(solverPL);
   //  stepper->initialize();
   //}
@@ -157,6 +178,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
+  stepper->setInitialConditions(solutionHistory); // Make x and xDot consistent.
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -245,13 +267,13 @@ TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     {
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
       RCP<Thyra::VectorBase<double> > xdot0 =
         model->getNominalValues().get_x_dot()->clone_v();
-      integrator->setInitialState(0.0, x0, xdot0);
+      integrator->initializeSolutionHistory(0.0, x0, xdot0);
     }
 
     // Integrate to timeMax

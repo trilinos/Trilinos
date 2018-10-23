@@ -79,6 +79,10 @@ namespace Tempus {
  *   - end for
  *   - \f$x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=1}^{s}b_i\,\dot{X}_i\f$
  *   - Solve \f$f(\dot{x}_n,x_n,t_n)=0\f$ for \f$\dot{x}_n\f$ [Optional]
+ *
+ *  The First-Step-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The default is to set useFSAL=false, however useFSAL=true will also work
+ *  but have no affect (i.e., no-op).
  */
 template<class Scalar>
 class StepperDIRK : virtual public Tempus::StepperImplicit<Scalar>
@@ -112,6 +116,10 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -136,11 +144,6 @@ public:
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
-
-  /// Pass initial guess to Newton solver
-  virtual void setInitialGuess(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-    {initial_guess_ = initial_guess;}
 
   /// \name ParameterList methods
   //@{
@@ -173,7 +176,6 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >                 stepperObserver_;
   Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
@@ -182,8 +184,6 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               sc;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >         initial_guess_;
 
 };
 

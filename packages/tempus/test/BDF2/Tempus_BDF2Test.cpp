@@ -34,8 +34,7 @@
 #include <sstream>
 #include <vector>
 
-//IKT, 11/20/17: comment out any of the following
-//if you wish not to build/run all the test cases.
+// Comment out any of the following tests to exclude from build/run.
 #define TEST_PARAMETERLIST
 #define TEST_CONSTRUCTING_FROM_DEFAULTS
 #define TEST_SINCOS
@@ -82,7 +81,13 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     stepperPL->remove("Default Start Up Stepper");
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 
   // Test constructor IntegratorBasic(model, stepperType)
@@ -94,10 +99,13 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
     RCP<ParameterList> defaultPL =
       integrator->getStepper()->getDefaultParameters();
 
-    //std::cout << std::endl;
-    //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
-    //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
-    TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
+    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      std::cout << std::endl;
+      std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
+      std::cout << "defaultPL -------------- \n" << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
   }
 }
 #endif // TEST_PARAMETERLIST
@@ -165,6 +173,7 @@ TEUCHOS_UNIT_TEST(BDF2, ConstructingFromDefaults)
   solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
   solutionHistory->setStorageLimit(3);
   solutionHistory->addState(icState);
+  stepper->setInitialConditions(solutionHistory); // Make x and xDot consistent.
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
@@ -260,10 +269,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -399,10 +408,10 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
     // is set by default to model->getNominalVales().get_x().  However,
-    // the application can set it also by integrator->setInitialState.
+    // the application can set it also by integrator->initializeSolutionHistory.
     RCP<Thyra::VectorBase<double> > x0 =
       model->getNominalValues().get_x()->clone_v();
-    integrator->setInitialState(0.0, x0);
+    integrator->initializeSolutionHistory(0.0, x0);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();

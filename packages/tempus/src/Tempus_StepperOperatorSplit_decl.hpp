@@ -41,7 +41,9 @@ public:
     std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
     Teuchos::RCP<Teuchos::ParameterList> pList);
 
-  /// Constructor which is setup except for models and steppers (i.e., addStepper()), and an initialize() before being used.
+  /** \brief Constructor which is setup except for models and steppers
+   * (i.e., addStepper()), and an initialize() before being used.
+   */
   StepperOperatorSplit();
 
   /// \name Basic stepper methods
@@ -68,14 +70,17 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set the initial conditions and make them consistent.
+    virtual void setInitialConditions (
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Pass initial guess to Newton solver (only relevant for explicit schemes)
+    /// Pass initial guess to Newton solver
     virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
-      {initial_guess_ = initial_guess;}
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess){}
 
    virtual std::string getStepperType() const
      { return stepperPL_->get<std::string>("Stepper Type"); }
@@ -131,7 +136,18 @@ public:
       return isOneStepMethod;
     }
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-  //@}
+
+    virtual void setUseFSAL(bool a) {stepperPL_->set<bool>("Use FSAL", a);}
+    virtual bool getUseFSAL() const {return stepperPL_->get<bool>("Use FSAL");}
+    virtual void setICConsistency(std::string s)
+      {stepperPL_->set<std::string>("Initial Condition Consistency", s);}
+    virtual std::string getICConsistency() const
+      {return stepperPL_->get<std::string>("Initial Condition Consistency");}
+    virtual void setICConsistencyCheck(bool c)
+      {stepperPL_->set<bool>("Initial Condition Consistency Check", c);}
+    virtual bool getICConsistencyCheck() const
+      {return stepperPL_->get<bool>("Initial Condition Consistency Check");}
+   //@}
 
   /// \name ParameterList methods
   //@{
@@ -153,8 +169,17 @@ public:
     { return subStepperList_; }
   virtual void setStepperList(std::vector<Teuchos::RCP<Stepper<Scalar> > > sl)
     { subStepperList_ = sl; }
-  virtual void addStepper(Teuchos::RCP<Stepper<Scalar> > stepper)
-    { subStepperList_.push_back(stepper); }
+  /** \brief Add Stepper to subStepper list.
+   *  In most cases, subSteppers cannot use xDotOld (thus the default),
+   *  but in some cases, the xDotOld can be used and save compute cycles.
+   *  The user can set this when adding to the subStepper list.
+   */
+  virtual void addStepper(Teuchos::RCP<Stepper<Scalar> > stepper,
+                          bool useFSAL = false)
+  {
+    stepper->setUseFSAL(useFSAL);
+    subStepperList_.push_back(stepper);
+  }
   virtual void clearStepperList() { subStepperList_.clear(); }
   /// Take models and ParameterList and create subSteppers
   virtual void createSubSteppers(
@@ -167,7 +192,6 @@ protected:
   Teuchos::RCP<SolutionHistory<Scalar> >              OpSpSolnHistory_;
   Teuchos::RCP<SolutionState<Scalar> >                tempState_;
   Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 
 };
 

@@ -14,6 +14,14 @@
 
 namespace Tempus {
 
+/// EVALUATION_TYPE indicates the evaluation to apply to the implicit ODE.
+enum EVALUATION_TYPE {
+  EVALUATE_RESIDUAL,      ///< Evaluate residual for the implicit ODE
+  SOLVE_FOR_X,            ///< Solve for x and determine xDot from x.
+  SOLVE_FOR_XDOT_CONST_X  ///< Solve for xDot keeping x constant (for ICs).
+};
+
+
 /** \brief A ModelEvaluator which wraps the application ModelEvaluator.
  *
  *  The WrapperModelEvaluator takes a state, \f$x\f$, computes time
@@ -65,7 +73,8 @@ public:
   /// Set parameters for application implicit ModelEvaluator solve.
   virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > td,
     Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs) = 0;
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs,
+    EVALUATION_TYPE evaluationType = SOLVE_FOR_X) = 0;
 };
 
 } // namespace Tempus
