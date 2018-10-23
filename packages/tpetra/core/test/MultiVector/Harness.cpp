@@ -357,6 +357,16 @@ namespace Harness {
     return Kokkos::subview (getMultiVector (LA), Kokkos::ALL (), 0);
   }
 
+  template<class SC, class LO, class GO, class NT,
+	   class MemorySpace, 
+	   const AccessMode access_mode>
+  auto
+  getVector (Impl::LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
+    -> decltype (Kokkos::subview (getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_,  LA.valid_)), Kokkos::ALL (), 0))
+  {
+    return Kokkos::subview (getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_,  LA.valid_)), Kokkos::ALL (), 0);
+  }
+
   namespace Impl {
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
@@ -370,6 +380,59 @@ namespace Harness {
       using memory_space = typename local_access_type::memory_space;
       static constexpr AccessMode access_mode = local_access_type::access_mode;
       using non_const_value_type = typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type;
+      using value_type = typename std::conditional<
+        access_mode == ReadOnly,
+        const non_const_value_type,
+        non_const_value_type
+	>::type;
+
+    public:
+      // FIXME (mfh 22 Oct 2018) See FIXME below.
+      using master_local_object_type =
+	Kokkos::View<value_type**, 
+		     typename global_object_type::dual_view_type::t_dev::array_layout,
+		     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+
+      static master_local_object_type get (local_access_type LA) {
+	std::cout << "Get master local object" << std::endl;
+
+	// if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
+	if (LA.G_.template need_sync<memory_space> ()) {
+	  LA.G_.template sync<memory_space> ();
+	}
+	if (access_mode != ReadWrite) {
+	  LA.G_.template modify<memory_space> ();
+	}
+	// FIXME (mfh 22 Oct 2018) This might break if we need copy-back
+	// semantics, e.g., for a memory space for which the
+	// Tpetra::MultiVector does not store data.  In that case, we
+	// would need some kind of object whose destructor copies back,
+	// and it would need to have the whole DualView, not just the
+	// View on one side.  Watch out for copy elision.  The object
+	// could just be std::shared_ptr and could handle copy-back via
+	// custom deleter.
+	if (LA.isValid ()) {
+	  // this converts to const if applicable
+	  return master_local_object_type (LA.G_.template getLocalView<memory_space> ()); 
+	}
+	else {
+	  return master_local_object_type (); // "null" Kokkos::View
+	}
+      }
+    };
+
+    // Specialization of GetMasterLocalObject for Tpetra::Vector.
+    template<class SC, class LO, class GO, class NT,
+	     class MemorySpace,
+	     const AccessMode am>
+    struct GetMasterLocalObject<LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> > {
+    public:
+      using local_access_type = LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;        
+    private:
+      using global_object_type = typename local_access_type::global_object_type;
+      using memory_space = typename local_access_type::memory_space;
+      static constexpr AccessMode access_mode = local_access_type::access_mode;
+      using non_const_value_type = typename global_object_type::impl_scalar_type;
       using value_type = typename std::conditional<
         access_mode == ReadOnly,
         const non_const_value_type,
@@ -531,10 +594,20 @@ namespace { // (anonymous)
     TEST_ASSERT( size_t (X_lcl_ro3.extent (0)) == numLocal );
     TEST_ASSERT( size_t (X_lcl_ro3.extent (1)) == numVecs );
 
-    // auto X_lcl_1d_ro = Harness::getVector (Harness::readOnly (vec));
-    // Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
-    // static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
-    // TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
+    auto X_lcl_1d_ro = Harness::getVector (Harness::readOnly (vec));
+    Kokkos::View<const double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
+    static_assert (decltype (X_lcl_1d_ro)::Rank == 1, "Rank is not 1");
+    TEST_ASSERT( size_t (X_lcl_1d_ro.extent (0)) == numLocal );
+
+    auto X_lcl_1d_ro3 = Harness::getVector (Harness::writeOnly (vec));
+    Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro4 = X_lcl_1d_ro3;
+    static_assert (decltype (X_lcl_1d_ro3)::Rank == 1, "Rank is not 1");
+    TEST_ASSERT( size_t (X_lcl_1d_ro3.extent (0)) == numLocal );
+
+    auto X_lcl_1d_ro5 = Harness::getVector (Harness::readWrite (vec));
+    Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro6 = X_lcl_1d_ro5;
+    static_assert (decltype (X_lcl_1d_ro5)::Rank == 1, "Rank is not 1");
+    TEST_ASSERT( size_t (X_lcl_1d_ro5.extent (0)) == numLocal );
   }
 } // namespace (anonymous)
 
