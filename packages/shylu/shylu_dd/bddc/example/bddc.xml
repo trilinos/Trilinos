@@ -1,0 +1,48 @@
+<ParameterList name="BDDC">
+  <Parameter name="Use Corners"        type="bool"   value="false"/>
+  <Parameter name="Use Edges"          type="bool"   value="true"/>
+  <Parameter name="Use Faces"          type="bool"   value="false"/>
+  <Parameter name="Corner Weight Type" type="string" value="stiffness"/>
+  <Parameter name="Edge Weight Type"   type="string" value="stiffness"/>
+  <Parameter name="Face Weight Type"   type="string" value="stiffness"/>
+  <Parameter name="Use Vertex Coarse Space"      type="bool"   value="false"/>
+  <Parameter name="Economic Vertex Coarse Space" type="bool"   value="false"/>
+  <Parameter name="Interface Preconditioner"     type="bool"   value="false"/>
+  <Parameter name="Use PComm"                    type="bool"   value="true"/>
+  <!-- Krylov Solver options: -->
+  <!--  PCG: preconditioned conjugate gradient -->
+  <!--  GCR: generalized conjugate residual -->
+  <Parameter name="Krylov Solver"                type="string" value="PCG"/>
+  <Parameter name="Maximum Iterations"           type="int"    value="20"/>
+  <Parameter name="Convergence Tolerance"        type="double" value="1e-6"/>
+  <Parameter name="Convergence Check Interval"   type="int"    value="100"/>
+  <Parameter name="Maximum Stored Directions"    type="int"    value="200"/>
+  <!-- Solver options: -->
+  <!--  LAPACK: uses LAPACK banded or dense solver (not best option) -->
+  <!--  SuperLU: requires enabling SuperLU TPL -->
+  <!--  Pardiso: requires enabling Intel/MKL Pardiso TPL -->
+  <!--  KLU2: requires enabling Amesos2 package -->
+  <!--  Tacho: requires enabling Tacho in Shylu_node subpackage -->
+  <!--  MueLu: requires enabling MueLu package -->
+  <Parameter name="Dirichlet Solver"   type="string" value="LAPACK"/>
+  <Parameter name="Neumann Solver"     type="string" value="LAPACK"/>
+  <Parameter name="Coarse Solver"      type="string" value="LAPACK"/>
+  <Parameter name="Estimate Condition Number"       type="bool"   value="true"/>
+  <Parameter name="Print Summary"                   type="int"    value="3"/>
+  <Parameter name="numSubdomainsPerCoarseSubdomain" type="int"    value="1000"/>
+  <Parameter name="numCoarseSubdomainsPerMpiRank"   type="int"    value="1"/>
+  <!-- coarsening options: -->
+  <!--  Graph: graph-based                  -->
+  <!--  RCB: recursive coordinate bisection -->
+  <!--  RIB: recursive inetial bisection    -->
+  <Parameter name="Coarsening Option"       type="string" value="RCB"/>
+  <!--  graph package options = PHG or ParMETIS -->
+  <Parameter name="Graph Package"           type="string" value="PHG"/>
+  <Parameter name="Output Timing"           type="bool"   value="false"/>
+  <Parameter name="Operator Name"           type="string" value="none"/>  
+  <Parameter name="Print Coarsest Matrix"   type="bool"   value="false"/>
+  <Parameter name="Print Vertex Matrix"     type="bool"   value="false"/>
+  <Parameter name="Print Psi Matrix"        type="bool"   value="false"/>
+  <Parameter name="Print Operator Matrix"   type="bool"   value="false"/>
+  <Parameter name="Print Preconditioner Matrix"  type="bool"   value="false"/>
+</ParameterList>
