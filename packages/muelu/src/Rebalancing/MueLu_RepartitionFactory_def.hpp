@@ -55,6 +55,7 @@
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Details_MpiTypeTraits.hpp>
 
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -100,13 +101,6 @@ namespace MueLu {
     Input(currentLevel, "number of partitions");
     Input(currentLevel, "Partition");
   }
-
-  template<class T> class MpiTypeTraits            { public: static MPI_Datatype getType(); };
-  template<>        class MpiTypeTraits<long>      { public: static MPI_Datatype getType() { return MPI_LONG;      } };
-  template<>        class MpiTypeTraits<int>       { public: static MPI_Datatype getType() { return MPI_INT;       } };
-  template<>        class MpiTypeTraits<short>     { public: static MPI_Datatype getType() { return MPI_SHORT;     } };
-  template<>        class MpiTypeTraits<unsigned>  { public: static MPI_Datatype getType() { return MPI_UNSIGNED;  } };
-  template<>        class MpiTypeTraits<long long> { public: static MPI_Datatype getType() { return MPI_LONG_LONG; } };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
@@ -286,7 +280,7 @@ namespace MueLu {
     numRecv = (numPartsIRecv->getData(0))[0];
 
     // Step 2: Get my GIDs from everybody else
-    MPI_Datatype MpiType = MpiTypeTraits<GO>::getType();
+    MPI_Datatype MpiType = Teuchos::Details::MpiTypeTraits<GO>::getType();
     int msgTag = 12345;  // TODO: use Comm::dup for all internal messaging
 
     // Post sends
@@ -461,7 +455,7 @@ namespace MueLu {
 
     // Step 2: Gather most edges
     // Each processors contributes maxLocal edges by providing maxLocal pairs <part id, weight>, which is of size dataSize
-    MPI_Datatype MpiType = MpiTypeTraits<GO>::getType();
+    MPI_Datatype MpiType = Teuchos::Details::MpiTypeTraits<GO>::getType();
     MPI_Allgather(static_cast<void*>(lData.getRawPtr()), dataSize, MpiType, static_cast<void*>(gData.getRawPtr()), dataSize, MpiType, *rawMpiComm);
 
     // Step 3: Construct mapping
