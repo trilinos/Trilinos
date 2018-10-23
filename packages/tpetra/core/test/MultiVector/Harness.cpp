@@ -552,28 +552,35 @@ namespace { // (anonymous)
     vec_type vec (map);
     TEST_EQUALITY_CONST(vec.getNumVectors (), size_t (1));
 
-    // Make sure that the test passed on all processes, not just Proc 0.
-    int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_ASSERT( gblSuccess == 1 );
-
-    // FIXME (mfh 22 Oct 2018) Make this simpler.  The original design
-    // only intended to expose readOnly etc., not the other functions.
-    // This design should actually only return a nonowning object.
+    // asMultiVector converts LocalAccess struct to nonowning rank-2 Kokkos::View.
     //
-    // // asVector converts LocalAccess struct to actual rank-1 Kokkos::View
-    // auto X_lcl = asVector (readOnly (mvec));
-    // auto X_lcl_host = asVector (readOnly (mvec).on (Kokkos::HostSpace));
+    // auto X_lcl_2d = asMultiVector (readOnly (mvec)); // rank 2
+    // auto X_lcl_2d_host = asMultiVector (readOnly (mvec).on (Kokkos::HostSpace)); // rank 2
     {
-      auto X_lcl_ro3 = Harness::getMultiVector (Harness::readOnly (mvec));
-      // Make sure X_lcl_ro3 can be assigned to the type we expect it to
+      auto X_lcl_ro = Harness::getMultiVector (Harness::readOnly (mvec));
+      // Make sure X_lcl_ro can be assigned to the type we expect it to
       // be.  It doesn't have to be that type, it just has to be
       // assignable to that type.
-      Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro4 = X_lcl_ro3;
-      static_assert (decltype (X_lcl_ro3)::Rank == 2, "Rank is not 2");
-      TEST_ASSERT( size_t (X_lcl_ro3.extent (0)) == numLocal );
-      TEST_ASSERT( size_t (X_lcl_ro3.extent (1)) == numVecs );
+      Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
+      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
+    }
+
+    {
+      auto X_lcl_wo = Harness::getMultiVector (Harness::writeOnly (mvec));
+      Kokkos::View<double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_wo2 = X_lcl_wo;
+      static_assert (decltype (X_lcl_wo)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_wo.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_wo.extent (1)) == numVecs );
+    }
+
+    {
+      auto X_lcl_rw = Harness::getMultiVector (Harness::readWrite (mvec));
+      Kokkos::View<double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_rw2 = X_lcl_rw;
+      static_assert (decltype (X_lcl_rw)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_rw.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_rw.extent (1)) == numVecs );
     }
 
     // NOTE (mfh 23 Oct 2018) Don't use the commented-out interface
@@ -592,7 +599,11 @@ namespace { // (anonymous)
       TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
     }
 #endif // 0
-    
+
+    // asVector converts LocalAccess struct to nonowning rank-1 Kokkos::View.
+    //
+    // auto X_lcl_1d = asVector (readOnly (mvec)); // rank 1
+    // auto X_lcl_1d_host = asVector (readOnly (mvec).on (Kokkos::HostSpace)); // rank 1
     {
       auto X_lcl_1d_ro = Harness::getVector (Harness::readOnly (vec));
       Kokkos::View<const double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro2 = X_lcl_1d_ro;
@@ -606,6 +617,17 @@ namespace { // (anonymous)
       static_assert (decltype (X_lcl_1d_wo)::Rank == 1, "Rank is not 1");
       TEST_ASSERT( size_t (X_lcl_1d_wo.extent (0)) == numLocal );
     }
+
+    {
+      auto X_lcl_1d_wr = Harness::getVector (Harness::readWrite (vec));
+      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
+      static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
+    }
+
+    //
+    // Examples of using the result of getVector in Kokkos::parallel_for kernels.
+    //
 
     {
       using execution_space = vec_type::device_type::execution_space;
@@ -641,14 +663,22 @@ namespace { // (anonymous)
 	  std::pair<double, double> p {3.0, 4.0}; // some not-device function
 	  X_lcl_1d_wo(lclRow) = p.first * p.second;
 	});
+
+      // Just plain modify some entries, in some sequential order.
+      // Just in case LO is unsigned, start at +1.
+      for (LO lclRowPlusOne = LO (numLocal); lclRowPlusOne > LO (0); --lclRowPlusOne) {
+	const LO lclRow = lclRowPlusOne - LO (1);
+	// operator[] for 1-D Kokkos::View does the same thing as
+	// operator().
+	X_lcl_1d_wo[lclRow] = double (lclRow) + 42.0;
+      }
     }
 
-    {
-      auto X_lcl_1d_wr = Harness::getVector (Harness::readWrite (vec));
-      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
-      static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
-      TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
-    }
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
   }
 } // namespace (anonymous)
 
