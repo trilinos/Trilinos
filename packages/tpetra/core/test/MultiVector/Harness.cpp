@@ -427,6 +427,20 @@ namespace { // (anonymous)
     // FIXME (mfh 22 Oct 2018) Make this simpler.  The original design
     // only intended to expose readOnly etc., not the other functions.
     // This design should actually only return a nonowning object.
+    //
+    // TODO (mfh 22 Oct 2018) Add a "zerothColumn" or "asVector"
+    // helper function that returns the first (0th) column of a Rank-2
+    // View as a Rank-1 View.  It looks like the app also needs
+    // "asMultiVector" (which would be a no-op in this case).
+    //
+    // // asVector converts LocalAccess struct to actual rank-1 Kokkos::View
+    // auto X_lcl = asVector (readOnly (mvec));
+    // auto X_lcl_host = asVector (readOnly (mvec).on (Kokkos::HostSpace));
+    //
+    // // Or how about this?  I don't like it because readOnly etc. apply
+    // // to objects for which asVector() doesn't make sense.
+    // auto X_lcl_host2 = readOnly (mvec).on (Kokkos::HostSpace).asVector ();
+    //
     auto X_lcl_ro = Harness::Impl::getNonowningLocalObject (Harness::Impl::getMasterLocalObject (Harness::readOnly (mvec)));
 
     // Make sure X_lcl_ro can be assigned to the type we expect it to
