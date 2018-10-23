@@ -281,6 +281,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     } // if (muelu)
 
+    if (params->isType<bool>("use kokkos refactor"))
+      params->remove("use kokkos refactor");
 
     if ( translatedmuelu ) {
        //
