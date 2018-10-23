@@ -4839,7 +4839,7 @@ namespace Tpetra {
     if (callComputeGlobalConstants) {
 	this->computeGlobalConstants ();
     }
-    
+        
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
 	TimeMonitor  fLGAM(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-fLGAM")));
@@ -8868,10 +8868,6 @@ namespace Tpetra {
 
     RCP<import_type> MyImport;
 
-    if(!params.is_null())
-      esfc_params.set("compute global constants",params->get("compute global constants",false));
-
-
     // now resolve the non-blocking allreduce on reduced_mismatch;
     MPI_Status stat;
     int mmwaiterr = 0;
@@ -9037,6 +9033,8 @@ namespace Tpetra {
             TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMM::destMat->eSFC")));
             esfc_params.set("Timer Label",label+std::string("isMM eSFC"));
 #endif
+	    if(!params.is_null())
+		esfc_params.set("compute global constants",params->get("compute global constants",true));
             destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
 
         }
@@ -9060,6 +9058,8 @@ namespace Tpetra {
 	TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
 #endif
 	esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
+	if(!params.is_null())
+	    esfc_params.set("compute global constants",params->get("compute global constants",true));
 	destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
 	
     }
