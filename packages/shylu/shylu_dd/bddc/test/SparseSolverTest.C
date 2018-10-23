@@ -45,6 +45,8 @@
 #include "ProblemMakerBDDC.h"
 #include "ShyLU_DDBDDC_config.h"
 #include "shylu_SolverFactoryBDDC.h"
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_XMLParameterListHelpers.hpp>
 
 using Teuchos::RCP;
 

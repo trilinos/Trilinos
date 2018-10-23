@@ -11,6 +11,8 @@
 
 #cmakedefine HAVE_SHYLU_DDBDDC_PARMETIS
 
+#cmakedefine HAVE_SHYLU_DDBDDC_METIS
+
 #cmakedefine HAVE_SHYLU_DDBDDC_MKL
 
 #cmakedefine HAVE_SHYLU_DDBDDC_PARDISO_MKL

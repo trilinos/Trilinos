@@ -53,7 +53,9 @@
 #include <vector>
 #include <complex>
 
+#ifdef HAVE_SHYLU_DDBDDC_METIS
 #include "metis.h"
+#endif
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -330,6 +332,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
   void getSubDomainElements(LO numPartsPerSub,
 			    std::vector< std::vector<LO> > & subElems) const
   {
+#ifdef HAVE_SHYLU_DDBDDC_METIS
     // determine elements for each node
     std::vector< std::vector<LO> > nodeElems(m_numNode);
     LO numElems = m_elemConn.size();
@@ -413,6 +416,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     for (LO i=0; i<numElems; i++) {
       subElems[part[i]].push_back(i);
     }
+#endif
   }
 
   void getSubDomainNodeData(std::vector< std::vector<LO> > & subNodes, 
