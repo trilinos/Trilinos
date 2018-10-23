@@ -601,17 +601,53 @@ namespace { // (anonymous)
     }
 
     {
-      auto X_lcl_1d_ro3 = Harness::getVector (Harness::writeOnly (vec));
-      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro4 = X_lcl_1d_ro3;
-      static_assert (decltype (X_lcl_1d_ro3)::Rank == 1, "Rank is not 1");
-      TEST_ASSERT( size_t (X_lcl_1d_ro3.extent (0)) == numLocal );
+      auto X_lcl_1d_wo = Harness::getVector (Harness::writeOnly (vec));
+      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wo2 = X_lcl_1d_wo;
+      static_assert (decltype (X_lcl_1d_wo)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_wo.extent (0)) == numLocal );
     }
 
     {
-      auto X_lcl_1d_ro5 = Harness::getVector (Harness::readWrite (vec));
-      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_ro6 = X_lcl_1d_ro5;
-      static_assert (decltype (X_lcl_1d_ro5)::Rank == 1, "Rank is not 1");
-      TEST_ASSERT( size_t (X_lcl_1d_ro5.extent (0)) == numLocal );
+      using execution_space = vec_type::device_type::execution_space;
+      using memory_space = vec_type::device_type::memory_space;
+      using LO = vec_type::local_ordinal_type;
+      using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+      auto X_lcl_1d_wo = Harness::getVector (Harness::writeOnly (vec).on (memory_space ()));
+      static_assert (std::is_same<
+		       decltype (X_lcl_1d_wo)::device_type::execution_space,
+		       vec_type::dual_view_type::t_host::execution_space>::value,
+		     "Not host execution space");
+      Kokkos::parallel_for (
+	"Device kernel for write-only getVector",
+	range_type (0, LO (numLocal)),
+	KOKKOS_LAMBDA (const LO lclRow) { X_lcl_1d_wo(lclRow) = 42.0; });
+    }
+
+    {
+      using host_execution_space = vec_type::dual_view_type::t_host::execution_space;
+      using LO = vec_type::local_ordinal_type;
+      using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
+
+      auto X_lcl_1d_wo = Harness::getVector (Harness::writeOnly (vec).on (Kokkos::HostSpace ()));
+      static_assert (std::is_same<
+		       decltype (X_lcl_1d_wo)::device_type::execution_space,
+		       vec_type::dual_view_type::t_host::execution_space>::value,
+		     "Not host execution space");
+      Kokkos::parallel_for (
+	"Host kernel for write-only getVector",
+	range_type (0, LO (numLocal)),
+	[=] (const LO lclRow) {
+	  std::pair<double, double> p {3.0, 4.0}; // some not-device function
+	  X_lcl_1d_wo(lclRow) = p.first * p.second;
+	});
+    }
+
+    {
+      auto X_lcl_1d_wr = Harness::getVector (Harness::readWrite (vec));
+      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
+      static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
     }
   }
 } // namespace (anonymous)
