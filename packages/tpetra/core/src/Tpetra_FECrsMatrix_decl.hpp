@@ -173,12 +173,12 @@ class FECrsMatrix :
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    explicit FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
-                         const Teuchos::RCP<const crs_graph_type>& offRankGraph,
-                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    explicit FECrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
+                          const Teuchos::RCP<const crs_graph_type>& offRankGraph,
+                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
-    virtual ~FECrsMatrix();
+    virtual ~FECrsMatrix ();
 
     //@}
     //! @name Methods for inserting, modifying, or removing entries
@@ -296,10 +296,10 @@ class FECrsMatrix :
     #if 0
     template<class GlobalIndicesViewType, class ImplScalarViewType>
     LocalOrdinal
-    sumIntoGlobalValues (const GlobalOrdinal globalRow,
-                         const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
-                         const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
-                         const bool atomic = useAtomicUpdatesByDefault) const;
+    sumIntoGlobalValues(const GlobalOrdinal globalRow,
+                        const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
+                        const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
+                        const bool atomic = useAtomicUpdatesByDefault) const;
     #endif
 
 
@@ -339,7 +339,7 @@ class FECrsMatrix :
     /// an exception, or it may silently drop the entries inserted
     /// into invalid rows.  Behavior may vary, depending on whether
     /// Tpetra was built with debug checking enabled.
-    void globalAssemble();
+    void globalAssemble ();
 
 
     /// \brief Resume operations that may change the values or
@@ -372,7 +372,7 @@ class FECrsMatrix :
 
 
     ///! Off-rank graph
-    Teuchos::RCP<crs_graph_type> offRankGraph_;
+    //Teuchos::RCP<crs_graph_type> offRankGraph_;       // Don't need this
     //@}
 
 

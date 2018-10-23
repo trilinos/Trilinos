@@ -52,12 +52,23 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
             const Teuchos::RCP<const crs_graph_type>& offRankGraph,
-            const Teuchos::RCP<Teuchos::ParameterList>& params):crs_matrix_type(graph)
+            const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)
 {
+    #ifdef HAVE_TPETRA_DEBUG
+    // TODO -->
+    // In Tpetra Debug mode, we should check that the graph and offRank graph have no
+    // common rows on any given rank (i.e., no intersections).
+    #endif
+
+    // Create an offRankMatrix_ object if the offRankGraph isn't null (i.e., if we're not SERIAL)
+    if(!offRankGraph.is_null())
+    {
+        offRankMatrix_ = Teuchos::rcp(new crs_matrix_type(offRankGraph, params));
+    }
 }
 
 
-#if 0
+#if 0  // disabled for now
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
@@ -71,6 +82,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 ~FECrsMatrix()
 {
+    // Probably nothing.
 }
 
 
@@ -82,6 +94,27 @@ sumIntoGlobalValues(const GlobalOrdinal globalRow,
                     const Teuchos::ArrayView<const Scalar>& vals,
                     const bool atomic)
 {
+    const LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+
+    // If globalRow is in 'this' matrix (i.e., is local)
+    if(LO_INVALID != this->getRowMap()->getLocalElement(globalRow) )
+    {
+        this->sumIntoGlobalValues(globalRow, cols, vals, atomic);
+    }
+    else
+    {
+        // If not local, let's check the offRankMatrix
+        if(LO_INVALID != this->offRankMatrix_->getRowMap()->getLocalElement(globalRow))
+        {
+            this->offRankMatrix_->sumIntoGlobalValues(globalRow, cols, vals, atomic);
+        }
+        // If neither local nor offRank, throw an error.
+        else
+        {
+            throw std::runtime_error("FECrsMatrix: sumIntoGlobalValues, globalRow not found.");
+        }
+    }
+
   return 0;
 }
 
@@ -99,7 +132,7 @@ sumIntoGlobalValues(const GlobalOrdinal globalRow,
 }
 
 
-#if 0
+#if 0   // disabled for now
 template<class GlobalIndicesViewType, class ImplScalarViewType>
 LocalOrdinal
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -114,15 +147,26 @@ sumIntoGlobalValues (const GlobalOrdinal globalRow,
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    setAllToScalar(const Scalar &alpha)
+setAllToScalar(const Scalar &alpha)
 {
+    // Call setAllToScalar on the local matrix (this).
+    this->setAllToScalar(alpha);
+
+    // Call setAllToSalar on the offRankMatrix if it's not null (i.e., we're not serial)
+    if(!offRankMatrix_.is_null())
+    {
+        offRankMatrix_->setAllToScalar(alpha);
+    }
 }
+
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 globalAssemble()
 {
+    // Here be dragons...
+    // - Will need Tim's new TAFC for this, or equivalent.
 }
 
 
@@ -131,6 +175,14 @@ void
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 resumeFill(const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
+    // Call resumeFill on the local matrix (this).
+    this->resumeFill(params);
+
+    // Call resumeFill on the offRankMatrix if it's not null (i.e., we're not serial)
+    if(!offRankMatrix_.is_null())
+    {
+        offRankMatrix_->resumeFill(params);
+    }
 }
 
 
