@@ -104,7 +104,7 @@ KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
 dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
+  return view.impl_map().dimension_scalar();
 }
 
 // Declare overloads of create_mirror() so they are in scope

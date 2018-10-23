@@ -206,7 +206,7 @@ KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_view_uq_pce< View<T,P...> >::value, unsigned >::type
 dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
+  return view.impl_map().dimension_scalar();
 }
 
 template <typename view_type>
@@ -215,7 +215,7 @@ constexpr typename
 std::enable_if< is_view_uq_pce<view_type>::value,
                 typename CijkType<view_type>::type >::type
 cijk(const view_type& view) {
-  return view.implementation_map().cijk();
+  return view.impl_map().cijk();
 }
 
 template <typename view_type>
@@ -223,7 +223,7 @@ KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_view_uq_pce<view_type>::value, bool >::type
 is_allocation_contiguous(const view_type& view) {
-  return view.implementation_map().is_allocation_contiguous();
+  return view.impl_map().is_allocation_contiguous();
 }
 
 template <typename ViewType>
@@ -315,7 +315,7 @@ create_mirror( const Kokkos::View<T,P...> & src
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
 
   return dst_type(view_alloc(std::string(src.label()).append("_mirror"),
-                             src.implementation_map().cijk()), layout);
+                             src.impl_map().cijk()), layout);
 }
 
 template< class T , class ... P >
@@ -357,7 +357,7 @@ create_mirror( const Kokkos::View<T,P...> & src
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
 
   return dst_type(view_alloc(std::string(src.label()).append("_mirror"),
-                             src.implementation_map().cijk()), layout);
+                             src.impl_map().cijk()), layout);
 }
 
 template<class Space, class T, class ... P>
@@ -371,7 +371,7 @@ create_mirror(const Space& , const Kokkos::View<T,P...> & src
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
   return typename Impl::MirrorType<Space,T,P ...>::view_type(
-    view_alloc(src.label(), src.implementation_map().cijk()),layout);
+    view_alloc(src.label(), src.impl_map().cijk()),layout);
 }
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
