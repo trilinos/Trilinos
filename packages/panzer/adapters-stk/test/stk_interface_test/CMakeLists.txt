@@ -108,11 +108,16 @@ TRIBITS_ADD_EXECUTABLE(
 #  COMM serial mpi
 #  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tPointLocationSearch
-  SOURCES tPointLocationSearch.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  )
+
+# This test appears to have fallen into disrepair.  #3719
+#
+#IF (${PROJECT_NAME}_ENABLE_STKSearch AND ${PROJECT_NAME}_ENABLE_STKSearchUtil)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    tPointLocationSearch
+#    SOURCES tPointLocationSearch.cpp ${UNIT_TEST_DRIVER}
+#    NUM_MPI_PROCS 2
+#    )
+#ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   SOURCE_FILES basic.gen basic.gen.2.0 basic.gen.2.1
