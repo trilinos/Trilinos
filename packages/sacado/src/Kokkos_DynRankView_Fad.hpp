@@ -960,7 +960,11 @@ KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_dynrankview_fad< DynRankView<T,P...> >::value, unsigned >::type
 dimension_scalar(const DynRankView<T,P...>& view) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   return view.implementation_map().dimension_scalar();
+#else
+  return view.impl_map().dimension_scalar();
+#endif
 }
 
 
@@ -1214,7 +1218,11 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
   layout.stride[7] = src.stride_7();
 
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   layout.stride[src.rank()] = src.implementation_map().stride_scalar();
+#else
+  layout.stride[src.rank()] = src.impl_map().stride_scalar();
+#endif
 
   return dst_type(std::string(src.label()).append("_mirror"),
                   Impl::reconstructLayout(layout, src.rank()+1));
