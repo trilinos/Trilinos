@@ -62,7 +62,7 @@ namespace Harness {
     // type and the default instance thereof).
     template<class GlobalObjectType>
     struct DefaultMemorySpace {
-      using type = typename GlobalObjectType::memory_space;
+      using type = typename GlobalObjectType::device_type::memory_space;
 
       // Given a global object, get its (default) memory space instance.
       static type space (const GlobalObjectType& /* G */) {
@@ -266,7 +266,7 @@ namespace Harness {
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadOnly>
   readOnly (GOT& G)
   {
-    std::cout << "readOnly(" << G.name () << ")" << std::endl;
+    std::cout << "readOnly" << std::endl;
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
   }
 
@@ -274,7 +274,7 @@ namespace Harness {
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, WriteOnly>
   writeOnly (GOT& G)
   {
-    std::cout << "writeOnly(" << G.name () << ")" << std::endl;
+    std::cout << "writeOnly" << std::endl;
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
   }
 
@@ -282,9 +282,78 @@ namespace Harness {
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadWrite>
   readWrite (GOT& G)
   {
-    std::cout << "readWrite(" << G.name () << ")" << std::endl;  
+    std::cout << "readWrite" << std::endl;  
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
   }
+
+namespace Impl {
+  // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
+  template<class SC, class LO, class GO, class NT,
+	   class MemorySpace,
+	   const AccessMode am>
+  struct GetMasterLocalObject<LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> > {
+  public:
+    using local_access_type = LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;        
+  private:
+    using global_object_type = typename local_access_type::global_object_type;
+    using memory_space = typename local_access_type::memory_space;
+    static constexpr AccessMode access_mode = local_access_type::access_mode;
+    using non_const_value_type = typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type;
+    using value_type = typename std::conditional<
+        access_mode == ReadOnly,
+        const non_const_value_type,
+        non_const_value_type
+      >::type;
+
+  public:
+    // FIXME (mfh 22 Oct 2018) See FIXME below.
+    using master_local_object_type =
+      Kokkos::View<value_type**, 
+		   typename global_object_type::dual_view_type::t_dev::array_layout,
+		   MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+
+    static master_local_object_type get (local_access_type LA) {
+      std::cout << "Get master local object" << std::endl;
+
+      // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
+      if (LA.G_.template need_sync<memory_space> ()) {
+	LA.G_.template sync<memory_space> ();
+      }
+      if (access_mode != ReadWrite) {
+	LA.G_.template modify<memory_space> ();
+      }
+      // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
+      // semantics, e.g., for a memory space for which the
+      // Tpetra::MultiVector does not store data.  In that case, we
+      // would need some kind of object whose destructor copies back,
+      // and it would need to have the whole DualView, not just the
+      // View on one side.  Watch out for copy elision.  The object
+      // could just be std::shared_ptr and could handle copy-back via
+      // custom deleter.
+      if (LA.isValid ()) {
+	// this converts to const if applicable
+	return master_local_object_type (LA.G_.template getLocalView<memory_space> ()); 
+      }
+      else {
+	return master_local_object_type (); // "null" Kokkos::View
+      }
+    }
+  };
+
+  // Specialization of GetNonowningLocalObject for StubMasterLocalObject.
+  template<class ValueType,
+	   class LayoutType,
+	   class MemorySpace>
+  struct GetNonowningLocalObject<Kokkos::View<ValueType**, LayoutType, MemorySpace> > {
+    using master_local_object_type = Kokkos::View<ValueType**, LayoutType, MemorySpace>;
+    using nonowning_local_object_type = Kokkos::View<ValueType**, LayoutType, MemorySpace, Kokkos::MemoryUnmanaged>;
+    static nonowning_local_object_type get (const master_local_object_type& M) {
+      return nonowning_local_object_type (M); // standard Kokkos::View assignment
+    }
+  };
+  
+} // namespace Impl
+  
 } // namespace Harness
 
 namespace { // (anonymous)
@@ -354,6 +423,20 @@ namespace { // (anonymous)
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
+
+    // FIXME (mfh 22 Oct 2018) Make this simpler.  The original design
+    // only intended to expose readOnly etc., not the other functions.
+    // This design should actually only return a nonowning object.
+    auto X_lcl_ro = Harness::Impl::getNonowningLocalObject (Harness::Impl::getMasterLocalObject (Harness::readOnly (mvec)));
+
+    // Make sure X_lcl_ro can be assigned to the type we expect it to
+    // be.  It doesn't have to be that type, it just has to be
+    // assignable to that type.
+    Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
+    static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+    TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
+    TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );    
+    
   }
 } // namespace (anonymous)
 
