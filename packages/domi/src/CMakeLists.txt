@@ -51,7 +51,7 @@ IF(Domi_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
 ENDIF()
 
-IF(Domi_ENABLE_Tpetra)
+IF(Domi_ENABLE_TpetraCore)
   SET(HAVE_TPETRA ON)
 ENDIF()
 
