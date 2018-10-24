@@ -69,8 +69,8 @@
 #endif
 
 /* EXODUS version number */
-#define EX_API_VERS 7.15f
-#define EX_API_VERS_NODOT 715
+#define EX_API_VERS 7.17f
+#define EX_API_VERS_NODOT 717
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -618,8 +618,9 @@ EXODUS_EXPORT int ex_get_num_props(int exoid, ex_entity_type obj_type);
 EXODUS_EXPORT int ex_large_model(int exoid);
 EXODUS_EXPORT size_t ex_header_size(int exoid);
 
-EXODUS_EXPORT void        ex_err(const char *module_name, const char *message, int err_num);
-EXODUS_EXPORT void        ex_set_err(const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_err_fn(int exoid, const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_set_err(const char *module_name, const char *message, int err_num);
 EXODUS_EXPORT const char *ex_strerror(int err_num);
 EXODUS_EXPORT void        ex_get_err(const char **msg, const char **func, int *err_num);
 EXODUS_EXPORT int         ex_opts(int options);

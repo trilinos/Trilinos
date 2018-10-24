@@ -217,7 +217,9 @@ namespace Belos {
     //@}
 
     //! Sets whether or not to store the diagonal for condition estimation
-    void setDoCondEst(bool val){doCondEst_=val;}
+    void setDoCondEst(bool val) {
+     if (numEntriesForCondEst_) doCondEst_=val;
+    }
 
     //! Gets the diagonal for condition estimation
     Teuchos::ArrayView<MagnitudeType> getDiag() {
@@ -278,6 +280,7 @@ namespace Belos {
 
     // Tridiagonal system for condition estimation (if needed)
     Teuchos::ArrayRCP<MagnitudeType> diag_, offdiag_;
+    ScalarType pAp_old_, beta_old_, rHz_old2_;  // Put scalars here so that estimate is correct for multiple RHS, when deflation occurs.
     int numEntriesForCondEst_;
     bool doCondEst_;
 
@@ -312,7 +315,8 @@ namespace Belos {
     initialized_(false),
     iter_(0),
     assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) ),
-    numEntriesForCondEst_(params.get("Max Size For Condest",0) )
+    numEntriesForCondEst_(params.get("Max Size For Condest",0) ),
+    doCondEst_(false)
   {
   }
 
@@ -416,15 +420,12 @@ namespace Belos {
     // Allocate memory for scalars.
     int i=0;
     std::vector<int> index(1);
-    std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ );
-    Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ ), beta( numRHS_,numRHS_ );
+    std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ ), beta( numRHS_ );
+    Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-
-    // Scalars for condition estimation (if needed) - These will always use entry zero, for convenience
-    ScalarType pAp_old=one, beta_old=one ,rHz_old2=one;
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -505,25 +506,25 @@ namespace Belos {
       //
       // Update the search directions.
       for (i=0; i<numRHS_; ++i) {
-        beta(i,i) = rHz[i] / rHz_old[i];
+        beta[i] = rHz[i] / rHz_old[i];
         index[0] = i;
         Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
         Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );       
+        MVT::MvAddMv( one, *Z_i, beta[i], *P_i, *P_i );       
       }
 
       // Condition estimate (if needed)
-      if(doCondEst_ > 0) {
-        if(iter_ > 1 ) {
-          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old * beta_old * pAp_old + pAp[0]) / rHz_old[0]);
-          offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old * pAp_old / (sqrt( rHz_old[0] * rHz_old2)));
+      if (doCondEst_) {
+        if (iter_ > 1) {
+          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old_ * beta_old_ * pAp_old_ + pAp[0]) / rHz_old[0]);
+          offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old_ * pAp_old_ / (sqrt( rHz_old[0] * rHz_old2_)));
         }
         else {
           diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp[0] / rHz_old[0]);
         }
-        rHz_old2 = rHz_old[0];
-        beta_old = beta(0,0);
-        pAp_old = pAp[0];
+        rHz_old2_ = rHz_old[0];
+        beta_old_ = beta[0];
+        pAp_old_ = pAp[0];
       }
 
 

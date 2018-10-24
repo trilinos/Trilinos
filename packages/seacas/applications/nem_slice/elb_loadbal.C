@@ -766,9 +766,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   /* Free up coordinates if used */
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
-    case 1:
-      free(y_node_ptr);
-      y_node_ptr = nullptr; /* fall through */
+    case 1: free(y_node_ptr); y_node_ptr = nullptr; /* fall through */
     case 2: free(z_node_ptr); z_node_ptr = nullptr;
     }
   }
@@ -2407,15 +2405,14 @@ namespace {
   }
 
   /*****************************************************************************/
-  void
-  BRICK_slices(int                  nslices_d, /* # of subdomains in this dimension */
-               int                  ndot,      /* # of dots */
-               float *              d,         /* Array of ndot coordinates in this dimension */
-               float *              dmin,      /* Output:  Smallest value in d[] */
-               float *              dmax,      /* Output:  Largest value in d[] */
-               double *             delta,     /* Output:  dmax - dmin */
-               std::vector<double> &slices_d /* Output:  maximum d for each slice in dimension using
-                                    uniform partition of dmax - dmin */
+  void BRICK_slices(int                  nslices_d, /* # of subdomains in this dimension */
+                    int                  ndot,      /* # of dots */
+                    float *              d,       /* Array of ndot coordinates in this dimension */
+                    float *              dmin,    /* Output:  Smallest value in d[] */
+                    float *              dmax,    /* Output:  Largest value in d[] */
+                    double *             delta,   /* Output:  dmax - dmin */
+                    std::vector<double> &slices_d /* Output:  maximum d for each slice in dimension
+                                         using uniform partition of dmax - dmin */
   )
   {
     /* Compute the min, max, delta and slices values for a single dimension. */

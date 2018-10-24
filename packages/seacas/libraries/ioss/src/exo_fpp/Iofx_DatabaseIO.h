@@ -89,20 +89,12 @@ namespace Iofx {
     ~DatabaseIO() override{};
 
   private:
-    // Check to see if database state is ok...
-    // If 'write_message' true, then output a warning message indicating the problem.
-    // If 'error_message' non-null, then put the warning message into the string and return it.
-    // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
-    //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
-    bool ok__(bool write_message = false, std::string *error_msg = nullptr,
-              int *bad_count = nullptr) const override;
-
     void get_step_times__() override;
 
     bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
-                         bool abort_if_error) const;
+                         bool abort_if_error) const override;
     bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
-                            bool overwrite, bool abort_if_error) const;
+                            bool overwrite, bool abort_if_error) const override;
     bool check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
                               bool abort_if_error) const;
 

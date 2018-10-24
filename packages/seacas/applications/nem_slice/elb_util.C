@@ -221,17 +221,17 @@ void clean_string(char inp_str[], const char *tokens)
 } /*---------------- End clean_string() -----------------*/
 
 namespace {
-/*
- * The following 'qsort' routine is modified from Sedgewicks
- * algorithm It selects the pivot based on the median of the left,
- * right, and center values to try to avoid degenerate cases ocurring
- * when a single value is chosen.  It performs a quicksort on
- * intervals down to the GDS_QSORT_CUTOFF size and then performs a final
- * insertion sort on the almost sorted final array.  Based on data in
- * Sedgewick, the GDS_QSORT_CUTOFF value should be between 5 and 20.
- *
- * See Sedgewick for further details
- */
+  /*
+   * The following 'qsort' routine is modified from Sedgewicks
+   * algorithm It selects the pivot based on the median of the left,
+   * right, and center values to try to avoid degenerate cases ocurring
+   * when a single value is chosen.  It performs a quicksort on
+   * intervals down to the GDS_QSORT_CUTOFF size and then performs a final
+   * insertion sort on the almost sorted final array.  Based on data in
+   * Sedgewick, the GDS_QSORT_CUTOFF value should be between 5 and 20.
+   *
+   * See Sedgewick for further details
+   */
 
 #define GDS_QSORT_CUTOFF 12
 

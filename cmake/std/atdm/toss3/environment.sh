@@ -49,8 +49,8 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     export OMPI_CXX=`which icpc`
     export OMPI_CC=`which icc`
     export OMPI_FC=`which ifort`
-    export ATDM_CONFIG_LAPACK_LIB="-mkl"
-    export ATDM_CONFIG_BLAS_LIB="-mkl"
+    export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+    export ATDM_CONFIG_BLAS_LIBS="-mkl"
 else
     echo
     echo "***"

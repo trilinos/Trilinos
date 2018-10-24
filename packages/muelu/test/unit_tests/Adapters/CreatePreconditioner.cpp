@@ -453,6 +453,8 @@ namespace MueLuTests {
       if (k == 0) xmlFileName = "testPDE.xml";
       if (k == 1) xmlFileName = "testPDE1.xml";
 
+      int numPDEs=3;
+
       if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
         typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
@@ -462,11 +464,22 @@ namespace MueLuTests {
         RCP<const Map > map = Op->getRowMap();
 
         Teuchos::ParameterList clist;
-        clist.set("nx", (nx * comm->getSize())/3);
-        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/3), Teuchos::as<int>(0), comm);
+        clist.set("nx", (nx * comm->getSize())/numPDEs);
+        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/numPDEs), Teuchos::as<int>(0), comm);
         RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", cmap, clist);
-        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
-        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), numPDEs);
+        if (numPDEs == 1) {
+          nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+        } else {
+          for (int i = 0; i < numPDEs; i++) {
+            Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+            for (int j = 0; j < nsData.size(); j++) {
+              GlobalOrdinal GID = Op->getDomainMap()->getGlobalElement(j) - Op->getDomainMap()->getIndexBase();
+              if ((GID-i) % numPDEs == 0)
+                nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+            }
+          }
+        }
 
         // Normalized RHS
         RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
@@ -518,11 +531,22 @@ namespace MueLuTests {
         RCP<const Map > map = Op->getRowMap();
 
         Teuchos::ParameterList clist;
-        clist.set("nx", (nx * comm->getSize())/3);
-        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/3), Teuchos::as<int>(0), comm);
+        clist.set("nx", (nx * comm->getSize())/numPDEs);
+        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/numPDEs), Teuchos::as<int>(0), comm);
         RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", cmap, clist);
-        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
-        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), numPDEs);
+        if (numPDEs == 1) {
+          nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+        } else {
+          for (int i = 0; i < numPDEs; i++) {
+            Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+            for (int j = 0; j < nsData.size(); j++) {
+              GlobalOrdinal GID = Op->getDomainMap()->getGlobalElement(j) - Op->getDomainMap()->getIndexBase();
+              if ((GID-i) % numPDEs == 0)
+                nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+            }
+          }
+        }
 
         // Normalized RHS
         RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);

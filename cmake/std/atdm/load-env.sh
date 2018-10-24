@@ -40,9 +40,15 @@ if [ "$2" != "" ] ; then
   return
 fi
 
+export ATDM_CONFIG_JOB_NAME=$1
+
 #
 # B) Get the system name from the hostname
 #
+
+unset ATDM_CONFIG_KNOWN_HOSTNAME
+unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
+unset ATDM_CONFIG_KNOWN_SYSTEM_NAME
 
 source $ATDM_SCRIPT_DIR/utils/get_known_system_name.sh
 
@@ -54,8 +60,6 @@ fi
 #
 # C) Set ATDM_CONFIG_JOB_NAME and Trilinos base directory
 #
-
-export ATDM_CONFIG_JOB_NAME=$1
 
 # Get the Trilins base dir
 export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path $ATDM_SCRIPT_DIR/../../..`
@@ -79,12 +83,16 @@ unset OMP_PLACES
 unset OMPI_CC
 unset OMPI_CXX
 unset OMPI_FC
+unset ATDM_CONFIG_ENABLE_SPARC_SETTINGS
 unset ATDM_CONFIG_USE_NINJA
 unset ATDM_CONFIG_BUILD_COUNT
+unset ATDM_CONFIG_OPENMP_FORTRAN_FLAGS
+unset ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES
+unset ATDM_CONFIG_OPENMP_GOMP_LIBRARY
 unset ATDM_CONFIG_CMAKE_JOB_POOL_LINK
 unset ATDM_CONFIG_CTEST_PARALLEL_LEVEL
-unset ATDM_CONFIG_BLAS_LIB
-unset ATDM_CONFIG_LAPACK_LIB
+unset ATDM_CONFIG_BLAS_LIBS
+unset ATDM_CONFIG_LAPACK_LIBS
 unset ATDM_CONFIG_USE_HWLOC
 unset ATDM_CONFIG_HWLOC_LIBS
 unset ATDM_CONFIG_USE_CUDA
@@ -94,6 +102,8 @@ unset ATDM_CONFIG_MPI_EXEC
 unset ATDM_CONFIG_MPI_PRE_FLAGS
 unset ATDM_CONFIG_MPI_POST_FLAG
 unset ATDM_CONFIG_COMPLETED_ENV_SETUP
+
+source $ATDM_SCRIPT_DIR/utils/atdm_config_helper_funcs.sh
 
 source $ATDM_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
 

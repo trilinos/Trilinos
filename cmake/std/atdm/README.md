@@ -61,9 +61,21 @@ The `<job-name>` argument is a single string of the form
 `XXX-<keyword0>-<keyword1>-...`.  The standard order and format of this string
 is:
 
-    <compiler>-<debug_or_opt>-<kokkos_threading>-<kokkos_arch>
+    <system-name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
 
 Each of these keywords are described below.
+
+**`<system-name>`**: Typically, the system name is determined automatically by
+examining the `hostname` on the system and matching it to known hosts.
+Therefore, it is typically not necessary to specify `<system-name>` in the
+`<job-name>` keys.  But there are some cases where more then one
+`<system-name>` env are supported on the same machine.  For example, on CEE
+LAN RHEL6 machines, both the <a href="#sems-rhel6-environment">SEMS RHEL6
+env</a> and <a href="#cee-rhel6-environment">CEE RHEL6 env</a> are supported.
+On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in the build job
+name, then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is
+included in the job name or non system name is given, then the `sems-rhel6`
+env will be selected by default.
 
 **`<compiler>`:** The following **lower case** `<job-name>` keywords specify
 the `<COMPILER>` variable include:
@@ -84,12 +96,24 @@ compilers and which versions are supported.  If you choose a compiler that is
 not supported, an error message will be provided.  If `default` is used, then
 the default compiler for the system will be selected.
 
-**`<debug_or_opt>`:** The following `<job-name>` keywords specify debug or
-optimized build and the `<BUILD_TYPE> variable `(used for the CMake cache var
-`CMAKE_BUILD_TYPE`with default `<BUILD_TYPE>=DEBUG`):
+**`<release_or_debug>`:** The following `<job-name>` keywords specify debug or
+optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
+var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
+checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `debug`: Use `<BUILD_TYPE>=DEBUG`
-* `opt`: Use `<BUILD_TYPE>=RELEASE`
+* `release-debug`: (`<BUILD_TYPE>=RELEASE_RELEASE`)
+  * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
+  * Turn **ON** runtime debug checking
+  * NOTE: This build runs runtime checks to catch developer and user mistakes
+    but still runs fairly fast.
+* `debug`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
+  * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
+  * Turn **ON** runtime debug checking
+  * NOTE: This build supports running in a debugger. 
+* `release` or `opt`: (`<BUILD_TYPE>=RELEASE`)
+  * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
+  * Turn **OFF** runtime debug checking
+  * NOTE: This build runs fast with minimal checks (i.e. production).
 
 **`<kokkos_threading>`:** The following `<job-name>` keywords determine the
 Kokkos threading model variable `<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL`
@@ -136,6 +160,10 @@ Some examples of `<job-name>` keyword sets used on various platforms include:
 * `gnu-opt-openmp`
 * `intel-debug-openmp`
 * `intel-opt-openmp`
+* `sems-rhel6-gnu-debug-openmp`
+* `cee-rhel6-gnu-debug-openmp`
+* `sems-rhel6-intel-opt-openmp`
+* `cee-rhel6-intel-opt-openmp`
 * `intel-debug-openmp-KNL`
 * `intel-opt-openmp-HSW`
 * `cuda-debug` (`<NODE_TYPE>` is implicitly `CUDA`)
@@ -235,15 +263,17 @@ builds on the local system can be run by using `all` instead of `<job-name-0>
 The parallel level for building and running tests are determined by the env
 vars `ATDM_CONFIG_BUILD_COUNT` and `ATDM_CONFIG_CTEST_PARALLEL_LEVEL`,
 respectfully, as set by default for the given system by the `atdm/load-env.sh`
-script.  These values can be overridden by setting the env vars
-`ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
+script for the given machine.  (On most machines, these are fixed but on
+generic systems like <a href="#sems-rhel6-environment">sems-rhel6</a>, they
+are computed from the number of cores on that machine).  These values can be
+overridden by setting the env vars `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE`, respectfully as, for example:
 
 ```
 $ env \
   ATDM_CONFIG_BUILD_COUNT_OVERRIDE=8 \
   ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE=12 \
-  ./checkin-test-atdm.sh ...
+  ./checkin-test-atdm.sh [options]
 ```
 
 A value of `ATDM_CONFIG_BUILD_COUNT_OVERRIDE=0` or less than `0` is allowed
@@ -251,9 +281,22 @@ when using Ninja (i.e. `ATDM_CONFIG_USE_NINJA=ON`) in which case `ninja` will
 be run with non `-j<N>` argument, and therefore all of the non-loaded cores
 will be used.
 
-Note that to run tests for a CUDA build or to run tests on platforms that must
-run on a compute node one will need to run these on a compute node on the
-system that has a GPU.  On such a system one would run:
+Alternatively, one can override the parallel build and test running levels and
+set other make/ninja and ctest options using the checkin-test arguments
+`--make-options` and `--ctest-options`.  For example, to use 20 processes to
+build with Nina, have Ninja keep going even if there are build errors, and run
+ctest with 10 proceses, one can use:
+
+```
+$ ./checkin-test-atdm.sh \
+  --make-options="-j20 -k 99999999" \
+  --ctest-options=-j10 \
+  [other options]
+```
+
+To run tests for a CUDA build or to run tests on platforms that must run on a
+compute node one will need to run these on a compute node on the system that
+has a GPU.  On such a system one would run:
 
 ```
 $ ./checkin-test-atdm.sh <job-name-0> <job-name-1> ... \
@@ -297,6 +340,7 @@ the `checkin-test-atdm.sh` script is run and will set these as the defaults
 * <a href="#chamaserrano">chama/serrano</a>
 * <a href="#mutrino">mutrino</a>
 * <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
+* <a href="#cee-rhel6-environment">CEE rhel6 environment</a>
 * <a href="#waterman">waterman</a>
 
 
@@ -469,16 +513,16 @@ order to drive jobs and submit to CDash.
 
 ### SEMS rhel6 environment
 
-Once logged on to a rhel6 machine with the sems NFS, one can directly
+Once logged on to a rhel6 machine with the sems NFS env, one can directly
 configure, build, and run tests.  For example, to configure, build and run the
-tests for `MueLu` one would clone Trilinos on the `develop` branch and then
-do the following:
+tests for `MueLu` one would clone Trilinos on the `develop` branch and then do
+the following:
 
 
 ```
 $ cd <some_build_dir>/
 
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh intel-opt-openmp
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh sems-rhel6-intel-opt-openmp
 
 $ cmake \
   -GNinja \
@@ -488,8 +532,82 @@ $ cmake \
 
 $ make NP=16
 
-$ ctest -j16 \
+$ ctest -j8
 ```
+
+NOTE: Above including `sems-rhel6` in the job build name
+`sems-rhel6-intel-opt-openmp` is not necessary but is recommended when on a
+CEE LAN RHEL6 machine to be explicit that the SEMS env is being used and not
+the <a href="#cee-rhel6-environment">CEE RHEL6 env</a>.
+
+One can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ ./checkin-test-atdm.sh sems-rhel6-clang-opt-openmp \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
+`atdm/load-env.sh <job-name>` script.
+
+
+### CEE RHEL6 environment
+
+Once logged into any CEE LAN RHEL6 SRN machine, one can configure, build, and
+run tests for any ATDM Trilinos package.  For example, to configure, build and
+run the tests for the `cee-rhel6-clang-opt-openmp` build for say `MueLu` on a
+CEE LAN machine, (after cloning Trilinos on the `develop` branch) one would
+do:
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cee-rhel6-clang-opt-openmp
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=16
+
+$ ctest -j16
+```
+
+NOTE: Above one must include `cee-rhel6` in the build job name
+`cee-rhel6-clang-opt-openmp` in order to select the `cee-rhel6` env on a CEE
+LAN RHEL6 machine or the <a href="#sems-rhel6-environment">sems-rhel6</a> env
+will be used by default.
+
+One can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ env ATDM_CHT_DEFAULT_ENV=cee-rhel6-default \
+  ./checkin-test-atdm.sh cee-rhel6-clang-opt-openmp \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+NOTE: Above one must set `ATDM_CHT_DEFAULT_ENV=cee-rhel6-default` in the env
+when passing in `all` in order for it to select the correct set of supported
+builds for the `cee-rhel6` env.
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
+`atdm/load-env.sh <job-name>` script.
 
 
 ### waterman
@@ -826,14 +944,17 @@ after the test was fixed.)
 
 The specific `cmake/std/atdm/<system-name>/` sub-directories and the systems
 they support are:
+
+* `cee-rhel6/`: CEE LANL RHEL6 systems with a CEE environment
+
 * `chama/`: Supports SNL HPC machine `chama`.
 
 * `mutrino/`: Supports SNL HPC machine `mutrino`.
 
-* `rhel6/`: RHEL6 systems with the SEMS NFS environment
-
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
   mirror SON machine `white`.
+
+* `sems-rhel6/`: RHEL6 systems with the SEMS NFS environment
 
 * `serrano/`: Supports SNL HPC machine `serrano`.
 

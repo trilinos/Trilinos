@@ -27,6 +27,11 @@ no_proxy='localhost,localnets,.sandia.gov,127.0.0.1,169.254.0.0/16,forge.sandia.
 whoami
 which -a env
 
+echo -e ""
+echo -e "Jenkins Environment Variables:"
+echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME}"
+echo -e ""
+
 ## Rather than do proper option handling right now I am just going to
 ##  test that all these environment variables are set.  Because getopt ;->
 : ${TRILINOS_SOURCE_REPO:?}
@@ -171,6 +176,12 @@ fi
 # not all test jobs kick off right away
 
 #------------------------------
+# PR merge is complete
+#------------------------------
+
+# TODO: Split this script in two here (See Issue 3625 for reasons)
+
+#------------------------------
 # Doing setup for build
 #------------------------------
 
@@ -217,7 +228,15 @@ cmake --version
 
 module list
 
-echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+# This crashes for the serial case since MPI variables are not set
+# - See Issue #3625
+# - wcm: bugfix #3673
+regex=".*(_SERIAL)$"
+if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
+  echo "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
+else
+  echo "Job is SERIAL"
+fi
 
 CDASH_TRACK="Pull Request"
 echo "CDash Track = ${CDASH_TRACK:?}"

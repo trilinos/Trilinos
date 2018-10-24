@@ -140,6 +140,13 @@ extern ML_PrintControl ML_PrintLevel;
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#ifdef ML_MPI
+#include "mpi.h"
+#define USR_COMM MPI_Comm
+#else
+#define USR_COMM int
+#endif
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
@@ -147,6 +154,7 @@ extern "C" {
 #endif
 
 extern int ML_Create(ML **ml, int Nlevels);
+extern int ML_Create2(ML **ml, int Nlevels, USR_COMM comm);
 extern int ML_build_ggb( ML *ml, void *data);
 extern void ML_build_ggb_cheap(ML *ml, void *data);
 extern void ML_build_ggb_fat(ML *ml, void *data);

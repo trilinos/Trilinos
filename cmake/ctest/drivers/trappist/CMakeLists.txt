@@ -21,6 +21,16 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     RUN_SERIAL
     TIMEOUT_MINUTES 330
     )
+
+  # REFACTOR tests
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    Linux_gcc_5.3.0_OPENMPI_1.10.1_KOKKOS_REFACTOR_OPENMP_EXPERIMENTAL
+    ctest_linux_nightly_mpi_experimental_openmp_refactor_muelu_trappist.gcc.cmake
+    CTEST_INSTALLER_TYPE release
+    RUN_SERIAL
+    TIMEOUT_MINUTES 330
+    )
+
 elseif($ENV{CTEST_CONFIGURATION} MATCHES "clang")
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
