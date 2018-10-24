@@ -16,11 +16,6 @@ FOREACH(EXCLUDED_PACKAGE ${${PROJECT_NAME}_EXCLUDE_PACKAGES})
     "Disabled in casl-core-enables-disables.cmake")
 ENDFOREACH()
 
-# We don't need ThreadPool or the Kokkoss::TPINode instnatiations (VRI Kanban
-# #2852, Trilinos #5861)
-SET(${PROJECT_NAME}_ENABLE_ThreadPool OFF CACHE BOOL
-  "Disabled in casl-core-enables-disables.cmake")
-
 # We don't want or need HDF5 support in EpetraExt
 SET(EpetraExt_ENABLE_HDF5 OFF CACHE BOOL
   "Disabled in casl-core-enables-disables.cmake")

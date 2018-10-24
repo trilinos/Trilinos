@@ -719,8 +719,6 @@ disabled by default.  Here is a summary of the required CMake options.
 Here are some OPTIONAL CMake options that may help reduce build times
 if ETI (explicit template instantiation) is enabled:
 
-# Disable KokkosClassic::TPINode
--D TpetraClassic_ENABLE_ThreadPool:BOOL=OFF
 # Disable KokkosClassic::OpenMPNode
 -D TpetraClassic_ENABLE_OpenMP:BOOL=OFF
 # Shut off Kokkos' Pthreads back-end.
@@ -832,8 +830,6 @@ The following options may reduce build times if ETI is enabled:
 
 # Disable KokkosClassic::OpenMPNode
 -D KokkosClassic_ENABLE_OpenMP:BOOL=OFF
-# Disable KokkosClassic::TPINode
--D KokkosClassic_ENABLE_ThreadPool:BOOL=OFF
 # Shut off Kokkos' Pthreads back-end in favor of OpenMP
 -D Kokkos_ENABLE_Pthread:BOOL=OFF
 

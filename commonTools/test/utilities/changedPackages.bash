@@ -31,10 +31,6 @@ else #If we aren't building everything, figure out which packages to bulid
         PackageEnables+="-DTrilinos_ENABLE_Gtest=ON "
   fi
 
-  if grep -q packages/ThreadPool/ gitchanges.txt; then
-	PackageEnables+="-DTrilinos_ENABLE_ThreadPool=ON "
-  fi
-
   if grep -q packages/kokkos/ gitchanges.txt; then
         PackageEnables+="-DTrilinos_ENABLE_Kokkos=ON "
   fi
