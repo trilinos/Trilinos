@@ -252,9 +252,7 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
 
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
     if (test_traits_check == true) {
-      using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad, typename Traits::value_type >;
-      auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
-      l.dimension[7] = cast_prop.fad_dim;
+      l.dimension[7] = compute_fad_dim_from_alloc_prop<P...>::eval(arg_prop);
     }
     else {
       const unsigned fad_dim = computeRank(layout);
@@ -295,10 +293,8 @@ struct DynRankDimTraits<Kokkos::Impl::ViewSpecializeSacadoFad> {
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
     const unsigned fad_dim = computeRank(layout);
     if (test_traits_check == true) {
-      using CVTR_type = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad, typename Traits::value_type >;
-      auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVTR_type> const &)arg_prop).value;
       l.dimension[fad_dim] = 1;
-      l.dimension[7] = cast_prop.fad_dim;
+      l.dimension[7] = compute_fad_dim_from_alloc_prop<P...>::eval(arg_prop);
     }
     else {
       const size_t fad_size = layout.dimension[fad_dim];

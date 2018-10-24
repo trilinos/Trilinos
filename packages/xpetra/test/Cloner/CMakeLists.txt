@@ -6,7 +6,7 @@ IF (NOT Xpetra_Epetra_NO_32BIT_GLOBAL_INDICES)
     Cloner_UnitTests
     SOURCES
     Cloner_UnitTests
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+      ../Xpetra_UnitTests
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )

@@ -54,36 +54,42 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.rocketman.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.gcc.cmake")
 
 #
 # Set the options specific to this build case
 #
 
-# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
-# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
-# details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_NAME_DETAILS AVATAR)
+SET(BUILD_DIR_NAME Linux_gcc_5.3.0_OPENMPI_1.10.1_KOKKOS_REFACTOR_OPENMP)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
-SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
-SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
-SET(CTEST_DO_MEMORY_TESTING FALSE)
+SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES TrilinosCouplings MueLu )
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
+  ### ETI ###
+
+  ### MISC ###
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-  "-DTPL_ENABLE_SuperLU=ON"
-  "-DTPL_ENABLE_Avatar=ON"
-  "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src;/home/csiefer/avatar/avatar/util/fclib-1.6.1/modules"
-  "-DAvatar_LIBRARY_DIRS=/home/csiefer/avatar/build/src;/home/csiefer/avatar/build/util/fclib-1.6.1/modules"
-  "-DTPL_Avatar_LIBRARIES=/home/csiefer/avatar/build/src/libavatar.a;/home/csiefer/avatar/build/util/fclib-1.6.1/modules/libfclib.a"
-  "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-L/home/csiefer/avatar/TPLs/lib -lgsl -lgslcblas'"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
+      "-DSuperLU_LIBRARY_DIRS:PATH=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
+
+  ### PACKAGES CONFIGURATION ###
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor_Use_By_Default:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DZoltan2_ENABLE_Experimental=ON"
 )
 
 #
