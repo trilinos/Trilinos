@@ -871,21 +871,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1  =
-    mdv1.template getTpetraVectorView< int >();
-  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2 =
-    mdv2.template getTpetraMultiVectorView< int >();
-  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3 =
-    mdv3.template getTpetraMultiVectorView< int >();
+  std::cout << "Constructing tv1" << std::endl;
+  Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1  = mdv1.template getTpetraVectorView< int >();
+  std::cout << "Constructing tmv2" << std::endl;
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2 = mdv2.template getTpetraMultiVectorView< int >();
+  std::cout << "Constructing tmv3" << std::endl;
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3 = mdv3.template getTpetraMultiVectorView< int >();
   TEST_EQUALITY_CONST(tmv2->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3->getNumVectors(), 5);
 
-  Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1c  =
-    mdv1.template getTpetraVectorCopy< int >();
-  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2c =
-    mdv2.template getTpetraMultiVectorCopy< int >();
-  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3c =
-    mdv3.template getTpetraMultiVectorCopy< int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1c  = mdv1.template getTpetraVectorCopy< int >();
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2c = mdv2.template getTpetraMultiVectorCopy< int >();
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3c = mdv3.template getTpetraMultiVectorCopy< int >();
   TEST_EQUALITY_CONST(tmv2c->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3c->getNumVectors(), 5);
 #endif
