@@ -28,7 +28,8 @@ build locally as described below.
 After [cloning the Trilinos git
 repo](https://github.com/trilinos/Trilinos/wiki/VC-%7C-Initial-Git-Setup) on
 one of the supported ATDM machines, a local configure of Trilinos enabling a
-few packages is performed as:
+few packages is performed using the bash shell (or opening a new bash shell
+using `bash -l` if bash is not the user's default shell) as:
 
 ```
 $ cd <some_build_dir>/
@@ -674,6 +675,11 @@ version of git.  The git commands that are used by TriBITS, Trilinos, and the
 ATDM Trilinos configuration and testing scripts should work with just about
 any version of git 2.0+.  Another approach would be for the user to
 (temporarily) edit their `~/.gitconfig` file to address the problems.
+
+Another problem occurs for developers who don't use bash but instead need to
+switch into a bash shell.  In this case, one must use `bash -l` so that the
+user's `.bash_profile` file will get sourced.  Without this, one can't load
+the modules when sourcing `Trilinos/cmake/std/atdm/load-env.sh`.
 
 
 ## Directory structure and contents
