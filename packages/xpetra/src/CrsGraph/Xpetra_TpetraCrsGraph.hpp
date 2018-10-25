@@ -691,7 +691,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     /// \brief Access the local KokkosSparse::StaticCrsGraph data
     local_graph_type getLocalGraph () const {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exception::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
