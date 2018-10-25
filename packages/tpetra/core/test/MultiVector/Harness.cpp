@@ -150,6 +150,12 @@ namespace Harness {
 		    ReadOnly>
   readOnly (GlobalObjectType&);
 
+  template<class GlobalObjectType>
+  Impl::LocalAccess<GlobalObjectType,
+		    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+		    ReadOnly>
+  readOnly (const GlobalObjectType&);
+
   // Declare that you want to access the given global object's local
   // data in write-only mode.
   template<class GlobalObjectType>
@@ -256,6 +262,8 @@ namespace Harness {
       template<class GOT> friend
       LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadOnly> readOnly (GOT&);
       template<class GOT> friend
+      LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadOnly> readOnly (const GOT&);
+      template<class GOT> friend
       LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, WriteOnly> writeOnly (GOT&);
       template<class GOT> friend
       LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadWrite> readWrite (GOT&);
@@ -271,6 +279,15 @@ namespace Harness {
   }
 
   template<class GOT>
+  Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadOnly>
+  readOnly (const GOT& G)
+  {
+    std::cout << "readOnly" << std::endl;
+    GOT& G_nc = const_cast<GOT&> (G);
+    return {G_nc, Impl::DefaultMemorySpace<GOT>::space (G_nc), true};
+  }
+  
+  template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, WriteOnly>
   writeOnly (GOT& G)
   {
@@ -285,7 +302,6 @@ namespace Harness {
     std::cout << "readWrite" << std::endl;  
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
   }
-
 
   namespace Impl {
     template<class SC, class LO, class GO, class NT,
@@ -346,6 +362,20 @@ namespace Harness {
       return ret_type (); // "null" Kokkos::View
     }
   }
+
+#if 0
+  template<class SC, class LO, class GO, class NT,
+	   class MemorySpace, 
+	   const AccessMode access_mode>
+  Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace, access_mode>
+  getMultiVector (Impl::LocalAccess<const Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
+  {
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    MV& G = const_cast<MV&> (LA.G_);
+    Impl::LocalAccess<const MV, MemorySpace, access_mode> LA2 (G, LA.space_, LA.valid_);
+    return getMultiVector (LA2);
+  }
+#endif // 0
 
   template<class SC, class LO, class GO, class NT,
 	   class MemorySpace, 
@@ -590,6 +620,18 @@ namespace { // (anonymous)
     // auto X_lcl_2d_host = asMultiVector (readOnly (mvec).on (Kokkos::HostSpace)); // rank 2
     {
       auto X_lcl_ro = Harness::getMultiVector (Harness::readOnly (mvec));
+      // Make sure X_lcl_ro can be assigned to the type we expect it to
+      // be.  It doesn't have to be that type, it just has to be
+      // assignable to that type.
+      Kokkos::View<const double**, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_ro2 = X_lcl_ro;
+      static_assert (decltype (X_lcl_ro)::Rank == 2, "Rank is not 2");
+      TEST_ASSERT( size_t (X_lcl_ro.extent (0)) == numLocal );
+      TEST_ASSERT( size_t (X_lcl_ro.extent (1)) == numVecs );
+    }
+
+    // Test whether read-only access works with a const MultiVector&.
+    {
+      auto X_lcl_ro = Harness::getMultiVector (Harness::readOnly (const_cast<const multivec_type&> (mvec)));
       // Make sure X_lcl_ro can be assigned to the type we expect it to
       // be.  It doesn't have to be that type, it just has to be
       // assignable to that type.
