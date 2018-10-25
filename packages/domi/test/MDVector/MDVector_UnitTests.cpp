@@ -871,11 +871,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
 #endif
 
 #ifdef HAVE_TPETRA
-  std::cout << "Constructing tv1" << std::endl;
   Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1  = mdv1.template getTpetraVectorView< int >();
-  std::cout << "Constructing tmv2" << std::endl;
   Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2 = mdv2.template getTpetraMultiVectorView< int >();
-  std::cout << "Constructing tmv3" << std::endl;
   Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3 = mdv3.template getTpetraMultiVectorView< int >();
   TEST_EQUALITY_CONST(tmv2->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3->getNumVectors(), 5);
