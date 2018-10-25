@@ -142,7 +142,7 @@ namespace MueLu {
         RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(Op);
         if (A != Teuchos::null) {
           Teuchos::RCP<MultiVector> nullspace = l0->Get<RCP<MultiVector>>("Nullspace");
-          TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() > nullspace->getNumVectors(), Exceptions::RuntimeError, "user-provided nullspace has fewer vectors (" << nullspace->getNumVectors() << ") than number of PDE equations (" << A->GetFixedBlockSize() << ")");
+          TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(A->GetFixedBlockSize()) > nullspace->getNumVectors(), Exceptions::RuntimeError, "user-provided nullspace has fewer vectors (" << nullspace->getNumVectors() << ") than number of PDE equations (" << A->GetFixedBlockSize() << ")");
         } else {
           this->GetOStream(Warnings0) << "Skipping dimension check of user-supplied nullspace because user-supplied operator is not a matrix" << std::endl;
         }

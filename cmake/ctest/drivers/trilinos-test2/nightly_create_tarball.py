@@ -118,7 +118,6 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Sundance", True),
   ("Teko", True),
   ("Teuchos", True),
-  ("ThreadPool", True),
   ("Thyra", True),
   ("Tpetra", True),
   ("TriKota", False),

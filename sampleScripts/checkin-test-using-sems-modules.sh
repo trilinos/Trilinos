@@ -706,7 +706,7 @@ echo "
 #
 # Here are some other options you may find useful:
 #
-# --disable-packages=FEI,PyTrilinos,Moertel,STK,SEACAS,ThreadPool,OptiPack,Rythmos,Intrepid,ROL,Panzer
+# --disable-packages=FEI,PyTrilinos,Moertel,STK,SEACAS,OptiPack,Rythmos,Intrepid,ROL,Panzer
 #
 #   This disables the given list of packages.  You may find this
 #   helpful if some packages are known to give you trouble.
