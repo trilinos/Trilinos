@@ -366,6 +366,51 @@ namespace Harness {
   {
     return Kokkos::subview (getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_,  LA.valid_)), Kokkos::ALL (), 0);
   }
+  
+  template<class SC, class LO, class GO, class NT,
+	   class UnaryFunction,
+	   class ExecutionSpace,
+	   class MemorySpace = typename ExecutionSpace::memory_space>
+  void
+  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+	     UnaryFunction f,
+	     ExecutionSpace execSpace = ExecutionSpace (),
+	     MemorySpace memSpace = MemorySpace ())
+  {
+    using execution_space =
+      typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+    if (X.getNumVectors () == size_t (1)) {
+      auto X_lcl = getVector (readWrite (X).on (memSpace));
+      Kokkos::parallel_for ("transform",
+			    range_type (execSpace, 0, X_lcl.extent (0)),
+			    KOKKOS_LAMBDA (const LO i) {
+			      X_lcl(i) = f (X_lcl(i), i, 0);
+			    });
+    }
+    else {
+      auto X_lcl = getMultiVector (readWrite (X).on (memSpace));
+      Kokkos::parallel_for ("transform",
+			    range_type (execSpace, 0, X_lcl.extent (0)),
+			    KOKKOS_LAMBDA (const LO i) {
+			      const LO numVecs = X_lcl.extent (1);
+			      for (LO j = 0; j < numVecs; ++j) {
+				X_lcl(i,j) = f (X_lcl(i,j), i, j);
+			      }
+			    });
+    }
+  }
+
+  template<class SC, class LO, class GO, class NT,
+	   class UnaryFunction>
+  void
+  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+	     UnaryFunction f)
+  {
+    using execution_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
+    using memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;    
+    transform (X, f, execution_space (), memory_space ());
+  }
 
   namespace Impl {
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
@@ -505,24 +550,11 @@ namespace { // (anonymous)
   using vec_type = Tpetra::Vector<>;
   using GO = map_type::global_ordinal_type;
 
-#if 0
-  Tpetra::MultiVector<> X (...);
-
-  auto X_lcl = localVectorReadOnly (X).on (Cuda);
-  auto Y_lcl = localVectorReadWrite (Y).on (Cuda);
-
-  // Look ma, it's an axpy!
-  Kokkos::parallel_for ("My happy kernel", range (0, N),
-    KOKKOS_LAMBDA (const int lclRow) {
-      Y_lcl(lclRow) += alpha * X_lcl(lclRow);
-    });
-#endif // 0			
-
   //
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST( MultiVector, Harness )
+  TEUCHOS_UNIT_TEST( VectorHarness, GetVector )
   {
     constexpr bool debug = true;
 
@@ -531,7 +563,7 @@ namespace { // (anonymous)
       Teuchos::rcpFromRef (out);
     Teuchos::FancyOStream& myOut = *outPtr;
 
-    myOut << "Test: MultiVector, Harness" << endl;
+    myOut << "Test Harness:{getMultiVector, getVector}" << endl;
     Teuchos::OSTab tab0 (myOut);
 
     myOut << "Create a Map" << endl;
@@ -680,6 +712,69 @@ namespace { // (anonymous)
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
   }
+
+  TEUCHOS_UNIT_TEST( VectorHarness, Transform )
+  {
+    constexpr bool debug = true;
+    using LO = typename multivec_type::local_ordinal_type;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test Harness::transform" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    myOut << "Create a Map" << endl;
+    auto comm = getDefaultComm ();
+    const auto INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const size_t numLocal = 13;
+    const size_t numVecs  = 3;
+    const GO indexBase = 0;
+    auto map = rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Create a MultiVector, and make sure that it has "
+      "the right number of vectors (columns)" << endl;
+    multivec_type X (map, numVecs);
+    TEST_EQUALITY( X.getNumVectors (), numVecs );
+
+    using Harness::transform;
+    transform (X, [] (const double X_ij, const LO i, const LO j) {
+	return X_ij + double (i+1.0) + double (j+1.0);
+      });
+    transform (X, [] (const double X_ij, const LO i, const LO j) {
+	return X_ij + double (i+1.0) + double (j+1.0);
+      }, Kokkos::DefaultHostExecutionSpace ());
+    transform (X, [] (const double X_ij, const LO i, const LO j) {
+	return X_ij + double (i+1.0) + double (j+1.0);
+      });
+    transform (X, [] (const double X_ij, const LO i, const LO j) {
+	return X_ij + double (i+1.0) + double (j+1.0);
+      }, Kokkos::DefaultHostExecutionSpace (), Kokkos::HostSpace ());
+
+
+    X.sync<Kokkos::HostSpace> ();
+    auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
+    bool ok = true;    
+    for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+	if (X_lcl(i,j) != 4.0 * (double (i+1.0) + double(j+1.0))) {
+	  ok = false;
+	}
+      }
+    }
+    TEST_ASSERT( ok );
+
+    myOut << "Create a Vector, and make sure that "
+      "it has exactly one vector (column)" << endl;
+    vec_type vec (map);
+    TEST_EQUALITY_CONST(vec.getNumVectors (), size_t (1));
+
+    transform (vec, [] (const double X_ij, const LO i, const LO j) {
+	return X_ij + double (i+1.0) + double (j+1.0);
+      });
+  }  
 } // namespace (anonymous)
 
 int
