@@ -400,7 +400,8 @@ namespace Harness {
   transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
 	     UnaryFunction f,
 	     ExecutionSpace execSpace = ExecutionSpace (),
-	     MemorySpace memSpace = MemorySpace ())
+	     MemorySpace memSpace = MemorySpace (),
+	     typename std::enable_if<std::is_convertible<decltype (f(SC (), LO (), LO ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
   {
     using execution_space =
       typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
@@ -427,16 +428,64 @@ namespace Harness {
   }
 
   template<class SC, class LO, class GO, class NT,
+	   class UnaryFunction,
+	   class ExecutionSpace,
+	   class MemorySpace = typename ExecutionSpace::memory_space>
+  void
+  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+	     UnaryFunction f,
+	     ExecutionSpace execSpace = ExecutionSpace (),
+	     MemorySpace memSpace = MemorySpace (),
+	     typename std::enable_if<std::is_convertible<decltype (f(SC ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
+  {
+    using execution_space =
+      typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+    if (X.getNumVectors () == size_t (1)) {
+      auto X_lcl = getVector (readWrite (X).on (memSpace));
+      Kokkos::parallel_for ("transform",
+			    range_type (execSpace, 0, X_lcl.extent (0)),
+			    KOKKOS_LAMBDA (const LO i) {
+			      X_lcl(i) = f (X_lcl(i));
+			    });
+    }
+    else {
+      auto X_lcl = getMultiVector (readWrite (X).on (memSpace));
+      Kokkos::parallel_for ("transform",
+			    range_type (execSpace, 0, X_lcl.extent (0)),
+			    KOKKOS_LAMBDA (const LO i) {
+			      const LO numVecs = X_lcl.extent (1);
+			      for (LO j = 0; j < numVecs; ++j) {
+				X_lcl(i,j) = f (X_lcl(i,j));
+			      }
+			    });
+    }
+  }
+
+  template<class SC, class LO, class GO, class NT,
 	   class UnaryFunction>
   void
   transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-	     UnaryFunction f)
+	     UnaryFunction f,
+	     typename std::enable_if<std::is_convertible<decltype (f(SC (), LO (), LO ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
   {
     using execution_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
     using memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;    
     transform (X, f, execution_space (), memory_space ());
   }
 
+  template<class SC, class LO, class GO, class NT,
+	   class UnaryFunction>
+  void
+  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
+	     UnaryFunction f,
+	     typename std::enable_if<std::is_convertible<decltype (f(SC ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
+  {
+    using execution_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
+    using memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;    
+    transform (X, f, execution_space (), memory_space ());
+  }
+	     
   namespace Impl {
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
@@ -802,18 +851,19 @@ namespace { // (anonymous)
 	return X_ij + double (i+1.0) + double (j+1.0);
       }, Kokkos::DefaultHostExecutionSpace (), Kokkos::HostSpace ());
 
-
-    X.sync<Kokkos::HostSpace> ();
-    auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
-    bool ok = true;    
-    for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
-      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-	if (X_lcl(i,j) != 4.0 * (double (i+1.0) + double(j+1.0))) {
-	  ok = false;
+    {
+      X.sync<Kokkos::HostSpace> ();
+      auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
+      bool ok = true;    
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+	for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+	  if (X_lcl(i,j) != 4.0 * (double (i+1.0) + double(j+1.0))) {
+	    ok = false;
+	  }
 	}
       }
+      TEST_ASSERT( ok );
     }
-    TEST_ASSERT( ok );
 
     myOut << "Create a Vector, and make sure that "
       "it has exactly one vector (column)" << endl;
@@ -823,6 +873,40 @@ namespace { // (anonymous)
     transform (vec, [] (const double X_ij, const LO i, const LO j) {
 	return X_ij + double (i+1.0) + double (j+1.0);
       });
+
+    // 1-argument function
+    transform (vec, [] (const double /* X_ij */) {
+	return 42.0;
+      });
+    
+    {
+      vec.sync<Kokkos::HostSpace> ();
+      auto vec_lcl = Kokkos::subview (vec.getLocalView<Kokkos::HostSpace> (), Kokkos::ALL (), 0);
+      bool ok = true;    
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+	if (vec_lcl(i) != 42.0) {
+	  ok = false;
+	}
+      }
+      TEST_ASSERT( ok );
+    }
+
+    vec.sync<vec_type::device_type::memory_space> ();
+    transform (vec, [] (const double X_ij) {
+	return X_ij + 1.0;
+      });
+
+    {
+      vec.sync<Kokkos::HostSpace> ();
+      auto vec_lcl = Kokkos::subview (vec.getLocalView<Kokkos::HostSpace> (), Kokkos::ALL (), 0);
+      bool ok = true;    
+      for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+	if (vec_lcl(i) != 43.0) {
+	  ok = false;
+	}
+      }
+      TEST_ASSERT( ok );
+    }
   }  
 } // namespace (anonymous)
 
