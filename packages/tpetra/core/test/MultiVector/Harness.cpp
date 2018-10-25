@@ -363,38 +363,33 @@ namespace Harness {
     }
   }
 
-#if 0
   template<class SC, class LO, class GO, class NT,
 	   class MemorySpace, 
 	   const AccessMode access_mode>
-  Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace, access_mode>
-  getMultiVector (Impl::LocalAccess<const Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
+  auto
+  getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA,
+	     const int whichColumn = 0)
+    -> decltype (Kokkos::subview (getMultiVector (LA), Kokkos::ALL (), whichColumn))
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    MV& G = const_cast<MV&> (LA.G_);
-    Impl::LocalAccess<const MV, MemorySpace, access_mode> LA2 (G, LA.space_, LA.valid_);
-    return getMultiVector (LA2);
-  }
-#endif // 0
-
-  template<class SC, class LO, class GO, class NT,
-	   class MemorySpace, 
-	   const AccessMode access_mode>
-  auto
-  getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
-    -> decltype (Kokkos::subview (getMultiVector (LA), Kokkos::ALL (), 0))
-  {
-    return Kokkos::subview (getMultiVector (LA), Kokkos::ALL (), 0);
+    using local_access_type = Impl::LocalAccess<MV, MemorySpace, access_mode>;
+    // FIXME (mfh 25 Oct 2018) If not valid, should not call getVectorNonConst.
+    Teuchos::RCP<MV> X_wc = LA.G_.getVectorNonConst (whichColumn);
+    auto X_wc_lcl = getMultiVector (local_access_type (*X_wc, LA.space_, LA.valid_));
+    return Kokkos::subview (X_wc_lcl, Kokkos::ALL (), 0);
   }
 
   template<class SC, class LO, class GO, class NT,
 	   class MemorySpace, 
 	   const AccessMode access_mode>
   auto
-  getVector (Impl::LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
-    -> decltype (Kokkos::subview (getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_,  LA.valid_)), Kokkos::ALL (), 0))
+  getVector (Impl::LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, access_mode> LA,
+	     const int whichColumn = 0)
+    -> decltype (getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_, LA.valid_), whichColumn))
   {
-    return Kokkos::subview (getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_,  LA.valid_)), Kokkos::ALL (), 0);
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    using local_access_type = Impl::LocalAccess<MV, MemorySpace, access_mode>;
+    return getVector (local_access_type (LA.G_, LA.space_, LA.valid_), whichColumn);
   }
   
   template<class SC, class LO, class GO, class NT,
@@ -694,6 +689,18 @@ namespace { // (anonymous)
 
     {
       auto X_lcl_1d_wr = Harness::getVector (Harness::readWrite (vec));
+      Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
+      static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
+      TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
+    }
+
+    // Make sure that getVector of a specific column works.
+    {
+      const int whichColumn = 2;
+      TEST_ASSERT( size_t (whichColumn) < numVecs );
+      TEST_ASSERT( size_t (whichColumn) < mvec.getNumVectors () );      
+      auto X_lcl_1d_wr =
+	Harness::getVector (Harness::readWrite (mvec), whichColumn);
       Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
       static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
       TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
