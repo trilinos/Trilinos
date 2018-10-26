@@ -639,18 +639,21 @@ Teuchos::Array<int> setLocalNodesPerDim(const std::string& problemType,
   }
   else {
 
-    if (rowMap.Comm().MyPID() == 4)
+    // Circle-in-a-disk example on 5 processors
     {
-      // This is the unstructured region, so we set dummy values
-      lNodesPerDim [0] = -1;
-      lNodesPerDim [1] = -1;
-      lNodesPerDim [2] = -1;
-    }
-    else
-    {
-      lNodesPerDim[0] = dimX;
-      lNodesPerDim[1] = dimY;
-      lNodesPerDim[2] = dimZ;
+      if (rowMap.Comm().MyPID() == 4)
+      {
+        // This is the unstructured region, so we set dummy values
+        lNodesPerDim [0] = -1;
+        lNodesPerDim [1] = -1;
+        lNodesPerDim [2] = -1;
+      }
+      else
+      {
+        lNodesPerDim[0] = dimX;
+        lNodesPerDim[1] = dimY;
+        lNodesPerDim[2] = dimZ;
+      }
     }
   }
 

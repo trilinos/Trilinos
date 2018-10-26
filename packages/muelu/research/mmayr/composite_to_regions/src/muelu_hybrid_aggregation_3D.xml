@@ -84,7 +84,7 @@
   <!-- Definition of the multigrid preconditioner -->
   <ParameterList name="Hierarchy">
 
-    <Parameter name="max levels"       type="int"    value="3"/>
+    <Parameter name="max levels"       type="int"    value="2"/>
     <Parameter name="coarse: max size" type="int"    value="10"/>
     <Parameter name="verbosity"        type="string" value="High"/>
 
