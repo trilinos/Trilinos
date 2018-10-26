@@ -1293,10 +1293,10 @@ public:
 
        out.zero();
        out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(2.0,*pint_input.getVectorPtr(2*k+1)); 
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
        out.axpy(1.0,*pint_input.getVectorPtr(2*k+2)); 
        
-       out.scale(1.0/4.0);
+       out.scale(1.0/3.0);
      }
 
      // handle the end point on this processor
@@ -1308,7 +1308,7 @@ public:
        ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
        out.zero();
        out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(2.0,*pint_input.getVectorPtr(2*k+1)); 
+       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
      
        pint_output.getRemoteBufferPtr(-1)->set(*pint_input.getVectorPtr(0));
        pint_output.boundaryExchangeSumInto();   // this adds the X_0^1 into the previous rank
@@ -1318,9 +1318,9 @@ public:
        int timeSize = pint_input.communicators().getTimeSize();
 
        if(timeRank+1==timeSize)
-         out.scale(1.0/3.0);
+         out.scale(1.0/2.0);
        else
-         out.scale(1.0/4.0);
+         out.scale(1.0/3.0);
      }
    }
 

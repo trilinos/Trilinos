@@ -63,6 +63,7 @@
 #include "ROL_ParameterList.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
+#include "ROL_RandomVector.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
 #include "ROL_PinTConstraint.hpp"
@@ -282,8 +283,10 @@ int main(int argc, char *argv[]) {
       mgOperator.myRank = myRank;
   
       Teuchos::ParameterList parlist;
-      parlist.set("Absolute Tolerance",1.e-1);
+      parlist.set("Absolute Tolerance",1.e-9);
       parlist.set("Relative Tolerance",relTol);
+
+      std::cout << "RELATIVE TOLERANCE = " << relTol << std::endl;
   
       ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
   
