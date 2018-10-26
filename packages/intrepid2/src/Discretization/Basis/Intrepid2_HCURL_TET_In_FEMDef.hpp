@@ -475,24 +475,24 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
     // copy values into right positions of V2
     for (ordinal_type j=0;j<numPtsPerCell;j++) {
 
-      const ordinal_type i_card = numEdges*numPtsPerEdge+2*numFaces*numPtsPerFace+j;
+      const ordinal_type i_card = numEdges*numPtsPerEdge+2*numFaces*numPtsPerFace+spaceDim*j;
 
       for (ordinal_type k=0;k<cardPn;k++)
         for (ordinal_type d=0;d<spaceDim;d++)
-          V2(i_card+d*numPtsPerCell,d*cardPn+k) = phisAtCellPoints(k,j);
+          V2(i_card+d,d*cardPn+k) = phisAtCellPoints(k,j);
 
 
       //save dof coordinates
       for(ordinal_type d=0; d<spaceDim; ++d) {
         for(ordinal_type dim=0; dim<spaceDim; ++dim) {
-          dofCoords(i_card+d*numPtsPerCell,dim) = cellPoints(j,dim);
-          dofCoeffs(i_card+d*numPtsPerCell,dim) = (d==dim);
+          dofCoords(i_card+d,dim) = cellPoints(j,dim);
+          dofCoeffs(i_card+d,dim) = (d==dim);
         }
 
-        tags[i_card+d*numPtsPerCell][0] = spaceDim; // elem dof
-        tags[i_card+d*numPtsPerCell][1] = 0; // elem id
-        tags[i_card+d*numPtsPerCell][2] = spaceDim*j+d; // local dof id
-        tags[i_card+d*numPtsPerCell][3] = spaceDim*numPtsPerCell; // total vert dof
+        tags[i_card+d][0] = spaceDim; // elem dof
+        tags[i_card+d][1] = 0; // elem id
+        tags[i_card+d][2] = spaceDim*j+d; // local dof id
+        tags[i_card+d][3] = spaceDim*numPtsPerCell; // total vert dof
       }
     }
   }
