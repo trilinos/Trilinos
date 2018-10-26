@@ -61,11 +61,13 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* && "$ATDM_CONFIG_KOKKOS_ARCH" == "Kep
   elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.0" ]] ; then
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/9.0.176
   else
-      echo
-      echo "***"
-      echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version of CUDA on this system!"
-      echo "***"
-      return
+    echo
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version"
+    echo "*** of CUDA on this system!  Supported versions include 'cuda-8.0'"
+    echo "*** and 'cuda-9.0'"
+    echo "***"
+    return
   fi
   export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper 
   if [ ! -x "$OMPI_CXX" ]; then
