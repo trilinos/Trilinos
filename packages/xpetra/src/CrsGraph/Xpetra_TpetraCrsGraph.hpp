@@ -693,7 +693,7 @@ namespace Xpetra {
     local_graph_type getLocalGraph () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
-      TEUCHOS_UNREACHABLE_RETURN(null);
+      TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
     }
 #endif
 
@@ -1016,7 +1016,7 @@ namespace Xpetra {
     local_graph_type getLocalGraph () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "Epetra does not support Kokkos::StaticCrsGraph!");
-      TEUCHOS_UNREACHABLE_RETURN(null);
+      TEUCHOS_UNREACHABLE_RETURN((Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>()));
     }
 #endif
 
