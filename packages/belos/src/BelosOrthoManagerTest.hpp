@@ -49,6 +49,7 @@
 #include <BelosOrthoManagerFactory.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_SerialDenseHelpers.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -586,8 +587,8 @@ namespace Belos {
             // it should require randomization, as
             // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
             mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-            C1.random();
-            C2.random();
+            Teuchos::randomSyncedMatrix(C1);
+            Teuchos::randomSyncedMatrix(C2);
             // S := X1*C1
             MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
             // S := S + X2*C2
@@ -631,13 +632,15 @@ namespace Belos {
             // rank-1
             RCP<MV> one = MVT::Clone(*S,1);
             MVT::MvRandom(*one);
+            mat_type scaleS(sizeS,1);
+            Teuchos::randomSyncedMatrix(scaleS);
             // put multiple of column 0 in columns 0:sizeS-1
             for (int i=0; i<sizeS; i++)
               {
                 std::vector<int> ind(1);
                 ind[0] = i;
                 RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-                MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+                MVT::MvAddMv(scaleS[i],*one,ZERO,*one,*Si);
               }
             debugOut << "Testing normalize() on a rank-1 multivector " << endl;
             const int thisNumFailed = testNormalize(OM,S,MyOM);
@@ -670,8 +673,8 @@ namespace Belos {
             // and
             // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
             mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-            C1.random();
-            C2.random();
+            Teuchos::randomSyncedMatrix(C1);
+            Teuchos::randomSyncedMatrix(C2);
             MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
             MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
@@ -714,13 +717,15 @@ namespace Belos {
             // rank-1
             RCP<MV> one = MVT::Clone(*S,1);
             MVT::MvRandom(*one);
+            mat_type scaleS(sizeS,1);
+            Teuchos::randomSyncedMatrix(scaleS);
             // Put a multiple of column 0 in columns 0:sizeS-1.
             for (int i=0; i<sizeS; i++)
               {
                 std::vector<int> ind(1);
                 ind[0] = i;
                 RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-                MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
+                MVT::MvAddMv(scaleS[i],*one,ZERO,*one,*Si);
               }
             debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
             bool constantStride = true;
@@ -935,9 +940,9 @@ namespace Belos {
             // copies of S,MS
             Scopy = MVT::CloneCopy(*S);
             // randomize this data, it should be overwritten
-            B->random();
+            Teuchos::randomSyncedMatrix(B);
             for (size_type i=0; i<C.size(); i++) {
-              C[i]->random();
+              Teuchos::randomSyncedmatrix(*C[i]);
             }
             // Run test.  Since S was specified by the caller and
             // Scopy is a copy of S, we don't know what rank to expect
@@ -991,9 +996,9 @@ namespace Belos {
               // data will be overwritten by projectAndNormalize().
               // Filling these matrices here is only to catch some
               // bugs in projectAndNormalize().
-              B->random();
+              Teuchos::randomSyncedMatrix(B);
               for (size_type i=0; i<C.size(); i++) {
-                C[i]->random();
+                Teuchos::randomSyncedMatrix(*C[i]);
               }
               // flip the inputs
               theX = tuple( theX[1], theX[0] );
@@ -1205,7 +1210,7 @@ namespace Belos {
             // random data just to make sure that the normalization
             // operated on all the elements of B on which it should
             // operate.
-            B->random();
+            Teuchos::randomSyncedMatrix(B);
 
             const int reportedRank = OM->normalize (*S_copy, B);
             sout << "normalize() returned rank " << reportedRank << endl;
@@ -1369,7 +1374,7 @@ namespace Belos {
         for (int k = 0; k < num_X; ++k)
           {
             C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
-            C[k]->random(); // will be overwritten
+            Teuchos::randomSyncedMatrix(*C[k]); // will be overwritten
           }
         try {
           // Q*B := (I - X X^*) S
@@ -1542,7 +1547,7 @@ namespace Belos {
         for (int k = 0; k < num_X; ++k)
           {
             C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
-            C[k]->random(); // will be overwritten
+            Teuchos::randomSyncedMatrix(*C[k]); // will be overwritten
           }
         try {
           // Compute the projection: S_copy := (I - X X^*) S
@@ -1747,7 +1752,7 @@ namespace Belos {
               Scopy = MVT::CloneCopy(*S);
               // randomize this data, it should be overwritten
               for (size_type i = 0; i < C.size(); ++i) {
-                C[i]->random();
+                Teuchos::randomSyncedMatrix(*C[i]);
               }
               // Run test.
               // Note that Anasazi and Belos differ, among other places,
@@ -1770,7 +1775,7 @@ namespace Belos {
                 Scopy = MVT::CloneCopy(*S);
                 // randomize this data, it should be overwritten
                 for (size_type i = 0; i < C.size(); ++i) {
-                  C[i]->random();
+                  Teuchos::randomSyncedMatrix(*C[i]);
                 }
                 // flip the inputs
                 theX = tuple( theX[1], theX[0] );

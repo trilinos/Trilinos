@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.4.7.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,23 +62,35 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../TrilinosCTestDriverCore.rhel6-x86_64.gcc4.
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_OPT_DEV_XYCE)
-#SET(CTEST_TEST_TIMEOUT 900)
-SET(CTEST_TEST_TYPE Nightly)
+SET(BUILD_DIR_NAME Linux_gcc_5.3.0_OPENMPI_1.10.1_KOKKOS_REFACTOR_OPENMP)
 
-#SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TIMEOUT 900)
 
-SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos Kokkos Gtest RTOp Shards Thyra Xpetra Galeri Pamgen ML SEACAS Anasazi Stratimikos FEI Intrepid STK MueLu)
-SET(Trilinos_PACKAGES NOX EpetraExt TrilinosCouplings Ifpack Isorropia AztecOO Belos Teuchos Amesos Sacado Zoltan Epetra Triutils)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
-SET( EXTRA_CONFIGURE_OPTIONS
-  "-DEpetraExt_BUILD_BTF=ON"
-  "-DTeuchos_ENABLE_COMPLEX=ON"
-  "-DNOX_ENABLE_LOCA=ON"
-  "-DTPL_ENABLE_ParMETIS:BOOL=OFF"
-  "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF"
-  "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
-  )
+SET(EXTRA_CONFIGURE_OPTIONS
+  ### ETI ###
+
+  ### MISC ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
+      "-DSuperLU_LIBRARY_DIRS:PATH=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
+
+  ### PACKAGES CONFIGURATION ###
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DMueLu_ENABLE_Kokkos_Refactor_Use_By_Default:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
+      "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+      "-DZoltan2_ENABLE_Experimental=ON"
+)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

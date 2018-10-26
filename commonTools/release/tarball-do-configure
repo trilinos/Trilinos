@@ -85,7 +85,6 @@ cmake \
 -DTrilinos_ENABLE_Sundance=ON \
 -DTrilinos_ENABLE_Teko=ON \
 -DTrilinos_ENABLE_Teuchos=ON \
--DTrilinos_ENABLE_ThreadPool=ON \
 -DTrilinos_ENABLE_Thyra=ON \
 -DTrilinos_ENABLE_Tpetra=ON \
 -DTrilinos_ENABLE_TriKota=ON \

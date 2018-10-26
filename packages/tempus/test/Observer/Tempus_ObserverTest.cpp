@@ -71,49 +71,54 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   std::map<std::string,int> refCounters;
   std::list<std::string> refOrder;
 
-  refCounters[loggingObs->nameObserveStartIntegrator_ ] = 1;
-  refCounters[loggingObs->nameObserveStartTimeStep_   ] = 10;
-  refCounters[loggingObs->nameObserveNextTimeStep_    ] = 10;
-  refCounters[loggingObs->nameObserveBeforeTakeStep_  ] = 10;
-  refCounters[loggingObs->nameObserveAfterTakeStep_   ] = 10;
-  refCounters[loggingObs->nameObserveAcceptedTimeStep_] = 10;
-  refCounters[loggingObs->nameObserveEndIntegrator_   ] = 1;
+  refCounters[loggingObs->nameObserveStartIntegrator_   ] = 1;
+  refCounters[loggingObs->nameObserveStartTimeStep_     ] = 10;
+  refCounters[loggingObs->nameObserveNextTimeStep_      ] = 10;
+  refCounters[loggingObs->nameObserveBeforeTakeStep_    ] = 10;
+  refCounters[loggingObs->nameObserveAfterTakeStep_     ] = 10;
+  refCounters[loggingObs->nameObserveAfterCheckTimeStep_] = 10;
+  refCounters[loggingObs->nameObserveEndTimeStep_       ] = 10;
+  refCounters[loggingObs->nameObserveEndIntegrator_     ] = 1;
 
   refOrder.push_back(loggingObs->nameObserveStartIntegrator_ );
   for (int i=0 ; i<10; ++i) {
-    refOrder.push_back(loggingObs->nameObserveStartTimeStep_   );
-    refOrder.push_back(loggingObs->nameObserveNextTimeStep_    );
-    refOrder.push_back(loggingObs->nameObserveBeforeTakeStep_  );
-    refOrder.push_back(loggingObs->nameObserveAfterTakeStep_   );
-    refOrder.push_back(loggingObs->nameObserveAcceptedTimeStep_);
+    refOrder.push_back(loggingObs->nameObserveStartTimeStep_     );
+    refOrder.push_back(loggingObs->nameObserveNextTimeStep_      );
+    refOrder.push_back(loggingObs->nameObserveBeforeTakeStep_    );
+    refOrder.push_back(loggingObs->nameObserveAfterTakeStep_     );
+    refOrder.push_back(loggingObs->nameObserveAfterCheckTimeStep_);
+    refOrder.push_back(loggingObs->nameObserveEndTimeStep_       );
   }
-  refOrder.push_back(loggingObs->nameObserveEndIntegrator_   );
+  refOrder.push_back(loggingObs->nameObserveEndIntegrator_       );
 
   const std::map<std::string,int>& counters = *(loggingObs->getCounters());
   const std::list<std::string>&    order    = *(loggingObs->getOrder());
 
   // Compare against reference.
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveStartIntegrator_ )->second,
-    refCounters.find(loggingObs->nameObserveStartIntegrator_ )->second);
+       counters.find(loggingObs->nameObserveStartIntegrator_   )->second,
+    refCounters.find(loggingObs->nameObserveStartIntegrator_   )->second);
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveStartTimeStep_   )->second,
-    refCounters.find(loggingObs->nameObserveStartTimeStep_   )->second);
+       counters.find(loggingObs->nameObserveStartTimeStep_     )->second,
+    refCounters.find(loggingObs->nameObserveStartTimeStep_     )->second);
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveNextTimeStep_    )->second,
-    refCounters.find(loggingObs->nameObserveNextTimeStep_    )->second);
+       counters.find(loggingObs->nameObserveNextTimeStep_      )->second,
+    refCounters.find(loggingObs->nameObserveNextTimeStep_      )->second);
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveBeforeTakeStep_  )->second,
-    refCounters.find(loggingObs->nameObserveBeforeTakeStep_  )->second);
+       counters.find(loggingObs->nameObserveBeforeTakeStep_    )->second,
+    refCounters.find(loggingObs->nameObserveBeforeTakeStep_    )->second);
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveAfterTakeStep_   )->second,
-    refCounters.find(loggingObs->nameObserveAfterTakeStep_   )->second);
+       counters.find(loggingObs->nameObserveAfterTakeStep_     )->second,
+    refCounters.find(loggingObs->nameObserveAfterTakeStep_     )->second);
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveAcceptedTimeStep_)->second,
-    refCounters.find(loggingObs->nameObserveAcceptedTimeStep_)->second);
+       counters.find(loggingObs->nameObserveAfterCheckTimeStep_)->second,
+    refCounters.find(loggingObs->nameObserveAfterCheckTimeStep_)->second);
   TEST_EQUALITY(
-       counters.find(loggingObs->nameObserveEndIntegrator_   )->second,
-    refCounters.find(loggingObs->nameObserveEndIntegrator_   )->second);
+       counters.find(loggingObs->nameObserveEndTimeStep_       )->second,
+    refCounters.find(loggingObs->nameObserveEndTimeStep_       )->second);
+  TEST_EQUALITY(
+       counters.find(loggingObs->nameObserveEndIntegrator_     )->second,
+    refCounters.find(loggingObs->nameObserveEndIntegrator_     )->second);
 
   TEUCHOS_ASSERT(order.size() == refOrder.size());
   std::list<std::string>::const_iterator orderIter = order.begin();
@@ -126,19 +131,21 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   // Test the reset.
   loggingObs->resetLogCounters();
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveStartIntegrator_ )->second, 0);
+    counters.find(loggingObs->nameObserveStartIntegrator_   )->second, 0);
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveStartTimeStep_   )->second, 0);
+    counters.find(loggingObs->nameObserveStartTimeStep_     )->second, 0);
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveNextTimeStep_    )->second, 0);
+    counters.find(loggingObs->nameObserveNextTimeStep_      )->second, 0);
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveBeforeTakeStep_  )->second, 0);
+    counters.find(loggingObs->nameObserveBeforeTakeStep_    )->second, 0);
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveAfterTakeStep_   )->second, 0);
+    counters.find(loggingObs->nameObserveAfterTakeStep_     )->second, 0);
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveAcceptedTimeStep_)->second, 0);
+    counters.find(loggingObs->nameObserveAfterCheckTimeStep_)->second, 0);
   TEST_EQUALITY(
-    counters.find(loggingObs->nameObserveEndIntegrator_   )->second, 0);
+    counters.find(loggingObs->nameObserveEndTimeStep_       )->second, 0);
+  TEST_EQUALITY(
+    counters.find(loggingObs->nameObserveEndIntegrator_     )->second, 0);
   TEST_EQUALITY(order.size(), 0);
 
   Teuchos::TimeMonitor::summarize();
@@ -177,43 +184,49 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
   compObs->observeStartTimeStep(*integrator);
   compObs->observeBeforeTakeStep(*integrator);
   compObs->observeAfterTakeStep(*integrator);
-  compObs->observeAcceptedTimeStep(*integrator);
+  compObs->observeAfterCheckTimeStep(*integrator);
+  compObs->observeEndTimeStep(*integrator);
 
 
   for (int i=0 ; i<10; ++i) {
       compObs->observeStartTimeStep(*integrator);
       compObs->observeBeforeTakeStep(*integrator);
       compObs->observeAfterTakeStep(*integrator);
-      compObs->observeAcceptedTimeStep(*integrator);
+      compObs->observeAfterCheckTimeStep(*integrator);
+      compObs->observeEndTimeStep(*integrator);
   }
   compObs->observeEndIntegrator(*integrator);
 
  const std::map<std::string,int>& counters = *(loggingObs->getCounters());
 
   TEST_EQUALITY(
-        counters.find(loggingObs->nameObserveStartIntegrator_  )->second, 1);
+        counters.find(loggingObs->nameObserveStartIntegrator_    )->second, 1);
   TEST_EQUALITY(
-        counters.find(loggingObs->nameObserveStartTimeStep_    )->second,11);
+        counters.find(loggingObs->nameObserveStartTimeStep_      )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs->nameObserveBeforeTakeStep_   )->second,11);
+        counters.find(loggingObs->nameObserveBeforeTakeStep_     )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs->nameObserveAfterTakeStep_    )->second,11);
+        counters.find(loggingObs->nameObserveAfterTakeStep_      )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs->nameObserveAcceptedTimeStep_ )->second,11);
+        counters.find(loggingObs->nameObserveAfterCheckTimeStep_ )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs->nameObserveEndIntegrator_    )->second, 1);
+        counters.find(loggingObs->nameObserveEndTimeStep_        )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs2->nameObserveStartIntegrator_ )->second, 1);
+        counters.find(loggingObs->nameObserveEndIntegrator_      )->second, 1);
   TEST_EQUALITY(
-        counters.find(loggingObs2->nameObserveStartTimeStep_   )->second,11);
+        counters.find(loggingObs2->nameObserveStartIntegrator_   )->second, 1);
   TEST_EQUALITY(
-        counters.find(loggingObs2->nameObserveBeforeTakeStep_  )->second,11);
+        counters.find(loggingObs2->nameObserveStartTimeStep_     )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs2->nameObserveAfterTakeStep_   )->second,11);
+        counters.find(loggingObs2->nameObserveBeforeTakeStep_    )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs2->nameObserveAcceptedTimeStep_)->second,11);
+        counters.find(loggingObs2->nameObserveAfterTakeStep_     )->second,11);
   TEST_EQUALITY(
-        counters.find(loggingObs2->nameObserveEndIntegrator_   )->second, 1);
+        counters.find(loggingObs2->nameObserveAfterCheckTimeStep_)->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveEndTimeStep_       )->second,11);
+  TEST_EQUALITY(
+        counters.find(loggingObs2->nameObserveEndIntegrator_     )->second, 1);
 }
 
 

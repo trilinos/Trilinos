@@ -652,7 +652,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       ordinal_type cur=0;
       for (ordinal_type i=0;i<cardinality;i++) {
         for (ordinal_type j=0;j<np_lattice;j++) {
-          if (std::abs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
+          if (std::abs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > 10*tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

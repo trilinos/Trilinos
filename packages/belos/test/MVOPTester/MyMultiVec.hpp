@@ -47,6 +47,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVec.hpp"
 
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
+
 //! Simple example of a user's defined Belos::MultiVec class.
 /*!
  * This is a simple, single processor example of user's defined
@@ -382,9 +385,11 @@ public:
   // Fill the vectors in *this with random numbers.
   void MvRandom ()
   {
+    Teuchos::SerialDenseMatrix<int,ScalarType> R( Length_, NumberVecs_ );
+    Teuchos::randomSyncedMatrix( R ); 
     for (int v = 0 ; v < NumberVecs_ ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {
-        (*this)(i, v) = Teuchos::ScalarTraits<ScalarType>::random();
+        (*this)(i, v) = R(i, v);
       }
     }
   }

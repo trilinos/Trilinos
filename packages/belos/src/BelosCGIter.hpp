@@ -205,7 +205,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   
 
   //! Sets whether or not to store the diagonal for condition estimation
-  void setDoCondEst(bool val){doCondEst_=val;}
+  void setDoCondEst(bool val) {
+   if (numEntriesForCondEst_) doCondEst_=val;
+  }
   
   //! Gets the diagonal for condition estimation
   Teuchos::ArrayView<MagnitudeType> getDiag() {
@@ -309,7 +311,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     stateStorageInitialized_(false),
     iter_(0),
     assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) ),
-    numEntriesForCondEst_(params.get("Max Size For Condest",0) )
+    numEntriesForCondEst_(params.get("Max Size For Condest",0) ),
+    doCondEst_(false)
   {
   }
 
@@ -438,7 +441,10 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-    
+
+    // Scalars for condition estimation (if needed) - These will always use entry zero, for convenience
+    ScalarType pAp_old = one, beta_old = one, rHz_old2 = one;
+             
     // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
@@ -505,7 +511,21 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       beta(0,0) = rHz(0,0) / rHz_old(0,0);
       //
       MVT::MvAddMv( one, *Z_, beta(0,0), *P_, *P_ );
-      
+     
+      // Condition estimate (if needed)
+      if (doCondEst_) {
+        if (iter_ > 1) {
+          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old * beta_old * pAp_old + pAp(0,0)) / rHz_old(0,0));
+          offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old * pAp_old / (sqrt( rHz_old(0,0) * rHz_old2)));
+        }
+        else {
+          diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp(0,0) / rHz_old(0,0));
+        }
+        rHz_old2 = rHz_old(0,0);
+        beta_old = beta(0,0);
+        pAp_old = pAp(0,0);
+      }
+ 
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 

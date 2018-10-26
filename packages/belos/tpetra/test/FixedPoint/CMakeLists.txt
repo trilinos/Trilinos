@@ -1,11 +1,10 @@
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   Tpetra_FixedPoint_hb_test
   SOURCES test_fp_hb.cpp
-  ARGS
-  COMM serial mpi
   )
+
 
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_FixedPoint_hb_CopyFiles1
@@ -14,3 +13,24 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_FixedPoint_hb_CopyFiles1
   EXEDEPS Tpetra_FixedPoint_hb_test
   )
 
+
+TRIBITS_ADD_TEST(
+  Tpetra_FixedPoint_hb_test
+  NAME "FixedPoint_tpetra_hb_test_no_precond"
+  ARGS "--verbose --no-precond"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_FixedPoint_hb_test
+  NAME "FixedPoint_tpetra_hb_test_left_precond"
+  ARGS "--verbose --use-precond --left"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  Tpetra_FixedPoint_hb_test
+  NAME "FixedPoint_tpetra_hb_test_right_precond"
+  ARGS "--verbose --use-precond --right"
+  COMM serial mpi
+  )

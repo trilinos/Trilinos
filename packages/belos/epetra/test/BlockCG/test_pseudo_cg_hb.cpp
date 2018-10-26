@@ -43,10 +43,6 @@
 // Multiple right-hand-sides are created randomly.
 // The initial guesses are all set to zero.
 //
-// As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15).  The pseudo-block CG solver will only take one pass through
-// all 15 RHS.
-//
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
@@ -59,8 +55,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#include "Ifpack.h"
-//
 int main(int argc, char *argv[]) {
   //
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
@@ -78,7 +72,7 @@ int main(int argc, char *argv[]) {
     bool proc_verbose = false;
     bool leftprec = true;      // left preconditioning or right.
     int frequency = -1; // how often residuals are printed by solver
-    int numrhs = 15;  // total number of right-hand sides to solve for
+    int numrhs = 1;  // total number of right-hand sides to solve for
     int maxiters = -1; // maximum number of iterations for the solver to use
     std::string filename("bcsstk14.hb");
     double tol = 1.0e-5;  // relative residual tolerance
@@ -125,49 +119,9 @@ int main(int argc, char *argv[]) {
       OPT::Apply( *A, *X, *B );
       MVT::MvInit( *X, 0.0 );
     }
-    //
-    // ************Construct preconditioner*************
-    //
-    ParameterList ifpackList;
-
-    // allocates an IFPACK factory. No data is associated
-    // to this object (only method Create()).
-    Ifpack Factory;
-
-    // create the preconditioner. For valid PrecType values,
-    // please check the documentation
-    std::string PrecType = "ICT"; // incomplete Cholesky
-    int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
-    // it is ignored.
-
-    RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
-    assert(Prec != Teuchos::null);
-
-    // specify parameters for ICT
-    ifpackList.set("fact: drop tolerance", 1e-9);
-    ifpackList.set("fact: ict level-of-fill", 1.0);
-    // the combine mode is on the following:
-    // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
-    // Their meaning is as defined in file Epetra_CombineMode.h
-    ifpackList.set("schwarz: combine mode", "Add");
-    // sets the parameters
-    IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
-
-    // initialize the preconditioner. At this point the matrix must
-    // have been FillComplete()'d, but actual values are ignored.
-    IFPACK_CHK_ERR(Prec->Initialize());
-
-    // Builds the preconditioners, by looking for the values of
-    // the matrix.
-    IFPACK_CHK_ERR(Prec->Compute());
-
-    // Create the Belos preconditioned operator from the Ifpack preconditioner.
-    // NOTE:  This is necessary because Belos expects an operator to apply the
-    //        preconditioner with Apply() NOT ApplyInverse().
-    RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
 
     //
-    // *****Create parameter list for the pseudo-block CG solver manager*****
+    // *****Create parameter list for the pseudo block CG solver manager*****
     //
     const int NumGlobalElements = B->GlobalLength();
     if (maxiters == -1)
@@ -186,16 +140,10 @@ int main(int argc, char *argv[]) {
     else
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
     //
-    // *******Construct a preconditioned linear problem********
+    // *******Construct a linear problem********
     //
     RCP<Belos::LinearProblem<double,MV,OP> > problem
       = rcp( new Belos::LinearProblem<double,MV,OP>( A, X, B ) );
-    if (leftprec) {
-      problem->setLeftPrec( belosPrec );
-    }
-    else {
-      problem->setRightPrec( belosPrec );
-    }
 
     bool set = problem->setProblem();
     if (set == false) {
@@ -210,13 +158,13 @@ int main(int argc, char *argv[]) {
 
     //
     // *******************************************************************
-    // *************Start the pseudo-block CG iteration*************************
+    // *************Start the block CG iteration*************************
     // *******************************************************************
     if (proc_verbose) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Max number of CG iterations: " << maxiters << std::endl;
+      std::cout << "Max number of pseudo block CG iterations: " << maxiters << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
