@@ -24,6 +24,10 @@ export ATDM_CONFIG_USE_PTHREADS=OFF
 # Set the compiler
 if [[ $ATDM_CONFIG_JOB_NAME == *"default" ]]; then
   ATDM_CONFIG_COMPILER=DEFAULT
+elif [[ $ATDM_CONFIG_JOB_NAME == *"gnu-4.9.3"* ]]; then
+  ATDM_CONFIG_COMPILER=GNU-4.9.3
+elif [[ $ATDM_CONFIG_JOB_NAME == *"gnu-7.2.0"* ]]; then
+  ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_JOB_NAME == *"gnu"* ]]; then
   ATDM_CONFIG_COMPILER=GNU
 elif [[ $ATDM_CONFIG_JOB_NAME == *"intel"* ]]; then
