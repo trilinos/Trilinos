@@ -55,6 +55,8 @@
 #include "Domi_Utils.hpp"
 #include "Domi_MDVector.hpp"
 
+typedef long long long_long_type;
+
 namespace
 {
 
@@ -956,9 +958,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, randomize, Sca )
 
 UNIT_TEST_GROUP(double)
 #if 1
-UNIT_TEST_GROUP(float)
 UNIT_TEST_GROUP(int)
-UNIT_TEST_GROUP(long)
+UNIT_TEST_GROUP(long_long_type)
 #endif
 
 }  // namespace
