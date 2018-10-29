@@ -38,7 +38,6 @@
 #include <string>                       // for string
 
 
-
 namespace {
 
 bool test_assert_handler_called = false;
@@ -243,3 +242,197 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
 }
+
+void testNGPThrowRequireMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = false;
+    NGP_ThrowRequireMsg(test == true, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  try {
+    testNGPThrowRequireMsg();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:250\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+}
+
+void testNGPThrowRequire()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = false;
+    NGP_ThrowRequire(test == true);
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  try {
+    testNGPThrowRequire();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:278\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+}
+
+// Debug testing
+#ifndef NDEBUG
+void testNGPThrowAssertMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = false;
+    NGP_ThrowAssertMsg(test == true, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  try {
+    testNGPThrowAssertMsg();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:307\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+}
+#endif
+
+// Release testing
+#ifdef NDEBUG
+void testNGPThrowAssertMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    NGP_ThrowAssertMsg(false, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  EXPECT_NO_THROW(testNGPThrowAssertMsg());
+#endif
+}
+#endif
+
+void testNGPThrowErrorMsgIf()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = true;
+    NGP_ThrowRequireMsg(test == true, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  try {
+    testNGPThrowErrorMsgIf();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:358\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+}
+
+void testNGPThrowErrorIf()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = true;
+    NGP_ThrowErrorIf(test == true);
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  try {
+    testNGPThrowErrorIf();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:386\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+}
+
+void testNGPThrowErrorMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    NGP_ThrowErrorMsg("Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+  try {
+    testNGPThrowErrorMsg();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:412\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+}
+
+
+
+
+

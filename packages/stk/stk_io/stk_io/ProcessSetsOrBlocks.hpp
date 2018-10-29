@@ -201,6 +201,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
 #endif
 }
 
+stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name);
 stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity);
 
 void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
