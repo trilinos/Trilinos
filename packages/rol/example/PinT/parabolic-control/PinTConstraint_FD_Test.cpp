@@ -190,7 +190,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector<RealT>(*w_u);
   ROL::RandomizeVector<RealT>(*v_z);
 
-  pint_constraint.setGlobalScale(1.037);
+  pint_constraint.setGlobalScale(1.0);
 
   // check the solve
   //////////////////////////////////////////////////////////////////////
@@ -259,28 +259,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     CHECK_ASSERT(adj_inv_1 < tol);
   }
 
-  return;
-
-  // check the pint constraint
-  if(false)
-  {
-    pint_constraint.checkSolve(*state,*control,*c,true,*outStream);
-    pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
-    RealT inv_1     = pint_constraint.checkInverseJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
-
-    CHECK_ASSERT(inv_1 > tol);
-
-    return;
-
-    RealT adj_inv_1 = pint_constraint.checkInverseAdjointJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
-    if(adj_inv_1 > tol) {
-      std::stringstream ss;
-      ss << "Adjoint Jacobian inverse inversion FAILED: error = " << adj_inv_1  << std::endl;
-      throw std::logic_error(ss.str());
-    }
-    
-  }
-
   auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
   auto v_1 = x->clone();
   auto v_2 = state->clone();
@@ -343,13 +321,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                            tol,
                                            level);
 
-    pint_constraint.invertAdjointTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*afv),
-                                                  dynamic_cast<const PinTVector<RealT>&>(*ajv),
-                                                  dynamic_cast<const PinTVector<RealT>&>(*state),
-                                                  dynamic_cast<const PinTVector<RealT>&>(*control),
-                                                  tol,
-                                                  level);
-
     RealT v_norm   = v->norm();
 
     // check forward time step jacobian
@@ -358,41 +329,37 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   
       RealT fv_norm  = fv->norm();
   
-      if(myRank==0) {
-        *outStream << "Testing vector norm = " << v_norm << std::endl;
-      }
+      if(myRank==0)
+        *outStream << "Testing vector norm = " << v_norm  << " (error = " << fv_norm/v_norm << ")" << std::endl;
   
       // check norms
-      if(fv_norm/v_norm > 1e-13) {
-        std::stringstream ss;
-        ss << "Forward block Jacobi subdomain inversion FAILED with proc " 
-           << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
-        throw std::logic_error(ss.str());
-      }
-      else {
-        if(myRank==0)
-          *outStream << "Forward block Jacobi subdomain inversion PASSED with proc " 
-                     << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
-      }
+      CHECK_ASSERT(fv_norm/v_norm <= 1e-13);
+
+      if(myRank==0)
+        *outStream << "Forward block Jacobi subdomain inversion PASSED with proc " 
+                   << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
     }
+
+    pint_constraint.invertAdjointTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*afv),
+                                                  dynamic_cast<const PinTVector<RealT>&>(*ajv),
+                                                  dynamic_cast<const PinTVector<RealT>&>(*state),
+                                                  dynamic_cast<const PinTVector<RealT>&>(*control),
+                                                  tol,
+                                                  level);
     
     // check backward time step jacobian
     {
       afv->axpy(-1.0,*v);
       RealT afv_norm = afv->norm();
+
+      if(myRank==0)
+        *outStream << "Testing vector norm = " << v_norm  << " (error = " << afv_norm/v_norm << ")" << std::endl;
+
+      CHECK_ASSERT(afv_norm/v_norm <= 1e-13);
   
-      // check norms (adjoint)
-      if(afv_norm/v_norm > 1e-13) {
-        std::stringstream ss;
-        ss << "Adjoint block Jacobi subdomain inversion FAILED with proc " 
-           << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
-        throw std::logic_error(ss.str());
-      }
-      else {
-        if(myRank==0)
-          *outStream << "Adjoint block Jacobi subdomain inversion PASSED with proc " 
-                     << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
-      }
+      if(myRank==0)
+        *outStream << "Adjoint block Jacobi subdomain inversion PASSED with proc " 
+                   << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
     }
 
   }

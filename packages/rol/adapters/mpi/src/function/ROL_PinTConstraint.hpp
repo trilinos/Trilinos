@@ -1036,62 +1036,68 @@ public:
    }
 
    // Done in parallel, no blocking, solve a linear system on this processor
-   void invertTimeStepJacobian(PinTVector<Real>       & pint_pv,
+   void invertTimeStepJacobian(PinTVector<Real>       & pint_ijv,
                                const PinTVector<Real> & pint_v,
                                const PinTVector<Real> & pint_u,
                                const PinTVector<Real> & pint_z,
                                Real &tol,
                                int level) 
    {
-     // apply the time continuity constraint, note that this just using the identity matrix
-     const std::vector<int> & stencil = pint_pv.stencil();
-     for(size_t i=0;i<stencil.size();i++) {
-       int offset = stencil[i];
-       if(offset<0) {
-         pint_pv.getVectorPtr(offset)->set(*pint_v.getVectorPtr(offset));             // this is the local value
-         pint_pv.getVectorPtr(offset)->scale(1.0/globalScale_);
+     int timeRank = pint_u.communicators().getTimeRank();
+
+     // update the old time information
+     pint_ijv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1));
+     pint_ijv.getVectorPtr(-1)->scale(1.0/globalScale_);
+
+     size_t numSteps = timeStamps_->size()-1;
+     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
+
+       auto part_ijv = getStateVector(pint_ijv,s);   
+       auto part_v   = getStateVector(pint_v,s);   
+       auto part_u   = getStateVector(pint_u,s);   
+       auto part_z   = getControlVector(pint_z,s); 
+
+       // compute the constraint for this subdomain
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+
+       constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
+
+       // satisfy the time continuity constraint, note that this just using the identity matrix
+       if(s<numSteps-1) {
+         pint_ijv.getVectorPtr(2*s+1)->set(*pint_ijv.getVectorPtr(2*s));    
+         pint_ijv.getVectorPtr(2*s+1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(2*s+1));        
        }
      }
-
-     auto part_pv  = getStateVector(pint_pv);   // strip out initial condition/constraint
-     auto part_v   = getStateVector(pint_v);   
-     auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
-     auto part_z   = getControlVector(pint_z); 
-
-     // compute the constraint for this subdomain
-     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
-
-     constraint->applyInverseJacobian_1(*part_pv,*part_v,*part_u,*part_z,tol);
    }
  
    // Done in parallel, no blocking, solve a linear system on this processor
-   void invertAdjointTimeStepJacobian(PinTVector<Real>       & pint_pv,
+   void invertAdjointTimeStepJacobian(PinTVector<Real>       & pint_iajv,
                                       const PinTVector<Real> & pint_v,
                                       const PinTVector<Real> & pint_u,
                                       const PinTVector<Real> & pint_z,
                                       Real &tol,
                                       int level)
    {
-     auto part_pv  = getStateVector(pint_pv);   // strip out initial condition/constraint
-     auto part_v   = getStateVector(pint_v);   
-     auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
-     auto part_z   = getControlVector(pint_z); 
+     int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
 
-     // compute the constraint for this subdomain
-     auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+     for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
+       auto part_iajv = getStateVector(pint_iajv,s);   
+       auto part_v    = getStateVector(pint_v,s);   
+       auto part_u    = getStateVector(pint_u,s);   
+       auto part_z    = getControlVector(pint_z,s); 
 
-     constraint->applyInverseAdjointJacobian_1(*part_pv,*part_v,*part_u,*part_z,tol);
-    
-     // apply the time continuity constraint, note that this just using the identity matrix
-     const std::vector<int> & stencil = pint_pv.stencil();
-     for(size_t i=0;i<stencil.size();i++) {
-       int offset = stencil[i];
-       if(offset<0) {
-         // pint_pv.getVectorPtr(offset)->set(*temp);
-           // NOT good enough for multi step!!!!
-         pint_pv.getVectorPtr(offset)->scale(1.0/globalScale_);
+       if(s<numSteps-1) {
+         pint_iajv.getVectorPtr(2*s+1)->scale(1.0/globalScale_);
+         pint_v.getVectorPtr(2*s)->axpy(globalScale_,*pint_iajv.getVectorPtr(2*s+1));
        }
+
+       // compute the constraint for this subdomain
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+
+       constraint->applyInverseAdjointJacobian_1(*part_iajv,*part_v,*part_u,*part_z,tol);
      }
+
+     pint_iajv.getVectorPtr(-1)->scale(1.0/globalScale_);
    }
  
    virtual void applyPreconditioner(Vector<Real> &pv,
