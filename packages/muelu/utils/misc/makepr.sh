@@ -7,10 +7,47 @@ tokenfile=~/.githubOAuth/token
 
 TMPFILE=/tmp/.ac$$
 
-# Check for a message
+USAGE="Usage: `basename $0` [-hfrb] \"PR title\""
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}]"
+
+# Parse command line options.
+while getopts hvf:r:b: OPT; do
+    case "$OPT" in
+        h)
+            echo -e $USAGE
+            echo -e $OPTDESCR
+            exit 0
+            ;;
+        v)
+            echo "`basename $0` version 0.1"
+            exit 0
+            ;;
+        f)
+            fork=$OPTARG
+            ;;
+        r)
+            repo=$OPTARG
+            ;;
+        b)
+            mainBranch=$OPTARG
+            ;;
+        \?)
+            # getopts issues an error message
+            echo $USAGE >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Remove the options we parsed above.
+shift `expr $OPTIND - 1`
+
+# We want at least one non-option argument.
+# Remove this block if you don't need it.
 if [ $# -eq 0 ]; then
-    echo "A message must be included"
-    exit -1
+    echo -e $USAGE >&2
+    echo -e $OPTDESCR
+    exit 1
 fi
 
 # Make sure there are no diff'd files
