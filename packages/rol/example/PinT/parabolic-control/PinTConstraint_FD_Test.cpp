@@ -58,19 +58,25 @@
 #include "dynamicConstraint.hpp"
 
 #define CHECK_ASSERT(expr) \
-    if(expr) { \
+    bool test = expr; \
+    if(not test) { \
       std::stringstream ss; \
-      ss << "Assertion failed on line " << __LINE__ << std::endl; \
+      ss << myRank << ". FAILED - Assertion failed on line " << __LINE__ << ": " #expr " " << std::endl; \
       throw std::logic_error(ss.str()); \
+    } \
+    else if(myRank==0) { \
+      std::stringstream ss; \
+      ss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
+      std::cout << ss.str() << std::endl; \
     }
 
 #define CHECK_EQUALITY(expr1,expr2) \
     if(expr1!=expr2) { \
       std::stringstream ss; \
-      ss << myRank << ". Equality assertion failed on line " << __LINE__ << std::endl; \
+      ss << myRank << ". FAILED - Equality assertion failed on line " << __LINE__ << std::endl; \
       ss << myRank << ".  " << expr1 << " != " << expr2 << std::endl; \
       throw std::logic_error(ss.str()); \
-    } \
+    } else if(myRank==0) \
     std::cout << myRank << ".  CHECK_EQUALITY line " << __LINE__ << " (passed): " << expr1 << " == " << expr2 << std::endl; \
 
 using RealT = double;
@@ -173,16 +179,91 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   double tol = 1e-10;
 
-  // check the pint constraint
-  {
-    auto c   = state->clone();
-    auto jv  = c->clone();
-    auto v_u = state->clone();
-    ROL::RandomizeVector<RealT>(*state);
-    ROL::RandomizeVector<RealT>(*control);
-    ROL::RandomizeVector<RealT>(*v_u);
+  auto c   = state->clone();
+  auto jv  = c->clone();
+  auto v_u = state->clone();
+  auto w_u = state->clone();
+  auto v_z = control->clone();
+  ROL::RandomizeVector<RealT>(*state);
+  ROL::RandomizeVector<RealT>(*control);
+  ROL::RandomizeVector<RealT>(*v_u);
+  ROL::RandomizeVector<RealT>(*w_u);
+  ROL::RandomizeVector<RealT>(*v_z);
 
-    pint_constraint.setGlobalScale(1.037);
+  pint_constraint.setGlobalScale(1.037);
+
+  // check the solve
+  //////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking solve" << std::endl;
+
+    double solveNorm = pint_constraint.checkSolve(*state,*control,*c,true,*outStream);
+
+    CHECK_ASSERT(solveNorm < tol);
+  }
+
+  // check the Jacobian_1
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Jacobian 1" << std::endl;
+
+    auto errors = pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
+    CHECK_ASSERT(errors[6][3]/errors[6][1] < 1e-6);
+  }
+
+  // check the Jacobian_2
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Jacobian 2" << std::endl;
+
+    auto errors = pint_constraint.checkApplyJacobian_2(*state,*control,*v_z,*jv,true,*outStream);
+    CHECK_ASSERT(errors[6][3]/errors[6][1] < 1e-6);
+  }
+
+  // check the Adjoint Jacobian_1
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Jacobian 1" << std::endl;
+
+    auto error = pint_constraint.checkAdjointConsistencyJacobian_1(*w_u,*v_u,*state,*control,true,*outStream);
+    CHECK_ASSERT(error<1e-8);
+  }
+
+  // check the Adjoint Jacobian_2
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Jacobian 2" << std::endl;
+
+    auto error = pint_constraint.checkAdjointConsistencyJacobian_2(*w_u,*v_z,*state,*control,true,*outStream);
+    CHECK_ASSERT(error<1e-8);
+  }
+
+  // check inverse Jacobian_1
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    RealT inv_1     = pint_constraint.checkInverseJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+
+    CHECK_ASSERT(inv_1 < tol);
+  }
+
+  // check inverse adjoint Jacobian_1
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    RealT adj_inv_1 = pint_constraint.checkInverseAdjointJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+
+    CHECK_ASSERT(adj_inv_1 < tol);
+  }
+
+  return;
+
+  // check the pint constraint
+  if(false)
+  {
     pint_constraint.checkSolve(*state,*control,*c,true,*outStream);
     pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
     RealT inv_1     = pint_constraint.checkInverseJacobian_1(*jv,*v_u,*state,*control,true,*outStream);

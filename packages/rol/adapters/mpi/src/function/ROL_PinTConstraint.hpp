@@ -779,26 +779,38 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
-    auto part_ajv = getStateVector(pint_ajv);   // strip out initial condition/constraint
-    auto part_v   = getStateVector(pint_v);   
-    auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
-    auto part_z   = getControlVector(pint_z); 
+    // int timeRank = pint_u.communicators().getTimeRank();
+    const std::vector<int> & stencil = pint_ajv.stencil();
 
-    // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+    // assert a forward stencil
+    assert(stencil.size()==2);
+    assert(stencil[0]==-1);
+    assert(stencil[1]== 0);
 
-    constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
+    int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
+    for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
+      auto part_ajv = getStateVector(pint_ajv,s);
+      auto part_v   = getStateVector(pint_v,s);   
+      auto part_u   = getStateVector(pint_u,s);   
+      auto part_z   = getControlVector(pint_z,s); 
 
-    // handle the constraint adjoint
-    const std::vector<int> & stencil = pint_u.stencil();
-    for(size_t i=0;i<stencil.size();i++) {
-      int offset = stencil[i];
-      if(offset<0) {
-        pint_ajv.getVectorPtr(offset)->axpy(globalScale_,*pint_v.getVectorPtr(offset));
-        pint_ajv.getRemoteBufferPtr(offset)->set(*pint_v.getVectorPtr(offset)); // this will be sent to the remote processor
-        pint_ajv.getRemoteBufferPtr(offset)->scale(-globalScale_);
-      }
+      // handle the constraint adjoint: Required for correctly applying step adjoint
+      if(s<numSteps-1)
+        pint_ajv.getVectorPtr(2*s+1)->axpy(globalScale_,*pint_v.getVectorPtr(2*s+1));
+
+      // compute the constraint for this subdomain
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+
+      constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
+
+      // this is the remainder of the constraint application
+      if(s<numSteps-1)
+        pint_ajv.getVectorPtr(2*s)->axpy(-globalScale_,*pint_v.getVectorPtr(2*s+1));
     }
+
+    pint_ajv.getVectorPtr(-1)->axpy(globalScale_,*pint_v.getVectorPtr(-1));
+    pint_ajv.getRemoteBufferPtr(-1)->set(*pint_v.getVectorPtr(-1)); // this will be sent to the remote processor
+    pint_ajv.getRemoteBufferPtr(-1)->scale(-globalScale_);
 
     // this sums from the remote buffer into the local buffer which is part of the vector
     pint_ajv.boundaryExchangeSumInto();
@@ -877,7 +889,14 @@ public:
        // its possible we won't always want to cast to a PinT vector here
       
     assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
-    assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+    assert(pint_ajv.numOwnedSteps()==pint_z.numOwnedSteps());
+
+    const std::vector<int> & stencil = pint_u.stencil();
+
+    // assert a forward stencil
+    assert(stencil.size()==2);
+    assert(stencil[0]==-1);
+    assert(stencil[1]== 0);
 
     // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
     pint_ajv.zeroAll();
@@ -887,15 +906,19 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
-    auto part_ajv = getControlVector(pint_ajv);   // strip out initial condition/constraint
-    auto part_v   = getStateVector(pint_v);   
-    auto part_u   = getStateVector(pint_u);    // strip out initial condition/constraint
-    auto part_z   = getControlVector(pint_z); 
+    int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
+    for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
+  
+      auto part_ajv = getControlVector(pint_ajv,s);
+      auto part_v   = getStateVector(pint_v,s);   
+      auto part_u   = getStateVector(pint_u,s); 
+      auto part_z   = getControlVector(pint_z,s); 
 
-    // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+      // compute the constraint for this subdomain
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
 
-    constraint->applyAdjointJacobian_2(*part_ajv,*part_v,*part_u,*part_z,tol);
+      constraint->applyAdjointJacobian_2(*part_ajv,*part_v,*part_u,*part_z,tol);
+    }
 
     // no constraint for controls hanlding because that doesn't work yet!
    }
@@ -912,81 +935,74 @@ public:
                                                const V& z, 
                                                Real& tol,
                                                int level) {
+     // applyInverseAdjointJacobian_1 is weird because it serializes in time. But we want to get it
+     // working so that we can test, but it won't be a performant way to do this. 
+     // We could do a parallel in time solve here but thats not really the focus.
 
-    // applyInverseAdjointJacobian_1 is weird because it serializes in time. But we want to get it
-    // working so that we can test, but it won't be a performant way to do this. 
-    // We could do a parallel in time solve here but thats not really the focus.
-    
-    // this is an inefficient hack (see line below where pint_v is modified!!!!)
-    ///////////////////////////////////
-    auto v_copy = v.clone();
-    v_copy->set(v);
-    ///////////////////////////////////
-    
-    PinTVector<Real>       & pint_iajv = dynamic_cast<PinTVector<Real>&>(iajv);
-    const PinTVector<Real> & pint_v    = dynamic_cast<const PinTVector<Real>&>(*v_copy);
-    const PinTVector<Real> & pint_u    = dynamic_cast<const PinTVector<Real>&>(u);
-    const PinTVector<Real> & pint_z    = dynamic_cast<const PinTVector<Real>&>(z);
-       // its possible we won't always want to cast to a PinT vector here
-       //
-    int timeRank = pint_u.communicators().getTimeRank();
-    int timeSize = pint_u.communicators().getTimeSize();
- 
-    assert(pint_iajv.numOwnedSteps()==pint_u.numOwnedSteps());
-    assert(pint_iajv.numOwnedSteps()==pint_v.numOwnedSteps());
+     // this is an inefficient hack (see line below where pint_v is modified!!!!)
+     ///////////////////////////////////
+     auto v_copy = v.clone();
+     v_copy->set(v);
+     ///////////////////////////////////
 
-    pint_iajv.zero();
+     PinTVector<Real>       & pint_iajv = dynamic_cast<PinTVector<Real>&>(iajv);
+     PinTVector<Real> & pint_v          = dynamic_cast<PinTVector<Real>&>(*v_copy);
+     const PinTVector<Real> & pint_u    = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real> & pint_z    = dynamic_cast<const PinTVector<Real>&>(z);
+     // its possible we won't always want to cast to a PinT vector here
+     //
 
-    pint_z.boundaryExchange();
-    pint_v.boundaryExchange();
-    pint_u.boundaryExchange();
-    pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::RECV_ONLY); // this is going to block
+     int timeRank = pint_u.communicators().getTimeRank();
+     int timeSize = pint_u.communicators().getTimeSize();
+     const std::vector<int> & stencil = pint_iajv.stencil();
 
-    auto part_iajv = getStateVector(pint_iajv);   
-    auto part_v    = getStateVector(pint_v);   
-    auto part_u    = getStateVector(pint_u);   
-    auto part_z    = getControlVector(pint_z); 
+     // assert a forward stencil
+     assert(stencil.size()==2);
+     assert(stencil[0]==-1);
+     assert(stencil[1]== 0);
 
-    const std::vector<int> & stencil = pint_iajv.stencil();
+     assert(pint_iajv.numOwnedSteps()==pint_u.numOwnedSteps());
+     assert(pint_iajv.numOwnedSteps()==pint_v.numOwnedSteps());
 
-    //////////////////////////////////////////////////////////////////////////////////////
+     pint_iajv.zero();
 
-    // we need to modify the RHS vector if this is an interior boundary
-    if(timeRank+1 < timeSize) {
-      int owned_steps = pint_v.numOwnedSteps();
-      for(size_t i=0;i<stencil.size();i++) {
-        if(stencil[i]<0) {
-          // this is why the hack above is necessary
-          pint_v.getVectorPtr(owned_steps+stencil[i])->axpy(globalScale_,*pint_iajv.getVectorPtr(owned_steps+stencil[i]));
-        }
-      }
-    }
+     pint_z.boundaryExchange();
+     pint_v.boundaryExchange();
+     pint_u.boundaryExchange();
+     pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::RECV_ONLY); // this is going to block
 
-    //////////////////////////////////////////////////////////////////////////////////////
-    
-    // compute the constraint for this subdomain
-    auto constraint = getSerialConstraint(pint_u.getVectorPtr(-1),level);
+     int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
 
-    constraint->applyInverseAdjointJacobian_1(*part_iajv,*part_v,*part_u,*part_z,tol);
+     // on the last processor (with the last time step) this doesn't happen
+     if(timeRank+1 < timeSize) {
+       int s = numSteps-1;
+       pint_v.getVectorPtr(2*s)->axpy(1.0,*pint_iajv.getVectorPtr(2*s));
+         // here we are abusing the iajv vector and storing the RHS to pass
+         // between processors, this will be overwritten below
+     }
 
-    //////////////////////////////////////////////////////////////////////////////////////
-    
-    // satisfy the time continuity constraint, note that this just using the identity matrix
-    for(size_t i=0;i<stencil.size();i++) {
-      int offset = stencil[i];
-      if(offset<0) {
-        // you would think that was the weird term here. But there isn't as its automatically
-        // included by the applyInverseAdjointJacobian_1 call with the "skipInitialCondition"
-        // flag on.
+     for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
+       auto part_iajv = getStateVector(pint_iajv,s);   
+       auto part_v    = getStateVector(pint_v,s);   
+       auto part_u    = getStateVector(pint_u,s);   
+       auto part_z    = getControlVector(pint_z,s); 
 
-        // sending this to the left
-        pint_iajv.getVectorPtr(offset)->scale(1.0/globalScale_);
-        pint_iajv.getRemoteBufferPtr(offset)->set(*pint_iajv.getVectorPtr(offset));        
-      }
-    }
+       if(s<numSteps-1) {
+         pint_iajv.getVectorPtr(2*s+1)->scale(1.0/globalScale_);
+         pint_v.getVectorPtr(2*s)->axpy(globalScale_,*pint_iajv.getVectorPtr(2*s+1));
+       }
 
-    pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::SEND_ONLY);
+       // compute the constraint for this subdomain
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
 
+       constraint->applyInverseAdjointJacobian_1(*part_iajv,*part_v,*part_u,*part_z,tol);
+     }
+
+     pint_iajv.getRemoteBufferPtr(-1)->set(*pint_iajv.getVectorPtr(-1));
+         // here we are abusing the iajv vector and storing the RHS to pass between processors
+     pint_iajv.getVectorPtr(-1)->scale(1.0/globalScale_);
+
+     pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::SEND_ONLY);
    }
 
    // Done in parallel, no blocking, solve a linear system on this processor
