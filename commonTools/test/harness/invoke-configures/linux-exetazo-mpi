@@ -75,7 +75,6 @@ FFLAGS="-O3 -fPIC" \
 --enable-teuchos-complex \
 --enable-teuchos-extended \
 --enable-teuchos-expat \
---enable-threadpool \
 --enable-thyra \
 --enable-tpetra \
 --enable-trilinoscouplings \

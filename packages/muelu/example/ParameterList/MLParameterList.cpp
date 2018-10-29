@@ -290,7 +290,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       //
 
       RCP<Teuchos::ParameterList> mueluParams = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(*params, "SA"));
+
       std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
+
+      if (xpetraParameters.GetLib() == Xpetra::UseEpetra)
+        mueluParams->set("use kokkos refactor", false);
 
       // Multigrid Hierarchy
       ParameterListInterpreter mueLuFactory(*mueluParams);

@@ -375,30 +375,59 @@ getQuadPoints(ordinal_type quad_order,
       normalizeRecurrenceCoefficients(a, b, c, d);
   }
 
-  // With normalized coefficients, A is symmetric and tri-diagonal, with
-  // diagonal = a, and off-diagonal = b, starting at b[1]
-  Teuchos::SerialDenseMatrix<ordinal_type,value_type> eig_vectors(num_points,
-                                                                  num_points);
-  Teuchos::Array<value_type> workspace(2*num_points);
-  ordinal_type info_flag;
-  Teuchos::LAPACK<ordinal_type,value_type> my_lapack;
-
-  // compute the eigenvalues (stored in a) and right eigenvectors.
-  if (num_points == 1)
-    my_lapack.STEQR('I', num_points, &a[0], &b[0], eig_vectors.values(),
-                    num_points, &workspace[0], &info_flag);
-  else
-    my_lapack.STEQR('I', num_points, &a[0], &b[1], eig_vectors.values(),
-                    num_points, &workspace[0], &info_flag);
-
-  // eigenvalues are sorted by STEQR
   quad_points.resize(num_points);
   quad_weights.resize(num_points);
-  for (ordinal_type i=0; i<num_points; i++) {
-    quad_points[i] = a[i];
-    if (std::abs(quad_points[i]) < quad_zero_tol)
-      quad_points[i] = 0.0;
-    quad_weights[i] = beta[0]*eig_vectors[i][0]*eig_vectors[i][0];
+
+  if (num_points == 1) {
+    quad_points[0] = a[0];
+    quad_weights[0] = beta[0];
+  }
+  else {
+
+    // With normalized coefficients, A is symmetric and tri-diagonal, with
+    // diagonal = a, and off-diagonal = b, starting at b[1].  We use
+    // LAPACK'S PTEQR function to compute the eigenvalues/vectors of A
+    // to compute the quadrature points/weights respectively.  PTEQR requires
+    // an SPD matrix, so we need to shift the matrix to make it diagonally
+    // dominant (We could use STEQR which works for indefinite matrices, but
+    // this function has proven to be problematic on some platforms).
+    Teuchos::SerialDenseMatrix<ordinal_type,value_type> eig_vectors(num_points,
+                                                                    num_points);
+    Teuchos::Array<value_type> workspace(4*num_points);
+    ordinal_type info_flag;
+    Teuchos::LAPACK<ordinal_type,value_type> my_lapack;
+
+    // Compute a shift to make matrix positive-definite
+    value_type max_a = 0.0;
+    value_type max_b = 0.0;
+    for (ordinal_type n = 0; n<num_points; n++) {
+      if (std::abs(a[n]) > max_a)
+        max_a = a[n];
+    }
+    for (ordinal_type n = 1; n<num_points; n++) {
+      if (std::abs(b[n]) > max_b)
+        max_b = b[n];
+    }
+    value_type shift = 1.0 + max_a + 2.0*max_b;
+
+    // Shift diagonal
+    for (ordinal_type n = 0; n<num_points; n++)
+      a[n] += shift;
+
+    // compute the eigenvalues (stored in a) and right eigenvectors.
+    my_lapack.PTEQR('I', num_points, &a[0], &b[1], eig_vectors.values(),
+                    num_points, &workspace[0], &info_flag);
+    TEUCHOS_TEST_FOR_EXCEPTION(info_flag != 0, std::logic_error,
+                               "PTEQR returned info = " << info_flag);
+
+    // (shifted) eigenvalues are sorted in descending order by PTEQR.
+    // Reorder them to ascending as in STEQR
+    for (ordinal_type i=0; i<num_points; i++) {
+      quad_points[i] = a[num_points-1-i]-shift;
+      if (std::abs(quad_points[i]) < quad_zero_tol)
+        quad_points[i] = 0.0;
+      quad_weights[i] = beta[0]*eig_vectors[num_points-1-i][0]*eig_vectors[num_points-1-i][0];
+    }
   }
 
   // Evalute basis at gauss points
