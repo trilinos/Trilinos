@@ -641,7 +641,8 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
   if (((size_t)num_nodes != globals.Num_Node) || ((size_t)num_elem != globals.Num_Elem) ||
       (num_elem_blk != globals.Num_Elem_Blk)) {
     fprintf(stderr, "%s: ERROR: Problem dimensions in the LB File don't match with those \
-in mesh file", yo);
+in mesh file",
+            yo);
     exit(1);
   }
 

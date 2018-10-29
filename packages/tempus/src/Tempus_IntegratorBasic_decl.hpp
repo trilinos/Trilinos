@@ -67,8 +67,8 @@ public:
     virtual void startIntegrator();
     /// Start time step.
     virtual void startTimeStep();
-    /// Only accept step after meeting time step criteria.
-    virtual void acceptTimeStep();
+    /// Check if time step has passed or failed.
+    virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList

@@ -530,6 +530,20 @@ Piro::RythmosSolver<Scalar>::getRythmosIntegrator() const
   return fwdStateIntegrator;
 }
 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
+Piro::RythmosSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getTimeStepSolver() const
+#else
+template <typename Scalar>
+Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
+Piro::RythmosSolver<Scalar>::getTimeStepSolver() const
+#endif
+{
+  return fwdTimeStepSolver;
+}
+
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >

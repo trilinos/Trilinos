@@ -1077,16 +1077,12 @@ public:
     typedef std::integral_constant< unsigned , 0 > padding ;
 
     // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
-    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFadContiguous 
-                                                           , typename Traits::value_type>;
-
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
 
-    typename Traits::array_layout internal_layout = 
-                            (test_traits_check == true
-                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type) 
-                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout) 
-                            : local_layout;
+    typename Traits::array_layout internal_layout =
+      (test_traits_check == true)
+      ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, P... >::returnNewLayoutPlusFad(prop, local_layout)
+      : local_layout;
 
     m_impl_offset = offset_type( padding(), internal_layout );
 

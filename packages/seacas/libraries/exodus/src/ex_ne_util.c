@@ -71,7 +71,7 @@ int ex_leavedef(int exoid, const char *call_rout)
 
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to end define mode for file id %d", exoid);
-    ex_err(call_rout, errmsg, status);
+    ex_err_fn(exoid, call_rout, errmsg, status);
 
     return (EX_FATAL);
   }
@@ -98,7 +98,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
   if ((status = nc_inq_varid(exoid, ne_var_name, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              ne_var_name, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_FATAL);
   }
 
@@ -111,7 +111,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
                "ERROR: failed to find dimension ID for variable \"%s\" "
                "in file ID %d",
                ne_var_name, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
 
@@ -120,7 +120,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find dimension for variable \"%s\" in file ID %d", ne_var_name,
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
 
@@ -138,7 +138,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable \"%s\" in file ID %d",
                ne_var_name, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
 
@@ -178,7 +178,7 @@ int ex_get_file_type(int exoid, char *ftype)
   if ((status = nc_get_var1_int(exoid, varid, NULL, &lftype)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_FILE_TYPE, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -219,7 +219,7 @@ int ex_put_nemesis_version(int exoid)
                                    &file_ver)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output nemesis file version in file ID %d",
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -228,7 +228,7 @@ int ex_put_nemesis_version(int exoid)
                                    &api_ver)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output nemesis api version in file ID %d",
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -256,14 +256,14 @@ int ne_check_file_version(int exoid)
     snprintf(errmsg, MAX_ERR_LENGTH,
             "ERROR: failed to get the nemesis file version from file ID %d",
             exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (fabs(NEMESIS_FILE_VERSION-file_ver) > 0.001) {
     snprintf(errmsg, MAX_ERR_LENGTH,
             "ERROR: Nemesis version mismatch in file ID %d!\n", exoid);
-    ex_err(__func__, errmsg, EX_MSG);
+    ex_err_fn(exoid, __func__, errmsg, EX_MSG);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);
@@ -321,7 +321,7 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable \"%s\" in file ID %d",
                ne_var_name, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(-1);
     }
 

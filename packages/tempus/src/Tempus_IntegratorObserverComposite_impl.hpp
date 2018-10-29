@@ -23,7 +23,7 @@ IntegratorObserverComposite<Scalar>::~IntegratorObserverComposite(){}
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 observeStartIntegrator(const Integrator<Scalar>& integrator)
-{ 
+{
   for(auto& o : observers_)
     o->observeStartIntegrator(integrator);
 }
@@ -62,17 +62,25 @@ observeAfterTakeStep(const Integrator<Scalar>& integrator)
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
-observeAcceptedTimeStep(const Integrator<Scalar>& integrator)
+observeAfterCheckTimeStep(const Integrator<Scalar>& integrator)
 {
   for(auto& o : observers_)
-    o->observeAcceptedTimeStep(integrator);
+    o->observeAfterCheckTimeStep(integrator);
+}
+
+template<class Scalar>
+void IntegratorObserverComposite<Scalar>::
+observeEndTimeStep(const Integrator<Scalar>& integrator)
+{
+  for(auto& o : observers_)
+    o->observeEndTimeStep(integrator);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 observeEndIntegrator(const Integrator<Scalar>& integrator)
 {
-  for(auto& o : observers_)  
+  for(auto& o : observers_)
     o->observeEndIntegrator(integrator);
 }
 

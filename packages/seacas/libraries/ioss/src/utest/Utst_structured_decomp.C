@@ -477,7 +477,7 @@ TEST_CASE("grv-large", "[grv-large]")
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
 
-  for (size_t proc_count = 2; proc_count < 8192; proc_count*=2) {
+  for (size_t proc_count = 2; proc_count < 8192; proc_count *= 2) {
     std::string name = "GRV-LARGE_ProcCount_" + std::to_string(proc_count);
     SECTION(name)
     {

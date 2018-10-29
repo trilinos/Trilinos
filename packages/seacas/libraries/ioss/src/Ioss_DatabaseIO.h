@@ -471,7 +471,11 @@ namespace Ioss {
      *     use set_cycle_count(1)
      */
     void set_cycle_count(int count) const { cycleCount = count; }
+    int  get_cycle_count() const { return cycleCount; }
     void set_overlay_count(int count) const { overlayCount = count; }
+    int  get_overlay_count() const { return overlayCount; }
+    void set_file_per_state(bool yes_no) const { filePerState = yes_no; }
+    bool get_file_per_state() const { return filePerState; }
 
     void set_time_scale_factor(double factor) { timeScaleFactor = factor; }
 
@@ -573,6 +577,13 @@ namespace Ioss {
     mutable int cycleCount{0};
 
     mutable int overlayCount{0};
+
+    /*! EXPERIMENTAL If this is true, then each state (timestep)
+     *  output will be directed to a separate file.  Currently this is
+     *  only implemented for the exodus (parallel or serial, single
+     *  file or fpp) database type.
+     */
+    mutable bool filePerState{false};
 
     /*! Scale the time read/written from/to the file by the specified
       scaleFactor.  If the datbase times are 0.1, 0.2, 0.3 and the

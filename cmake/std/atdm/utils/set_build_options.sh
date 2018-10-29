@@ -22,8 +22,12 @@ export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
 
 # Set the compiler
-if [[ $ATDM_CONFIG_JOB_NAME == "default" ]]; then
+if [[ $ATDM_CONFIG_JOB_NAME == *"default" ]]; then
   ATDM_CONFIG_COMPILER=DEFAULT
+elif [[ $ATDM_CONFIG_JOB_NAME == *"gnu-4.9.3"* ]]; then
+  ATDM_CONFIG_COMPILER=GNU-4.9.3
+elif [[ $ATDM_CONFIG_JOB_NAME == *"gnu-7.2.0"* ]]; then
+  ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_JOB_NAME == *"gnu"* ]]; then
   ATDM_CONFIG_COMPILER=GNU
 elif [[ $ATDM_CONFIG_JOB_NAME == *"intel"* ]]; then
@@ -107,7 +111,15 @@ fi
 
 # Set the optimization level
 # Defaults to debug
-if [[ $ATDM_CONFIG_JOB_NAME == *"opt"* ]]; then export ATDM_CONFIG_BUILD_TYPE=RELEASE; fi
+if [[ $ATDM_CONFIG_JOB_NAME == *"release-debug"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_JOB_NAME == *"opt"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE;
+elif [[ $ATDM_CONFIG_JOB_NAME == *"release"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE;
+elif [[ $ATDM_CONFIG_JOB_NAME == *"debug"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=DEBUG;
+fi
 
 # Set the node types default to serial
 ATDM_CONFIG_NODE_TYPE=SERIAL

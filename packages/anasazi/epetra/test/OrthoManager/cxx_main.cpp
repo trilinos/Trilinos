@@ -845,33 +845,6 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
       }
 
-      // do we run the reversed input?
-      /*
-      if ( (t & 3) == 3 ) {
-        // copies of S,MS
-        Scopy = MVT::CloneCopy(*S);
-        // randomize this data, it should be overwritten
-        for (unsigned int i=0; i<C.size(); i++) {
-          C[i]->random();
-        }
-        // flip the inputs
-        theX = tuple( theX[1], theX[0] );
-        // run test
-        OM->project(*Scopy,theX,C);
-        // we allocate S and MS for each test, so we can save these as views
-        // however, save copies of the C
-        S_outs.push_back( Scopy );
-        // we are in a special case: P_X1 and P_X2, so we know we applied 
-        // two projectors, and therefore have two C[i]
-        C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
-        // reverse the Cs to compensate for the reverse projectors
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
-        // flip the inputs back
-        theX = tuple( theX[1], theX[0] );
-      }
-      */
-
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
         // S_in = X1*C1 + X2*C2 + S_out

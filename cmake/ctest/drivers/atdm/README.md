@@ -13,6 +13,7 @@ Trilinos CDash site.
 * <a href="#specific-system_name-directories">Specific <system_name> directories</a>
 * <a href="#how-add-a-new-system">How add a new system</a>
 
+
 ## Base CTest/CDash configuration
 
 The base directory:
@@ -85,6 +86,7 @@ which just runs:
 
 for that current system for the given job name.
 
+
 ## System-specific driver files
 
 Each system `<system_name>` is given a subdirectory under this directory:
@@ -122,6 +124,7 @@ Having this file and using `smart-jenkins-driver.sh` allows customizing almost
 anything about a particular ATDM build of Trilinos without having to touch the
 Jenkins job configuration (which is not under any type of version control).
 
+
 ## Split ctest -S drivers and submits to CDash
 
 On some machines (e.g. the SNL HPC machines), the update, configure and build
@@ -150,6 +153,7 @@ going to the same build (i.e. row) on CDash.  For older versions of CMake, the
 test results show up as a separate build (same `site` and `build name` but
 different `build stamp`).
 
+
 ## Running locally and debugging
 
 To run locally, first set up a mock Jenkins workspace directory structure and
@@ -175,9 +179,9 @@ $ time env \
     WORKSPACE=$PWD \
     Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
     CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_SUBMIT=OFF \
     CTEST_DO_UPDATES=OFF \
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+    CTEST_DO_SUBMIT=OFF \
   <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/<system_name>/local-driver.sh \
     &> console.out
 ```
@@ -196,9 +200,9 @@ $ time env \
     WORKSPACE=$PWD \
     Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
     CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_SUBMIT=OFF \
     CTEST_DO_UPDATES=OFF \
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+    CTEST_DO_SUBMIT=OFF \
   <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
     &> console.out
 ```
@@ -222,14 +226,39 @@ $ time env \
     WORKSPACE=$PWD \
     Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
     CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_SUBMIT=ON \
     CTEST_DO_UPDATES=OFF \
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+    CTEST_DO_SUBMIT=ON \
   <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
     &> console.out
 ```
 
 If that submit looks good, then the job is ready to set up as a Jenkins job.
+
+Note that one is running on a loaded/shared machine and therfore needs to use
+less processes to build and test, then one can use the env vars
+`ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
+`ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE` and use them as, for example:
+
+```
+$ time env \
+    ATDM_CONFIG_BUILD_COUNT_OVERRIDE=8 \
+    ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE=12 \
+    JOB_NAME=<some-build-name> \
+    WORKSPACE=$PWD \
+    Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
+    CTEST_TEST_TYPE=Experimental \
+    CTEST_DO_UPDATES=OFF \
+    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+    CTEST_DO_SUBMIT=OFF \
+  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
+    &> console.out
+```
+
+That can also be handy for specializing the automated builds on specific SEMS
+and CEE RHEL6 machines, for example, that may have more or less hardware
+cores.
+
 
 ## Setting up Jenkins jobs
 
@@ -256,19 +285,23 @@ But be careful not to put any additional settings that what is absolutely
 necessary because Jenkins configurations are not under version control and
 there is no tractability for changes in these settings!
 
+
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
+ 
+* `cee-rhel6/`: Contains files to drive builds on CEE LAnL RHEL6 machines with
+  a SEMS environment.
 
 * `chama/`: Contains files to drive builds on the SRN HPC machine `chama`.
 
 * `mutrino/`: Contains files to drive builds on SNL machine mutrino.
- 
-* `rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
-  environment.
 
 * `ride/`: Contains the files to drive builds on the SRN test bed machine
   `ride` which also can be run on the SON machine `white`.
+ 
+* `sems-rhel6/`: Contains files to drive builds on rhel6 machines with the SEMS
+  environment.
 
 * `sems_gcc-7.2.0/`: Contains driver scripts for an on-off GCC 7.2.0 build
   based on the SEMS system.  This build really does not fit into the system
@@ -301,7 +334,11 @@ Note that more than one `hostname` machine may map to the same
 The variable `ATDM_HOSTNAME` (set to exported variable
 `ATDM_CONFIG_KNOWN_HOSTNAME`) is used for the CDash site name.  This makes it
 so that any node `white05`, `white12`, etc. just says `white` on CDash.  This
-is important for the CDash 'next' and 'previous' relationships to work.
+is important for the CDash 'next' and 'previous' relationships to work.  (But
+for `CTEST_TEST_TYPE=Experimental` builds, the real `hostname` is used which
+is stored in the exported env variable `ATDM_CONFIG_REAL_HOSTNAME`.  This
+ensures that queries with `cdash/queryTests.php` don't accidentally pick up
+tests from "Experimental" builds.)
 
 The variable `ATDM_SYSTEM_NAME` (set to the exported variable
 `ATDM_CONFIG_KNOWN_SYSTEM_NAME`) must be set to `<new_system_name>` which is

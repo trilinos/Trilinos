@@ -888,7 +888,7 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, Val
 };
 
 // Detect if a ViewCtorProp contains a CommonViewAllocProp
-template < typename ... >
+template < typename ... P >
 struct has_common_view_alloc_prop : public std::false_type {};
 
 template < class Specialize, class ValueType >
@@ -917,22 +917,73 @@ struct check_has_common_view_alloc_prop<P0, P...>
   enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : check_has_common_view_alloc_prop<P...>::value ) };
 };
 
-template <typename Traits, typename CtorProp >
-struct appendFadToLayoutViewAllocHelper 
+template < typename ... >
+struct compute_fad_dim_from_alloc_prop;
+
+template < >
+struct compute_fad_dim_from_alloc_prop<> {
+  template <typename CtorProp>
+  static unsigned eval(const CtorProp&) { return 0; }
+};
+
+template < typename P >
+struct compute_fad_dim_from_alloc_prop<P> {
+  template <typename CtorProp>
+  static unsigned eval(const CtorProp&) { return 0; }
+};
+
+template < typename P0, typename ... P >
+struct compute_fad_dim_from_alloc_prop<P0,P...> {
+  template <typename CtorProp>
+  static unsigned eval(const CtorProp& prop) {
+    unsigned d1 = compute_fad_dim_from_alloc_prop<P0>::eval(prop);
+    unsigned d2 = compute_fad_dim_from_alloc_prop<P...>::eval(prop);
+    return d1 > d2 ? d1 : d2;
+  }
+};
+
+template < class ValueType >
+struct compute_fad_dim_from_alloc_prop<
+  CommonViewAllocProp<ViewSpecializeSacadoFad, ValueType>
+  > {
+  template <typename CtorProp>
+  static unsigned eval(const CtorProp& prop) {
+    using specialize = ViewSpecializeSacadoFad;
+    using CVAP = CommonViewAllocProp< specialize, ValueType >;
+    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP> const &)prop).value;
+    return cast_prop.fad_dim;
+  }
+};
+
+template < class ValueType >
+struct compute_fad_dim_from_alloc_prop<
+  CommonViewAllocProp<ViewSpecializeSacadoFadContiguous, ValueType>
+  > {
+  template <typename CtorProp>
+  static unsigned eval(const CtorProp& prop) {
+    using specialize = ViewSpecializeSacadoFadContiguous;
+    using CVAP = CommonViewAllocProp< specialize, ValueType >;
+    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP> const &)prop).value;
+    return cast_prop.fad_dim;
+  }
+};
+
+template <typename Traits, typename ... P >
+struct appendFadToLayoutViewAllocHelper
 {
   using layout_type = typename Traits::array_layout;
   using specialize = typename Traits::specialize;
-  
+  using CtorProp = ViewCtorProp< P... >;
+
   static layout_type returnNewLayoutPlusFad( const CtorProp & arg_prop, const layout_type & arg_layout ) {
-
-    using CVAP_type = CommonViewAllocProp< specialize, typename Traits::value_type >;
-
-    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP_type> const &)arg_prop).value;
 
     layout_type appended_layout( arg_layout );
 
     // Static View case - DynRankView layout handled within createLayout calls
-    appended_layout.dimension[ Traits::rank ] = (cast_prop.fad_dim > 0) ? cast_prop.fad_dim : 1;
+
+    const unsigned fad_dim =
+      compute_fad_dim_from_alloc_prop<P...>::eval(arg_prop);
+    appended_layout.dimension[ Traits::rank ] = (fad_dim > 0) ? fad_dim : 1;
 
     return appended_layout;
   }
@@ -942,7 +993,7 @@ template <typename Layout>
 struct prependFadToLayout
 {
   using layout_type = Layout;
-  
+
   template < typename FadSizeType >
   KOKKOS_INLINE_FUNCTION
   static layout_type returnNewLayoutPlusFad( const layout_type & arg_layout, const FadSizeType fad_dim ) {
@@ -1282,15 +1333,15 @@ public:
 
     // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
-    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad
-                                                           , typename Traits::value_type >;
+
     m_impl_offset = offset_type( padding(), local_layout );
 
-    m_array_offset = array_offset_type( padding(),
-                            ( test_traits_check == true
-                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type)
-                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout)
-                            : local_layout );
+    typename Traits::array_layout internal_layout =
+      (test_traits_check == true)
+      ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, P... >::returnNewLayoutPlusFad(prop, local_layout)
+      : local_layout;
+
+    m_array_offset = array_offset_type( padding(), internal_layout );
 
     const unsigned fad_dim =
       ( Rank == 0 ? m_array_offset.dimension_0() :

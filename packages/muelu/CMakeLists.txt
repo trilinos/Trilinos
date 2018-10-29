@@ -17,6 +17,10 @@ ENDIF()
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
 ASSERT_DEFINED(Xpetra_ENABLE_Kokkos_Refactor)
+IF (${PACKAGE_NAME}_ENABLE_KokkosCore AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "MueLu requires that if Kokkos is enabled, Tpetra must also be enabled.")
+ENDIF()
+
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_DOUBLE)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
@@ -172,11 +176,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   OFF)
 
 # Define option to enable code that is refactored to use Kokkos
+# This is ON by default, unless only Serial is enabled, in which case it is off.
+# Define option to enable code that is refactored to use Kokkos
+# This is ON by default, unless only Serial is enabled, in which case it is off.
+IF ( ${PACKAGE_NAME}_ENABLE_Tpetra AND (Tpetra_INST_OPENMP OR Tpetra_INST_CUDA) )
+  SET(Kokkos_Refactor_On_By_Default ON)
+  MESSAGE("-- MueLu: Kokkos_Refactor ON by default")
+ELSE()
+  SET(Kokkos_Refactor_On_By_Default OFF)
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
-  "Enable MueLu code refactored to use Kokkos."
-  NO)
+  "Enable Xpetra code refactored to use Kokkos."
+  ${Kokkos_Refactor_On_By_Default})
 
 # Define option to use code that is refactored to use Kokkos by
 # default. This is useful for running all non-unit tests with Kokkos

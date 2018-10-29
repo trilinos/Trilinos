@@ -64,10 +64,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # set as a cache var in ATDMDevEnvSettings.cmake that gets included below.
   
   SET(EXTRA_CONFIGURE_OPTIONS)
-  
-  # Must set the site name so that it does not change depending on what node
-  # runs the build.
-  SET(CTEST_SITE "$ENV{ATDM_CONFIG_KNOWN_HOSTNAME}")
 
   # See if to enable all of the packages
   MESSAGE("ENV ATDM_CONFIG_ENABLE_ALL_PACKAGE = $ENV{ATDM_CONFIG_ENABLE_ALL_PACKAGES}")
@@ -104,39 +100,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     MESSAGE("Found 'panzer' in JOB_NAME, enabling only Panzer tests")
     SET(Trilinos_PACKAGES Panzer)
   ELSE()
-    # Explictly test an important subset of Trilinos packages used by the ATDM
-    # APP codes that are under active development.
-    SET(Trilinos_PACKAGES
-      Kokkos
-      Teuchos
-      KokkosKernels
-      Sacado
-      Tpetra
-      TrilinosSS
-      Thyra
-      Xpetra
-      Zoltan2
-      Belos
-      Amesos2
-      SEACAS
-      Anasazi
-      Ifpack2
-      Stratimikos
-      Teko
-      Intrepid2
-      STK
-      Phalanx
-      NOX
-      MueLu
-      Rythmos
-      Tempus
-      Piro
-      Panzer
-      )
-    # NOTE: Above, we explicilty list out the packages that we want to be tested
-    # which is *not* the full set of packages used by the ATDM APP codes.  The
-    # other packages are not actively developed and are at less of a risk to be
-    # broken.
+    MESSAGE("Enabling all packages not otherwise disabled!")
+    SET(Trilinos_PACKAGES)
+    # Implicitly allow the enable of all packages that are not otherwise
+    # disabled by the (indirect) include of ATDMDisables.cmake.
   ENDIF()
 
   # Point to the ATDM Trilinos configuration
@@ -170,8 +137,22 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # CDash error emails for any failures.  But when the build is clean, the var
   # Trilinos_TRACK should be overridden to be "ATDM" on a build-by-build
   # basis.
-  SET_DEFAULT(CTEST_TEST_TYPE Nightly)
+  SET_DEFAULT_AND_FROM_ENV(CTEST_TEST_TYPE Nightly)
   SET_DEFAULT(Trilinos_TRACK Specialized)
+  
+  IF (CTEST_TEST_TYPE STREQUAL "Experimental")
+    # For "Experimental" builds, set the CDash site name to the real hostname.
+    # This is done so that using queryTests.php will not pick up tests from
+    # "Experimental" builds with the same 'site' and 'buildname' as builds in
+    # the "Specialized" and "ATDM" groups.
+    SET(CTEST_SITE "$ENV{ATDM_CONFIG_REAL_HOSTNAME}")
+  ELSE()
+    # For regular builds ("Specialized" and "ATDM"), set the CDash site name
+    # so that it does not change depending on what node on a given machine
+    # runs the build.  If you don't, CDash can't compare to previous builds
+    # for the number of new warnings, errors, tests, etc.
+    SET(CTEST_SITE "$ENV{ATDM_CONFIG_KNOWN_HOSTNAME}")
+  ENDIF()
 
   # Don't process any extra repos
   SET(Trilinos_EXTRAREPOS_FILE NONE)

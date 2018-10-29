@@ -180,6 +180,7 @@ namespace Iocgns {
     const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, int64_t file_offset,
                              int64_t file_count, entity_type type) const;
 
+    int         get_file_pointer() const;
     mutable int cgnsFilePtr{-1};
 
     int m_currentVertexSolutionIndex     = 0;

@@ -1090,6 +1090,31 @@ namespace MueLuTests {
     TEST_EQUALITY(0,0);
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, CheckNullspaceDimension, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    // Test that HierarchyManager throws if user-supplied nullspace has dimension smaller than numPDEs
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    GO nx = 30;
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(nx);
+    A->SetFixedBlockSize(2);
+
+    HierarchyManager mueluManager;
+    RCP<Hierarchy> Hrcp = mueluManager.CreateHierarchy();
+    Hierarchy&     H    = *Hrcp;
+    H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
+
+    RCP<Level> l0 = H.GetLevel(0);
+    l0->Set("A", A);
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
+    nullSpace->putScalar( (Scalar) 1.0);
+    l0->Set("Nullspace", nullSpace);
+
+    TEST_THROW( mueluManager.SetupHierarchy(H), MueLu::Exceptions::RuntimeError );
+  }
+
 
 # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Constructor, Scalar, LO, GO, Node) \
@@ -1106,7 +1131,8 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, Write, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, BlockCrs, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, CheckNullspaceDimension, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 

@@ -94,8 +94,13 @@ namespace Iocgns {
 
     void release_memory__() override;
 
+    int get_file_pointer() const;
+    int get_serial_file_pointer() const;
+
     void openDatabase__() const override;
     void closeDatabase__() const override;
+    void openSerialDatabase__() const;
+    void closeSerialDatabase__() const;
     bool node_major() const override { return false; }
 
     bool needs_shared_node_information() const override { return false; }
