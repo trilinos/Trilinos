@@ -3996,12 +3996,12 @@ namespace Tpetra {
     // device, we need to clear that flag, since the code below works
     // on host.
     auto diag_dv = diag.getDualView ();
-    diag_dv.modified_device () = 0;
+    diag_dv.clear_sync_state();
 
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
     // device.
-    diag.template modify<host_execution_space> ();
+    diag.modify_host();
     auto lclVecHost = diag.template getLocalView<host_execution_space> ();
     // 1-D subview of the first (and only) column of lclVecHost.
     auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
@@ -6522,16 +6522,16 @@ namespace Tpetra {
     // DistObject might use their placement to decide where to pack
     // and/or unpack.
     const bool permuteToLIDs_sync_back =
-      permuteToLIDs.modified_device () >= permuteToLIDs.modified_host ();
+      !permuteToLIDs.need_sync_host ();
     auto permuteToLIDs_nc = castAwayConstDualView (permuteToLIDs);
-    permuteToLIDs_nc.template sync<host_mem_space> ();
-    auto permuteToLIDs_h = permuteToLIDs.template view<host_mem_space> ();
+    permuteToLIDs_nc.sync_host ();
+    auto permuteToLIDs_h = permuteToLIDs.view_host();
 
     const bool permuteFromLIDs_sync_back =
-      permuteFromLIDs.modified_device () >= permuteFromLIDs.modified_host ();
+      !permuteFromLIDs.need_sync_host ();
     auto permuteFromLIDs_nc = castAwayConstDualView (permuteFromLIDs);
-    permuteFromLIDs_nc.template sync<host_mem_space> ();
-    auto permuteFromLIDs_h = permuteFromLIDs.template view<host_mem_space> ();
+    permuteFromLIDs_nc.sync_host ();
+    auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
 
     if (verbose) {
       std::ostringstream os;
@@ -6699,9 +6699,9 @@ namespace Tpetra {
       // Sync exportLIDs to host, and view its host data as a Teuchos::ArrayView.
       {
         auto exportLIDs_nc = castAwayConstDualView (exportLIDs);
-        exportLIDs_nc.template sync<HostSpace> ();
+        exportLIDs_nc.sync_host ();
       }
-      auto exportLIDs_h = exportLIDs.template view<HostSpace> ();
+      auto exportLIDs_h = exportLIDs.view_host ();
       Teuchos::ArrayView<const LO> exportLIDs_av (exportLIDs_h.data (),
                                                   exportLIDs_h.size ());
 
@@ -6714,10 +6714,10 @@ namespace Tpetra {
       // need to mark the DualView as modified on host.
       {
         auto numPacketsPerLID_nc = numPacketsPerLID; // const DV& -> DV
-        numPacketsPerLID_nc.modified_device() = 0; // write-only host access
-        numPacketsPerLID_nc.modified_host() = 1;
+        numPacketsPerLID_nc.clear_sync_state(); // write only access
+        numPacketsPerLID_nc.modify_host();
       }
-      auto numPacketsPerLID_h = numPacketsPerLID.template view<HostSpace> ();
+      auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
       Teuchos::ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
                                                       numPacketsPerLID_h.size ());
 
@@ -6741,10 +6741,10 @@ namespace Tpetra {
       }
       // It's safe to assume that we're working on host anyway, so
       // just keep exports sync'd to host.
-      exports.modified_device() = 0; // ignore current device contents
-      exports.modified_host() = 1;
+      // ignore current device contents
+      exports.modify_host();
 
-      auto exports_h = exports.template view<HostSpace> ();
+      auto exports_h = exports.view_host ();
       auto exports_h_sub = subview (exports_h, range_type (0, newAllocSize));
 
       // Kokkos::deep_copy needs a Kokkos::View input, so turn
@@ -7023,9 +7023,9 @@ namespace Tpetra {
     {
       Kokkos::DualView<local_ordinal_type*, device_type> exportLIDs_nc =
         Tpetra::Details::castAwayConstDualView (exportLIDs);
-      exportLIDs_nc.template sync<Kokkos::HostSpace> ();
+      exportLIDs_nc.sync_host ();
     }
-    auto exportLIDs_h = exportLIDs.template view<Kokkos::HostSpace> ();
+    auto exportLIDs_h = exportLIDs.view_host ();
 
     // Count the total number of matrix entries to send.
     totalNumEntries = 0;
@@ -7160,9 +7160,9 @@ namespace Tpetra {
     const size_t bufSize = static_cast<size_t> (exports.extent (0));
 
     // Write-only host access
-    exports.modified_device() = 0;
-    exports.modified_host() = 1;
-    auto exports_h = exports.template view<Kokkos::HostSpace> ();
+    exports.clear_sync_state();
+    exports.modify_host();
+    auto exports_h = exports.view_host ();
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "After marking exports as modified on host, "
@@ -7171,12 +7171,12 @@ namespace Tpetra {
     }
 
     // Read-only host access
-    auto exportLIDs_h = exportLIDs.template view<Kokkos::HostSpace> ();
+    auto exportLIDs_h = exportLIDs.view_host ();
 
     // Write-only host access
-    numPacketsPerLID.modified_device() = 0;
-    numPacketsPerLID.modified_host() = 1;
-    auto numPacketsPerLID_h = numPacketsPerLID.template view<Kokkos::HostSpace> ();
+    const_cast<Kokkos::DualView<size_t*, buffer_device_type>*>(&numPacketsPerLID)->clear_sync_state();
+    const_cast<Kokkos::DualView<size_t*, buffer_device_type>*>(&numPacketsPerLID)->modify_host();
+    auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
 
     // Compute the number of "packets" (in this case, bytes) per
     // export LID (in this case, local index of the row to send), and
@@ -7616,23 +7616,23 @@ namespace Tpetra {
     // We're unpacking on host.  This is read-only host access of imports.
     {
       auto imports_nc = castAwayConstDualView (imports);
-      imports_nc.template sync<Kokkos::HostSpace> ();
+      imports_nc.sync_host ();
     }
-    auto imports_h = imports.template view<Kokkos::HostSpace> ();
+    auto imports_h = imports.view_host ();
 
     // Read-only host access.
     {
       auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);
-      numPacketsPerLID_nc.template sync<Kokkos::HostSpace> ();
+      numPacketsPerLID_nc.sync_host ();
     }
-    auto numPacketsPerLID_h = numPacketsPerLID.template view<Kokkos::HostSpace> ();
+    auto numPacketsPerLID_h = numPacketsPerLID.view_host ();
 
     // Read-only host access.
     {
       auto importLIDs_nc = castAwayConstDualView (importLIDs);
-      importLIDs_nc.template sync<Kokkos::HostSpace> ();
+      importLIDs_nc.sync_host ();
     }
-    auto importLIDs_h = importLIDs.template view<Kokkos::HostSpace> ();
+    auto importLIDs_h = importLIDs.view_host ();
 
     size_t numBytesPerValue;
     {
@@ -8527,7 +8527,7 @@ namespace Tpetra {
       int lclErr = 0;
       try {
         // packAndPrepare* methods modify numExportPacketsPerLID_.
-        destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+        destMat->numExportPacketsPerLID_.modify_host ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
         packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
@@ -8565,7 +8565,7 @@ namespace Tpetra {
 #else
     {
       // packAndPrepare* methods modify numExportPacketsPerLID_.
-      destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+      destMat->numExportPacketsPerLID_.modify_host ();
       Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
       packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
@@ -8585,10 +8585,10 @@ namespace Tpetra {
           // Make sure that host has the latest version, since we're
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
-          destMat->numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          destMat->numExportPacketsPerLID_.sync_host ();
           Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
             getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-          destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          destMat->numImportPacketsPerLID_.sync_host ();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
           Distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
@@ -8601,12 +8601,12 @@ namespace Tpetra {
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destMat->reallocImportsIfNeeded (totalImportPackets);
-          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
           Distor.doReversePostsAndWaits (hostExports,
@@ -8615,12 +8615,12 @@ namespace Tpetra {
                                          numImportPacketsPerLID);
         }
         else { // constant number of packets per LI
-          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
           Distor.doReversePostsAndWaits (hostExports,
@@ -8633,10 +8633,10 @@ namespace Tpetra {
           // Make sure that host has the latest version, since we're
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
-          destMat->numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          destMat->numExportPacketsPerLID_.sync_host ();
           Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
             getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-          destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          destMat->numImportPacketsPerLID_.sync_host ();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
           Distor.doPostsAndWaits (numExportPacketsPerLID, 1,
@@ -8649,12 +8649,12 @@ namespace Tpetra {
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destMat->reallocImportsIfNeeded (totalImportPackets);
-          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
           Distor.doPostsAndWaits (hostExports,
@@ -8663,12 +8663,12 @@ namespace Tpetra {
                                   numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
-          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          destMat->imports_.modify_host ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          destMat->exports_.sync_host ();
           Teuchos::ArrayView<const char> hostExports =
             getArrayViewFromDualView (destMat->exports_);
           Distor.doPostsAndWaits (hostExports,
@@ -8687,10 +8687,10 @@ namespace Tpetra {
 #endif
 
     // Backwards compatibility measure.  We'll use this again below.
-    destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+    destMat->numImportPacketsPerLID_.sync_host ();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
-    destMat->imports_.template sync<Kokkos::HostSpace> ();
+    destMat->imports_.sync_host ();
     Teuchos::ArrayView<const char> hostImports =
       getArrayViewFromDualView (destMat->imports_);
     size_t mynnz =

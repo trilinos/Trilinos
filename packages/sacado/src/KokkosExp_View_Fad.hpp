@@ -217,7 +217,11 @@ KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_view_fad< View<T,P...> >::value, unsigned >::type
 dimension_scalar(const View<T,P...>& view) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   return view.implementation_map().dimension_scalar();
+#else
+  return view.impl_map().dimension_scalar();
+#endif
 }
 
 template <typename Layout>
