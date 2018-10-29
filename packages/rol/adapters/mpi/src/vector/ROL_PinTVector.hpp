@@ -82,6 +82,7 @@ protected:
   // parallel distribution information
   int stepStart_;
   int stepEnd_;
+  int replicate_;
 
   mutable Ptr<PinTVector<Real>> dual_;
 
@@ -161,7 +162,7 @@ public:
 
   PinTVector(const PinTVector & v)
   {
-    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.steps_,v.stencil_);
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.steps_,v.stencil_,v.replicate_);
 
     // make sure you copy boundary exchange "end points" - handles initial conditions
     for(std::size_t i=0;i<leftVectors_.size();i++)
@@ -176,10 +177,11 @@ public:
              const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
              const Ptr<Vector<Real>> & localVector,
              int steps,
-             const std::vector<int> & stencil)
+             const std::vector<int> & stencil,
+             int replicate=1)
     : isInitialized_(false)
   {
-    initialize(comm,vectorComm,localVector,steps,stencil);
+    initialize(comm,vectorComm,localVector,steps,stencil,replicate);
   }
 
   virtual ~PinTVector() {}
@@ -188,8 +190,10 @@ public:
                   const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                   const Ptr<Vector<Real>> & localVector,
                   int steps,
-                  const std::vector<int> & stencil)
+                  const std::vector<int> & stencil,
+                  int replicate=1)
   {
+    replicate_     = replicate;
     communicators_ = comm;
     localVector_   = localVector;
     steps_         = steps;
@@ -200,7 +204,8 @@ public:
     allocateBoundaryExchangeVectors();
 
     std::vector<Ptr<Vector<Real>>> stepVectors;
-    stepVectors.resize(stepEnd_-stepStart_ + rightVectors_.size() + leftVectors_.size());
+    // replicate is a hack to allow virtual variables to be automatically allocated: this calculation is nonsense
+    stepVectors.resize(replicate*(stepEnd_-stepStart_-1)+ 1 + rightVectors_.size() + leftVectors_.size());
     
     // build up local vectors
     for(int i=0;i<(int)stepVectors.size();i++) {

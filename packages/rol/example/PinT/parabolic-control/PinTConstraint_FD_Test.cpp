@@ -55,9 +55,23 @@
 #include "ROL_PinTConstraint.hpp"
 #include "ROL_PinTVectorCommunication_StdVector.hpp"
 
-#include "Tanks_DynamicConstraint.hpp"
-#include "Tanks_SerialConstraint.hpp"
-#include "Tanks_ConstraintCheck.hpp"
+#include "dynamicConstraint.hpp"
+
+#define CHECK_ASSERT(expr) \
+    if(expr) { \
+      std::stringstream ss; \
+      ss << "Assertion failed on line " << __LINE__ << std::endl; \
+      throw std::logic_error(ss.str()); \
+    }
+
+#define CHECK_EQUALITY(expr1,expr2) \
+    if(expr1!=expr2) { \
+      std::stringstream ss; \
+      ss << myRank << ". Equality assertion failed on line " << __LINE__ << std::endl; \
+      ss << myRank << ".  " << expr1 << " != " << expr2 << std::endl; \
+      throw std::logic_error(ss.str()); \
+    } \
+    std::cout << myRank << ".  CHECK_EQUALITY line " << __LINE__ << " (passed): " << expr1 << " == " << expr2 << std::endl; \
 
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
@@ -111,8 +125,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 //  using ValidateFunction  = ROL::ValidateFunction<RealT>;
   using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
-  using State             = Tanks::StateVector<RealT>;
-  using Control           = Tanks::ControlVector<RealT>;
 
   int numRanks = -1;
   int myRank = -1;
@@ -125,69 +137,39 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
   ROL::Ptr<const ROL::PinTVectorCommunication<RealT>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<RealT>>();
 
+  // Parse input parameter list
+  ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
+  bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+  uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
+  uint nt         = pl->get("Temporal Discretization",   100); // Set temporal discretization.
+  RealT T         = pl->get("End Time",                  1.0); // Set end time.
+  RealT dt        = T/(static_cast<RealT>(nt)-1.0);
+
+  // Initialize objective function.
+  ROL::Ptr<ROL::DynamicConstraint<RealT>> dyn_con
+    = ROL::makePtr<Constraint_ParabolicControl<RealT>>(*pl);
+
+  // Create control vectors.
+  ROL::Ptr<ROL::StdVector<RealT>>         zk = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx+2));
+
+  // Create initial state vector.
+  ROL::Ptr<ROL::StdVector<RealT>> u0 = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtr<std::vector<RealT>>(nx,0.0));
+
   ROL::Ptr< ROL::PinTVector<RealT>> state;
   ROL::Ptr< ROL::PinTVector<RealT>> control;
 
-  auto  pl_ptr = ROL::getParametersFromXmlFile("tank-parameters.xml");
-  auto& pl     = *pl_ptr;
-  auto  con    = Tanks::DynamicConstraint<RealT>::create(pl);
-  auto  height = pl.get("Height of Tank",              10.0  );
-  auto  Qin00  = pl.get("Corner Inflow",               100.0 );
-  auto  h_init = pl.get("Initial Fluid Level",         2.0   );
-  auto  nrows  = static_cast<size_type>( pl.get("Number of Rows"   ,3) );
-  auto  ncols  = static_cast<size_type>( pl.get("Number of Columns",3) );
-  auto  Nt     = static_cast<size_type>( pl.get("Number of Time Steps",100) );
-  auto  T       = pl.get("Total Time", 20.0);
+  state        = ROL::buildStatePinTVector<RealT>(   communicators, vectorComm, nt,     u0); // for Euler, Crank-Nicolson, stencil = [-1,0]
+  control      = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, nt,     zk); // time discontinous, stencil = [0]
 
-  RealT dt = T/Nt;
-
-  ROL::Ptr<ROL::Vector<RealT>> initial_cond;
-  {
-    // control
-    auto  z      = Control::create( pl, "Control (z)"     );    
-    auto  vz     = z->clone( "Control direction (vz)"     );
-    auto  z_lo   = z->clone( "Control Lower Bound (z_lo)" );
-    auto  z_bnd  = makePtr<Bounds>( *z_lo );
-    z_lo->zero();
-
-    // State
-    auto u_new     = State::create( pl, "New state (u_new)"   );
-    auto u_old     = u_new->clone( "Old state (u_old)"        );
-    auto u_initial = u_new->clone( "Initial conditions"       );
-    auto u_new_lo  = u_new->clone( "State lower bound (u_lo)" );
-    auto u_new_up  = u_new->clone( "State upper bound (u_up)" );
-    auto u         = PartitionedVector::create( { u_old,    u_new    } );
-    auto u_lo      = PartitionedVector::create( { u_new_lo, u_new_lo } );
-    auto u_up      = PartitionedVector::create( { u_new_up, u_new_up } );
-  
-    u_lo->zero();
-    u_up->setScalar( height );
-    auto u_bnd = makePtr<Bounds>(u_new_lo,u_new_up);
-
-    (*z)(0,0) = Qin00;
-
-    for( size_type i=0; i<nrows; ++i ) {
-      for( size_type j=0; j<ncols; ++j ) {
-        u_old->h(i,j) = h_init;
-        u_initial->h(i,j) = h_init;
-      }
-    }
-
-    state        = ROL::buildStatePinTVector<RealT>(   communicators, vectorComm, Nt,     u_old);
-    control      = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, Nt,         z);
-
-    initial_cond = u_initial;
-    state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
-  }
-
-  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+  int numLocalSteps = control->numOwnedSteps();
+  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(numLocalSteps);
   for( size_type k=0; k<timeStamp->size(); ++k ) {
     timeStamp->at(k).t.resize(2);
     timeStamp->at(k).t.at(0) = k*dt;
     timeStamp->at(k).t.at(1) = (k+1)*dt;
   }
 
-  ROL::PinTConstraint<RealT> pint_constraint(con,initial_cond,timeStamp);
+  ROL::PinTConstraint<RealT> pint_constraint(dyn_con,u0,timeStamp);
 
   double tol = 1e-10;
 
@@ -200,18 +182,16 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     ROL::RandomizeVector<RealT>(*control);
     ROL::RandomizeVector<RealT>(*v_u);
 
-    pint_constraint.setGlobalScale(1.0);
+    pint_constraint.setGlobalScale(1.037);
     pint_constraint.checkSolve(*state,*control,*c,true,*outStream);
     pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
     RealT inv_1     = pint_constraint.checkInverseJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
+
+    CHECK_ASSERT(inv_1 > tol);
+
+    return;
+
     RealT adj_inv_1 = pint_constraint.checkInverseAdjointJacobian_1(*jv,*v_u,*state,*control,true,*outStream);
-
-    if(inv_1 > tol) {
-      std::stringstream ss;
-      ss << "Forward Jacobian inverse inversion FAILED: error = " << inv_1  << std::endl;
-      throw std::logic_error(ss.str());
-    }
-
     if(adj_inv_1 > tol) {
       std::stringstream ss;
       ss << "Adjoint Jacobian inverse inversion FAILED: error = " << adj_inv_1  << std::endl;

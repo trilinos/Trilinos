@@ -39,8 +39,8 @@ IF( TPL_ENABLE_MPI )
   )
   
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    example_03
-    SOURCES example_03.cpp
+    PinTConstraint_FD_Test 
+    SOURCES PinTConstraint_FD_Test.cpp
     ARGS PrintItAll
     NUM_MPI_PROCS 3
     PASS_REGULAR_EXPRESSION "TEST PASSED"

@@ -219,7 +219,8 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     initial_cond = u_initial;
   }
 
-  auto timeStamp = makePtr<std::vector<ROL::TimeStamp<Real>>>(state->numOwnedSteps());
+  int numLocalSteps = control->numOwnedSteps();
+  auto timeStamp = makePtr<std::vector<ROL::TimeStamp<Real>>>(numLocalSteps);
   for( size_type k=0; k<timeStamp->size(); ++k ) {
     timeStamp->at(k).t.resize(2);
     timeStamp->at(k).t.at(0) = k*dt;
