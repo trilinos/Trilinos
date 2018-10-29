@@ -51,13 +51,13 @@ TEST( stk_topology, lexicographical_smallest_permutation)
 
   char permutation_nodes[4] = "";
 
-  unsigned permutation_index = t.lexicographical_smallest_permutation(nodes);
-  t.permutation_nodes(nodes,permutation_index,permutation_nodes);
+  unsigned permutation_index = t.lexicographical_smallest_permutation((char*)nodes);
+  t.permutation_nodes((char*)nodes,permutation_index,(char*)permutation_nodes);
 
   EXPECT_EQ( std::string("abc"), std::string(permutation_nodes));
 
-  permutation_index = t.lexicographical_smallest_permutation(nodes,true); // only consider positive permutations (true means this)
-  t.permutation_nodes(nodes,permutation_index,permutation_nodes);
+  permutation_index = t.lexicographical_smallest_permutation((char*)nodes,true); // only consider positive permutations (true means this)
+  t.permutation_nodes((char*)nodes,permutation_index,(char*)permutation_nodes);
 
   EXPECT_EQ( std::string("acb"), std::string(permutation_nodes));
 }
@@ -73,7 +73,7 @@ TEST( stk_topology, side_node_ordinals)
     std::cout << "QUAD_4_2D side_nodes\n";
     for (unsigned s=0; s<t.num_sides(); ++s) {
       char side_nodes[9] = {};
-      t.side_nodes( nodes, s, side_nodes );
+      t.side_nodes( (char*)nodes, s, (char*)side_nodes );
       std::cout << "  " << side_nodes << std::endl;
     }
   }
@@ -83,7 +83,7 @@ TEST( stk_topology, side_node_ordinals)
     std::cout << "HEX_8 side_nodes\n";
     for (unsigned s=0; s<t.num_sides(); ++s) {
       char side_nodes[9] = {};
-      t.side_nodes( nodes, s, side_nodes );
+      t.side_nodes( (char*)nodes, s, (char*)side_nodes );
       std::cout << "  " << side_nodes << std::endl;
     }
   }
@@ -220,7 +220,7 @@ TEST( stk_topology, arrayMesh )
   const int nodes[] = {0,1,2,3,4,5,6,7};
   topology t = topology::HEX_8;
   int side_nodes[4] = {};
-  t.side_nodes( nodes, 0, side_nodes );
+  t.side_nodes( (int*)nodes, 0, (int*)side_nodes );
   EXPECT_EQ( 0, side_nodes[0] );
   EXPECT_EQ( 1, side_nodes[1] );
   EXPECT_EQ( 5, side_nodes[2] );

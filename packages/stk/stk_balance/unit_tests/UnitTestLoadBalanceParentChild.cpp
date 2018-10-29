@@ -251,20 +251,6 @@ private:
         return elements;
     }
 
-    void set_child_element_destination(stk::balance::DecompositionChangeList & decomp, stk::mesh::Entity childElement, const int destination) const
-    {
-        EXPECT_TRUE(decomp.get_bulk().is_valid(childElement));
-        decomp.set_entity_destination(childElement, destination);
-    }
-
-    void set_child_element_destination_from_parent_element(stk::balance::DecompositionChangeList & decomp, stk::mesh::Entity parentElement, const int destination) const
-    {
-          stk::mesh::EntityVector childElements = m_parentChildManager.get_child_elements(parentElement);
-          for (const auto & childElement : childElements) {
-             set_child_element_destination(decomp, childElement, destination);
-          }
-    }
-
     void move_related_entities_with_parent_element(stk::balance::DecompositionChangeList & decomp) const
     {
         stk::mesh::EntityProcVec changedEntities = decomp.get_all_partition_changes();
