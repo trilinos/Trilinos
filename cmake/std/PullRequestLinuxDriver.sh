@@ -109,7 +109,7 @@ do
   ierror=$?
   if [[ $ierror != 0 ]]; then
     echo "Source remote fetch failed. The error code was: $ierror"
-    if $i != $num_retries
+    if [[ $i != $num_retries ]]
     then
       echo "retry $i"
       sleep $(($i*20))

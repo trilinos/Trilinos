@@ -41,16 +41,6 @@ IF (${PACKAGE_NAME}_ENABLE_SerialNode)
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE( 
-  ${PACKAGE_NAME}_ENABLE_TPINode
-  HAVE_TPETRACLASSIC_THREADPOOL
-  "Enable KokkosClassic::DoNotUse::TPINode in ${PACKAGE_NAME}.  DO NOT USE THIS!  This Node type was deprecated long ago and has since been removed.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead."  
-  OFF
-  )
-IF (${PACKAGE_NAME}_ENABLE_TPINode)
-  MESSAGE(FATAL_ERROR "KokkosClassic::DoNotUse::TPINode was deprecated long ago and has since been removed.  Please use Kokkos::Compat::KokkosThreadsWrapperNode instead.")
-ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_TBBNode
   HAVE_TPETRACLASSIC_TBB
   "Enable KokkosClassic::DoNotUse::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option was deprecated long ago and has since been REMOVED."

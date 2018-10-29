@@ -141,7 +141,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix>  A = Pr->BuildMatrix();
 
     //
-    // Preconditionner configuration
+    // Preconditioner configuration
     //
 
     // ML parameter list
@@ -179,6 +179,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
 
       // Multigrid Hierarchy
+      if (xpetraParameters.GetLib() == Xpetra::UseEpetra)
+        params->set("use kokkos refactor", false);
       MLParameterListInterpreter mueLuFactory(*params);
       RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
@@ -279,6 +281,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     } // if (muelu)
 
+    if (params->isType<bool>("use kokkos refactor"))
+      params->remove("use kokkos refactor");
 
     if ( translatedmuelu ) {
        //
@@ -286,7 +290,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       //
 
       RCP<Teuchos::ParameterList> mueluParams = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(*params, "SA"));
+
       std::cout << MueLu::ML2MueLuParameterTranslator::translate(*params, "SA") << std::endl;
+
+      if (xpetraParameters.GetLib() == Xpetra::UseEpetra)
+        mueluParams->set("use kokkos refactor", false);
 
       // Multigrid Hierarchy
       ParameterListInterpreter mueLuFactory(*mueluParams);

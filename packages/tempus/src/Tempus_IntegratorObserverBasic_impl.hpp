@@ -56,7 +56,11 @@ observeAfterTakeStep(const Integrator<Scalar>& integrator){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAcceptedTimeStep(const Integrator<Scalar>& integrator){
+observeAfterCheckTimeStep(const Integrator<Scalar>& integrator){}
+
+template<class Scalar>
+void IntegratorObserverBasic<Scalar>::
+observeEndTimeStep(const Integrator<Scalar>& integrator){
 
   using Teuchos::RCP;
   RCP<SolutionStateMetaData<Scalar> > csmd =

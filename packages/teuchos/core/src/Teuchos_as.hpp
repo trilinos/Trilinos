@@ -482,7 +482,7 @@ namespace { // anonymous
       // let it pass through, per the rules for propagation of silent
       // NaN.  (Signaling NaN will signal, but that's OK.)
       TEUCHOS_TEST_FOR_EXCEPTION(
-        x < minVal || x > maxVal,
+        x < as<InputRealType>(minVal) || x > as<InputRealType>(maxVal),
         std::range_error,
         "realToReal<" << TypeNameTraits<OutputRealType>::name () << ", "
         << TypeNameTraits<InputRealType>::name () << ">: "
