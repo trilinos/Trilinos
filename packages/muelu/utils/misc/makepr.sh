@@ -96,12 +96,11 @@ else
 fi
 
 # Add labels
-echo "Adding labels: $labels"
 CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
-    echo "PR $PRN labeled as 'AT: AUTOMERGE'"
+    echo "PR $PRN labeled as: $labels"
 else
     echo "PR $PRN label failed"; 
     exit 1
