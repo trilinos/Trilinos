@@ -7,11 +7,13 @@ tokenfile=~/.githubOAuth/token
 
 TMPFILE=/tmp/.ac$$
 
-USAGE="Usage: `basename $0` [-hfrb] \"PR title\""
-OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}]"
+USAGE="Usage: `basename $0` [-hfrbl] \"PR title\""
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]"
+
+labels="\"AT: AUTOMERGE\""
 
 # Parse command line options.
-while getopts hvf:r:b: OPT; do
+while getopts hvf:r:b:l: OPT; do
     case "$OPT" in
         h)
             echo -e $USAGE
@@ -30,6 +32,9 @@ while getopts hvf:r:b: OPT; do
             ;;
         b)
             mainBranch=$OPTARG
+            ;;
+        l)
+            labels="$labels,\"$OPTARG\""
             ;;
         \?)
             # getopts issues an error message
@@ -90,8 +95,9 @@ else
     exit 1
 fi
 
-# Add the AT: AUTOMERGE tag
-CMD=$(echo curl -i -H $h -d \'[\"AT: AUTOMERGE\"]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
+# Add labels
+echo "Adding labels: $labels"
+CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
