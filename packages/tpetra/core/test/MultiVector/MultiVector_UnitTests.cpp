@@ -3917,7 +3917,11 @@ namespace {
     }
 
     Kokkos::deep_copy (X_host, THREE);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     X_gbl.template sync<device_type> ();
+#else
+    X_gbl.sync_device ();
+#endif
 
     {
       lclSuccess = success ? 1 : 0;
