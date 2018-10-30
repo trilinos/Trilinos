@@ -41,9 +41,6 @@ namespace stk { namespace topology_detail {
 template <typename OrdinalOutputIterator>
 struct fill_ordinal_container {
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename Ordinal>
   void operator()(Ordinal i)
   { *m_itr = i; ++m_itr; }
@@ -73,9 +70,6 @@ struct fill_ordinal_container< std::vector<T,A> >
 template <typename NodeArray, typename NodeOutputIterator>
 struct fill_node_container {
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename Ordinal>
   void operator()(Ordinal i)
   { *m_itr = m_nodes[i]; ++m_itr; }
@@ -96,6 +90,7 @@ struct fill_node_container<NodeArray, std::vector<T,A> > {
   void operator()(Ordinal i)
   { *m_itr = m_nodes[i]; ++m_itr; }
 
+  STK_FUNCTION
   fill_node_container( const NodeArray & nodes, std::vector<T,A> & vec)
     : m_nodes(nodes)
     , m_itr(vec.begin())

@@ -49,7 +49,7 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology.tcc"    // for topology::num_nodes, etc
+#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 namespace stk {
@@ -332,6 +332,20 @@ Part & MetaData::declare_part( const std::string & p_name )
   const EntityRank rank = InvalidEntityRank;
 
   return *m_part_repo.declare_part( p_name, rank );
+}
+
+const char** MetaData::reserved_state_suffix() const
+{
+  static const char* s_reserved_state_suffix[6] = {
+    "_STKFS_OLD",
+    "_STKFS_N",
+    "_STKFS_NM1",
+    "_STKFS_NM2",
+    "_STKFS_NM3",
+    "_STKFS_NM4"
+  };
+
+  return s_reserved_state_suffix;
 }
 
 Part & MetaData::declare_internal_part( const std::string & p_name )

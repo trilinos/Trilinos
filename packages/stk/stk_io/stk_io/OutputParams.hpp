@@ -125,6 +125,18 @@ public:
     void set_is_skin_mesh(const bool skinMesh) {m_isSkinMesh = skinMesh;}
 
 private:
+    OutputParams();
+    OutputParams(const OutputParams &);
+
+    void initialize_output_selectors()
+    {
+        for (unsigned rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; rank++) {
+            m_outputSelector[rank] = nullptr;
+        }
+    }
+
+    bool is_valid_rank(stk::topology::rank_t rank) const {return ((rank >= stk::topology::NODE_RANK) && (rank <= stk::topology::ELEM_RANK)); }
+
     Ioss::Region * m_ioRegion = nullptr;
     const mesh::BulkData &m_bulkData;
     const stk::mesh::Selector *m_subsetSelector = nullptr;
@@ -138,20 +150,6 @@ private:
     bool m_hasGhosting = false;
     bool m_hasAdaptivity = false;
     bool m_isSkinMesh = false;
-
-private:
-    OutputParams();
-    OutputParams(const OutputParams &);
-
-    void initialize_output_selectors()
-    {
-        for (unsigned rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; rank++) {
-            m_outputSelector[rank] = nullptr;
-        }
-    }
-
-    bool is_valid_rank(stk::topology::rank_t rank) const {return ((rank >= stk::topology::NODE_RANK) && (rank <= stk::topology::ELEM_RANK)); }
-
 };
 
 }//namespace io

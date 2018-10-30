@@ -66,6 +66,7 @@ public:
     }
     const_entity_iterator end_rank(EntityRank ent_rank) const
     {
+      clear_cache(ent_rank);
       return m_entities[ent_rank].end();
     }
 

@@ -53,6 +53,23 @@ project votd
   : build-dir $(stk_balance-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  stk_balance
+  stk_balance_m2n
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_balance_unit_tester
+  stk_balance_integration_tester
+  ;
+
 #
 # SECTION 2: Development install
 #
@@ -61,12 +78,12 @@ alias install-serial-targets
   :
   ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_balance_unit_tester
-    stk_balance_integration_tester
-    stk_balance_m2n
-    stk_balance
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
 
 #
@@ -91,19 +108,27 @@ install install-user-jamfile
 explicit install-exe-targets ;
 alias install-exe-targets : ;
 
-# Note that all Sierra executable are installed in a common bin directory,
-# not in a product-specific bin directory.
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
 explicit install-user-bin ;
 install install-user-bin
-  : stk_balance
-    stk_balance_m2n
-  : <location>$(install-bin-dir)
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Targets listed here will only be installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittests to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
   ;
 
 explicit install-user-include ;
 install install-user-include
   : [ path.glob-tree $(stk_balance-root)/stk_balance : *.h *.hpp *.H ]
-  : <location>$(install-root)/stk/stk_balance/include <install-source-root>$(stk_balance-root)/stk_balance
+  : <location>$(install-root)/stk/stk_balance/include/stk_balance <install-source-root>$(stk_balance-root)/stk_balance
   ;
 
 explicit install-user-lib ;
@@ -120,7 +145,7 @@ alias search_tolerance
   : # No sources defined for header-only libraries.
   : # No build requirements
   : # No default build
-  : <include>$(stk_balance-root)/stk_balance/search_tolerance
+  : <include>$(stk_balance-root-inc)/stk_balance/search_tolerance
   ;
 
 lib search_tolerance_algs
@@ -132,7 +157,7 @@ lib search_tolerance_algs
     search_tolerance
     /sierra/stk_mesh//stk_mesh_base
   :
-    <include>$(stk_balance-root)/stk_balance/search_tolerance_algs/
+    <include>$(stk_balance-root-inc)/stk_balance/search_tolerance_algs/
     [ ifuserbuild <file>$(stk_balance-root)/lib/libsearch_tolerance_algs.a ]
   :
   :
@@ -157,7 +182,7 @@ lib stk_balance_lib
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line
   :
-    <include>$(stk_balance-root)/stk_balance
+    <include>$(stk_balance-root-inc)/stk_balance
     [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a ]
   :
   :

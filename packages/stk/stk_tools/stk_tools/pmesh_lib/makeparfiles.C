@@ -577,18 +577,8 @@ void getMyNodeNeighbors(int my_node_neighbor[26],
         0, 1, 1, // Edge 12
         1, 1, 1};
 
-    // The neighbors array was for determining element communicatoin
-    // needs, until I figured out there won't be any. So for now, the following
-    // is not needed.
-    static int neighbors[26] = {0, 0, 0, 0, 1, 0, 0, 0, 0, // face -1
-        0, 1, 0, 1, 1, 0, 1, 0, // face 0
-        0, 0, 0, 0, 1, 0, 0, 0, 0};
-
-
-    int my_elem_neighbor[26];
     for(int j = 0;j < 26;j++){
         my_node_neighbor[j] = -1;
-        my_elem_neighbor[j] = -1;
     }
     for(int j = 0;j < 26;j++){
         int *cc = &all_neighbors[3 * j];
@@ -607,11 +597,7 @@ void getMyNodeNeighbors(int my_node_neighbor[26],
         // At this point, the cube does have a neighbor 'j'. So add it to the list.
         num_node_cmaps++;
         my_node_neighbor[j] = getCubeId(junk1, junk2, junk3, ncuts_x, ncuts_y, ncuts_z);
-        if(neighbors[j] != 0)
-            my_elem_neighbor[j] = my_node_neighbor[j];
-
     }
-    (void)((my_elem_neighbor)); // avoid set but unused variable compiler warning.
 }
 
 
@@ -905,8 +891,6 @@ void WriteNodeElemMaps(int num_nodes, int nelem_per_edge, int num_elem,
 int *nodemap = new int[num_nodes];
 // We have (xc,yc,zc) coordiante index of cube.
 // Translate to nodeindex (n_xc, n_yc, n_zc )
-    int t1 = num_nodes_globalx * nelem_per_edge; // numnodes per subcube for each increment in cube
-    int t2 = num_nodes_globalx * num_nodes_globaly * nelem_per_edge; // numnodes per x-y face per cube
     int n_xc = nelem_per_edge * xc;
     int n_yc = nelem_per_edge * yc;
     int n_zc = nelem_per_edge * zc;
@@ -927,10 +911,6 @@ int *nodemap = new int[num_nodes];
     delete[] nodemap;
     nodemap = 0;
     int *elemmap = new int[num_elem];
-    t1 = nelem_per_edge * ncuts_x; // num elem per x edge
-    t2 = nelem_per_edge * nelem_per_edge * ncuts_x * ncuts_y; // num elem per cube edge
-    (void) ((((t1)))); // avoid set but unused variable compiler warning.
-    (void) ((((t2)))); // avoid set but unused variable compiler warning.
 
     n_xc = nelem_per_edge * xc;
     n_yc = nelem_per_edge * yc;
@@ -992,9 +972,10 @@ void WriteNodesets(int xc, int exoid, int num_nodes_in_set,
     else // if no nodeset on this subdomain
     {
         ierr = ex_put_node_set_param(exoid, 2, 0, 0);
-        assert( ierr >= 0);
+        if (ierr < 0) {
+          assert( ierr >= 0);
+        }
     }
-    (void) ierr; // avoid compiler warning
 }
 
 
