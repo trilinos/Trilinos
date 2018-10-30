@@ -251,6 +251,10 @@ void testNGPThrowRequireMsg()
   });
 }
 
+#if (defined(__GNUC__) && (__GNUC__ > 4))
+#define NEW_ENOUGH_GCC
+#endif
+
 TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
 {
 #ifdef KOKKOS_HAVE_CUDA
@@ -259,7 +263,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
   //
   // testNGPThrowRequireMsg();
 #else
-#if (defined(__GNUC__) && (__GNUC__ > 4))
+#ifdef NEW_ENOUGH_GCC
 //For now, only test this on gcc compilers more recent than major version 4.
 //A Trilinos pre-push test platform, 4.8.4 seems to produce an abort instead
 //of a throw for this test.
@@ -292,14 +296,16 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   //
   // testNGPThrowRequireMsg();
 #else
+#ifdef NEW_ENOUGH_GCC
   try {
     testNGPThrowRequire();
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:283\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:287\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
+#endif
 #endif
 }
 
@@ -321,15 +327,17 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
   //
   // testNGPThrowRequireMsg();
 #else
+#ifdef NEW_ENOUGH_GCC
   try {
     testNGPThrowAssertMsg();
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:307\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:318\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
+#endif
 #endif
 }
 #endif
@@ -351,7 +359,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
   //
   // testNGPThrowRequireMsg();
 #else
+#ifdef NEW_ENOUGH_GCC
   EXPECT_NO_THROW(testNGPThrowAssertMsg());
+#endif
 #endif
 }
 #endif
@@ -360,7 +370,7 @@ void testNGPThrowErrorMsgIf()
 {
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
     bool test = true;
-    NGP_ThrowRequireMsg(test == true, "Error testing whatever");
+    NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
   });
 }
 
@@ -372,15 +382,17 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
   //
   // testNGPThrowRequireMsg();
 #else
+#ifdef NEW_ENOUGH_GCC
   try {
     testNGPThrowErrorMsgIf();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:358\n"
+    const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:373\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
+#endif
 #endif
 }
 
@@ -400,14 +412,16 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
   //
   // testNGPThrowRequireMsg();
 #else
+#ifdef NEW_ENOUGH_GCC
   try {
     testNGPThrowErrorIf();
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:391\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:403\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
+#endif
 #endif
 }
 
@@ -426,18 +440,16 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
   //
   // testNGPThrowRequireMsg();
 #else
+#ifdef NEW_ENOUGH_GCC
   try {
     testNGPThrowErrorMsg();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:417\n"
+    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:431\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
+#endif
 }
-
-
-
-
 
