@@ -58,7 +58,7 @@
 #include "dynamicConstraint.hpp"
 
 #define CHECK_ASSERT(expr) \
-    bool test = expr; \
+    {bool test = expr; \
     if(not test) { \
       std::stringstream ss; \
       ss << myRank << ". FAILED - Assertion failed on line " << __LINE__ << ": " #expr " " << std::endl; \
@@ -68,7 +68,7 @@
       std::stringstream ss; \
       ss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
       std::cout << ss.str() << std::endl; \
-    }
+    }}
 
 #define CHECK_EQUALITY(expr1,expr2) \
     if(expr1!=expr2) { \
@@ -147,7 +147,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
   bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
   uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
-  uint nt         = pl->get("Temporal Discretization",   100); // Set temporal discretization.
+  uint nt         = pl->get("Temporal Discretization",   128); // Set temporal discretization.
   RealT T         = pl->get("End Time",                  1.0); // Set end time.
   RealT dt        = T/(static_cast<RealT>(nt)-1.0);
 
@@ -267,12 +267,13 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector<RealT>(*r_1);
   ROL::RandomizeVector<RealT>(*r_2);
 
-  // check parallel communication for invertTimeStep methods
+  // check local forward and adjoint operators (invertTimeStep* and apply*Jacobian_1_leveled_approx)
   {
     using ROL::PinTVector;
 
     auto v  = state->clone();
     auto fv  = state->clone();
+    auto lfv  = state->clone();   // local fv
     auto afv  = state->clone();
     auto jv = state->clone();
     auto ajv = state->clone();
@@ -321,23 +322,34 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                            tol,
                                            level);
 
+    pint_constraint.applyJacobian_1_leveled_approx(*lfv,
+                                                   *fv,
+                                                   *state,
+                                                   *control,
+                                                   tol,
+                                                   level);
+
     RealT v_norm   = v->norm();
+    RealT jv_norm  = jv->norm();
 
     // check forward time step jacobian
     {
       fv->axpy(-1.0,*v);
-  
       RealT fv_norm  = fv->norm();
   
       if(myRank==0)
         *outStream << "Testing vector norm = " << v_norm  << " (error = " << fv_norm/v_norm << ")" << std::endl;
   
       // check norms
-      CHECK_ASSERT(fv_norm/v_norm <= 1e-13);
+      CHECK_ASSERT(fv_norm/v_norm <= 1e-12);
 
       if(myRank==0)
         *outStream << "Forward block Jacobi subdomain inversion PASSED with proc " 
                    << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
+
+      lfv->axpy(-1.0,*jv);
+      RealT lfv_norm  = lfv->norm();
+      CHECK_ASSERT(lfv_norm/jv_norm <= 1e-13);
     }
 
     pint_constraint.invertAdjointTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*afv),
@@ -346,6 +358,16 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                                   dynamic_cast<const PinTVector<RealT>&>(*control),
                                                   tol,
                                                   level);
+
+    lfv->zero();
+    pint_constraint.applyAdjointJacobian_1_leveled_approx(*lfv,
+                                                   *afv,
+                                                   *state,
+                                                   *control,
+                                                   tol,
+                                                   level);
+
+    RealT ajv_norm  = ajv->norm();
     
     // check backward time step jacobian
     {
@@ -355,11 +377,19 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       if(myRank==0)
         *outStream << "Testing vector norm = " << v_norm  << " (error = " << afv_norm/v_norm << ")" << std::endl;
 
-      CHECK_ASSERT(afv_norm/v_norm <= 1e-13);
+      CHECK_ASSERT(afv_norm/v_norm <= 1e-12);
   
       if(myRank==0)
         *outStream << "Adjoint block Jacobi subdomain inversion PASSED with proc " 
-                   << " (relative error = " << afv_norm / v_norm  << ")" << std::endl;
+                   << " (relative error = " << afv_norm / v_norm  << ")\n" << std::endl;
+      
+      lfv->axpy(-1.0,*ajv);
+      RealT lfv_norm  = lfv->norm();
+
+      if(myRank==0)
+        *outStream << "Testing vector norm = " << ajv_norm  << " (error = " << lfv_norm/ajv_norm << ")" << std::endl;
+
+      CHECK_ASSERT(lfv_norm/ajv_norm <= 1e-13);
     }
 
   }
