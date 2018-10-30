@@ -537,7 +537,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
         auto X_lcl_host = X.template getLocalView<Kokkos::HostSpace> ();
         auto Y_lcl_host = Y.template getLocalView<Kokkos::HostSpace> ();
 #else
-        auto X_lcl_host = X.getLocalView ();
+        auto X_lcl_host = X.getLocalViewHost ();
         auto Y_lcl_host = Y.getLocalViewHost ();
 #endif
         if (X_lcl_host.data () == Y_lcl_host.data ()) {

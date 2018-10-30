@@ -499,13 +499,13 @@ void RBILUK<MatrixType>::compute ()
   U_block_->template modify<Kokkos::HostSpace> ();
   D_block_->template modify<Kokkos::HostSpace> ();
 #else
-  L_block_->template sync<Kokkos::HostSpace> ();
-  U_block_->template sync<Kokkos::HostSpace> ();
-  D_block_->template sync<Kokkos::HostSpace> ();
+  L_block_->sync_host ();
+  U_block_->sync_host ();
+  D_block_->sync_host ();
   // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
-  L_block_->template modify<Kokkos::HostSpace> ();
-  U_block_->template modify<Kokkos::HostSpace> ();
-  D_block_->template modify<Kokkos::HostSpace> ();
+  L_block_->modify_host ();
+  U_block_->modify_host ();
+  D_block_->modify_host ();
 #endif
 
   Teuchos::Time timer ("RBILUK::compute");
