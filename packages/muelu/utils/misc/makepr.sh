@@ -7,10 +7,52 @@ tokenfile=~/.githubOAuth/token
 
 TMPFILE=/tmp/.ac$$
 
-# Check for a message
+USAGE="Usage: `basename $0` [-hfrbl] \"PR title\""
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]"
+
+labels="\"AT: AUTOMERGE\""
+
+# Parse command line options.
+while getopts hvf:r:b:l: OPT; do
+    case "$OPT" in
+        h)
+            echo -e $USAGE
+            echo -e $OPTDESCR
+            exit 0
+            ;;
+        v)
+            echo "`basename $0` version 0.1"
+            exit 0
+            ;;
+        f)
+            fork=$OPTARG
+            ;;
+        r)
+            repo=$OPTARG
+            ;;
+        b)
+            mainBranch=$OPTARG
+            ;;
+        l)
+            labels="$labels,\"$OPTARG\""
+            ;;
+        \?)
+            # getopts issues an error message
+            echo $USAGE >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Remove the options we parsed above.
+shift `expr $OPTIND - 1`
+
+# We want at least one non-option argument.
+# Remove this block if you don't need it.
 if [ $# -eq 0 ]; then
-    echo "A message must be included"
-    exit -1
+    echo -e $USAGE >&2
+    echo -e $OPTDESCR
+    exit 1
 fi
 
 # Make sure there are no diff'd files
@@ -53,12 +95,12 @@ else
     exit 1
 fi
 
-# Add the AT: AUTOMERGE tag
-CMD=$(echo curl -i -H $h -d \'[\"AT: AUTOMERGE\"]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
+# Add labels
+CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
-    echo "PR $PRN labeled as 'AT: AUTOMERGE'"
+    echo "PR $PRN labeled as: $labels"
 else
     echo "PR $PRN label failed"; 
     exit 1

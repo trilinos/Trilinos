@@ -119,6 +119,8 @@ public:
 
   Teuchos::RCP<const Rythmos::IntegratorBase<Scalar> > getRythmosIntegrator() const;
 
+  Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> > getTimeStepSolver() const;
+
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
   //@{
   /** \brief . */
