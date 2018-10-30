@@ -79,6 +79,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
   "-DTPL_ENABLE_SuperLU=ON"
+  "-DTPL_ENABLE_Netcdf=ON"
+  "-DTPL_ENABLE_HDF5=ON"
   "-DTPL_ENABLE_Avatar=ON"
   "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src;/home/csiefer/avatar/avatar/util/fclib-1.6.1/modules"
   "-DAvatar_LIBRARY_DIRS=/home/csiefer/avatar/build/src;/home/csiefer/avatar/build/util/fclib-1.6.1/modules"
