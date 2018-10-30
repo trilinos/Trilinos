@@ -194,9 +194,9 @@ evaluateFields(typename Traits::EvalData workset)
 
     // to compute tangents at qps (copied from GatherTangents)
     int numEdges = gatherFieldTangents.extent(1);
-    Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
+    Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,num_dim);
     for(int i=0;i<numEdges;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
+      Kokkos::DynRankView<double,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refEdgeTan_local("refEdgeTan_local",num_dim);
       Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<num_dim;d++)

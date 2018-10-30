@@ -40,81 +40,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_SCALAR_DECL_HPP
-#define PANZER_EVALUATOR_SCALAR_DECL_HPP
-
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
-
-#include "Panzer_Evaluator_Macros.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 
 namespace panzer {
-    
-/** This integrates a scalar quanity over each cell.
-  * It is useful for comptuing integral responses.
 
-  \verbatim
-    <ParameterList>
-      <Parameter name="Integral Name" type="string" value="<Name to give to the integral field>"/>
-      <Parameter name="Integrand Name" type="string" value="<Name of integrand>"/>
-      <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
-      <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
-      <Parameter name="Field Multipliers" type="RCP<const vector<string> >" value="<Other scalar multiplier fields>"/>
-    </ParameterList>
-  \endverbatim
-  */
-template<typename EvalT, typename Traits>
-class Integrator_Scalar
-  :
-  public panzer::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits>
-{
-  public:
+  HP::HP() :
+    vector_size_(1),
+    fad_vector_size_(1)
+  {
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(KOKKOS_ENABLE_CUDA)
+    fad_vector_size_ = 32;
+#endif
+#endif
+  }
 
-    Integrator_Scalar(
-      const Teuchos::ParameterList& p);
+  HP& HP::inst()
+  {
+    static HP hp;
+    return hp;
+  }
 
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
-    evaluateFields(
-      typename Traits::EvalData d);
-
-  private:
-
-    using ScalarT = typename EvalT::ScalarT;
-  
-  PHX::MDField<ScalarT> integral;  // result
-    
-  PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
-
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
-
-  std::size_t num_qp;
-  std::size_t quad_index;
-  int quad_order;
-
-  double multiplier;
-
-  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> tmp;
-
-public:
-  // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
-  { return integral.fieldTag(); }
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-
-}; // end of class Integrator_Scalar
-
+  void HP::overrideSizes(const int& default_vector_size,
+			 const int& fad_vector_size)
+  {
+    vector_size_ = default_vector_size;
+    fad_vector_size_ = fad_vector_size;
+  }
 
 }
-
-#endif

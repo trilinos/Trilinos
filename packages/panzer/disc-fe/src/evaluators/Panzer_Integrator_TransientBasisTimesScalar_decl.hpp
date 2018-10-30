@@ -92,7 +92,7 @@ class Integrator_TransientBasisTimesScalar
   std::string basis_name;
   std::size_t basis_index;
 
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> tmp;
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;

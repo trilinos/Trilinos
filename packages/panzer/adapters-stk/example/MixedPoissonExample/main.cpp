@@ -44,6 +44,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 #include "Teuchos_DefaultComm.hpp"
@@ -78,14 +79,16 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 
 #include "Epetra_MpiComm.h"
 
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 
-#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "Ifpack2_Factory.hpp"
 
 #include "Example_BCStrategy_Factory.hpp"
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -117,7 +120,13 @@ int main(int argc,char * argv[])
 
    Kokkos::initialize(argc,argv);
 
+   //panzer::HP::inst().overrideSizes(1,1,1);
+
    {
+     const auto stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Panzer MixedPoisson Test"));
+     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+     stackedTimer->start("Mixed Poisson");
+
   
      Teuchos::GlobalMPISession mpiSession(&argc,&argv);
      RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -129,7 +138,7 @@ int main(int argc,char * argv[])
      // Build command line processor
      ////////////////////////////////////////////////////
   
-     bool useTpetra = false;
+     bool useTpetra = true;
      int x_elements=10,y_elements=10,z_elements=10,hgrad_basis_order=1,hdiv_basis_order=1;
      std::string celltype = "Hex"; // or "Tet"
 
@@ -475,6 +484,14 @@ int main(int argc,char * argv[])
         lout << "HDiv Basis Order = " << hdiv_basis_order << std::endl;         
         lout << "Error = " << sqrt(resp_func->value) << std::endl;
      }
+
+     stackedTimer->stop("Mixed Poisson");
+     Teuchos::StackedTimer::OutputOptions options;
+     options.output_fraction = true;
+     options.output_minmax = true;
+     options.output_histogram = true;
+     options.num_histogram = 5;
+     stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
   
      // all done!
      /////////////////////////////////////////////////////////////
@@ -538,15 +555,21 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef Tpetra::Operator<double,int,panzer::Ordinal64> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
+  auto prec = Ifpack2::Factory::create<Tpetra::RowMatrix<double,int,panzer::Ordinal64>>("RELAXATION",tp_container.get_A(),4);
+  Teuchos::ParameterList precParams;
+  precParams.set("relaxation: type", "Gauss-Seidel");
+  prec->setParameters(precParams);
+  prec->initialize();
+  prec->compute();
+  problem->setRightPrec(prec);
   TEUCHOS_ASSERT(problem->setProblem());
 
-  typedef Belos::BlockGmresSolMgr<double,MV,OP> SolverType;
+  typedef Belos::PseudoBlockGmresSolMgr<double,MV,OP> SolverType;
 
   Teuchos::ParameterList belosList;
-  belosList.set( "Flexible Gmres", false );               // Flexible Gmres will be used to solve this problem
-  belosList.set( "Num Blocks", 250 );            // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Blocks", 3000 );            // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", 1 );              // Blocksize to be used by iterative solver
-  belosList.set( "Maximum Iterations", 1000 );       // Maximum number of iterations allowed
+  belosList.set( "Maximum Iterations", 3000 );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", 1 );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", 1e-9 );         // Relative convergence tolerance requested
   belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails );
