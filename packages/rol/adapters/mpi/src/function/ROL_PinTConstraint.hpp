@@ -420,7 +420,7 @@ public:
     else
       pint_u.getVectorPtr(-1)->set(*pint_u.getRemoteBufferPtr(-1));
 
-    size_t numSteps = timeStamps_->size()-1;
+    size_t numSteps = getTimeStampsByLevel(0)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_c = getStateVector(pint_c,s);   
@@ -482,7 +482,7 @@ public:
       pint_c.getVectorPtr(-1)->axpy(-1,*pint_u.getRemoteBufferPtr(-1));
     pint_c.getVectorPtr(-1)->scale(globalScale_);
 
-    size_t numSteps = timeStamps_->size()-1;
+    size_t numSteps = getTimeStampsByLevel(0)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_c = getStateVector(pint_c,s);   // strip out initial condition/constraint
@@ -543,7 +543,7 @@ public:
       pint_jv.getVectorPtr(-1)->axpy(-1,*pint_v.getRemoteBufferPtr(-1));
     pint_jv.getVectorPtr(-1)->scale(globalScale_);
 
-    size_t numSteps = timeStamps_->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_jv = getStateVector(pint_jv,s); 
@@ -597,7 +597,7 @@ public:
     pint_jv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1)); 
     pint_jv.getVectorPtr(-1)->scale(globalScale_);
 
-    size_t numSteps = timeStamps_->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_jv = getStateVector(pint_jv,s); 
@@ -657,7 +657,7 @@ public:
     // v0 - u0
     pint_jv.getVectorPtr(-1)->zero();
 
-    size_t numSteps = timeStamps_->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_jv = getStateVector(pint_jv,s); 
@@ -728,7 +728,7 @@ public:
       pint_ijv.getVectorPtr(-1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(-1));        
     }
 
-    size_t numSteps = timeStamps_->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_ijv = getStateVector(pint_ijv,s);   
@@ -770,58 +770,58 @@ public:
                                         const V& z, 
                                         Real& tol,
                                         int level) {
-    PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
-    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
-    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
-    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
-       // its possible we won't always want to cast to a PinT vector here
-      
-    assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
-    assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+     PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
+     const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+     const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+     // its possible we won't always want to cast to a PinT vector here
 
-    // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
-    pint_ajv.zeroAll();
+     assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+     assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
 
-    // communicate neighbors, these are block calls
-    pint_v.boundaryExchange();
-    pint_u.boundaryExchange();
-    pint_z.boundaryExchange();
+     // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
+     pint_ajv.zeroAll();
 
-    // int timeRank = pint_u.communicators().getTimeRank();
-    const std::vector<int> & stencil = pint_ajv.stencil();
+     // communicate neighbors, these are block calls
+     pint_v.boundaryExchange();
+     pint_u.boundaryExchange();
+     pint_z.boundaryExchange();
 
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
+     // int timeRank = pint_u.communicators().getTimeRank();
+     const std::vector<int> & stencil = pint_ajv.stencil();
 
-    int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
-    for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
-      auto part_ajv = getStateVector(pint_ajv,s);
-      auto part_v   = getStateVector(pint_v,s);   
-      auto part_u   = getStateVector(pint_u,s);   
-      auto part_z   = getControlVector(pint_z,s); 
+     // assert a forward stencil
+     assert(stencil.size()==2);
+     assert(stencil[0]==-1);
+     assert(stencil[1]== 0);
 
-      // handle the constraint adjoint: Required for correctly applying step adjoint
-      if(s<numSteps-1)
-        pint_ajv.getVectorPtr(2*s+1)->axpy(globalScale_,*pint_v.getVectorPtr(2*s+1));
+     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
+     for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
+       auto part_ajv = getStateVector(pint_ajv,s);
+       auto part_v   = getStateVector(pint_v,s);   
+       auto part_u   = getStateVector(pint_u,s);   
+       auto part_z   = getControlVector(pint_z,s); 
 
-      // compute the constraint for this subdomain
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+       // handle the constraint adjoint: Required for correctly applying step adjoint
+       if(s<numSteps-1)
+         pint_ajv.getVectorPtr(2*s+1)->axpy(globalScale_,*pint_v.getVectorPtr(2*s+1));
 
-      constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
+       // compute the constraint for this subdomain
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
 
-      // this is the remainder of the constraint application
-      if(s<numSteps-1)
-        pint_ajv.getVectorPtr(2*s)->axpy(-globalScale_,*pint_v.getVectorPtr(2*s+1));
-    }
+       constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
 
-    pint_ajv.getVectorPtr(-1)->axpy(globalScale_,*pint_v.getVectorPtr(-1));
-    pint_ajv.getRemoteBufferPtr(-1)->set(*pint_v.getVectorPtr(-1)); // this will be sent to the remote processor
-    pint_ajv.getRemoteBufferPtr(-1)->scale(-globalScale_);
+       // this is the remainder of the constraint application
+       if(s<numSteps-1)
+         pint_ajv.getVectorPtr(2*s)->axpy(-globalScale_,*pint_v.getVectorPtr(2*s+1));
+     }
 
-    // this sums from the remote buffer into the local buffer which is part of the vector
-    pint_ajv.boundaryExchangeSumInto();
+     pint_ajv.getVectorPtr(-1)->axpy(globalScale_,*pint_v.getVectorPtr(-1));
+     pint_ajv.getRemoteBufferPtr(-1)->set(*pint_v.getVectorPtr(-1)); // this will be sent to the remote processor
+     pint_ajv.getRemoteBufferPtr(-1)->scale(-globalScale_);
+
+     // this sums from the remote buffer into the local buffer which is part of the vector
+     pint_ajv.boundaryExchangeSumInto();
    }
 
    /**
@@ -859,7 +859,7 @@ public:
      assert(stencil[0]==-1);
      assert(stencil[1]== 0);
 
-     int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
+     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
      for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
        auto part_ajv = getStateVector(pint_ajv,s);
        auto part_v   = getStateVector(pint_v,s);   
@@ -926,7 +926,7 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
-    int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
+    int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
     for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
   
       auto part_ajv = getControlVector(pint_ajv,s);
@@ -991,7 +991,7 @@ public:
      pint_u.boundaryExchange();
      pint_iajv.boundaryExchangeSumInto(PinTVector<Real>::RECV_ONLY); // this is going to block
 
-     int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
+     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
 
      // on the last processor (with the last time step) this doesn't happen
      if(timeRank+1 < timeSize) {
@@ -1069,7 +1069,7 @@ public:
      pint_ijv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1));
      pint_ijv.getVectorPtr(-1)->scale(1.0/globalScale_);
 
-     size_t numSteps = timeStamps_->size()-1;
+     size_t numSteps = getTimeStampsByLevel(level)->size()-1;
      for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
        auto part_ijv = getStateVector(pint_ijv,s);   
@@ -1104,7 +1104,7 @@ public:
      v_copy->set(pint_v_src);
      PinTVector<Real> & pint_v = dynamic_cast<PinTVector<Real>&>(*v_copy);
      ///////////////////////////////////
-     int numSteps = Teuchos::as<int>(timeStamps_->size())-1;
+     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
 
      for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
        auto part_iajv = getStateVector(pint_iajv,s);   
