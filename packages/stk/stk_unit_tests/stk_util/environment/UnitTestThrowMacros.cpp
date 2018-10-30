@@ -259,6 +259,10 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
   //
   // testNGPThrowRequireMsg();
 #else
+#if (defined(__GNUC__) && (__GNUC__ > 4))
+//For now, only test this on gcc compilers more recent than major version 4.
+//A Trilinos pre-push test platform, 4.8.4 seems to produce an abort instead
+//of a throw for this test.
   try {
     testNGPThrowRequireMsg();
   }
@@ -268,6 +272,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
+#endif
 #endif
 }
 
@@ -292,7 +297,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:278\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:283\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
@@ -400,7 +405,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:386\n";
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:391\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
 #endif
@@ -425,7 +430,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
     testNGPThrowErrorMsg();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:412\n"
+    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:417\n"
                                "Error: Error testing whatever\n";
     EXPECT_STREQ(ex.what(), expectedMsg);
   }
