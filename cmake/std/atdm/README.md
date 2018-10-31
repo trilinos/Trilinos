@@ -28,7 +28,8 @@ build locally as described below.
 After [cloning the Trilinos git
 repo](https://github.com/trilinos/Trilinos/wiki/VC-%7C-Initial-Git-Setup) on
 one of the supported ATDM machines, a local configure of Trilinos enabling a
-few packages is performed as:
+few packages is performed using the bash shell (or opening a new bash shell
+using `bash -l` if bash is not the user's default shell) as:
 
 ```
 $ cd <some_build_dir>/
@@ -61,21 +62,21 @@ The `<job-name>` argument is a single string of the form
 `XXX-<keyword0>-<keyword1>-...`.  The standard order and format of this string
 is:
 
-    <system-name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
+    <system_name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
 
 Each of these keywords are described below.
 
-**`<system-name>`**: Typically, the system name is determined automatically by
-examining the `hostname` on the system and matching it to known hosts.
-Therefore, it is typically not necessary to specify `<system-name>` in the
-`<job-name>` keys.  But there are some cases where more then one
-`<system-name>` env are supported on the same machine.  For example, on CEE
+**`<system_name>`**: Typically, the system name is determined automatically by
+examining the `hostname` or other files on the system and matching to known hosts.
+Therefore, it is typically not necessary to specify `<system_name>` in the
+`<job-name>` keys string.  But there are some cases where more then one
+`<system_name>` env are supported on the same machine.  For example, on CEE
 LAN RHEL6 machines, both the <a href="#sems-rhel6-environment">SEMS RHEL6
 env</a> and <a href="#cee-rhel6-environment">CEE RHEL6 env</a> are supported.
-On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in the build job
-name, then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is
-included in the job name or non system name is given, then the `sems-rhel6`
-env will be selected by default.
+On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in `<job-name>`,
+then the `cee-rhel6` env will be selected.  But if `sems-rhel6` is
+included in the job name or no system name is given, then the `sems-rhel6`
+env will be selected by default on such machines.
 
 **`<compiler>`:** The following **lower case** `<job-name>` keywords specify
 the `<COMPILER>` variable include:
@@ -674,6 +675,11 @@ version of git.  The git commands that are used by TriBITS, Trilinos, and the
 ATDM Trilinos configuration and testing scripts should work with just about
 any version of git 2.0+.  Another approach would be for the user to
 (temporarily) edit their `~/.gitconfig` file to address the problems.
+
+Another problem occurs for developers who don't use bash but instead need to
+switch into a bash shell.  In this case, one must use `bash -l` so that the
+user's `.bash_profile` file will get sourced.  Without this, one can't load
+the modules when sourcing `Trilinos/cmake/std/atdm/load-env.sh`.
 
 
 ## Directory structure and contents

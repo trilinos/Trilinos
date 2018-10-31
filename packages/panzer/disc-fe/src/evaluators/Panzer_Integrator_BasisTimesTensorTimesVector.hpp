@@ -314,7 +314,7 @@ namespace panzer
        *  \brief The `Kokkos::View` representation of the tensor fields that are multiplied out in front of the integral
        *         (\f$ a(x) \f$).
        */
-      Kokkos::View<const ScalarT****> kokkosTensor_;
+    Kokkos::View<const ScalarT****,typename PHX::DevLayout<ScalarT>::type,PHX::Device> kokkosTensor_;
 
 
       /**

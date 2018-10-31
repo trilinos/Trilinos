@@ -37,17 +37,17 @@ FOREACH( ORDER 1 2 3)
     #   OUTPUT_FILE MPE-ConvTest-Hex-p${ORDER}-02
     TEST_0 EXEC MixedPoissonExample
       ARGS --x-elements=3 --y-elements=3 --z-elements=3 --hgrad-basis-order=${HGRAD_ORDER} --hdiv-basis-order=${HDIV_ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 3
       OUTPUT_FILE MPE-ConvTest-Hex-p${ORDER}-03
     TEST_1 EXEC MixedPoissonExample
       ARGS --x-elements=6 --y-elements=6 --z-elements=6 --hgrad-basis-order=${HGRAD_ORDER} --hdiv-basis-order=${HDIV_ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Hex-p${ORDER}-06
     TEST_2 EXEC MixedPoissonExample
       ARGS --x-elements=12 --y-elements=12 --z-elements=12 --hgrad-basis-order=${HGRAD_ORDER} --hdiv-basis-order=${HDIV_ORDER}
-      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
       NUM_MPI_PROCS 4
       OUTPUT_FILE MPE-ConvTest-Hex-p${ORDER}-12
     TEST_3 CMND python

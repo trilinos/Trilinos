@@ -236,7 +236,7 @@ namespace app {
     Ioss::NodeBlock *nb = node_blocks[0];
 
     std::vector<stk::mesh::Entity> nodes;
-    stk::io::get_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
+    stk::io::get_input_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
 
     /// \todo REFACTOR Application would probably store this field
     /// (and others) somewhere after the declaration instead of
@@ -418,7 +418,7 @@ namespace app {
 		      Ioss::Field::RoleType filter_role)
   {
     std::vector<stk::mesh::Entity> entities;
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk::io::get_input_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
@@ -482,13 +482,13 @@ namespace app {
     region.end_state(step);
   }
 
-  void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
+  void put_field_data(stk::io::OutputParams& params, stk::mesh::Part &part,
 		      stk::mesh::EntityRank part_type,
 		      Ioss::GroupingEntity *io_entity,
 		      Ioss::Field::RoleType filter_role)
   {
     std::vector<stk::mesh::Entity> entities;
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk::io::get_output_entity_list(io_entity, part_type, params, entities);
 
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
@@ -497,7 +497,7 @@ namespace app {
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
       if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
-	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, f->name(), filter_role);
+	stk::io::field_data_to_ioss(params.bulk_data(), f, entities, io_entity, f->name(), filter_role);
       }
     }
   }
@@ -510,7 +510,8 @@ namespace app {
     // Special processing for nodeblock (all nodes in model)...
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
-    app::put_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
+    stk::io::OutputParams params(region, bulk);
+    app::put_field_data(params, meta.universal_part(), stk::topology::NODE_RANK,
 			region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -535,11 +536,11 @@ namespace app {
 	    for (int i=0; i < block_count; i++) {
 	      Ioss::SideBlock *fb = sset->get_block(i);
 	      /// \todo REFACTOR Need filtering mechanism.
-	      app::put_field_data(bulk, *part, part_rank,
+	      app::put_field_data(params, *part, part_rank,
 				  fb, Ioss::Field::TRANSIENT);
 	    }
 	  } else {
-	    app::put_field_data(bulk, *part, part_rank,
+	    app::put_field_data(params, *part, part_rank,
 				entity, Ioss::Field::TRANSIENT);
 	  }
 	} else {

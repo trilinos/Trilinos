@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <cmath>
 #include <string>
+#include "UnitTestStkVectorUtils.hpp"
 
 namespace 
 {
@@ -15,39 +16,21 @@ const size_t TEN=10;
 
 double tol = 1.e-10;
 
-template <typename GoldT, typename VecT, unsigned Dim>
-void expect_equal(GoldT *goldValues, const stk::math::Vec<VecT, Dim> &vec)
-{
-    size_t i = 0;
-    for(VecT val : vec)
-    {
-        EXPECT_LT(i, Dim);
-        EXPECT_NEAR(goldValues[i], val, tol);
-        i++;
-    }
-    EXPECT_EQ(Dim, i);
-}
-
-template <typename GoldArray, typename VecT, unsigned Dim>
-void expect_equal(const GoldArray &goldValues, const stk::math::Vec<VecT, Dim> &vec)
-{
-    expect_equal(goldValues.data(), vec);
-}
+using namespace stk::math::unitTestStkVectorUtils;
 
 TEST(stk_math_stkVector,Construction_from_data_double_into_double)
 {
   double values[THREE] = { 2.0, 3.0, 4.0};
   stk::math::Vec<double, THREE> vec(values);
-  expect_equal(values, vec);
+  expect_equal(values, vec, tol);
 }
 
 TEST(stk_math_stkVector,Construction_from_data_double_into_float)
 {
   double values[THREE] = { 2.0, 3.0, 4.0};
   stk::math::Vec<float, THREE> vec(values);
-  expect_equal(values, vec);
+  expect_equal(values, vec, tol);
 }
-
 
 TEST(stk_math_stkVector, Construction_from_data_with_buffer1)
 {
@@ -84,7 +67,7 @@ TEST(stk_math_stkVector, Construction_from_data_with_null_buffer1)
 TEST(stk_math_stkVector, Construction_from_data_with_null_buffer2)
 {
   stk::math::Vec<double, TEN> vec((double*)nullptr, ZERO);
-  expect_equal(std::vector<double>(10, 0.0), vec);
+  expect_equal(std::vector<double>(10, 0.0), vec, tol);
 }
 
 TEST(stk_math_stkVector,Copy_Constructor)
@@ -92,7 +75,7 @@ TEST(stk_math_stkVector,Copy_Constructor)
   double values[THREE] = { 2.0, 3.0, 4.0};
   stk::math::Vec<double, THREE> vec(values);
   stk::math::Vec<double, THREE> copy(vec);
-  expect_equal(values, vec);
+  expect_equal(values, vec, tol);
 }
 
 TEST(stk_math_stkVector,Const_Copy_Constructor)
@@ -100,55 +83,55 @@ TEST(stk_math_stkVector,Const_Copy_Constructor)
   double values[THREE] = { 2.0, 3.0, 4.0};
   const stk::math::Vec<double, THREE> const_vec(values);
   const stk::math::Vec<double, THREE> const_copy(const_vec);
-  expect_equal(values, const_copy);
+  expect_equal(values, const_copy, tol);
 }
 
 TEST(stk_math_stkVector, Construction_doublevec_from_doublexyz)
 {
   double xyz[THREE] = {2.0, 3.0, 4.0};
   stk::math::Vec<double, THREE> vec(xyz[0], xyz[1], xyz[2]);
-  expect_equal(xyz, vec);
+  expect_equal(xyz, vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_floatvec_from_doublexyz)
 {
   double xyz[THREE] = {2.0, 3.0, 4.0};
   stk::math::Vec<float, THREE> vec(xyz[0], xyz[1], xyz[2]);
-  expect_equal(xyz, vec);
+  expect_equal(xyz, vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_doublevec_from_doublexy)
 {
   double xyz[TWO] = {2.0, 3.0};
   stk::math::Vec<double, TWO> vec(xyz[0], xyz[1]);
-  expect_equal(xyz, vec);
+  expect_equal(xyz, vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_floatvec_from_doublexy)
 {
   double xyz[TWO] = {2.0, 3.0};
   stk::math::Vec<float, TWO> vec(xyz[0], xyz[1]);
-  expect_equal(xyz, vec);
+  expect_equal(xyz, vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_doublevec_from_doublex)
 {
   double xyz[ONE] = {2.0};
   stk::math::Vec<double, ONE> vec(xyz[0]);
-  expect_equal(xyz, vec);
+  expect_equal(xyz, vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_floatvec_from_doublex)
 {
   double xyz[ONE] = {2.0};
   stk::math::Vec<float, ONE> vec(xyz[0]);
-  expect_equal(xyz, vec);
+  expect_equal(xyz, vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_default_constructor)
 {
   stk::math::Vec<float, TEN> vec;
-  expect_equal(std::vector<double>(10, 0.0), vec);
+  expect_equal(std::vector<double>(10, 0.0), vec, tol);
 }
 
 TEST(stk_math_stkVector, Construction_MemberInit_constructor)
@@ -167,7 +150,7 @@ TEST(stk_math_stkVector, operator_equals)
   stk::math::Vec<double, THREE> copy;
 
   copy = vec;
-  expect_equal(values, vec);
+  expect_equal(values, vec, tol);
 }
 
 TEST(stk_math_stkVector,const_operator_equals)
@@ -177,7 +160,7 @@ TEST(stk_math_stkVector,const_operator_equals)
   stk::math::Vec<double, THREE> copy;
 
   copy = vec;
-  expect_equal(values, copy);
+  expect_equal(values, copy, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_minus_equals)
@@ -189,8 +172,8 @@ TEST(stk_math_stkVector, const_operator_minus_equals)
 
   vec1 -= vec2; // This is what we want to test.
 
-  expect_equal(gold_vec1, vec1);
-  expect_equal(gold_vec2, vec2);
+  expect_equal(gold_vec1, vec1, tol);
+  expect_equal(gold_vec2, vec2, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_plus_equals)
@@ -202,8 +185,8 @@ TEST(stk_math_stkVector, const_operator_plus_equals)
 
   vec1 += vec2; // This is what we want to test.
 
-  expect_equal(gold_vec1, vec1);
-  expect_equal(gold_vec2, vec2);
+  expect_equal(gold_vec1, vec1, tol);
+  expect_equal(gold_vec2, vec2, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_multiply_equals)
@@ -222,9 +205,9 @@ TEST(stk_math_stkVector, const_operator_multiply_equals)
   stk::math::Vec<double, THREE> vec3(orig);
   vec3*= -.1;
 
-  expect_equal(gold1, vec1);
-  expect_equal(gold2, vec2);
-  expect_equal(gold3, vec3);
+  expect_equal(gold1, vec1, tol);
+  expect_equal(gold2, vec2, tol);
+  expect_equal(gold3, vec3, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_divide_equals)
@@ -239,8 +222,8 @@ TEST(stk_math_stkVector, const_operator_divide_equals)
   stk::math::Vec<double, THREE> vec2(orig);
   vec2 /= -2.;
 
-  expect_equal(gold1, vec1);
-  expect_equal(gold2, vec2);
+  expect_equal(gold1, vec1, tol);
+  expect_equal(gold2, vec2, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_unary_negative)
@@ -251,7 +234,7 @@ TEST(stk_math_stkVector, const_operator_unary_negative)
 
   answer = -vec;
 
-  expect_equal(gold, answer);
+  expect_equal(gold, answer, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_subtract)
@@ -265,8 +248,8 @@ TEST(stk_math_stkVector, const_operator_subtract)
   answer1 = vec1 - vec2;
   answer2 = vec2 - vec1;
 
-  expect_equal(gold1, answer1);
-  expect_equal(gold2, answer2);
+  expect_equal(gold1, answer1, tol);
+  expect_equal(gold2, answer2, tol);
 }
 
 TEST(stk_math_stkVector, const_operator_add)
@@ -279,8 +262,8 @@ TEST(stk_math_stkVector, const_operator_add)
   answer1 = vec1 + vec2;
   answer2 = vec2 + vec1;
 
-  expect_equal(gold, answer1);
-  expect_equal(gold, answer2);
+  expect_equal(gold, answer1, tol);
+  expect_equal(gold, answer2, tol);
 }
 
 TEST(stk_math_stkVector, zero_length)
@@ -335,7 +318,7 @@ TEST(stk_math_stkVector, unitize)
 {
     stk::math::Vec<double, THREE> vec(0., 2., 0.);
     vec.unitize();
-    expect_equal(std::vector<double>{0., 1., 0.}, vec);
+    expect_equal(std::vector<double>{0., 1., 0.}, vec, tol);
 
     stk::math::Vec<double, THREE> zeroVec(0., 0., 0.);
     zeroVec.unitize();
@@ -345,12 +328,12 @@ TEST(stk_math_stkVector, unitize)
 TEST(stk_math_stkVector, unitVector)
 {
     stk::math::Vec<double, THREE> vec(0., 2., 0.);
-    expect_equal(std::vector<double>{0., 1., 0.}, vec.unit_vector());
-    expect_equal(std::vector<double>{0., 2., 0.}, vec);
+    expect_equal(std::vector<double>{0., 1., 0.}, vec.unit_vector(), tol);
+    expect_equal(std::vector<double>{0., 2., 0.}, vec, tol);
 
     stk::math::Vec<double, THREE> zeroVec(0., 0., 0.);
     expect_vec_is_nan(zeroVec.unit_vector());
-    expect_equal(std::vector<double>{0., 0., 0.}, zeroVec);
+    expect_equal(std::vector<double>{0., 0., 0.}, zeroVec, tol);
 }
 
 TEST(stk_math_stkVector, length)
@@ -449,21 +432,21 @@ TEST(stk_math_stkVector, scalar_times_vector)
 {
     const stk::math::Vec<double, THREE> vec(0., 1., 2.);
     const stk::math::Vec<double, THREE> result = 2 * vec;
-    expect_equal(std::vector<double>{0., 2., 4.}, result);
+    expect_equal(std::vector<double>{0., 2., 4.}, result, tol);
 }
 
 TEST(stk_math_stkVector, vector_times_scalar)
 {
     const stk::math::Vec<double, THREE> vec(0., 1., 2.);
     const stk::math::Vec<double, THREE> result = vec * -2;
-    expect_equal(std::vector<double>{0., -2., -4.}, result);
+    expect_equal(std::vector<double>{0., -2., -4.}, result, tol);
 }
 
 TEST(stk_math_stkVector, vector_divided_by_scalar)
 {
     const stk::math::Vec<double, THREE> vec(0., 1., 2.);
     const stk::math::Vec<double, THREE> result = vec / 2;
-    expect_equal(std::vector<double>{0., 0.5, 1.}, result);
+    expect_equal(std::vector<double>{0., 0.5, 1.}, result, tol);
 }
 
 TEST(stk_math_stkVector, dot_product)
@@ -477,33 +460,33 @@ TEST(stk_math_stkVector, cross_product)
 {
     const stk::math::Vec<double, THREE> a(1., 0., 0.);
     const stk::math::Vec<double, THREE> b(0., 1., 0.);
-    expect_equal(std::vector<double>{0., 0., 1.}, Cross(a,b));
+    expect_equal(std::vector<double>{0., 0., 1.}, Cross(a,b), tol);
     const stk::math::Vec<double, THREE> c(1., 1., 1.);
     const stk::math::Vec<double, THREE> d(2., 2., 2.);
-    expect_equal(std::vector<double>{0., 0., 0.}, Cross(c,d));
+    expect_equal(std::vector<double>{0., 0., 0.}, Cross(c,d), tol);
     const stk::math::Vec<double, THREE> zeroVec(0., 0., 0.);
-    expect_equal(std::vector<double>{0., 0., 0.}, Cross(zeroVec,d));
+    expect_equal(std::vector<double>{0., 0., 0.}, Cross(zeroVec,d), tol);
 }
 
 TEST(stk_math_stkVector, cross_product_with_unit_x)
 {
-    expect_equal(std::vector<double>{0., 0., -1.}, crossX(stk::math::Vec<double, THREE>(0., 1., 0.)));
-    expect_equal(std::vector<double>{0., -1., 0.}, crossX(stk::math::Vec<double, THREE>(0., 0., -1.)));
-    expect_equal(std::vector<double>{0., 0., 0.}, crossX(stk::math::Vec<double, THREE>(-1., 0., 0.)));
+    expect_equal(std::vector<double>{0., 0., -1.}, crossX(stk::math::Vec<double, THREE>(0., 1., 0.)), tol);
+    expect_equal(std::vector<double>{0., -1., 0.}, crossX(stk::math::Vec<double, THREE>(0., 0., -1.)), tol);
+    expect_equal(std::vector<double>{0., 0., 0.}, crossX(stk::math::Vec<double, THREE>(-1., 0., 0.)), tol);
 }
 
 TEST(stk_math_stkVector, cross_product_with_unit_y)
 {
-    expect_equal(std::vector<double>{0., 0., 1.}, crossY(stk::math::Vec<double, THREE>(1., 0., 0.)));
-    expect_equal(std::vector<double>{1., 0., 0.}, crossY(stk::math::Vec<double, THREE>(0., 0., -1.)));
-    expect_equal(std::vector<double>{0., 0., 0.}, crossY(stk::math::Vec<double, THREE>(0., 6., 0.)));
+    expect_equal(std::vector<double>{0., 0., 1.}, crossY(stk::math::Vec<double, THREE>(1., 0., 0.)), tol);
+    expect_equal(std::vector<double>{1., 0., 0.}, crossY(stk::math::Vec<double, THREE>(0., 0., -1.)), tol);
+    expect_equal(std::vector<double>{0., 0., 0.}, crossY(stk::math::Vec<double, THREE>(0., 6., 0.)), tol);
 }
 
 TEST(stk_math_stkVector, cross_product_with_unit_z)
 {
-    expect_equal(std::vector<double>{0., -1., 0.}, crossZ(stk::math::Vec<double, THREE>(1., 0., 0.)));
-    expect_equal(std::vector<double>{1., 0., 0.}, crossZ(stk::math::Vec<double, THREE>(0., 1., 0.)));
-    expect_equal(std::vector<double>{0., 0., 0.}, crossZ(stk::math::Vec<double, THREE>(0., 0., -13.)));
+    expect_equal(std::vector<double>{0., -1., 0.}, crossZ(stk::math::Vec<double, THREE>(1., 0., 0.)), tol);
+    expect_equal(std::vector<double>{1., 0., 0.}, crossZ(stk::math::Vec<double, THREE>(0., 1., 0.)), tol);
+    expect_equal(std::vector<double>{0., 0., 0.}, crossZ(stk::math::Vec<double, THREE>(0., 0., -13.)), tol);
 }
 
 TEST(stk_math_stkVector, to_string)
@@ -512,5 +495,14 @@ TEST(stk_math_stkVector, to_string)
     EXPECT_EQ("3 5 7", someVec.to_string());
 }
 
+TEST(stk_math_stkVector, whenSettingVectorToInvalid_makeSureItIsInvalid)
+{
+    stk::math::Vector3d someVec;
+    EXPECT_TRUE(someVec.is_valid());
+    someVec.set_invalid();
+    EXPECT_FALSE(someVec.is_valid());
+    someVec = {1,2,3};
+    EXPECT_TRUE(someVec.is_valid());
+}
 }
 

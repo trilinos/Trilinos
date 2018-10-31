@@ -51,8 +51,23 @@ else
 fi
 # NOTE: Above, we use 1/2 as many executors as
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
-  module load sparc-dev/gcc
+if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]] ; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
+    export ATDM_CONFIG_COMPILER=GNU-4.9.3
+  fi
+  if [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3" ]] ; then
+    module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
+  elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
+    module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
+  else
+    echo
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version"
+    echo "*** of GNU on this system!  Supported versions include 'gnu-4.9.3'"
+    echo "*** and 'gnu-7.2.0'"
+    echo "***"
+    return
+  fi
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
@@ -124,6 +139,13 @@ export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
+
+# Set the direct libs for HDF5 and NetCDF in case we use that option for
+# building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
+
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+
+export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
 
 export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 

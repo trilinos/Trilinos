@@ -103,6 +103,17 @@ unset ATDM_CONFIG_MPI_PRE_FLAGS
 unset ATDM_CONFIG_MPI_POST_FLAG
 unset ATDM_CONFIG_COMPLETED_ENV_SETUP
 
+# Set the location for NVCC wrapper for source dir unless this is from an
+# install of Trilinos!
+if [[ "${ATDM_SCRIPT_DIR}" == *"atdm-trilinos" ]] ; then
+  # This is being invoked from an install so use the installed nvcc_wrapper we
+  # installed in this installation directory
+  export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_SCRIPT_DIR}/nvcc_wrapper"
+else
+  # This is from the Trilinos source tree so grab nvcc_wrapper from there!
+  export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_CONFIG_TRILNOS_DIR}/packages/kokkos/bin/nvcc_wrapper"
+fi
+
 source $ATDM_SCRIPT_DIR/utils/atdm_config_helper_funcs.sh
 
 source $ATDM_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh

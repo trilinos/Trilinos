@@ -323,13 +323,10 @@ std::string field_prefix(stk::mesh::EntityRank rank)
   {
   case stk::topology::NODE_RANK:
     return "Node";
-    break;
   case stk::topology::ELEM_RANK:
     return "Element";
-    break;
   case stk::topology::FACE_RANK:
     return "Face";
-    break;
   default:
     throw std::runtime_error("Unknown field prefix");
   }
