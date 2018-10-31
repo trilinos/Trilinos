@@ -55,7 +55,7 @@ private:
     const SC one  = STS::one ();
     const mag_type eps = STS::eps ();
     const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
-    const bool computeRitzValues = false;
+    const bool computeRitzValues = input.computeRitzValues;
 
     // initialize output parameters
     SolverOutput<SC> output {};

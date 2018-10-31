@@ -142,7 +142,7 @@ private:
     int restart = input.resCycle;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-    const bool computeRitzValues = false;
+    const bool computeRitzValues = input.computeRitzValues;
 
     SolverOutput<SC> output {};
     // initialize output parameters
