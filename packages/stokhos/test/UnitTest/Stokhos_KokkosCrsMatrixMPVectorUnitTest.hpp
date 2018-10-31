@@ -546,7 +546,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
     array_type("ay_expected", fem_length, stoch_length);
 #else
   array_type ay_expected =
-    RankTypeSelector<array_type, ordinal_type, array_type::traits::rank_dynamic>::create_view("ay_expected", fem_length, stoch_length)
+    RankTypeSelector<array_type, ordinal_type, array_type::traits::rank_dynamic>::create_view("ay_expected", fem_length, stoch_length);
 #endif
   typename array_type::HostMirror hay_expected =
     Kokkos::create_mirror_view(ay_expected);
