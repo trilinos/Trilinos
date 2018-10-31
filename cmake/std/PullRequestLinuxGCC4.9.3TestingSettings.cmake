@@ -22,4 +22,5 @@ include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 #Adding warnings as errors flags to this PR build
 #This should fail. Plan to break down package by package
-set (CMAKE_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor")
+#Need to make sure this adds rather than overwrites flags
+set (CMAKE_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
