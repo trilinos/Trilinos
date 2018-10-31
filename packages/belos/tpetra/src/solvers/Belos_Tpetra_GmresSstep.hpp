@@ -122,13 +122,17 @@ public:
     base_type::Gmres (),
     stepSize_ (1),
     tsqr_ (Teuchos::null)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   GmresSstep (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
     stepSize_ (1),
     tsqr_ (Teuchos::null)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   virtual ~GmresSstep ()
   {}
@@ -180,7 +184,7 @@ private:
     int step = stepSize;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
-    const bool computeRitzValues = true;
+    const bool computeRitzValues = input.computeRitzValues;
 
     // initialize output parameters
     SolverOutput<SC> output {};

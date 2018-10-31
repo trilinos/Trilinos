@@ -29,11 +29,15 @@ private:
 public:
   GmresPipeline () :
     base_type::Gmres ()
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   GmresPipeline (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   virtual ~GmresPipeline ()
   {}

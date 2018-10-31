@@ -27,12 +27,16 @@ public:
   GmresSingleReduce () :
     base_type::Gmres (),
     stepSize_ (1)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   GmresSingleReduce (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A),
     stepSize_ (1)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   virtual ~GmresSingleReduce ()
   {}
