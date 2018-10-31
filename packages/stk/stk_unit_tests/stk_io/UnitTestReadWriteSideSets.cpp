@@ -115,7 +115,7 @@ void create_new_sideset_and_faces(stk::unit_test_util::sideset::BulkDataTester &
   {
     stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEMENT_RANK, static_cast<stk::mesh::EntityId>(newSideSet[i].elem_id));
     EXPECT_TRUE(bulk.is_valid(element));
-    sideSet.push_back({element, static_cast<stk::mesh::ConnectivityOrdinal>(newSideSet[i].side_ordinal)});
+    sideSet.add({element, static_cast<stk::mesh::ConnectivityOrdinal>(newSideSet[i].side_ordinal)});
   }
 
   bulk.create_side_entities(sideSet, parts);
@@ -195,7 +195,7 @@ void delete_sides_from_sideset(stk::unit_test_util::sideset::BulkDataTester& bul
     stk::mesh::SideSet& sideSet = bulk.get_sideset(*surface_part);
     for(const stk::mesh::SideSetEntry &entry : deletedSideset)
     {
-        stk::mesh::SideSet::iterator iter = std::find(sideSet.begin(), sideSet.end(), entry);
+        auto iter = std::find(sideSet.begin(), sideSet.end(), entry);
         EXPECT_TRUE(iter != sideSet.end());
         sideSet.erase(iter);
     }
@@ -250,9 +250,9 @@ TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
       stk::mesh::SideSet &sideSet = bulk.create_sideset(*parts[0]);
 
       if(bulk.parallel_rank() == 0)
-          sideSet.push_back({bulk.get_entity(stk::topology::ELEMENT_RANK, 1u), 5});
+          sideSet.add({bulk.get_entity(stk::topology::ELEMENT_RANK, 1u), 5});
       else
-          sideSet.push_back({bulk.get_entity(stk::topology::ELEMENT_RANK, 2u), 4});
+          sideSet.add({bulk.get_entity(stk::topology::ELEMENT_RANK, 2u), 4});
 
       bulk.create_side_entities(sideSet, parts);
       test_output_sideset(bulk,"modified_ADA.e", stk::unit_test_util::sideset::READ_ALREADY_DECOMPOSED);

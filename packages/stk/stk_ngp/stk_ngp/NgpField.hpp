@@ -87,6 +87,10 @@ public:
     {
     }
 
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field_in)
+    {
+    }
+
     stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
 
     unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
@@ -208,6 +212,15 @@ public:
         copy_data(buckets, field, [](T &staticData, T &fieldData){fieldData = staticData;});
     }
 
+    void copy_host_to_device(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
+    {
+        stk::mesh::Selector selector = stk::mesh::selectField(field);
+        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
+        copy_data(buckets, field, [](T &staticData, T &fieldData){staticData = fieldData;});
+
+        Kokkos::deep_copy(deviceData, hostData);
+    }
+
     STK_FUNCTION StaticField(const StaticField &) = default;
     STK_FUNCTION ~StaticField(){}
 
@@ -230,7 +243,7 @@ public:
         return deviceData(entity.bucket->bucket_id(), ORDER_INDICES(entity.bucketOrd, component));
     }
 
-    template <typename Mesh> STK_FUNCTION
+    template <typename Mesh>
     void set_all(const Mesh& ngpMesh, const T& value)
     {
         Kokkos::deep_copy(hostData, value);
@@ -323,20 +336,20 @@ public:
     STK_FUNCTION ~ConstStaticField(){}
 
     template <typename Mesh> STK_FUNCTION
-    const T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    T get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         stk::mesh::FastMeshIndex fastIndex = ngpMesh.fast_mesh_index(entity);
         return get(fastIndex, component);
     }
 
     STK_FUNCTION
-    const T& get(stk::mesh::FastMeshIndex entity, int component) const
+    T get(stk::mesh::FastMeshIndex entity, int component) const
     {
         return constDeviceData(entity.bucket_id, ORDER_INDICES(entity.bucket_ord, component));
     }
 
     template <typename MeshIndex> STK_FUNCTION
-    const T& get(MeshIndex entity, int component) const
+    T get(MeshIndex entity, int component) const
     {
         return constDeviceData(entity.bucket->bucket_id(), ORDER_INDICES(entity.bucketOrd, component));
     }

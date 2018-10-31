@@ -44,6 +44,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
 #include "Teuchos_DefaultComm.hpp"
@@ -165,6 +166,10 @@ int main(int argc,char * argv[])
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
+
+   const auto stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Panzer MixedPoisson Test"));
+   Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+   stackedTimer->start("Curl Laplacian");
 
    // Build command line processor
    ////////////////////////////////////////////////////
@@ -578,6 +583,14 @@ int main(int argc,char * argv[])
       lout << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
       lout << "HCurl Error = " << sqrt(h1_resp_func->value) << std::endl;
    }
+
+   stackedTimer->stop("Curl Laplacian");
+   Teuchos::StackedTimer::OutputOptions options;
+   options.output_fraction = true;
+   options.output_minmax = true;
+   options.output_histogram = true;
+   options.num_histogram = 5;
+   stackedTimer->report(std::cout, Teuchos::DefaultComm<int>::getComm(), options);
 
    // all done!
    /////////////////////////////////////////////////////////////

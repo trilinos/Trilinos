@@ -79,7 +79,7 @@ public:
     STK_FUNCTION
     ngp::ConstField<T> get_field_old_state(stk::mesh::FieldState state) const
     {
-        ThrowRequire(state != stk::mesh::StateNew);
+        NGP_ThrowRequire(state != stk::mesh::StateNew);
         return fieldOldStates[state-1];
     }
     STK_FUNCTION
@@ -122,7 +122,7 @@ public:
     }
 
     STK_FUNCTION
-    const T& get_old(stk::mesh::FieldState state, const ngp::Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    T get_old(stk::mesh::FieldState state, const ngp::Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         return MultistateField<T>::get_field_old_state(state).get(ngpMesh, entity, component);
     }
@@ -134,7 +134,7 @@ public:
     }
 
     STK_FUNCTION
-    const T& get_old(stk::mesh::FieldState state, ngp::Mesh::MeshIndex entity, int component) const
+    T get_old(stk::mesh::FieldState state, ngp::Mesh::MeshIndex entity, int component) const
     {
         return MultistateField<T>::get_field_old_state(state).get(entity, component);
     }

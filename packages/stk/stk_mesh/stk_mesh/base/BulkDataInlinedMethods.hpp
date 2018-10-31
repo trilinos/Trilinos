@@ -686,7 +686,7 @@ inline bool BulkData::element_side_polarity( const Entity elem ,
             : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
 
     std::vector<unsigned> side_map(side_top.num_nodes());
-    elem_top.side_node_ordinals( local_side_id, side_map.begin());
+    elem_top.side_node_ordinals( local_side_id, side_map.data());
 
     Entity const *elem_nodes = begin_nodes(elem);
     Entity const *side_nodes = begin_nodes(side);

@@ -20,7 +20,7 @@ FaceCreator::~FaceCreator()
 
 }
 
-void FaceCreator::fill_side_ordinals(size_t element_side_index, const std::vector<SideSetEntry> &skinnedSideSet, std::vector<int>& ordinals)
+void FaceCreator::fill_side_ordinals(size_t element_side_index, const SideSet &skinnedSideSet, std::vector<int>& ordinals)
 {
     size_t j=element_side_index;
     do
@@ -31,7 +31,7 @@ void FaceCreator::fill_side_ordinals(size_t element_side_index, const std::vecto
     while(j<skinnedSideSet.size() && skinnedSideSet[j].element==skinnedSideSet[element_side_index].element);
 }
 
-std::vector<int> FaceCreator::get_side_ordinals_of_element(size_t element_side_index, const std::vector<SideSetEntry> &skinnedSideSet)
+std::vector<int> FaceCreator::get_side_ordinals_of_element(size_t element_side_index, const SideSet &skinnedSideSet)
 {
     std::vector<int> ordinals;
     const int max_num_sides_per_any_element = 20;
@@ -40,7 +40,7 @@ std::vector<int> FaceCreator::get_side_ordinals_of_element(size_t element_side_i
     return ordinals;
 }
 
-size_t FaceCreator::create_face_entities_per_element(size_t element_side_index, const std::vector<SideSetEntry> &skinnedSideSet, const stk::mesh::PartVector& skinParts, std::vector<stk::mesh::sharing_info> &sharedModified)
+size_t FaceCreator::create_face_entities_per_element(size_t element_side_index, const SideSet &skinnedSideSet, const stk::mesh::PartVector& skinParts, std::vector<stk::mesh::sharing_info> &sharedModified)
 {
     std::vector<int> ordinals = get_side_ordinals_of_element(element_side_index, skinnedSideSet);
     stk::mesh::impl::LocalId localId = m_eeGraph.get_local_element_id(skinnedSideSet[element_side_index].element);
@@ -48,7 +48,7 @@ size_t FaceCreator::create_face_entities_per_element(size_t element_side_index, 
     return ordinals.size();
 }
 
-void FaceCreator::create_side_entities_given_sideset(const std::vector<SideSetEntry> &skinnedSideSet, const stk::mesh::PartVector& skinParts)
+void FaceCreator::create_side_entities_given_sideset(const SideSet &skinnedSideSet, const stk::mesh::PartVector& skinParts)
 {
     std::vector<stk::mesh::sharing_info> sharedModified;
     m_bulkData.modification_begin();

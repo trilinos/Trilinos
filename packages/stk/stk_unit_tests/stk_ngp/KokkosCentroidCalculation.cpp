@@ -112,8 +112,8 @@ void run_it_uvm()
     Kokkos::parallel_reduce(numBuckets, KOKKOS_LAMBDA(int i, double& update) {
         BucketConnectivityView bucket = viewOfBuckets(i);
         int expectedOffset = expectedBucketOffsets(i);
-        for(unsigned elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
-            for(unsigned nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
+        for(int elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
+            for(int nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
                int offset = bucket(elemIndex, nodeIndex);
                printf("i=%d, elemIndex=%d, nodeIndex=%d, offset=%d, expectedOffset=%d\n",i, elemIndex,nodeIndex,offset,expectedOffset);
                if (offset != expectedOffset) {

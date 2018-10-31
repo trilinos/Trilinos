@@ -540,7 +540,7 @@ namespace stk_example_io {
     Ioss::NodeBlock *nb = node_blocks[0];
 
     std::vector<stk::mesh::Entity> nodes;
-    stk::io::get_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
+    stk::io::get_input_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
 
     /** \todo REFACTOR Application would probably store this field
      * (and others) somewhere after the declaration instead of
@@ -737,7 +737,7 @@ namespace stk_example_io {
 		      Ioss::Field::RoleType filter_role)
   {
     std::vector<stk::mesh::Entity> entities;
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk::io::get_input_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
@@ -809,7 +809,8 @@ namespace stk_example_io {
 		      Ioss::Field::RoleType filter_role)
   {
     std::vector<stk::mesh::Entity> entities;
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk::io::OutputParams params(bulk);
+    stk::io::get_output_entity_list(io_entity, part_type, params, entities);
 
     stk::mesh::MetaData& meta = stk::mesh::MetaData::get(part);
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();

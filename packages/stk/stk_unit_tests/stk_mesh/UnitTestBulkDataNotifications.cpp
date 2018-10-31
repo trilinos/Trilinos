@@ -65,8 +65,8 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
         const std::string generatedMeshSpec = "generated:1x1x2";
         stk::io::fill_mesh(generatedMeshSpec, mesh);
 
-        TestListener listener(comm);
-        mesh.register_observer(&listener);
+        std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
+        mesh.register_observer(listener);
 
         int procId = stk::parallel_machine_rank(comm);
 
@@ -86,7 +86,7 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
         }
         mesh.modification_end();
 
-        EXPECT_EQ(1u, listener.get_buckets_changed(stk::topology::NODE_RANK));
+        EXPECT_EQ(1u, listener->get_buckets_changed(stk::topology::NODE_RANK));
     }
 }
 

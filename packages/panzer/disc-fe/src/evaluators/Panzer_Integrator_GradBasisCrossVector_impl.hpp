@@ -149,7 +149,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ = View<View<const ScalarT**>*>(
+    kokkosFieldMults_ = View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>(
       "GradBasisCrossVector::KokkosFieldMultipliers", fmNames.size());
     for (const auto& name : fmNames)
     {
