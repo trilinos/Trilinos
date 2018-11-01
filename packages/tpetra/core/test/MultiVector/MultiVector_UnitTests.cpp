@@ -2174,10 +2174,10 @@ namespace {
             os << ">>> Proc " << comm->getSize ();
             auto A_dv = A.getDualView ();
             os << ": A.modified_host: " << A_dv.need_sync_device ()?1:0;
-               << ", A.modified_device: " << A_dv.need_sync_host ()?1:0;
+            os  << ", A.modified_device: " << A_dv.need_sync_host ()?1:0;
             auto B_dv = B.getDualView ();
             os << ": B.modified_host: " << B_dv.need_sync_device ()?1:0;
-               << ", B.modified_device: " << B_dv.need_sync_host ()?1:0;
+            os << ", B.modified_device: " << B_dv.need_sync_host ()?1:0;
             os << std::endl;
             std::cerr << os.str ();
           }
