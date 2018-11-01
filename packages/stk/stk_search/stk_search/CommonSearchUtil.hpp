@@ -167,6 +167,8 @@ namespace stk {
     }
 
 
+    // Ghost the range boxes needed for each processor to search against its local domain boxes
+    // in distributed AABB overlap search ("coarse search")..
     template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
       void
       ComputeRangeWithGhostsForCoarseSearch(
@@ -215,9 +217,8 @@ namespace stk {
 
       //
       //  Determine what to ghost.  If a boxB box from this processor overlaps another processor's
-      //  processor all-boxA box, then we need to ghost the boxB's data to that other processor.
-      //  (The stricter criteria used by the full BoxA_BoxB_Ghost function would make sure that
-      //  the individual boxB box overlaps some individual boxA box from the other processor.)
+      //  processor all-boxA box, then we need to ghost the boxB's data to that other processor
+      //  to include in the range boxes (local + global) to search against its local domain boxes.
       //
 
       typedef typename RangeIdentifier::ident_type GlobalIdType;

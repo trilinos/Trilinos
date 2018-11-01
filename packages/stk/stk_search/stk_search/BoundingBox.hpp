@@ -35,10 +35,10 @@
 #ifndef STK_SEARCH_BOUNDINGBOX_HPP
 #define STK_SEARCH_BOUNDINGBOX_HPP
 
+#include <stk_math/StkVector.hpp>
+#include <stk_search/Box.hpp>
 #include <stk_search/Point.hpp>
 #include <stk_search/Sphere.hpp>
-#include <stk_search/Box.hpp>
-#include <stk_math/StkVector.hpp>
 
 namespace stk { namespace search {
 

@@ -48,6 +48,19 @@ public:
     {
     }
 
+    virtual bool should_notifier_delete() const
+    {
+        return false;
+    }
+
+    virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+    {
+    }
+
+    virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+    {
+    }
+
     virtual void entity_added(stk::mesh::Entity entity)
     {
     }

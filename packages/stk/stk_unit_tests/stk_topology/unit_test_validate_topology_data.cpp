@@ -43,6 +43,9 @@
 
 using namespace stk;
 using namespace stk::topology_detail;
+
+#ifndef KOKKOS_HAVE_CUDA
+
 using namespace boost;
 
 namespace {
@@ -236,6 +239,8 @@ TEST( stk_topology, validate_topology)
     }
   }
 }
+
+#endif
 
 TEST( stk_topology, verify_3D_topology)
 {

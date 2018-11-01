@@ -84,7 +84,13 @@ void fill_block_parts_given_names(const std::vector<std::string>& side_block_nam
                                               stk::mesh::MetaData& meta,
                                               std::vector<const stk::mesh::Part*>& blocks);
 
+void reconstruct_sideset(stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart);
+
+void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkData, stk::mesh::Selector elementSelector);
+
 void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData);
+
+bool should_reconstruct_sideset(const stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart);
 
 bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &sides, const stk::mesh::impl::ParallelPartInfo &parallelPartInfo);
 
@@ -111,6 +117,11 @@ get_parameter_type_from_field_representation(const std::string &storage,
 std::pair<size_t, Ioss::Field::BasicType>
 get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
                                const boost::any &value);
+
+std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bulk, const stk::mesh::Part& sideSetPart, stk::mesh::Entity face);
+std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face);
+
+std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkData& bulkData, stk::mesh::Entity face);
 
 }}
 

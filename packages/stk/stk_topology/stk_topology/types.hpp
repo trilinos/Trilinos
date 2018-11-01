@@ -35,7 +35,7 @@
 
 // IWYU pragma: private, include "stk_topology/topology.hpp"
 
-#include <stk_topology/topology_type.tcc>
+#include <stk_topology/topology_type.hpp>
 
 namespace stk {
 

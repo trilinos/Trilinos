@@ -231,7 +231,7 @@ namespace panzer
       void
       operator()(
         const FieldMultTag<NUM_FIELD_MULT>& tag,
-        const std::size_t&                  cell) const;
+        const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
 
     private:
 
@@ -291,7 +291,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      Kokkos::View<Kokkos::View<const ScalarT**>*> kokkosFieldMults_;
+    Kokkos::View<Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*> kokkosFieldMults_;
 
       /**
        *  \brief The number of quadrature points for each cell.
