@@ -1272,9 +1272,10 @@ public:
 #ifndef __CUDA_ARCH__
       if (m_cijk.dimension() == 0)
         m_cijk = getGlobalCijkTensor<cijk_type>();
-      // Use 0 or 1 to signal the size wasn't specified in the constructor,
-      // since now dimesion_i() == 1 for all i >= rank
-      if (m_sacado_size == 0 || m_sacado_size == 1)
+      // Use 0 or KOKKOS_IMPL_CTOR_DEFAULT_ARG to signal the size wasn't
+      // specified in the constructor
+      if (m_sacado_size == 0 ||
+          m_sacado_size == unsigned(KOKKOS_IMPL_CTOR_DEFAULT_ARG))
         m_sacado_size = m_cijk.dimension();
 #endif
       m_is_contiguous = this->is_data_contiguous();
@@ -1305,9 +1306,10 @@ public:
     m_cijk = extract_cijk<cijk_type>(prop);
     if (m_cijk.dimension() == 0)
       m_cijk = getGlobalCijkTensor<cijk_type>();
-    // Use 0 or 1 to signal the size wasn't specified in the constructor,
-    // since now dimesion_i() == 1 for all i >= rank
-    if (m_sacado_size == 0 || m_sacado_size == 1)
+    // Use 0 or KOKKOS_IMPL_CTOR_DEFAULT_ARG to signal the size wasn't
+    // specified in the constructor
+    if (m_sacado_size == 0 ||
+        m_sacado_size == unsigned(KOKKOS_IMPL_CTOR_DEFAULT_ARG))
       m_sacado_size = m_cijk.dimension();
     m_is_contiguous = true;
 
