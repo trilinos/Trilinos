@@ -55,6 +55,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_CompositeStep.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_SimOpt

@@ -51,6 +51,7 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_BundleStatusTest.hpp"
 #include "ROL_InteriorPoint.hpp"
 #include "ROL_ObjectiveFromBoundConstraint.hpp"
 #include "ROL_Types.hpp"

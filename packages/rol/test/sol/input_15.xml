@@ -66,14 +66,14 @@
 
     <Parameter name = "Stochastic Component Type" type="string" value="Risk Averse" />
     <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="CVaR" />
+      <Parameter name="Name" type="string" value="Mean Plus Semi-Deviation" />
       <!-- ===========  CVAR SUBLIST  =========== -->
       <ParameterList name="CVaR">
         <Parameter name="Confidence Level"             type="double" value="0.8"   />
         <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
       </ParameterList>
       <!-- ===========  MEAN PLUS DEVIATION SUBLIST  =========== -->
-      <ParameterList name="Mean Plus Deviation">
+      <ParameterList name="Mean Plus Semi-Deviation">
         <Parameter name="Coefficient"                  type="double" value="0.8"   />
       </ParameterList>
       <!-- ===========  MEAN PLUS DEVIATION FROM TARGET SUBLIST  =========== -->

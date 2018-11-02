@@ -53,6 +53,8 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_BundleStatusTest.hpp"
 #include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
