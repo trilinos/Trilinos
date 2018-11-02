@@ -1365,7 +1365,7 @@ namespace {
       TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
       TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
 #else
-      TEST_ASSERT( A1.need_sync_host () );
+      TEST_ASSERT( ! A1.need_sync_host () );
       TEST_ASSERT( ! A1.need_sync_device () );
 #endif
     }
