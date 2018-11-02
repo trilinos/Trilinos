@@ -18,8 +18,8 @@ TRIBITS_ADD_ETI_SUPPORT()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_DEPRECATED_CODE
   TPETRA_ENABLE_DEPRECATED_CODE
-  "Disable Tpetra deprecated code (templated ordinal types and dynamic graph/matrix allocation)"
-  Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT
+  "Whether Tpetra enables deprecated code at compile time. Default is ON (deprecated code enabled)."
+  ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
 )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
