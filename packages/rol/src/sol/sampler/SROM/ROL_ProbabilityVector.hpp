@@ -87,6 +87,13 @@ public:
     int numMySamples = static_cast<int>(StdVector<Real>::getVector()->size());
     return numMySamples;
   }
+
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    const std::vector<Real> &yval = *(StdVector<Real>::getVector());
+    uint numMySamples = yval.size();
+    return ROL::makePtr<ProbabilityVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),BatchStdVector<Real>::getBatchManager());
+  }
 };
 
 template<class Real>
