@@ -55,6 +55,8 @@
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 
 #include "ROL_Objective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -120,7 +122,11 @@ void setUpAndSolve(Teuchos::ParameterList &list,
   opt.checkObjectiveGradient(*d,true,outStream);
   opt.checkObjectiveHessVec(*d,true,outStream);
   // Run ROL algorithm
-  ROL::Algorithm<RealT> algo("Trust Region",list,false);
+  ROL::Ptr<ROL::Step<RealT>>
+    step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(list);
+  ROL::Ptr<ROL::StatusTest<RealT>>
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(list);
+  ROL::Algorithm<RealT> algo(step,status,false);
   algo.run(opt,true,outStream);
 }
 
