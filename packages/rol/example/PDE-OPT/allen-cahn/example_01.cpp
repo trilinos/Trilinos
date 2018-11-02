@@ -46,7 +46,6 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -56,6 +55,8 @@
 #include <iostream>
 #include <algorithm>
 
+#include "ROL_Stream.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
@@ -66,8 +67,6 @@
 #include "../TOOLS/pdevector.hpp"
 #include "pde_allen_cahn.hpp"
 #include "obj_allen_cahn.hpp"
-
-#include "ROL_OptimizationSolver.hpp"
 
 typedef double RealT;
 
@@ -231,7 +230,11 @@ int main(int argc, char *argv[]) {
       optSolver.solve(*outStream);
     }
     else {
-      ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);
+      ROL::Ptr<ROL::Step<RealT>>
+        step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+      ROL::Ptr<ROL::StatusTest<RealT>>
+        status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+      ROL::Algorithm<RealT> algo(step,status,false);
       algo.run(*zp,*robj,*zbnd,true,*outStream);
     }
 

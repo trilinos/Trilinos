@@ -60,11 +60,10 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Algorithm.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
+#include "ROL_OptimizationSolver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -81,9 +80,10 @@ template<class Real>
 void setUpAndSolve(ROL::OptimizationProblem<Real> &opt,
                    Teuchos::ParameterList &parlist,
                    std::ostream &outStream) {
-  ROL::Algorithm<RealT> algo("Trust Region",parlist,false);
+  parlist.sublist("Step").set("Type","Trust Region");
+  ROL::OptimizationSolver<Real> solver(opt,parlist);
   Teuchos::Time timer("Optimization Time", true);
-  algo.run(opt,true,outStream);
+  solver.solve(outStream);
   timer.stop();
   outStream << "Total optimization time = " << timer.totalElapsedTime() << " seconds." << std::endl;
 }

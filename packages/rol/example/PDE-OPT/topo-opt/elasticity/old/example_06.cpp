@@ -58,6 +58,8 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_AugmentedLagrangianStep.hpp"
 #include "ROL_AugmentedLagrangian.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -381,7 +383,11 @@ int main(int argc, char *argv[]) {
       *outStream << "\n";
     }
 
-    ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::AugmentedLagranginaStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     Teuchos::Time algoTimer("Algorithm Time", true);
     algo.run(*(opt.getSolutionVector()),*c2p,augLag,*(opt.getConstraint()),*(opt.getBoundConstraint()),true,*outStream);
     algoTimer.stop();

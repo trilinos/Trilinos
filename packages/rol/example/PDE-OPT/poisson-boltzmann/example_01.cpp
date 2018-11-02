@@ -57,6 +57,8 @@
 #include <algorithm>
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -150,7 +152,11 @@ int main(int argc, char *argv[]) {
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
-    ROL::Algorithm<RealT> algo("Composite Step",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     algo.run(x,*rp,*obj,*con,true,*outStream);
 
     // Output.
