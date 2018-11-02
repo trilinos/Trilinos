@@ -19,7 +19,7 @@ TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 # this will be set to "ON", to keep old behaviors.
 
 SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
-MESSAGE (STATUS "Determine whether Tpetra will enable ordinal template arguments and dynamic allocation.  By default, this will be ON.")
+MESSAGE (STATUS "Whether Tpetra enables deprecated code at compile time. Default is ON (deprecated code enabled).")
 
 # mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
 # This doesn't meant that users actually want to instantiate Tpetra
