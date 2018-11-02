@@ -38,18 +38,6 @@ TEST_F(TestBalanceBalanceSmallToLarge, MxN_decompositionWithoutAura)
 class Mesh1x1x4 : public MeshFixtureMxNRebalance
 {
 protected:
-
-    void verify_node_sharing_info(const stk::mesh::EntityIdVector &goldSharedNodes, const stk::mesh::EntityVector &sharedNodes)
-    {
-        ASSERT_EQ(goldSharedNodes.size(), sharedNodes.size());
-        for(size_t nodeIndex = 0; nodeIndex < sharedNodes.size(); nodeIndex++)
-        {
-            stk::mesh::EntityId nodeId = get_bulk().identifier(sharedNodes[nodeIndex]);
-            EXPECT_EQ(goldSharedNodes[nodeIndex], nodeId);
-        }
-    }
-
-protected:
     virtual unsigned get_num_procs_initial_decomp() const { return 2; }
     virtual unsigned get_num_procs_target_decomp()  const { return 4; }
     virtual std::string get_output_filename() const { return "junk.g"; }

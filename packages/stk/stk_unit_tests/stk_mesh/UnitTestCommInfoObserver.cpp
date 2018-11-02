@@ -54,7 +54,7 @@ protected:
     {
         stk::io::fill_mesh("generated:1x1x4", bulk);
 
-        observer = new MockCommInfoObserver();
+        observer = std::make_shared<MockCommInfoObserver>();
         bulk.register_observer(observer);
 
         bulk.modification_begin();
@@ -64,7 +64,6 @@ protected:
 
     virtual ~CommInfoObserverTest()
     {
-        delete observer;
     }
 
     void ghost_element1_to_proc1_and_check_for_comm_info_change()
@@ -138,7 +137,7 @@ private:
 private:
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk;
-    MockCommInfoObserver *observer;
+    std::shared_ptr<MockCommInfoObserver> observer;
     stk::mesh::Ghosting *ghost;
 };
 

@@ -92,7 +92,7 @@ class Sum
   // std::vector< PHX::MDField<const ScalarT> > values;
   // std::vector<double> scalars;
   PHX::MDField<const ScalarT> values[MAX_VALUES];
-  Kokkos::View<const double *,PHX::Device> scalars;
+  Kokkos::View<const double *,typename PHX::DevLayout<double>::type,PHX::Device> scalars;
 
   std::size_t cell_data_size;
 
@@ -175,8 +175,8 @@ private:
   //////////////////////////////////////////////
   enum {MAX_VALUES=20};
   PHX::MDField<const ScalarT,Tag0,Tag1> current_value;
-  Kokkos::View<const ScalarT**,PHX::Device> value_views[MAX_VALUES];
-  Kokkos::View<const double*,PHX::Device> scalars;
+  Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device> value_views[MAX_VALUES];
+  Kokkos::View<const double*,typename PHX::DevLayout<ScalarT>::type,PHX::Device> scalars;
   int numValues;
 
      // this is used in the parallel kernel

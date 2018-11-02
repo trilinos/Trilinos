@@ -63,6 +63,10 @@ namespace stk {
 #if OMPI_MAJOR_VERSION == 3 && OMPI_MINOR_VERSION == 1
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
+//OpenMPI 2.x.y doesn't seem to support MPI_Neighbor* functions either...
+#if OMPI_MAJOR_VERSION == 2
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
 #endif
 
 void CommNeighbors::rank_error( const char * method , int p ) const

@@ -268,14 +268,14 @@ evaluateFields(typename Traits::EvalData d)
     return;
 
   // Get field coefficients for cell
-  Kokkos::DynRankView<ScalarT,PHX::Device> field_coeffs =
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_coeffs =
     Kokkos::createDynRankView(field_.get_static_view(), "field_val",
                               1, num_basis); // Cell, Basis
   for (size_t i=0; i<num_basis; ++i)
     field_coeffs(0,i) = field_(cellIndex_,i);
 
   // Evaluate FE interpolant at point
-  Kokkos::DynRankView<ScalarT,PHX::Device> field_val =
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_val =
     Kokkos::createDynRankView(field_coeffs, "field_val", 1, 1); // Cell, Point
   Intrepid2::FunctionSpaceTools<PHX::exec_space>::evaluate(
     field_val, field_coeffs, basis_values_);
