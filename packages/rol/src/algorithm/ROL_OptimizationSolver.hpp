@@ -45,6 +45,8 @@
 #define ROL_OPTIMIZATIONSOLVER_HPP
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_StepFactory.hpp"
+#include "ROL_StatusTestFactory.hpp"
 #include "ROL_OptimizationProblem.hpp"
 #include "ROL_CombinedStatusTest.hpp"
 
