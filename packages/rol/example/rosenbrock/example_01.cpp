@@ -89,7 +89,11 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::Algorithm<RealT> algo("Line Search",parlist);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::LineSearchStep<RealT>>(parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::StatusTest<RealT>>(parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Iteration Vector
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);

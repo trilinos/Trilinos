@@ -55,6 +55,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 

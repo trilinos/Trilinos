@@ -129,7 +129,11 @@ int main(int argc, char *argv[]) {
 
     // Define Algorithm
     std::string stepname(parlist->get("Step Type", "Line Search"));
-    ROL::Algorithm<RealT> algo(stepname, *parlist);
+    ROL::StepFactory<RealT> stepFactory;
+    ROL::Ptr<ROL::Step<RealT>> step = stepFactory.getStep(stepname,*parlist);
+    ROL::StatusTestFactory<RealT> statusFactory;
+    ROL::Ptr<ROL::StatusTest<RealT>> status = statusFactory.getStatusTest(stepname,*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
 
     // Iteration Vector
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);

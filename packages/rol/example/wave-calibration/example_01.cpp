@@ -55,6 +55,7 @@
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <complex>
 #include <valarray>

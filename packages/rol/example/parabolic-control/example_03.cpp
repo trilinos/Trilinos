@@ -57,6 +57,7 @@
 #include "Teuchos_LAPACK.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
 #include "ROL_StdVector.hpp"
@@ -649,7 +650,9 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    auto algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>       step   = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>> status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    ROL::Ptr<ROL::Algorithm<RealT>>  algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
 
     // Run algorithm.
     x.zero();
@@ -666,7 +669,9 @@ int main(int argc, char *argv[]) {
     // re-load parameters
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Set algorithm.
-    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
+    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
     // Run Algorithm
     y.zero();
     algo->run(y, obj, icon, true, *outStream);
