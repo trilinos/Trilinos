@@ -21,6 +21,14 @@ set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily di
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 #Adding warnings as errors flags to this PR build
-#This should fail. Plan to break down package by package
+#This should fail. Starting to break down package by package.
 #Need to make sure this adds rather than overwrites flags
-set (CMAKE_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Teuchos_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Intrepid2_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (KokkosKernels_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Phalanx_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Pike_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (ShyLU_Node_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Shards_CXX_FLAGS "-ansi -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Zoltan_CXX_FLAGS "-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
+set (Epetra_CXX_FLAGS "-ansi -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor" CACHE STRING "Warnings as errors setting")
