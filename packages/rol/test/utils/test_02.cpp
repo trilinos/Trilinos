@@ -109,11 +109,10 @@ int main(int argc, char *argv[] ) {
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Iteration Limit",1000);
 
-    ROL::Ptr<ScalarMinimization<RealT> > sm = ROL::makePtr<BisectionScalarMinimization<RealT>>(parlist);
-    ROL::Ptr<LineSearch<RealT> > ls = ROL::makePtr<ScalarMinimizationLineSearch<RealT>>(parlist, sm);
-    ROL::Ptr<Step<RealT> > step = ROL::makePtr<LineSearchStep<RealT>>( parlist, ls );
-   
-    ROL::Ptr<StatusTest<RealT> > status = ROL::makePtr<StatusTest<RealT>>(parlist);
+    ROL::Ptr<ScalarMinimization<RealT>> sm = ROL::makePtr<BisectionScalarMinimization<RealT>>(parlist);
+    ROL::Ptr<LineSearch<RealT>>         ls = ROL::makePtr<ScalarMinimizationLineSearch<RealT>>(parlist, sm);
+    ROL::Ptr<Step<RealT>>             step = ROL::makePtr<LineSearchStep<RealT>>( parlist, ls );
+    ROL::Ptr<StatusTest<RealT>>     status = ROL::makePtr<StatusTest<RealT>>(parlist);
 
     Algorithm<RealT> algo( step, status, false );
  
