@@ -59,6 +59,8 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_CompositeStep.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_SparseGridGenerator.hpp"
@@ -364,7 +366,11 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE PROBLEM *****************************************/
     /*************************************************************************/
-    ROL::Algorithm<RealT> algo("Composite Step",*parlist,false);
+    ROL::Ptr<ROL::Step<RealT>>
+      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
+    ROL::Ptr<ROL::StatusTest<RealT>>
+      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
+    ROL::Algorithm<RealT> algo(step,status,false);
     std::clock_t timer = std::clock();
     algo.run(x, *vp, *simobj, *simcon, true, *outStream);
     *outStream << "Optimization time: "
