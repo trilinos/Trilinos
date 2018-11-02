@@ -15,18 +15,11 @@ TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
 # gcd 26 Oct 2018: Part of the great de-templating effort, 
 # allows users to switch at CMake time between using the old template
-# parameters, using Tpetra_DISABLE_DEPRECATED_CODE.  By default,
+# parameters, using Tpetra_ENABLE_DEPRECATED_CODE.  By default,
 # this will be set to "ON", to keep old behaviors.
 
-SET (Tpetra_DISABLE_DEPRECATED_CODE_DEFAULT OFF)
-MESSAGE (STATUS "Determine whether Tpetra will enable ordinal template arguments.")
-
-IF (Tpetra_DISABLE_DEPRECATED_CODE)
-  MESSAGE (STATUS "  - Tpetra_DISABLE_DEPRECATED_CODE is ON, so Tpetra will assume you do not want the old template behavior.")
-  SET (Tpetra_DISABLE_DEPRECATED_CODE_DEFAULT ON)   
-ELSE()
-  MESSAGE (STATUS "  - Tpetra_DISABLE_DEPRECATED_CODE is OFF, so Tpetra will assume you want the old template behavior.")
-ENDIF()
+SET (Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+MESSAGE (STATUS "Determine whether Tpetra will enable ordinal template arguments and dynamic allocation.  By default, this will be ON.")
 
 # mfh 06 Nov 2017: Do users want to build Tpetra with CUDA enabled?
 # This doesn't meant that users actually want to instantiate Tpetra
