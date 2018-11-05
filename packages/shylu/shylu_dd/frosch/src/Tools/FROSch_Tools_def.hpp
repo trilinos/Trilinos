@@ -41,7 +41,7 @@
 
 #ifndef _FROSCH_TOOLS_DEF_HPP
 #define _FROSCH_TOOLS_DEF_HPP
-
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <FROSch_Tools_decl.hpp>
 namespace FROSch {
     
@@ -890,9 +890,9 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos:
         return 0;
     }
 template <class SC, class LO, class GO, class NO>
-Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
+Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
     //connection: alternativ in Sparse Matrix...
-    
+
     Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = connection->getMap()->getComm();
     int MYPID = TeuchosComm->getRank();
     
@@ -905,11 +905,11 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Crs
     LO localRows = connection->getRowMap()->getNodeNumElements();
     GO a;
     Teuchos::ArrayView< const LO>  indices;
-    Teuchos::
-    ArrayView< const GO>   values;
+    Teuchos::ArrayView< const SC>   values;
     for(int j = 0;j<localRows;j++){
         connection->getLocalRowView(j,indices,values);
-        Xgraph->insertLocalIndices(j,values);
+        Teuchos::ArrayView< const GO> valls = Teuchos::av_reinterpret_cast< const GO> (values);
+        Xgraph->insertLocalIndices(j,valls);
     }
     
     Xgraph->fillComplete();
@@ -917,15 +917,14 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Crs
     
     //Partition the subdomains
     typedef Zoltan2::XpetraCrsGraphAdapter<Xpetra::CrsGraph<LO,GO,NO> > inputAdapter;
-    
+ 
     Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::sublist(parameterList,"Zoltan2 Parameter");
     
     Teuchos::RCP<inputAdapter> adaptedMatrix = Teuchos::rcp(new inputAdapter(Xgraph,0,0));
     
     Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
-    Teuchos::
-    RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
-    
+        Teuchos::
+        RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm)); 
     problem->solve();
     
     Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
@@ -971,6 +970,7 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Crs
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),-1,repeatedIndices(),0,ReGraph->getColMap()->getComm());
     
     return RepeatedMap;
+
     
 }
 
