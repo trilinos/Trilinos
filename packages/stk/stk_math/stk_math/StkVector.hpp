@@ -99,6 +99,9 @@ typedef typename std::array<REAL,DIM>::iterator iterator;
   iterator end();
   const_iterator end() const;
 
+  void set_invalid() { for (unsigned i=0; i<DIM; ++i) vec[i] = std::nan(""); }
+  bool is_valid() const { for ( REAL item : vec ) { if ( std::isnan(item) ) return false; } return true; }
+
  private:
   std::array<REAL, DIM> vec;
 };
@@ -160,7 +163,7 @@ inline REAL Vec<REAL,DIM>::unitize()
   }
   else
   {
-    for (unsigned i=0; i<DIM; ++i) vec[i] = std::nan("");
+    set_invalid();
   }
   return len;
 }

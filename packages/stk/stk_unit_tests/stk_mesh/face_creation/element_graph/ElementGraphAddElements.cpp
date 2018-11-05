@@ -175,27 +175,6 @@ protected:
             EXPECT_EQ(graphEdge.sideOrdinalConnectingElement1ToElement2, elementGraph->get_side_from_element1_to_element2(graphEdge.element1, graphEdge.element2));
     }
 
-    void test_for_unique_ids(stk::mesh::EntityIdVector &chosen_ids)
-    {
-        std::sort(chosen_ids.begin(), chosen_ids.end());
-        std::vector<stk::mesh::EntityId>::iterator iter = std::unique(chosen_ids.begin(), chosen_ids.end());
-        bool ids_are_unique = iter == chosen_ids.end();
-        EXPECT_TRUE(ids_are_unique);
-    }
-
-    void test_similarity_on_both_procs(const stk::mesh::EntityIdVector &sideIds)
-    {
-        stk::mesh::EntityIdVector globalSideIds = get_global_side_ids(sideIds);
-        stk::util::sort_and_unique(globalSideIds);
-        EXPECT_GE(globalSideIds.size(), sideIds.size());
-    }
-
-    stk::mesh::EntityIdVector get_global_side_ids(const stk::mesh::EntityIdVector &sideIds)
-    {
-        stk::mesh::EntityIdVector globalSideIds;
-        stk::parallel_vector_concat(get_comm(), sideIds, globalSideIds);
-        return globalSideIds;
-    }
 protected:
     ElemElemGraphTester *elementGraph;
     stk::mesh::Part *hexPart;

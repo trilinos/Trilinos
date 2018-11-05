@@ -140,6 +140,13 @@ export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
 
+# Set the direct libs for HDF5 and NetCDF in case we use that option for
+# building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
+
+export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
+
+export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
+
 export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

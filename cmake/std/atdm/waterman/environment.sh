@@ -53,7 +53,7 @@ fi
 echo "Using waterman compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=128
+export ATDM_CONFIG_BUILD_COUNT=64
 # NOTE: Above settings are used for building on a Dual-Socket POWER9 with 8
 # cores per socket.
 

@@ -261,7 +261,6 @@ public:
       error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
       error << "Invalid internal state of expression evaluator";
       throw std::runtime_error(error.str());
-      return m_doublePtr[0];
     }
   } 
 

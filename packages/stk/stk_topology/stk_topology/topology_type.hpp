@@ -30,8 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-#ifndef STKTOPOLOGY_TOPOLOGY_TYPE_TCC
-#define STKTOPOLOGY_TOPOLOGY_TYPE_TCC
+#ifndef STKTOPOLOGY_TOPOLOGY_TYPE_HPP
+#define STKTOPOLOGY_TOPOLOGY_TYPE_HPP
 
 // IWYU pragma: private, include "stk_topology/topology.hpp"
 
@@ -45,62 +45,6 @@
 #include <boost/mpl/for_each.hpp>
 #include <boost/mpl/assert.hpp>
 
-
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
-
-
-#define STKTOPOLOGY_META_FUNCTION_SWITCH(ordinal, meta_function)  \
-  switch (ordinal)                                                \
-  {                                                               \
-    case 0:  return meta_function<type,0 >::value;                \
-    case 1:  return meta_function<type,1 >::value;                \
-    case 2:  return meta_function<type,2 >::value;                \
-    case 3:  return meta_function<type,3 >::value;                \
-    case 4:  return meta_function<type,4 >::value;                \
-    case 5:  return meta_function<type,5 >::value;                \
-    case 6:  return meta_function<type,6 >::value;                \
-    case 7:  return meta_function<type,7 >::value;                \
-    case 8:  return meta_function<type,8 >::value;                \
-    case 9:  return meta_function<type,9 >::value;                \
-    case 10: return meta_function<type,10>::value;                \
-    case 11: return meta_function<type,11>::value;                \
-    default: break;                                               \
-  }
-
-
-#define STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(ordinal, meta_function, functor)  \
-  switch (ordinal)                                                                               \
-  {                                                                                              \
-    case 0:  boost::mpl::for_each< typename meta_function<type,0 >::type >( functor ); break;    \
-    case 1:  boost::mpl::for_each< typename meta_function<type,1 >::type >( functor ); break;    \
-    case 2:  boost::mpl::for_each< typename meta_function<type,2 >::type >( functor ); break;    \
-    case 3:  boost::mpl::for_each< typename meta_function<type,3 >::type >( functor ); break;    \
-    case 4:  boost::mpl::for_each< typename meta_function<type,4 >::type >( functor ); break;    \
-    case 5:  boost::mpl::for_each< typename meta_function<type,5 >::type >( functor ); break;    \
-    case 6:  boost::mpl::for_each< typename meta_function<type,6 >::type >( functor ); break;    \
-    case 7:  boost::mpl::for_each< typename meta_function<type,7 >::type >( functor ); break;    \
-    case 8:  boost::mpl::for_each< typename meta_function<type,8 >::type >( functor ); break;    \
-    case 9:  boost::mpl::for_each< typename meta_function<type,9 >::type >( functor ); break;    \
-    case 10: boost::mpl::for_each< typename meta_function<type,10>::type >( functor ); break;    \
-    case 11: boost::mpl::for_each< typename meta_function<type,11>::type >( functor ); break;    \
-    case 12: boost::mpl::for_each< typename meta_function<type,12>::type >( functor ); break;    \
-    case 13: boost::mpl::for_each< typename meta_function<type,13>::type >( functor ); break;    \
-    case 14: boost::mpl::for_each< typename meta_function<type,14>::type >( functor ); break;    \
-    case 15: boost::mpl::for_each< typename meta_function<type,15>::type >( functor ); break;    \
-    case 16: boost::mpl::for_each< typename meta_function<type,16>::type >( functor ); break;    \
-    case 17: boost::mpl::for_each< typename meta_function<type,17>::type >( functor ); break;    \
-    case 18: boost::mpl::for_each< typename meta_function<type,18>::type >( functor ); break;    \
-    case 19: boost::mpl::for_each< typename meta_function<type,19>::type >( functor ); break;    \
-    case 20: boost::mpl::for_each< typename meta_function<type,20>::type >( functor ); break;    \
-    case 21: boost::mpl::for_each< typename meta_function<type,21>::type >( functor ); break;    \
-    case 22: boost::mpl::for_each< typename meta_function<type,22>::type >( functor ); break;    \
-    case 23: boost::mpl::for_each< typename meta_function<type,23>::type >( functor ); break;    \
-    default: break;                                                                              \
-  }
-
-
 namespace stk {
 
 //******************************************************************************
@@ -111,6 +55,8 @@ namespace stk {
 template <topology::topology_t Topology>
 struct topology::topology_type
 {
+  STK_FUNCTION topology_type() {}
+
   typedef topology_detail::topology_data<Topology> data;
   typedef topology_type<Topology>         type;
   typedef topology_t                      value_type;
@@ -147,6 +93,7 @@ struct topology::topology_type
   static std::string name() { return topology(Topology).name(); }
 
   /// is the current topology defined on the given spatial dimension
+  STK_FUNCTION
   static bool defined_on_spatial_dimension(unsigned spatial_dimension)
   {
     switch(spatial_dimension)
@@ -160,100 +107,192 @@ struct topology::topology_type
   }
 
   /// the topology of the face at the given ordinal
+  STK_FUNCTION
   static topology face_topology(unsigned face_ordinal = 0)
   {
-    STKTOPOLOGY_META_FUNCTION_SWITCH(face_ordinal, topology_detail::face_topology_)
+    switch (face_ordinal)
+    {
+      case 0:  return topology_detail::face_topology_<type,0 >::value;
+      case 1:  return topology_detail::face_topology_<type,1 >::value;
+      case 2:  return topology_detail::face_topology_<type,2 >::value;
+      case 3:  return topology_detail::face_topology_<type,3 >::value;
+      case 4:  return topology_detail::face_topology_<type,4 >::value;
+      case 5:  return topology_detail::face_topology_<type,5 >::value;
+      default: break;
+    }
 
     return INVALID_TOPOLOGY;
   }
 
   /// node ordinals that make up the given edge
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename OrdinalOutputIterator>
   static void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, topology_detail::edge_node_ordinals_, f)
+    switch (edge_ordinal)
+    {
+      case 0:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,0 >::type >( f ); break;
+      case 1:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,1 >::type >( f ); break;
+      case 2:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,2 >::type >( f ); break;
+      case 3:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,3 >::type >( f ); break;
+      case 4:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,4 >::type >( f ); break;
+      case 5:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,5 >::type >( f ); break;
+      case 6:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,6 >::type >( f ); break;
+      case 7:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,7 >::type >( f ); break;
+      case 8:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,8 >::type >( f ); break;
+      case 9:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,9 >::type >( f ); break;
+      case 10: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,10>::type >( f ); break;
+      case 11: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,11>::type >( f ); break;
+      default: break;
+    }
 
     return;
   }
 
   /// the node ordinals that make up the given face
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename OrdinalOutputIterator>
   static void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
+    switch (face_ordinal)
+    {
+      case 0:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,0 >::type >( f ); break;
+      case 1:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,1 >::type >( f ); break;
+      case 2:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,2 >::type >( f ); break;
+      case 3:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,3 >::type >( f ); break;
+      case 4:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,4 >::type >( f ); break;
+      case 5:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,5 >::type >( f ); break;
+      default: break;
+    }
 
     return;
   }
 
   /// the node ordinals of the topology in the given permutation order
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename OrdinalOutputIterator>
   static void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, topology_detail::permutation_node_ordinals_, f)
+    switch (permutation_ordinal)
+    {
+      case 0:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,0 >::type >( f ); break;
+      case 1:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,1 >::type >( f ); break;
+      case 2:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,2 >::type >( f ); break;
+      case 3:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,3 >::type >( f ); break;
+      case 4:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,4 >::type >( f ); break;
+      case 5:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,5 >::type >( f ); break;
+      case 6:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,6 >::type >( f ); break;
+      case 7:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,7 >::type >( f ); break;
+      case 8:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,8 >::type >( f ); break;
+      case 9:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,9 >::type >( f ); break;
+      case 10: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,10>::type >( f ); break;
+      case 11: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,11>::type >( f ); break;
+      case 12: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,12>::type >( f ); break;
+      case 13: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,13>::type >( f ); break;
+      case 14: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,14>::type >( f ); break;
+      case 15: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,15>::type >( f ); break;
+      case 16: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,16>::type >( f ); break;
+      case 17: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,17>::type >( f ); break;
+      case 18: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,18>::type >( f ); break;
+      case 19: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,19>::type >( f ); break;
+      case 20: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,20>::type >( f ); break;
+      case 21: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,21>::type >( f ); break;
+      case 22: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,22>::type >( f ); break;
+      case 23: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,23>::type >( f ); break;
+      default: break;
+    }
 
     return;
   }
 
   /// node that make up the given edge
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename NodeArray, typename NodeOutputIterator>
   static void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(edge_ordinal, topology_detail::edge_node_ordinals_, f)
+    switch (edge_ordinal)
+    {
+      case 0:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,0 >::type >( f ); break;
+      case 1:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,1 >::type >( f ); break;
+      case 2:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,2 >::type >( f ); break;
+      case 3:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,3 >::type >( f ); break;
+      case 4:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,4 >::type >( f ); break;
+      case 5:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,5 >::type >( f ); break;
+      case 6:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,6 >::type >( f ); break;
+      case 7:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,7 >::type >( f ); break;
+      case 8:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,8 >::type >( f ); break;
+      case 9:  boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,9 >::type >( f ); break;
+      case 10: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,10>::type >( f ); break;
+      case 11: boost::mpl::for_each< typename topology_detail::edge_node_ordinals_<type,11>::type >( f ); break;
+      default: break;
+    }
 
     return;
   }
 
   /// node that make up the given face
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename NodeArray, typename NodeOutputIterator>
   static void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
+
+    switch (face_ordinal)
+    {
+      case 0:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,0 >::type >( f ); break;
+      case 1:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,1 >::type >( f ); break;
+      case 2:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,2 >::type >( f ); break;
+      case 3:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,3 >::type >( f ); break;
+      case 4:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,4 >::type >( f ); break;
+      case 5:  boost::mpl::for_each< typename topology_detail::face_node_ordinals_<type,5 >::type >( f ); break;
+      default: break;
+    }
 
     return;
   }
 
   /// node that make up the given permutation
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename NodeArray, typename NodeOutputIterator>
   static void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
 
-    STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(permutation_ordinal, topology_detail::permutation_node_ordinals_, f)
+    switch (permutation_ordinal)
+    {
+      case 0:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,0 >::type >( f ); break;
+      case 1:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,1 >::type >( f ); break;
+      case 2:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,2 >::type >( f ); break;
+      case 3:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,3 >::type >( f ); break;
+      case 4:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,4 >::type >( f ); break;
+      case 5:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,5 >::type >( f ); break;
+      case 6:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,6 >::type >( f ); break;
+      case 7:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,7 >::type >( f ); break;
+      case 8:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,8 >::type >( f ); break;
+      case 9:  boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,9 >::type >( f ); break;
+      case 10: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,10>::type >( f ); break;
+      case 11: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,11>::type >( f ); break;
+      case 12: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,12>::type >( f ); break;
+      case 13: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,13>::type >( f ); break;
+      case 14: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,14>::type >( f ); break;
+      case 15: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,15>::type >( f ); break;
+      case 16: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,16>::type >( f ); break;
+      case 17: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,17>::type >( f ); break;
+      case 18: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,18>::type >( f ); break;
+      case 19: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,19>::type >( f ); break;
+      case 20: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,20>::type >( f ); break;
+      case 21: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,21>::type >( f ); break;
+      case 22: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,22>::type >( f ); break;
+      case 23: boost::mpl::for_each< typename topology_detail::permutation_node_ordinals_<type,23>::type >( f ); break;
+      default: break;
+    }
 
     return;
   }
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename OrdinalOutputIterator>
   static void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals)
   {
@@ -267,9 +306,6 @@ struct topology::topology_type
   }
 
   /// fill the output nodes with the nodes that make up the given sub topology
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename NodeArray, typename NodeOutputIterator>
   static void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes)
   {
@@ -312,9 +348,6 @@ struct topology::topology_type
 
   /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename NodeArrayA, typename NodeArrayB>
   static std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b)
   {
@@ -368,7 +401,6 @@ struct topology::topology_type
 
 } //namespace stk
 
-#undef STKTOPOLOGY_META_FUNCTION_SWITCH
 #undef STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR
 
 #endif //STKTOPOLOGY_TOPOLOGY_TYPE_TCC

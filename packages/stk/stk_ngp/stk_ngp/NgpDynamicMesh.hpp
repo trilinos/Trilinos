@@ -74,6 +74,9 @@ STK_FUNCTION
 inline
 bool all_parts_match(const UnmanagedPartOrdViewType& lhsParts, const UnmanagedPartOrdViewType& rhsParts)
 {
+    if (lhsParts.size() == 0 && rhsParts.size() == 0) {
+        return true;
+    }
     if (lhsParts.size() == 0 || rhsParts.size() == 0) {
         return false;
     }

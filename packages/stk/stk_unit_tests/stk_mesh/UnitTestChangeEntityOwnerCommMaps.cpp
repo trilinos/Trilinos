@@ -145,20 +145,6 @@ public:
                                      (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
     }
 
-    void storeFieldPointers()
-    {
-        m_commListNodeField = static_cast<stk::mesh::Field<double> *>(m_stkMeshMetaData.get_field(stk::topology::NODE_RANK, m_commListNodeFieldName));
-        m_sharingCommMapNodeField = static_cast<stk::mesh::Field<double> *>(m_stkMeshMetaData.get_field(stk::topology::NODE_RANK, m_sharingCommMapNodeFieldName));
-        m_auraCommMapNodeField = static_cast<stk::mesh::Field<double > *>(m_stkMeshMetaData.get_field(stk::topology::NODE_RANK, m_auraCommMapNodeFieldName));
-        m_auraCommMapElementField = static_cast<stk::mesh::Field<double > *>(m_stkMeshMetaData.get_field(stk::topology::ELEMENT_RANK, m_auraCommMapElementFieldName));
-    }
-
-    double getFieldValue(stk::mesh::Field<double>* field, stk::mesh::Entity entity)
-    {
-        double *fieldValue = stk::mesh::field_data(*field, entity);
-        return *fieldValue;
-    }
-
     stk::mesh::Field<double> * getCommListNodeField() { return m_commListNodeField; }
     stk::mesh::Field<double> * getSharingCommMapNodeField() { return m_sharingCommMapNodeField; }
     stk::mesh::Field<double> * getAuraCommMapNodeField() { return m_auraCommMapNodeField; }

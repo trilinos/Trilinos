@@ -43,7 +43,8 @@ namespace stk {
 namespace simd {
 
 template <typename Func>
-inline constexpr bool is_gpu() {
+STK_INLINE
+constexpr bool is_gpu() {
   typedef typename
     Kokkos::Impl::FunctorPolicyExecutionSpace<Func, void>::execution_space execution_space;
 #ifdef KOKKOS_HAVE_CUDA

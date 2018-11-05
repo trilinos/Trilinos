@@ -6,6 +6,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
@@ -174,5 +175,16 @@ TEST_F(StatedFields, gettingFieldData_direct)
         ngp::ConstField<double> constNgpField = ngpStatedField.get_field_old_state(static_cast<stk::mesh::FieldState>(stateCount));
         test_field_has_value(constNgpField, stateCount, stateCount);
     }
+}
+TEST_F(StatedFields, updateFromHostStkField)
+{
+    ngp::ConvenientMultistateField<double> ngpStatedField = create_field_with_num_states(1);
+    verify_initial_value_set_per_state(ngpStatedField);
+    ngp::Field<double> ngpField = ngpStatedField.get_field_new_state();
+
+    const double new_value = 999;
+    stk::mesh::field_fill(new_value, *stkField);
+    ngpField.copy_host_to_device(*bulkData, *stkField);
+    test_field_has_value(ngpField, 0, new_value);
 }
 } //namespace

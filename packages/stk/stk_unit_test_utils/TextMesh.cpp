@@ -25,6 +25,7 @@
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg
+
 namespace stk { namespace mesh { class Part; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -247,7 +248,11 @@ MeshData parse_input(const std::string& meshDescription)
             spatialDimLine = userLineNumber;
         }
         else
-            ThrowRequireMsg(elementData.topology.defined_on_spatial_dimension(spatialDim), "Error!  Topology = " << elementData.topology << " is not defined on spatial dimension = " << spatialDim << " that was set on line " << spatialDimLine << ".  Error on line " << userLineNumber << ".");
+        {
+            ThrowRequireMsg(elementData.topology.defined_on_spatial_dimension(spatialDim), "Error!  Topology = " << elementData.topology
+                            << " is not defined on spatial dimension = " << spatialDim << " that was set on line " << spatialDimLine
+                            << ".  Error on line " << userLineNumber << ".");
+        }
 
         unsigned numNodes = elementData.topology.num_nodes();
 
@@ -256,12 +261,14 @@ MeshData parse_input(const std::string& meshDescription)
         ThrowRequireMsg(tokens.size() >= numNodes+3u, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
         elementData.nodeIds.resize(numNodes);
         for (unsigned i=0 ; i < numNodes ; ++i)
+        {
             elementData.nodeIds[i] = static_cast<stk::mesh::EntityId>(std::stoul(tokens[3+i]));
-
+        }
         ThrowRequireMsg(tokens.size() <= numNodes+3u+1, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
         if(tokens.size() == numNodes+4u)
+        {
             elementData.partName = tokens[3+numNodes];
-
+        }
         data.elementDataVec.push_back(elementData);
     }
     ThrowRequireMsg(spatialDim>1, "Error!  Spatial dimension not defined to be 2 or 3!");

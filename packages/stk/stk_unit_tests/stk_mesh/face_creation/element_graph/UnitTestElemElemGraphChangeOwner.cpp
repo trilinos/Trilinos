@@ -175,7 +175,7 @@ protected:
     void create_elem_graph()
     {
         elemElemGraph = new ElemElemGraphTester(get_bulk());
-        elemElemGraphUpdater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemElemGraph);
+        elemElemGraphUpdater = std::make_shared<stk::mesh::ElemElemGraphUpdater>(get_bulk(), *elemElemGraph);
         get_bulk().register_observer(elemElemGraphUpdater);
     }
 
@@ -185,19 +185,18 @@ protected:
     }
 
     ElemGraphChangeOwner()
-    : elemElemGraph(nullptr), elemElemGraphUpdater(nullptr)
+    : elemElemGraph(nullptr), elemElemGraphUpdater()
     {
     }
 
     ~ElemGraphChangeOwner()
     {
-        delete elemElemGraphUpdater;
         delete elemElemGraph;
     }
 
 protected:
     ElemElemGraphTester *elemElemGraph;
-    stk::mesh::ElemElemGraphUpdater *elemElemGraphUpdater;
+    std::shared_ptr<stk::mesh::ElemElemGraphUpdater> elemElemGraphUpdater;
 };
 
 
@@ -519,8 +518,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
         EXPECT_EQ(2, numLocallyOwnedElems);
 
         ElemElemGraphTester elem_graph(bulkData);
-        stk::mesh::ElemElemGraphUpdater elem_graph_updater(bulkData, elem_graph);
-        bulkData.register_observer(&elem_graph_updater);
+        bulkData.register_observer(std::make_shared<stk::mesh::ElemElemGraphUpdater>(bulkData, elem_graph));
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;

@@ -103,12 +103,6 @@ public:
         *stk::mesh::field_data(m_statusField, elem) = 1;
     }
 
-    void activate_element(stk::mesh::EntityId elemId)
-    {
-        stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
-        *stk::mesh::field_data(m_statusField, elem) = 0;
-    }
-
     void animate(const std::vector<stk::mesh::EntityId> elemIds, int numSteps)
     {
         initialize_status_field();

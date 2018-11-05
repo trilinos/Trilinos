@@ -21,9 +21,9 @@ namespace stk{ namespace unit_test_util{ namespace sideset{
 
 stk::mesh::SideSet get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss)
 {
-    stk::mesh::SideSet sideSet(ss.size());
+    stk::mesh::SideSet sideSet;
     for(size_t i=0; i<ss.size(); i++)
-        sideSet[i] = stk::mesh::SideSetEntry(bulk.get_entity(stk::topology::ELEM_RANK, ss[i].elem_id), ss[i].side_ordinal);
+        sideSet.add(stk::mesh::SideSetEntry(bulk.get_entity(stk::topology::ELEM_RANK, ss[i].elem_id), ss[i].side_ordinal));
 
     return sideSet;
 }
