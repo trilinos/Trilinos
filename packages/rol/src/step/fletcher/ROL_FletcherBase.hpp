@@ -50,7 +50,7 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Ptr.hpp"
-#include "ROL_Krylov.hpp"
+#include "ROL_KrylovFactory.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include <iostream>
 
