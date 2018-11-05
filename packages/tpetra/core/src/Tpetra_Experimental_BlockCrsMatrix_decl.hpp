@@ -979,8 +979,12 @@ public:
   /// allocations generally are not lazy; that way, the host fill
   /// interface always works in a thread-parallel context without
   /// needing to synchronize on the allocation.
+  ///
+  /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
+  /// Hence I made the non-templated functions const. 
+
   template<class MemorySpace>
-  auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ()) const
+  auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ())
   {
     return val_.template view<typename MemorySpace::memory_space> ();
   }
