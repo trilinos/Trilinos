@@ -148,7 +148,7 @@ public:
         // May be larger that requested:
         set_span = node_node_set.span();
 
-        Kokkos::parallel_for( elem_node_id.extent(0) , *this );
+        Kokkos::parallel_for( "kokkos-kernels/example/fenl: NodeNodeGraph" , elem_node_id.extent(0) , *this );
       }
 
       execution_space::fence();

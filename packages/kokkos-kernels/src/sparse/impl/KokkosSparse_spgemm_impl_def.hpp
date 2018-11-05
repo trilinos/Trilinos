@@ -180,10 +180,10 @@ void KokkosSPGEMM
     	}
     }
     else {
-    	new_row_mapB = row_lno_temp_work_view_t ("");
-    	new_row_mapB_begins = row_lno_temp_work_view_t ("");
-    	set_index_entries = nnz_lno_temp_work_view_t ("");
-    	set_entries = nnz_lno_temp_work_view_t ("");
+    	new_row_mapB = row_lno_temp_work_view_t();
+    	new_row_mapB_begins = row_lno_temp_work_view_t();
+    	set_index_entries = nnz_lno_temp_work_view_t();
+    	set_entries = nnz_lno_temp_work_view_t();
     	nnz_lno_t maxNumRoughZeros = this->handle->get_spgemm_handle()->original_max_row_flops;
     	if (KOKKOSKERNELS_VERBOSE){
     		std::cout << "SYMBOLIC PHASE -- NO COMPRESSION: maxNumRoughZeros:" << maxNumRoughZeros << std::endl;

@@ -42,13 +42,13 @@
 */
 
 #include <KokkosKernels_config.h>
+#include <iostream>
 #if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
     defined(KOKKOSKERNELS_INST_OFFSET_INT) && \
     defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 #include "KokkosSparse_pcg.hpp"
 
 #include "KokkosKernels_Utils.hpp"
-#include <iostream>
 #include "KokkosKernels_IOUtils.hpp"
 
 #define MAXVAL 1

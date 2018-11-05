@@ -286,7 +286,7 @@ public:
       std::max( m_node_grid.extent(0) ,
                 m_elem_node.extent(0) * m_elem_node.extent(1) ))));
 
-    Kokkos::parallel_for( nwork , *this );
+    Kokkos::parallel_for( "kokkos-kernels/example/fen: BoxElemFixture", nwork , *this );
   }
 
 

@@ -48,16 +48,16 @@
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 extern "C" void daxpy_( const int* N, const double* alpha,
                                       const double* x, const int* x_inc,
-                                      const double* y, const int* y_inc);
+                                      double* y, const int* y_inc);
 extern "C" void saxpy_( const int* N, const float* alpha,
                                       const float* x, const int* x_inc,
-                                      const float* y, const int* y_inc);
+                                      float* y, const int* y_inc);
 extern "C" void zaxpy_( const int* N, const std::complex<double>* alpha,
                                       const std::complex<double>* x, const int* x_inc,
-                                      const std::complex<double>* y, const int* y_inc);
+                                      std::complex<double>* y, const int* y_inc);
 extern "C" void caxpy_( const int* N, const std::complex<float>* alpha,
                                       const std::complex<float>* x, const int* x_inc,
-                                      const std::complex<float>* y, const int* y_inc);
+                                      std::complex<float>* y, const int* y_inc);
 
 namespace KokkosBlas {
 namespace Impl {
@@ -212,5 +212,162 @@ KOKKOSBLAS1_CAXPBY_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, false)
 }
 
 #endif // KOKKOSKERNELS_ENABLE_TPL_BLAS
+
+// cuBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#include<KokkosBlas_tpl_spec.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+#define KOKKOSBLAS1_DAXPBY_CUBLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Axpby< \
+     double, \
+     Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     double, \
+     Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     1, true, ETI_SPEC_AVAIL> { \
+  typedef double AV; \
+  typedef double BV; \
+  typedef Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef Kokkos::View<double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
+\
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0)) { \
+      axpby_print_specialization<AV,XV,BV,YV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasDaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one); \
+    } else \
+      Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+  } \
+};
+
+
+#define KOKKOSBLAS1_SAXPBY_CUBLAS( LAYOUT, MEMSPACE , ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Axpby< \
+     float, \
+     Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     float, \
+     Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     1, true, ETI_SPEC_AVAIL> { \
+  typedef float AV; \
+  typedef float BV; \
+  typedef Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef Kokkos::View<float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
+\
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
+      axpby_print_specialization<AV,XV,BV,YV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasSaxpy(s.handle, N, &alpha, X.data(), one, Y.data(), one); \
+    } else \
+      Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+  } \
+};
+
+#define KOKKOSBLAS1_ZAXPBY_CUBLAS( LAYOUT, MEMSPACE , ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Axpby< \
+     Kokkos::complex<double>, \
+     Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::complex<double>, \
+     Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     1, true, ETI_SPEC_AVAIL> { \
+  typedef Kokkos::complex<double> AV; \
+  typedef Kokkos::complex<double> BV; \
+  typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
+\
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
+      axpby_print_specialization<AV,XV,BV,YV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasZaxpy(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(&alpha), reinterpret_cast<const cuDoubleComplex*>(X.data()), one, reinterpret_cast<cuDoubleComplex*>(Y.data()), one); \
+    } else \
+      Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+  } \
+};
+
+#define KOKKOSBLAS1_CAXPBY_CUBLAS( LAYOUT, MEMSPACE , ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Axpby< \
+     Kokkos::complex<float>, \
+     Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     Kokkos::complex<float>, \
+     Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                  Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+     1, true, ETI_SPEC_AVAIL> { \
+  typedef Kokkos::complex<float> AV; \
+  typedef Kokkos::complex<float> BV; \
+  typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YV; \
+  typedef typename XV::size_type size_type; \
+\
+  static void \
+  axpby (const AV& alpha, const XV& X, const BV& beta, const YV& Y) { \
+    const size_type numElems = X.extent(0); \
+    if((numElems < static_cast<size_type> (INT_MAX)) && (beta == 1.0f)) { \
+      axpby_print_specialization<AV,XV,BV,YV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasCaxpy(s.handle, N, reinterpret_cast<const cuComplex*>(&alpha), reinterpret_cast<const cuComplex*>(X.data()), one, reinterpret_cast<cuComplex*>(Y.data()), one); \
+    } else \
+      Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
+  } \
+};
+
+KOKKOSBLAS1_DAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_DAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS1_SAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_SAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS1_ZAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_ZAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS1_CAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_CAXPBY_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+#undef KOKKOSBLAS1_DAXPBY_CUBLAS
+#undef KOKKOSBLAS1_SAXPBY_CUBLAS
+#undef KOKKOSBLAS1_ZAXPBY_CUBLAS
+#undef KOKKOSBLAS1_CAXPBY_CUBLAS
+}
+}
+
+#endif // KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
 #endif

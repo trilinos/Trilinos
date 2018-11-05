@@ -24,7 +24,9 @@ namespace Test {
     typedef typename ats::mag_type mag_type;
 
     vector_type a, b, aref, bref;
+    const value_type one(1.0);
     const value_type half(0.5);
+    const value_type maxmin(1.0e-7);
     const mag_type eps = 1.0e3 * ats::epsilon();
 
     Random<value_type> random;
@@ -33,8 +35,8 @@ namespace Test {
         const auto aval = (random.value() + half);
         const auto bval = (random.value() + half);
         
-        aref[k] = max(min(aval, 1.0), 1.0e-7);
-        bref[k] = max(min(bval, 1.0), 1.0e-7);
+        aref[k] = max(min(aval, one), maxmin);
+        bref[k] = max(min(bval, one), maxmin);
       }
 
       {
