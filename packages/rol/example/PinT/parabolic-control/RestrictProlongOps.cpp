@@ -115,15 +115,15 @@ int main( int argc, char* argv[] )
     run_test_allocateVectors(MPI_COMM_WORLD, outStream);
 */
 
+/*
     (*outStream) << "restrictVectors" << std::endl;
     (*outStream) << "**************************************************" << std::endl;
     run_test_restrictVectors(MPI_COMM_WORLD, outStream);
+*/
 
-/*
     (*outStream) << "prolongVectors" << std::endl;
     (*outStream) << "**************************************************" << std::endl;
     run_test_prolongVectors(MPI_COMM_WORLD, outStream);
-*/
 
 /*
     (*outStream) << "buildCommunicators " << myRank << std::endl;
@@ -359,10 +359,6 @@ void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-//  using size_type         = std::vector<RealT>::size_type;
-//  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-//  using Bounds            = ROL::Bounds<RealT>;
-//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   auto & out = *outStream;
   std::stringstream ss;  // for errors
@@ -567,11 +563,11 @@ void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outSt
   MPI_Comm_size(comm, &numRanks);
   MPI_Comm_rank(comm, &myRank);
 
-  int local_Nt = 16;
+  int local_Nt = 8;
   ConstraintData cd = buildPinTConstraint(local_Nt,comm,outStream);
   Ptr<ROL::PinTConstraint<RealT>> pint_constraint = cd.constraint;
 
-  for(int level=0;level<3;level++) {
+  for(int level=0;level<1;level++) {
     (*outStream) << "Checking level " << level << std::endl;
 
     auto state       = pint_constraint->allocateSimVector(*cd.state,level); // fine vectors
@@ -583,18 +579,14 @@ void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outSt
       ROL::PinTVector<RealT> & pint_state_crs   = dynamic_cast<ROL::PinTVector<RealT>&>(*state_crs); 
       ROL::PinTVector<RealT> & pint_control_crs = dynamic_cast<ROL::PinTVector<RealT>&>(*control_crs); 
 
-      out << "Compare steps in control and state: " << pint_state_crs.numOwnedSteps() << " " << pint_control_crs.numOwnedSteps() << std::endl;
-      if(pint_state_crs.numOwnedSteps()!=pint_control_crs.numOwnedSteps()) {
-        ss << "prolongVectors: control and state time step count's don't match" << std::endl;
-        throw std::logic_error(ss.str());
-      }
-  
       // fill up the fine level vectors
-      pint_state_crs.getVectorPtr(-1)->setScalar(myRank*100.0-1); 
-      for(int k=0;k<pint_state_crs.numOwnedSteps();k++) {
-        pint_state_crs.getVectorPtr(k)->setScalar(myRank*100.0+k); 
-        pint_control_crs.getVectorPtr(k)->setScalar(myRank*100.0+k); 
+      for(int k=0;k<pint_state_crs.numOwnedVectors();k++) {
+        double scaling = (k % 2 == 0) ? -1.0 : 1.0;
+        pint_state_crs.getVectorPtr(k-1)->setScalar(scaling*(myRank*100.0+k+1.0)); 
       }
+
+      for(int k=0;k<pint_control_crs.numOwnedSteps();k++)
+        pint_control_crs.getVectorPtr(k)->setScalar(myRank*100.0+k); 
     }
 
     out << "Calling state prolongation" << std::endl;
@@ -607,67 +599,112 @@ void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outSt
     out << "Checking prolongation methods" << std::endl;
     { 
       ROL::PinTVector<RealT> & pint_state   = dynamic_cast<ROL::PinTVector<RealT>&>(*state); 
-      ROL::PinTVector<RealT> & pint_control = dynamic_cast<ROL::PinTVector<RealT>&>(*control); 
-
       ROL::PinTVector<RealT> & pint_state_crs   = dynamic_cast<ROL::PinTVector<RealT>&>(*state_crs); 
-      ROL::PinTVector<RealT> & pint_control_crs = dynamic_cast<ROL::PinTVector<RealT>&>(*control_crs); 
 
-      if(pint_state.dimension()!=pint_state_crs.dimension()*2) {
-        ss << "prolongVectors: coarse state is the wrong size: found " << pint_state_crs.dimension() 
-           << ", expected " << pint_state.dimension()/2 << std::endl;
-        throw std::logic_error(ss.str());
-      }
+      *outStream << "TOTAL NORM (before) = " << pint_state.norm() << std::endl;
 
-      // check the coarse state (read comment for prolong to understand what this is checking)
+      // check the state prolong (read comment for prolong to understand what this is checking)
       //////////////////////////////////////////////
       
       int dim_state = pint_state_crs.getVectorPtr(-1)->dimension();
 
-      // check that the initial state is the sum of the previous processor
+      // check the left most vectors
       {
-        int num_previous_steps = pint_state_crs.numOwnedSteps()-1;
-        RealT exact_value = 0.0;
-        if(myRank==0)
-          exact_value = (myRank*100.0+0)/2.0;
+        pint_state.getVectorPtr(-1)->axpy(-1.0,*pint_state_crs.getVectorPtr(-1));
+
+        CHECK_ASSERT(pint_state.getVectorPtr(-1)->norm() <= tolerance);
+
+        pint_state.getVectorPtr( 1)->axpy(-0.5,*pint_state_crs.getVectorPtr(-1));
+        pint_state.getVectorPtr( 1)->axpy(-0.5,*pint_state_crs.getVectorPtr( 1));
+
+        CHECK_ASSERT(pint_state.getVectorPtr( 1)->norm() <= tolerance);
+
+        auto empty = pint_state.getVectorPtr( 0)->clone();
+        if(myRank>0) 
+          empty->setScalar((myRank-1)*100.0+pint_state_crs.numOwnedVectors());
         else
-          exact_value = (myRank*100.0+0+(myRank-1)*100.0+num_previous_steps)/2.0;
+          empty->zero();
+        pint_state.getVectorPtr( 0)->axpy(-0.5,*empty);
+        pint_state.getVectorPtr( 0)->axpy(-0.5,*pint_state_crs.getVectorPtr( 0));
 
-        RealT exact_norm  = std::sqrt(std::pow(exact_value,2.0)*dim_state);
-        RealT fine_norm = pint_state.getVectorPtr(0)->norm();
-        if(std::fabs(fine_norm-exact_norm)>tolerance) {
-          ss << "prolongVectors: norm of prolonged inital state vector is incorrect. " << std::endl;
-          throw std::logic_error(ss.str());
+        CHECK_ASSERT(pint_state.getVectorPtr( 0)->norm() <= tolerance);
+      }
+
+      // check the interior vectors
+      int numSteps = (pint_state.numOwnedVectors()-2)/2+1;
+      for( int k=1; k<numSteps-2;k++) {
+        int u_index = 2*k;
+        int v_index = 2*k+1;
+
+        if( k % 2 == 1) {
+          // injection
+          int coarse_si = (k-1)/2;
+         
+          int u_crs_index = 2*coarse_si;
+          int v_crs_index = 2*coarse_si+1;
+
+          pint_state.getVectorPtr(u_index)->axpy(-1.0,*pint_state_crs.getVectorPtr(u_crs_index));
+          pint_state.getVectorPtr(v_index)->axpy(-1.0,*pint_state_crs.getVectorPtr(v_crs_index));
+
+          CHECK_ASSERT(pint_state.getVectorPtr(u_index)->norm() <= tolerance);
+          CHECK_ASSERT(pint_state.getVectorPtr(v_index)->norm() <= tolerance);
+        }
+        else {
+          // injection
+          int coarse_si_0 = k/2-1;
+          int coarse_si_1 = k/2;
+         
+          int u_crs_index = 2*coarse_si_0;
+          int v_crs_index = 2*coarse_si_0+1;
+
+          pint_state.getVectorPtr(u_index)->axpy(-0.5,*pint_state_crs.getVectorPtr(u_crs_index));
+          pint_state.getVectorPtr(v_index)->axpy(-0.5,*pint_state_crs.getVectorPtr(v_crs_index));
+
+          u_crs_index = 2*coarse_si_1;
+          v_crs_index = 2*coarse_si_1+1;
+
+          pint_state.getVectorPtr(u_index)->axpy(-0.5,*pint_state_crs.getVectorPtr(u_crs_index));
+          pint_state.getVectorPtr(v_index)->axpy(-0.5,*pint_state_crs.getVectorPtr(v_crs_index));
+
+          CHECK_ASSERT(pint_state.getVectorPtr(u_index)->norm() <= tolerance);
+          CHECK_ASSERT(pint_state.getVectorPtr(v_index)->norm() <= tolerance);
         }
       }
 
-      // check the injection vectors, note this includes the virtual variable
-      for(int k=-1;k<pint_state_crs.numOwnedSteps();k++) {
-        RealT exact_value = myRank*100.0+k;
-        RealT exact_norm  = std::sqrt(std::pow(exact_value,2.0)*dim_state);
+      // check the right most vectors
+      
+      {
+        int fine_last = pint_state.numOwnedVectors();
+        int crs_last = pint_state_crs.numOwnedVectors();
 
-        RealT fine_norm = pint_state.getVectorPtr(2*k+1)->norm();
-        if(std::fabs(fine_norm-exact_norm)>tolerance) {
-          ss << "prolongVectors: norm of prolonged state vector " << 2*k+1 << " is incorrect. "
-             << "Expected " << exact_norm << ", found " << fine_norm << std::endl;
-          throw std::logic_error(ss.str());
-        }
+        // final state vector
+        pint_state.getVectorPtr(fine_last-2)->axpy(-1.0,*pint_state_crs.getVectorPtr(crs_last-2));
+
+        CHECK_ASSERT(pint_state.getVectorPtr(fine_last-2)->norm() <= tolerance);
+
+ 
+        pint_state.getVectorPtr( fine_last-4)->axpy(-0.5,*pint_state_crs.getVectorPtr(crs_last-2));
+        pint_state.getVectorPtr( fine_last-4)->axpy(-0.5,*pint_state_crs.getVectorPtr(crs_last-4));
+
+        CHECK_ASSERT(pint_state.getVectorPtr(fine_last-4)->norm() <= tolerance);
+
+        auto empty = pint_state.getVectorPtr(fine_last-3)->clone();
+        if(myRank!=numRanks-1) 
+          empty->setScalar(-1.0*((myRank+1)*100.0+1.0));
+        else
+          empty->zero();
+        pint_state.getVectorPtr( fine_last-3)->axpy(-0.5,*empty);
+        pint_state.getVectorPtr( fine_last-3)->axpy(-0.5,*pint_state_crs.getVectorPtr( crs_last-3));
+
+        CHECK_ASSERT(pint_state.getVectorPtr( fine_last-3)->norm() <= tolerance);
       }
 
-      // check the injection vectors, note this includes the virtual variable
-      for(int k=0;k<pint_state_crs.numOwnedSteps()-1;k++) {
-        RealT exact_value = (myRank*100.0+k + myRank*100.0+k+1)/2.0;
-        RealT exact_norm  = std::sqrt(std::pow(exact_value,2.0)*dim_state);
+      *outStream << "TOTAL NORM (after) = " << pint_state.norm() << std::endl;
 
-        RealT fine_norm = pint_state.getVectorPtr(2*k+2)->norm();
-        if(std::fabs(fine_norm-exact_norm)>tolerance) {
-          ss << "ERROR prolongVectors: norm of prolonged state vector " << 2*k+2 << " is incorrect. "
-             << "Expected " << exact_norm << ", found " << fine_norm << std::endl;
-          throw std::logic_error(ss.str());
-        }
-      }
-
-      // check the coarse control (read comment for prolong to understand what this is checking)
+      // check the control prolong (read comment for prolong to understand what this is checking)
       //////////////////////////////////////////////
+      ROL::PinTVector<RealT> & pint_control = dynamic_cast<ROL::PinTVector<RealT>&>(*control); 
+      ROL::PinTVector<RealT> & pint_control_crs = dynamic_cast<ROL::PinTVector<RealT>&>(*control_crs); 
       
       int dim_control = pint_control_crs.getVectorPtr(0)->dimension();
 

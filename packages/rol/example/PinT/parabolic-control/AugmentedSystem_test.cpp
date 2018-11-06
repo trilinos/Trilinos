@@ -186,7 +186,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   control      = ROL::buildControlPinTVector<RealT>( communicators, vectorComm, nt,     zk); // time discontinous, stencil = [0]
 
   // Construct reduced dynamic objective
-  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+  auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(control->numOwnedSteps());
   for( uint k=0; k<timeStamp->size(); ++k ) {
     timeStamp->at(k).t.resize(2);
     timeStamp->at(k).t.at(0) = k*dt;
@@ -207,13 +207,16 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   // build the parallel in time constraint from the user constraint
   Ptr<ROL::PinTConstraint<RealT>> pint_con = makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-  // pint_con->setGlobalScale(1.0);
-  pint_con->applyMultigrid(numLevels);
-  // pint_con->applyMultigrid(2);
+  pint_con->setGlobalScale(1.0);
+  // pint_con->applyMultigrid(numLevels);
+  pint_con->applyMultigrid(2);
   pint_con->setSweeps(sweeps);
   pint_con->setRelaxation(omega);
 
   double tol = 1e-12;
+
+  ROL::RandomizeVector(*control);
+  ROL::RandomizeVector(*state);
 
   // make sure we are globally consistent
   state->boundaryExchange();
@@ -238,8 +241,9 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     kkt_x_out->axpy(-1.0,*kkt_x_in);
 
     RealT norm = kkt_x_out->norm();
-    if(myRank==0)
+    if(myRank==0) {
       (*outStream) << "NORM EXACT= " << norm << std::endl;
+    }
   }
 
   if(myRank==0)
@@ -253,10 +257,17 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto kkt_res = kkt_vector->clone();
     kkt_x_out->zero();
 
-    for(int i=0;i<sweeps;i++) {
+    RealT res_0 = -1;
+    for(int i=0;i<10;i++) {
       pint_con->applyAugmentedKKT(*kkt_res,*kkt_x_out,*state,*control,tol);
       kkt_res->scale(-1.0);
       kkt_res->axpy(1.0,*kkt_b);                                                       // r = b - A*x_i
+
+      RealT norm_res = kkt_res->norm();
+      if(res_0<0.0)
+        res_0 = norm_res;
+      if(myRank==0)
+        (*outStream) << "NORM RES = " << norm_res << "  " << norm_res/res_0<< std::endl;
     
       pint_con->applyAugmentedInverseKKT(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
@@ -265,8 +276,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       kkt_err->set(*kkt_x_out);
       kkt_err->axpy(-1.0,*kkt_x_in);                                                   // err = x_{i+1} - x
       RealT norm = kkt_err->norm() / kkt_b->norm();
-      if(myRank==0)
-        (*outStream) << "NORM JACOBI= " << norm << std::endl;
+      // if(myRank==0)
+      //   (*outStream) << "NORM JACOBI= " << norm << std::endl;
     }
   }
 

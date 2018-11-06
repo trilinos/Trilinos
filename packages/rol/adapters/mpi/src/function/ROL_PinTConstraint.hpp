@@ -1610,8 +1610,6 @@ public:
    /**
     * \brief Prolong a simulation space vector
     *
-    *
-    *   X_0 = (x_0 + x_{Np-1}^{-1})/2                               (initial condition on time domain)
     *   X_{2*i+1} = x_i                           -1 <= i < Np      (injection variables, including virtual variable)
     *   X_{2*i+2} = (x_i + x_{i+1})/2              0 <= i < Np - 1  (averaged variables, created at fine level)
     *
@@ -1626,42 +1624,93 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input); // coarse vector
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     int Np = pint_input.numOwnedSteps();
+     int Np = (pint_output.numOwnedVectors()-2)/2 + 1;
 
-     //   X_0 = (x_0 + x_{Np-1}^{-1})/2                               (initial condition on time domain)
+     // handle left exterior points
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+     pint_input.getRemoteBufferPtr(-1)->setScalar(0.0);
+     pint_input.boundaryExchange();
+     
+     {
+       // injection of the virtual point
+       pint_output.getVectorPtr(-1)->set(*pint_input.getVectorPtr(-1));
+
+       // averaging of the state points
+       pint_output.getVectorPtr( 0)->set(*pint_input.getRemoteBufferPtr(-1));
+       pint_output.getVectorPtr( 0)->axpy(1.0,*pint_input.getVectorPtr(0));
+       pint_output.getVectorPtr( 0)->scale(0.5);
+
+       // averaging of the virtual points
+       pint_output.getVectorPtr( 1)->set(*pint_input.getVectorPtr(-1));
+       pint_output.getVectorPtr( 1)->axpy(1.0,*pint_input.getVectorPtr(1));
+       pint_output.getVectorPtr( 1)->scale(0.5);
+     }
+
+     // handle interior points
+     ////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+     for(int si=1;si<Np-2;si++) {
+
+       // fine indices
+       int u_index = 2*si;   
+       int v_index = 2*si+1;   
+
+       if(si % 2 == 1) {
+         int coarse_si = (si-1)/2;
+         int u_crs_index = 2*coarse_si;
+         int v_crs_index = 2*coarse_si+1;
+
+         pint_output.getVectorPtr(u_index)->set(*pint_input.getVectorPtr(u_crs_index));
+         pint_output.getVectorPtr(v_index)->set(*pint_input.getVectorPtr(v_crs_index));
+       }
+       else {
+         int coarse_si_0 = si/2-1;
+         int coarse_si_1 = si/2;
+         int u_crs_index = -1; 
+         int v_crs_index = -1;
+ 
+         u_crs_index = 2*coarse_si_0;
+         v_crs_index = 2*coarse_si_0+1;
+
+         pint_output.getVectorPtr(u_index)->set(*pint_input.getVectorPtr(u_crs_index));
+         pint_output.getVectorPtr(v_index)->set(*pint_input.getVectorPtr(v_crs_index));
+
+         u_crs_index = 2*coarse_si_1;
+         v_crs_index = 2*coarse_si_1+1;
+
+         pint_output.getVectorPtr(u_index)->axpy(1.0,*pint_input.getVectorPtr(u_crs_index));
+         pint_output.getVectorPtr(v_index)->axpy(1.0,*pint_input.getVectorPtr(v_crs_index));
+
+         pint_output.getVectorPtr(u_index)->scale(0.5);
+         pint_output.getVectorPtr(v_index)->scale(0.5);
+       }
+     }
+
+     // handle left exterior points
      ////////////////////////////////////////////////////////////////////////////////////////////////////////
      
      {
-       int timeRank = pint_input.communicators().getTimeRank();
+       int fine_last = pint_output.numOwnedVectors();
+       int crs_last = pint_input.numOwnedVectors();
 
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(0);
+       pint_output.getRemoteBufferPtr(-1)->set(*pint_input.getVectorPtr(-1)); // copy the virtual variable
+       pint_output.getVectorPtr(fine_last-2)->zero();  // make space
+       pint_output.boundaryExchangeSumInto();
 
-       pint_input.boundaryExchange(); // fill remote buffer
+       // averaging of the virtual points
+       pint_output.getVectorPtr(fine_last-3)->set(*pint_output.getVectorPtr(fine_last-2));
+       pint_output.getVectorPtr(fine_last-3)->axpy(1.0,*pint_input.getVectorPtr(crs_last-3));
+       pint_output.getVectorPtr(fine_last-3)->scale(0.5);
 
-       out.zero(); 
+       // averaging of the virtual points
+       pint_output.getVectorPtr(fine_last-4)->set(*pint_input.getVectorPtr(crs_last-2));
+       pint_output.getVectorPtr(fine_last-4)->axpy(1.0,*pint_input.getVectorPtr(crs_last-4));
+       pint_output.getVectorPtr(fine_last-4)->scale(0.5);
 
-       if(timeRank!=0)
-         out.axpy(1.0/2.0,*pint_input.getRemoteBufferPtr(-1)); 
-       out.axpy(1.0/2.0,*pint_input.getVectorPtr(0)); 
-     } 
+       // injection of the state point
+       pint_output.getVectorPtr(fine_last-2)->set(*pint_input.getVectorPtr(crs_last-2));
 
-     //   X_{2*i+1} = x_i                            -1 <= i < Np          (includes "virtual variable")
-     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-     
-     for(int k=-1;k<Np;k++) {
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(2*k+1);
-       out.set(*pint_input.getVectorPtr(k));
-     }
-
-     //   X_{2*i+2} = (x_i + x_{i+1})/2              0 <= i < Np - 1  (averaged variables, created at fine level)
-     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-     
-     for(int k=0;k<Np-1;k++) {
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(2*k+2);
-
-       out.zero(); 
-       out.axpy(1.0/2.0,*pint_input.getVectorPtr(k+0)); 
-       out.axpy(1.0/2.0,*pint_input.getVectorPtr(k+1)); 
      }
    }
 
