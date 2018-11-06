@@ -24,4 +24,4 @@ if [ "$ATDM_CONFIG_KOKKOS_ARCH" != "SNB" ] ; then
   return
 fi
 
-source $ATDM_SCRIPT_DIR/toss3/environment.sh
+source $ATDM_SCRIPT_DIR/common/toss3/environment.sh
