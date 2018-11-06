@@ -1303,8 +1303,9 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
       // Build output operator
-      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
-      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
+      auto tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(destOp);
+      if(tExplicitOp.is_null())
+        tExplicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
@@ -1939,12 +1940,14 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
      TEUCHOS_ASSERT(blocked_opr->productDomain()->numBlocks() == numCols);
 
      RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_sum = Teuchos::rcp_dynamic_cast<Thyra::DefaultBlockedLinearOp<double>>(destOp);
-     if(destOp==Teuchos::null)
+     if(blocked_sum.is_null())
        blocked_sum = Thyra::defaultBlockedLinearOp<double>();
      blocked_sum->beginBlockFill(numRows,numCols);
      for(int r = 0; r < numRows; ++r)
-       for(int c = 0; c < numCols; ++c)
-         blocked_sum->setBlock(r,c,explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c))));
+       for(int c = 0; c < numCols; ++c){
+         auto block = explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),Teuchos::null);
+         blocked_sum->setNonconstBlock(r,c,block);
+       }
      blocked_sum->endBlockFill();
      return blocked_sum;
    }
