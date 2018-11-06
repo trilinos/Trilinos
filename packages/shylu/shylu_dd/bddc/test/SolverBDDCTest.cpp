@@ -54,8 +54,6 @@
 
 #if defined(_OPENMP)
 #include <omp.h>
-#else
-#define omp_get_nested() 0
 #endif
 
 using Teuchos::RCP;
@@ -63,7 +61,7 @@ using Teuchos::RCP;
 namespace {
 
 typedef int LO; // Local Ordinal
-typedef long GO; // Global Ordinal
+typedef Tpetra::Map<>::global_ordinal_type GO; // Global Ordinal
 typedef double SX; // floating point data type
 typedef double SM; // real (magnitude) for SX
 
@@ -105,25 +103,20 @@ void readInputFiles(MPI_Comm Comm,
   }
 }
 
-TEST(SolverBDDCSimple, Test1)
+void runTest(RCP<Teuchos::ParameterList> & parametersPM,
+	     RCP<Teuchos::ParameterList> & parametersBDDC,
+	     RCP<Teuchos::ParameterList> & parametersMueLu,
+	     RCP<Teuchos::ParameterList> & parametersNodalAMG,
+	     const std::string meshDataFile,
+	     const int myPID,
+	     MPI_Comm Comm,
+	     const bool resetFile,
+	     int & numIterations)
 {
-  const std::string fileNamePM = "problemMakerSimple.xml";
-  const std::string fileNameBDDC = "bddc.xml";
-  const std::string fileNameMueLu = "elasticity3D.xml";
-  const std::string fileNameNodalAMG = "";
-  const std::string meshDataFile = "";
-  MPI_Comm Comm = MPI_COMM_WORLD;
-  int myPID;
-  MPI_Comm_rank(Comm, &myPID);  
-  RCP<Teuchos::ParameterList> parametersPM, parametersBDDC, parametersMueLu,
-    parametersNodalAMG;
-  readInputFiles(Comm, fileNamePM, fileNameBDDC, fileNameMueLu, 
-		 fileNameNodalAMG, parametersPM, parametersBDDC,
-		 parametersMueLu, parametersNodalAMG);
   // setup test data
   bddc::setupTest<LO,GO,SX,SM> 
-    test(parametersPM, parametersBDDC, parametersMueLu, parametersNodalAMG,
-	 meshDataFile, Comm);
+    test(parametersPM, parametersBDDC, parametersMueLu,
+	 parametersNodalAMG, meshDataFile, Comm);
   LO numNode, *nodeBegin(nullptr), *localDofs(nullptr);
   const GO *nodeGlobalIDs(nullptr);
   const SM *xCoord(nullptr), *yCoord(nullptr), *zCoord(nullptr);
@@ -135,33 +128,17 @@ TEST(SolverBDDCSimple, Test1)
 		      xCoord, yCoord, zCoord, subRowBeginPtr,
 		      subColumnsPtr, subValuesPtr, Operator);
   const std::vector< std::vector<LO> > & subNodes = test.getSubNodes();
-  BDDC_TEST_FOR_EXCEPTION(subNodes.size() != 1, std::runtime_error, 
-			  "number of subdomains per MPI rank must be 1");  
+  std::vector<int> nodeSend;
+  bddc::getNodeSend(numNode, nodeGlobalIDs, Comm, nodeSend);
   // initialize preconditioner
   int level(0);
-  LO* rowBegin = subRowBeginPtr[0];
-  LO* columns = subColumnsPtr[0];
-  SX* values = subValuesPtr[0];
-  // make adjustments for essential boundary conditions
-  std::vector<SM> xUse(numNode), yUse(numNode), zUse(numNode);
-  std::vector<GO> nodeGlobalIDsUse(numNode);
-  LO numNodeUse(0);
-  for (LO i=0; i<numNode; i++) {
-    if (nodeBegin[i+1] > nodeBegin[i]) {
-      xUse[numNodeUse] = xCoord[i];
-      yUse[numNodeUse] = yCoord[i];
-      zUse[numNodeUse] = zCoord[i];
-      nodeGlobalIDsUse[numNodeUse++] = nodeGlobalIDs[i];
-    }
-  }
-  std::vector<int> nodeSend;
-  bddc::getNodeSend(numNodeUse, nodeGlobalIDsUse.data(), Comm, nodeSend);
   MPI_Barrier(Comm);
   double startTimeBDDCPre = test.getTime();
   RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > Preconditioner =
     rcp( new bddc::PreconditionerBDDC<SX,SM,LO,GO>
-	 (numNodeUse, nodeGlobalIDsUse.data(), xUse.data(), yUse.data(), 
-	  zUse.data(), rowBegin, columns, values, parametersBDDC, Comm, level, 
+	 (numNode, nodeBegin, localDofs, nodeGlobalIDs, xCoord, yCoord, zCoord, 
+	  subNodes, subRowBeginPtr.data(), subColumnsPtr.data(), 
+	  subValuesPtr.data(), parametersBDDC, Comm, level, Operator, 
 	  &nodeSend) );
   MPI_Barrier(Comm);
   double stopTimeBDDCPre = test.getTime();
@@ -170,7 +147,6 @@ TEST(SolverBDDCSimple, Test1)
   test.getRhs(numMyRows, rhs);
   double startTimeKrylovInit(0), startTimeKrylovSolve(0);
   double stopTimeKrylovInit(0), stopTimeKrylovSolve(0);
-  const bool resetFile = true;
   test.openFiles(Preconditioner, resetFile);
   MPI_Barrier(Comm);
   // initialize Krylov solver
@@ -198,8 +174,6 @@ TEST(SolverBDDCSimple, Test1)
   SM normRhs = Preconditioner->Norm2(rhs.data(), numMyRows);
   double solverTolerance = parametersBDDC->get("Convergence Tolerance", 1e-6);
   EXPECT_LT(normError, 1.01*solverTolerance*normRhs);
-  int krylovMethod = parametersBDDC->get("Krylov Method", 0);
-  test.printTimings(Preconditioner, Solver, krylovMethod);
   if (myPID == 0) {
     std::cout << "BDDC Preconditioner initialization time = "
 	      << stopTimeBDDCPre - startTimeBDDCPre << std::endl;
@@ -208,7 +182,75 @@ TEST(SolverBDDCSimple, Test1)
     std::cout << "KrylovSolver solve solve time           = "
 	      << stopTimeKrylovSolve - startTimeKrylovSolve << std::endl;
   }
-  Preconditioner->printTimings("BDDC_timers.dat");
+  const bool outputTiming = parametersBDDC->get("Output Timing", false);
+  if (outputTiming) {
+    int krylovMethod = parametersBDDC->get("Krylov Method", 0);
+    test.printTimings(Preconditioner, Solver, krylovMethod);
+    Preconditioner->printTimings("BDDC_timers.dat");
+  }
+}
+
+TEST(SolverBDDC, Test1)
+{
+  const std::string fileNamePM = "problemMaker.xml";
+  const std::string fileNameBDDC = "bddc.xml";
+  const std::string fileNameMueLu = "mueLu_SGS.xml";
+  const std::string fileNameNodalAMG = "";
+  const std::string meshDataFile = "";
+  RCP<Teuchos::ParameterList> parametersPM, parametersBDDC, parametersMueLu,
+    parametersNodalAMG;
+  MPI_Comm Comm = MPI_COMM_WORLD;
+  int myPID;
+  MPI_Comm_rank(Comm, &myPID);  
+  readInputFiles(Comm, fileNamePM, fileNameBDDC, fileNameMueLu, 
+		 fileNameNodalAMG, parametersPM, parametersBDDC,
+		 parametersMueLu, parametersNodalAMG);
+  int numIterations;
+  const bool runSingleTest = false;
+  bool resetFile = true;
+  if (runSingleTest) {
+    runTest(parametersPM, parametersBDDC, parametersMueLu, parametersNodalAMG, 
+	    meshDataFile, myPID, Comm, resetFile, numIterations);
+  }
+  else {
+    const std::string solverDirichlet = 
+      parametersBDDC->get("Dirichlet Solver", "SuperLU");
+    const std::string solverNeumann = 
+      parametersBDDC->get("Neumann Solver", "SuperLU");
+    const std::string solverCoarse = 
+      parametersBDDC->get("Coarse Solver", "SuperLU");
+    for (int i=0; i<2; i++) {
+      parametersBDDC->set("Dirichlet Solver", solverDirichlet);
+      parametersBDDC->set("Neumann Solver", solverNeumann);
+      parametersBDDC->set("Coarse Solver", solverCoarse);
+      if (i == 0) {
+	parametersPM->set("Problem Type String", "Poisson-3D");
+	parametersBDDC->set("Krylov Solver", "PCG");
+      }
+      if (i == 1) {
+	parametersPM->set("Problem Type String", "Elasticity-3D");
+	parametersBDDC->set("Krylov Solver", "GCR");
+      }
+      int jMax = 2;
+#if defined(HAVE_SHYLU_DDBDDC_MUELU)
+      jMax++;
+#endif
+      for (int j=0; j<jMax; j++) {
+	if (j == 0) parametersBDDC->set("Interface Preconditioner", true);
+	if (j == 1) parametersBDDC->set("Interface Preconditioner", false);
+	if (j == 2) {
+	  parametersBDDC->set("Dirichlet Solver", "MueLu");
+	  parametersBDDC->set("Neumann Solver", "MueLu");
+	  parametersBDDC->set("Coarse Solver", "MueLu");
+	}
+	if ((i == 1) && (j == 2)) continue;
+	runTest(parametersPM, parametersBDDC, parametersMueLu,
+		parametersNodalAMG, meshDataFile, myPID, Comm, 
+		resetFile, numIterations);
+	resetFile = false;
+      }
+    }
+  }
 }
 
 } // end namespace

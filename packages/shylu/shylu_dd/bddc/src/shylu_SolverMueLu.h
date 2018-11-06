@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef SOLVERMUELUBDDC_H
-#define SOLVERMUELUBDDC_H
+#ifndef BDDC_SOLVERMUELU_H
+#define BDDC_SOLVERMUELU_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -68,14 +68,13 @@ template <class SX> class SolverMueLu :
 {
 public:
   typedef int LO; // Local Ordinal
-  typedef long GO; // Global Ordinal
-  typedef Tpetra::Map<>::node_type                                Node;
-  typedef Tpetra::Map<LO,GO,Node>                                 Map;
-  typedef Tpetra::MultiVector<double,LO,GO,Node>                  MV;
-  typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-  typedef Tpetra::CrsMatrix<double,LO,GO,Node>                    CrsMatrix;
-  typedef Tpetra::Operator<double,LO,GO,Node>                     Operator;
-  typedef MueLu::TpetraOperator<double,LO,GO,Node>                MTOperator;
+  typedef Tpetra::Map<>::global_ordinal_type GO; // Global Ordinal
+  typedef Tpetra::Map<LO,GO>                                 Map;
+  typedef Tpetra::MultiVector<double,LO,GO>                  MV;
+  typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+  typedef Tpetra::CrsMatrix<double,LO,GO>                    CrsMatrix;
+  typedef Tpetra::Operator<double,LO,GO>                     Operator;
+  typedef MueLu::TpetraOperator<double,LO,GO>                MTOperator;
 
   SolverMueLu(int numRows,
 	      int* rowBegin,
@@ -414,5 +413,5 @@ private:
   
 } // namespace bddc
 
-#endif // SOLVERMUELUBDDC_H
+#endif // BDDC_SOLVERMUELU_H
   

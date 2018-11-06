@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef OPERATORBASEBDDC_H
-#define OPERATORBASEBDDC_H
+#ifndef BDDC_OPERATORBASE_H
+#define BDDC_OPERATORBASE_H
 
 #include <stdio.h>
 #include <fstream>
@@ -68,4 +68,4 @@ template <class SX> class OperatorBase
  
 } // namespace bddc
 
-#endif // OPERATORBASEBDDC_H
+#endif // BDDC_OPERATORBASE_H

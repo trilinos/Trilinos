@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef PARTITIONOFUNITYBDDC_H
-#define PARTITIONOFUNITYBDDC_H
+#ifndef BDDC_PARTITIONOFUNITY_H
+#define BDDC_PARTITIONOFUNITY_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -65,7 +65,6 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Author: Clark R. Dohrmann
 namespace bddc {
 
 template <class SX,
@@ -77,11 +76,10 @@ template <class SX,
   //
   // Convenience typedefs
   //
-  typedef Tpetra::Map<>::node_type                                Node;
-  typedef Tpetra::Map<LO,GO,Node>                                 Map;
-  typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-  typedef Tpetra::Export<LO,GO,Node>                              Export;
-  typedef Tpetra::Import<LO,GO,Node>                              Import;
+  typedef Tpetra::Map<LO,GO>                                 Map;
+  typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+  typedef Tpetra::Export<LO,GO>                              Export;
+  typedef Tpetra::Import<LO,GO>                              Import;
 
   PartitionOfUnity()
   {
@@ -92,7 +90,7 @@ template <class SX,
 		   const std::vector< std::vector<LO> > & subNodeBegin,
 		   const std::vector< std::vector<LO> > & subNodes,
 		   LO spatialDim,
-		   RCP<Teuchos::ParameterList> & Parameters,
+		   RCP<Teuchos::ParameterList> Parameters,
 		   RCP<const Teuchos::Comm<int> > Comm,
 		   RCP<Tpetra::Distributor> & distributor,
 		   const std::vector<int> & nodeSend,
@@ -924,5 +922,5 @@ template <class SX,
 
 } // namespace bddc
 
-#endif // PARTITIONOFUNITYBDDC_H
+#endif // BDDC_PARTITIONOFUNITY_H
   

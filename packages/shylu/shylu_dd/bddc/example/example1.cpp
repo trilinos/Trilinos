@@ -48,12 +48,13 @@
 #include "shylu_PreconditionerBDDC.h"
 #include "shylu_KrylovSolver.h"
 #include "setupTest.h"
-#include <Teuchos_XMLParameterListHelpers.hpp>
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Tpetra_Core.hpp"
 
 using Teuchos::RCP;
 
 typedef int LO; // Local Ordinal
-typedef long GO; // Global Ordinal
+typedef Tpetra::Map<>::global_ordinal_type GO; // Global Ordinal
 typedef double SX; // floating point data type
 typedef double SM; // real (magnitude) for SX
 
@@ -182,10 +183,8 @@ void runTest(RCP<Teuchos::ParameterList> & parametersPM,
 }
 
 int main (int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
-    Kokkos::initialize(argc, argv);
-#endif
+  // manage init and finalize of MPI and Kokkos
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   const std::string fileNamePM = "problemMaker.xml";
   const std::string fileNameBDDC = "bddc.xml";
   const std::string fileNameMueLu = "";
@@ -203,8 +202,4 @@ int main (int argc, char *argv[]) {
   bool resetFile = true;
   runTest(parametersPM, parametersBDDC, parametersMueLu, parametersNodalAMG, 
 	  meshDataFile, myPID, Comm, resetFile, numIterations);
-#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
-    Kokkos::finalize();
-#endif    
-  MPI_Finalize();
 }

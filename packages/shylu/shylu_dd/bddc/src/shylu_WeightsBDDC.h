@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef WEIGHTSBDDC_H
-#define WEIGHTSBDDC_H
+#ifndef BDDC_WEIGHTS_H
+#define BDDC_WEIGHTS_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -57,7 +57,6 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 template <class SX, class SM, class LO, class GO> 
@@ -67,14 +66,13 @@ public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::Map<>::node_type                                Node;
-  typedef Tpetra::Map<LO,GO,Node>                                 Map;
-  typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-  typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
-  typedef Tpetra::CrsMatrix<GO,LO,GO,Node>                        CrsMatrixGO;
-  typedef Tpetra::Export<LO,GO,Node>                              Export;
-  typedef Tpetra::Import<LO,GO,Node>                              Import;
-  typedef Tpetra::MultiVector<SX,LO,GO,Node>                      MV;
+  typedef Tpetra::Map<LO,GO>                                 Map;
+  typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+  typedef Tpetra::CrsMatrix<SX,LO,GO>                        CrsMatrix;
+  typedef Tpetra::CrsMatrix<GO,LO,GO>                        CrsMatrixGO;
+  typedef Tpetra::Export<LO,GO>                              Export;
+  typedef Tpetra::Import<LO,GO>                              Import;
+  typedef Tpetra::MultiVector<SX,LO,GO>                      MV;
 
   WeightsBDDC()
   {
@@ -470,5 +468,5 @@ private:
 
 } // namespace bddc
 
-#endif // WEIGHTSBDDC_H
+#endif // BDDC_WEIGHTS_H
   

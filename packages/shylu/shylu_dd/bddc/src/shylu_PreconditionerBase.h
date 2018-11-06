@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef PRECONDITIONERBASE_H
-#define PRECONDITIONERBASE_H
+#ifndef BDDC_PRECONDITIONERBASE_H
+#define BDDC_PRECONDITIONERBASE_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -50,7 +50,6 @@
 #include <vector>
 #include <set>
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 template <class SX, class SM, class LO, class GO> 
@@ -127,5 +126,5 @@ private:
 
 } // namespace bddc
 
-#endif // PRECONDITIONERBASE_H
+#endif // BDDC_PRECONDITIONERBASE_H
   

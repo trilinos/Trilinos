@@ -4,11 +4,6 @@
     ShyLU BDDC configuration.
 */
 
-/* define if we want to use MPI */
-#cmakedefine HAVE_SHYLU_DDBDDC_MPI
-
-#cmakedefine HAVE_SHYLU_DDBDDC_TPETRA
-
 #cmakedefine HAVE_SHYLU_DDBDDC_PARMETIS
 
 #cmakedefine HAVE_SHYLU_DDBDDC_METIS
@@ -26,7 +21,5 @@
 #cmakedefine HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO
 
 #cmakedefine HAVE_SHYLU_DDBDDC_AMESOS2
-
-#cmakedefine HAVE_SHYLU_DDBDDC_LAPACK
 
 #endif // SHYLU_DDBDDCCONFIG_H

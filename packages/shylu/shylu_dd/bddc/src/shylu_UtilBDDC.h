@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef UTILBDDC_H
-#define UTILBDDC_H
+#ifndef BDDC_UTIL_H
+#define BDDC_UTIL_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -59,7 +59,6 @@
 #include "shylu_PComm.h"
 #include "shylu_errorBDDC.h"
 
-// Author: Clark R. Dohrmann
 namespace bddc {
 
   template <class LO, class GO>
@@ -248,11 +247,10 @@ namespace bddc {
 		    MPI_Comm mpiComm,
 		    std::vector<int> & nodeSend)
   {
-    typedef Tpetra::Map<>::node_type                                Node;
-    typedef Tpetra::Map<LO,GO,Node>                                 Map;
-    typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-    typedef Tpetra::Export<LO,GO,Node>                              Export;
-    typedef Tpetra::Import<LO,GO,Node>                              Import;
+    typedef Tpetra::Map<LO,GO>                                 Map;
+    typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+    typedef Tpetra::Export<LO,GO>                              Export;
+    typedef Tpetra::Import<LO,GO>                              Import;
     RCP<const Teuchos::Comm<int> > Comm = 
       rcp( new Teuchos::MpiComm<int>(mpiComm) );
     const int myPID = Comm->getRank();
@@ -269,7 +267,7 @@ namespace bddc {
     for (LO i=0; i<numNode; i++) {
       nodeProcs.insertLocalIndices(i, Teuchos::ArrayView<LO>(zero));
     }
-    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO,Node>(nodeMap);
+    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO>(nodeMap);
     nodeProcs.fillComplete(colMap, nodeMap1to1);
     CrsGraph nodeProcs1to1(nodeMap1to1, 0);
     Export Exporter(nodeMap, nodeMap1to1);
@@ -301,11 +299,10 @@ namespace bddc {
 			   std::vector<int> & adjProcs,
 			   std::vector< std::vector<int> > & nodeProcsVec)
   {
-    typedef Tpetra::Map<>::node_type                                Node;
-    typedef Tpetra::Map<LO,GO,Node>                                 Map;
-    typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-    typedef Tpetra::Export<LO,GO,Node>                              Export;
-    typedef Tpetra::Import<LO,GO,Node>                              Import;
+    typedef Tpetra::Map<LO,GO>                                 Map;
+    typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+    typedef Tpetra::Export<LO,GO>                              Export;
+    typedef Tpetra::Import<LO,GO>                              Import;
     int myPID;
     MPI_Comm_rank(mpiComm, &myPID);
     RCP<const Teuchos::Comm<int> > Comm = 
@@ -323,7 +320,7 @@ namespace bddc {
     for (LO i=0; i<numNode; i++) {
       nodeProcs.insertLocalIndices(i, Teuchos::ArrayView<LO>(zero));
     }
-    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO,Node>(nodeMap);
+    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO>(nodeMap);
     nodeProcs.fillComplete(colMap, nodeMap1to1);
     CrsGraph nodeProcs1to1(nodeMap1to1, 0);
     Export Exporter(nodeMap, nodeMap1to1);
@@ -874,5 +871,5 @@ private:
 
 } // namespace bddc
 
-#endif // UTILBDDC_H
+#endif // BDDC_UTIL_H
   

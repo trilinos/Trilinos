@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef DOFMANAGERBDDC_H
-#define DOFMANAGERBDDC_H
+#ifndef BDDC_DOFMANAGER_H
+#define BDDC_DOFMANAGER_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -56,7 +56,6 @@ using Teuchos::rcp;
 #include "Tpetra_CrsMatrix.hpp"
 #include "shylu_errorBDDC.h"
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 template <class LO, class GO> 
@@ -66,12 +65,11 @@ public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::Map<>::node_type                                Node;
-  typedef Tpetra::Map<LO,GO,Node>                                 Map;
-  typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-  typedef Tpetra::CrsMatrix<GO,LO,GO,Node>                        CrsMatrixGO;
-  typedef Tpetra::Export<LO,GO,Node>                              Export;
-  typedef Tpetra::Import<LO,GO,Node>                              Import;
+  typedef Tpetra::Map<LO,GO>                                 Map;
+  typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+  typedef Tpetra::CrsMatrix<GO,LO,GO>                        CrsMatrixGO;
+  typedef Tpetra::Export<LO,GO>                              Export;
+  typedef Tpetra::Import<LO,GO>                              Import;
 
   DofManager()
   {
@@ -99,7 +97,7 @@ public:
 		   0, Comm));
     RCP<const Map> nodeMap1to1;
     if (nodeGlobalIDs1to1 == nullptr) {
-      nodeMap1to1 = Tpetra::createOneToOne<LO,GO,Node>(nodeMap);
+      nodeMap1to1 = Tpetra::createOneToOne<LO,GO>(nodeMap);
     }
     else {
       nodeMap1to1 = 
@@ -114,8 +112,7 @@ public:
     // The graph nodeGraph1to1 is the counterpart of graph nodeGraphSubdomain, 
     // but with uniquely owned rows. Note: it is assumed that the local dofs
     // for each node are identical across all processors
-    size_t maxNumCols = nodeGraphSubdomain->getGlobalMaxNumRowEntries();
-    RCP<CrsGraph> nodeGraph1to1 = rcp( new CrsGraph(nodeMap1to1, maxNumCols) );
+    RCP<CrsGraph> nodeGraph1to1 = rcp( new CrsGraph(nodeMap1to1, 0) );
     Export exporter(nodeMap, nodeMap1to1);
     nodeGraph1to1->doExport(*nodeGraphSubdomain, exporter, Tpetra::ADD);
     RCP<const Map> domainMap = nodeGraphSubdomain->getDomainMap();
@@ -159,7 +156,7 @@ public:
       rcp( new Map(IGO, 
 		   Teuchos::ArrayView<const GO>(nodeGlobalIDs, numNodes), 
 		   0, Comm));
-    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO,Node>(nodeMap);
+    RCP<const Map> nodeMap1to1 = Tpetra::createOneToOne<LO,GO>(nodeMap);
     // The rows and columns of the graph nodeGraphSubdomain are node global IDs 
     // and local degrees of freedom (dofs), respectively, prior to assembly.
     RCP<CrsGraph> nodeGraphSubdomain;
@@ -226,12 +223,12 @@ public:
 	  (i, Teuchos::ArrayView<LO>(&localDofsIndex[nodeBegin[i]], count[i]));
       }
     }
-    RCP<const Map> ColMap1to1 = Tpetra::createOneToOne<LO,GO,Node>(ColMap);
+    RCP<const Map> ColMap1to1 = Tpetra::createOneToOne<LO,GO>(ColMap);
     A->fillComplete(ColMap1to1, NodeMap1to1);
   }
 
   static void extractDofMap(CrsMatrixGO & A,
-			    RCP<const Map> & dofMap)
+			    RCP<const Map> dofMap)
   {
     Tpetra::global_size_t IGO =
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -301,5 +298,5 @@ public:
 
 } // namespace bddc
 
-#endif // DOFMANAGERBDDC_H
+#endif // BDDC_DOFMANAGER_H
   

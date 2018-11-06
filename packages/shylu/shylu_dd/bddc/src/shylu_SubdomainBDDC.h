@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef SUBDOMAINBDDC_H
-#define SUBDOMAINBDDC_H
+#ifndef BDDC_SUBDOMAIN_H
+#define BDDC_SUBDOMAIN_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -61,7 +61,6 @@
 #include "shylu_SolverMueLu.h"
 #endif
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 template <class SX, class SM, class LO, class GO> class SubdomainBDDC
@@ -1791,5 +1790,5 @@ public:
 
 } // namespace bddc
 
-#endif // SUBDOMAINBDDC_H
+#endif // BDDC_SUBDOMAIN_H
   

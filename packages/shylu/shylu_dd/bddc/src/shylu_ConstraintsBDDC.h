@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef CONSTRAINTSBDDC_H
-#define CONSTRAINTSBDDC_H
+#ifndef BDDC_CONSTRAINTS_H
+#define BDDC_CONSTRAINTS_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -60,7 +60,6 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 template <class SX, class SM, class LO, class GO> 
@@ -508,5 +507,5 @@ private:
 
 } // namespace bddc
 
-#endif // CONSTRAINTSBDDC_H
+#endif // BDDC_CONSTRAINTS_H
   

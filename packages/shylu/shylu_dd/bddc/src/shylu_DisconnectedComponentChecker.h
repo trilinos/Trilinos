@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef DISCONNECTEDCOMPONENTCHECKERBDDC_H
-#define DISCONNECTEDCOMPONENTCHECKERBDDC_H
+#ifndef BDDC_DISCONNECTEDCOMPONENTCHECKER_H
+#define BDDC_DISCONNECTEDCOMPONENTCHECKER_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -51,7 +51,6 @@
 #include "shylu_UtilBDDC.h"
 #include "shylu_errorBDDC.h"
 
-// Author: Clark R. Dohrmann
 namespace bddc {
 
 template <class LO, class GO, class SX> 
@@ -188,7 +187,7 @@ class DisconnectedComponentChecker
 	  nodeConnPtrNew[++numConnected] = numTerms;
 	}
       }
-      int *components(0);
+      int *components(nullptr);
       UtilBDDC<double,double>::determineComponents
 	(nodeConn.data(), nodeConnPtrNew.data(), numConnected, components);
       // Note: any inactive nodes are placed in the the first component
@@ -414,5 +413,5 @@ class DisconnectedComponentChecker
 
 } // namespace bddc
 
-#endif // DISCONNECTEDCOMPONENTCHECKERBDDC_H
+#endif // BDDC_DISCONNECTEDCOMPONENTCHECKER_H
   

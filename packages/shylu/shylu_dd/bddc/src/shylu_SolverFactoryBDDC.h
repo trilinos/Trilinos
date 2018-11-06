@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef SOLVERFACTORYBDDC_H
-#define SOLVERFACTORYBDDC_H
+#ifndef BDDC_SOLVERFACTORY_H
+#define BDDC_SOLVERFACTORY_H
 
 #include <stdio.h>
 #include <fstream>
@@ -211,4 +211,4 @@ template <class SX> class SolverFactory
  
 } // namespace bddc
 
-#endif // SOLVERFACTORYBDDC_H
+#endif // BDDC_SOLVERFACTORY_H

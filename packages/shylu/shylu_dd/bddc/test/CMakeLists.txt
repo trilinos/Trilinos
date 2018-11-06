@@ -2,7 +2,7 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-FILE(GLOB SOURCES *.C)
+FILE(GLOB SOURCES *.cpp)
 
 #removing due to dependence on a header not in Trilinos
 #LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestDistributedIndexWithBulkData.cpp")

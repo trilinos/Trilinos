@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef SOLVERLAPACKBDDC_H
-#define SOLVERLAPACKBDDC_H
+#ifndef BDDC_SOLVERLAPACK_H
+#define BDDC_SOLVERLAPACK_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -106,5 +106,5 @@ private:
   
 } // namespace bddc
 
-#endif // SOLVERLAPACKBDDC_H
+#endif // BDDC_SOLVERLAPACK_H
   

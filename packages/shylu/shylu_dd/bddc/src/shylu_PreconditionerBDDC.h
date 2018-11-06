@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef PRECONDITIONERBDDC_H
-#define PRECONDITIONERBDDC_H
+#ifndef BDDC_PRECONDITIONER_H
+#define BDDC_PRECONDITIONER_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -78,7 +78,6 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 template <class SX, class SM, class LO, class GO> 
@@ -89,20 +88,19 @@ public:
   //
   // Convenience typedefs
   //
-  typedef Tpetra::Map<>::node_type                                Node;
-  typedef Tpetra::Map<LO,GO,Node>                                 Map;
-  typedef Tpetra::CrsGraph<LO,GO,Node>                            CrsGraph;
-  typedef Tpetra::CrsMatrix<SX,LO,GO,Node>                        CrsMatrix;
-  typedef Tpetra::CrsMatrix<LO,LO,GO,Node>                        CrsMatrixLO;
-  typedef Tpetra::CrsMatrix<GO,LO,GO,Node>                        CrsMatrixGO;
-  typedef Tpetra::Export<LO,GO,Node>                              Export;
-  typedef Tpetra::Import<LO,GO,Node>                              Import;
-  typedef Tpetra::Vector<SM,LO,GO,Node>                           VectorSM;
-  typedef Tpetra::Vector<SX,LO,GO,Node>                           Vector;
-  typedef Tpetra::Vector<LO,LO,GO,Node>                           VectorLO;
-  typedef Tpetra::Vector<GO,LO,GO,Node>                           VectorGO;
-  typedef Tpetra::MultiVector<SX,LO,GO,Node>                      MV;
-  typedef Tpetra::MultiVector<double,LO,GO,Node>                  MVD;
+  typedef Tpetra::Map<LO,GO>                                 Map;
+  typedef Tpetra::CrsGraph<LO,GO>                            CrsGraph;
+  typedef Tpetra::CrsMatrix<SX,LO,GO>                        CrsMatrix;
+  typedef Tpetra::CrsMatrix<LO,LO,GO>                        CrsMatrixLO;
+  typedef Tpetra::CrsMatrix<GO,LO,GO>                        CrsMatrixGO;
+  typedef Tpetra::Export<LO,GO>                              Export;
+  typedef Tpetra::Import<LO,GO>                              Import;
+  typedef Tpetra::Vector<SM,LO,GO>                           VectorSM;
+  typedef Tpetra::Vector<SX,LO,GO>                           Vector;
+  typedef Tpetra::Vector<LO,LO,GO>                           VectorLO;
+  typedef Tpetra::Vector<GO,LO,GO>                           VectorGO;
+  typedef Tpetra::MultiVector<SX,LO,GO>                      MV;
+  typedef Tpetra::MultiVector<double,LO,GO>                  MVD;
 
   PreconditionerBDDC()
   {
@@ -1093,11 +1091,6 @@ public:
 #pragma omp parallel num_threads(m_numThreads)
 #endif
       {
-#if 0
-        if (omp_get_thread_num() == 0)
-          std::cout << "PreconditionerBDDC::ApplyOperator nthreads "
-                    << omp_get_num_threads() << "\n";
-#endif
 #ifdef _OPENMP
 #pragma omp for
 #endif
@@ -4341,5 +4334,5 @@ private:
 
 } // namespace bddc
 
-#endif // PRECONDITIONERBDDC_H
+#endif // BDDC_PRECONDITIONER_H
   

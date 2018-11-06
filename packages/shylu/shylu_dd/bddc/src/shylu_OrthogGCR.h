@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef ORTHOGGCR_H
-#define ORTHOGGCR_H
+#ifndef BDDC_ORTHOGGCR_H
+#define BDDC_ORTHOGGCR_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -55,7 +55,6 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
   template <class SX, class SM, class LO, class GO> 
@@ -256,5 +255,5 @@ namespace bddc {
 
 } // namespace bddc
 
-#endif // ORTHOGGCR_H
+#endif // BDDC_ORTHOGGCR_H
   

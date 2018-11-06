@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef KRYLOVSOLVERBDDC_H
-#define KRYLOVSOLVERBDDC_H
+#ifndef BDDC_KRYLOVSOLVER_H
+#define BDDC_KRYLOVSOLVER_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -56,7 +56,6 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-// Author: Clark R. Dohrmann
 namespace bddc {
   
 enum KrylovMethod {GCR, PCG};
@@ -87,9 +86,7 @@ public:
     initialize();
   }
    
-  ~KrylovSolver()
-  {
-  }
+  ~KrylovSolver() = default;
 
   double getProjectionTime() const {
     if (m_Orthog == Teuchos::null) return 0;
@@ -592,5 +589,5 @@ public:
 
 } // namespace bddc
 
-#endif // KRYLOVSOLVERBDDC_H
+#endif // BDDC_KRYLOVSOLVER_H
   

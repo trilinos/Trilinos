@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef SETUPTESTBDDC_H
-#define SETUPTESTBDDC_H
+#ifndef BDDC_SETUPTEST_H
+#define BDDC_SETUPTEST_H
 #include <gtest/gtest.h>
 
 #include <mpi.h>
@@ -664,4 +664,4 @@ void checkInterfacePreconditionerSolverCompatibility
 
 } // end namespace
 
-#endif // SETUPTEST_H
+#endif // BDDC_SETUPTEST_H

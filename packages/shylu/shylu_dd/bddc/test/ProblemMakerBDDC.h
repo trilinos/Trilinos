@@ -40,8 +40,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef PROBLEMMAKERBDDC_H
-#define PROBLEMMAKERBDDC_H
+#ifndef BDDC_PROBLEMMAKER_H
+#define BDDC_PROBLEMMAKER_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -67,9 +67,6 @@
 
 #ifdef _OPENMP
 #include "omp.h"
-#else
-#define omp_get_max_threads() 1
-#define omp_get_thread_num() 0
 #endif
 
 //#define TENSORPRODUCTBDDC
@@ -176,31 +173,31 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
   }
 
   const LO* getNodeBegin() const {
-    return &m_nodeBegin[0];
+    return m_nodeBegin.data();
   }
 
   const LO* getLocalDofs() const {
-    return &m_localDofs[0];
+    return m_localDofs.data();
   }
 
   const SM* getXcoord() const {
-    return &m_x[0];
+    return m_x.data();
   }
 
   const SM* getYcoord() const {
-    return &m_y[0];
+    return m_y.data();
   }
 
   const SM* getZcoord() const {
-    return &m_z[0];
+    return m_z.data();
   }
 
   const GO* getNodeGlobalIDs() const {
-    return &m_nodeGIDs[0];
+    return m_nodeGIDs.data();
   }
 
   const SX* getLoadVector() const {
-    return &m_loadVector[0];
+    return m_loadVector.data();
   }
 
   void printElementMatrices(const int elem=0) const
@@ -395,7 +392,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
     idx_t* part = parts.data();
     int edgecut, ncon(1);
     std::vector<idx_t> options(METIS_NOPTIONS, 0);
-    METIS_SetDefaultOptions(&options[0]);
+    METIS_SetDefaultOptions(options.data());
     options[METIS_OPTION_NUMBERING] = 0;
     idx_t *vwgt(0), *vsize(0), *adjwgt(0);
     std::vector<real_t> ubvec(ncon, 1.10);
@@ -1897,4 +1894,4 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
 
 } // namespace bddc
 
-#endif // PROBLEMMAKERBDDC_H
+#endif // BDDC_PROBLEMMAKER_H

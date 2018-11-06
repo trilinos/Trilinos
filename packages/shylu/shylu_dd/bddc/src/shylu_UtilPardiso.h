@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef UTILPARDISO_H
-#define UTILPARDISO_H
+#ifndef BDDC_UTILPARDISO_H
+#define BDDC_UTILPARDISO_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -141,5 +141,5 @@ private:
 
 } // namespace bddc
 
-#endif // UTILPARDISO_H
+#endif // BDDC_UTILPARDISO_H
   

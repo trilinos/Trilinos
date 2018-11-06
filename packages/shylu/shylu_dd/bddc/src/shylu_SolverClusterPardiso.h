@@ -35,13 +35,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
 
-#ifndef SOLVERCLUSTERPARDISOBDDC_H
-#define SOLVERCLUSTERPARDISOBDDC_H
+#ifndef BDDC_SOLVERCLUSTERPARDISO_H
+#define BDDC_SOLVERCLUSTERPARDISO_H
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -190,5 +190,5 @@ private:
   
 } // namespace bddc
 
-#endif // SOLVERCLUSTERPARDISOBDDC_H
+#endif // BDDC_SOLVERCLUSTERPARDISO_H
   
