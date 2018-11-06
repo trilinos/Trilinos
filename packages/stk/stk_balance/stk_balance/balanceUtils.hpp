@@ -242,6 +242,7 @@ public:
     void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
     virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
+    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const { return 1.0; }
     //virtual double getImbalanceTolerance() const { return 1.05; }
     virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
     virtual std::string getDecompMethod() const { return method; }

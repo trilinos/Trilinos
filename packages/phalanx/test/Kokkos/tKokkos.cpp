@@ -681,7 +681,7 @@ namespace phalanx_test {
 
       TEST_EQUALITY(c.rank(),2);
       TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
-      TEST_EQUALITY(c.implementation_map().dimension_scalar(),2);
+      TEST_EQUALITY(c.impl_map().dimension_scalar(),2);
 
       // verify for bracket access
       double tol = std::numeric_limits<double>::epsilon() * 100.0;

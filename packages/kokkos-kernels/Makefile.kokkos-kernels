@@ -12,15 +12,20 @@ KOKKOSKERNELS_SPACES ?= $(KOKKOS_DEVICES),HostSpace
 KOKKOSKERNELS_ORDINALS ?= int,int64_t
 KOKKOSKERNELS_OFFSETS ?= int,size_t
 
-# mkl, blas
+# mkl, blas, yaml
 KOKKOSKERNELS_ENABLE_TPLS ?= ""
+
 # eti-only
 KOKKOSKERNELS_OPTIONS ?= ""
 
+KOKKOSKERNELS_INTERNAL_ENABLE_YAML := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "yaml" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_BLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "blas" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_MKL := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "mkl" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_CUSPARSE := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "cusparse" | wc -l))
 KOKKOSKERNELS_INTERNAL_ENABLE_CUBLAS := $(strip $(shell echo $(KOKKOSKERNELS_ENABLE_TPLS) | grep "cublas" | wc -l))
+
+YAML_PATH ?= ${HOME}/yaml-cpp/install
+YAML_LIBS ?= -L${YAML_PATH}/lib -lyaml-cpp
 
 BLAS_PATH ?= /usr
 BLAS_LIBS ?= -L${BLAS_PATH}/lib64 $(BLAS_LIBRARIES) -lgfortran -lgomp
@@ -228,6 +233,12 @@ tmp := $(shell echo "" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "/* ---------------------------------------------" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "Third Party Libraries:" >> KokkosKernels_config.tmp)
 tmp := $(shell echo "   ---------------------------------------------*/" >> KokkosKernels_config.tmp)
+
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_YAML}, 1)
+  KOKKOSKERNELS_CPPFLAGS += -I${YAML_PATH}/include
+  KOKKOSKERNELS_LIBS += ${YAML_LIBS}
+  tmp := $(shell echo "\#define KOKKOSKERNELS_ENABLE_TPL_YAML" >> KokkosKernels_config.tmp )
+endif
 
 ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_BLAS}, 1)
   KOKKOSKERNELS_LIBS += ${BLAS_LIBS}

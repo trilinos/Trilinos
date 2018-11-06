@@ -218,10 +218,10 @@ int main (int argc, char* argv[]){
     KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap
     <c_row_map_view_t, c_cols_view_t, row_map_view_t, cols_view_t,MyExecSpace>
     (numrows, orm, oentries, new_rowmap, new_entries);
-    values_view_t new_values("",new_entries.extent(0));
+    values_view_t new_values("new_values",new_entries.extent(0));
 
-    cols_view_t out_adj ("", new_entries.extent(0));
-    values_view_t out_vals("",new_entries.extent(0));
+    cols_view_t out_adj ("out_adj", new_entries.extent(0));
+    values_view_t out_vals("out_vals", new_entries.extent(0));
 
     KokkosKernels::Impl::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
 		(new_rowmap, new_entries, new_values, out_adj, out_vals);
@@ -257,8 +257,8 @@ int main (int argc, char* argv[]){
           new_rowmap, new_entries, new_values);
 
     std::cout << 1 << std::endl;
-    cols_view_t out_adj ("", new_entries.extent(0));
-    values_view_t out_vals("",new_entries.extent(0));
+    cols_view_t out_adj ("out_adj", new_entries.extent(0));
+    values_view_t out_vals("out_vals", new_entries.extent(0));
     std::cout << 2 << std::endl;
     KokkosKernels::Impl::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
                 (new_rowmap, new_entries, new_values, out_adj, out_vals);

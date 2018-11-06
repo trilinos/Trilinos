@@ -161,6 +161,17 @@ struct Loc
   IdType m_loc;
 };
 
+// The offsetof() function requires a "Standard Layout Type" to avoid undefined behavior.
+// Base these usages off of a simplified version of the above Loc template, under the
+// assumption that alignment of the data members will be identical between the two.
+//
+template <typename T, typename IdType=int64_t>
+struct LocStandardLayout
+{
+  T m_value;
+  IdType m_loc;
+};
+
 template <typename T, typename IdType>
 KOKKOS_INLINE_FUNCTION bool operator==(const Loc<T, IdType> & lhs, const Loc<T, IdType> & rhs)
 {

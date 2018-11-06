@@ -104,7 +104,7 @@ KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_view_mp_vector< View<T,P...> >::value, unsigned >::type
 dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
+  return view.impl_map().dimension_scalar();
 }
 
 // Declare overloads of create_mirror() so they are in scope
@@ -804,8 +804,8 @@ private:
     prepend_offset_type,
     append_offset_type >::type array_offset_type;
 
-  handle_type      m_handle ;
-  offset_type      m_offset ;
+  handle_type      m_impl_handle ;
+  offset_type      m_impl_offset ;
   unsigned         m_stride ;
   sacado_size_type m_sacado_size ; // Size of sacado dimension
 
@@ -842,28 +842,28 @@ public:
   // Using the internal offset mapping so limit to public rank:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
-    { return m_offset.m_dim.extent(r); }
+    { return m_impl_offset.m_dim.extent(r); }
 
   KOKKOS_INLINE_FUNCTION constexpr
   typename Traits::array_layout layout() const
-    { return m_offset.layout(); }
+    { return m_impl_offset.layout(); }
 
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
-    { return m_offset.dimension_0(); }
+    { return m_impl_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
-    { return m_offset.dimension_1(); }
+    { return m_impl_offset.dimension_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const
-    { return m_offset.dimension_2(); }
+    { return m_impl_offset.dimension_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_3() const
-    { return m_offset.dimension_3(); }
+    { return m_impl_offset.dimension_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_4() const
-    { return m_offset.dimension_4(); }
+    { return m_impl_offset.dimension_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const
-    { return m_offset.dimension_5(); }
+    { return m_impl_offset.dimension_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const
-    { return m_offset.dimension_6(); }
+    { return m_impl_offset.dimension_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const
-    { return m_offset.dimension_7(); }
+    { return m_impl_offset.dimension_7(); }
 
   // Is a regular layout with uniform striding for each index.
   // Since we all for striding within the data type, we can't guarantee
@@ -872,25 +872,25 @@ public:
 
   // FIXME:  Adjust these for m_stride
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_0() const
-    { return m_offset.stride_0(); }
+    { return m_impl_offset.stride_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_1() const
-    { return m_offset.stride_1(); }
+    { return m_impl_offset.stride_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_2() const
-    { return m_offset.stride_2(); }
+    { return m_impl_offset.stride_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_3() const
-    { return m_offset.stride_3(); }
+    { return m_impl_offset.stride_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_4() const
-    { return m_offset.stride_4(); }
+    { return m_impl_offset.stride_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_5() const
-    { return m_offset.stride_5(); }
+    { return m_impl_offset.stride_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const
-    { return m_offset.stride_6(); }
+    { return m_impl_offset.stride_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const
-    { return m_offset.stride_7(); }
+    { return m_impl_offset.stride_7(); }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
-    { m_offset.stride(s); }
+    { m_impl_offset.stride(s); }
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
@@ -913,21 +913,21 @@ public:
 
   /** \brief  Span of the mapped range : [ data() .. data() + span() ) */
   KOKKOS_INLINE_FUNCTION constexpr size_t span() const
-    { return m_offset.span(); }
+    { return m_impl_offset.span(); }
 
   /** \brief  Is the mapped range span contiguous */
   KOKKOS_INLINE_FUNCTION constexpr bool span_is_contiguous() const
-    { return m_offset.span_is_contiguous() && (m_stride == 1); }
+    { return m_impl_offset.span_is_contiguous() && (m_stride == 1); }
 
   /** \brief Raw data access */
   KOKKOS_INLINE_FUNCTION constexpr pointer_type data() const
-    { return m_handle.value_ptr ; }
+    { return m_impl_handle.value_ptr ; }
 
   //----------------------------------------
 
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference() const
-    { return *m_handle.value_ptr; }
+    { return *m_impl_handle.value_ptr; }
 
   // FIXME:  Check this
   template< typename I0 >
@@ -937,7 +937,7 @@ public:
                     ! std::is_same< typename Traits::array_layout , Kokkos::LayoutStride >::value
                   , reference_type >::type
   reference( const I0 & i0 ) const
-    { return m_handle.value_ptr[m_stride * i0]; }
+    { return m_impl_handle.value_ptr[m_stride * i0]; }
 
   // FIXME:  Check this
   template< typename I0 >
@@ -947,50 +947,50 @@ public:
                     std::is_same< typename Traits::array_layout , Kokkos::LayoutStride >::value
                   , reference_type >::type
   reference( const I0 & i0 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0) ]; }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1) ]; }
 
   template< typename I0 , typename I1 , typename I2 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1,i2) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1,i2) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1,i2,i3) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1,i2,i3) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1,i2,i3,i4) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1,i2,i3,i4) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1,i2,i3,i4,i5) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1,i2,i3,i4,i5) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 , typename I6 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1,i2,i3,i4,i5,i6) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1,i2,i3,i4,i5,i6) ]; }
 
   template< typename I0 , typename I1 , typename I2 , typename I3
           , typename I4 , typename I5 , typename I6 , typename I7 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 , const I7 & i7 ) const
-    { return m_handle.value_ptr[ m_stride * m_offset(i0,i1,i2,i3,i4,i5,i6,i7) ]; }
+    { return m_impl_handle.value_ptr[ m_stride * m_impl_offset(i0,i1,i2,i3,i4,i5,i6,i7) ]; }
 
   //----------------------------------------
 
@@ -1010,8 +1010,8 @@ public:
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping() :
-    m_handle(),
-    m_offset(),
+    m_impl_handle(),
+    m_impl_offset(),
     m_stride(1),
     m_sacado_size(0)
     {}
@@ -1028,14 +1028,14 @@ public:
     ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & layout
     )
-    : m_handle()
-    , m_offset( std::integral_constant< unsigned , 0 >()
+    : m_impl_handle()
+    , m_impl_offset( std::integral_constant< unsigned , 0 >()
               , layout )
     , m_stride( 1 )
     , m_sacado_size( Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout) )
     {
-      m_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value,
-                    m_offset.span(), m_sacado_size.value );
+      m_impl_handle.set( ( (ViewCtorProp<void,pointer_type> const &) prop ).value,
+                    m_impl_offset.span(), m_sacado_size.value );
     }
 
   //----------------------------------------
@@ -1058,12 +1058,12 @@ public:
     // Disallow padding
     typedef std::integral_constant< unsigned , 0 > padding ;
 
-    m_offset = offset_type( padding(), layout );
+    m_impl_offset = offset_type( padding(), layout );
     m_stride = 1;
     m_sacado_size = Kokkos::Impl::GetSacadoSize<unsigned(Rank)>::eval(layout);
 
     const size_t alloc_size =
-      handle_type::memory_span( m_offset.span(), m_sacado_size.value );
+      handle_type::memory_span( m_impl_offset.span(), m_sacado_size.value );
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
@@ -1075,15 +1075,15 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
-      m_handle.set( reinterpret_cast< pointer_type >( record->data() ),
-                    m_offset.span(), m_sacado_size.value );
+      m_impl_handle.set( reinterpret_cast< pointer_type >( record->data() ),
+                    m_impl_offset.span(), m_sacado_size.value );
 
       // Assume destruction is only required when construction is requested.
       // The ViewValueFunctor has both value construction and destruction operators.
-      record->m_destroy = m_handle.create_functor(
+      record->m_destroy = m_impl_handle.create_functor(
         ( (ViewCtorProp<void,execution_space> const &) prop).value
         , ctor_prop::initialize
-        , m_offset.span()
+        , m_impl_offset.span()
         , m_sacado_size.value );
 
       // Construct values
@@ -1100,13 +1100,13 @@ public:
   template< class ExecSpace >
   void construct( const ExecSpace & space ) const
     {
-      m_handle.construct( space, m_offset.span(), m_sacado_size.value );
+      m_impl_handle.construct( space, m_impl_offset.span(), m_sacado_size.value );
     }
 
   template< class ExecSpace >
   void destroy( const ExecSpace & space ) const
     {
-      m_handle.destruct( space, m_offset.span(), m_sacado_size.value );
+      m_impl_handle.destruct( space, m_impl_offset.span(), m_sacado_size.value );
     }
   */
 };
@@ -1193,8 +1193,8 @@ public:
           , typename SrcType::offset_type::dimension_type >::value ,
         "View assignment must have compatible dimensions" );
 
-      dst.m_handle  = src.m_handle ;
-      dst.m_offset  = src.m_offset ;
+      dst.m_impl_handle  = src.m_impl_handle ;
+      dst.m_impl_offset  = src.m_impl_offset ;
       dst.m_stride  = src.m_stride ;
       dst.m_sacado_size = src.m_sacado_size ;
     }
@@ -1280,14 +1280,14 @@ public:
       }
 
       unsigned dims[8];
-      dims[0] = src.m_offset.dimension_0();
-      dims[1] = src.m_offset.dimension_1();
-      dims[2] = src.m_offset.dimension_2();
-      dims[3] = src.m_offset.dimension_3();
-      dims[4] = src.m_offset.dimension_4();
-      dims[5] = src.m_offset.dimension_5();
-      dims[6] = src.m_offset.dimension_6();
-      dims[7] = src.m_offset.dimension_7();
+      dims[0] = src.m_impl_offset.dimension_0();
+      dims[1] = src.m_impl_offset.dimension_1();
+      dims[2] = src.m_impl_offset.dimension_2();
+      dims[3] = src.m_impl_offset.dimension_3();
+      dims[4] = src.m_impl_offset.dimension_4();
+      dims[5] = src.m_impl_offset.dimension_5();
+      dims[6] = src.m_impl_offset.dimension_6();
+      dims[7] = src.m_impl_offset.dimension_7();
       unsigned rank = SrcTraits::dimension::rank;
       unsigned sacado_size = src.m_sacado_size.value;
       if (std::is_same<typename SrcTraits::array_layout, LayoutLeft>::value) {
@@ -1300,11 +1300,11 @@ public:
         dims[rank] = sacado_size;
       }
       typedef typename DstType::offset_type dst_offset_type;
-      dst.m_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
+      dst.m_impl_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_handle  = src.m_handle.scalar_ptr ;
+      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
     }
 };
 
@@ -1389,14 +1389,14 @@ public:
       }
 
       unsigned dims[8];
-      dims[0] = src.m_offset.dimension_0();
-      dims[1] = src.m_offset.dimension_1();
-      dims[2] = src.m_offset.dimension_2();
-      dims[3] = src.m_offset.dimension_3();
-      dims[4] = src.m_offset.dimension_4();
-      dims[5] = src.m_offset.dimension_5();
-      dims[6] = src.m_offset.dimension_6();
-      dims[7] = src.m_offset.dimension_7();
+      dims[0] = src.m_impl_offset.dimension_0();
+      dims[1] = src.m_impl_offset.dimension_1();
+      dims[2] = src.m_impl_offset.dimension_2();
+      dims[3] = src.m_impl_offset.dimension_3();
+      dims[4] = src.m_impl_offset.dimension_4();
+      dims[5] = src.m_impl_offset.dimension_5();
+      dims[6] = src.m_impl_offset.dimension_6();
+      dims[7] = src.m_impl_offset.dimension_7();
       unsigned rank = SrcTraits::dimension::rank;
       unsigned sacado_size = src.m_sacado_size.value;
       if (std::is_same<typename DstTraits::array_layout, LayoutLeft>::value) {
@@ -1408,11 +1408,11 @@ public:
         dims[rank] = 0;
       }
       typedef typename DstType::offset_type dst_offset_type;
-      dst.m_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
+      dst.m_impl_offset = dst_offset_type( std::integral_constant< unsigned , 0 >(),
                                       typename DstTraits::array_layout(
                                         dims[0] , dims[1] , dims[2] , dims[3] ,
                                         dims[4] , dims[5] , dims[6] , dims[7] ) );
-      dst.m_handle  = src.m_handle.scalar_ptr ;
+      dst.m_impl_handle  = src.m_impl_handle.scalar_ptr ;
     }
 };
 
@@ -1535,9 +1535,9 @@ public:
       typedef typename DstType::offset_type  dst_offset_type ;
 
       const SubviewExtents< SrcTraits::rank , rank >
-        extents( src.m_offset.m_dim , arg0 , args... );
+        extents( src.m_impl_offset.m_dim , arg0 , args... );
 
-      const size_t offset = src.m_offset( extents.domain_offset(0)
+      const size_t offset = src.m_impl_offset( extents.domain_offset(0)
                                           , extents.domain_offset(1)
                                           , extents.domain_offset(2)
                                           , extents.domain_offset(3)
@@ -1546,10 +1546,10 @@ public:
                                           , extents.domain_offset(6)
                                           , extents.domain_offset(7) );
 
-      dst.m_offset = dst_offset_type( src.m_offset , extents );
-      dst.m_handle.value_ptr = src.m_handle.value_ptr + offset;
-      dst.m_handle.scalar_ptr =
-        src.m_handle.scalar_ptr + offset * src.m_stride * src.m_sacado_size.value;
+      dst.m_impl_offset = dst_offset_type( src.m_impl_offset , extents );
+      dst.m_impl_handle.value_ptr = src.m_impl_handle.value_ptr + offset;
+      dst.m_impl_handle.scalar_ptr =
+        src.m_impl_handle.scalar_ptr + offset * src.m_stride * src.m_sacado_size.value;
       dst.m_stride = src.m_stride;
       dst.m_sacado_size = src.m_sacado_size;
     }
@@ -1608,12 +1608,12 @@ public:
         Kokkos::abort("\n\n ******  Kokkos::View< Sacado::MP::Vector ... > Invalid size in partitioned view assignment ******\n\n");
       }
 
-      dst.m_handle.value_ptr =
-        reinterpret_cast<strided_value_type*>( src.m_handle.value_ptr ) +
+      dst.m_impl_handle.value_ptr =
+        reinterpret_cast<strided_value_type*>( src.m_impl_handle.value_ptr ) +
         part.begin / len ;
-      dst.m_handle.scalar_ptr = src.m_handle.scalar_ptr +
+      dst.m_impl_handle.scalar_ptr = src.m_impl_handle.scalar_ptr +
         (part.begin / len) * src.m_stride * src.m_sacado_size.value ;
-      dst.m_offset  = src.m_offset ;
+      dst.m_impl_offset  = src.m_impl_offset ;
       dst.m_stride  = src.m_stride * src.m_sacado_size.value / Size ;
       dst.m_sacado_size = len ;
     }
@@ -1812,8 +1812,8 @@ public:
 
       typedef typename DstType::offset_type  dst_offset_type ;
 
-      dst.m_offset  = dst_offset_type( src.m_array_offset );
-      dst.m_handle.assign(src.m_handle) ;
+      dst.m_impl_offset  = dst_offset_type( src.m_array_offset );
+      dst.m_impl_handle.assign(src.m_impl_handle) ;
       dst.m_stride  = 1;
 
       // Don't need to set dst.m_sacado_size since it is determined statically

@@ -99,9 +99,9 @@ public:
 
     bool does_sideset_exist(const stk::mesh::Part &part) const;
 
-    SideSet& create_sideset(KEY sideset_key);
+    SideSet& create_sideset(KEY sideset_key, bool fromInput);
 
-    SideSet& create_sideset(const stk::mesh::Part &part);
+    SideSet& create_sideset(const stk::mesh::Part &part, bool fromInput);
 
     const SideSet& get_sideset(KEY sideset_key) const;
 

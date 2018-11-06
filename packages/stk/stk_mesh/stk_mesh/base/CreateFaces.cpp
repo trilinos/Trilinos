@@ -52,10 +52,10 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
-#include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
+#include "stk_topology/apply_functor.hpp"  // for topology::apply_host_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology.tcc"    // for topology::num_nodes
-#include "stk_topology/topology_type.tcc"  // for topology::topology_type
+#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes
+#include "stk_topology/topology_type.hpp"  // for topology::topology_type
 
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 #include <stk_mesh/base/CreateEdges.hpp>
@@ -351,7 +351,7 @@ void internal_create_faces( BulkData & mesh, const Selector & element_selector, 
   for (size_t i=0, e=shells_first_element_buckets.size(); i<e; ++i) {
      Bucket &this_bucket = *shells_first_element_buckets[i];
      create_face_impl functor( count_faces, ids_requested, face_map, this_bucket, faceCreationBehavior);
-     stk::topology::apply_functor< create_face_impl > apply(functor);
+     stk::topology::apply_host_functor< create_face_impl > apply(functor);
      apply( this_bucket.topology() );
   }
   if (connect_faces_to_edges) {

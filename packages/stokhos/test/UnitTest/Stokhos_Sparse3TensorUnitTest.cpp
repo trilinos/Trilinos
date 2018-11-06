@@ -62,8 +62,8 @@ namespace Sparse3TensorUnitTest {
     Teuchos::RCP<Cijk_type> Cijk;
     
     UnitTestSetup(): d(3), p(4), bases(d) {
-      rtol = 1e-15;
-      atol = 1e-15;
+      rtol = 1e-14;
+      atol = 1e-14;
       sparse_tol = 1e-15;
       
       // Create product basis

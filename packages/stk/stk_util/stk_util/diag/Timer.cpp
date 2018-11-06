@@ -878,14 +878,6 @@ TimeBlockSynchronized::stop()
 namespace sierra {
 namespace Diag {
 
-namespace {
-
-size_t
-s_timerNameMaxWidth = DEFAULT_TIMER_NAME_MAX_WIDTH;  ///< Maximum width for names
-
-} // namespace
-
-
 // 
 // SierraRootTimer member functions:
 // 
@@ -986,7 +978,6 @@ void
 setTimerNameMaxWidth(
   size_t        width)
 {
-  s_timerNameMaxWidth = width;
 }
 
 stk::diag::MetricTraits<stk::diag::WallTime>::Type

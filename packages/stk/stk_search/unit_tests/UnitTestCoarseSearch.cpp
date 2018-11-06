@@ -494,8 +494,8 @@ void testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::Search
 
     SearchResults searchResults;
 
-    double markTime, elapsedTime, totalTime;
-    markTime = elapsedTime = totalTime = 0.0;
+    double markTime = 0.0;
+    double totalTime = 0.0;
 
     for (int count = 0; count < numLoops; ++count) {
 
