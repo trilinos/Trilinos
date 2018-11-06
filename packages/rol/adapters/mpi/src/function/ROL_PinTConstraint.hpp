@@ -1373,20 +1373,19 @@ public:
     * \brief Restrict a simulation space vector
     *
     * Currently doing the following. Let the coarse distribution be defined locally
-    * to contain Np steps. The fine discretization is denoted by a X, while the coarse
-    * discretization is denoted by a x. A superscript indicates the relative processor index.
+    * to contain Np steps. The fine discretization virtual variable is denoted by a V, while the coarse
+    * discretization is denoted by a v (similarly U and u for the primary variable). A superscript indicates the relative processor index.
     * If no index is included then it is assumed to be 0 (denoting no relative change in
     * processor index). The restriction for the sim vector thus computes
     *
-    *   x_i = X_i                                  i = -1           (this is the "virtual variable")
-    *   x_i = X_{2*i} + X_{2*i+1} + X_{2*i+2}      0 <= i < Np - 1
-    *   x_i = X_{2*i} + X_{2*i+1} + X_0^1          i = Np-1         (this is the end boundary on this processor)
+    *   v_i = V_{2*i} + V_{2*i+1} + V_{2*i+2}      0 <= i < Np - 1
+    *   u_i = U_{2*i} + U_{2*i+1} + U_{2*i+2}      0 <= i < Np - 1
     *
-    * This ensures that for all interior points the coarse grid is the sum of the three neighbors.
-    * So now we need to divide the coarse x vector by 1/3 except at the end point at the final
-    * time step. This needs to be scaled by 1/2. Note that in the code we scale each component as needed
-    * rather than scaling the global vector and the fixing up only the final time step. There is a (very) modest
-    * efficiency gain here.
+    * This ensures that for all interior points the coarse grid is the sum of the three neighbors. These
+    * averages are dividecd by three.
+    * At the boundaries of processors the same thing holds, but with the appropriate sharing. Finally,
+    * at the origin for v and the terminus for u only the relavant two points are taken and the sum is divided
+    * by two.
     *
     * \param[in] inputLevel Multigrid level of the input vector (not currently used)
     * \param[in] input The input vector to be "restricted" 
@@ -1397,40 +1396,86 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     int Np = pint_output.numOwnedSteps();
+     int Np = (pint_output.numOwnedVectors()-2)/2 + 1;
 
-     // this is the virtual variable (set it to -1)
-     //     x_i = X_i                                  i = -1           (this is the "virtual variable")
+     // handle the left end point on this processor
      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-     {
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(-1);
-       out.set(*pint_input.getVectorPtr(-1));
+     
+     {     
+       int si = -1;                  // -1           
+       int ns = si+1;                // 0
+       int v_crs_index = 2*(ns-1)+1; // -1
+       int v_index = 2*(2*ns-1)+1;   // -1
+
+       ROL::Vector<Real> & out_v = *pint_output.getVectorPtr(v_crs_index);
+       out_v.zero();
+       out_v.axpy(1.0,*pint_input.getVectorPtr(v_index)); 
+       out_v.axpy(1.0,*pint_input.getVectorPtr(v_index+2)); 
+     
+       int timeRank = pint_input.communicators().getTimeRank();
+       {
+         int crs_final_index = pint_output.numOwnedVectors()-2;
+         int fine_final_index = pint_input.numOwnedVectors()-2;
+
+         // copy final index into the buffer to be sent, this will be overwritten
+         pint_output.getVectorPtr(crs_final_index)->set(*pint_input.getVectorPtr(fine_final_index-1));
+       }
+
+       pint_output.boundaryExchange();
+       out_v.axpy(1.0,*pint_output.getRemoteBufferPtr(-1));
+
+       if(timeRank==0)
+         out_v.scale(1.0/2.0);
+       else
+         out_v.scale(1.0/3.0);
      }
 
      // handle interior points
-     //     x_i = X_{2*i} + X_{2*i+1} + X_{2*i+2}      0 <= i < Np - 1
      ////////////////////////////////////////////////////////////////////////////////////////////////////////
-     for(int k=0;k<Np-1;k++) {
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
+     for(int si=0;si<Np-1;si++) {
 
-       out.zero();
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+2)); 
-       
-       out.scale(1.0/3.0);
+       // si = the step index, ns = the number of steps = si + 1
+       int ns = si+1;
+
+       // coarse indices
+       int u_crs_index = 2*(ns-1);
+       int v_crs_index = 2*(ns-1)+1;
+
+       // fine indices
+       int u_index = 2*(2*ns-1);   
+       int v_index = 2*(2*ns-1)+1;
+
+       ROL::Vector<Real> & out_u = *pint_output.getVectorPtr(u_crs_index);
+       ROL::Vector<Real> & out_v = *pint_output.getVectorPtr(v_crs_index);
+
+       out_u.zero();
+       out_u.axpy(1.0,*pint_input.getVectorPtr(u_index-2)); 
+       out_u.axpy(1.0,*pint_input.getVectorPtr(u_index+0)); 
+       out_u.axpy(1.0,*pint_input.getVectorPtr(u_index+2)); 
+
+       out_u.scale(1.0/3.0);
+
+       out_v.zero();
+       out_v.axpy(1.0,*pint_input.getVectorPtr(v_index-2)); 
+       out_v.axpy(1.0,*pint_input.getVectorPtr(v_index+0)); 
+       out_v.axpy(1.0,*pint_input.getVectorPtr(v_index+2)); 
+
+       out_v.scale(1.0/3.0);
      }
 
-     // handle the end point on this processor
-     //   x_i = X_{2*i} + X_{2*i+1} + X_0^1          i = Np-1         (this is the end boundary on this processor)
+     // handle the right end point on this processor
      ////////////////////////////////////////////////////////////////////////////////////////////////////////
      
      {
-       int k = Np-1;
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
-       out.zero();
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(1.0,*pint_input.getVectorPtr(2*k+1)); 
+       int si = Np-1;                   
+       int ns = si+1;                   
+       int u_crs_index = 2*(ns-1);      
+       int u_index = 2*(2*ns-1);       
+
+       ROL::Vector<Real> & out_u = *pint_output.getVectorPtr(u_crs_index);
+       out_u.zero();
+       out_u.axpy(1.0,*pint_input.getVectorPtr(u_index-2)); 
+       out_u.axpy(1.0,*pint_input.getVectorPtr(u_index+0)); 
      
        pint_output.getRemoteBufferPtr(-1)->set(*pint_input.getVectorPtr(0));
        pint_output.boundaryExchangeSumInto();   // this adds the X_0^1 into the previous rank
@@ -1440,9 +1485,9 @@ public:
        int timeSize = pint_input.communicators().getTimeSize();
 
        if(timeRank+1==timeSize)
-         out.scale(1.0/2.0);
+         out_u.scale(1.0/2.0);
        else
-         out.scale(1.0/3.0);
+         out_u.scale(1.0/3.0);
      }
    }
 
@@ -1565,11 +1610,6 @@ public:
    /**
     * \brief Prolong a simulation space vector
     *
-    * Currently doing the following. Let the coarse distribution be defined locally
-    * to contain Np steps. The fine discretization is denoted by a X, while the coarse
-    * discretization is denoted by a x. A superscript indicates the relative processor index.
-    * If no index is included then it is assumed to be 0 (denoting no relative change in
-    * processor index). The restriction for the sim vector thus computes
     *
     *   X_0 = (x_0 + x_{Np-1}^{-1})/2                               (initial condition on time domain)
     *   X_{2*i+1} = x_i                           -1 <= i < Np      (injection variables, including virtual variable)
@@ -1796,7 +1836,7 @@ public:
 
      // constraint
      applyJacobian_1_leveled(*output_v_tmp,*input_u,u,z,tol,level);
-     applyJacobian_2_leveled(*output_v,*input_z,u,z,tol,level);
+     applyJacobian_2_leveled(*output_v,*input_z,u,z,tol,level);   // BAD ???
 
      output_v->axpy(1.0,*output_v_tmp);
    }
@@ -1937,8 +1977,7 @@ public:
 
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
 
-     // get the level communicators
-     auto comm = getLevelCommunicators(level);
+     std::cout << "SOLVING ON LEVEL " << level << std::endl;
 
      std::string levelStr = "";
      std::string levelRankStr = "";
@@ -1948,7 +1987,10 @@ public:
        levelStr = ss.str();
      }
 
-     {
+     if(useRepart_) {
+       // get the level communicators
+       auto comm = getLevelCommunicators(level);
+
        std::stringstream ss;
        ss << levelStr << "-";
        if(ROL::is_nullPtr(comm))
@@ -1962,6 +2004,7 @@ public:
 
      // base case: solve the KKT system directly
      if(level+1==maxLevels_) {
+       std::cout << "SOLVING ON COARSE LEVEL " << level << std::endl;
        bool approxSmoother = false;
   
        applyAugmentedInverseKKT(x,b,u,z,tol,approxSmoother,level);
@@ -2024,7 +2067,8 @@ public:
        restrictSimVector(u,crs_u,level);               // restrict the state to the coarse level
        restrictOptVector(z,crs_z,level);               // restrict the control to the coarse level
 
-       if(not ROL::is_nullPtr(getLevelCommunicators(level+1))) {
+       // if(not ROL::is_nullPtr(getLevelCommunicators(level+1))) 
+       {
          auto crs_correction = makePtr<PartitionedVector>({crs_correction_u,crs_correction_z,crs_correction_v});
          auto crs_residual   = makePtr<PartitionedVector>({  crs_residual_u,  crs_residual_z,  crs_residual_v});
 
