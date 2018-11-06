@@ -95,7 +95,7 @@ dot (const XVector& x, const YVector& y)
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
-  typename XVector::non_const_value_type result;
+  typename XVector::non_const_value_type result = 0;
   RVector_Internal R = RVector_Internal(&result);
   XVector_Internal X = x;
   YVector_Internal Y = y;

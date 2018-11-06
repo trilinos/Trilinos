@@ -34,7 +34,7 @@ echo "ulimit -c 0; ctest" &> test_submitted_command
 chmod a+x test_submitted_command
 
 echo "bsub -J ${JOBNAME}-Conf1 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
-echo "bsub -J ${JOBNAME}-Build1 -W 06:00 -Is -n 16 -q ${QUEUE} make -j 10 -k  &> build.output" &> build_command
+echo "bsub -J ${JOBNAME}-Build1 -W 06:00 -Is -n 16 -q ${QUEUE} make -j 30 -k  &> build.output" &> build_command
 echo "bsub -J ${JOBNAME}-Test1 -W 02:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
 
 chmod a+x *_command
@@ -88,7 +88,7 @@ echo "ulimit -c 0; ctest" &> test_submitted_command
 chmod a+x test_submitted_command
 
 echo "bsub -J ${JOBNAME}-Conf2 -W 01:00 -Is -n 16 -q ${QUEUE} ${CONFIG_SCRIPT} &> config.output" &> config_command
-echo "bsub -J ${JOBNAME}-Build2 -W 06:00 -Is -n 16 -q ${QUEUE} make -j 60 -k  &> build.output" &> build_command
+echo "bsub -J ${JOBNAME}-Build2 -W 06:00 -Is -n 16 -q ${QUEUE} make -j 30 -k  &> build.output" &> build_command
 echo "bsub -J ${JOBNAME}-Test2 -W 02:00 -Is -n 16 -q ${QUEUE} ./test_submitted_command &> test.output" &> test_command
 
 

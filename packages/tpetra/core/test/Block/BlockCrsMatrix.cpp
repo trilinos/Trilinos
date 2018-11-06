@@ -1361,8 +1361,13 @@ namespace {
 #ifdef HAVE_TPETRA_DEBUG
     if (! std::is_same<typename Kokkos::HostSpace, typename BCM::device_type::memory_space>::value) {
       // The above setAllToScalar should have run on device.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
       TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
+#else
+      TEST_ASSERT( ! A1.need_sync_host () );
+      TEST_ASSERT( ! A1.need_sync_device () );
+#endif
     }
 #endif // HAVE_TPETRA_DEBUG
 

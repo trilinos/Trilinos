@@ -903,6 +903,18 @@ public:
     val_.template modify<typename MemorySpace::memory_space> ();
   }
 
+  //! Mark the matrix's valueas as modified in host space
+  inline void modify_host()
+  {
+    val_.modify_host();
+  }
+
+  //! Mark the matrix's valueas as modified in device space
+  inline void modify_device()
+  {
+    val_.modify_device();
+  }
+
   //! Whether the matrix's values need sync'ing to the given memory space.
   template<class MemorySpace>
   bool need_sync () const
@@ -916,6 +928,18 @@ public:
     return val_.template need_sync<typename MemorySpace::memory_space> ();
   }
 
+  //! Whether the matrix's values need sync'ing to host space
+  inline bool need_sync_host() const
+  {
+    return val_.need_sync_host();
+  }
+
+  //! Whether the matrix's values need sync'ing to device space
+  inline bool need_sync_device() const
+  {
+    return val_.need_sync_device();
+  }
+
   //! Sync the matrix's values <i>to</i> the given memory space.
   template<class MemorySpace>
   void sync ()
@@ -927,6 +951,18 @@ public:
     // However, insisting on a memory space avoids unnecessary
     // instantiations.
     val_.template sync<typename MemorySpace::memory_space> ();
+  }
+
+  //! Sync the matrix's values to host space
+  inline void sync_host()
+  {
+    val_.sync_host();
+  }
+
+  //! Sync the matrix's values to device space
+  inline void sync_device()
+  {
+    val_.sync_device();
   }
 
   /// \brief Get the host or device View of the matrix's values (\c val_).
@@ -943,10 +979,24 @@ public:
   /// allocations generally are not lazy; that way, the host fill
   /// interface always works in a thread-parallel context without
   /// needing to synchronize on the allocation.
+  ///
+  /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
+  /// Hence I made the non-templated functions const. 
+
   template<class MemorySpace>
   auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ())
   {
     return val_.template view<typename MemorySpace::memory_space> ();
+  }
+
+  // \brief Get the host view of the matrix's values
+  inline typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host getValuesHost () const {
+    return val_.view_host();
+  }
+
+  // \brief Get the device view of the matrix's values
+  inline typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev getValuesDevice () const {
+    return val_.view_device();
   }
 
   //@}

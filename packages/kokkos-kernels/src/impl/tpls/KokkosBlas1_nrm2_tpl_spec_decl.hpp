@@ -202,4 +202,152 @@ KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_BLAS( Kokkos::LayoutLeft, Kokkos::HostSpace, fal
 
 #endif
 
+// cuBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+#include<KokkosBlas_tpl_spec.hpp>
+
+namespace KokkosBlas {
+namespace Impl {
+
+#define KOKKOSBLAS1_DNRM2_TPL_SPEC_DECL_CUBLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Nrm2< \
+Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1,true, ETI_SPEC_AVAIL > { \
+  \
+  typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef typename XV::size_type size_type; \
+  \
+  static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
+  { \
+    const size_type numElems = X.extent(0); \
+    if (numElems < static_cast<size_type> (INT_MAX)) { \
+      nrm2_print_specialization<RV,XV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasDnrm2(s.handle, N, X.data(), one, &R()); \
+      if(!take_sqrt) R() = R()*R(); \
+    } else { \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
+    } \
+  } \
+};
+
+#define KOKKOSBLAS1_SNRM2_TPL_SPEC_DECL_CUBLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Nrm2< \
+Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1,true, ETI_SPEC_AVAIL > { \
+  \
+  typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef typename XV::size_type size_type; \
+  \
+  static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
+  { \
+    const size_type numElems = X.extent(0); \
+    if (numElems < static_cast<size_type> (INT_MAX)) { \
+      nrm2_print_specialization<RV,XV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasSnrm2(s.handle, N, X.data(), one, &R()); \
+      if(!take_sqrt) R() = R()*R(); \
+    } else { \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
+    } \
+  } \
+};
+
+#define KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_CUBLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Nrm2< \
+Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1,true, ETI_SPEC_AVAIL > { \
+  \
+  typedef Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef typename XV::size_type size_type; \
+  \
+  static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
+  { \
+    const size_type numElems = X.extent(0); \
+    if (numElems < static_cast<size_type> (INT_MAX)) { \
+      nrm2_print_specialization<RV,XV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasDznrm2(s.handle, N, reinterpret_cast<const cuDoubleComplex*>(X.data()), one, &R()); \
+      if(!take_sqrt) R() = R()*R(); \
+    } else { \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
+    } \
+  } \
+};
+
+#define KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_CUBLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
+template<class ExecSpace> \
+struct Nrm2< \
+Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1,true, ETI_SPEC_AVAIL > { \
+  \
+  typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
+  typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
+  typedef typename XV::size_type size_type; \
+  \
+  static void nrm2 (RV& R, const XV& X, const bool& take_sqrt) \
+  { \
+    const size_type numElems = X.extent(0); \
+    if (numElems < static_cast<size_type> (INT_MAX)) { \
+      nrm2_print_specialization<RV,XV>(); \
+      const int N = static_cast<int> (numElems); \
+      constexpr int one = 1; \
+      KokkosBlas::Impl::CudaBlasSingleton & s = KokkosBlas::Impl::CudaBlasSingleton::singleton(); \
+      cublasScnrm2(s.handle, N, reinterpret_cast<const cuComplex*>(X.data()), one, &R()); \
+      if(!take_sqrt) R() = R()*R(); \
+    } else { \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
+    } \
+  } \
+};
+
+KOKKOSBLAS1_DNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_DNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS1_SNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_SNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, true)
+KOKKOSBLAS1_CNRM2_TPL_SPEC_DECL_CUBLAS( Kokkos::LayoutLeft, Kokkos::CudaSpace, false)
+
+}
+}
+
+#endif
+
 #endif
