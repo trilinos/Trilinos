@@ -45,6 +45,8 @@
 namespace panzer {
 
   HP::HP() :
+    use_auto_team_size_(true),
+    team_size_(-1),
     vector_size_(1),
     fad_vector_size_(1)
   {
@@ -61,11 +63,14 @@ namespace panzer {
     return hp;
   }
 
-  void HP::overrideSizes(const int& default_vector_size,
-			 const int& fad_vector_size)
+  void HP::overrideSizes(const int& in_team_size,
+			 const int& in_vector_size,
+			 const int& in_fad_vector_size)
   {
-    vector_size_ = default_vector_size;
-    fad_vector_size_ = fad_vector_size;
+    use_auto_team_size_ = false;
+    team_size_ = in_team_size;
+    vector_size_ = in_vector_size;
+    fad_vector_size_ = in_fad_vector_size;
   }
 
 }
