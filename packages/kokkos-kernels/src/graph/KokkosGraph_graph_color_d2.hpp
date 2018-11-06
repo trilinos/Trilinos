@@ -115,6 +115,3 @@ void graph_color_d2(KernelHandle *handle,
 
 #endif //_KOKKOS_GRAPH_COLOR_HPP
 
-
-// This is a trivial edit to force the PR tester to build KokkosKernels.  
-// DO NOT MERGE THIS PR INTO TRILINOS!
