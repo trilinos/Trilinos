@@ -73,7 +73,7 @@ namespace panzer {
 
   template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-  panzer::L2Projection<LO,GO>::buildMassMatrix()
+  panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping)
   {
     TEUCHOS_ASSERT(setupCalled_);
 
@@ -139,16 +139,17 @@ namespace panzer {
             double vals[256];
             const int numQP = static_cast<int>(unweightedBasis.extent(2));
 
-            for (int qp=0; qp < numQP; ++qp) {
-              for (int row=0; row < numBasisPoints; ++row) {
-                int offset = kOffsets(row);
-                LO lid = localIds(cell,offset);
+            for (int row=0; row < numBasisPoints; ++row) {
+              int offset = kOffsets(row);
+              LO lid = localIds(cell,offset);
 
-                for (int col=0; col < numIds; ++col)
-                  vals[col] = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
-
-                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+              for (int col=0; col < numIds; ++col) {
+                vals[col] = 0.0;
+                for (int qp=0; qp < numQP; ++qp)
+                  vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
               }
+              M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+
             }
 
           });

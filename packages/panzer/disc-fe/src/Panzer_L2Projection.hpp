@@ -75,7 +75,7 @@ namespace panzer {
         \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildMassMatrix();
+      buildMassMatrix(bool use_lumping=false);
 
     /** \brief Allocates, fills and returns a Tpetra::MultiVector
         containing the inverse lumped mass matrix values. This is
