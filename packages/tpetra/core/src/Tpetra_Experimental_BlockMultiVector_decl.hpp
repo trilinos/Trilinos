@@ -449,10 +449,30 @@ public:
     mv_.template sync<typename TargetMemorySpace::memory_space> ();
   }
 
+  /// \brief Update data to the host
+  void sync_host() {
+    mv_.sync_host();
+  }
+ 
+  /// \brief Update data to the device
+  void sync_device() {
+    mv_.sync_device();
+  }
+
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
   bool need_sync () const {
     return mv_.template need_sync<typename TargetMemorySpace::memory_space> ();
+  }
+
+  //! Whether this object needs synchronization to the host
+  bool need_sync_host() const {
+    return mv_.need_sync_host();
+  }
+ 
+  //! Whether this object needs synchronization to the device
+  bool need_sync_device() const {
+    return mv_.need_sync_device();
   }
 
   /// \brief Mark data as modified on the given memory space.
@@ -465,6 +485,15 @@ public:
     mv_.template modify<typename TargetMemorySpace::memory_space> ();
   }
 
+  /// \brief Mark data as modified on the host
+  void modify_host() {
+    mv_.modify_host();
+  }
+ 
+  /// \brief Mark data as modified on the device
+  void modify_device() {
+    mv_.modify_device();
+  }
   //@}
   //! \name Fine-grained data access
   //@{

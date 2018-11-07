@@ -46,7 +46,7 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ride"* ]] ; then
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "chama"* ]] ; then
   ATDM_HOSTNAME=chama
   ATDM_SYSTEM_NAME=chama
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
   ATDM_HOSTNAME=serrano
   ATDM_SYSTEM_NAME=serrano
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then

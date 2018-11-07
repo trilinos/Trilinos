@@ -371,8 +371,8 @@ size_t KokkosSPGEMM
 
   //size_t write_index = num_collapsed_triplets_per_thread[0];
 
-  entriesC_ = c_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing(""),overall_size);
-  valuesC_ = c_scalar_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing(""),overall_size);
+  entriesC_ = c_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC_"),overall_size);
+  valuesC_ = c_scalar_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC_"),overall_size);
   rowmapC_(0) = 0;
   rowmapC_(this->a_row_cnt) = overall_size;
 #pragma omp parallel
@@ -830,7 +830,7 @@ void KokkosSPGEMM
   //AND MULTI-WAY-MERGE THEM
   ////////////////////////////////////////
   timer1.reset();
-  slow_triplet_view_t output_triplets("",overall_size);
+  slow_triplet_view_t output_triplets("output_triplets",overall_size);
 
   this->merge_triplets_on_slow_memory(
       &(host_triplet_arrays[0]),
@@ -848,7 +848,7 @@ void KokkosSPGEMM
   ////////////////////////////////////////
   //COLLAPSE TRIPLETS, MERGE SAME ONES
   ////////////////////////////////////////
-  //triplet_host_view_t collapsed_output_triplets("",overall_size);
+  //triplet_host_view_t collapsed_output_triplets("collapsed_output_triplets",overall_size);
 
   size_type outsize = this->final_collapse_triplets_omp(
       output_triplets,

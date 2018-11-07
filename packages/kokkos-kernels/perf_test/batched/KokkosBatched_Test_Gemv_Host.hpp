@@ -19,6 +19,8 @@
 #include "KokkosBatched_Gemv_Decl.hpp"
 #include "KokkosBatched_Gemv_Serial_Impl.hpp"
 
+#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
+
 namespace KokkosBatched {
   namespace Experimental {
     namespace PerfTest {
@@ -146,7 +148,7 @@ namespace KokkosBatched {
           }
         }
 #endif
-
+        
         ///
         /// Plain version (comparable to micro BLAS version)
         ///

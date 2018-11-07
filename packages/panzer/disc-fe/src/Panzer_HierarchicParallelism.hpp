@@ -50,25 +50,51 @@ namespace panzer {
 
   /// Singleton class for accessing kokkos hierarchical parallelism parameters.
   class HP {
-    /// Default vector size for Kokkos hierarchic dispatch
-    int vector_size_;
-    /// FAD vector size 
-    int fad_vector_size_;
+    bool use_auto_team_size_; /// If true, the team size is set with Kokkos::AUTO()
+    int team_size_;           /// User specified team size.
+    int vector_size_;         /// Default vector size for non-AD types.
+    int fad_vector_size_;     /// FAD vector size.
 
-    HP();
+    HP(); /// Private ctor.
 
   public:
+    /// Return singleton instance of this class.
     static HP& inst();
 
-    void overrideSizes(const int& default_vector_size,
+    /// Allows the user to override default sizes.
+    void overrideSizes(const int& team_size,
+		       const int& vector_size,
 		       const int& fad_vector_size);
 
+    /** \brief Returns the vector size. Specialized for AD scalar types.
+
+	NOTE: For hierarchic parallelism, if we use the same code for
+	both Residual and Jacobian (as we do in most evaluators), the
+	loop over vector level is missing for Residual. The loop is
+	implemented internally in the AD types for Jacobian where on
+	CUDA the warp parallelizes over the derivative dimension. To
+	prevent incorrect code, we need to force the vector size to 1
+	for non-AD scalar types. Eventual workaround is to use SIMD
+	data type with similar hidden vector loop for Residual. In the
+	mean time, this function will set correct vector_size of one.
+     */
     template<typename Scalar>
     int vectorSize() const
     {
-      if (Sacado::IsADType<Scalar>::value)
-	return fad_vector_size_;
-      return vector_size_;
+      return Sacado::IsADType<Scalar>::value ? fad_vector_size_ : vector_size_;
+    }
+
+    /// Returns a TeamPolicy for hierarchic parallelism.
+    template<typename ScalarT, typename ... TeamPolicyProperties>
+    Kokkos::TeamPolicy<TeamPolicyProperties...> teamPolicy(const int& league_size)
+    {
+      const int tmp_vector_size = this->template vectorSize<ScalarT>();
+
+      if (use_auto_team_size_)
+	return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,Kokkos::AUTO(),
+							   tmp_vector_size);
+      
+      return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,team_size_,tmp_vector_size);
     }
   };
 

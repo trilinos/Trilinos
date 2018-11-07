@@ -69,11 +69,45 @@ Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 1> { enum : bool { value = true }; };
 
+#if defined (KOKKOSKERNELS_INST_DOUBLE)
 KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_FLOAT)
 KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_)
 KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_)
 KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
+#endif
 
+#endif
+
+// cuBLAS
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+// double
+#define KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_CUBLAS( SCALAR, LAYOUT, MEMSPACE ) \
+template<class ExecSpace> \
+struct nrminf_tpl_spec_avail< \
+Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, Kokkos::HostSpace, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
+             Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
+1> { enum : bool { value = true }; };
+
+#if defined (KOKKOSKERNELS_INST_DOUBLE)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_CUBLAS( double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_FLOAT)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_CUBLAS( float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#endif
+#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_)
+KOKKOSBLAS1_NRMINF_TPL_SPEC_AVAIL_CUBLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
+#endif
 
 #endif
 

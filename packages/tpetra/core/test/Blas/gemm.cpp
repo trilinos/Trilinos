@@ -217,7 +217,7 @@ namespace {
           B_norm = (curAbs > B_norm) ? curAbs : B_norm;
         }
       }
-      Kokkos::deep_copy (C2, A_orig);
+      Kokkos::deep_copy (C2, C_orig);
       for (LO i = 0; i < static_cast<LO> (C2.extent (0)); ++i) {
         for (LO j = 0; j < static_cast<LO> (C2.extent (1)); ++j) {
           const mag_type curAbs =
