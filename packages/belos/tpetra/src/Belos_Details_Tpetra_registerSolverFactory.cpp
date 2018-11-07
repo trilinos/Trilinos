@@ -50,6 +50,7 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosGmresPolySolMgr.hpp"
 #include "BelosLSQRSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
 #include "BelosPCPGSolMgr.hpp"
@@ -91,6 +92,10 @@ void registerSolverFactory() {
 
   #undef LCL_CALL
   #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GCRODRSolMgr, "GCRODR", SC, LO, GO, NT)
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  #undef LCL_CALL
+  #define LCL_CALL( SC, LO, GO, NT ) BELOS_LCL_CALL_FOR_MANAGER(GmresPolySolMgr, "HYBRID BLOCK GMRES", SC, LO, GO, NT)
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
 
   #undef LCL_CALL

@@ -24,6 +24,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_HybridGMRES_hb_test
+  SOURCES test_hybrid_gmres_hb.cpp
+  ARGS "--verbose --max-degree=10 --poly-type=Arnoldi"
+       "--verbose --max-degree=10 --poly-type=Gmres"
+  COMM serial mpi
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockGMRES_hb_CopyFiles
   SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
