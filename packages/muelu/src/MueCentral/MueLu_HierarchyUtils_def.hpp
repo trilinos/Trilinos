@@ -178,11 +178,11 @@ namespace MueLu {
         const ParameterList& userList = paramList.sublist(levelName);
         for (ParameterList::ConstIterator it2 = userList.begin(); it2 != userList.end(); it2++) {
           const std::string& name = it2->first;
-          TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R" &&
+          TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      "MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type!");
-          if( name == "P" || name == "R") {
+          if( name == "P" || name == "R" || name == "K" || name == "M") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), NoFactory::get());
           } else if (name == "Mdiag") {

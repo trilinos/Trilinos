@@ -41,33 +41,37 @@ namespace KokkosBatched {
              const AViewType &A,
              const bViewType &b) {
         typedef typename bViewType::value_type vector_type;
-        typedef typename vector_type::value_type value_type;
+        //typedef typename vector_type::value_type value_type;
         
         const int
           m = b.extent(0),
-          n = 1,
-          vl = vector_type::vector_length;
+          n = 1;
+
+        static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+        static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                      "AVX, AVX2 and AVX512 is supported");
+        const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
         
         // no error check
         int r_val = 0;
         if (A.stride_0() == 1) { 
-          cblas_dtrsm_compact(CblasColMajor, 
-                              CblasLeft, CblasLower, CblasNoTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_COL_MAJOR, 
+                              MKL_LEFT, MKL_LOWER, MKL_NOTRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else if (A.stride_1() == 1) {  
-          cblas_dtrsm_compact(CblasRowMajor, 
-                              CblasLeft, CblasLower, CblasNoTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_ROW_MAJOR, 
+                              MKL_LEFT, MKL_LOWER, MKL_NOTRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else {
           r_val = -1;
         }
@@ -133,33 +137,37 @@ namespace KokkosBatched {
              const AViewType &A,
              const bViewType &b) {
         typedef typename bViewType::value_type vector_type;
-        typedef typename vector_type::value_type value_type;
+        //typedef typename vector_type::value_type value_type;
         
         const int
           m = b.extent(0),
-          n = 1,
-          vl = vector_type::vector_length;
+          n = 1;
+
+        static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+        static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                      "AVX, AVX2 and AVX512 is supported");
+        const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
         
         // no error check
         int r_val = 0;
         if (A.stride_0() == 1) { 
-          cblas_dtrsm_compact(CblasColMajor, 
-                              CblasLeft, CblasLower, CblasTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_COL_MAJOR, 
+                              MKL_LEFT, MKL_LOWER, MKL_TRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else if (A.stride_1() == 1) {  
-          cblas_dtrsm_compact(CblasRowMajor, 
-                              CblasLeft, CblasLower, CblasTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_ROW_MAJOR, 
+                              MKL_LEFT, MKL_LOWER, MKL_TRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else {
           r_val = -1;
         }
@@ -225,33 +233,37 @@ namespace KokkosBatched {
              const AViewType &A,
              const bViewType &b) {
         typedef typename bViewType::value_type vector_type;
-        typedef typename vector_type::value_type value_type;
+        //typedef typename vector_type::value_type value_type;
         
         const int
           m = b.extent(0),
-          n = 1,
-          vl = vector_type::vector_length;
+          n = 1;
+
+        static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+        static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                      "AVX, AVX2 and AVX512 is supported");
+        const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
         // no error check
         int r_val = 0;
         if (A.stride_0() == 1) { 
-          cblas_dtrsm_compact(CblasColMajor, 
-                              CblasLeft, CblasUpper, CblasNoTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_COL_MAJOR, 
+                              MKL_LEFT, MKL_UPPER, MKL_NOTRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else if (A.stride_1() == 1) {  
-          cblas_dtrsm_compact(CblasRowMajor, 
-                              CblasLeft, CblasUpper, CblasNoTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_ROW_MAJOR, 
+                              MKL_LEFT, MKL_UPPER, MKL_NOTRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else {
           r_val = -1;
         }
@@ -317,33 +329,37 @@ namespace KokkosBatched {
              const AViewType &A,
              const bViewType &b) {
         typedef typename bViewType::value_type vector_type;
-        typedef typename vector_type::value_type value_type;
+        //typedef typename vector_type::value_type value_type;
         
         const int
           m = b.extent(0),
-          n = 1,
-          vl = vector_type::vector_length;
+          n = 1;
+
+        static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+        static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                      "AVX, AVX2 and AVX512 is supported");
+        const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
         // no error check
         int r_val = 0;
         if (A.stride_0() == 1) { 
-          cblas_dtrsm_compact(CblasColMajor, 
-                              CblasLeft, CblasUpper, CblasTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_COL_MAJOR, 
+                              MKL_LEFT, MKL_UPPER, MKL_TRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else if (A.stride_1() == 1) {  
-          cblas_dtrsm_compact(CblasRowMajor, 
-                              CblasLeft, CblasUpper, CblasTrans, 
-                              ArgDiag::use_unit_diag ? CblasUnit : CblasNonUnit,
+          mkl_dtrsm_compact(MKL_ROW_MAJOR, 
+                              MKL_LEFT, MKL_UPPER, MKL_TRANS, 
+                              ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
                               m, n, 
                               alpha, 
                               (const double*)A.data(), A.stride_0(), 
                               (double*)b.data(), b.stride_0(), 
-                              (MKL_INT)vl, (MKL_INT)1);
+                              format, (MKL_INT)vector_type::vector_length);
         } else {
           r_val = -1;
         }

@@ -54,13 +54,13 @@ public:
 
   KOKKOS_FUNCTION value_type const& operator[](size_t index) const
   {
-    ThrowAssert(index < Dim);
+    NGP_ThrowAssert(index < Dim);
     return m_value[index];
   }
 
   KOKKOS_FUNCTION value_type & operator[](size_t index)
   {
-    ThrowAssert(index < Dim);
+    NGP_ThrowAssert(index < Dim);
     return m_value[index];
   }
 

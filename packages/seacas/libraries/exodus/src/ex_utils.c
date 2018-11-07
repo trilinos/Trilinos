@@ -1473,12 +1473,10 @@ static int warning_output = 0;
 
 int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 {
-  char errmsg[MAX_ERR_LENGTH];
-  int  nc_mode = 0;
-#if NC_HAS_HDF5
+  char       errmsg[MAX_ERR_LENGTH];
+  int        nc_mode      = 0;
   static int netcdf4_mode = -1;
-#endif /* NC_NETCDF4 */
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
   static int netcdf5_mode = -1;
 #endif
 
@@ -1518,7 +1516,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   }
 #endif
 
-#if !defined(NC_64BIT_DATA)
+#if !NC_HAS_CDF5
   if (my_mode & EX_64BIT_DATA) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "EXODUS: ERROR: File format specified as 64bit_data, but "
@@ -1563,7 +1561,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
 
   if ((int64_status & EX_ALL_INT64_DB) != 0) {
-#if NC_HAS_HDF5 || defined(NC_64BIT_DATA)
+#if NC_HAS_HDF5 || NC_HAS_CDF5
     /* Library DOES support netcdf4 and/or cdf5 ... See if user
      * specified either of these and use that one; if not, pick
      * netcdf4, non-classic as default.
@@ -1571,7 +1569,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     if (my_mode & EX_NETCDF4) {
       my_mode |= EX_NOCLASSIC;
     }
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
     else if (my_mode & EX_64BIT_DATA) {
       ; /* Do nothing, already set */
     }
@@ -1697,7 +1695,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     nc_mode |= NC_CLASSIC_MODEL;
   }
 
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
   if (my_mode & EX_64BIT_DATA) {
     nc_mode |= (NC_64BIT_DATA);
   }
@@ -1727,7 +1725,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 #if NC_HAS_HDF5
       !(nc_mode & NC_NETCDF4) &&
 #endif
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
       !(nc_mode & NC_64BIT_DATA) &&
 #endif
       filesiz == 1) {

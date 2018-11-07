@@ -130,13 +130,24 @@ localSolve (Tpetra::MultiVector<
   // sequential, host-only code.  See
   // https://github.com/kokkos/kokkos-kernels/issues/48.  This means
   // that we need to sync to host, then sync back to device when done.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   X.template sync<host_memory_space> ();
   const_cast<MV&> (Y).template sync<host_memory_space> ();
   X.template modify<host_memory_space> (); // we will write to X
+#else
+  X.sync_host ();
+  const_cast<MV&> (Y).sync_host ();
+  X.modify_host (); // we will write to X
+#endif
 
   if (X.isConstantStride () && Y.isConstantStride ()) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto X_lcl = X.template getLocalView<host_memory_space> ();
     auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+#else
+    auto X_lcl = X.getLocalViewHost ();
+    auto Y_lcl = Y.getLocalViewHost ();
+#endif
     KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                         A_lcl, Y_lcl, X_lcl);
   }
@@ -146,8 +157,13 @@ localSolve (Tpetra::MultiVector<
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVector (j);
       auto Y_j = X.getVector (j);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       auto X_lcl = X_j->template getLocalView<host_memory_space> ();
       auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
+#else
+      auto X_lcl = X_j->getLocalViewHost ();
+      auto Y_lcl = Y_j->getLocalViewHost ();
+#endif
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                           diag.c_str (), A_lcl, Y_lcl, X_lcl);
     }
@@ -1059,9 +1075,15 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   // Set up the right-hand side b.
   vec_type b (ranMap);
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     b.template sync<Kokkos::HostSpace> ();
     b.template modify<Kokkos::HostSpace> ();
     auto b_lcl_2d = b.template getLocalView<Kokkos::HostSpace> ();
+#else
+    b.sync_host ();
+    b.modify_host ();
+    auto b_lcl_2d = b.getLocalViewHost ();
+#endif
     auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i < lclNumRows; ++i) {
@@ -1131,8 +1153,13 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     c.template sync<Kokkos::HostSpace> ();
     auto c_lcl_2d = c.template getLocalView<Kokkos::HostSpace> ();
+#else
+    c.sync_host ();
+    auto c_lcl_2d = c.getLocalViewHost ();
+#endif
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1176,8 +1203,13 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     x.template sync<Kokkos::HostSpace> ();
     auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
+#else
+    x.sync_host ();
+    auto x_lcl_2d = x.getLocalViewHost ();
+#endif
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1204,8 +1236,13 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     c.template sync<Kokkos::HostSpace> ();
     auto c_lcl_2d = c.template getLocalView<Kokkos::HostSpace> ();
+#else
+    c.sync_host ();
+    auto c_lcl_2d = c.getLocalViewHost ();
+#endif
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1224,8 +1261,13 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     x.template sync<Kokkos::HostSpace> ();
     auto x_lcl_2d = x.template getLocalView<Kokkos::HostSpace> ();
+#else
+    x.sync_host ();
+    auto x_lcl_2d = x.getLocalViewHost ();
+#endif
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {

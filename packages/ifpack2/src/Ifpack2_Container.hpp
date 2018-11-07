@@ -344,8 +344,13 @@ public:
   //! Wrapper for apply with MVs, used in unit tests (never called by BlockRelaxation)
   void applyMV (mv_type& X, mv_type& Y) const
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     HostView XView = X.template getLocalView<Kokkos::HostSpace>();
     HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
+#else
+    HostView XView = X.getLocalViewHost();
+    HostView YView = Y.getLocalViewHost();
+#endif
     this->apply (XView, YView, 0, X.getStride());
   }
 
@@ -384,9 +389,15 @@ public:
                         mv_type& Y,
                         vector_type& W)
   {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     HostView XView = X.template getLocalView<Kokkos::HostSpace>();
     HostView YView = Y.template getLocalView<Kokkos::HostSpace>();
     HostView WView = W.template getLocalView<Kokkos::HostSpace>();
+#else
+    HostView XView = X.getLocalViewHost();
+    HostView YView = Y.getLocalViewHost();
+    HostView WView = W.getLocalViewHost();
+#endif
     weightedApply (XView, YView, WView, 0, X.getStride());
   }
 
@@ -465,7 +476,11 @@ void Container<MatrixType>::DoJacobi(HostView& X, HostView& Y, int stride) const
     {
       local_ordinal_type LRID = partitions_[partitionIndices_[i]];
       getMatDiag();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+#else
+      HostView diagView = Diag_->getLocalViewHost();
+#endif
       impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
       for(size_t nv = 0; nv < numVecs; nv++)
       {
@@ -573,7 +588,11 @@ void Container<MatrixType>::DoGaussSeidel(HostView& X, HostView& Y, HostView& Y2
       // a singleton calculation is exact, all residuals should be zero.
       local_ordinal_type LRID = partitionIndices_[i];  // by definition, a singleton 1 row in block.
       getMatDiag();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+#else
+      HostView diagView = Diag_->getLocalViewHost();
+#endif
       impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
       for(size_t m = 0; m < numVecs; m++)
       {
@@ -675,7 +694,11 @@ void Container<MatrixType>::DoSGS(HostView& X, HostView& Y, HostView& Y2, int st
     {
       local_ordinal_type LRID  = partitions_[partitionIndices_[i]];
       getMatDiag();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       HostView diagView = Diag_->template getLocalView<Kokkos::HostSpace>();
+#else
+      HostView diagView = Diag_->getLocalViewHost();
+#endif
       impl_scalar_type d = (impl_scalar_type) one / diagView(LRID, 0);
       for(size_t m = 0; m < numVecs; m++)
       {
