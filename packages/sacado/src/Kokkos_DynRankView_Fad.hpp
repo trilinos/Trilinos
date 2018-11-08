@@ -643,8 +643,8 @@ public:
   static ret_type subview( const unsigned src_rank , Kokkos::DynRankView< T , P...> const & src , Args ... args )
   {
 
-    typedef ViewMapping< traits_type, void >  DstType ;
-    typedef ViewMapping< SrcTraits, void> SrcType;
+    typedef ViewMapping< traits_type, typename traits_type::specialize>  DstType ;
+    typedef ViewMapping< SrcTraits, typename SrcTraits::specialize> SrcType;
     enum { FadStaticDim = SrcType::FadStaticDimension };
     typedef typename std::conditional< (rank==0) , ViewDimension<>
       , typename std::conditional< (rank==1) , ViewDimension<0>
@@ -777,7 +777,7 @@ permute_fad_layout(const LayoutStride& src, const unsigned rank) {
 
 /**\brief  Assign compatible Sacado FAD view mappings.
  *
- *  View<FAD>      = View<FAD>
+ *  DynRankView<FAD>      = View<FAD>
  */
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
@@ -800,8 +800,8 @@ public:
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template < typename DT , typename ... DP , typename ST , typename ... SP >
   KOKKOS_INLINE_FUNCTION static
@@ -877,8 +877,8 @@ public:
   enum { is_assignable = true };
 
   typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
-  typedef ViewMapping< DstTraits , void >  DstType ;
-  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+  typedef ViewMapping< DstTraits , typename DstTraits::specialize >  DstType ;
+  typedef ViewMapping< SrcTraits , typename SrcTraits::specialize >  SrcFadType ;
 
   template < typename DT , typename ... DP , typename ST , typename ... SP >
   KOKKOS_INLINE_FUNCTION static
