@@ -142,9 +142,6 @@ namespace panzer {
               const int numQP = static_cast<int>(unweightedBasis.extent(2));
 
               for (int row=0; row < numBasisPoints; ++row) {
-                int offset = kOffsets(row);
-                LO lid = localIds(cell,offset);
-
                 for (int col=0; col < numIds; ++col) {
                   for (int qp=0; qp < numQP; ++qp) {
                     auto tmp = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
@@ -154,7 +151,6 @@ namespace panzer {
                   }
                 }
               }
-
 
               for (int row=0; row < numBasisPoints; ++row) {
                 for (int col=0; col < numBasisPoints; ++col)

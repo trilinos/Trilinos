@@ -670,7 +670,6 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   auto timer = Teuchos::TimeMonitor::getStackedTimer();
   timer->start("Total Time");
 
-  const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
   const int numXElements = 4;
   const int numYElements = 2;
@@ -791,7 +790,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
     for(int r = 0; r < 4; r++){
       cols[0] = lids(i,r);
       cols[1] = lids(i,(r+2)%4);
-      int num_insert =  localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
+      localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
     }
   });
   PHX::Device::fence();
