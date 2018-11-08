@@ -118,7 +118,7 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
   RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-  LevelOfFill_ (1),
+  LevelOfFill_ (1.0),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
@@ -152,7 +152,7 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   using Teuchos::Exceptions::InvalidParameterType;
 
   // Default values of the various parameters.
-  int fillLevel = 1;
+  double fillLevel = 1.0;
   magnitude_type absThresh = STM::zero ();
   magnitude_type relThresh = STM::one ();
   magnitude_type relaxValue = STM::zero ();
@@ -160,8 +160,8 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 
   bool gotFillLevel = false;
   try {
-    // Try getting the fill level as an int.
-    fillLevel = params.get<int> ("fact: ilut level-of-fill");
+    // Try getting the fill level as an double.
+    fillLevel = params.get<double> ("fact: ilut level-of-fill");
     gotFillLevel = true;
   }
   catch (InvalidParameterName&) {
@@ -177,27 +177,28 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
   if (! gotFillLevel) {
     // Try magnitude_type, for backwards compatibility.
     try {
-      fillLevel = as<int> (params.get<magnitude_type> ("fact: ilut level-of-fill"));
+      fillLevel = static_cast<double> (params.get<magnitude_type> ("fact: ilut level-of-fill"));
     }
     catch (InvalidParameterType&) {}
   }
   if (! gotFillLevel) {
-    // Try double, for backwards compatibility.
+    // Try int, for backwards compatibility.
     try {
-      fillLevel = as<int> (params.get<double> ("fact: ilut level-of-fill"));
+      fillLevel = static_cast<double> (params.get<int> ("fact: ilut level-of-fill"));
     }
     catch (InvalidParameterType&) {}
   }
   // If none of the above attempts succeed, accept the default value.
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    fillLevel <= 0, std::runtime_error,
+    fillLevel < 1.0, std::runtime_error,
     "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be "
-    "strictly greater than zero, but you specified a value of " << fillLevel
+    "greater than or equal to one, but you specified a value of " << fillLevel
     << ".  Remember that for ILUT, the fill level p means something different "
     "than it does for ILU(k).  ILU(0) produces factors with the same sparsity "
-    "structure as the input matrix A; ILUT with p = 0 always produces a "
-    "diagonal matrix, and is thus probably not what you want.");
+    "structure as the input matrix A; In this implementation of ILUT,  "
+    "level-of-fill = 1.0 will produce factors with nonzeros matching the "
+    "sparsity structure of A. level-of-fill > 1.0 allows for additional fill-in.");
 
   try {
     absThresh = params.get<magnitude_type> ("fact: absolute threshold");
@@ -523,20 +524,10 @@ void ILUT<MatrixType>::compute ()
     std::ofstream ofsU("U.tif.mtx", std::ios::out);
 #endif
 
-    // The code here uses double for fill calculations, even though
-    // the fill level is actually an integer.  The point is to avoid
-    // rounding and overflow for integer calculations.  If int is <=
-    // 32 bits, it can never overflow double, so this cast is always
-    // OK as long as int has <= 32 bits.
-
     // Calculate how much fill will be allowed in addition to the
     // space that corresponds to the input matrix entries.
     double local_nnz = static_cast<double> (A_local_->getNodeNumEntries ());
-    double fill;
-    {
-      const double fillLevel = as<double> (getLevelOfFill ());
-      fill = ((fillLevel - 1) * local_nnz) / (2 * myNumRows);
-    }
+    double fill = ((getLevelOfFill () - 1.0) * local_nnz) / (2 * myNumRows);
 
     // std::ceil gives the smallest integer larger than the argument.
     // this may give a slightly different result than Aztec's fill value in
