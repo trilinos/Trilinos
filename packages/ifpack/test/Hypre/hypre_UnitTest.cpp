@@ -370,9 +370,9 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, DiagonalMatrixOutOfOrder ) {
   //
   // Solve the linear system
   //
-  TEST_EQUALITY(prec.ApplyInverse(RHS,X),0);
+  TEST_EQUALITY(prec.ApplyInverse(B,X),0);
 
-  TEST_EQUALITY(EquivalentVectors(X, RHS, tol*10*pow(10.0,numProcs)), true);
+  TEST_EQUALITY(EquivalentVectors(X, KnownX, tol*10*pow(10.0,numProcs)), true);
 }
 
 
