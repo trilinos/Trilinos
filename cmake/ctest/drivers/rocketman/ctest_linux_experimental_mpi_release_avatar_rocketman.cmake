@@ -83,6 +83,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_HDF5=ON"
   "-DTPL_ENABLE_Avatar=ON"
   "-DTPL_ENABLE_Matio=OFF"
+  "-DTPL_ENABLE_Boost=ON"
+  "-DTPL_ENABLE_BoostLib=ON"
   "-DTPL_ENABLE_X11=OFF"
   "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src;/home/csiefer/avatar/a
 vatar/util/fclib-1.6.1/modules"
