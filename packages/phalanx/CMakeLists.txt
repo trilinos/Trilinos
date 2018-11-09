@@ -125,6 +125,8 @@ IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 ENDIF()
 ENDIF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
 
+MESSAGE(STATUS "Sacado Hierarchic DFAD support: ${Sacado_ENABLE_HIERARCHICAL_DFAD}")
+
 # For use by Phalanx and Panzer unit tests
 GLOBAL_SET(PHALANX_UNIT_TEST_MAIN
   "${PACKAGE_SOURCE_DIR}/test/Utilities/Phalanx_UnitTestMain.cpp")
