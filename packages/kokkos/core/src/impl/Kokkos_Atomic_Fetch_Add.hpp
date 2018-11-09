@@ -173,7 +173,7 @@ T atomic_fetch_add( volatile T * const dest ,
 #endif
 //----------------------------------------------------------------------------
 #if !defined(KOKKOS_ENABLE_ROCM_ATOMICS)
-#if !defined(__CUDA_ARCH__) || defined(KOKKOS_IMPL_CUDA_CLANG_WORKAROUND)
+#if !defined(KOKKOS_ENABLE_CUDA) || !defined(__CUDA_ARCH__) || defined(KOKKOS_IMPL_CUDA_CLANG_WORKAROUND)
 #if defined(KOKKOS_ENABLE_GNU_ATOMICS) || defined(KOKKOS_ENABLE_INTEL_ATOMICS)
 
 #if defined( KOKKOS_ENABLE_ASM ) && defined ( KOKKOS_ENABLE_ISA_X86_64 )
