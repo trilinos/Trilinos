@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD PINT CONSTRAINT *********************************/
     /*************************************************************************/
-    auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(state->numOwnedSteps());
+    auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(control->numOwnedSteps());
     for( uint k=0; k<timeStamp->size(); ++k ) {
       timeStamp->at(k).t.resize(2);
       timeStamp->at(k).t.at(0) = k*dt;
@@ -228,10 +228,10 @@ int main(int argc, char *argv[]) {
 
     // build the parallel in time constraint from the user constraint
     ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con = ROL::makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-    pint_con->applyMultigrid(numLevels);
+    pint_con->applyMultigrid(2); //numLevels);
     pint_con->setSweeps(sweeps);
     pint_con->setRelaxation(omega);
-    pint_con->buildLevels(*state);
+    // pint_con->buildLevels(*state);
 
     /*************************************************************************/
     /***************** Run KKT Solver ***************************************/
@@ -286,7 +286,8 @@ int main(int argc, char *argv[]) {
       parlist.set("Absolute Tolerance",1.e-9);
       parlist.set("Relative Tolerance",relTol);
 
-      std::cout << "RELATIVE TOLERANCE = " << relTol << std::endl;
+      if(myRank==0) 
+        (*outStream) << "RELATIVE TOLERANCE = " << relTol << std::endl;
   
       ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
   
@@ -324,10 +325,12 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   }; // end try
 
-  if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED " << myRank << "\n";
-  else
-    std::cout << "End Result: TEST PASSED " << myRank << "\n";
+  if(myRank==0) {
+    if (errorFlag != 0)
+      std::cout << "End Result: TEST FAILED " << myRank << "\n";
+    else
+      std::cout << "End Result: TEST PASSED " << myRank << "\n";
+  }
 
   return 0;
 }

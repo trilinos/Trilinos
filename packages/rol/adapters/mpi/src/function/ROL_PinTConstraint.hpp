@@ -2026,7 +2026,7 @@ public:
 
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
 
-     std::cout << "SOLVING ON LEVEL " << level << std::endl;
+     // std::cout << "SOLVING ON LEVEL " << level << std::endl;
 
      std::string levelStr = "";
      std::string levelRankStr = "";
@@ -2053,7 +2053,7 @@ public:
 
      // base case: solve the KKT system directly
      if(level+1==maxLevels_) {
-       std::cout << "SOLVING ON COARSE LEVEL " << level << std::endl;
+       // std::cout << "SOLVING ON COARSE LEVEL " << level << std::endl;
        bool approxSmoother = false;
   
        applyAugmentedInverseKKT(x,b,u,z,tol,approxSmoother,level);
