@@ -9,12 +9,13 @@ echo -e "SCRIPTPATH: ${SCRIPTPATH}"
 REPO_ROOT=`readlink -f ${SCRIPTPATH}/../..`
 echo -e "REPO_ROOT : ${REPO_ROOT}"
 
-${SCRIPTPATH}/PullRequestLinuxDriver-old.sh
+# This is the old Linux Driver (deprecated)
+#${SCRIPTPATH}/PullRequestLinuxDriver-old.sh
 
 # Call the script to handle merging the incoming branch into
 # the current trilinos/develop branch for testing.
-#${SCRIPTPATH}/PullRequestLinuxDriver-Merge.sh
+${SCRIPTPATH}/PullRequestLinuxDriver-Merge.sh
 
 # Call the script to handle driving the testing
-#${SCRIPTPATH}/PullRequestLinuxDriver-Test.sh
+${SCRIPTPATH}/PullRequestLinuxDriver-Test.sh
 
