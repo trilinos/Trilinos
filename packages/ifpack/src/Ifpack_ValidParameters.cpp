@@ -141,6 +141,16 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.set("krylov: damping parameter",(double)1.0);
   List.set("krylov: zero starting solution",true);
 
+  // Ifpack_Hypre.cpp
+  Teuchos::ParameterList dummy;
+  List.set("hypre: Solver", "PCG");
+  List.set("hypre: Preconditioner", "Euclid");
+  List.set("hypre: SolveOrPrecondition", "Solver");
+  List.set("hypre: Solver functions", dummy);
+  List.set("hypre: Preconditioner functions", dummy);
+  List.set("hypre: NumFunctions", 0);
+
+
   return(List);
 }
 

@@ -48,6 +48,7 @@
 #include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Ifpack_HypreParameterMap.h"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -180,24 +181,103 @@ int Ifpack_Hypre::Initialize(){
 
 //==============================================================================
 int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+
+  std::map<std::string, Hypre_Solver> solverMap;
+  solverMap["BoomerAMG"] = BoomerAMG;
+  solverMap["ParaSails"] = ParaSails;
+  solverMap["Euclid"] = Euclid;
+  solverMap["AMS"] = AMS;
+  solverMap["Hybrid"] = Hybrid;
+  solverMap["PCG"] = PCG;
+  solverMap["GMRES"] = GMRES;
+  solverMap["FlexGMRES"] = FlexGMRES;
+  solverMap["LGMRES"] = LGMRES;
+  solverMap["BiCGSTAB"] = BiCGSTAB;
+
+  std::map<std::string, Hypre_Chooser> chooserMap;
+  chooserMap["Solver"] = Solver;
+  chooserMap["Preconditioner"] = Preconditioner;
+
   List_ = list;
-  Hypre_Solver solType = list.get("Solver", PCG);
+  Hypre_Solver solType;
+  if (list.isType<std::string>("hypre: Solver"))
+    solType = solverMap[list.get<std::string>("hypre: Solver")];
+  else
+    solType = list.get("hypre: Solver", PCG);
   SolverType_ = solType;
-  Hypre_Solver precType = list.get("Preconditioner", Euclid);
+  Hypre_Solver precType;
+  if (list.isType<std::string>("hypre: Preconditioner"))
+    precType = solverMap[list.get<std::string>("hypre: Preconditioner")];
+  else
+    precType = list.get("hypre: Preconditioner", Euclid);
   PrecondType_ = precType;
-  Hypre_Chooser chooser = list.get("SolveOrPrecondition", Solver);
+  Hypre_Chooser chooser;
+  if (list.isType<std::string>("hypre: SolveOrPrecondition"))
+    chooser = chooserMap[list.get<std::string>("hypre: SolveOrPrecondition")];
+  else
+    chooser = list.get("hypre: SolveOrPrecondition", Solver);
   SolveOrPrec_ = chooser;
-  bool SetPrecond = list.get("SetPreconditioner", false);
+  bool SetPrecond = list.get("hypre: SetPreconditioner", false);
   IFPACK_CHK_ERR(SetParameter(SetPrecond));
-  int NumFunctions = list.get("NumFunctions", 0);
+  int NumFunctions = list.get("hypre: NumFunctions", 0);
   FunsToCall_.clear();
   NumFunsToCall_ = 0;
   if(NumFunctions > 0){
-    RCP<FunctionParameter>* params = list.get<RCP<FunctionParameter>*>("Functions");
+    RCP<FunctionParameter>* params = list.get<RCP<FunctionParameter>*>("hypre: Functions");
     for(int i = 0; i < NumFunctions; i++){
       IFPACK_CHK_ERR(AddFunToList(params[i]));
     }
   }
+
+  if (list.isSublist("hypre: Solver functions")) {
+    Teuchos::ParameterList solverList = list.sublist("hypre: Solver functions");
+    for (auto it = solverList.begin(); it != solverList.end(); ++it) {
+      std::string funct_name = it->first;
+      if (it->second.isType<int>()) {
+        IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Solver, funct_name , Teuchos::getValue<int>(it->second)))));
+      } else if (it->second.isType<double>()) {
+        IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Solver, funct_name , Teuchos::getValue<double>(it->second)))));
+      } else {
+        IFPACK_CHK_ERR(-1);
+      }
+    }
+  }
+
+  if (list.isSublist("hypre: Preconditioner functions")) {
+    Teuchos::ParameterList precList = list.sublist("hypre: Preconditioner functions");
+    for (auto it = precList.begin(); it != precList.end(); ++it) {
+      std::string funct_name = it->first;
+      if (it->second.isType<int>()) {
+        IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , Teuchos::getValue<int>(it->second)))));
+      } else if (it->second.isType<double>()) {
+        IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , Teuchos::getValue<double>(it->second)))));
+      } else if (it->second.isList()) {
+        Teuchos::ParameterList pl = Teuchos::getValue<Teuchos::ParameterList>(it->second);
+        if (FunctionParameter::isFuncIntInt(funct_name)) {
+          int arg0 = pl.get<int>("arg 0");
+          int arg1 = pl.get<int>("arg 1");
+          IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , arg0, arg1))));
+        } else if (FunctionParameter::isFuncIntIntDoubleDouble(funct_name)) {
+          int arg0 = pl.get<int>("arg 0");
+          int arg1 = pl.get<int>("arg 1");
+          double arg2 = pl.get<double>("arg 2");
+          double arg3 = pl.get<double>("arg 3");
+          IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , arg0, arg1, arg2, arg3))));
+        } else if (FunctionParameter::isFuncIntIntIntDoubleIntInt(funct_name)) {
+          int arg0 = pl.get<int>("arg 0");
+          int arg1 = pl.get<int>("arg 1");
+          int arg2 = pl.get<int>("arg 2");
+          double arg3 = pl.get<double>("arg 3");
+          int arg4 = pl.get<int>("arg 4");
+          int arg5 = pl.get<int>("arg 5");
+          IFPACK_CHK_ERR(AddFunToList(rcp(new FunctionParameter(Preconditioner, funct_name , arg0, arg1, arg2, arg3, arg4, arg5))));
+        } else {
+          IFPACK_CHK_ERR(-1);
+        }
+      }
+    }
+  }
+
   return 0;
 } //SetParameters()
 
