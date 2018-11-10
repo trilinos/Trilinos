@@ -123,8 +123,12 @@ private:
   // preconditioner settings
   bool applyMultigrid_;         // default to block jacobi
   int maxLevels_;               // must turn on multigrid 
+
   int numSweeps_;
+  int numCoarseSweeps_;
   Real omega_;
+  Real omegaCoarse_;
+
   Real globalScale_;
 
   std::vector<Ptr<const PinTCommunicators>> communicators_;
@@ -197,7 +201,10 @@ public:
     , applyMultigrid_(false)
     , maxLevels_(-1)
     , numSweeps_(1)
+    , numCoarseSweeps_(1)
     , omega_(2.0/3.0)
+    , omegaCoarse_(1.0)
+    , globalScale_(0.99e0)
     , globalScale_(0.99e0)
   { }
 
@@ -233,10 +240,22 @@ public:
   { numSweeps_ = s; }
 
   /**
+   * Set sweeps for coarse level solver
+   */
+  void setCoarseSweeps(int s)
+  { numCoarseSweeps_ = s; }
+
+  /**
    * Set relaxation parater for jacobi and multigrid
    */
   void setRelaxation(Real o)
   { omega_ = o; }
+
+  /**
+   * Set relaxation parater for jacobi and multigrid
+   */
+  void setCoarseRelaxation(Real o)
+  { omegaCoarse_ = o; }
 
   /**
    * Set the global scaling for the coupling constraints.
@@ -2024,7 +2043,11 @@ public:
    {
      using PartitionedVector = PartitionedVector<Real>;
 
+     bool printResidualInfo = true;
+
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
+
+     const PinTVector<Real>       & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
 
      // std::cout << "SOLVING ON LEVEL " << level << std::endl;
 
@@ -2051,12 +2074,51 @@ public:
 
      timer->start("applyMGAugmentedKKT"+levelStr);
 
+     double b_norm = b.norm();
+
+     std::string levelIndent = "";
+     if(printResidualInfo) {
+       int timeRank = pint_u.communicators().getTimeRank();
+       for(int i=0;i<level+1;i++)
+         levelIndent += "   ";
+
+       if(timeRank==0 && level==0) {
+         std::cout << "Start new solve: " << std::endl;
+       }
+       else if(timeRank==0) {
+         std::cout << levelIndent << "Next level " << level << std::endl;
+       }
+     }
+
      // base case: solve the KKT system directly
      if(level+1==maxLevels_) {
-       // std::cout << "SOLVING ON COARSE LEVEL " << level << std::endl;
        bool approxSmoother = false;
-  
-       applyAugmentedInverseKKT(x,b,u,z,tol,approxSmoother,level);
+
+       auto dx = x.clone();
+       auto residual = b.clone();
+       residual->set(b);
+
+       double relax = omegaCoarse_;
+
+       for(int i=0;i<numCoarseSweeps_;i++) {
+         // compute the residual
+         applyAugmentedKKT(*residual,x,u,z,tol,level);
+         residual->scale(-1.0);
+         residual->axpy(1.0,b);
+
+         applyAugmentedInverseKKT(*dx,*residual,u,z,tol,approxSmoother,level); 
+         x.axpy(relax,*dx);
+       }
+
+       if(printResidualInfo) {
+         applyAugmentedKKT(*residual,x,u,z,tol,level);
+         residual->scale(-1.0);
+         residual->axpy(1.0,b);
+         int timeRank = pint_u.communicators().getTimeRank();
+         double res_norm = residual->norm();
+         if(timeRank == 0)
+           std::cout << levelIndent << "(level " << level << ") coarse reduction = " << res_norm/b_norm << std::endl;
+       }
 
        timer->stop("applyMGAugmentedKKT"+levelStr);
        return;
@@ -2083,6 +2145,13 @@ public:
        residual->axpy(1.0,b);
      }
      timer->stop("applyMGAugmentedKKT-preSmooth");
+
+     if(printResidualInfo) {
+       int timeRank = pint_u.communicators().getTimeRank();
+       double res_norm = residual->norm();
+       if(timeRank == 0)
+         std::cout << levelIndent << "(level " << level << ") pre reduction = " << res_norm/b_norm << std::endl;
+     }
 
      // solve the coarse system
      timer->start("applyMGAugmentedKKT-coarse");
@@ -2132,6 +2201,17 @@ public:
      }
      timer->stop("applyMGAugmentedKKT-coarse");
 
+     if(printResidualInfo) {
+       applyAugmentedKKT(*residual,x,u,z,tol,level);
+       residual->scale(-1.0);
+       residual->axpy(1.0,b);
+
+       int timeRank = pint_u.communicators().getTimeRank();
+       double res_norm = residual->norm();
+       if(timeRank == 0)
+         std::cout << levelIndent << "(level " << level << ") coarse solve reduction = " << res_norm/b_norm << std::endl;
+     }
+
      // apply one smoother sweep
      timer->start("applyMGAugmentedKKT-postSmooth");
      for(int i=0;i<numSweeps_;i++) {
@@ -2144,6 +2224,17 @@ public:
        x.axpy(omega_,*dx);
      }
      timer->stop("applyMGAugmentedKKT-postSmooth");
+
+     if(printResidualInfo) {
+       applyAugmentedKKT(*residual,x,u,z,tol,level);
+       residual->scale(-1.0);
+       residual->axpy(1.0,b);
+
+       int timeRank = pint_u.communicators().getTimeRank();
+       double res_norm = residual->norm();
+       if(timeRank == 0)
+         std::cout << levelIndent << "(level " << level << ") post reduction = " << res_norm/b_norm << std::endl;
+     }
 
      timer->stop("applyMGAugmentedKKT"+levelStr);
    }

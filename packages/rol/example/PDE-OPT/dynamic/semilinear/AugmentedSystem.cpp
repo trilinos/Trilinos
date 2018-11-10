@@ -157,11 +157,13 @@ int main(int argc, char *argv[]) {
     RealT dt       = T/static_cast<RealT>(nt);
 
     // Add MGRIT parameter list stuff
-    int sweeps    = parlist->get("MGRIT Sweeps", 1);
-    RealT omega   = parlist->get("MGRIT Relaxation",2.0/3.0);
-    int numLevels = parlist->get("MGRIT Levels",3);
-    double relTol = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
-    int spaceProc = parlist->get("MGRIT Spatial Procs",1);
+    int sweeps        = parlist->get("MGRIT Sweeps", 1);
+    RealT omega       = parlist->get("MGRIT Relaxation",2.0/3.0);
+    int coarseSweeps  = parlist->get("MGRIT Coarse Sweeps", 1);
+    RealT coarseOmega = parlist->get("MGRIT Coarse Relaxation",1.0);
+    int numLevels     = parlist->get("MGRIT Levels",3);
+    double relTol     = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
+    int spaceProc     = parlist->get("MGRIT Spatial Procs",1);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
     ROL::Ptr<const Teuchos::Comm<int>> mpiSpaceComm = ROL::makePtr<Teuchos::MpiComm<int>>(communicators->getSpaceCommunicator());
@@ -221,16 +223,20 @@ int main(int argc, char *argv[]) {
     }
 
     if(myRank==0) {
-      (*outStream) << "Sweeps = " << sweeps    << std::endl;
-      (*outStream) << "Omega = "  << omega     << std::endl;
-      (*outStream) << "Levels = " << numLevels << std::endl;
+      (*outStream) << "Sweeps = " << sweeps       << std::endl;
+      (*outStream) << "Omega = "  << omega        << std::endl;
+      (*outStream) << "Levels = " << numLevels    << std::endl;
+      (*outStream) << "Sweeps = " << coarseSweeps << std::endl;
+      (*outStream) << "Omega = "  << coarseOmega  << std::endl;
     }
 
     // build the parallel in time constraint from the user constraint
     ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con = ROL::makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-    pint_con->applyMultigrid(2); //numLevels);
+    pint_con->applyMultigrid(numLevels);
     pint_con->setSweeps(sweeps);
     pint_con->setRelaxation(omega);
+    pint_con->setCoarseSweeps(coarseSweeps);
+    pint_con->setCoarseRelaxation(coarseOmega);
     // pint_con->buildLevels(*state);
 
     /*************************************************************************/
