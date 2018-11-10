@@ -12,6 +12,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_ADVANCED_TEST(
   MixedPoissonExample
+  EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
   TEST_0 EXEC MixedPoissonExample
     ARGS --use-epetra --x-elements=5 --y-elements=5 --z-elements=5 --output-filename="base_mixed_poisson_epetra_"
     PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
@@ -30,11 +31,7 @@ FOREACH( ORDER 1 2 3)
 
   TRIBITS_ADD_ADVANCED_TEST(
     MixedPoissonExample-ConvTest-Hex-Order-${ORDER}
-    # TEST_0 EXEC MixedPoissonExample
-    #   ARGS --x-elements=2 --y-elements=2 --z-elements=2 --hgrad-basis-order=${HGRAD_ORDER} --hdiv-basis-order=${HDIV_ORDER}
-    #   PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
-    #   NUM_MPI_PROCS 2
-    #   OUTPUT_FILE MPE-ConvTest-Hex-p${ORDER}-02
+    EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
     TEST_0 EXEC MixedPoissonExample
       ARGS --x-elements=3 --y-elements=3 --z-elements=3 --hgrad-basis-order=${HGRAD_ORDER} --hdiv-basis-order=${HDIV_ORDER}
       PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
@@ -70,6 +67,7 @@ FOREACH( ORDER 1)
 
   TRIBITS_ADD_ADVANCED_TEST(
     MixedPoissonMultiblockExample-ConvTest-Hex-Order-${ORDER}
+    EXCLUDE_IF_NOT_TRUE ${PARENT_PACKAGE_NAME}_ADD_EXPENSIVE_CUDA_TESTS
     TEST_0 EXEC MixedPoissonExample
       ARGS --x-blocks=2 --x-elements=6 --y-elements=6 --z-elements=6 --hgrad-basis-order=${HGRAD_ORDER} --hdiv-basis-order=${HDIV_ORDER} --output-filename="multiblock-${ORDER}-"
       PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"

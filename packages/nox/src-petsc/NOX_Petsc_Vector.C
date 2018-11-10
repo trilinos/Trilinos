@@ -167,6 +167,21 @@ Vector::abs(const Vector& base)
 }
 
 Abstract::Vector&
+Vector::random(bool useSeed, int seed)
+{
+  PetscRandom rnd;
+  PetscRandomCreate(PETSC_COMM_SELF, &rnd);
+  if (useSeed) {
+    PetscRandomSetSeed(rnd, seed);
+    PetscRandomSeed(rnd);
+  }
+  VecSetRandom(petscVec, rnd);
+  PetscRandomDestroy(&rnd);
+  return *this;
+}
+
+
+Abstract::Vector&
 Vector::reciprocal(const Abstract::Vector& base)
 {
   return reciprocal(dynamic_cast<const Vector&>(base));
