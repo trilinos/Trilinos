@@ -5,13 +5,13 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 
 if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
-  TRILINOS_DRIVER_ADD_DASHBORAD(
-    OPENMPI_1.10.0_RELEASE_Tpetra
-    ctest_linux_nightly_mpi_release_tpetra_trappist.gcc.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  # TRILINOS_DRIVER_ADD_DASHBORAD(
+  #   OPENMPI_1.10.0_RELEASE_Tpetra
+  #   ctest_linux_nightly_mpi_release_tpetra_trappist.gcc.cmake
+  #   CTEST_INSTALLER_TYPE release
+  #   RUN_SERIAL
+  #   TIMEOUT_MINUTES 330
+  #   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_RELEASE_MueLu
