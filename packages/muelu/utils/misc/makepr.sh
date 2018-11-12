@@ -111,6 +111,7 @@ if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
     echo "PR $PRN labeled as: $labels"
 else
     echo "PR $PRN label failed: $labels"; 
+    cat $TMPFILE
     exit 1
 fi
 
@@ -124,6 +125,7 @@ else
         echo "PR $PRN adding reviewers : $reviewers"
     else
         echo "PR $PRN adding reviewers failed: $reviewers"; 
+        cat $TMPFILE
         exit 1
     fi
 fi
