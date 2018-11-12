@@ -110,7 +110,7 @@ eval $CMD >$TMPFILE 2> $TMPFILE
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
     echo "PR $PRN labeled as: $labels"
 else
-    echo "PR $PRN label failed"; 
+    echo "PR $PRN label failed: $labels"; 
     exit 1
 fi
 
@@ -123,9 +123,10 @@ else
     if grep 'review_comments_url' $TMPFILE > /dev/null; then
         echo "PR $PRN adding reviewers : $reviewers"
     else
-        echo "PR $PRN adding reviewers failed"; 
+        echo "PR $PRN adding reviewers failed: $reviewers"; 
         exit 1
     fi
 fi
+
 
 rm -f $TMPFILE
