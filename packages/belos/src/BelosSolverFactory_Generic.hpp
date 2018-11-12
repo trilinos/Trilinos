@@ -52,7 +52,6 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
-#include "BelosGmresPolySolMgr.hpp"
 #include "BelosLSQRSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
 #include "BelosPCPGSolMgr.hpp"
@@ -74,7 +73,6 @@ class GenericSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
       Impl::registerSolverSubclassForTypes<BlockGmresSolMgr<SC,MV,OP>, SC, MV, OP> ("BLOCK GMRES");
       Impl::registerSolverSubclassForTypes<FixedPointSolMgr<SC,MV,OP>, SC, MV, OP> ("FIXED POINT");
       Impl::registerSolverSubclassForTypes<GCRODRSolMgr<SC,MV,OP>, SC, MV, OP> ("GCRODR");
-      Impl::registerSolverSubclassForTypes<GmresPolySolMgr<SC,MV,OP>, SC, MV, OP> ("HYBRID BLOCK GMRES");
       Impl::registerSolverSubclassForTypes<LSQRSolMgr<SC,MV,OP>, SC, MV, OP> ("LSQR");
       Impl::registerSolverSubclassForTypes<MinresSolMgr<SC,MV,OP>, SC, MV, OP> ("MINRES");
       Impl::registerSolverSubclassForTypes<PCPGSolMgr<SC,MV,OP>, SC, MV, OP> ("PCPG");

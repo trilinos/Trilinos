@@ -52,7 +52,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 #include "BelosGmresPolyOp.hpp"
-#include "BelosSolverFactory.hpp"
+#include "BelosSolverFactory_Generic.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -86,7 +86,7 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 
 /// \class Belos::GmresPolySolMgr
 /// \brief Hybrid block GMRES iterative linear solver.
-/// \author Heidi Thornquist
+/// \author Heidi Thornquist and Jennifer Loe
 /// \ingroup belos_solver_framework
 /// \example BlockGmres/BlockGmresPolyEpetraExFile.cpp
 ///
@@ -587,7 +587,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
 
     // Then the polynomial will be used as an operator for an outer solver.
     // Use outer solver parameter list passed in a sublist.
-    Belos::SolverFactory<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > factory;
+    Belos::GenericSolverFactory<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > factory;
     RCP<SolverManager<ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > > solver = factory.create( outerSolverType_, outerParams_ );
     TEUCHOS_TEST_FOR_EXCEPTION( solver == Teuchos::null, std::invalid_argument,
       "Belos::GmresPolySolMgr::solve(): Selected solver is not valid.");

@@ -187,7 +187,7 @@ namespace Belos {
 	solution (<tt>X</tt>), and right-hand side (<tt>B</tt>) of the linear system <tt>phi(A)X = B</tt>.
 	Furthermore, it is also the interface to left/right preconditioning of the linear system.
 
-	\author Heidi Thornquist
+	\author Heidi Thornquist and Jennifer Loe
   */
   template <class ScalarType, class MV, class OP>
   class GmresPolyOp : public Operator<ScalarType> {
@@ -202,6 +202,8 @@ namespace Belos {
                )
       : problem_(problem_in), 
         params_(params_in),
+        LP_(problem_in->getLeftPrec()), 
+        RP_(problem_in->getRightPrec()),
         outputStream_ (Teuchos::rcp(outputStream_default_,false)),
         polyTol_ (DefaultSolverParameters::polyTol),
         maxDegree_ (maxDegree_default_),
@@ -210,9 +212,7 @@ namespace Belos {
         label_ (label_default_),
         polyType_ (polyType_default_),
         orthoType_ (orthoType_default_),
-        dim_(0),
-        LP_(problem_in->getLeftPrec()), 
-        RP_(problem_in->getRightPrec())
+        dim_(0)
     {
       setParameters( params_ );
 
@@ -302,6 +302,18 @@ namespace Belos {
     static constexpr const char * orthoType_default_ = "DGKS";
     static constexpr std::ostream * outputStream_default_ = &std::cout;
 
+    // Variables for generating the polynomial
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<Teuchos::ParameterList> params_;
+    Teuchos::RCP<const OP> LP_, RP_;
+
+    // Output manager.
+    Teuchos::RCP<OutputManager<ScalarType> > printer_;
+    Teuchos::RCP<std::ostream> outputStream_;
+ 
+    // Orthogonalization manager.
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+
     // Current polynomial parameters
     MagnitudeType polyTol_;
     int maxDegree_;
@@ -312,19 +324,7 @@ namespace Belos {
     std::string orthoType_;
     int dim_;
 
-    // Variables for generating the polynomial
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
-    Teuchos::RCP<Teuchos::ParameterList> params_;
-
-    // Output manager.
-    Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<std::ostream> outputStream_;
- 
-    // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
-
     // Variables for Arnoldi polynomial
-    Teuchos::RCP<const OP> LP_, RP_;
     mutable Teuchos::RCP<MV> V_, wL_, wR_;
     Teuchos::SerialDenseMatrix<OT,ScalarType> H_, y_;
     Teuchos::SerialDenseVector<OT,ScalarType> r0_;
