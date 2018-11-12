@@ -12,6 +12,7 @@ OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- reposito
 
 labels="\"AT: AUTOMERGE\""
 
+
 # Parse command line options.
 while getopts hvf:r:b:l: OPT; do
     case "$OPT" in
@@ -105,5 +106,6 @@ else
     echo "PR $PRN label failed"; 
     exit 1
 fi
+
 
 rm -f $TMPFILE
