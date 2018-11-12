@@ -104,7 +104,7 @@ else
 fi
 
 # Add labels
-CMD=$(echo curl -i -H $h -d \'{\"reviewers\": [$reviewers]}\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
+CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
@@ -118,7 +118,7 @@ fi
 # Add reviewers
 if [ -z "$reviewers" ]; then :
 else
-    CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/pulls/$PRN/requested_reviewers)
+    CMD=$(echo curl -i -H $h -d \'{\"reviewers\": [$reviewers]}\' https://api.github.com/repos/$fork/$repo/pulls/$PRN/requested_reviewers)
     eval $CMD >$TMPFILE 2> $TMPFILE
     
     if grep 'review_comments_url' $TMPFILE > /dev/null; then
