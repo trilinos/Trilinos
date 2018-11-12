@@ -8,7 +8,7 @@
 
 # This script expects to start out in the root level of the Jenkins workspace.
 # Let's make sure we're there.
-cd ${WORKSPACE}
+cd ${WORKSPACE:?}
 
 echo -e "--------------------------------------------------------------------------------"
 echo -e "-"
@@ -18,11 +18,11 @@ echo -e "-----------------------------------------------------------------------
 
 # Identify the path to this script
 SCRIPTPATH="$(cd "$(dirname "$0")" ; pwd -P)"
-echo -e "SCRIPTPATH: ${SCRIPTPATH}"
+echo -e "SCRIPTPATH: ${SCRIPTPATH:?}"
 
 # Identify the path to the trilinos repository root
-REPO_ROOT=`readlink -f ${SCRIPTPATH}/../..`
-echo -e "REPO_ROOT : ${REPO_ROOT}"
+REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
+echo -e "REPO_ROOT : ${REPO_ROOT:?}"
 
 #
 # This script drives a PR testing build.  It assume that Trilinos is already
@@ -54,10 +54,10 @@ which -a env
 echo -e ""
 echo -e "================================================================================"
 echo -e "Jenkins Environment Variables:"
-echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME}"
-echo -e "- JOB_NAME     : ${JOB_NAME}"
-echo -e "- WORKSPACE    : ${WORKSPACE}"
-echo -e "- NODE_NAME    : ${NODE_NAME}"
+echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME:?}"
+echo -e "- JOB_NAME     : ${JOB_NAME:?}"
+echo -e "- WORKSPACE    : ${WORKSPACE:?}"
+echo -e "- NODE_NAME    : ${NODE_NAME:?}"
 echo -e ""
 echo -e "================================================================================"
 echo -e "Environment:"
