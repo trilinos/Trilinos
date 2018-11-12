@@ -312,7 +312,7 @@ T atomic_compare_exchange( volatile T * const dest_v, const T compare, const T v
 #if defined(__CUDA_ARCH__) && !defined(KOKKOS_ENABLE_CUDA)
 __inline__ __device__
 template <typename T>
-T atomic_compare_exchange(volatile T * const, const Kokkos::Impl::identity<T>, const Kokkos::Impl::identity_t<T>)
+T atomic_compare_exchange(volatile T * const, const Kokkos::Impl::identity_t<T>, const Kokkos::Impl::identity_t<T>)
 {
   return T();
 }
