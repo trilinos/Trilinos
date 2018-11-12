@@ -8,13 +8,13 @@ tokenfile=~/.githubOAuth/token
 TMPFILE=/tmp/.ac$$
 
 USAGE="Usage: `basename $0` [-hfrbl] \"PR title\""
-OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]\n  -v     -- review [reviewer name]"
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]\n  -v     -- evier [reviewer_name]"
 
 labels="\"AT: AUTOMERGE\""
 reviewers=""
 
 # Parse command line options.
-while getopts hvf:r:b:l:v: OPT; do
+while getopts hvf:r:b:l:e: OPT; do
     case "$OPT" in
         h)
             echo -e $USAGE
@@ -37,7 +37,7 @@ while getopts hvf:r:b:l:v: OPT; do
         l)
             labels="$labels,\"$OPTARG\""
             ;;
-        v)
+        e)
             if [ -z "$reviewers" ]; then
                 reviewers="\"$OPTARG\""
             else
