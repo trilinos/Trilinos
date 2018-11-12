@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.clang.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,19 +62,19 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.clang.cmake"
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME OPENMPI_1.10.1_RELEASE_DEV_MueLu_clang)
+SET(BUILD_DIR_NAME OPENMPI_1.10.1_RELEASE_DEV_Tpetra_gcc)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK  Specialized)      # Set CDash board to Specialized
+SET(Trilinos_TRACK  Nightly)      # Set CDash board to Nightly
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu)
+SET(Trilinos_PACKAGES Tpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTrilinos_ENABLE_COMPLEX_DOUBLE=ON"
   "-DTPL_ENABLE_SuperLU=OFF"
-  "-DZoltan2_ENABLE_Experimental=ON"
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )
 
