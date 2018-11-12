@@ -8,7 +8,7 @@ tokenfile=~/.githubOAuth/token
 TMPFILE=/tmp/.ac$$
 
 USAGE="Usage: `basename $0` [-hfrbl] \"PR title\""
-OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]\n  -v     -- evier [reviewer_name]"
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]\n  -e     -- (r)eviewer [reviewer_name]"
 
 labels="\"AT: AUTOMERGE\""
 reviewers=""
