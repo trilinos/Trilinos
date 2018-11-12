@@ -145,12 +145,10 @@ ProjectionTools<SpT>::getHVolBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
 
   Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
   ordinal_type info = 0;
-  Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", basisCardinality, 1);
 
-  lapack.GESV(basisCardinality, numCells,
+  lapack.POSV('U', basisCardinality, numCells,
       massMat.data(),
       massMat.stride_1(),
-      (ordinal_type*)pivVec.data(),
       rhsMat.data(),
       rhsMat.stride_1(),
       &info);

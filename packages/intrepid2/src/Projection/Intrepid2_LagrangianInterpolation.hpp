@@ -119,7 +119,7 @@ namespace Experimental {
     \f[
     L_i(f) := f(\mathbf x_i) \cdot \beta_i, \quad L_i(\phi_j) = \delta_{ij},
     \f]
-    where \f$\beta_i\f$ are referred to as <var><b>dofCoeffs</b></var>.
+    where \f$\beta_i\f$ are referred to as <var><b>dofCoeffs</b></var>, and \f$\mathbf x_i\f$ are the coordinates of the basis nodes.
 
     In order to perform the interpolation, call the member <var><b>getDofCoordsAndCoeffs
     </b></var> that returns a set of points \f$\{\mathbf x_i\}\f$ and DOF coefficients \f$\{\beta_i\}\f$,
@@ -127,7 +127,7 @@ namespace Experimental {
     the function <var><b>getBasisCoeffs</b></var>.
 
     \remark The interpolation is performed at the oriented reference element. Therefore, the function \f$f\f$,
-            which is contravariant, needs to be pushed forward before calling <var><b>getBasisCoeffs</b></var>.
+            which is contravariant, needs to mapped to the reference space, using the inverse operation of a pullback, before calling <var><b>getBasisCoeffs</b></var>.
 
     \todo  The implementation is mostly serial and needs to be improved for performance portability
  */
@@ -182,7 +182,7 @@ public:
       \remark The output views need to be pre-allocated. <var><b>dofCoeffs</b></var> and <var><b>functionAtDofCoords</b></var> have
               rank 2, (C,F) for scalar basis and  3, (C,F,D) for vector basis.
               <var><b>functValsAtDofCoords</b></var> contains the function evaluated at the dofCoords and contravariantly transformed
-              (push forward) to the reference eleemnt.
+              to the reference eleemnt.
               <var><b>dofCoeffs</b></var> are as returned by <var><b>getDofCoordsAndCoeffs</b></var>.
    */
   template<typename basisCoeffsViewType,

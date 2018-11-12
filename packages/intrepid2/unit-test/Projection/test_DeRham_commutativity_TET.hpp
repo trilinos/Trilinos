@@ -407,7 +407,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             }
           }
 
-          //transform the target function and its derivative to the reference element (push forward)
+          //transform the target function and its derivative to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numCells, numGradPoints, dim, dim);
           if(numGradPoints>0)
             ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, tet);
@@ -475,7 +475,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             }
           }
 
-          //transform the target function to the reference element (push forward)
+          //transform the target function to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
           ct::setJacobian(jacobian, evaluationPoints, physVertexes, tet);
 
@@ -516,7 +516,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               elemOrts,
               &basis);
 
-          // transform basis values to the reference element (pull back)
+          // transform basis values to the reference element (pullback)
           DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
           DynRankView ConstructWithLabel(jacobian_inv, numCells, basisCardinality, dim, dim);
           ct::setJacobian(jacobian, refPoints, physVertexes, tet);
@@ -552,7 +552,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               elemOrts,
               &basisHCurl);
 
-          // transform basis values to the reference element (pull back)
+          // transform basis values to the reference element (pullback)
           DynRankView ConstructWithLabel(jacobian, numCells, numRefCoords, dim, dim);
           DynRankView ConstructWithLabel(jacobian_inv, numCells, numRefCoords, dim, dim);
           ct::setJacobian(jacobian, refPoints, physVertexes, tet);
@@ -799,7 +799,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             }
           }
 
-          //transform the function to the reference element (push forward)
+          //transform the function to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
@@ -843,7 +843,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               elemOrts,
               &basis);
 
-          // transform basis values to the reference element (pull back)
+          // transform basis values to the reference element (pullback)
           DynRankView ConstructWithLabel(jacobian, numCells, numRefCoords, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, numRefCoords);
           ct::setJacobian(jacobian, refPoints, physVertexes, tet);
@@ -879,7 +879,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               elemOrts,
               &basisHDiv);
 
-          // transform basis values to the reference element (pull back)
+          // transform basis values to the reference element (pullback)
           DynRankView ConstructWithLabel(jacobian, numCells, numRefCoords, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, numRefCoords);
           ct::setJacobian(jacobian, refPoints, physVertexes, tet);
@@ -1039,7 +1039,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             }
           }
 
-          //transform the function to the reference element (push forward)
+          //transform the function to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
           DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
@@ -1116,7 +1116,7 @@ int DeRhamCommutativityTet(const bool verbose) {
             }
           }
 
-          //transform the function to the reference element (push forward)
+          //transform the function to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numCells, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_inv, numCells, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, numPoints);
@@ -1155,7 +1155,7 @@ int DeRhamCommutativityTet(const bool verbose) {
               elemOrts,
               &basis);
 
-          // transform basis values to reference element (pull back)
+          // transform basis values to reference element (pullback)
           DynRankView ConstructWithLabel(jacobian, numCells, numRefCoords, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numCells, numRefCoords);
           ct::setJacobian(jacobian, refPoints, physVertexes, tet);

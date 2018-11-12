@@ -280,25 +280,15 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
     Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", sideCardinality+1, 1);
 
     for(ordinal_type ic=0; ic<numCells; ++ic)  {
-      Kokkos::deep_copy(sideMassMat,funValsValueType(0));  //Aztec might overight the matrix
+      Kokkos::deep_copy(sideMassMat,funValsValueType(0));  //LAPACK might overwrite the matrix
       for(ordinal_type i=0; i<sideCardinality; ++i) {
         sideRhsMat(i,0) = sideRhsMat_(ic,i);
         for(ordinal_type j=0; j<sideCardinality+1; ++j){
           sideMassMat(i,j) = sideMassMat_(ic,i,j);
-          //  std::cout << sideMassMat(i,j) <<" ";
         }
-        //   std::cout  << "     " << sideRhsMat(i,0) << std::endl;
         sideMassMat(sideCardinality,i) =  sideMassMat_(ic,i,sideCardinality);
       }
       sideRhsMat(sideCardinality,0) = sideRhsMat_(ic,sideCardinality);
-
-      //std::cout << "ic: " << ic << ":\n";
-      //      for(ordinal_type i=0; i<sideCardinality+1; ++i){
-      //        for(ordinal_type j=0; j<sideCardinality+1; ++j)
-      //          std::cout << sideMassMat(i,j) <<" ";
-      //      std::cout  << "     " << sideRhsMat(i,0) << std::endl;
-      //      }
-      //      std::cout  <<  std::endl;
 
 
       lapack.GESV(sideCardinality+1, 1,
@@ -477,7 +467,7 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
   Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", numElemDofs+numCurlInteriorDOFs, 1);
 
   for(ordinal_type ic=0; ic<numCells; ++ic) {
-    Kokkos::deep_copy(massMat,funValsValueType(0));  //Aztec might overight the matrix
+    Kokkos::deep_copy(massMat,funValsValueType(0));  //LAPACK might overwrite the matrix
 
     for(ordinal_type i=0; i<numElemDofs+numCurlInteriorDOFs; ++i) {
       rhsMat(i,0) = rhsMatTrans(ic,i);
@@ -489,15 +479,6 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
       for(ordinal_type j=0; j<numElemDofs; ++j)
         massMat(i,j) = massMat(j,i);
 
-    //    std::cout  << numElemDofs << " " << numCurlInteriorDOFs << std::endl;
-    //    for(ordinal_type i=0; i<numElemDofs+numCurlInteriorDOFs; ++i) {
-    //      for(ordinal_type j=0; j<numElemDofs+numCurlInteriorDOFs; ++j)
-    //        std::cout << massMat(i,j) << " ";
-    //      std::cout << rhsMat(i,0) << "; ";
-    //      std::cout << ";" << std::endl;
-    //    }
-    //    std::cout  << std::endl;
-
     lapack.GESV(numElemDofs+numCurlInteriorDOFs, 1,
         massMat.data(),
         massMat.stride_1(),
@@ -505,18 +486,6 @@ ProjectionTools<SpT>::getHDivBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTyp
         rhsMat.data(),
         rhsMat.stride_1(),
         &info);
-
-    //  std::cout << "INfo: "  << numElemDofs <<std::endl;
-
-    //  std::cout  << std::endl;
-    //  for(ordinal_type i=0; i<numElemDofs+numCurlInteriorDOFs; ++i) {
-    //  for(ordinal_type j=0; j<numElemDofs+numCurlInteriorDOFs; ++j)
-    //    std::cout << massMat(i,j) << " ";
-    //    std::cout << rhsMat(i,0) << "; ";
-    //   std::cout << ";" << std::endl;
-    //  }
-    //  std::cout  << std::endl;
-
 
     if (info) {
       std::stringstream ss;

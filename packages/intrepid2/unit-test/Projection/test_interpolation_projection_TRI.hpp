@@ -393,7 +393,7 @@ int InterpolationProjectionTri(const bool verbose) {
                 elemOrts,
                 &basis);
 
-            // transform basis (pull back)
+            // transform basis (pullback)
             fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
                 basisValuesAtDofCoordsOriented);
 

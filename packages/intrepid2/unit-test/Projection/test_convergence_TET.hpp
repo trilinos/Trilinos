@@ -247,6 +247,10 @@ int ConvergenceTet(const bool verbose) {
   int NX = 2;
   constexpr int numRefinements = 2;
 
+  // Expected values of the projection errors in H1, Hcurl, Hdiv and L2 norms for HGRAD, HDIV, HCURL and HVOL elements respectively.
+  // These values have been computed running the code with numRefinements=4 and the convergence rates are close to the optimal ones.
+  // We currently only test two mesh refinements to make the test run faster, so this is used as a regression test rather than
+  // a convergence test, but the test can be use for verifying optimal accuracy as well.
   ValueType hgradNorm[numRefinements], hcurlNorm[numRefinements], hdivNorm[numRefinements], hvolNorm[numRefinements];
 
   ValueType hgrad_errors[4] = {7.3278, 2.34301, 0.352119, 0.0488729};
@@ -488,7 +492,7 @@ int ConvergenceTet(const bool verbose) {
           }
         }
 
-        //transform the target function and its derivative to the reference element (push forward)
+        //transform the target function and its derivative to the reference element (inverse of pullback operator)
         DynRankView ConstructWithLabel(jacobian, numElems, numGradPoints, dim, dim);
         if(numGradPoints>0)
           ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, tet);
@@ -550,7 +554,7 @@ int ConvergenceTet(const bool verbose) {
           elemOrts,
           &basis);
 
-      // transform basis values to the reference element (pull back)
+      // transform basis values to the reference element (pullback)
       DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
       DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
       DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
@@ -683,7 +687,7 @@ int ConvergenceTet(const bool verbose) {
           }
         }
 
-        //transform the target function and its derivative to the reference element (push forward)
+        //transform the target function and its derivative to the reference element (inverse of pullback operator)
         DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
         ct::setJacobian(jacobian, evaluationPoints, physVertexes, tet);
 
@@ -737,7 +741,7 @@ int ConvergenceTet(const bool verbose) {
           elemOrts,
           &basis);
 
-      // transform basis values to the reference element (pull back)
+      // transform basis values to the reference element (pullback)
       DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
       DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
       DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
@@ -891,7 +895,7 @@ int ConvergenceTet(const bool verbose) {
           }
         }
 
-        //transform the target function and its derivative to the reference element (push forward)
+        //transform the target function and its derivative to the reference element (inverse of pullback operator)
         DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
         DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
         DynRankView ConstructWithLabel(jacobian_inv, numElems, numPoints, dim, dim);
@@ -944,7 +948,7 @@ int ConvergenceTet(const bool verbose) {
           elemOrts,
           &basis);
 
-      // transform basis values to the reference element (pull back)
+      // transform basis values to the reference element (pullback)
       DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
       DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
       ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
@@ -1084,7 +1088,7 @@ int ConvergenceTet(const bool verbose) {
           }
         }
 
-        //transform the target function to the reference element (push forward)
+        //transform the target function to the reference element (inverse of pullback operator)
         DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
         DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
         ct::setJacobian(jacobian, evaluationPoints, physVertexes, tet);
@@ -1120,7 +1124,7 @@ int ConvergenceTet(const bool verbose) {
           elemOrts,
           &basis);
 
-      // transform basis values to the reference element (pull back)
+      // transform basis values to the reference element (pullback)
       DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
       DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
       ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);

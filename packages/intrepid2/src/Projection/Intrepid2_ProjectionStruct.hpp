@@ -58,16 +58,16 @@ namespace Experimental {
     \brief  An helper class to compute the evaluation points and weights needed for performing projections
 
     In order to perform projections, the basis functions and the target function need to be evaluated
-    at different evaluation points (cubature points) living on different subcell entities (edges, faces,
+    at several sets of evaluation points (cubature points) defined on subcell entities (edges, faces,
     volumes).
     Depending on the projection, the evaluation of derivatives of the basis functions and of the target
     function may be needed as well.
-    This class provide a struct to store the evaluation points/weights on the reference cell.
+    This class provides a struct to store the evaluation points/weights on the reference cell.
 
     Use: create the proper ProjectionStruct rule by calling one of the functions:
     <var><b>createL2ProjectionStruct</b></var>,
+    <var><b>createHGradProjectionStruct</b></var>,
     <var><b>createHCurlProjectionStruct</b></var>,
-    <var><b>createL2ProjectionStruct</b></var>,
     <var><b>createHDivProjectionStruct</b></var>,
     <var><b>createHVolProjectionStruct</b></var>,
     depending on the type of projection wanted.

@@ -76,9 +76,9 @@ ProjectionTools<SpT>::getHGradEvaluationPoints(typename BasisType::scalarViewTyp
   const ordinal_type edgeDim = 1;
   const ordinal_type faceDim = 2;
 
-  ordinal_type numVertices = cellTopo.getVertexCount()*ordinal_type(cellBasis->getDofCount(0, 0) > 0);
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
+  ordinal_type numVertices = (cellBasis->getDofCount(0, 0) > 0) ? cellTopo.getVertexCount() : 0;
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
   Kokkos::View<ordinal_type*> eOrt("eOrt", numEdges), fOrt("fOrt", numFaces);
 
@@ -189,9 +189,9 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
   const std::string& name = cellBasis->getName();
 
-  ordinal_type numVertices = cellTopo.getVertexCount()*ordinal_type(cellBasis->getDofCount(0, 0) > 0);
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
+  ordinal_type numVertices = (cellBasis->getDofCount(0, 0) > 0) ? cellTopo.getVertexCount() : 0;
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
   Kokkos::View<ordinal_type*> eOrt("eOrt", numEdges);
   Kokkos::View<ordinal_type*> fOrt("fOrt", numFaces);
@@ -261,7 +261,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
       basisCoeffs(ic,idof) = targetAtEvalPoints(ic,iv);
   }
 
-
   for(ordinal_type ie=0; ie<numEdges; ++ie)  {
 
     ordinal_type edgeCardinality = cellBasis->getDofCount(edgeDim,ie);
@@ -328,8 +327,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
     Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
     ordinal_type info = 0;
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", edgeCardinality, 1);
-    //   std::cout << "Solving systems edge " << ie << "..... " << std::endl;
     for(ordinal_type ic=0; ic<numCells; ++ic)  {
       for(ordinal_type i=0; i<edgeCardinality; ++i) {
         edgeRhsMat(i,0) = edgeRhsMat_(ic,i);
@@ -337,10 +334,9 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
           edgeMassMat(i,j) = edgeMassMat_(ic,i,j);
       }
 
-      lapack.GESV(edgeCardinality, 1,
+      lapack.POSV('U', edgeCardinality, 1,
           edgeMassMat.data(),
           edgeMassMat.stride_1(),
-          (ordinal_type*)pivVec.data(),
           edgeRhsMat.data(),
           edgeRhsMat.stride_1(),
           &info);
@@ -358,7 +354,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         basisCoeffs(ic,edge_dof) = edgeRhsMat(i,0);
       }
     }
-    //   std::cout<<"done" <<std::endl;
     for(ordinal_type i=0; i<edgeCardinality; ++i)
       computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(edgeDim, ie, i);
   }
@@ -423,7 +418,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
             for(ordinal_type jtan=0; jtan <faceDim; ++jtan)
               targetGradAtTargetGradCubPoints(ic,iq,itan) += refFaceTangents(d, jtan)*ortJacobian(jtan,itan)*targetGradAtGradEvalPoints(ic,offsetTargetGrad+iq,d);
 
-      //std::cout << "azz? " << computedDofsCount << " " << numVertexDofs+numEdgeDofs << " " << faceCardinality << std::endl;
       for(ordinal_type j=0; j <numVertexDofs+numEdgeDofs; ++j) {
         ordinal_type jdof = computedDofs(j);
         for(ordinal_type iq=0; iq <numGradCubPoints; ++iq)
@@ -447,21 +441,17 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
     Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
     ordinal_type info = 0;
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", faceCardinality, 1);
-    //   std::cout << "Solving systems face " << iface << "..... " << std::endl;
     for(ordinal_type ic=0; ic<numCells; ++ic)  {
 
       for(ordinal_type i=0; i<faceCardinality; ++i) {
         faceRhsMat(i,0) = faceRhsMat_(ic,i);
-        //   std::cout << faceRhsMat(i,0) << " |: ";
         for(ordinal_type j=0; j<faceCardinality; ++j)
           faceMassMat(i,j) = faceMassMat_(ic,i,j);
       }
 
-      lapack.GESV(faceCardinality, 1,
+      lapack.POSV('U', faceCardinality, 1,
           faceMassMat.data(),
           faceMassMat.stride_1(),
-          (ordinal_type*)pivVec.data(),
           faceRhsMat.data(),
           faceRhsMat.stride_1(),
           &info);
@@ -479,7 +469,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         basisCoeffs(ic,face_dof) = faceRhsMat(i,0);
       }
     }
-    //   std::cout << "done"<<std::endl;
 
     for(ordinal_type i=0; i<faceCardinality; ++i)
       computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(faceDim, iface, i);
@@ -544,8 +533,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
     Teuchos::LAPACK<ordinal_type,funValsValueType> lapack;
     ordinal_type info = 0;
-    Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", numElemDofs, 1);
-    //    std::cout << "Solving systems element..... " << std::endl;
     for(ordinal_type ic=0; ic<numCells; ++ic) {
       for(ordinal_type i=0; i<numElemDofs; ++i) {
         cellRhsMat(i,0) = cellRhsMat_(ic,i);
@@ -553,10 +540,9 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
           cellMassMat(i,j) = cellMassMat_(ic,i,j);
       }
 
-      lapack.GESV(numElemDofs, 1,
+      lapack.POSV('U', numElemDofs, 1,
           cellMassMat.data(),
           cellMassMat.stride_1(),
-          (ordinal_type*)pivVec.data(),
           cellRhsMat.data(),
           cellRhsMat.stride_1(),
           &info);
@@ -574,7 +560,6 @@ ProjectionTools<SpT>::getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
       }
     }
-    //    std::cout << "done"<<std::endl;
   }
 }
 }

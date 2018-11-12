@@ -139,9 +139,13 @@ namespace Experimental {
        <var><b>getHDivEvaluationPoints</b></var>,
        <var><b>getHVolEvaluationPoints</b></var>, or
        <var><b>getL2EvaluationPoints</b></var>
-    4. Push-forward to the physical elements the evaluation points,
+    4. Map to the physical elements the evaluation points,
        evaluate the target function and its derivatives at these points and
-       push them forward to the reference points
+       map them back (inverse of pullback operator) to the reference points.
+       Note: if the target function is defined at reference element (e.g. in case the target function is a
+       combination of basis functions) there is no need to map points and functions between the reference
+       and physical spaces, but one needs to simply evaluate the target function and its derivatives at the
+       evaluation points
     5. Evaluate the basis coefficients using one of the methods
        <var><b>getHGradBasisCoeffs</b></var>,
        <var><b>getHCURLBasisCoeffs</b></var>,
@@ -150,7 +154,8 @@ namespace Experimental {
        <var><b>getL2BasisCoeffs</b></var>
 
     \remark The projections are performed at the oriented reference element. Therefore, the target function \f$f\f$,
-            which is contravariant, needs to be pushed forward before calling <var><b>getXXXBasisCoeffs</b></var>.
+            which is contravariant, needs to be mapped back to the reference element (using inverse of pullback operator)
+            before calling <var><b>getXXXBasisCoeffs</b></var>.
 
     \remark The projections are implemented as in "Demkowics et al., Computing with Hp-Adaptive Finite Elements,
             Vol. 2, Chapman & Hall/CRC 2007". However, the projections along edges for HGrad and HCurl elements have been

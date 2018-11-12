@@ -79,9 +79,9 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
   ordinal_type basisCubDegree = cellBasis->getDegree();
   ordinal_type edgeBasisCubDegree, faceBasisCubDegree;
 
-  ordinal_type numVertices = cellTopo.getVertexCount()*ordinal_type(cellBasis->getDofCount(0, 0) > 0);
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
+  ordinal_type numVertices = (cellBasis->getDofCount(0, 0) > 0) ? cellTopo.getVertexCount() : 0;
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
 
   numBasisEvalPoints += numVertices;
   numTargetEvalPoints += numVertices;
@@ -190,9 +190,9 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
   ordinal_type edgeBasisCubDegree = basisCubDegree;
   ordinal_type faceBasisCubDegree = basisCubDegree;
 
-  ordinal_type numVertices = cellTopo.getVertexCount()*ordinal_type(cellBasis->getDofCount(0, 0) > 0);
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
+  ordinal_type numVertices = (cellBasis->getDofCount(0, 0) > 0) ? cellTopo.getVertexCount() : 0;
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount(): 0;
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
 
   numBasisEvalPoints += numVertices;
   numTargetEvalPoints += numVertices;
@@ -285,8 +285,8 @@ void ProjectionStruct<SpT,ValueType>::createHCurlProjectionStruct(const BasisPtr
   ordinal_type basisCubDegree = cellBasis->getDegree();
   ordinal_type edgeBasisCubDegree = basisCubDegree - 1;
   ordinal_type faceBasisCubDegree = basisCubDegree;
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
 
   DefaultCubatureFactory cub_factory;
   for(ordinal_type ie=0; ie<numEdges; ++ie) {

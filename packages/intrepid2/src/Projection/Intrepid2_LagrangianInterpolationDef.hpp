@@ -80,8 +80,8 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   bool isBasisHDIV = name.find("HDIV") != std::string::npos;
   bool isBasisTriOrTet = (name.find("TRI") != std::string::npos) || (name.find("TET") != std::string::npos);
 
-  ordinal_type numEdges = topo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
-  ordinal_type numFaces = topo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
+  ordinal_type numEdges = (basis->getDofCount(1, 0) > 0) ? topo.getEdgeCount() : 0;
+  ordinal_type numFaces = (basis->getDofCount(2, 0) > 0) ? topo.getFaceCount() : 0;
 
   Teuchos::RCP<Basis<SpT,scalarType,scalarType> > faceBases[6];
   Teuchos::RCP<Basis<SpT,scalarType,scalarType> > edgeBasis;
@@ -123,7 +123,13 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
     edgeBasis = Teuchos::null;
     faceBases[0] = Teuchos::rcp(new Basis_HVOL_TRI_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
     for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
+  } else { //HVOL element does not have any face or edge DOFs
+    //Throw error when basis is not HVOL.
+    INTREPID2_TEST_FOR_ABORT(name.find("HVOL") == std::string::npos,
+        ">>> ERROR (Intrepid2::Experimental::LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs): " \
+        "method not implemented for this basis function");
   }
+
 
   auto ordinalToTag = basis->getAllDofTags();
   auto tagToOrdinal = basis->getAllDofOrdinal();

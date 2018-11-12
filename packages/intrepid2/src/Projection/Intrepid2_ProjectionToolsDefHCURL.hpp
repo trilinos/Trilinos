@@ -76,8 +76,8 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::scalarViewTyp
   const ordinal_type edgeDim = 1;
   const ordinal_type faceDim = 2;
 
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
   Kokkos::View<ordinal_type*> eOrt("eOrt", numEdges), fOrt("fOrt", numFaces);
 
@@ -203,8 +203,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
   const std::string& name = cellBasis->getName();
 
-  ordinal_type numEdges = cellTopo.getEdgeCount()*ordinal_type(cellBasis->getDofCount(1, 0) > 0);
-  ordinal_type numFaces = cellTopo.getFaceCount()*ordinal_type(cellBasis->getDofCount(2, 0) > 0);
+  ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
+  ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
   Kokkos::View<ordinal_type*> eOrt("eOrt", numEdges);
   Kokkos::View<ordinal_type*> fOrt("fOrt", numFaces);
@@ -326,7 +326,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     ordinal_type info = 0;
     Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", edgeCardinality+1, 1);
     for(ordinal_type ic=0; ic<numCells; ++ic)  {
-      Kokkos::deep_copy(edgeMassMat,funValsValueType(0));  //Aztec might overight the matrix
+      Kokkos::deep_copy(edgeMassMat,funValsValueType(0));  //LAPACK might overwrite the matrix
 
       for(ordinal_type i=0; i<edgeCardinality; ++i) {
         edgeRhsMat(i,0) = edgeRhsMat_(ic,i);
@@ -513,7 +513,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     ordinal_type info = 0;
     Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", numFaceDofs+internalHgradCardinality, 1);
     for(ordinal_type ic=0; ic<numCells; ++ic)  {
-      Kokkos::deep_copy(faceMassMat,funValsValueType(0));  //Aztec might overight the matrix
+      Kokkos::deep_copy(faceMassMat,funValsValueType(0));  //LAPACK might overwrite the matrix
 
       for(ordinal_type i=0; i<numFaceDofs; ++i) {
         for(ordinal_type j=0; j<numFaceDofs+internalHgradCardinality; ++j)
@@ -676,7 +676,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     Kokkos::View<funValsValueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", numElemDofs+internalHgradCardinality, 1);
 
     for(ordinal_type ic=0; ic<numCells; ++ic) {
-      Kokkos::deep_copy(cellMassMat,funValsValueType(0));  //Aztec might overight the matrix
+      Kokkos::deep_copy(cellMassMat,funValsValueType(0));  //LAPACK might overwrite the matrix
 
       for(ordinal_type i=0; i<numElemDofs; ++i) {
         for(ordinal_type j=0; j<numElemDofs+internalHgradCardinality; ++j)
