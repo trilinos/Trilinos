@@ -8,13 +8,13 @@ tokenfile=~/.githubOAuth/token
 TMPFILE=/tmp/.ac$$
 
 USAGE="Usage: `basename $0` [-hfrbl] \"PR title\""
-OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]"
+OPTDESCR="\n  -h     -- help\n  -f       -- fork [${fork}]\n  -r     -- repository [${repo}]\n  -b     -- branch [${mainBranch}\n  -l     -- label [label_name]\n  -v     -- review [reviewer name]"
 
 labels="\"AT: AUTOMERGE\""
-
+reviewers=""
 
 # Parse command line options.
-while getopts hvf:r:b:l: OPT; do
+while getopts hvf:r:b:l:v: OPT; do
     case "$OPT" in
         h)
             echo -e $USAGE
@@ -36,6 +36,13 @@ while getopts hvf:r:b:l: OPT; do
             ;;
         l)
             labels="$labels,\"$OPTARG\""
+            ;;
+        v)
+            if [ -z "$reviewers" ]; then
+                reviewers="\"$OPTARG\""
+            else
+                reviewers="$reviewers,\"$OPTARG\""
+            fi
             ;;
         \?)
             # getopts issues an error message
@@ -97,7 +104,7 @@ else
 fi
 
 # Add labels
-CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
+CMD=$(echo curl -i -H $h -d \'{\"reviewers\": [$reviewers]}\' https://api.github.com/repos/$fork/$repo/issues/$PRN/labels)
 eval $CMD >$TMPFILE 2> $TMPFILE
 
 if grep 'AT: AUTOMERGE' $TMPFILE > /dev/null; then
@@ -107,5 +114,18 @@ else
     exit 1
 fi
 
+# Add reviewers
+if [ -z "$reviewers" ]; then :
+else
+    CMD=$(echo curl -i -H $h -d \'[$labels]\' https://api.github.com/repos/$fork/$repo/pulls/$PRN/requested_reviewers)
+    eval $CMD >$TMPFILE 2> $TMPFILE
+    
+    if grep 'review_comments_url' $TMPFILE > /dev/null; then
+        echo "PR $PRN adding reviewers : $reviewers"
+    else
+        echo "PR $PRN adding reviewers failed"; 
+        exit 1
+    fi
+fi
 
 rm -f $TMPFILE
