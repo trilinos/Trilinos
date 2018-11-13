@@ -217,7 +217,7 @@ build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
 
 #This should be runnable from anywhere, but all the tests so far have been from the 
 #same dir the simple_testing.cmake file was in.
-pushd TFW_testing_single_configure_prototype &> /dev/null
+cd TFW_testing_single_configure_prototype &> /dev/null
 echo -e "Set CWD = `pwd`"
 
 if [ "icc" == ${CC:?} ] ; then
@@ -251,7 +251,9 @@ if [[ $ierror != 0 ]]; then
     exit $ierror
 fi
 
-#pushd Trilinos/cmake/ctest/drivers/parameterized
-#ctest -S ctest_linux_nightly_generic.cmake
+# Reset to known directory location.
+# - ${WORKSPACE} is set by Jenkins and points to the root workspace directory.
+cd ${WORKSPACE:?}
+
 
 
