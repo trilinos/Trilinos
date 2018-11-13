@@ -344,25 +344,23 @@ int DeRHAM_TRI_FEM_Test01(const bool verbose) {
         funHGradCoeffs(i) = funAtHGradDofCoords(i)*hgradDofCoeffs(i); //not really needed for HGRAD, hgradDofCoeffs = 1
 
       //Computing the curl of the (hgrad) interpolated function (ifun) at ref coordinates
-      DynRankView ConstructWithLabel(gradOfHGradBasisAtRefCoords, hgradCardinality , refCardinality, dim);
-      triHGradBasis.getValues(gradOfHGradBasisAtRefCoords, refCoords, OPERATOR_GRAD);
+      DynRankView ConstructWithLabel(curlOfHGradBasisAtRefCoords, hgradCardinality , refCardinality, dim);
+      triHGradBasis.getValues(curlOfHGradBasisAtRefCoords, refCoords, OPERATOR_CURL);
       DynRankView ConstructWithLabel(ifunCurlAtRefCoords, refCardinality, dim);
       for(int i=0;i<refCardinality;i++) {
-        for(int k=0;k<hgradCardinality;k++) {
-          ifunCurlAtRefCoords(i,0) += funHGradCoeffs(k)*gradOfHGradBasisAtRefCoords(k,i,1);
-          ifunCurlAtRefCoords(i,1) -= funHGradCoeffs(k)*gradOfHGradBasisAtRefCoords(k,i,0);
-        }
+        for(int k=0;k<hgradCardinality;k++)
+          for(int j=0;j<dim;j++)
+            ifunCurlAtRefCoords(i,j) += funHGradCoeffs(k)*curlOfHGradBasisAtRefCoords(k,i,j);
       }
 
       //Computing the curl of the (hgrad) interpolated function (ifun) at HDIV dof coordinates
-      DynRankView ConstructWithLabel(gradOfHGradBasisAtHDivDofCoords, hgradCardinality , hdivCardinality, dim);
-      triHGradBasis.getValues(gradOfHGradBasisAtHDivDofCoords, hdivDofCoords, OPERATOR_GRAD);
+      DynRankView ConstructWithLabel(curlOfHGradBasisAtHDivDofCoords, hgradCardinality , hdivCardinality, dim);
+      triHGradBasis.getValues(curlOfHGradBasisAtHDivDofCoords, hdivDofCoords, OPERATOR_CURL);
       DynRankView ConstructWithLabel(ifunCurlAtHDivDofCoords, hdivCardinality,dim);
       for(int i=0;i<hdivCardinality;i++) {
-         for(int k=0;k<hgradCardinality;k++) {
-            ifunCurlAtHDivDofCoords(i,0) += funHGradCoeffs(k)*gradOfHGradBasisAtHDivDofCoords(k,i,1);
-            ifunCurlAtHDivDofCoords(i,1) -= funHGradCoeffs(k)*gradOfHGradBasisAtHDivDofCoords(k,i,0);
-         }
+        for(int k=0;k<hgradCardinality;k++)
+          for(int j=0;j<dim;j++)
+            ifunCurlAtHDivDofCoords(i,j) += funHGradCoeffs(k)*curlOfHGradBasisAtHDivDofCoords(k,i,j);
       }
 
       //Interpolating the curl of ifun in the HDIV space by computing the degrees of freedom for the function
