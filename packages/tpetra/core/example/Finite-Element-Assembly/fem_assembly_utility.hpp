@@ -73,8 +73,6 @@ getOutputStream(const Teuchos::Comm<int>& comm)
 }
 
 
-
-
 } // namespace TpetraExamples
 
 #endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_UTILITY_HPP
