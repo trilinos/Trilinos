@@ -242,4 +242,16 @@ $ Test variable deletion
 {delete("new_var")}
 {new_var}  This should print warning about undefined variable
 
+$ Test extract
+{ex_found = extract("The test string is found", "test", "")}
+{ex_null  = extract("The test string is not found", "xxxx", "yyyy")}
+
+$ Test string tokenization optimization
+{_i=1}
+{list1 ='51,52,53,54,61,62,63,64'}
+{list2 ='71,72,73,74,81,82,83,84'}
+{loop(8)}
+Word {_i} of list1 and list2 are {get_word(_i,list1,',')} and {get_word(_i++,list2,',')}
+{endloop}
+
 $End of test file

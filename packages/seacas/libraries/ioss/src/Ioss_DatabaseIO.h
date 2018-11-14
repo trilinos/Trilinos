@@ -271,15 +271,15 @@ namespace Ioss {
       return end__(state);
     }
 
-    bool begin_state(Region *region, int state, double time)
+    bool begin_state(int state, double time)
     {
       IOSS_FUNC_ENTER(m_);
-      return begin_state__(region, state, time);
+      return begin_state__(state, time);
     }
-    bool end_state(Region *region, int state, double time)
+    bool end_state(int state, double time)
     {
       IOSS_FUNC_ENTER(m_);
-      return end_state__(region, state, time);
+      return end_state__(state, time);
     }
     // Metadata-related functions.
     void read_meta_data()
@@ -662,8 +662,8 @@ namespace Ioss {
     virtual void read_meta_data__() = 0;
     virtual void get_step_times__() {}
 
-    virtual bool begin_state__(Region *region, int state, double time);
-    virtual bool end_state__(Region *region, int state, double time);
+    virtual bool begin_state__(int state, double time);
+    virtual bool end_state__(int state, double time);
 
     void get_block_adjacencies__(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const;
