@@ -69,8 +69,8 @@ namespace Iotr {
     bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
-    bool doMin;
-    bool doAbs;
+    bool doMin{false};
+    bool doAbs{false};
   };
 } // namespace Iotr
 

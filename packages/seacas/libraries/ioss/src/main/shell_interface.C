@@ -221,6 +221,12 @@ void IOShell::Interface::enroll_options()
       "Sleep for <$val> seconds between timestep output to simulate application calculation time",
       nullptr);
 
+  options_.enroll("flush_interval", Ioss::GetLongOption::MandatoryValue,
+                  "Specify the number of steps between database flushes.\n"
+                  "\t\tIf not specified, then the default database-dependent setting is used.\n"
+                  "\t\tA value of 0 disables flushing.",
+                  nullptr);
+
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
                   "\t\t when recognizing vector, tensor fields. Enter '0' for no separator",
@@ -552,6 +558,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("append_after_time");
     if (temp != nullptr) {
       append_time = std::strtod(temp, nullptr);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("flush_interval");
+    if (temp != nullptr) {
+      flush_interval = std::strtod(temp, nullptr);
     }
   }
 

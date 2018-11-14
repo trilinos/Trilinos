@@ -164,11 +164,8 @@ namespace Iofx {
     int64_t get_Xset_field_internal(ex_entity_type type, const Ioss::EntitySet *ns,
                                     const Ioss::Field &field, void *data, size_t data_size) const;
 
-  public:
-    // Temporarily made public for use during Salinas transition
-    // to using Ioss
     int get_file_pointer() const override; // Open file and set exodusFilePtr.
-  private:
+
     int64_t read_nodal_coordinates();
     void    read_elements(const Ioss::ElementBlock &block);
 

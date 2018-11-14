@@ -945,6 +945,9 @@ namespace Iofx {
               entity_map.set_map(tmp_map.data(), tmp_map.size(), 0, true);
             }
           }
+          if (error < 0) {
+            Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+          }
         }
       }
       else {
