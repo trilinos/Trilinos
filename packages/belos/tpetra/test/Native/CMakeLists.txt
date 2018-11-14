@@ -76,7 +76,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_nonsymm_matrix
   NAME Tpetra_Native_GMRES_nonsymm_matrix
-  ARGS "--solver=\"TPETRA GMRES\""
+  ARGS "--solver=\"TPETRA GMRES\" --restartLength=10"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -84,7 +84,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_nonsymm_matrix
   NAME Tpetra_Native_GMRES_PIPELINE_nonsymm_matrix
-  ARGS "--solver=\"TPETRA GMRES PIPELINE\""
+  ARGS "--solver=\"TPETRA GMRES PIPELINE\" --restartLength=10"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -92,7 +92,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_nonsymm_matrix
   NAME Tpetra_Native_GMRES_SINGLE_REDUCE_nonsymm_matrix
-  ARGS "--solver=\"TPETRA GMRES SINGLE REDUCE\""
+  ARGS "--solver=\"TPETRA GMRES SINGLE REDUCE\" --restartLength=10"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
@@ -100,7 +100,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   Tpetra_Native_solvers_nonsymm_matrix
   NAME Tpetra_Native_GMRES_S_STEP_nonsymm_matrix
-  ARGS "--solver=\"TPETRA GMRES S-STEP\""
+  ARGS "--solver=\"TPETRA GMRES S-STEP\" --restartLength=10"
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
