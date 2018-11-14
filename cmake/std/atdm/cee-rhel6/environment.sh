@@ -6,16 +6,20 @@
 #
 ################################################################################
 
-if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=GNU
+# NOTE: The custom_builds.sh script in this directory sets the exact compilers
+# used so no need for dealing with different varients of compilers here.
+
+if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
+  # Abort, no compiler was selected!
+  return
 fi
 
-if [ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ] ; then
+if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
   unset ATDM_CONFIG_KOKKOS_ARCH
 else
   echo
   echo "***"
-  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on RHEL6 ATDM builds"
+  echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on CEE RHEL6 builds"
   echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from JOB_NAME=$JOB_NAME"
   echo "***"
   return
@@ -51,23 +55,28 @@ else
 fi
 # NOTE: Above, we use 1/2 as many executors as
 
-if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]] ; then
-  if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
-    export ATDM_CONFIG_COMPILER=GNU-4.9.3
-  fi
-  if [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3" ]] ; then
-    module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
-  elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
-    module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
-  else
-    echo
-    echo "***"
-    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version"
-    echo "*** of GNU on this system!  Supported versions include 'gnu-4.9.3'"
-    echo "*** and 'gnu-7.2.0'"
-    echo "***"
-    return
-  fi
+if [ "$ATDM_CONFIG_COMPILER" == "CLANG-5.0.1-OPENMPI-1.10.2" ]; then
+  module load sparc-dev/clang-5.0.1_openmpi-1.10.2
+  export OMPI_CXX=`which clang++`
+  export OMPI_CC=`which clang`
+  export OMPI_FC=`which gfortran`
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0-OPENMPI-1.10.2" ]] ; then
+  module load sparc-dev/gcc-7.2.0_openmpi-1.10.2
+  export OMPI_CXX=`which g++`
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core"
+  # NOTE: Above is waht What SPARC uses?
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-4.9.3-OPENMPI-1.10.2" ]] ; then
+  module load sparc-dev/gcc-4.9.3_openmpi-1.10.2
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
@@ -75,9 +84,24 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]] ; then
   export MPICXX=`which mpicxx`
   export MPIF90=`which mpif90`
   export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+  # Still uses old 
   export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
   export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
-elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2-MPICH2-3.2" ]; then
+  module load sparc-dev/intel-18.0.2_mpich2-3.2
+  export OMPI_CXX=`which icpc`
+  export OMPI_CC=`which icc`
+  export OMPI_FC=`which ifort`
+  export MPICC=`which mpicc`
+  export MPICXX=`which mpicxx`
+  export MPIF90=`which mpif90`
+  export ATDM_CONFIG_MPI_EXEC=mpirun
+  export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG=-np
+  export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;core" # Critical to perforamnce!
+  export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
+  export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
+  export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1-INTELMPI-5.1.2" ]; then
   module load sparc-dev/intel-17.0.1_intelmpi-5.1.2
   export OMPI_CXX=`which icpc`
   export OMPI_CC=`which icc`
@@ -90,18 +114,6 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
-  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
-  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist.a
-elif [ "$ATDM_CONFIG_COMPILER" == "CLANG" ]; then
-  module load sparc-dev/clang-5.0.1_openmpi-1.10.2
-  #export OMPI_CXX=`which icpc`
-  #export OMPI_CC=`which icc`
-  #export OMPI_FC=`which ifort`
-  export MPICC=`which mpicc`
-  export MPICXX=`which mpicxx`
-  export MPIF90=`which mpif90`
-  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/SRC
-  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist_4.2.a
 else
   echo
   echo "***"
@@ -109,6 +121,10 @@ else
   echo "***"
   return
 fi
+
+# ToDo: Update above to only load the compiler and MPI moudles and then
+# directly set <TPL_NAME>_ROOT to point to the right TPLs.  This is needed to
+# avoid having people depend on the SPARC modules.
 
 # Use updated Ninja and CMake
 module load atdm-env
@@ -121,6 +137,8 @@ export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
 # NOTE: Above, we have to explicitly set the libs to use libbdf.so instead of
 # libbdf.a because the former works and the latter does not and TriBITS is set
 # up to only find static libs by default!
+
+# BLAS and LAPACK
 
 #export ATDM_CONFIG_BLAS_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64;-L${CBLAS_ROOT}/lib/intel64;-lmkl_intel_lp64;-lmkl_intel_thread;-lmkl_core;-liomp5"
 #export ATDM_CONFIG_LAPACK_LIBS="-L${CBLAS_ROOT}/mkl/lib/intel64"
@@ -140,13 +158,19 @@ export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
 
-# Set the direct libs for HDF5 and NetCDF in case we use that option for
-# building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
+# However, set the direct libs for HDF5 and NetCDF in case we use that option
+# for building (see env var ATDM_CONFIG_USE_SPARC_TPL_FIND_SETTINGS).
 
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
 
 export ATDM_CONFIG_NETCDF_LIBS="-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${SEMS_PNETCDF_ROOT}/lib;-L${HDF5_ROOT}/lib;${BOOST_ROOT}/lib/libboost_program_options.a;${BOOST_ROOT}/lib/libboost_system.a;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl;-lcurl"
 
-export ATDM_CONFIG_MPI_PRE_FLAGS="--bind-to;none"
+# SuperLUDist
+if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
+  # Set the default which is correct for all of the new TPL builds
+  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+  export ATDM_CONFIG_SUPERLUDIST_LIBS=${SUPERLUDIST_ROOT}/lib/libsuperlu_dist.a
+fi
 
+# Finished!
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

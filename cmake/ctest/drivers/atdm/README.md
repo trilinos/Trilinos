@@ -368,6 +368,19 @@ read and interpreted in the file:
 
 to understand their impact on the configuration, build and testing.
 
+In addition, a custom set of build configuration options can be set in the
+file:
+
+```
+  Trilinos/cmake/std/atdm/<new_system_name>/custom_builds.sh
+```
+
+This file can be used to put in special logic for special compilers and
+compiler versions and other types of logic.  This file gets sourced before the
+standard logic is executed in in `atdm/utils/set_build_options.sh`.  (To see
+an example of the usage of this file, see `atdm/cee-rhel6/custom_builds.sh`
+and `atdm/cee-rhel6/environment.sh`.)
+
 A few of the environment variables that need to be set in the file
 `<new_system_name>/environment.sh` worth specifically discussing are:
 
