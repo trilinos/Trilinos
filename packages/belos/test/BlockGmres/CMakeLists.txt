@@ -34,6 +34,16 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       XHOST KALLIKRATES
       )
 
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      hybrid_gmres_complex_hb
+      SOURCES test_hybrid_gmres_complex_hb.cpp
+      COMM serial mpi
+      ARGS
+        "--verbose --filename=mhd1280b.cua --max-degree=10"
+      STANDARD_PASS_OUTPUT 
+      XHOST KALLIKRATES
+      )
+
     IF(NOT ${${PROJECT_NAME}_HOSTNAME} STREQUAL "KALLIKRATES")
       ASSERT_DEFINED(Anasazi_SOURCE_DIR)
       TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
