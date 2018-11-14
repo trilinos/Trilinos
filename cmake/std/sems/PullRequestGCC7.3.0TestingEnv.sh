@@ -1,8 +1,8 @@
 # This script can be used to load the appropriate environment for the
-# GCC 7.3 Pull Request testing build on a Linux machine that has access to
+# GCC 7.3.0 Pull Request testing build on a Linux machine that has access to
 # the SEMS NFS mount.
 
-# usage: $ source PullRequestGCC7.3TestingEnv.sh
+# usage: $ source PullRequestGCC7.3.0TestingEnv.sh
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
