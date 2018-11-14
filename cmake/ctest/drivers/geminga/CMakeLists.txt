@@ -114,8 +114,8 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
   # Tpetra Experimental Testing
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_SERIAL_EXPERIMENTAL
-    ctest_linux_nightly_mpi_release_tpetra_no_int_serial_experimental_geminga.cmake
+    OPENMPI-1.10.1_RELEASE_NO-EPETRA_NO-INT_EXPERIMENTAL
+    ctest_linux_nightly_mpi_release_tpetra_no_int_experimental_geminga.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
