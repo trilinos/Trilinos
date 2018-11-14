@@ -923,18 +923,21 @@ struct compute_fad_dim_from_alloc_prop;
 template < >
 struct compute_fad_dim_from_alloc_prop<> {
   template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
   static unsigned eval(const CtorProp&) { return 0; }
 };
 
 template < typename P >
 struct compute_fad_dim_from_alloc_prop<P> {
   template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
   static unsigned eval(const CtorProp&) { return 0; }
 };
 
 template < typename P0, typename ... P >
 struct compute_fad_dim_from_alloc_prop<P0,P...> {
   template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
   static unsigned eval(const CtorProp& prop) {
     unsigned d1 = compute_fad_dim_from_alloc_prop<P0>::eval(prop);
     unsigned d2 = compute_fad_dim_from_alloc_prop<P...>::eval(prop);
@@ -947,6 +950,7 @@ struct compute_fad_dim_from_alloc_prop<
   CommonViewAllocProp<ViewSpecializeSacadoFad, ValueType>
   > {
   template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
   static unsigned eval(const CtorProp& prop) {
     using specialize = ViewSpecializeSacadoFad;
     using CVAP = CommonViewAllocProp< specialize, ValueType >;
@@ -960,6 +964,7 @@ struct compute_fad_dim_from_alloc_prop<
   CommonViewAllocProp<ViewSpecializeSacadoFadContiguous, ValueType>
   > {
   template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
   static unsigned eval(const CtorProp& prop) {
     using specialize = ViewSpecializeSacadoFadContiguous;
     using CVAP = CommonViewAllocProp< specialize, ValueType >;
@@ -975,6 +980,7 @@ struct appendFadToLayoutViewAllocHelper
   using specialize = typename Traits::specialize;
   using CtorProp = ViewCtorProp< P... >;
 
+  KOKKOS_INLINE_FUNCTION
   static layout_type returnNewLayoutPlusFad( const CtorProp & arg_prop, const layout_type & arg_layout ) {
 
     layout_type appended_layout( arg_layout );
@@ -1257,7 +1263,7 @@ public:
 
   //----------------------------------------
 
-  KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
+  KOKKOS_INLINE_FUNCTION ~ViewMapping() {}
   KOKKOS_INLINE_FUNCTION ViewMapping() : m_impl_handle(0) , m_impl_offset() , m_array_offset() , m_fad_size(0) , m_fad_stride(0) {}
 
   KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
