@@ -79,6 +79,9 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   bool isBasisHCURL = name.find("HCURL") != std::string::npos;
   bool isBasisHDIV = name.find("HDIV") != std::string::npos;
   bool isBasisTriOrTet = (name.find("TRI") != std::string::npos) || (name.find("TET") != std::string::npos);
+  bool isBasisHEXI1 = (name.find("HEX_I1") != std::string::npos);
+  bool isBasisTETI1 = (name.find("TET_I1") != std::string::npos);
+  bool isBasisI1 = (name.find("I1") != std::string::npos);
 
   ordinal_type numEdges = (basis->getDofCount(1, 0) > 0) ? topo.getEdgeCount() : 0;
   ordinal_type numFaces = (basis->getDofCount(2, 0) > 0) ? topo.getFaceCount() : 0;
@@ -87,39 +90,39 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   Teuchos::RCP<Basis<SpT,scalarType,scalarType> > edgeBasis;
 
 
-  if (name == "Intrepid2_HGRAD_QUAD_Cn_FEM") {
+  if ((name == "Intrepid2_HGRAD_QUAD_Cn_FEM") || (name == "Intrepid2_HGRAD_QUAD_C1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
-  } else if (name == "Intrepid2_HGRAD_HEX_Cn_FEM") {
+  } else if ((name == "Intrepid2_HGRAD_HEX_Cn_FEM") || (name == "Intrepid2_HGRAD_HEX_C1_FEM")){
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
     faceBases[0] = Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
     for(ordinal_type i=1; i<6; ++i) faceBases[i]=faceBases[0];
-  } else if (name == "Intrepid2_HGRAD_TRI_Cn_FEM") {
+  } else if ((name == "Intrepid2_HGRAD_TRI_Cn_FEM") || (name == "Intrepid2_HGRAD_TRI_C1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
-  } else if (name == "Intrepid2_HGRAD_TET_Cn_FEM") {
+  } else if ((name == "Intrepid2_HGRAD_TET_Cn_FEM") || (name == "Intrepid2_HGRAD_TET_C1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
     faceBases[0] = Teuchos::rcp(new Basis_HGRAD_TRI_Cn_FEM<SpT,scalarType,scalarType>(degree, pointType) );
     for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
-  } else if (name == "Intrepid2_HCURL_QUAD_In_FEM") {
+  } else if ((name == "Intrepid2_HCURL_QUAD_In_FEM") || (name == "Intrepid2_HCURL_QUAD_I1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
-  } else if (name == "Intrepid2_HCURL_HEX_In_FEM") {
+  } else if ((name == "Intrepid2_HCURL_HEX_In_FEM") || (name == "Intrepid2_HCURL_HEX_I1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
     faceBases[0] = Teuchos::rcp(new Basis_HCURL_QUAD_In_FEM<SpT,scalarType,scalarType>(degree, pointType) );
     for(ordinal_type i=1; i<6; ++i) faceBases[i]=faceBases[0];
-  } else if (name == "Intrepid2_HCURL_TRI_In_FEM") {
+  } else if ((name == "Intrepid2_HCURL_TRI_In_FEM") || (name == "Intrepid2_HCURL_TRI_I1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HVOL_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
-  } else if (name == "Intrepid2_HCURL_TET_In_FEM") {
+  } else if ((name == "Intrepid2_HCURL_TET_In_FEM") || (name == "Intrepid2_HCURL_TET_I1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HVOL_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
     faceBases[0] = Teuchos::rcp(new Basis_HCURL_TRI_In_FEM<SpT,scalarType,scalarType>(degree, pointType) );
     for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
-  } else if (name == "Intrepid2_HDIV_QUAD_In_FEM") {
+  } else if ((name == "Intrepid2_HDIV_QUAD_In_FEM") || (name == "Intrepid2_HDIV_QUAD_I1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
-  } else if (name == "Intrepid2_HDIV_HEX_In_FEM") {
+  } else if ((name == "Intrepid2_HDIV_HEX_In_FEM") || (name == "Intrepid2_HDIV_HEX_I1_FEM")) {
     edgeBasis = Teuchos::null;
     faceBases[0] = Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<SpT,scalarType,scalarType>(degree-1, POINTTYPE_GAUSS) );
     for(ordinal_type i=1; i<6; ++i) faceBases[i]=faceBases[0];
-  } else if (name == "Intrepid2_HDIV_TRI_In_FEM") {
+  } else if ((name == "Intrepid2_HDIV_TRI_In_FEM") || (name == "Intrepid2_HDIV_TRI_I1_FEM")) {
     edgeBasis = Teuchos::rcp(new Basis_HVOL_LINE_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
-  } else if (name == "Intrepid2_HDIV_TET_In_FEM") {
+  } else if ((name == "Intrepid2_HDIV_TET_In_FEM") || (name == "Intrepid2_HDIV_TET_I1_FEM")) {
     edgeBasis = Teuchos::null;
     faceBases[0] = Teuchos::rcp(new Basis_HVOL_TRI_Cn_FEM<SpT,scalarType,scalarType>(degree-1, pointType) );
     for(ordinal_type i=1; i<4; ++i) faceBases[i]=faceBases[0];
@@ -185,7 +188,8 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
       }
     }
 
-    auto edgeScale = isBasisTriOrTet ? 2.0 :1.0;
+    //depending on how the reference basis is defined, the edges are scaled differently
+    auto edgeScale = (isBasisTriOrTet||isBasisI1) ? 2.0 :1.0;
     if(isBasisHCURL) {
 
       scalarViewType edgeDofCoeffs("edgeDofCoeffs", edgeBasisCardinality);
@@ -279,6 +283,9 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
         }
       }
     } else if(isBasisHDIV) {
+      //depending on how the reference basis is defined, the faces are scaled differently
+      auto faceScale = (isBasisHEXI1) ? 4.0 :
+                       (isBasisTETI1) ? 0.5 : 1.0;
       CellTools<SpT>::getReferenceFaceNormal(refNormal, iface, topo);
       scalarViewType faceDofCoeffs("faceDofCoeffs", faceBasisCardinality);
       faceBasis->getDofCoeffs(faceDofCoeffs);
@@ -290,7 +297,7 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
           auto idof = basis->getDofOrdinal(2, iface, j);
           auto jdof = faceBasis->getDofOrdinal(2, 0, j);
           for(ordinal_type d=0; d <dim; ++d)
-            dofCoeffs(i,idof,d) = refNormal(d)*ortJacobianDet*faceDofCoeffs(jdof);
+            dofCoeffs(i,idof,d) = refNormal(d)*ortJacobianDet*faceDofCoeffs(jdof)*faceScale;
         }
       }
     } else {
