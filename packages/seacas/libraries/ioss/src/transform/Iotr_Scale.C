@@ -50,7 +50,7 @@ namespace Iotr {
 
   Ioss::Transform *Scale_Factory::make(const std::string & /*unused*/) const { return new Scale(); }
 
-  Scale::Scale() : intMultiplier(1), realMultiplier(1.0) {}
+  Scale::Scale() {}
 
   void Scale::set_property(const std::string & /*name*/, int value) { intMultiplier = value; }
 

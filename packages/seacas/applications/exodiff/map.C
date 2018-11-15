@@ -1000,6 +1000,11 @@ namespace {
 
     INT i = low == N ? N - 1 : low; // Make sure index falls within array bounds.
 
+    if (i == 0 && interface.coord_tol.Diff(x[id[i]], x0)) {
+      // Could not find an index within tolerance on x coordinate.
+      return -1;
+    }
+
     // Drop to first index before which the tolerance fails.
     while (i > 0 && !interface.coord_tol.Diff(x[id[i - 1]], x0)) {
       --i;

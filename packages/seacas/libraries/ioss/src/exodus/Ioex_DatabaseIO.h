@@ -126,8 +126,8 @@ namespace Ioex {
 
     void open_state_file(int state);
 
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
     void get_step_times__() override = 0;
 
     int maximum_symbol_length() const override { return maximumNameLength; }
@@ -213,11 +213,8 @@ namespace Ioex {
 
     void closeDatabase__() const override { free_file_pointer(); }
 
-  public:
-    // Temporarily made public for use during Salinas transition
-    // to using Ioss
     virtual int get_file_pointer() const = 0; // Open file and set exodusFilePtr.
-  protected:
+
     virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
 
     virtual bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
