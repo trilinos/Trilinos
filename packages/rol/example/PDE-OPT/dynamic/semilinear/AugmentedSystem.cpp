@@ -113,6 +113,24 @@ public:
   }
 };
 
+class WathenKKTOperator : public ROL::LinearOperator<RealT> {
+public:
+  ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con;
+  ROL::Ptr<ROL::Vector<RealT>> state;
+  ROL::Ptr<ROL::Vector<RealT>> control;
+  int myRank;
+  ROL::Ptr<std::ostream> outStream;
+
+  void apply( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
+  {
+    assert(false);
+  }
+  void applyInverse( ROL::Vector<RealT> &Hv, const ROL::Vector<RealT> &v, RealT &tol ) const override
+  {
+    pint_con->applyAugmentedInverseKKT(Hv,v,*state,*control,tol,false,0); 
+  }
+};
+
 inline void pauseToAttach(MPI_Comm mpicomm)
 {
   Teuchos::RCP<Teuchos::Comm<int> > comm = 
@@ -132,6 +150,8 @@ inline void pauseToAttach(MPI_Comm mpicomm)
 }
 
 int main(int argc, char *argv[]) {
+
+  using Teuchos::RCP;
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -167,6 +187,9 @@ int main(int argc, char *argv[]) {
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
     ROL::Ptr<const Teuchos::Comm<int>> mpiSpaceComm = ROL::makePtr<Teuchos::MpiComm<int>>(communicators->getSpaceCommunicator());
+
+    // for "serial" in time cases, use the wathen preconditioner
+    bool useWathenPrec = communicators->getTimeSize()==spaceProc;
 
     /*************************************************************************/
     /***************** BUILD GOVERNING PDE ***********************************/
@@ -280,13 +303,30 @@ int main(int argc, char *argv[]) {
       kktOperator.control = control;
       kktOperator.outStream = outStream;
       kktOperator.myRank = myRank;
-  
-      MGRITKKTOperator mgOperator;
-      mgOperator.pint_con = pint_con;
-      mgOperator.state = state;
-      mgOperator.control = control;
-      mgOperator.outStream = outStream;
-      mgOperator.myRank = myRank;
+
+      RCP<ROL::LinearOperator<RealT>> precOperator;
+    
+      // build the preconditioner 
+      if(useWathenPrec) {
+        RCP<WathenKKTOperator> wathenOperator(new WathenKKTOperator);
+        wathenOperator->pint_con = pint_con;
+        wathenOperator->state = state;
+        wathenOperator->control = control;
+        wathenOperator->outStream = outStream;
+        wathenOperator->myRank = myRank;
+
+        precOperator = wathenOperator;
+      }
+      else {
+        RCP<MGRITKKTOperator> mgOperator(new MGRITKKTOperator);
+        mgOperator->pint_con = pint_con;
+        mgOperator->state = state;
+        mgOperator->control = control;
+        mgOperator->outStream = outStream;
+        mgOperator->myRank = myRank;
+
+        precOperator = mgOperator;
+      }
   
       Teuchos::ParameterList parlist;
       parlist.set("Absolute Tolerance",1.e-9);
@@ -302,11 +342,16 @@ int main(int argc, char *argv[]) {
       MPI_Barrier(MPI_COMM_WORLD);
       double t0 = MPI_Wtime();
   
-      if(myRank==0)
-        (*outStream) << "Solving KKT system" << std::endl;
+      if(myRank==0) {
+        (*outStream) << "Solving KKT system: "; 
+        if(useWathenPrec) 
+          (*outStream) << "using Wathen preconditioner" << std::endl;
+        else
+          (*outStream) << "using MGRIT preconditioner" << std::endl;
+      }
 
       timer->start("krylov");
-      RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,mgOperator,iter,flag);
+      RealT finalTol = krylov.run(*kkt_x_out,kktOperator,*kkt_b,*precOperator,iter,flag);
       timer->stop("krylov");
 
       if(myRank==0)

@@ -217,7 +217,7 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
     state->getVectorPtr(-1)->set(*u_initial);   // set the initial condition
   }
 
-  assert(local_Nt==state->numOwnedSteps());
+  assert(local_Nt==control->numOwnedSteps());
 
   auto timeStamp = ROL::makePtr<std::vector<ROL::TimeStamp<RealT>>>(local_Nt);
 
