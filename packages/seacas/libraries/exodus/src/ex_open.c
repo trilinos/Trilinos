@@ -136,7 +136,7 @@ static int warning_output = 0;
 int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
                 int run_version)
 {
-  int     exoid;
+  int     exoid = -1;
   int     status, stat_att, stat_dim;
   nc_type att_type = NC_NAT;
   size_t  att_len  = 0;
@@ -169,7 +169,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
 
   if ((mode & EX_READ) && (mode & EX_WRITE)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Cannot specify both EX_READ and EX_WRITE");
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEMODE);
+    ex_err(__func__, errmsg, EX_BADFILEMODE);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -262,7 +262,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
                "the file does not exist, or there is a permission or file "
                "format issue.",
                path, type);
-      ex_err_fn(exoid, __func__, errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -271,6 +271,9 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
 #if NC_HAS_DISKLESS
     if (mode & EX_DISKLESS) {
       nc_mode |= NC_DISKLESS;
+#if defined NC_PERSIST
+      nc_mode |= NC_PERSIST;
+#endif
     }
 #endif
     if ((status = nc_open(path, nc_mode, &exoid)) != NC_NOERR) {
@@ -280,7 +283,7 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
                "does not exist, or there is a permission or file format "
                "issue.",
                path);
-      ex_err_fn(exoid, __func__, errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 

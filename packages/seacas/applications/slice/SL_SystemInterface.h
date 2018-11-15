@@ -101,21 +101,21 @@ private:
 
   GetLongOption options_; //!< Options parsing
 
-  std::string decompMethod_;
+  std::string decompMethod_{"linear"};
   std::string decompFile_;
   std::string outputPath_;
 
-  size_t partialReadCount_;
-  int    processorCount_;
-  int    debugLevel_;
-  int    screenWidth_;
-  int    stepMin_;
-  int    stepMax_;
-  int    stepInterval_;
-  bool   omitNodesets_;
-  bool   omitSidesets_;
-  bool   disableFieldRecognition_;
-  bool   contig_;
+  size_t partialReadCount_{1000000000};
+  int    processorCount_{1};
+  int    debugLevel_{0};
+  int    screenWidth_{0};
+  int    stepMin_{1};
+  int    stepMax_{INT_MAX};
+  int    stepInterval_{1};
+  bool   omitNodesets_{false};
+  bool   omitSidesets_{false};
+  bool   disableFieldRecognition_{false};
+  bool   contig_{false};
 
   Omissions blockOmissions_;
 

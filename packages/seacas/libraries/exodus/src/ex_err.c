@@ -144,6 +144,9 @@ void ex_err(const char *module_name, const char *message, int err_num)
   if (err_num == EX_PRTLASTMSG) {
     fprintf(stderr, "\n[%s] %s\n", EX_PNAME, EX_ERRMSG);
     fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
+    if (EX_ERR_NUM < 0) {
+      fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
+    }
     EX_FUNC_VOID();
   }
 
@@ -215,6 +218,9 @@ void ex_err_fn(int exoid, const char *module_name, const char *message, int err_
     }
     else {
       fprintf(stderr, "    exerrval = %d\n", EX_ERR_NUM);
+    }
+    if (EX_ERR_NUM < 0) {
+      fprintf(stderr, "\t%s\n", ex_strerror(EX_ERR_NUM));
     }
     EX_FUNC_VOID();
   }

@@ -97,10 +97,6 @@ namespace Iocgns {
     int get_file_pointer() const;
     int get_serial_file_pointer() const;
 
-    void openDatabase__() const override;
-    void closeDatabase__() const override;
-    void openSerialDatabase__() const;
-    void closeSerialDatabase__() const;
     bool node_major() const override { return false; }
 
     bool needs_shared_node_information() const override { return false; }
@@ -109,18 +105,24 @@ namespace Iocgns {
     // a file with 32-bit ints. However,...
     int int_byte_size_db() const override { return CG_SIZEOF_SIZE; }
 
-    bool begin__(Ioss::State state) override;
-    bool end__(Ioss::State state) override;
-
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
-
     // Metadata-related functions.
     void read_meta_data__() override;
     void write_meta_data();
     void write_results_meta_data();
 
   private:
+    void openDatabase__() const override;
+    void closeDatabase__() const override;
+    void openSerialDatabase__() const;
+    void closeSerialDatabase__() const;
+
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
+    void flush_database__() const override;
+
     void    handle_structured_blocks();
     void    handle_unstructured_blocks();
     size_t  finalize_structured_blocks();
@@ -197,12 +199,13 @@ namespace Iocgns {
 
     std::vector<int64_t> get_processor_zone_node_offset() const;
 
-    mutable int   cgnsFilePtr{-1};
-    mutable int   cgnsSerFilePtr{-1};
+    mutable int   m_cgnsFilePtr{-1};
+    mutable int   m_cgnsSerFilePtr{-1};
     CG_ZoneType_t m_zoneType{CG_ZoneTypeNull};
 
     mutable std::unique_ptr<DecompositionDataBase> decomp;
 
+    int m_flushInterval{0}; // Default is no flushing after each timestep
     int m_currentVertexSolutionIndex     = 0;
     int m_currentCellCenterSolutionIndex = 0;
 

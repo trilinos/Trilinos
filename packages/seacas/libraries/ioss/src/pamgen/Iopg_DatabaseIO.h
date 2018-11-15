@@ -110,9 +110,6 @@ namespace Iopg {
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
 
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
-
     void read_region();
     void read_communication_metadata();
 
@@ -223,20 +220,20 @@ namespace Iopg {
 
     std::string databaseTitle;
 
-    int spatialDimension;
+    int spatialDimension{3};
 
-    int nodeBlockCount;
-    int elementBlockCount;
-    int nodesetCount;
-    int sidesetCount;
+    int nodeBlockCount{0};
+    int elementBlockCount{0};
+    int nodesetCount{0};
+    int sidesetCount{0};
 
     // Communication Set Data
     Ioss::IntVector nodeCmapIds;
     Ioss::IntVector nodeCmapNodeCnts;
     Ioss::IntVector elemCmapIds;
     Ioss::IntVector elemCmapElemCnts;
-    int             commsetNodeCount;
-    int             commsetElemCount;
+    int             commsetNodeCount{0};
+    int             commsetElemCount{0};
   };
 } // namespace Iopg
 #endif // SIERRA_Iopg_DatabaseIO_h

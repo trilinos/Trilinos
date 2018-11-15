@@ -247,6 +247,8 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     return 0;
   }
 
+  ex_put_eb_info_global(exoid, mesh->eb_ids.data(), mesh->eb_cnts.data());
+
   /* Set up dummy arrays for output */
   std::vector<INT> num_nmap_cnts(machine->num_procs);
   std::vector<INT> num_emap_cnts(machine->num_procs);

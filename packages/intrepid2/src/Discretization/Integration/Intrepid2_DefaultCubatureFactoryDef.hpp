@@ -163,7 +163,7 @@ namespace Intrepid2 {
   create( const shards::CellTopology       cellTopology,
           const std::vector<ordinal_type> &degree,
           const EPolyType                  polytype) {
-       return create<SpT,PT,WT>(cellTopology.getKey(), degree, polytype);
+       return create<SpT,PT,WT>(cellTopology.getBaseKey(), degree, polytype);
   }
 
 
@@ -186,7 +186,7 @@ namespace Intrepid2 {
           const EPolyType            polytype ) {
     // uniform order for 3 axes
     const std::vector<ordinal_type> degreeArray(3, degree);
-    return create<SpT,PT,WT>(cellTopology.getKey(), degreeArray, polytype);
+    return create<SpT,PT,WT>(cellTopology.getBaseKey(), degreeArray, polytype);
   }
 
 
