@@ -196,6 +196,13 @@ public:
 }; // DynamicTrackingObjective
 
 
+template<typename Real>
+inline Ptr<DynamicObjective<Real>> 
+make_DynamicTrackingObjective( const Ptr<PartitionedVector<Real>>& target, Real alpha=0.0 ) {
+  Ptr<DynamicObjective<Real>> obj = makePtr<DynamicTrackingObjective<Real>>(target,alpha);
+  return obj;
+}
+
 } // namespace ROL
 
 #endif  // ROL_DYNAMICTRACKINGOBJECTIVE_HPP
