@@ -71,6 +71,7 @@
 #include "Intrepid2_Orientation.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_ProjectionTools.hpp"
+#include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 #include "Intrepid2_HVOL_TET_Cn_FEM.hpp"
@@ -302,8 +303,14 @@ int InterpolationProjectionTet(const bool verbose) {
 
         for (ordinal_type degree=1; degree <= max_degree; degree++) {
 
-          Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(degree);
-          ordinal_type basisCardinality = basis.getCardinality();
+          Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType>> basisPtr;
+
+          if(degree==1)
+            basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
+          else
+            basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType>(degree));
+
+          ordinal_type basisCardinality = basisPtr->getCardinality();
 
           //compute DofCoords Oriented
           DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
@@ -314,7 +321,7 @@ int InterpolationProjectionTet(const bool verbose) {
 
           //compute Lagrangian Interpolation of fun
           {
-            li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, &basis, POINTTYPE_EQUISPACED, elemOrts);
+            li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr.get(), POINTTYPE_EQUISPACED, elemOrts);
 
             //Compute physical Dof Coordinates
             {
@@ -350,13 +357,13 @@ int InterpolationProjectionTet(const bool verbose) {
               DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
               auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
-              basis.getValues(outView, inView);
+              basisPtr->getValues(outView, inView);
 
               // modify basis values to account for orientations
               ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
                   basisValuesAtDofCoords,
                   elemOrts,
-                  &basis);
+                  basisPtr.get());
 
               // transform basis values
               fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
@@ -384,10 +391,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //check that fun values are consistent on common face dofs
           {
             bool areDifferent(false);
-            auto numFaceDOFs = basis.getDofCount(2,0);
+            auto numFaceDOFs = basisPtr->getDofCount(2,0);
             for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
+              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
             }
 
             if(areDifferent) {
@@ -396,10 +403,10 @@ int InterpolationProjectionTet(const bool verbose) {
               *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
               *outStream << "Function DOFs for Tet 0 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
               *outStream << "\nFunction DOFs for Tet 1 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
               *outStream << std::endl;
             }
           }
@@ -407,11 +414,11 @@ int InterpolationProjectionTet(const bool verbose) {
           //check that fun values are consistent on common edges dofs
           {
             bool areDifferent(false);
-            auto numEdgeDOFs = basis.getDofCount(1,0);
+            auto numEdgeDOFs = basisPtr->getDofCount(1,0);
             for(std::size_t iEdge=0;iEdge<common_edges.size();iEdge++) {
               for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
-                areDifferent = std::abs(basisCoeffsLI(0,basis.getDofOrdinal(1,edgeIndexes[0][iEdge],j))
-                    - basisCoeffsLI(1,basis.getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+                areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
+                    - basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
               }
               if(areDifferent) {
                 errorFlag++;
@@ -419,10 +426,10 @@ int InterpolationProjectionTet(const bool verbose) {
                 *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
                 *outStream << "Function DOFs for Tet 0 are:";
                 for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                  *outStream << " " << basisCoeffsLI(0,basis.getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+                  *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
                 *outStream << "\nFunction DOFs for Tet 1 are:";
                 for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                  *outStream << " " << basisCoeffsLI(1,basis.getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+                  *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
                 *outStream << std::endl;
               }
             }
@@ -434,13 +441,13 @@ int InterpolationProjectionTet(const bool verbose) {
           DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
 
           for (ordinal_type ic = 0; ic < numCells; ++ic)
-            basis.getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
 
           // modify basis values to account for orientations
           ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
               basisValuesAtDofCoordsCells,
               elemOrts,
-              &basis);
+              basisPtr.get());
 
           // transform basis values
           // transform basis values
@@ -475,10 +482,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
           {
-            ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
+            ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree());
 
             Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+            projStruct.createHGradProjectionStruct(basisPtr.get(), targetCubDegree, targetDerivCubDegree);
 
             ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
             DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
@@ -488,7 +495,7 @@ int InterpolationProjectionTet(const bool verbose) {
             pts::getHGradEvaluationPoints(evaluationPoints,
                 evaluationGradPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
 
 
@@ -498,21 +505,21 @@ int InterpolationProjectionTet(const bool verbose) {
             DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
             DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
             for(int ic=0; ic<numCells; ic++)
-              basis.getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
             ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
                 hgradBasisAtEvaluationPointsNonOriented,
                 elemOrts,
-                &basis);
+                basisPtr.get());
 
             DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPoints, numCells, basisCardinality , numGradPoints, dim);
             if(numGradPoints>0) {
               DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numGradPoints, dim);
               for(int ic=0; ic<numCells; ic++)
-                basis.getValues(Kokkos::subview(gradOfHGradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationGradPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_GRAD);
+                basisPtr->getValues(Kokkos::subview(gradOfHGradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationGradPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_GRAD);
               ots::modifyBasisByOrientation(gradOfHGradBasisAtEvaluationPoints,
                   gradOfHGradBasisAtEvaluationPointsNonOriented,
                   elemOrts,
-                  &basis);
+                  basisPtr.get());
             }
 
 
@@ -535,7 +542,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 evaluationPoints,
                 evaluationGradPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
           }
 
@@ -559,17 +566,17 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute L2 projection of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
           {
-            ordinal_type targetCubDegree(basis.getDegree());
+            ordinal_type targetCubDegree(basisPtr->getDegree());
 
             Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+            projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
 
             ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
             DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
 
             pts::getL2EvaluationPoints(evaluationPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
 
 
@@ -577,11 +584,11 @@ int InterpolationProjectionTet(const bool verbose) {
             DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
             DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
             for(int ic=0; ic<numCells; ic++)
-              basis.getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
             ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
                 hgradBasisAtEvaluationPointsNonOriented,
                 elemOrts,
-                &basis);
+                basisPtr.get());
 
 
             for(int ic=0; ic<numCells; ic++) {
@@ -595,7 +602,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 targetAtEvalPoints,
                 evaluationPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
           }
           //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
@@ -722,8 +729,14 @@ int InterpolationProjectionTet(const bool verbose) {
         ots::getOrientation(elemOrts, elemNodes, tet);
 
         for (ordinal_type degree=1; degree <= max_degree; degree++) {
-          Basis_HCURL_TET_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(degree, POINTTYPE_WARPBLEND);
-          ordinal_type basisCardinality = basis.getCardinality();
+
+          Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType> > basisPtr;
+          if(degree==1)
+            basisPtr = Teuchos::rcp(new Basis_HCURL_TET_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
+          else
+            basisPtr = Teuchos::rcp(new Basis_HCURL_TET_In_FEM<DeviceSpaceType,ValueType,ValueType>(degree, POINTTYPE_WARPBLEND));
+
+          ordinal_type basisCardinality = basisPtr->getCardinality();
 
           //compute DofCoords Oriented
           DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
@@ -734,7 +747,7 @@ int InterpolationProjectionTet(const bool verbose) {
 
           //compute Lagrangian Interpolation of fun
           {
-            li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, &basis, POINTTYPE_WARPBLEND, elemOrts);
+            li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr.get(), POINTTYPE_WARPBLEND, elemOrts);
 
             //Compute physical Dof Coordinates
 
@@ -779,13 +792,13 @@ int InterpolationProjectionTet(const bool verbose) {
               DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
               auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              basis.getValues(outView, inView);
+              basisPtr->getValues(outView, inView);
 
               // modify basis values to account for orientations
               ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
                   basisValuesAtDofCoords,
                   elemOrts,
-                  &basis);
+                  basisPtr.get());
 
               for(ordinal_type k=0; k<basisCardinality; ++k) {
                 for(ordinal_type j=0; j<basisCardinality; ++j){
@@ -810,11 +823,11 @@ int InterpolationProjectionTet(const bool verbose) {
           //check that fun values are consistent on common edges dofs
           {
             bool areDifferent(false);
-            auto numEdgeDOFs = basis.getDofCount(1,0);
+            auto numEdgeDOFs = basisPtr->getDofCount(1,0);
             for(std::size_t iEdge=0;iEdge<common_edges.size();iEdge++) {
               for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
-                areDifferent = std::abs(basisCoeffsLI(0,basis.getDofOrdinal(1,edgeIndexes[0][iEdge],j))
-                    - basisCoeffsLI(1,basis.getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+                areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
+                    - basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
               }
               if(areDifferent) {
                 errorFlag++;
@@ -822,10 +835,10 @@ int InterpolationProjectionTet(const bool verbose) {
                 *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
                 *outStream << "Function DOFs for Tet 0 are:";
                 for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                  *outStream << " " << basisCoeffsLI(0,basis.getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+                  *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
                 *outStream << "\nFunction DOFs for Tet 1 are:";
                 for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                  *outStream << " " << basisCoeffsLI(1,basis.getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+                  *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
                 *outStream << std::endl;
               }
             }
@@ -834,10 +847,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //check that fun values are consistent on common face dofs
           {
             bool areDifferent(false);
-            auto numFaceDOFs = basis.getDofCount(2,0);
+            auto numFaceDOFs = basisPtr->getDofCount(2,0);
             for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
+              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
             }
 
             if(areDifferent) {
@@ -846,10 +859,10 @@ int InterpolationProjectionTet(const bool verbose) {
               *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
               *outStream << "Function DOFs for Tet 0 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
               *outStream << "\nFunction DOFs for Tet 1 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
               *outStream << std::endl;
             }
           }
@@ -860,13 +873,13 @@ int InterpolationProjectionTet(const bool verbose) {
           DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
 
           for (ordinal_type ic = 0; ic < numCells; ++ic)
-            basis.getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
 
           // modify basis values to account for orientations
           ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
               basisValuesAtDofCoordsCells,
               elemOrts,
-              &basis);
+              basisPtr.get());
 
           // transform basis values
           DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
@@ -904,10 +917,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
           {
-            ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
+            ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
             Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+            projStruct.createHCurlProjectionStruct(basisPtr.get(), targetCubDegree, targetDerivCubDegree);
 
             ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
             DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
@@ -916,7 +929,7 @@ int InterpolationProjectionTet(const bool verbose) {
             pts::getHCurlEvaluationPoints(evaluationPoints,
                 evaluationCurlPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
 
 
@@ -926,21 +939,21 @@ int InterpolationProjectionTet(const bool verbose) {
             DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
             DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
             for(int ic=0; ic<numCells; ic++)
-              basis.getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
             ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
                 hcurlBasisAtEvaluationPointsNonOriented,
                 elemOrts,
-                &basis);
+                basisPtr.get());
 
             DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPoints, numCells, basisCardinality , numCurlPoints, dim);
             if(numCurlPoints>0) {
               DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numCurlPoints, dim);
               for(int ic=0; ic<numCells; ic++)
-                basis.getValues(Kokkos::subview(curlOfHCurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationCurlPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_CURL);
+                basisPtr->getValues(Kokkos::subview(curlOfHCurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationCurlPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_CURL);
               ots::modifyBasisByOrientation(curlOfHCurlBasisAtEvaluationPoints,
                   curlOfHCurlBasisAtEvaluationPointsNonOriented,
                   elemOrts,
-                  &basis);
+                  basisPtr.get());
             }
 
 
@@ -963,7 +976,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 evaluationPoints,
                 evaluationCurlPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
           }
 
@@ -987,17 +1000,17 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute L2 projection of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
           {
-            ordinal_type targetCubDegree(basis.getDegree());
+            ordinal_type targetCubDegree(basisPtr->getDegree());
 
             Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+            projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
 
             ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
             DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
 
             pts::getL2EvaluationPoints(evaluationPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
 
 
@@ -1006,11 +1019,11 @@ int InterpolationProjectionTet(const bool verbose) {
             DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
             DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
             for(int ic=0; ic<numCells; ic++)
-              basis.getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
             ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
                 hcurlBasisAtEvaluationPointsNonOriented,
                 elemOrts,
-                &basis);
+                basisPtr.get());
 
             for(int ic=0; ic<numCells; ic++){
               for(int i=0;i<numPoints;i++) {
@@ -1024,7 +1037,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 targetAtEvalPoints,
                 evaluationPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
           }
 
@@ -1130,8 +1143,13 @@ int InterpolationProjectionTet(const bool verbose) {
 
         for (ordinal_type degree=1; degree <= max_degree; degree++) {
 
-          Basis_HDIV_TET_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(degree);
-          ordinal_type basisCardinality = basis.getCardinality();
+          Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType> > basisPtr;
+          if(degree==1)
+            basisPtr = Teuchos::rcp(new Basis_HDIV_TET_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
+          else
+            basisPtr = Teuchos::rcp(new Basis_HDIV_TET_In_FEM<DeviceSpaceType,ValueType,ValueType>(degree));
+
+          ordinal_type basisCardinality = basisPtr->getCardinality();
 
           //compute DofCoords Oriented
 
@@ -1144,7 +1162,7 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute Lagrangian Interpolation of fun
           {
 
-            li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, &basis, POINTTYPE_EQUISPACED, elemOrts);
+            li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr.get(), POINTTYPE_EQUISPACED, elemOrts);
 
             //Compute physical Dof Coordinates
             Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
@@ -1191,13 +1209,13 @@ int InterpolationProjectionTet(const bool verbose) {
               DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
               auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              basis.getValues(outView, inView);
+              basisPtr->getValues(outView, inView);
 
               // modify basis values to account for orientations
               ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
                   basisValuesAtDofCoords,
                   elemOrts,
-                  &basis);
+                  basisPtr.get());
 
               DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
               DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
@@ -1227,10 +1245,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //check that fun values are consistent on common face dofs
           {
             bool areDifferent(false);
-            auto numFaceDOFs = basis.getDofCount(2,0);
+            auto numFaceDOFs = basisPtr->getDofCount(2,0);
             for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
+              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
             }
 
             if(areDifferent) {
@@ -1239,10 +1257,10 @@ int InterpolationProjectionTet(const bool verbose) {
               *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
               *outStream << "Function DOFs for Tet 0 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
               *outStream << "\nFunction DOFs for Tet 1 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
               *outStream << std::endl;
             }
           }
@@ -1250,10 +1268,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //check that fun values are consistent on common face dofs
           {
             bool areDifferent(false);
-            auto numFaceDOFs = basis.getDofCount(2,0);
+            auto numFaceDOFs = basisPtr->getDofCount(2,0);
             for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
+              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
             }
 
             if(areDifferent) {
@@ -1262,10 +1280,10 @@ int InterpolationProjectionTet(const bool verbose) {
               *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
               *outStream << "Function DOFs for Tet 0 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
               *outStream << "\nFunction DOFs for Tet 1 are:";
               for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
+                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
               *outStream << std::endl;
             }
           }
@@ -1276,13 +1294,13 @@ int InterpolationProjectionTet(const bool verbose) {
           DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
 
           for (ordinal_type ic = 0; ic < numCells; ++ic)
-            basis.getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
 
           // modify basis values to account for orientations
           ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
               basisValuesAtDofCoordsCells,
               elemOrts,
-              &basis);
+              basisPtr.get());
 
           // transform basis values
           DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
@@ -1321,10 +1339,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute projection-based interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsHDiv, numCells, basisCardinality);
           {
-            ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
+            ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
             Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+            projStruct.createHDivProjectionStruct(basisPtr.get(), targetCubDegree, targetDerivCubDegree);
 
             ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
 
@@ -1334,7 +1352,7 @@ int InterpolationProjectionTet(const bool verbose) {
             pts::getHDivEvaluationPoints(evaluationPoints,
                 evaluationDivPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
 
             DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
@@ -1343,21 +1361,21 @@ int InterpolationProjectionTet(const bool verbose) {
             DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
             DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
             for(ordinal_type ic=0; ic<numCells; ++ic)
-              basis.getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
             ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
                 hdivBasisAtEvaluationPointsNonOriented,
                 elemOrts,
-                &basis);
+                basisPtr.get());
 
             DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPoints, numCells, basisCardinality , numDivPoints);
             if(numDivPoints>0) {
               DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numDivPoints);
               for(ordinal_type ic=0; ic<numCells; ++ic)
-                basis.getValues(Kokkos::subview(divOfHDivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationDivPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_DIV);
+                basisPtr->getValues(Kokkos::subview(divOfHDivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationDivPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_DIV);
               ots::modifyBasisByOrientation(divOfHDivBasisAtEvaluationPoints,
                   divOfHDivBasisAtEvaluationPointsNonOriented,
                   elemOrts,
-                  &basis);
+                  basisPtr.get());
             }
 
 
@@ -1380,7 +1398,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 evaluationPoints,
                 evaluationDivPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
           }
 
@@ -1405,10 +1423,10 @@ int InterpolationProjectionTet(const bool verbose) {
           //compute L2 projection interpolation of the Lagrangian interpolation
           DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
           {
-            ordinal_type targetCubDegree(basis.getDegree());
+            ordinal_type targetCubDegree(basisPtr->getDegree());
 
             Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+            projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
 
             ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
 
@@ -1416,7 +1434,7 @@ int InterpolationProjectionTet(const bool verbose) {
 
             pts::getL2EvaluationPoints(evaluationPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
 
             DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
@@ -1424,11 +1442,11 @@ int InterpolationProjectionTet(const bool verbose) {
             DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
             DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
             for(ordinal_type ic=0; ic<numCells; ++ic)
-              basis.getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
             ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
                 hdivBasisAtEvaluationPointsNonOriented,
                 elemOrts,
-                &basis);
+                basisPtr.get());
 
             for(ordinal_type ic=0; ic<numCells; ++ic) {
               for(int i=0;i<numPoints;i++) {
@@ -1442,7 +1460,7 @@ int InterpolationProjectionTet(const bool verbose) {
                 targetAtEvalPoints,
                 evaluationPoints,
                 elemOrts,
-                &basis,
+                basisPtr.get(),
                 &projStruct);
           }
 
@@ -1522,8 +1540,12 @@ int InterpolationProjectionTet(const bool verbose) {
 
     for (ordinal_type degree=1; degree <= max_degree; degree++) {
 
-      Basis_HVOL_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(degree, POINTTYPE_WARPBLEND);
-      ordinal_type basisCardinality = basis.getCardinality();
+      Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType> > basisPtr;
+      if(degree==1)
+        basisPtr = Teuchos::rcp(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(tet));
+      else
+        basisPtr = Teuchos::rcp(new Basis_HVOL_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType>(degree, POINTTYPE_WARPBLEND));
+      ordinal_type basisCardinality = basisPtr->getCardinality();
 
       //compute DofCoords Oriented
       DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
@@ -1534,7 +1556,7 @@ int InterpolationProjectionTet(const bool verbose) {
 
       //compute Lagrangian Interpolation of fun
       {
-        li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, &basis, POINTTYPE_WARPBLEND, elemOrts);
+        li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr.get(), POINTTYPE_WARPBLEND, elemOrts);
 
         //Compute physical Dof Coordinates
         {
@@ -1577,13 +1599,13 @@ int InterpolationProjectionTet(const bool verbose) {
           DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
           auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
           auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
-          basis.getValues(outView, inView);
+          basisPtr->getValues(outView, inView);
 
           // modify basis values to account for orientations
           ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
               basisValuesAtDofCoords,
               elemOrts,
-              &basis);
+              basisPtr.get());
 
           for(ordinal_type k=0; k<basisCardinality; ++k) {
             for(ordinal_type j=0; j<basisCardinality; ++j){
@@ -1609,13 +1631,13 @@ int InterpolationProjectionTet(const bool verbose) {
       DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
 
       for (ordinal_type ic = 0; ic < numCells; ++ic)
-        basis.getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+        basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
 
       // modify basis values to account for orientations
       ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
           basisValuesAtDofCoordsCells,
           elemOrts,
-          &basis);
+          basisPtr.get());
 
       // transform basis values
       DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
@@ -1653,10 +1675,10 @@ int InterpolationProjectionTet(const bool verbose) {
       //compute projection-based interpolation of the Lagrangian interpolation
       DynRankView ConstructWithLabel(basisCoeffsHVol, numCells, basisCardinality);
       {
-        ordinal_type targetCubDegree(basis.getDegree());
+        ordinal_type targetCubDegree(basisPtr->getDegree());
 
         Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
+        projStruct.createHVolProjectionStruct(basisPtr.get(), targetCubDegree);
 
         ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
         DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
@@ -1664,7 +1686,7 @@ int InterpolationProjectionTet(const bool verbose) {
 
         pts::getHVolEvaluationPoints(evaluationPoints,
             elemOrts,
-            &basis,
+            basisPtr.get(),
             &projStruct);
 
 
@@ -1673,11 +1695,11 @@ int InterpolationProjectionTet(const bool verbose) {
         DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
         DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
         for(int ic=0; ic<numCells; ic++)
-          basis.getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
         ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
             hvolBasisAtEvaluationPointsNonOriented,
             elemOrts,
-            &basis);
+            basisPtr.get());
 
         for(int ic=0; ic<numCells; ic++) {
           for(int i=0;i<numPoints;i++) {
@@ -1690,7 +1712,7 @@ int InterpolationProjectionTet(const bool verbose) {
             targetAtEvalPoints,
             evaluationPoints,
             elemOrts,
-            &basis,
+            basisPtr.get(),
             &projStruct);
       }
 
@@ -1714,10 +1736,10 @@ int InterpolationProjectionTet(const bool verbose) {
       //compute L2 projection of the Lagrangian interpolation
       DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
       {
-        ordinal_type targetCubDegree(basis.getDegree());
+        ordinal_type targetCubDegree(basisPtr->getDegree());
 
         Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+        projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
 
         ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
         DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
@@ -1725,7 +1747,7 @@ int InterpolationProjectionTet(const bool verbose) {
 
         pts::getL2EvaluationPoints(evaluationPoints,
             elemOrts,
-            &basis,
+            basisPtr.get(),
             &projStruct);
 
 
@@ -1734,11 +1756,11 @@ int InterpolationProjectionTet(const bool verbose) {
         DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
         DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
         for(int ic=0; ic<numCells; ic++)
-          basis.getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
         ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
             hvolBasisAtEvaluationPointsNonOriented,
             elemOrts,
-            &basis);
+            basisPtr.get());
 
         for(int ic=0; ic<numCells; ic++) {
           for(int i=0;i<numPoints;i++) {
@@ -1751,7 +1773,7 @@ int InterpolationProjectionTet(const bool verbose) {
             targetAtEvalPoints,
             evaluationPoints,
             elemOrts,
-            &basis,
+            basisPtr.get(),
             &projStruct);
       }
 
