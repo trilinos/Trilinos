@@ -16,6 +16,7 @@ build locally as described below.
 * <a href="#quick-start">Quick-start</a>
 * <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
+* <a href="#ctest-s-local-test-driversh">ctest-s-local-test-driver.sh</a>
 * <a href="#specific-instructions-for-each-system">Specific instructions for each system</a>
 * <a href="#troubleshooting-configuration-problems">Troubleshooting configuration problems</a>
 * <a href="#directory-structure-and-contents">Directory structure and contents</a>
@@ -333,7 +334,7 @@ Alternatively, one can override the parallel build and test running levels and
 set other make/ninja and ctest options using the checkin-test arguments
 `--make-options` and `--ctest-options`.  For example, to use 20 processes to
 build with Nina, have Ninja keep going even if there are build errors, and run
-ctest with 10 proceses, one can use:
+ctest with 10 processes, one can use:
 
 ```
 $ ./checkin-test-atdm.sh \
@@ -379,6 +380,77 @@ $ ./checkin-test-atdm.sh <build-name-0> <build-name-1> ... \
 However, a default `local-checkin-test-defaults.py` is created the first time
 the `checkin-test-atdm.sh` script is run and will set these as the defaults
 (after which can be modified).
+
+
+## ctest-s-local-test-driver.sh
+
+When one wants to run local builds to test a branch and submit results to
+CDash so that they are archived and for others to see, then a simple way to
+that is to use the provided `ctest-s-local-test-driver.sh` script.  This
+script uses the CTest -S Jenkins driver system in the directory
+`Trilinos/cmake/ctest/drivers/atdm/` and the specific Jenkins driver files in
+the directory
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
+```
+
+to run builds and submit to the Experimental CDash Track/Group.
+
+To use this, first set up a local directory and symlink as:
+
+```
+$ cd <some_base_build_dir>/
+$ ln -s <some_base_dir>/Trilinos/cmake/std/atdm/ctest-s-local-test-driver.sh .
+````
+
+Then run any of the build names (e.g. `gnu-opt-debug`) listed in the variable
+`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
+`cmake/std/atdm/<system_name>/all_supported_builds.sh` (or `all` for all of
+the defined builds) for the system as:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
+```
+
+That will submit results to the Trilinos CDash project to the "Experimental"
+CDash Group (the CDash group can not be changed).  This will automatically
+allocate nodes and run just like it was running as a Jenkins job so the
+details of how this is done are completely taken care of by the existing setup
+for the current system.
+
+One can examine the progress of the builds and tests locally by looking at the
+generated files:
+
+```
+  <some_base_build_dir>/<full_build_name>/smart-jenkins-driver.out
+```
+
+(e.g. `<full_build_name>` = `Trilinos-atdm-<system_name>-gnu-opt-debug`) and
+also examine the generated `*.xml` configure, build, and test files created
+under:
+
+```
+  <some_base_build_dir>/<full_build_name>/SRC_AND_BUILD/BUILD/Testing/
+```
+
+To avoid submitting results to CDash and rebuilding (instead of blowing away
+the build dir each time), run:
+
+```
+$ env \
+    Trilinos_PACKAGES=<pkg0>,<pkg1>,... \
+    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+    CTEST_DO_SUBMIT=OFF \
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
+```
+
+See
+[TRIBITS_CTEST_DRIVER()](https://tribits.org/doc/TribitsDevelopersGuide.html#determining-what-testing-related-actions-are-performed-tribits-ctest-driver)
+for a description of all of the options that can be set as env vars to, for
+example, skip configure, skip the build, skip running tests, etc.
 
 
 ## Specific instructions for each system
@@ -760,6 +832,11 @@ contains the following files:
   drive builds and tests on the given platform.  (See comments in the top of
   the script for instructions.)
 
+* **ctest-s-local-test-driver.sh**: Uses the script
+  `Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh` script to drive
+  builds and tests on the given platform and submit results to CDash.  (See
+  comments in the top of the script for instructions.)
+
 Each supported ATDM system `<system-name>` has its own sub-directory with the
 contents:
 
@@ -775,15 +852,27 @@ contents:
 ```
 
 The optional file `<system-name>/all_supported_builds.sh` contains a list of
-all of the supported builds on the system.  This sets the environment variable
-`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` as:
+all of the supported builds on the system.  This sets the bash environment
+array variable `ATDM_CONFIG_ALL_SUPPORTED_BUILDS` and the bash var
+`ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX` as, for example:
 
 ```
-  export ATDM_CONFIG_ALL_SUPPORTED_BUILDS="gnu-debug-openmp gnu-opt-openmp ..."
+  export ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-<system_name>-
+
+  export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
+    gnu-debug-openmp
+    gnu-opt-openmp
+    ...
+    )
 ```
 
-This is used in the `checkin-test-atdm.sh` script to run all of the builds for
-a system with `checkin-test-atdm.sh all [other options]`.
+The variable `ATDM_CONFIG_ALL_SUPPORTED_BUILDS` is used in the
+`checkin-test-atdm.sh` script for the `all` argument to run all of the builds
+for a system with `checkin-test-atdm.sh all [other options]`.  Both the
+variables `ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX` and
+`ATDM_CONFIG_ALL_SUPPORTED_BUILDS` are used in the
+`ctest-s-local-test-driver.sh` script in order to drive ctest -S Experimental
+builds that submit to CDash.
 
 The optional file `<system-name>/custom_builds.sh` contains specialized logic
 for compiler versions and other specialized keywords and versions.  (For an
