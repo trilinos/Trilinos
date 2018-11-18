@@ -67,25 +67,25 @@ template <class LO, class GO, class SX> class PComm
 {
 public:
   
-  PComm(RCP< PComm<LO,GO,SX> > & pComm,
+  PComm(const PComm<LO,GO,SX> & pComm,
 	RCP<const Teuchos::Comm<int> > Comm)
   {
     m_distributor = rcp( new Tpetra::Distributor(Comm) );
-    m_distributor->createFromSendsAndRecvs(pComm->m_distributor->getProcsTo(),
-					   pComm->m_distributor->getProcsFrom());
-    m_sourceLength = pComm->m_sourceLength;
-    m_targetLength = pComm->m_targetLength;
-    m_sendCount = pComm->m_sendCount;
-    m_recvCount = pComm->m_recvCount;
-    m_sendDofs = pComm->m_sendDofs;
-    m_recvDofs = pComm->m_recvDofs;
-    m_nodeBeginOwned = pComm->m_nodeBeginOwned;
-    m_ownedDofs = pComm->m_ownedDofs;
-    m_ownedDofsTarget = pComm->m_ownedDofsTarget;
-    m_sendVals = pComm->m_sendVals;
-    m_recvVals = pComm->m_recvVals;
-    m_nodeGlobalIDsOwned = pComm->m_nodeGlobalIDsOwned;
-    m_numNodesSource = pComm->m_numNodesSource;
+    m_distributor->createFromSendsAndRecvs(pComm.m_distributor->getProcsTo(),
+					   pComm.m_distributor->getProcsFrom());
+    m_sourceLength = pComm.m_sourceLength;
+    m_targetLength = pComm.m_targetLength;
+    m_sendCount = pComm.m_sendCount;
+    m_recvCount = pComm.m_recvCount;
+    m_sendDofs = pComm.m_sendDofs;
+    m_recvDofs = pComm.m_recvDofs;
+    m_nodeBeginOwned = pComm.m_nodeBeginOwned;
+    m_ownedDofs = pComm.m_ownedDofs;
+    m_ownedDofsTarget = pComm.m_ownedDofsTarget;
+    m_sendVals = pComm.m_sendVals;
+    m_recvVals = pComm.m_recvVals;
+    m_nodeGlobalIDsOwned = pComm.m_nodeGlobalIDsOwned;
+    m_numNodesSource = pComm.m_numNodesSource;
   }
 
   PComm(RCP<Tpetra::Distributor> distributor,

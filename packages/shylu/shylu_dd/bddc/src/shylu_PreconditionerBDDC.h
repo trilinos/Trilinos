@@ -1822,10 +1822,10 @@ private:
     if (m_fineProc == false) return;
     if (m_usePComm) {
       if (m_interfacePreconditioner) {
-	m_pCommB_dis = rcp( new PComm<LO,GO,SX>(m_pCommB, m_CommFine) );
+	m_pCommB_dis = rcp( new PComm<LO,GO,SX>(*m_pCommB, m_CommFine) );
       }
       else {
-	m_pComm_dis = rcp( new PComm<LO,GO,SX>(m_pComm, m_CommFine) );
+	m_pComm_dis = rcp( new PComm<LO,GO,SX>(*m_pComm, m_CommFine) );
       }
     }
     else {
