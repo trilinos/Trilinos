@@ -41,24 +41,12 @@
 //@HEADER
 
 #include <gtest/gtest.h>
-#include <mpi.h>
 #include "ShyLU_DDBDDC_config.h"
-#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
-#include "Kokkos_Core.hpp"
-#endif
+#include "Tpetra_Core.hpp"
 
 int main(int argc, char **argv)
 {
-    MPI_Init(&argc, &argv);
-#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
-    Kokkos::initialize(argc, argv);
-#endif
-    testing::InitGoogleTest(&argc, argv);
-    int returnVal = RUN_ALL_TESTS();
-#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
-    Kokkos::finalize();
-#endif    
-    MPI_Finalize();
-
-    return returnVal;
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
