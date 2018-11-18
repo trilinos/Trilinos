@@ -264,36 +264,6 @@ public:
     indices.erase(iter, indices.end());
   }
 
-  static void generateRootMap(RCP<const Map> & inputMap, 
-			      int root,
-			      RCP<const Map> & rootMap)
-  {
-    // we assume InputMap has uniquely owned rows
-    RCP<const Teuchos::Comm<int> > Comm = inputMap->getComm();
-    int numProc = Comm->getSize();
-    LO sendCount = inputMap->getNodeNumElements();
-    std::vector<LO> recvCounts(numProc), displs(numProc);
-    Teuchos::gather<int, LO> (&sendCount, 1, &recvCounts[0], 1,
-			      root, *Comm);
-    int numGIDs(0);
-    std::vector<GO> myNewGIDs;
-    if (Comm->getRank() == root) {
-      for (int i=0; i<numProc; i++) {
-	numGIDs += recvCounts[i];
-	if (i < numProc-1) displs[i+1] = displs[i] + recvCounts[i];
-      }
-      const bool test = (numGIDs == LO(inputMap->getGlobalNumElements()));
-      BDDC_TEST_FOR_EXCEPTION(test == false, std::runtime_error, 
-			      "invalud numGIDs");
-      myNewGIDs.resize(numGIDs);
-    }
-    const GO* globalIDs = (inputMap->getNodeElementList()).getRawPtr();
-    Teuchos::gatherv<int, LO> (globalIDs, sendCount, myNewGIDs.data(), 
-			       recvCounts.data(), displs.data(), root, *Comm);
-    rootMap = rcp( new Map(-1, Teuchos::ArrayView<GO>(myNewGIDs), 0, 
-			   Comm) );
-  }
-
 };
 
 } // namespace bddc
