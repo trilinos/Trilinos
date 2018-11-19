@@ -7004,6 +7004,30 @@ namespace Tpetra {
     transferAndFillComplete(destGraph, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  swap(CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & graph)
+  {
+    // WCMCLEN - SCAFFOLDING - This is a stub. The next steps are to go through and figure out what
+    // the state variables are in a CrsGraph and copy do the swap.
+
+    // 1) Cache graph.<data> to local vars.
+
+    // 2) Set graph.<data> = this-><data>
+
+    // 3) Set this-><data> = local vars from (1)
+
+
+    // Note: There could be an issue with the static const state variable, useAtomicUpdatesByDefault,
+    //       which will be true _unless_ KOKKOS_ENABLE_SERIAL is defined -and- the execution space is serial.
+    //       (since atomic updates isn't necessary if we're serial).
+    //       Solution(s):
+    //       1) Throw an error if the values are different since the CrsGraphs would be incompatible?
+    //       2) Change this state variable to a non static-const variable and just swap it with everything else?
+
+  }
+
 } // namespace Tpetra
 
 //

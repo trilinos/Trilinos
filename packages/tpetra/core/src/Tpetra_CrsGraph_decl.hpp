@@ -588,6 +588,16 @@ namespace Tpetra {
       return copier_type::clone (*this, node2, params);
     }
 
+
+    /// \brief Swaps the data from *this with the data and maps from graph
+    /// \param graph [in/out] a crsGraph
+    ///
+    /// Note: This is done with minimal copying of data.
+    /// WCMCLEN(SCAFFOLDING) - This is a stub, it needs to be implemented fully.
+    /// todo: make this protected (?) ... if so, should MultiVector::swap() be protected as well???
+    void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
+
+
     //! Destructor.
     virtual ~CrsGraph ();
 
@@ -861,23 +871,23 @@ namespace Tpetra {
     /** Returns the number of entries in the domain map of the matrix.
         Undefined if isFillActive().
     */
-    global_size_t getGlobalNumCols() const override;
+    global_size_t getGlobalNumCols () const override;
 
     //! Returns the number of graph rows owned on the calling node.
-    size_t getNodeNumRows() const override;
+    size_t getNodeNumRows () const override;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    size_t getNodeNumCols() const override;
+    size_t getNodeNumCols () const override;
 
     //! Returns the index base for global indices for this graph.
-    GlobalOrdinal getIndexBase() const override;
+    GlobalOrdinal getIndexBase () const override;
 
     //! Returns the global number of entries in the graph.
-    /** Undefined if isFillActive().
+    /** Undefined if isFillActive ().
      */
-    global_size_t getGlobalNumEntries() const override;
+    global_size_t getGlobalNumEntries () const override;
 
     /// \brief The local number of entries in the graph.
     ///
@@ -1075,16 +1085,16 @@ namespace Tpetra {
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    bool isLocallyIndexed() const override;
+    bool isLocallyIndexed () const override;
 
     //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    bool isGloballyIndexed() const override;
+    bool isGloballyIndexed () const override;
 
     //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
-    bool isFillComplete() const override;
+    bool isFillComplete () const override;
 
     //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
-    bool isFillActive() const;
+    bool isFillActive () const;
 
     /// \brief Whether graph indices in all rows are known to be sorted.
     ///
@@ -1093,7 +1103,7 @@ namespace Tpetra {
     /// resumeFill(), but any changes to the graph may result in the
     /// sorting status becoming unknown (and therefore, presumed
     /// unsorted).
-    bool isSorted() const;
+    bool isSorted () const;
 
     //! \brief Returns \c true if storage has been optimized.
     /**
@@ -1102,10 +1112,10 @@ namespace Tpetra {
        during a mat-vec, requires minimal memory traffic. One limitation of
        optimized storage is that no new indices can be added to the graph.
     */
-    bool isStorageOptimized() const;
+    bool isStorageOptimized () const;
 
     //! Returns \c true if the graph was allocated with static data structures.
-    ProfileType getProfileType() const;
+    ProfileType getProfileType () const;
 
     /// \brief Get a copy of the given row, using global indices.
     ///
@@ -1334,7 +1344,7 @@ namespace Tpetra {
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
      */
-    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
+    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices () const;
 
     /// \brief Replace the graph's current column Map with the given Map.
     ///
