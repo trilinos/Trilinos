@@ -463,67 +463,66 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   total_out_time += PIO_Time_Array[6];
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-  if (iproc == 0) {
-    /* Generate a QA record for the utility */
-    time_t date_time = time(nullptr);
+  /* Generate a QA record for the utility */
+  time_t date_time = time(nullptr);
 
-    char qa_time[MAX_STR_LENGTH + 1];
-    char qa_name[MAX_STR_LENGTH + 1];
-    char qa_vers[MAX_STR_LENGTH + 1];
-    char qa_date[MAX_STR_LENGTH + 1];
+  char qa_time[MAX_STR_LENGTH + 1];
+  char qa_name[MAX_STR_LENGTH + 1];
+  char qa_vers[MAX_STR_LENGTH + 1];
+  char qa_date[MAX_STR_LENGTH + 1];
 
-    strftime(qa_date, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time));
-    strftime(qa_time, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time));
+  strftime(qa_date, MAX_STR_LENGTH, "%Y/%m/%d", localtime(&date_time));
+  strftime(qa_time, MAX_STR_LENGTH, "%H:%M:%S", localtime(&date_time));
 
-    strncpy(qa_name, UTIL_NAME, MAX_STR_LENGTH);
-    strncpy(qa_vers, VER_STR, MAX_STR_LENGTH);
+  strncpy(qa_name, UTIL_NAME, MAX_STR_LENGTH);
+  strncpy(qa_vers, VER_STR, MAX_STR_LENGTH);
 
-    if (qa_date[strlen(qa_date) - 1] == '\n') {
-      qa_date[strlen(qa_date) - 1] = '\0';
-    }
-    if (globals.Num_QA_Recs > 0) {
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name);
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers);
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date);
-      strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time);
+  if (qa_date[strlen(qa_date) - 1] == '\n') {
+    qa_date[strlen(qa_date) - 1] = '\0';
+  }
+  if (globals.Num_QA_Recs > 0) {
+    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 0], qa_name);
+    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 1], qa_vers);
+    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 2], qa_date);
+    strcpy(globals.QA_Record[(4 * (globals.Num_QA_Recs - 1)) + 3], qa_time);
 
-      /* Output QA records to screen */
-      if (Debug_Flag >= 4) {
-        printf("Number of QA records: %d\n", globals.Num_QA_Recs);
-        if (Debug_Flag >= 6) {
-          printf("QA Records:\n");
-          for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
-            printf("\t%s\n", globals.QA_Record[i1]);
-          }
+    /* Output QA records to screen */
+    if (Debug_Flag >= 4) {
+      printf("Number of QA records: %d\n", globals.Num_QA_Recs);
+      if (Debug_Flag >= 6) {
+        printf("QA Records:\n");
+        for (int i1 = 0; i1 < 4 * (globals.Num_QA_Recs); i1++) {
+          printf("\t%s\n", globals.QA_Record[i1]);
         }
       }
     }
+  }
 
-    /* Output the QA and Info records */
-    for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
-      bytes_out += (MAX_STR_LENGTH + MAX_LINE_LENGTH) * sizeof(char);
+  /* Output the QA and Info records */
+  for (int i1 = 0; i1 < 4 * globals.Num_QA_Recs; i1++) {
+    bytes_out += (MAX_STR_LENGTH + MAX_LINE_LENGTH) * sizeof(char);
+  }
+
+  tt1 = second();
+
+  if (ex_put_qa(mesh_exoid, globals.Num_QA_Recs, (char *(*)[4]) & globals.QA_Record[0]) < 0) {
+    fprintf(stderr, "[%s]: ERROR Could not put QA records\n", yo);
+    ex_close(mesh_exoid);
+    exit(1);
+  }
+
+  if (globals.Num_Info_Recs > 0) {
+    if (Debug_Flag >= 4) {
+      printf("Number of info records: %d\n", globals.Num_Info_Recs);
     }
 
-    tt1 = second();
-
-    if (ex_put_qa(mesh_exoid, globals.Num_QA_Recs, (char *(*)[4]) & globals.QA_Record[0]) < 0) {
-      fprintf(stderr, "[%s]: ERROR Could not put QA records\n", yo);
+    if (ex_put_info(mesh_exoid, globals.Num_Info_Recs, globals.Info_Record) < 0) {
+      fprintf(stderr, "[%s]: ERROR Could not put Info records\n", yo);
       ex_close(mesh_exoid);
       exit(1);
     }
-
-    if (globals.Num_Info_Recs > 0) {
-      if (Debug_Flag >= 4) {
-        printf("Number of info records: %d\n", globals.Num_Info_Recs);
-      }
-
-      if (ex_put_info(mesh_exoid, globals.Num_Info_Recs, globals.Info_Record) < 0) {
-        fprintf(stderr, "[%s]: ERROR Could not put Info records\n", yo);
-        ex_close(mesh_exoid);
-        exit(1);
-      }
-    }
   }
+
   PIO_Time_Array[8] = (second() - tt1);
   total_out_time += PIO_Time_Array[8];
 

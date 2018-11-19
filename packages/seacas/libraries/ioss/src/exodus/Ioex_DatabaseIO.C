@@ -368,8 +368,8 @@ namespace Ioex {
     // Check byte-size of integers stored on the database...
     if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
       if (myProcessor == 0) {
-	std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
-	  "integers.\n";
+        std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
+                     "integers.\n";
       }
       ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
       set_int_byte_size_api(Ioss::USE_INT64_API);
@@ -448,66 +448,76 @@ namespace Ioex {
 
     size_t num_qa_records = qaRecords.size() / 4;
 
-    auto qa = new qa_element[num_qa_records + 1];
-    for (size_t i = 0; i < num_qa_records + 1; i++) {
-      for (int j = 0; j < 4; j++) {
-        qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
+    bool i_write = (usingParallelIO && myProcessor == 0) || !usingParallelIO;
+    if (i_write) {
+      auto qa = new qa_element[num_qa_records + 1];
+      for (size_t i = 0; i < num_qa_records + 1; i++) {
+        for (int j = 0; j < 4; j++) {
+          qa[i].qa_record[0][j] = new char[MAX_STR_LENGTH + 1];
+        }
+      }
+
+      {
+        int j = 0;
+        for (size_t i = 0; i < num_qa_records; i++) {
+          std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
+          qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
+          qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
+          qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
+          qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
+        }
+      }
+
+      Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
+                                 qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
+
+      std::string codename = "unknown";
+      std::string version  = "unknown";
+
+      if (get_region()->property_exists("code_name")) {
+        codename = get_region()->get_property("code_name").get_string();
+      }
+      if (get_region()->property_exists("code_version")) {
+        version = get_region()->get_property("code_version").get_string();
+      }
+
+      char buffer[MAX_STR_LENGTH + 1];
+      std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
+      buffer[MAX_STR_LENGTH] = '\0';
+      std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
+
+      std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
+      buffer[MAX_STR_LENGTH] = '\0';
+      std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
+
+      int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, qa[0].qa_record);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+
+      for (size_t i = 0; i < num_qa_records + 1; i++) {
+        for (int j = 0; j < 4; j++) {
+          delete[] qa[i].qa_record[0][j];
+        }
+      }
+      delete[] qa;
+    }
+    else {
+      int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1, nullptr);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
     }
-
-    {
-      int j = 0;
-      for (size_t i = 0; i < num_qa_records; i++) {
-        std::strncpy(qa[i].qa_record[0][0], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        std::strncpy(qa[i].qa_record[0][1], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        std::strncpy(qa[i].qa_record[0][2], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        std::strncpy(qa[i].qa_record[0][3], qaRecords[j++].c_str(), MAX_STR_LENGTH);
-        qa[i].qa_record[0][0][MAX_STR_LENGTH] = '\0';
-        qa[i].qa_record[0][1][MAX_STR_LENGTH] = '\0';
-        qa[i].qa_record[0][2][MAX_STR_LENGTH] = '\0';
-        qa[i].qa_record[0][3][MAX_STR_LENGTH] = '\0';
-      }
-    }
-
-    Ioss::Utils::time_and_date(qa[num_qa_records].qa_record[0][3],
-                               qa[num_qa_records].qa_record[0][2], MAX_STR_LENGTH);
-
-    std::string codename = "unknown";
-    std::string version  = "unknown";
-
-    if (get_region()->property_exists("code_name")) {
-      codename = get_region()->get_property("code_name").get_string();
-    }
-    if (get_region()->property_exists("code_version")) {
-      version = get_region()->get_property("code_version").get_string();
-    }
-
-    char buffer[MAX_STR_LENGTH + 1];
-    std::strncpy(buffer, codename.c_str(), MAX_STR_LENGTH);
-    buffer[MAX_STR_LENGTH] = '\0';
-    std::strcpy(qa[num_qa_records].qa_record[0][0], buffer);
-
-    std::strncpy(buffer, version.c_str(), MAX_STR_LENGTH);
-    buffer[MAX_STR_LENGTH] = '\0';
-    std::strcpy(qa[num_qa_records].qa_record[0][1], buffer);
-
-    int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1,
-                         myProcessor == 0 ? qa[0].qa_record : nullptr);
-    if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-    }
-
-    for (size_t i = 0; i < num_qa_records + 1; i++) {
-      for (int j = 0; j < 4; j++) {
-        delete[] qa[i].qa_record[0][j];
-      }
-    }
-    delete[] qa;
   }
 
   // common
   void DatabaseIO::put_info()
   {
+    bool i_write = (usingParallelIO && myProcessor == 0) || !usingParallelIO;
+
     // dump info records, include the product_registry
     // See if the input file was specified as a property on the database...
     std::string              filename;
@@ -525,32 +535,40 @@ namespace Ioex {
 
     size_t total_lines = in_lines + qa_lines + info_rec_size;
 
-    char **info = Ioss::Utils::get_name_array(
-        total_lines, max_line_length); // 'total_lines' pointers to char buffers
+    if (i_write) {
+      char **info = Ioss::Utils::get_name_array(
+          total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
-    int i = 0;
-    std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
+      int i = 0;
+      std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(), max_line_length);
 
-    std::strncpy(info[i++], Ioex::Version(), max_line_length);
+      std::strncpy(info[i++], Ioex::Version(), max_line_length);
 
-    // Copy input file lines into 'info' array...
-    for (size_t j = 0; j < input_lines.size(); j++, i++) {
-      std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
-      info[i][max_line_length] = '\0'; // Once more for good luck...
+      // Copy input file lines into 'info' array...
+      for (size_t j = 0; j < input_lines.size(); j++, i++) {
+        std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
+        info[i][max_line_length] = '\0'; // Once more for good luck...
+      }
+
+      // Copy "information_records" property data ...
+      for (size_t j = 0; j < informationRecords.size(); j++, i++) {
+        std::strncpy(info[i], informationRecords[j].c_str(), max_line_length);
+        info[i][max_line_length] = '\0'; // Once more for good luck...
+      }
+
+      int ierr = ex_put_info(get_file_pointer(), total_lines, info);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+
+      Ioss::Utils::delete_name_array(info, total_lines);
     }
-
-    // Copy "information_records" property data ...
-    for (size_t j = 0; j < informationRecords.size(); j++, i++) {
-      std::strncpy(info[i], informationRecords[j].c_str(), max_line_length);
-      info[i][max_line_length] = '\0'; // Once more for good luck...
+    else {
+      int ierr = ex_put_info(get_file_pointer(), total_lines, nullptr);
+      if (ierr < 0) {
+        Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
     }
-
-    int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : nullptr);
-    if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-    }
-
-    Ioss::Utils::delete_name_array(info, total_lines);
   }
 
   // common
@@ -1097,7 +1115,7 @@ namespace Ioex {
     }
   }
 
-  bool DatabaseIO::begin_state__(Ioss::Region * /* region */, int state, double time)
+  bool DatabaseIO::begin_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -1125,7 +1143,7 @@ namespace Ioex {
   }
 
   // common
-  bool DatabaseIO::end_state__(Ioss::Region * /*region*/, int state, double time)
+  bool DatabaseIO::end_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 

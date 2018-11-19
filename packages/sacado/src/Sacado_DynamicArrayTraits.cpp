@@ -37,7 +37,7 @@ namespace Sacado {
 }
 #endif
 
-#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDACC__)
+#if defined(HAVE_SACADO_KOKKOSCORE) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 namespace Sacado {
   namespace Impl {
     const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host = 0;

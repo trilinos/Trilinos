@@ -90,8 +90,7 @@ namespace {
 } // namespace
 
 Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_name)
-    : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(std::move(filename)), numDOF(0),
-      num_nodes(0), numEIG(0), numRBM(0), num_dim(0), filePtr(-1)
+    : Ioss::GroupingEntity(nullptr, my_name, 1), fileName(std::move(filename))
 {
 
   // For now, we will open the raw netcdf file here and parse the

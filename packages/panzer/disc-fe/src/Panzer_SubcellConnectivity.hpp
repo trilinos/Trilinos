@@ -47,6 +47,7 @@
 #include "PanzerCore_config.hpp"
 #include "Kokkos_View.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace panzer {
 
@@ -68,6 +69,7 @@ public:
    *
    * \return Number of subcells associated with the cells
    */
+  KOKKOS_INLINE_FUNCTION
   int numSubcells() const {return _num_subcells;}
 
   /**
@@ -75,6 +77,7 @@ public:
    *
    * \return Number of subcells associated with the cells
    */
+  KOKKOS_INLINE_FUNCTION
   int numCells() const {return _num_cells;}
 
   /**
@@ -86,6 +89,7 @@ public:
    *
    * \return Number of subcells on a given cell
    */
+  KOKKOS_INLINE_FUNCTION
   int numSubcellsOnCell(const int cell) const;
 
   /**
@@ -99,6 +103,7 @@ public:
    *
    * \return Number of cells connected to subcell
    */
+  KOKKOS_INLINE_FUNCTION
   int numCellsOnSubcell(const int subcell) const;
 
   /**
@@ -115,6 +120,7 @@ public:
    *
    * \return Subcell index
    */
+  KOKKOS_INLINE_FUNCTION
   int subcellForCell(const int cell, const int local_subcell_index) const;
 
   /**
@@ -131,6 +137,7 @@ public:
    *
    * \return Cell index
    */
+  KOKKOS_INLINE_FUNCTION
   int cellForSubcell(const int subcell, const int local_cell_index) const;
 
   /**
@@ -143,6 +150,7 @@ public:
    *
    * \return Local subcell index for cell identified by subcell index and local_cell_index
    */
+  KOKKOS_INLINE_FUNCTION
   int localSubcellForSubcell(const int subcell, const int local_cell_index) const;
 
 protected:
@@ -194,6 +202,76 @@ public:
   void setup(const panzer::LocalMeshPartition<int,panzer::Ordinal64> & partition);
 
 };
+
+// **********************************
+// Inlined functions
+// **********************************
+
+int
+SubcellConnectivity::
+numSubcellsOnCell(const int cell) const
+{
+#ifdef PANZER_DEBUG
+#ifndef KOKKOS_ENABLE_CUDA
+  TEUCHOS_ASSERT(cell >= 0 and cell < _num_cells);
+#endif
+#endif
+  return _cell_to_subcells_adj(cell+1)-_cell_to_subcells_adj(cell);
+}
+
+int
+SubcellConnectivity::
+numCellsOnSubcell(const int subcell) const
+{
+#ifdef PANZER_DEBUG
+#ifndef KOKKOS_ENABLE_CUDA
+  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+#endif
+#endif
+  return _subcell_to_cells_adj(subcell+1)-_subcell_to_cells_adj(subcell);
+}
+
+int
+SubcellConnectivity::
+subcellForCell(const int cell, const int local_subcell_index) const
+{
+#ifdef PANZER_DEBUG
+#ifndef KOKKOS_ENABLE_CUDA
+  TEUCHOS_ASSERT(cell >= 0 and cell < _num_cells);
+  TEUCHOS_ASSERT(local_subcell_index < numSubcellsOnCell(cell));
+#endif
+#endif
+  const int index = _cell_to_subcells_adj(cell)+local_subcell_index;
+  return _cell_to_subcells(index);
+}
+
+int
+SubcellConnectivity::
+cellForSubcell(const int subcell, const int local_cell_index) const
+{
+#ifdef PANZER_DEBUG
+#ifndef KOKKOS_ENABLE_CUDA
+  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  TEUCHOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
+#endif
+#endif
+  const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
+  return _subcell_to_cells(index);
+}
+
+int
+SubcellConnectivity::
+localSubcellForSubcell(const int subcell, const int local_cell_index) const
+{
+#ifdef PANZER_DEBUG
+#ifndef KOKKOS_ENABLE_CUDA
+  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  TEUCHOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
+#endif
+#endif
+  const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
+  return _subcell_to_local_subcells(index);
+}
 
 } // namespace panzer
 

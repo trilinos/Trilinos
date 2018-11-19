@@ -29,11 +29,15 @@ private:
 public:
   GmresPipeline () :
     base_type::Gmres ()
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   GmresPipeline (const Teuchos::RCP<const OP>& A) :
     base_type::Gmres (A)
-  {}
+  {
+    this->input_.computeRitzValues = true;
+  }
 
   virtual ~GmresPipeline ()
   {}
@@ -55,7 +59,13 @@ private:
     const SC one  = STS::one ();
     const mag_type eps = STS::eps ();
     const mag_type tolOrtho = mag_type (10.0) * STM::squareroot (eps);
+    const bool computeRitzValues = input.computeRitzValues;
+
+    // initialize output parameters
     SolverOutput<SC> output {};
+    output.converged = false;
+    output.numRests = 0;
+    output.numIters = 0;
 
     Teuchos::BLAS<LO ,SC> blas;
 
@@ -74,34 +84,28 @@ private:
     vec_type MZ (B.getMap ());
 
     // initial residual (making sure R = B - Ax)
-    if (input.precoSide == "right") {
-      M.apply (X, MZ);
-      A.apply (MZ, R);
-    }
-    else {
-      A.apply (X, R);
-    }
+    A.apply (X, R);
     R.update (one, B, -one);
     // TODO: this should be idot?
-    b0_norm = STM::squareroot (STS::real (R.dot (R))); // residual norm
-
+    b0_norm = STM::squareroot (STS::real (R.dot (R))); // initial residual norm, no preconditioned
     if (input.precoSide == "left") {
       M.apply (R, Z);
       // TODO: this should be idot?
-      b_norm = STS::real (Z.dot( Z )); //Z.norm2 (); // residual norm
+      b_norm = STS::real (Z.dot( Z )); //Z.norm2 (); // initial residual norm, preconditioned
     }
     else {
-      Tpetra::deep_copy (Z, R);
       b_norm = b0_norm;
     }
     r_norm = b_norm;
 
-    // Invoke standard Gmres for the first restart cycle, to compute
-    // Ritz values as Newton shifts
-    {
+    if (computeRitzValues) {
+      // Invoke standard Gmres for the first restart cycle, to compute
+      // Ritz values as Newton shifts
       SolverInput<SC> input_gmres = input;
       input_gmres.maxNumIters = input.resCycle;
       input_gmres.computeRitzValues = true;
+
+      Tpetra::deep_copy (R, B);
       output = Gmres<SC, MV, OP>::solveOneVec (outPtr, X, R, A, M,
                                                input_gmres);
       if (output.converged) {
@@ -112,10 +116,12 @@ private:
         r_norm = Z.norm2 (); // residual norm
       }
       else {
-        Tpetra::deep_copy (Z, R);
         r_norm = output.absResid;
       }
       output.numRests++;
+    }
+    if (input.precoSide != "left") {
+      Tpetra::deep_copy (Z, R);
     }
 
     // for idot
@@ -124,11 +130,12 @@ private:
                                                restart+1);
     auto vals_h = Kokkos::create_mirror_view (vals);
 
-    // initialize starting vector
+    // Initialize starting vector
     //Z.scale (one / b_norm);
     G(0, 0) = r_norm*r_norm;
     y[0] = r_norm;
-    // main loop
+
+    // Main loop
     mag_type metric = 2*input.tol; // to make sure to hit the first synch
     while (output.numIters < input.maxNumIters && ! output.converged) {
       int iter = 0;
@@ -136,14 +143,14 @@ private:
         restart = input.maxNumIters-output.numIters;
       }
 
-      // normalize initial vector
+      // Normalize initial vector
       MVT::MvScale (Z, one/std::sqrt(G(0, 0)));
 
-      // copy initial vector
+      // Copy initial vector
       vec_type AP = * (Q.getVectorNonConst (0));
       Tpetra::deep_copy (AP, Z);
 
-      // restart cycle
+      // Restart cycle
       for (iter = 0; iter < restart+ell && metric > input.tol; ++iter) {
         if (iter < restart) {
           // W = A*Z
@@ -162,7 +169,7 @@ private:
           }
           // Shift for Newton basis, explicitly for the first iter
           // (rest is done through change-of-basis)
-          if (input.computeRitzValues && iter == 0) {
+          if (computeRitzValues && iter == 0) {
             //W.update (-output.ritzValues(iter%ell),  Z, one);
             const complex_type theta = output.ritzValues[iter%ell];
             UpdateNewton<SC, MV>::updateNewtonV (iter, V, theta);
@@ -171,7 +178,7 @@ private:
         }
         int k = iter+1 - ell; // we synch idot from k-th iteration
 
-        // compute G and H
+        // Compute G and H
         if (k >= 0) {
           if (k > 0) {
             req->wait (); // wait for idot
@@ -185,13 +192,13 @@ private:
             }
             // Integrate shift for Newton basis (applied through
             // change-of-basis)
-            if (input.computeRitzValues) {
+            if (computeRitzValues) {
               //H(k-1, k-1) += output.getRitzValue((k-1)%ell);
               const complex_type theta = output.ritzValues[(k-1)%ell];
               UpdateNewton<SC, MV>::updateNewtonH(k-1, H, theta);
             }
 
-            // fix H
+            // Fix H
             for (int i = 0; i < k; ++i) {
               H(k, k-1) -= (G(i, k)*G(i, k));
             }
@@ -203,7 +210,7 @@ private:
           }
 
           if (k > 0) {
-            // orthogonalize V(:, k), k = iter+1-ell
+            // Orthogonalize V(:, k), k = iter+1-ell
             vec_type AP = * (Q.getVectorNonConst (k));
             Teuchos::Range1D index_prev(0, k-1);
             const MV Qprev = * (Q.subView(index_prev));
@@ -215,7 +222,7 @@ private:
         }
 
         if (iter < restart) {
-          // apply change-of-basis to W
+          // Apply change-of-basis to W
           vec_type W = * (V.getVectorNonConst (iter+1));
           if (k > 0) {
             Teuchos::Range1D index_prev(ell, iter);
@@ -250,11 +257,11 @@ private:
         }
 
         if (iter < restart && metric > input.tol) {
-          // copy the new vector
+          // Copy the new vector
           vec_type AP = * (Q.getVectorNonConst (iter+1));
           Tpetra::deep_copy (AP, * (V.getVectorNonConst (iter+1)));
 
-          // start all-reduce to compute G(:, iter+1)
+          // Start all-reduce to compute G(:, iter+1)
           // [Q(:,1:k-1), V(:,k:iter+1)]'*W
           Teuchos::Range1D index_prev(0, iter+1);
           const MV Qprev  = * (Q.subView(index_prev));
@@ -262,7 +269,7 @@ private:
           vec_type W = * (V.getVectorNonConst (iter+1));
           req = Tpetra::idot (vals, Qprev, W);
         }
-      } // end of restart cycle
+      } // End of restart cycle
       if (iter > 0) {
         // Update solution
         blas.TRSM (Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI,

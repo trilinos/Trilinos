@@ -154,9 +154,58 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test1, Scalar, LocalOrdinal, Glob
   TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test2, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 10;
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_banded_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 5);
+
+  Ifpack2::ILUT<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("fact: ilut level-of-fill", 0.5);
+  params.set("fact: drop tolerance", 0.0);
+
+  // Fill < 1.0 not allowed
+  TEST_THROW(prec.setParameters(params), std::runtime_error);
+
+  size_t numFill0, numFill1, numFill2;
+  params.set("fact: ilut level-of-fill", 1.0);
+  TEST_NOTHROW(prec.setParameters(params));
+  prec.initialize();
+  prec.compute();
+  numFill0 = prec.getNodeNumEntries();
+  TEST_EQUALITY(numFill0, crsmatrix->getNodeNumEntries());
+
+  params.set("fact: ilut level-of-fill", 1.5);
+  TEST_NOTHROW(prec.setParameters(params));
+  prec.initialize();
+  prec.compute();
+  numFill1 = prec.getNodeNumEntries();
+
+  params.set("fact: ilut level-of-fill", 2.0);
+  TEST_NOTHROW(prec.setParameters(params));
+  prec.initialize();
+  prec.compute();
+  numFill2 = prec.getNodeNumEntries();
+
+  TEST_ASSERT(numFill0 < numFill1);
+  TEST_ASSERT(numFill1 < numFill2);
+}
+
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
 
 #include "Ifpack2_ETIHelperMacros.h"
 
