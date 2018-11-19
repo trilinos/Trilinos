@@ -42,9 +42,9 @@
 
 #include <gtest/gtest.h>
 #include <mpi.h>
-#include "ProblemMakerBDDC.h"
+#include "ProblemMakerBDDC.hpp"
 #include "ShyLU_DDBDDC_config.h"
-#include "shylu_SolverFactoryBDDC.h"
+#include "shylu_SolverFactoryBDDC.hpp"
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 

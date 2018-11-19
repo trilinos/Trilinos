@@ -45,9 +45,9 @@
 #if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
 #include "Kokkos_Core.hpp"
 #endif
-#include "shylu_PreconditionerBDDC.h"
-#include "shylu_KrylovSolver.h"
-#include "setupTest.h"
+#include "shylu_PreconditionerBDDC.hpp"
+#include "shylu_KrylovSolver.hpp"
+#include "setupTest.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Tpetra_Core.hpp"
 

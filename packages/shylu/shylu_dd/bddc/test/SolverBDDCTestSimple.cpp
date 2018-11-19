@@ -42,14 +42,14 @@
 
 #include <gtest/gtest.h>
 #include <mpi.h>
-#include "ProblemMakerBDDC.h"
-#include "OperatorStandard.h"
+#include "ProblemMakerBDDC.hpp"
+#include "OperatorStandard.hpp"
 #include "ShyLU_DDBDDC_config.h"
-#include "shylu_PreconditionerBDDC.h"
-#include "shylu_KrylovSolver.h"
-#include "shylu_UtilBDDC.h"
-#include "shylu_enumsBDDC.h"
-#include "setupTest.h"
+#include "shylu_PreconditionerBDDC.hpp"
+#include "shylu_KrylovSolver.hpp"
+#include "shylu_UtilBDDC.hpp"
+#include "shylu_enumsBDDC.hpp"
+#include "setupTest.hpp"
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #if defined(_OPENMP)
