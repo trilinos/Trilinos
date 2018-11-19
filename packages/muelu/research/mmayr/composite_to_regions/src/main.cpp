@@ -719,7 +719,17 @@ void vCycle(const int l, ///< ID of current level
         regRowMaps[l], regRowImporters[l]);
   }
 
-  else { // coarse level: use the composite operator that has been created after hierarchy setup
+  else {
+
+    // create row and column maps with continuous GIDs
+    Teuchos::RCP<Epetra_Map> contigRowMap = Teuchos::rcp(new Epetra_Map(coarseCompMat->RowMap()));
+    Teuchos::RCP<Epetra_Map> contigColMap = Teuchos::rcp(new Epetra_Map(coarseCompMat->ColMap()));
+    createContinuousCoarseLevelMaps(coarseCompMat->RowMap(),
+        coarseCompMat->ColMap(), contigRowMap, contigColMap);
+
+    // Store non contiguous maps for later
+    RCP<Epetra_Map> noncontigRowMap = rcp(new Epetra_Map(coarseCompMat->RowMap()));
+    RCP<Epetra_Map> noncontigColMap = rcp(new Epetra_Map(coarseCompMat->ColMap()));
 
     // Create composite error vector (zero initial guess)
     Teuchos::RCP<Epetra_Vector> compX = Teuchos::rcp(new Epetra_Vector(coarseCompMat->RowMap(), true));
@@ -727,28 +737,29 @@ void vCycle(const int l, ///< ID of current level
     // Create composite right-hand side vector
     Teuchos::RCP<Epetra_Vector> compRhs = Teuchos::rcp(new Epetra_Vector(coarseCompMat->RowMap(), true));
     {
-    for (int j = 0; j < maxRegPerProc; j++) {
-      for (int i = 0; i < fineRegB[j]->MyLength(); ++i)
-      (*fineRegB[j])[i] /= (*((regInterfaceScalings[l])[j]))[i];
+      for (int j = 0; j < maxRegPerProc; j++) {
+        for (int i = 0; i < fineRegB[j]->MyLength(); ++i)
+        (*fineRegB[j])[i] /= (*((regInterfaceScalings[l])[j]))[i];
+      }
+
+      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+        regRowImporters[l], Add, true);
     }
 
-    regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
-      regRowImporters[l], Add, true);
-    }
-
-//    std::cout << "compRhs before direct solve:" << std::endl;
-//    compRhs->Print(std::cout);
-
-//    coarseCompMat->RowMap().Print(std::cout);
-//    coarseCompMat->ColMap().Print(std::cout);
-
-    const int myRank = coarseCompMat->Comm().MyPID();
-    std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
+    // Replace non-continuos maps by continuous maps
+    compX->ReplaceMap(*contigRowMap);
+    compRhs->ReplaceMap(*contigRowMap);
+    int err = coarseCompMat->ReplaceRowMap(*contigRowMap);
+    TEUCHOS_ASSERT(err==0);
+    err = coarseCompMat->ReplaceColMap(*contigColMap);
+    TEUCHOS_ASSERT(err==0);
+    err = coarseCompMat->ExpertStaticFillComplete(*contigRowMap, *contigRowMap);
+    TEUCHOS_ASSERT(err==0);
 
     // create a linear problem object
     Epetra_LinearProblem problem(coarseCompMat.get(), &(*compX), &(*compRhs));
 
-    // Use Amesos for direct solver
+    // Direct solver
     {
       Teuchos::ParameterList pList;
       pList.set("PrintTiming",true);
@@ -767,156 +778,15 @@ void vCycle(const int l, ///< ID of current level
       solver->Solve();
     }
 
-    std::cout << "compX after direct solve:" << std::endl;
-    compX->Print(std::cout);
-
-    // transform solution back to regional vector
-    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
-    compositeToRegional(compX, quasiRegVec, fineRegX, maxRegPerProc,
-        quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+    // Replace maps with the original non-continuous maps
+    compX->ReplaceMap(*noncontigColMap);
+    compRhs->ReplaceMap(*noncontigRowMap);
   }
-
-/* This is for debgging
-  else { // coarse level: attempt to remap composite operator to continuous GIDs
-
-    // Create composite error vector (zero initial guess)
-    Teuchos::RCP<Epetra_Vector> compX = Teuchos::rcp(new Epetra_Vector(coarseCompMat->RowMap(), true));
-
-    // Create composite right-hand side vector
-    Teuchos::RCP<Epetra_Vector> compRhs = Teuchos::rcp(new Epetra_Vector(coarseCompMat->RowMap(), true));
-    {
-      for (int j = 0; j < maxRegPerProc; j++) {
-        for (int i = 0; i < fineRegB[j]->MyLength(); ++i)
-          (*fineRegB[j])[i] /= (*((regInterfaceScalings[l])[j]))[i];
-      }
-
-      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
-          regRowImporters[l], Add, true);
-    }
-
-//    std::cout << "compRhs before direct solve:" << std::endl;
-//    compRhs->Print(std::cout);
-
-//    coarseCompMat->RowMap().Print(std::cout);
-//    coarseCompMat->ColMap().Print(std::cout);
-
-    const int myRank = coarseCompMat->Comm().MyPID();
-    std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
-
-    // create row and column maps with continuous GIDs
-    Teuchos::RCP<Epetra_Map> contRowMap = Teuchos::rcp(new Epetra_Map(coarseCompMat->RowMap()));
-    Teuchos::RCP<Epetra_Map> contColMap = Teuchos::rcp(new Epetra_Map(coarseCompMat->ColMap()));
-    createContinuousCoarseLevelMaps(coarseCompMat->RowMap(),
-        coarseCompMat->ColMap(), contRowMap, contColMap);
-
-    std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
-
-    // transform coarse level problem to use maps with continuous GIDs
-    Teuchos::RCP<Epetra_CrsMatrix> contCompMat = Teuchos::null;
-    Teuchos::RCP<Epetra_Vector> contCompX = Teuchos::null;
-    Teuchos::RCP<Epetra_Vector> contCompRhs = Teuchos::null;
-    Teuchos::RCP<Epetra_Import> contRowImporter = Teuchos::null;
-    Teuchos::RCP<Epetra_Import> contColImporter = Teuchos::null; // remove?
-    {
-      // Create Importer
-      contRowImporter = Teuchos::rcp(new Epetra_Import(*contRowMap, coarseCompMat->RowMap()));
-      contColImporter = Teuchos::rcp(new Epetra_Import(*contColMap, coarseCompMat->ColMap()));
-
-      std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
-
-      int err = 0;
-
-      // Transform vectors
-      {
-        contCompX = Teuchos::rcp(new Epetra_Vector(*contRowMap, true));
-        contCompRhs = Teuchos::rcp(new Epetra_Vector(*contRowMap, true));
-
-        err = contCompX->Import(*compX, *contRowImporter, Insert);
-        TEUCHOS_ASSERT(err == 0);
-        err = contCompRhs->Import(*compRhs, *contRowImporter, Insert);
-        TEUCHOS_ASSERT(err == 0);
-
-        contCompRhs->Print(std::cout);
-      }
-
-      std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
-
-//      // Transform matrix
-//      contCompMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *contRowMap, *contColMap, 3, false));
-//      err = contCompMat->Import(*coarseCompMat, *contRowImporter, Add);
-//      TEUCHOS_ASSERT(err == 0);
-////      err = contCompMat->FillComplete(*contRowMap, *contRowMap);
-//      err = contCompMat->FillComplete();
-//      TEUCHOS_ASSERT(err == 0);
-
-      contCompMat = Teuchos::rcp(new Epetra_CrsMatrix(*coarseCompMat,
-          *contRowImporter, &(*contColImporter), contRowMap.get(), contRowMap.get(), false));
-//      contCompMat = Teuchos::rcp(new Epetra_CrsMatrix(*coarseCompMat,
-//          *contRowImporter, contRowMap.get(), contRowMap.get(), false));
-
-      std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
-
-      sleep(1);
-      coarseCompMat->Print(std::cout);
-
-//      sleep(1);
-//      std::cout << "After FillComplete()" << std::endl;
-      sleep(1);
-
-      contCompMat->Print(std::cout);
-//      sleep(1);
-//      contCompMat->RowMap().Print(std::cout);
-//      sleep(1);
-//      contCompMat->ColMap().Print(std::cout);
-//      sleep(1);
-//      contCompMat->RangeMap().Print(std::cout);
-//      sleep(1);
-//      contCompMat->DomainMap().Print(std::cout);
-//
-//      std::cout << myRank << " | " << __LINE__ << __FILE__ << std::endl;
-//
-//      exit(0);
-
-    }
-
-    // create a linear problem object
-    Epetra_LinearProblem problem(contCompMat.get(), &(*contCompX), &(*contCompRhs));
-
-    // Use Amesos for direct solver
-    {
-      Teuchos::ParameterList pList;
-      pList.set("PrintTiming",true);
-      pList.set("PrintStatus",true);
-      pList.set("MaxProcs", contCompMat->Comm().NumProc());
-
-      Amesos Factory;
-      Amesos_BaseSolver* solver = Factory.Create("Amesos_Umfpack", problem);
-      TEUCHOS_ASSERT(solver!=NULL);
-
-      solver->SetParameters(pList);
-      solver->SetUseTranspose(false);
-
-      solver->SymbolicFactorization();
-      solver->NumericFactorization();
-      solver->Solve();
-    }
-
-    std::cout << "compX after direct solve:" << std::endl;
-    compX->Print(std::cout);
-    exit(0);
-
-
-    // transform solution back to regional vector
-    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
-    compositeToRegional(compX, quasiRegVec, fineRegX, maxRegPerProc,
-        quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
-  }
-*/
 
   return;
 }
 
-/* To run the region MG sovler, first run the Matlab program 'createInput.m'
+/* To run the region MG solver, first run the Matlab program 'createInput.m'
  * to write a bunch of files with region information to the disk.
  * Then start this executable with the appropriate number of MPI ranks.
  * See unpublished latex document
@@ -2513,10 +2383,14 @@ int main(int argc, char *argv[]) {
           quasiRegRowMaps[maxLevel], quasiRegColMaps[maxLevel],
           regRowImporters[maxLevel], Add, false);
 
-      sleep(1);
-      std::cout << myRank << " | Printing coarseCompOp ..." << std::endl;
-      Comm.Barrier();
-      coarseCompOp->Print(std::cout);
+      int err = coarseCompOp->FillComplete(*compRowMaps[maxLevel], *compRowMaps[maxLevel]);
+      TEUCHOS_ASSERT(err==0);
+
+
+//      sleep(1);
+//      std::cout << myRank << " | Printing coarseCompOp ..." << std::endl;
+//      Comm.Barrier();
+//      coarseCompOp->Print(std::cout);
     }
   }
 
