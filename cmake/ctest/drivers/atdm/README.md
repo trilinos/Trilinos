@@ -156,103 +156,87 @@ different `build stamp`).
 
 ## Running locally and debugging
 
-To run locally, first set up a mock Jenkins workspace directory structure and
-set up symlinks to the local Trilinos git repo as:
+To test out locally, first set up a local directory and symlink as:
 
 ```
 $ cd <some_base_build_dir>/
-$ mkdir MOCK_jenkins_driver
-$ cd MOCK_jenkins_driver/
-$ ln -s <some_base_dir>/Trilinos .
-$ mkdir SRC_AND_BUILD
-$ cd SRC_AND_BUILD/
-$ ln -s <some_base_dir>/Trilinos .
-$ cd ..
-```
+$ ln -s <some_base_dir>/Trilinos/cmake/std/atdm/ctest-s-local-test-driver.sh .
+````
 
-Then any of these builds can be tested locally without submitting to CDash with:
+Once that directory and the symlinked script `ctest-s-local-test-driver.sh`
+are set up, then one can drive and test out builds (for a subset of packages)
+as:
 
 ```
-$ cd <some_base_build_dir>/MOCK_jenkins_driver/
-$ time env \
-    JOB_NAME=<some-build-name> \
-    WORKSPACE=$PWD \
+$ env \
     Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
-    CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_UPDATES=OFF \
-    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
     CTEST_DO_SUBMIT=OFF \
-  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/<system_name>/local-driver.sh \
-    &> console.out
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-(Where it is **CRITICAL** that you set `CTEST_DO_UPDATES=OFF` or it will hard
-reset your local Trilinos git repo!)
-
-Or if a `<system_name>/drivers/<some-build-name>.sh` file
-(e.g. `Trilinos-atdm-hansel-shiller-gnu-debug-openmp.sh`) already exists,
-instead use:
-
-```
-$ cd <some_base_build_dir>/MOCK_jenkins_driver/
-$ time env \
-    JOB_NAME=<some-build-name> \
-    WORKSPACE=$PWD \
-    Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
-    CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_UPDATES=OFF \
-    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
-    CTEST_DO_SUBMIT=OFF \
-  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
-    &> console.out
-```
-
-Then you can look at the `console.out` file and examine the `*.xml` configure,
-build, and test files created under:
+where the build names `<build-base-name-i>` (e.g. `gnu-opt-debug`) must match
+the entries given in variable `ATDM_CONFIG_ALL_SUPPORTED_BUILDS` in the file
+`cmake/std/atdm/<system_name>/all_supported_builds.sh` for the local system.
+This will not submit to CDash due to `CTEST_DO_SUBMIT=OFF` so to see the
+status of the build and tests, see the generated files:
 
 ```
-  <some_base_build_dir>/MOCK_jenkins_driver/SRC_AND_BUILD/BUILD/Testing/
+  <some_base_build_dir>/<full_build_name>/smart-jenkins-driver.out
+```
+
+(e.g. `<full_build_name>` = `Trilinos-atdm-<system_name>-gnu-opt-debug`) and
+also examine the generated `*.xml` configure, build, and test files created
+under:
+
+```
+  <some_base_build_dir>/<full_build_name>/SRC_AND_BUILD/BUILD/Testing/
 ```
 
 to see if it is doing the right thing.
 
-If that looks good, then you can do an experimental submit (avoiding a rebuild)
-with:
+To test the submit to CDash (Experimental Track/Group) without a complete
+rebuild, run again with:
 
 ```
-$ cd <some_base_build_dir>/MOCK_jenkins_driver/
-$ time env \
-    JOB_NAME=<some-build-name> \
-    WORKSPACE=$PWD \
+$ env \
     Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
-    CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_UPDATES=OFF \
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
     CTEST_DO_SUBMIT=ON \
-  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
-    &> console.out
+  ./ctest-s-local-test-driver.sh <build-base-name-0> <build-base-name-1> ...
 ```
 
-If that submit looks good, then the job is ready to set up as a Jenkins job.
+To test that all of the builds specified in the file
+`cmake/std/atdm/<system_name>/all_supported_builds.sh` have matching driver
+scripts in the directory `cmake/ctest/drivers/atdm/<system_name>/drivers/`,
+run with `all` like:
 
-Note that one is running on a loaded/shared machine and therfore needs to use
-less processes to build and test, then one can use the env vars
+```
+$ env \
+    Trilinos_PACKAGES=Kokkos \
+    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+    CTEST_DO_SUBMIT=OFF \
+  ./ctest-s-local-test-driver.sh all
+```
+
+and examine the generated `<full_build_name>/smart-jenkins-driver.out` files
+to ensure that they were all found correctly.
+
+If things look good after all of that testing, then the builds are ready to be
+set up as Jenkins (or GitLab CI or cron, etc.) jobs.
+
+NOTE: When one is running on a loaded/shared machine and therefore needs to
+use less processes to build and test, one can use the env vars
 `ATDM_CONFIG_BUILD_COUNT_OVERRIDE` and
 `ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE` and use them as, for example:
 
 ```
-$ time env \
+$ env \
     ATDM_CONFIG_BUILD_COUNT_OVERRIDE=8 \
     ATDM_CONFIG_CTEST_PARALLEL_LEVEL_OVERIDE=12 \
-    JOB_NAME=<some-build-name> \
-    WORKSPACE=$PWD \
     Trilinos_PACKAGES=Kokkos,Teuchos,Tpetra \
-    CTEST_TEST_TYPE=Experimental \
-    CTEST_DO_UPDATES=OFF \
-    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE \
+    CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
     CTEST_DO_SUBMIT=OFF \
-  <some_base_dir>/Trilinos/cmake/ctest/drivers/atdm/smart-jenkins-driver.sh \
-    &> console.out
+  ./ctest-s-local-test-driver.sh <build-base-name>
 ```
 
 That can also be handy for specializing the automated builds on specific SEMS
@@ -368,6 +352,19 @@ read and interpreted in the file:
 
 to understand their impact on the configuration, build and testing.
 
+In addition, a custom set of build configuration options can be set in the
+file:
+
+```
+  Trilinos/cmake/std/atdm/<new_system_name>/custom_builds.sh
+```
+
+This file can be used to put in special logic for special compilers and
+compiler versions and other types of logic.  This file gets sourced before the
+standard logic is executed in in `atdm/utils/set_build_options.sh`.  (To see
+an example of the usage of this file, see `atdm/cee-rhel6/custom_builds.sh`
+and `atdm/cee-rhel6/environment.sh`.)
+
 A few of the environment variables that need to be set in the file
 `<new_system_name>/environment.sh` worth specifically discussing are:
 
@@ -416,9 +413,38 @@ Then, add the file:
   Trilinos/cmake/std/atdm/<new_system_name>/all_supported_builds.sh
 ```
 
-and fill in the list of builds that are going to be supported on this machine.
-This allows one to use `./checkin-test-sems.sh all ...` to test all
-configurations on a given machine.
+and fill in the list of builds that are going to be supported on this machine.  For example, this looks like:
+
+```
+  export ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-<system_name>-
+
+  export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=(
+    gnu-debug-openmp
+    gnu-opt-openmp
+    ...
+    )
+```
+
+The names
+`"${ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX}${ATDM_CONFIG_ALL_SUPPORTED_BUILDS[i]}.sh"
+must match the ctest -S driver files under:
+
+```
+  Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
+```
+
+The variable `ATDM_CONFIG_ALL_SUPPORTED_BUILDS` is used by
+`./checkin-test-sems.sh all ...` to test all configurations on a given machine
+using the `checkin-test.py` script.
+
+NOTE: The array variable `ATDM_CONFIG_ALL_SUPPORTED_BUILDS` can also be
+specified as:
+
+```
+  export ATDM_CONFIG_ALL_SUPPORTED_BUILDS="gnu-debug-openmp gnu-opt-openmp ..."
+```
+
+which works as well.
 
 Once local configurations are complete and some local testing if finished,
 then create the ctest -S / Jenkins driver directory:

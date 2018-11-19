@@ -10,6 +10,9 @@ fi
 
 set -x
 
-/usr/bin/srun -N 1 --constraint=k80 -J $JOB_NAME \
+srun -N 1 --constraint=k80 -J $JOB_NAME \
   --time=${SRUN_CTEST_TIME_LIMIT_MINUTES} \
   $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-s-driver.sh
+
+# NOTE: 'srun' is in different places on 'hansen' and 'shiller' so you can't
+# provide full path to 'srun'.  You just need to hope it is in the path.
