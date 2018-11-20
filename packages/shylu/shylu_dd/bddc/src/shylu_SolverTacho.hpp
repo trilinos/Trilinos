@@ -60,8 +60,8 @@ namespace bddc {
   public:
     typedef Tacho::Solver<SX,Kokkos::DefaultHostExecutionSpace> solver_type;
 
-    typedef Tacho::Experimental::ordinal_type ordinal_type;
-    typedef Tacho::Experimental::size_type size_type;
+    typedef Tacho::ordinal_type ordinal_type;
+    typedef Tacho::size_type size_type;
     typedef typename solver_type::value_type value_type;
 
     typedef typename solver_type::ordinal_type_array ordinal_type_array;
