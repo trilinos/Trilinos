@@ -94,7 +94,7 @@ namespace panzer {
     auto M = ghostedMatrix->getLocalMatrix();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
-    const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const";
+    const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const" || targetBasisDescriptor_.getType()=="HVol";
 
     // Loop over element blocks and fill mass matrix
     if(is_scalar){
@@ -348,7 +348,7 @@ namespace panzer {
         Kokkos::View<const double***,PHX::Device> sourceUnweightedScalarBasis;
         Kokkos::View<const double****,PHX::Device> sourceUnweightedVectorBasis;
         bool useRankThreeBasis = false; // default to gradient or vector basis
-        if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") ) {
+        if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") || (sourceBasisDescriptor.getType() == "HVol") ) {
           if (directionIndex == -1) { // Project dof value
             sourceUnweightedScalarBasis = sourceBasisValues.basis_scalar.get_static_view();
             useRankThreeBasis = true;
