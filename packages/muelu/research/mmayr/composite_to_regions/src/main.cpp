@@ -50,6 +50,9 @@
 #include <iostream>
 #include <numeric>
 
+#include "Amesos.h"
+#include "Amesos_BaseSolver.h"
+
 #define RegionsSpanProcs  1
 #define MultipleRegionsPerProc  2
 #include "ml_config.h"
@@ -117,6 +120,44 @@ struct widget {
    int        nx;
 int myRank;
 };
+
+//! Print an Epetra_Vector in regional layout to screen
+void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+//  sleep(myRank);
+  for (int j = 0; j < (int) regVecs.size(); j++) {
+    printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
+    regVecs[j]->Print(std::cout);
+  }
+}
+
+//! Print an Epetra_Map in regional layout to screen
+void printRegionalMap(const std::string mapName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_Map> > regMaps, ///< regional map to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+//  sleep(myRank);
+  for (int j = 0; j < (int) regMaps.size(); j++) {
+    printf("%d: %s %d\n", myRank, mapName.c_str(), j);
+    regMaps[j]->Print(std::cout);
+  }
+}
+
+//! Print an Epetra_CrsMatrix in regional layout to screen
+void printRegionalMatrix(const std::string matrixName, ///< string to be used for screen output
+    const std::vector<Teuchos::RCP<Epetra_CrsMatrix> > regMats, ///< regional matrix to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+  for (int j = 0; j < (int) regMats.size(); j++) {
+    printf("%d: %s %d\n", myRank, matrixName.c_str(), j);
+    regMats[j]->Print(std::cout);
+  }
+}
 
 /*! \brief Transform composite vector to regional layout
  *
@@ -223,36 +264,117 @@ void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_Vector> >& regVec
   return;
 }
 
-//! Print an Epetra_Vector in regional layout to screen
-void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
-    const std::vector<Teuchos::RCP<Epetra_Vector> > regVecs, ///< regional vector to be printed to screen
-    const int myRank ///< rank of calling proc
+/*! \brief Transform regional matrix to composite layout
+ *
+ *  Starting from a \c Epetra_CrsMatrix in regional layout, we
+ *  1. copy data from regional matrix into quasiRegional matrix and set all maps
+ *     to be quasiRegional maps
+ *  2. export it into a Epetra_CrsMatrix with composite layout using the \c CombineMode \c Add.
+ *     Note: on-process values also have to be added to account for region interfaces inside a process.
+ *
+ *  \note The \c Add operation in the \c Export() can be done twofold, depending on the linear algebra package:
+ *  - Epetra provides a \c CombineMode \c Eptra_AddLocalAlso that adds on-process values.
+ *  - Tpetra does not provide such a capability (as it is not unique), so we perform the local summation
+ *    manually.
+ */
+void regionalToComposite(const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& regMat, ///< Matrix in region layout [in]
+    Teuchos::RCP<Epetra_CrsMatrix> compMat, ///< Matrix in composite layout [in/out]
+    const int maxRegPerProc, ///< max number of regions per proc
+    const std::vector<Teuchos::RCP<Epetra_Map> > rowMapPerGrp, ///< row maps in quasiRegion layout [in]
+    const std::vector<Teuchos::RCP<Epetra_Map> > colMapPerGrp, ///< col maps in quasiRegion layout [in]
+    const std::vector<Teuchos::RCP<Epetra_Import> > rowImportPerGrp, ///< row importer in region layout [in]
+    const Epetra_CombineMode combineMode, ///< Combine mode for import/export [in]
+    const bool addLocalManually ///< perform ADD of local values manually (not via Epetra CombineMode)
     )
 {
-//  sleep(myRank);
-  for (int j = 0; j < (int) regVecs.size(); j++) {
-    printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
-    regVecs[j]->Print(std::cout);
-  }
-}
+  if (not addLocalManually) {
+    /* Use the Eptra_AddLocalAlso combine mode to add processor-local values.
+     * Note that such a combine mode is not available in Tpetra.
+     */
 
-//! Print an Epetra_Map in regional layout to screen
-void printRegionalMap(const std::string mapName, ///< string to be used for screen output
-    const std::vector<Teuchos::RCP<Epetra_Map> > regMaps, ///< regional map to be printed to screen
-    const int myRank ///< rank of calling proc
-    )
-{
-  sleep(myRank);
-  for (int j = 0; j < (int) regMaps.size(); j++) {
-    printf("%d: %s %d\n", myRank, mapName.c_str(), j);
-    regMaps[j]->Print(std::cout);
+    // Copy data from quasiRegionGrpMats, but into new map layout
+    std::vector<Teuchos::RCP<Epetra_CrsMatrix> > quasiRegMat(maxRegPerProc);
+    {
+      for (int j = 0; j < maxRegPerProc; j++) {
+        // create empty matrix with correct row and column map
+        quasiRegMat[j] = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *(rowMapPerGrp[j]), *(colMapPerGrp[j]), 3));
+
+        // extract pointers to crs arrays from region matrix
+        Epetra_IntSerialDenseVector & rowPtr = regMat[j]->ExpertExtractIndexOffset();
+        Epetra_IntSerialDenseVector & colInd = regMat[j]->ExpertExtractIndices();
+        double *& vals = regMat[j]->ExpertExtractValues();
+
+        // extract pointers to crs arrays from quasiRegion matrix
+        Epetra_IntSerialDenseVector & qRowPtr = quasiRegMat[j]->ExpertExtractIndexOffset();
+        Epetra_IntSerialDenseVector & qColInd = quasiRegMat[j]->ExpertExtractIndices();
+        double *& qVals = quasiRegMat[j]->ExpertExtractValues();
+
+        // assign array values from regional to quasiRegional matrices
+        qRowPtr.Resize(rowPtr.Length());
+        qColInd.Resize(colInd.Length());
+        delete [] qVals;
+        qVals = new double[qColInd.Length()];
+        for (int i = 0; i < qRowPtr.Length(); ++i) qRowPtr[i] = rowPtr[i];
+        for (int i = 0; i < qColInd.Length(); ++i) {
+          qColInd[i] = colInd[i];
+          qVals[i] = vals[i];
+        }
+      }
+
+      /* add domain and range map to quasiRegion matrices (pass in quasiRow map, since
+       * we assume that row map = range map = domain map)
+       */
+      for (int j = 0; j < maxRegPerProc; j++) {
+        quasiRegMat[j]->ExpertStaticFillComplete(*(rowMapPerGrp[j]),*(rowMapPerGrp[j]));
+      }
+
+      for (int j = 0; j < maxRegPerProc; j++) {
+        int err = compMat->Export(*quasiRegMat[j], *(rowImportPerGrp[j]), combineMode);
+        TEUCHOS_ASSERT(err == 0);
+      }
+
+//      int err = compMat->FillComplete(compMat->RowMap(), compMat->RowMap());
+      int err = compMat->FillComplete();
+      TEUCHOS_ASSERT(err == 0);
+    }
   }
+  else {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Not implemented, yet.");
+//    /* Let's fake an ADD combine mode that also adds local values by
+//     * 1. exporting quasiRegional vectors to auxiliary composite vectors (1 per group)
+//     * 2. add all auxiliary vectors together
+//     */
+//
+//    Teuchos::RCP<Epetra_MultiVector> partialCompVec = Teuchos::rcp(new Epetra_MultiVector(compVec->Map(), maxRegPerProc, true));
+//    TEUCHOS_ASSERT(!partialCompVec.is_null());
+//
+//    std::vector<Teuchos::RCP<Epetra_Vector> > quasiRegVec(maxRegPerProc);
+//    for (int j = 0; j < maxRegPerProc; j++) {
+//      // copy vector and replace map
+//      quasiRegVec[j] = Teuchos::rcp(new Epetra_Vector(*(regVec[j])));
+//      TEUCHOS_ASSERT(!quasiRegVec[j].is_null());
+//
+//      int err = quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+//      TEUCHOS_ASSERT(err == 0);
+//
+//      err = (*partialCompVec)(j)->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), Add);
+//      TEUCHOS_ASSERT(err == 0);
+//    }
+//
+//    compVec->PutScalar(0.0);
+//    for (int j = 0; j < maxRegPerProc; j++) {
+//      int err = compVec->Update(1.0, *(*partialCompVec)(j), 1.0);
+//      TEUCHOS_ASSERT(err == 0);
+//    }
+  }
+
+  return;
 }
 
 /*! \brief Sum region interface values
  *
  *  Sum values of interface GIDs using the underlying Export() routines. Technically, we perform the
- *  exchange/summation of interace data by exporting a regional vector to the composite layout and
+ *  exchange/summation of interface data by exporting a regional vector to the composite layout and
  *  then immediately importing it back to the regional layout. The Export() involved when going to the
  *  composite layout takes care of the summation of interface values.
  */
@@ -293,7 +415,7 @@ void createRegionalVector(std::vector<Teuchos::RCP<Epetra_Vector> >& regVecs, //
  *
  *  The residual is computed based on matrices and vectors in a regional layout.
  *  1. Compute y = A*x in regional layout.
- *  2. Sum interface valus of y to account for duplication of interface DOFs.
+ *  2. Sum interface values of y to account for duplication of interface DOFs.
  *  3. Compute r = b - y
  */
 std::vector<Teuchos::RCP<Epetra_Vector> > computeResidual(
@@ -475,6 +597,49 @@ std::vector<int> findCommonRegions(const int nodeA, ///< GID of first node
   return finalCommonRegions;
 }
 
+/*! \brief Create coarse level maps with continuous GIDs
+ *
+ *  The direct solver requires maps with continuous GIDs. Starting from the
+ *  coarse level composite maps with discontinuous GIDs, we create a new row map
+ *  and a matching column map.
+ *
+ *  Range and Domain map happen to correspond to the Row map, so we don't have
+ *  to deal with them in particular.
+ */
+void createContinuousCoarseLevelMaps(const Epetra_Map& rowMap, ///< row map
+    const Epetra_Map& colMap, ///< column map
+    Teuchos::RCP<Epetra_Map>& contRowMap, ///< row map with continuous GIDs
+    Teuchos::RCP<Epetra_Map>& contColMap ///< column map with continuous GIDs
+    )
+{
+  // Create row map with continuous GIDs
+  contRowMap = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),
+      rowMap.NumMyElements(), 0, rowMap.Comm()));
+
+  /* Create column map based on row map with continuous GIDs
+   *
+   * We use an Importer to create an auxiliary vector in colMap format containing
+   * the GIDs of the contRowMap as its entries. By looping over its LIDs, we can
+   * then form the contColMap.
+   */
+  Teuchos::RCP<Epetra_Import> rowColImport = Teuchos::rcp(new Epetra_Import(colMap, rowMap));
+  Teuchos::RCP<Epetra_Vector> colGIDVec = Teuchos::rcp(new Epetra_Vector(rowMap, true));
+  for (int i = 0; i < colGIDVec->MyLength(); ++i)
+    (*colGIDVec)[i] = contRowMap->GID(i);
+  Teuchos::RCP<Epetra_Vector> contColGIDVec = Teuchos::rcp(new Epetra_Vector(colMap, true));
+  int err = contColGIDVec->Import(*colGIDVec, *rowColImport, Insert);
+  TEUCHOS_ASSERT(err == 0);
+
+  std::vector<int> contColGIDs;
+  for (int i = 0; i < contColGIDVec->MyLength(); ++i) {
+    contColGIDs.push_back((*contColGIDVec)[i]);
+  }
+  contColMap = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),
+      contColGIDs.size(), contColGIDs.data(), 0, rowMap.Comm()));
+
+  return;
+}
+
 //! Recursive V-cycle in region fashion
 void vCycle(const int l, ///< ID of current level
     const int numLevels, ///< Total number of levels
@@ -486,11 +651,12 @@ void vCycle(const int l, ///< ID of current level
     std::vector<Teuchos::RCP<Epetra_Vector> > fineRegB, ///< right hand side
     Teuchos::Array<std::vector<Teuchos::RCP<Epetra_CrsMatrix> > > regMatrices, ///< Matrices in region layout
     Teuchos::Array<std::vector<Teuchos::RCP<Epetra_CrsMatrix> > > regProlong, ///< Prolongators in region layout
-    Teuchos::Array<Teuchos::RCP<Epetra_Map> > compMaps, ///< composite maps
+    Teuchos::Array<Teuchos::RCP<Epetra_Map> > compRowMaps, ///< composite maps
     Teuchos::Array<std::vector<Teuchos::RCP<Epetra_Map> > > quasiRegRowMaps, ///< quasiRegional row maps
     Teuchos::Array<std::vector<Teuchos::RCP<Epetra_Map> > > regRowMaps, ///< regional row maps
     Teuchos::Array<std::vector<Teuchos::RCP<Epetra_Import> > > regRowImporters, ///< regional row importers
-    Teuchos::Array<std::vector<Teuchos::RCP<Epetra_Vector> > > regInterfaceScalings ///< regional interface scaling factors
+    Teuchos::Array<std::vector<Teuchos::RCP<Epetra_Vector> > > regInterfaceScalings, ///< regional interface scaling factors
+    Teuchos::RCP<Epetra_CrsMatrix> coarseCompMat ///< Coarsest level composite operator
     )
 {
   using Teuchos::RCP;
@@ -500,12 +666,12 @@ void vCycle(const int l, ///< ID of current level
 
     // pre-smoothing
     jacobiIterate(maxFineIter, omega, fineRegX, fineRegB, regMatrices[l],
-        regInterfaceScalings[l], maxRegPerProc, compMaps[l],
+        regInterfaceScalings[l], maxRegPerProc, compRowMaps[l],
         quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
 
     std::vector<Teuchos::RCP<Epetra_Vector> > regRes(maxRegPerProc);
     createRegionalVector(regRes, maxRegPerProc, regRowMaps[l]);
-    computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], compMaps[l],
+    computeResidual(regRes, fineRegX, fineRegB, regMatrices[l], compRowMaps[l],
         quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
 
     // Transfer to coarse level
@@ -523,13 +689,13 @@ void vCycle(const int l, ///< ID of current level
       TEUCHOS_ASSERT(regProlong[l+1][j]->RangeMap().PointSameAs(regRes[j]->Map()));
       TEUCHOS_ASSERT(regProlong[l+1][j]->DomainMap().PointSameAs(coarseRegB[j]->Map()));
     }
-    sumInterfaceValues(coarseRegB, compMaps[l+1], maxRegPerProc,
+    sumInterfaceValues(coarseRegB, compRowMaps[l+1], maxRegPerProc,
         quasiRegRowMaps[l+1], regRowMaps[l+1], regRowImporters[l+1]);
 
     // Call V-cycle recursively
     vCycle(l+1, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc,
-        coarseRegX, coarseRegB, regMatrices, regProlong, compMaps,
-        quasiRegRowMaps, regRowMaps, regRowImporters, regInterfaceScalings);
+        coarseRegX, coarseRegB, regMatrices, regProlong, compRowMaps,
+        quasiRegRowMaps, regRowMaps, regRowImporters, regInterfaceScalings, coarseCompMat);
 
     // Transfer coarse level correction to fine level
     std::vector<Teuchos::RCP<Epetra_Vector> > regCorrection(maxRegPerProc);
@@ -549,24 +715,78 @@ void vCycle(const int l, ///< ID of current level
 
     // post-smoothing
     jacobiIterate(maxFineIter, omega, fineRegX, fineRegB, regMatrices[l],
-        regInterfaceScalings[l], maxRegPerProc, compMaps[l], quasiRegRowMaps[l],
+        regInterfaceScalings[l], maxRegPerProc, compRowMaps[l], quasiRegRowMaps[l],
         regRowMaps[l], regRowImporters[l]);
   }
-  else { // coarse level
 
-    // coarse level solve
-    /* For now, we do Jacobi. We need to figure out how to deal with free-floating
-     * regions or recombine to a composite matrix on the coarse level
-     */
-    jacobiIterate(maxCoarseIter, omega, fineRegX, fineRegB, regMatrices[l],
-        regInterfaceScalings[l], maxRegPerProc, compMaps[l],
-        quasiRegRowMaps[l], regRowMaps[l], regRowImporters[l]);
+  else {
+
+    // create row and column maps with continuous GIDs
+    Teuchos::RCP<Epetra_Map> contigRowMap = Teuchos::rcp(new Epetra_Map(coarseCompMat->RowMap()));
+    Teuchos::RCP<Epetra_Map> contigColMap = Teuchos::rcp(new Epetra_Map(coarseCompMat->ColMap()));
+    createContinuousCoarseLevelMaps(coarseCompMat->RowMap(),
+        coarseCompMat->ColMap(), contigRowMap, contigColMap);
+
+    // Store non contiguous maps for later
+    RCP<Epetra_Map> noncontigRowMap = rcp(new Epetra_Map(coarseCompMat->RowMap()));
+    RCP<Epetra_Map> noncontigColMap = rcp(new Epetra_Map(coarseCompMat->ColMap()));
+
+    // Create composite error vector (zero initial guess)
+    Teuchos::RCP<Epetra_Vector> compX = Teuchos::rcp(new Epetra_Vector(coarseCompMat->RowMap(), true));
+
+    // Create composite right-hand side vector
+    Teuchos::RCP<Epetra_Vector> compRhs = Teuchos::rcp(new Epetra_Vector(coarseCompMat->RowMap(), true));
+    {
+      for (int j = 0; j < maxRegPerProc; j++) {
+        for (int i = 0; i < fineRegB[j]->MyLength(); ++i)
+        (*fineRegB[j])[i] /= (*((regInterfaceScalings[l])[j]))[i];
+      }
+
+      regionalToComposite(fineRegB, compRhs, maxRegPerProc, quasiRegRowMaps[l],
+        regRowImporters[l], Add, true);
+    }
+
+    // Replace non-continuos maps by continuous maps
+    compX->ReplaceMap(*contigRowMap);
+    compRhs->ReplaceMap(*contigRowMap);
+    int err = coarseCompMat->ReplaceRowMap(*contigRowMap);
+    TEUCHOS_ASSERT(err==0);
+    err = coarseCompMat->ReplaceColMap(*contigColMap);
+    TEUCHOS_ASSERT(err==0);
+    err = coarseCompMat->ExpertStaticFillComplete(*contigRowMap, *contigRowMap);
+    TEUCHOS_ASSERT(err==0);
+
+    // create a linear problem object
+    Epetra_LinearProblem problem(coarseCompMat.get(), &(*compX), &(*compRhs));
+
+    // Direct solver
+    {
+      Teuchos::ParameterList pList;
+      pList.set("PrintTiming",true);
+      pList.set("PrintStatus",true);
+      pList.set("MaxProcs", coarseCompMat->Comm().NumProc());
+
+      Amesos Factory;
+      Amesos_BaseSolver* solver = Factory.Create("Amesos_Umfpack", problem);
+      TEUCHOS_ASSERT(solver!=NULL);
+
+      solver->SetParameters(pList);
+      solver->SetUseTranspose(false);
+
+      solver->SymbolicFactorization();
+      solver->NumericFactorization();
+      solver->Solve();
+    }
+
+    // Replace maps with the original non-continuous maps
+    compX->ReplaceMap(*noncontigColMap);
+    compRhs->ReplaceMap(*noncontigRowMap);
   }
 
   return;
 }
 
-/* To run the region MG sovler, first run the Matlab program 'createInput.m'
+/* To run the region MG solver, first run the Matlab program 'createInput.m'
  * to write a bunch of files with region information to the disk.
  * Then start this executable with the appropriate number of MPI ranks.
  * See unpublished latex document
@@ -771,16 +991,21 @@ int main(int argc, char *argv[]) {
    * We use Teuchos::Array<T> to store each quantity on each level.
    */
   int numLevels = 0;
-  Array<RCP<Epetra_Map> > compMaps;
-  Array<std::vector<RCP<Epetra_Map> > > regRowMaps;
-  Array<std::vector<RCP<Epetra_Map> > > quasiRegRowMaps;
-  Array<std::vector<RCP<Epetra_CrsMatrix> > > regMatrices;
-  Array<std::vector<RCP<Epetra_CrsMatrix> > > regProlong;
-  Array<std::vector<RCP<Epetra_Import> > > regRowImporters;
-  Array<std::vector<RCP<Epetra_Vector> > > regInterfaceScalings;
+  Array<RCP<Epetra_Map> > compRowMaps; ///< composite row maps on each level
+  Array<RCP<Epetra_Map> > compColMaps; ///< composite columns maps on each level
+  Array<std::vector<RCP<Epetra_Map> > > regRowMaps; ///< regional row maps on each level
+  Array<std::vector<RCP<Epetra_Map> > > quasiRegRowMaps; ///< quasiRegional row maps on each level
+  Array<std::vector<RCP<Epetra_Map> > > regColMaps; ///< regional column maps on each level
+  Array<std::vector<RCP<Epetra_Map> > > quasiRegColMaps; ///< quasiRegional column maps on each level
+  Array<std::vector<RCP<Epetra_CrsMatrix> > > regMatrices; ///< regional matrices on each level
+  Array<std::vector<RCP<Epetra_CrsMatrix> > > regProlong; ///< regional prolongators on each level
+  Array<std::vector<RCP<Epetra_Import> > > regRowImporters; ///< regional row importers on each level
+  Array<std::vector<RCP<Epetra_Vector> > > regInterfaceScalings; ///< regional interface scaling factors on each level
 
   Array<std::vector<std::vector<int> > > interfaceLIDs; // local IDs of interface nodes on each level in each group
   Array<std::vector<std::vector<std::vector<int> > > > interfaceGIDPairs; // pairs of GIDs of interface nodes on each level in each group
+
+  Teuchos::RCP<Epetra_CrsMatrix> coarseCompOp = Teuchos::null;
 
   /* The actual computations start here. It's a sequence of operations to
    * - read region data from files
@@ -807,7 +1032,7 @@ int main(int argc, char *argv[]) {
     while (fscanf(fp, "%d", &i) != EOF)
       fileData.push_back(i);
 
-    mapComp = Teuchos::rcp(new Epetra_Map(-1, (int) fileData.size(), fileData.data(), 0, Comm));
+    mapComp = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) fileData.size(), fileData.data(), 0, Comm));
 //    mapComp->Print(std::cout);
   }
 
@@ -891,10 +1116,12 @@ int main(int argc, char *argv[]) {
     fp = fopen(fileNameSS.str().c_str(), "r");
     TEUCHOS_ASSERT(fp!=NULL);
 
+    int retval; // dummy return value for fscanf()
+
     if (doing1D) {
       int minGID, maxGID;
       for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d",&minGID,&maxGID);
+        retval = fscanf(fp,"%d%d",&minGID,&maxGID);
         minGIDComp[i] = minGID;
         maxGIDComp[i] = maxGID;
       }
@@ -902,9 +1129,9 @@ int main(int argc, char *argv[]) {
       appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
       appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
       for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+        retval = fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+        retval = fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
+        retval = fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
       }
       appData.minGIDComp = minGIDComp.data();
       appData.maxGIDComp = maxGIDComp.data();
@@ -920,10 +1147,10 @@ int main(int argc, char *argv[]) {
       appData.relcornery= (int *) malloc(sizeof(int)*myRegions.size());
       int garbage;
       for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lDimx[i]),&(appData.lDimy[i]),&garbage);
-        fscanf(fp,"%d%d%d",&(appData.relcornerx[i]),&(appData.relcornery[i]),&garbage);
-        fscanf(fp,"%d%d%d",&(appData.trueCornerx[i]),&(appData.trueCornery[i]),&garbage);
+        retval = fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+        retval = fscanf(fp,"%d%d%d",&(appData.lDimx[i]),&(appData.lDimy[i]),&garbage);
+        retval = fscanf(fp,"%d%d%d",&(appData.relcornerx[i]),&(appData.relcornery[i]),&garbage);
+        retval = fscanf(fp,"%d%d%d",&(appData.trueCornerx[i]),&(appData.trueCornery[i]),&garbage);
       }
     }
 
@@ -958,12 +1185,12 @@ int main(int argc, char *argv[]) {
         if (tempRegIDs[idx[i]] != -1)
           rowGIDsReg.push_back(colGIDsComp[idx[i]]);
       }
-      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1, (int) rowGIDsReg.size(),
+      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) rowGIDsReg.size(),
           rowGIDsReg.data(), 0, Comm));
     }
 
     for (int k=(int) myRegions.size(); k < maxRegPerProc; k++) {
-      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+      rowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
     }
   }
 
@@ -977,11 +1204,11 @@ int main(int argc, char *argv[]) {
       // clone rowMap
       for (int j=0; j < maxRegPerProc; j++) {
         if (j < (int) myRegions.size()) {
-          colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(-1,
+          colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),
               rowMapPerGrp[j]->NumMyElements(),
               rowMapPerGrp[j]->MyGlobalElements(), 0, Comm));
         }
-        else colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+        else colMapPerGrp[j] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
       }
     }
     else if (whichCase == RegionsSpanProcs) {//so maxRegPerProc = 1
@@ -1011,10 +1238,10 @@ int main(int argc, char *argv[]) {
         }
       }
       if ((int) myRegions.size() > 0) {
-       colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(-1, (int) colIDsReg.size(),
+       colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) colIDsReg.size(),
            colIDsReg.data(), 0, Comm));
       }
-      else colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+      else colMapPerGrp[0] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
     }
     else { fprintf(stderr,"whichCase not set properly\n"); exit(1); }
   }
@@ -1108,7 +1335,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,(int) revisedGIDs.size(),
+      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),(int) revisedGIDs.size(),
                                           revisedGIDs.data(),0,Comm));
       // now append more stuff to handle ghosts ... needed for
       // revised version of column map
@@ -1131,12 +1358,12 @@ int main(int argc, char *argv[]) {
           }
         }
       }
-      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1, (int) revisedGIDs.size(),
+      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), (int) revisedGIDs.size(),
           revisedGIDs.data(), 0, Comm));
     }
     for (int k = (int) myRegions.size(); k < maxRegPerProc; k++) {
-      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
-      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(-1,0,NULL,0,Comm));
+      revisedRowMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
+      revisedColMapPerGrp[k] = Teuchos::rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(),0,NULL,0,Comm));
     }
 
     // Setup importers
@@ -1318,7 +1545,34 @@ int main(int argc, char *argv[]) {
 
   Comm.Barrier();
 
-  // Make MueLu transfer operators
+//  /* Form composite operator on fine level for debug purposes */
+//  {
+//    Teuchos::RCP<Epetra_CrsMatrix> compOp = Teuchos::rcp(new Epetra_CrsMatrix(Copy, AComp->RowMap(), AComp->ColMap(), 3));
+//    regionalToComposite(regionGrpMats, compOp, maxRegPerProc, rowMapPerGrp, colMapPerGrp, rowImportPerGrp, Add, false);
+//
+//    sleep(1);
+//    std::cout << myRank << " | Printing compOp ..." << std::endl;
+//    Comm.Barrier();
+//    compOp->Print(std::cout);
+//
+//    Teuchos::RCP<Epetra_CrsMatrix> diffOp = Teuchos::rcp(new Epetra_CrsMatrix(Copy, AComp->Graph()));
+//    Epetra_CrsMatrix* diffOp_ptr = diffOp.get();
+//    EpetraExt::MatrixMatrix::Add(*AComp, false, 1.0, *compOp, false, -1.0, diffOp_ptr);
+//
+//    sleep(1);
+//    std::cout << myRank << " | Printing diffOp ..." << std::endl;
+//    Comm.Barrier();
+//    diffOp->Print(std::cout);
+//
+//    Comm.Barrier();
+//    std::cout << myRank << " | Calling exit(0) ..." << std::endl;
+//    Comm.Barrier();
+//    exit(0);
+//  }
+
+  Comm.Barrier();
+
+  // Create multigrid hierarchy
   {
     std::cout << myRank << " | Setting up MueLu hierarchies ..." << std::endl;
 
@@ -1429,9 +1683,12 @@ int main(int argc, char *argv[]) {
     {
       // resize level containers
       numLevels = regGrpHierarchy[0]->GetNumLevels();
-      compMaps.resize(numLevels);
+      compRowMaps.resize(numLevels);
+      compColMaps.resize(numLevels);
       regRowMaps.resize(numLevels);
+      regColMaps.resize(numLevels);
       quasiRegRowMaps.resize(numLevels);
+      quasiRegColMaps.resize(numLevels);
       regMatrices.resize(numLevels);
       regProlong.resize(numLevels);
       regRowImporters.resize(numLevels);
@@ -1440,7 +1697,9 @@ int main(int argc, char *argv[]) {
       // resize group containers on each level
       for (int l = 0; l < numLevels; ++l) {
         regRowMaps[l].resize(maxRegPerProc);
+        regColMaps[l].resize(maxRegPerProc);
         quasiRegRowMaps[l].resize(maxRegPerProc);
+        quasiRegColMaps[l].resize(maxRegPerProc);
         regMatrices[l].resize(maxRegPerProc);
         regProlong[l].resize(maxRegPerProc);
         regRowImporters[l].resize(maxRegPerProc);
@@ -1450,9 +1709,11 @@ int main(int argc, char *argv[]) {
 
     // Fill fine level with our data
     {
-      compMaps[0] = mapComp;
+      compRowMaps[0] = mapComp;
       quasiRegRowMaps[0] = rowMapPerGrp;
+      quasiRegColMaps[0] = colMapPerGrp;
       regRowMaps[0] = revisedRowMapPerGrp;
+      regColMaps[0] = revisedColMapPerGrp;
       regRowImporters[0] = rowImportPerGrp;
       regMatrices[0] = regionGrpMats;
 
@@ -1466,7 +1727,9 @@ int main(int argc, char *argv[]) {
       regProlong[0] = fineLevelProlong;
     }
 
-    // Get coarse level matrices and prolongators from MueLu hierarchy (Note: fine level has been dealt with previously)
+    /* Get coarse level matrices and prolongators from MueLu hierarchy
+     * Note: fine level has been dealt with previously, so we start at level 1 here.
+     */
     for (int l = 1; l < numLevels; ++l) { // Note: we start at level 1 (which is the first coarse level)
       for (int j = 0; j < maxRegPerProc; ++j) {
         RCP<MueLu::Level> level = regGrpHierarchy[j]->GetLevel(l);
@@ -1478,6 +1741,7 @@ int main(int argc, char *argv[]) {
         regMatrices[l][j] = Utilities::Op2NonConstEpetraCrs(regRAPXpetra);
 
         regRowMaps[l][j] = Teuchos::rcp(new Epetra_Map(regMatrices[l][j]->RowMap())); // ToDo (mayr.mt) Do not copy!
+        regColMaps[l][j] = Teuchos::rcp(new Epetra_Map(regMatrices[l][j]->ColMap())); // ToDo (mayr.mt) Do not copy!
       }
     }
 
@@ -1492,10 +1756,10 @@ int main(int argc, char *argv[]) {
       /* General strategy to create coarse level maps:
        * =============================================
        *
-       * We need three maps on the next coarser level:
-       * - regional map: just extract the RowMap() from the prolongator
-       * - quasiRegional map: needs to be formed manually
-       * - composite map: needs to be formed manually
+       * We need three row maps on the next coarser level:
+       * - regional row map: just extract the RowMap() from the prolongator
+       * - quasiRegional row map: needs to be formed manually
+       * - composite row map: needs to be formed manually
        *
        * After extracting the RowMap() from the prolongator to be used as the
        * coarse level's regional map, we need to identify pairs/sets of GIDs
@@ -1522,6 +1786,17 @@ int main(int argc, char *argv[]) {
        * To form the composite map, we loop over the quasiRegional map and
        * - every proc accepts every GID that it owns.
        * - every proc ignores every GID that it doesn't own.
+       *
+       * To form a composite operator on the coarsest level, we also need the
+       * column map on the coarsest level. Hence, we have to recursively
+       * re-construct all column maps on each level, namely
+       * - regional col map: just extract the ColMap() from the prolongator
+       * - quasiRegional col map: needs to be formed manually
+       * - composite col map: needs to be formed manually
+       *
+       * To form column maps, lots of information that we used to generate row
+       * maps can be reused. The central piece of information is the mapping
+       * of duplicated interface GIDs.
        */
 
       int err = 0;
@@ -1603,7 +1878,7 @@ int main(int argc, char *argv[]) {
             (*regDupGIDVec[j])[interfaceLIDs[l][j][i]] = 1.0;
         }
 
-        RCP<Epetra_Vector> compDupGIDVec = rcp(new Epetra_Vector(*compMaps[l]), true);
+        RCP<Epetra_Vector> compDupGIDVec = rcp(new Epetra_Vector(*compRowMaps[l]), true);
         regionalToComposite(regDupGIDVec, compDupGIDVec, maxRegPerProc,
             quasiRegRowMaps[l], regRowImporters[l], Add, true);
 
@@ -1906,7 +2181,7 @@ int main(int argc, char *argv[]) {
           TEUCHOS_ASSERT(err == 0);
 
 //          sleep(1);
-//          std::cout << myRank << " | Printing the tranpose ..." << std::endl;
+//          std::cout << myRank << " | Printing the transpose ..." << std::endl;
 //          Comm.Barrier();
 //          transDuplicateMapping->Print(std::cout);
         }
@@ -1951,7 +2226,7 @@ int main(int argc, char *argv[]) {
 //          regRowMaps[l+1][0]->Print(std::cout);
 //          sleep(2);
 
-          // create quasiRegional map
+          // create quasiRegional row map
           {
             std::vector<int> myQuasiRegGIDs;
 
@@ -2004,10 +2279,9 @@ int main(int argc, char *argv[]) {
 //            std::cout << myRank << " | Printing quasiRegRowMaps[" << l+1 << "][0] ..." << std::endl;
 //            Comm.Barrier();
 //            quasiRegRowMaps[l+1][0]->Print(std::cout);
-
           }
 
-          // create composite map
+          // create composite row map
           {
             std::vector<int> myCompGIDs;
             for (int j = 0; j < maxRegPerProc; j++) {
@@ -2019,23 +2293,104 @@ int main(int argc, char *argv[]) {
               }
             }
 
-            compMaps[l+1] = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myCompGIDs.size(), myCompGIDs.data(), 0, Comm));
-            TEUCHOS_ASSERT(!compMaps[l+1].is_null());
+            compRowMaps[l+1] = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myCompGIDs.size(), myCompGIDs.data(), 0, Comm));
+            TEUCHOS_ASSERT(!compRowMaps[l+1].is_null());
 
 //            sleep(1);
-//            std::cout << myRank << " | Printing compMaps["<< l+1 << "] ..." << std::endl;
+//            std::cout << myRank << " | Printing compRowMaps["<< l+1 << "] ..." << std::endl;
 //            Comm.Barrier();
-//            compMaps[l+1]->Print(std::cout);
+//            compRowMaps[l+1]->Print(std::cout);
           }
 
           // create regRowImporter
           for (int j = 0; j < maxRegPerProc; ++j) {
             regRowImporters[l+1][j] =
-                rcp(new Epetra_Import(*quasiRegRowMaps[l+1][j], *compMaps[l+1]));
+                rcp(new Epetra_Import(*quasiRegRowMaps[l+1][j], *compRowMaps[l+1]));
             TEUCHOS_ASSERT(!regRowImporters[l+1][j].is_null());
+          }
+
+          // Create quasiRegional column map
+          {
+            std::vector<int> myQuasiRegGIDs;
+
+            for (int i = 0; i < regColMaps[l+1][0]->NumMyElements(); ++i) {
+              // grab current regional GID to be processed
+              int currGID = regColMaps[l+1][0]->GID(i);
+              int quasiGID = currGID; // assign dummy value
+
+              /* Find quasiRegional counterpart
+               *
+               * We should be able to use the same procedure as for the
+               * quasiRegRowMap since duplicated GIDs only live on the interface.
+               * Hence, even if the column map reaches across an interface,
+               * GIDs from 'the other side of the interface' do not have to be
+               * modified as they have not been duplicated (only those on the
+               * interface).
+               */
+              {
+                // Is this an interface GID?
+                bool isInterface = false;
+                for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
+                  for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
+                    if (currGID == myCoarseInterfaceDuplicates[k][kk])
+                      isInterface = true;
+                  }
+                }
+
+                if (isInterface) {
+                  for (std::size_t k = 0; k < myCoarseInterfaceDuplicates.size(); ++k) {
+                    bool found = false;
+                    for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk) {
+                      if (currGID == myCoarseInterfaceDuplicates[k][kk])
+                        found = true;
+                    }
+
+                    if (found) {
+                      for (std::size_t kk = 0; kk < myCoarseInterfaceDuplicates[k].size(); ++kk)
+                        quasiGID = std::min(quasiGID, Teuchos::as<int>(myCoarseInterfaceDuplicates[k][kk]));
+
+//                      std::cout << myRank << " | Interface GID " << currGID << " is replaced by quasiGID " << quasiGID << std::endl;
+                      break;
+                    }
+                  }
+                }
+                else { // interior node --> take GID from regional map
+                  quasiGID = currGID;
+                }
+              }
+
+              TEUCHOS_ASSERT(quasiGID>=0);
+              myQuasiRegGIDs.push_back(quasiGID);
+            }
+
+            quasiRegColMaps[l+1][0] = rcp(new Epetra_Map(Teuchos::OrdinalTraits<int>::invalid(), myQuasiRegGIDs.size(), myQuasiRegGIDs.data(), 0, Comm));
+            TEUCHOS_ASSERT(!quasiRegColMaps[l+1][0].is_null());
+
+//            sleep(1);
+//            std::cout << myRank << " | Printing quasiRegColMaps[" << l+1 << "][0] ..." << std::endl;
+//            Comm.Barrier();
+//            quasiRegColMaps[l+1][0]->Print(std::cout);
           }
         }
       }
+    }
+
+    // Form the composite coarse level operator
+    {
+      const int maxLevel = numLevels - 1;
+      coarseCompOp = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *compRowMaps[maxLevel], 3));
+      regionalToComposite(regMatrices[maxLevel], coarseCompOp, maxRegPerProc,
+          quasiRegRowMaps[maxLevel], quasiRegColMaps[maxLevel],
+          regRowImporters[maxLevel], Add, false);
+
+      int err = coarseCompOp->FillComplete(*compRowMaps[maxLevel], *compRowMaps[maxLevel]);
+      TEUCHOS_ASSERT(err==0);
+
+
+//      sleep(1);
+//      std::cout << myRank << " | Printing coarseCompOp ..." << std::endl;
+//      Comm.Barrier();
+//      coarseCompOp->Print(std::cout);
     }
   }
 
@@ -2045,7 +2400,7 @@ int main(int argc, char *argv[]) {
   {
     std::cout << myRank << " | Computing interface scaling factors ..." << std::endl;
 
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!numLevels>0, "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
 
     for (int l = 0; l < numLevels; l++)
     {
@@ -2056,7 +2411,7 @@ int main(int argc, char *argv[]) {
       }
 
       // transform to composite layout while adding interface values via the Export() combine mode
-      RCP<Epetra_Vector> compInterfaceScalingSum = rcp(new Epetra_Vector(*compMaps[l], true));
+      RCP<Epetra_Vector> compInterfaceScalingSum = rcp(new Epetra_Vector(*compRowMaps[l], true));
       regionalToComposite(regInterfaceScalings[l], compInterfaceScalingSum, maxRegPerProc, quasiRegRowMaps[l], regRowImporters[l], Add, true);
 
       /* transform composite layout back to regional layout. Now, GIDs associated
@@ -2075,7 +2430,7 @@ int main(int argc, char *argv[]) {
   {
     std::cout << myRank << " | Running V-cycle ..." << std::endl;
 
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!numLevels>0, "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probaly, numLevel has not been set, yet.");
 
     /* We first use the non-level container variables to setup the fine grid problem.
      * This is ok since the initial setup just mimics the application and the outer
@@ -2179,8 +2534,8 @@ int main(int argc, char *argv[]) {
     for (int cycle = 0; cycle < maxVCycle; ++cycle) {
 
       vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB, regMatrices,
-          regProlong, compMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-          regInterfaceScalings);
+          regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
+          regInterfaceScalings, coarseCompOp);
 
       ////////////////////////////////////////////////////////////////////////
       // SWITCH BACK TO NON-LEVEL VARIABLES
