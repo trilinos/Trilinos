@@ -7005,18 +7005,137 @@ namespace Tpetra {
   }
 
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  swap(CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & graph)
+  void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& graph)
   {
     // WCMCLEN - SCAFFOLDING - This is a stub. The next steps are to go through and figure out what
     // the state variables are in a CrsGraph and copy do the swap.
 
-    // 1) Cache graph.<data> to local vars.
+    // Throw if useAtomicUpdatesByDefault are not the same.
+    if(this->useAtomicUpdatesByDefault != graph.useAtomicUpdatesByDefault)
+    {
+      throw std::runtime_error("Tpetra::CrsGraph::swap() incompatible execution_space between CrsGraphs.");
+    }
 
+    // 1) Cache graph.<data> to local vars.
+    Teuchos::RCP<const map_type> tmp_rowMap    = graph.rowMap_;
+    Teuchos::RCP<const map_type> tmp_colMap    = graph.colMap_;
+    Teuchos::RCP<const map_type> tmp_rangeMap  = graph.rangeMap_;
+    Teuchos::RCP<const map_type> tmp_domainMap = graph.domainMap_;
+
+    Teuchos::RCP<const import_type> tmp_importer = graph.importer_;
+    Teuchos::RCP<const export_type> tmp_exporter = graph.exporter_;
+
+    local_graph_type tmp_lclGraph = graph.lclGraph_;
+
+    size_t tmp_nodeNumDiags         = graph.nodeNumDiags_;
+    size_t tmp_nodeMaxNumRowEntries = graph.nodeMaxNumRowEntries_;
+
+    global_size_t tmp_globalNumEntries       = graph.globalNumEntries_;
+    global_size_t tmp_globalNumDiags         = graph.globalNumDiags_;
+    global_size_t tmp_globalMaxNumRowEntries = graph.globalMaxNumRowEntries_;
+
+    ProfileType tmp_pftype = graph.pftype_;
+
+    size_t tmp_numAllocForAllRows = graph.numAllocForAllRows_;
+
+    typename local_graph_type::row_map_type::const_type tmp_k_rowPtrs = graph.k_rowPtrs_;
+
+    Teuchos::ArrayRCP<Teuchos::Array<LocalOrdinal>>  tmp_lclInds2D = graph.lclInds2D_;
+    Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal>> tmp_gblInds2D = graph.gblInds2D_;
+
+    ::Tpetra::Details::EStorageStatus tmp_storageStatus = graph.storageStatus_;
+
+    bool tmp_indicesAreAllocated = graph.indicesAreAllocated_;
+    bool tmp_indicesAreLocal     = graph.indicesAreLocal_;
+    bool tmp_indicesAreGlobal    = graph.indicesAreGlobal_;
+    bool tmp_fillComplete        = graph.fillComplete_;
+    bool tmp_lowerTriangular     = graph.lowerTriangular_;
+    bool tmp_upperTriangular     = graph.upperTriangular_;
+    bool tmp_indicesAreSorted    = graph.indicesAreSorted_;
+    bool tmp_noRedundancies      = graph.noRedundancies_;
+    bool tmp_haveLocalConstants  = graph.haveLocalConstants_;
+    bool tmp_haveGlobalConstants = graph.haveGlobalConstants_;
+
+    bool tmp_sortGhostsAssociatedWithEachProcessor = graph.sortGhostsAssociatedWithEachProcessor_;
+
+    // todo: These aren't scalars, so how do we handle them?  Deep copy?  Can I just copy pointers around?
+    // k_numAllocPerRow_;
+    // typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror tmp_num_row_entries_type;
+    // num_row_entries_type tmp_k_numRowEntries = graph.k_numRowEntries_;  // todo: how to handle this view?  deep copy?
+    // copying std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
+
+    // -----------------------------------------------------
     // 2) Set graph.<data> = this-><data>
+    graph.rowMap_                 = this->rowMap_;
+    graph.colMap_                 = this->colMap_;
+    graph.rangeMap_               = this->rangeMap_;
+    graph.domainMap_              = this->domainMap_;
+    graph.importer_               = this->importer_;
+    graph.exporter_               = this->exporter_;
+    graph.lclGraph_               = this->lclGraph_;
+    graph.nodeNumDiags_           = this->nodeNumDiags_;
+    graph.nodeMaxNumRowEntries_   = this->nodeMaxNumRowEntries_;
+    graph.globalNumEntries_       = this->globalNumEntries_;
+    graph.globalNumDiags_         = this->globalNumDiags_;
+    graph.globalMaxNumRowEntries_ = this->globalMaxNumRowEntries_;
+    graph.pftype_                 = this->pftype_;
+    graph.numAllocForAllRows_     = this->numAllocForAllRows_;
+    graph.k_rowPtrs_              = this->k_rowPtrs_;      // Scalar or no? (SCAFFOLDING)
+    graph.lclInds2D_              = this->lclInds2D_;
+    graph.gblInds2D_              = this->gblInds2D_;
+    graph.storageStatus_          = this->storageStatus_;
+    graph.indicesAreAllocated_    = this->indicesAreAllocated_;
+    graph.indicesAreLocal_        = this->indicesAreLocal_;
+    graph.indicesAreGlobal_       = this->indicesAreGlobal_;
+    graph.fillComplete_           = this->fillComplete_;
+    graph.lowerTriangular_        = this->lowerTriangular_;
+    graph.upperTriangular_        = this->upperTriangular_;
+    graph.indicesAreSorted_       = this->indicesAreSorted_;
+    graph.noRedundancies_         = this->noRedundancies_;
+    graph.haveLocalConstants_     = this->haveLocalConstants_;
+    graph.haveGlobalConstants_    = this->haveGlobalConstants_;
+    graph.sortGhostsAssociatedWithEachProcessor_ = this->sortGhostsAssociatedWithEachProcessor_;
+    // todo: still need to handle:
+    // - k_numAllocPerRow_
+    // - k_numRowEntries_
+    // - nonlocals_
+
 
     // 3) Set this-><data> = local vars from (1)
+    this->rowMap_                 = tmp_rowMap;
+    this->colMap_                 = tmp_colMap;
+    this->rangeMap_               = tmp_rangeMap;
+    this->domainMap_              = tmp_domainMap;
+    this->importer_               = tmp_importer;
+    this->exporter_               = tmp_exporter;
+    this->lclGraph_               = tmp_lclGraph;
+    this->nodeNumDiags_           = tmp_nodeNumDiags;
+    this->nodeMaxNumRowEntries_   = tmp_nodeMaxNumRowEntries;
+    this->globalNumEntries_       = tmp_globalNumEntries;
+    this->globalNumDiags_         = tmp_globalNumDiags;
+    this->globalMaxNumRowEntries_ = tmp_globalMaxNumRowEntries;
+    this->pftype_                 = tmp_pftype;
+    this->numAllocForAllRows_     = tmp_numAllocForAllRows;
+    this->k_rowPtrs_              = tmp_k_rowPtrs;      // Scalar or no? (SCAFFOLDING)
+    this->lclInds2D_              = tmp_lclInds2D;
+    this->gblInds2D_              = tmp_gblInds2D;
+    this->storageStatus_          = tmp_storageStatus;
+    this->indicesAreAllocated_    = tmp_indicesAreAllocated;
+    this->indicesAreLocal_        = tmp_indicesAreLocal;
+    this->indicesAreGlobal_       = tmp_indicesAreGlobal;
+    this->fillComplete_           = tmp_fillComplete;
+    this->lowerTriangular_        = tmp_lowerTriangular;
+    this->upperTriangular_        = tmp_upperTriangular;
+    this->indicesAreSorted_       = tmp_indicesAreSorted;
+    this->noRedundancies_         = tmp_noRedundancies;
+    this->haveLocalConstants_     = tmp_haveLocalConstants;
+    this->haveGlobalConstants_    = tmp_haveGlobalConstants;
+    this->sortGhostsAssociatedWithEachProcessor_ = tmp_sortGhostsAssociatedWithEachProcessor;
+    // todo: handle these:
+    // - k_numAllocPerRow_
+    // - k_numRowEntries_
+    // - nonlocals_
+
 
 
     // Note: There could be an issue with the static const state variable, useAtomicUpdatesByDefault,
@@ -7025,7 +7144,6 @@ namespace Tpetra {
     //       Solution(s):
     //       1) Throw an error if the values are different since the CrsGraphs would be incompatible?
     //       2) Change this state variable to a non static-const variable and just swap it with everything else?
-
   }
 
 } // namespace Tpetra

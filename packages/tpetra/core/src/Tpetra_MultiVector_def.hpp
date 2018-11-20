@@ -5088,7 +5088,7 @@ namespace Tpetra {
     // Cache maps & views
     Teuchos::RCP<const map_type> map = mv.map_;
     dual_view_type  view, origView;
-    Teuchos::Array<size_t> whichVectors; // FIXME: This is a deep copy
+    Teuchos::Array<size_t> whichVectors;  // FIXME: This is a deep copy
     view         = mv.view_;
     origView     = mv.origView_;
     whichVectors = mv.whichVectors_;
