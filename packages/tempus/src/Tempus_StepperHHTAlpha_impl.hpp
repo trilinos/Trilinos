@@ -171,6 +171,7 @@ void StepperHHTAlpha<Scalar>::initialize()
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
+  this->setParameterList(this->stepperPL_);
   this->setSolver();
 }
 
@@ -234,24 +235,24 @@ void StepperHHTAlpha<Scalar>::takeStep(
       Thyra::copy(*d_old, d_init.ptr());
       Thyra::copy(*v_old, v_init.ptr());
       if (initial_guess_ != Teuchos::null) { //set initial guess for Newton, if provided
-        //Throw an exception if initial_guess is not compatible with solution 
-        bool is_compatible = (a_init->space())->isCompatible(*initial_guess_->space()); 
+        //Throw an exception if initial_guess is not compatible with solution
+        bool is_compatible = (a_init->space())->isCompatible(*initial_guess_->space());
         TEUCHOS_TEST_FOR_EXCEPTION(
             is_compatible != true, std::logic_error,
               "Error in Tempus::NemwarkImplicitAForm takeStep(): user-provided initial guess'!\n"
-              << "for Newton is not compatible with solution vector!\n"); 
+              << "for Newton is not compatible with solution vector!\n");
         Thyra::copy(*initial_guess_, a_init.ptr());
       }
-      else { //if no initial_guess_ provide, set 0 initial guess 
+      else { //if no initial_guess_ provide, set 0 initial guess
         Thyra::put_scalar(0.0, a_init.ptr());
       }
       wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
       const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
 
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-        workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+        workingState->setSolutionStatus(Status::PASSED);
       else
-        workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+        workingState->setSolutionStatus(Status::FAILED);
       Thyra::copy(*a_init, a_old.ptr());
     }
 #ifdef DEBUG_OUTPUT
@@ -286,9 +287,9 @@ void StepperHHTAlpha<Scalar>::takeStep(
     correctDisplacement(*d_new, *d_pred, *a_new, dt);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+      workingState->setSolutionStatus(Status::PASSED);
     else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+      workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
   }
   return;

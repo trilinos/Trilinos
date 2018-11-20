@@ -57,6 +57,7 @@ namespace Ioss { class Property; }
 namespace Ioss { class Region; }
 namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
+namespace stk { namespace io { class SidesetUpdater; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
@@ -103,15 +104,22 @@ namespace impl
     {
     public:
       OutputFile(const std::string &filename, MPI_Comm communicator, DatabasePurpose db_type,
-		 Ioss::PropertyManager& property_manager, const Ioss::Region *input_region, char const* type = "exodus")
+		 Ioss::PropertyManager& property_manager, const Ioss::Region *input_region,
+		 char const* type = "exodus", bool openFileImmediately = true)
         : m_current_output_step(-1), m_use_nodeset_for_block_nodes_fields(false), m_use_nodeset_for_sideset_nodes_fields(false),
           m_check_field_existence_when_creating_nodesets(true), m_use_part_id_for_output(true),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
           m_appending_to_mesh(false),
+          m_has_ghosting(false),
+          m_has_adaptivity(false),
+          m_is_skin_mesh(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr), m_shared_selector(nullptr),
 	  m_multiStateSuffixes(nullptr)
       {
-	setup_output_file(filename, communicator, property_manager, type);
+	initialize_output_selectors();
+	setup_output_file(filename, communicator, property_manager, type, openFileImmediately);
+
+	initialize_output_selectors();
       }
 
       OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
@@ -120,11 +128,15 @@ namespace impl
           m_check_field_existence_when_creating_nodesets(true), m_use_part_id_for_output(true),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
           m_appending_to_mesh(false),
+          m_has_ghosting(false),
+          m_has_adaptivity(false),
+          m_is_skin_mesh(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr), m_shared_selector(nullptr),
 	  m_multiStateSuffixes(nullptr)
       {
 	m_region = ioss_output_region;
 	m_mesh_defined = true;
+	initialize_output_selectors();
       }
       Teuchos::RCP<Ioss::Region> get_output_io_region() {
 	return m_region;
@@ -140,6 +152,8 @@ namespace impl
       void write_output_mesh(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
       void flush_output() const;
       void add_field(stk::mesh::FieldBase &field, const std::string &alternate_name, stk::mesh::EntityRank var_type);
+      void add_field(stk::mesh::FieldBase &field, const OutputVariableParams &var, stk::mesh::EntityRank var_type);
+      void add_user_data(const std::vector<std::string>& userData, const std::string &alternate_name, stk::io::DataLocation loc);
       bool has_global(const std::string &globalVarName) const;
       void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
       void add_global_ref(const std::string &variableName, const boost::any *value, stk::util::ParameterType::Type type);
@@ -166,7 +180,8 @@ namespace impl
 
       void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
-      void set_output_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
+
+      void set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
 
       bool use_nodeset_for_block_nodes_fields() const;
       void use_nodeset_for_block_nodes_fields(bool true_false);
@@ -180,13 +195,31 @@ namespace impl
       bool use_part_id_for_output() const;
       void use_part_id_for_output(bool true_false);
 
+      bool has_ghosting() const;
+      void has_ghosting(bool hasGhosting);
+
+      bool has_adaptivity() const;
+      void has_adaptivity(bool hasAdaptivity);
+
+      bool is_skin_mesh() const;
+      void is_skin_mesh(bool skinMesh);
+
       Ioss::DatabaseIO *get_output_database();
+
+      std::vector<stk::mesh::Entity> get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name);
 
     private:
       void define_output_fields(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
       void setup_output_file(const std::string &filename, MPI_Comm communicator,
 			     Ioss::PropertyManager &property_manager,
-                             char const* type = "exodus");
+                             char const* type = "exodus", bool openFileImmediately = true);
+      void initialize_output_selectors()
+      {
+          m_output_selector[stk::topology::NODE_RANK].reset();
+          m_output_selector[stk::topology::EDGE_RANK].reset();
+          m_output_selector[stk::topology::FACE_RANK].reset();
+          m_output_selector[stk::topology::ELEM_RANK].reset();
+      }
 
       int m_current_output_step;
       bool m_use_nodeset_for_block_nodes_fields;
@@ -197,13 +230,17 @@ namespace impl
       bool m_fields_defined;
       bool m_non_any_global_variables_defined;
       bool m_appending_to_mesh;
+      bool m_has_ghosting;
+      bool m_has_adaptivity;
+      bool m_is_skin_mesh;
       DatabasePurpose m_db_purpose;
       const Ioss::Region* m_input_region;
       Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
       Teuchos::RCP<stk::mesh::Selector> m_shared_selector;
-      Teuchos::RCP<stk::mesh::Selector> m_output_selector;
+      Teuchos::RCP<stk::mesh::Selector> m_output_selector[stk::topology::ELEM_RANK+1];
       Teuchos::RCP<Ioss::Region> m_region;
       std::vector<stk::io::FieldAndName> m_named_fields;
+      std::vector<stk::io::UserDataAndName> m_user_data;
 
       // Global fields that can be output automatically without app calling write_global.
       std::vector<GlobalAnyVariable> m_global_any_fields; 
@@ -354,8 +391,15 @@ namespace impl
       void set_shared_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
       void set_shared_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
 
-      void set_output_selector(size_t output_file_index, Teuchos::RCP<stk::mesh::Selector> my_selector);
-      void set_output_selector(size_t output_file_index, stk::mesh::Selector &my_selector);
+      void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
+      void set_output_selector(size_t output_file_index, stk::topology::rank_t rank, stk::mesh::Selector &my_selector);
+
+      void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
+      void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
+      void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
+
+      stk::mesh::Selector get_active_selector();
+      void set_active_selector(stk::mesh::Selector my_selector);
 
       Teuchos::RCP<stk::mesh::Selector> deprecated_selector();
       void deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
@@ -514,6 +558,8 @@ namespace impl
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
       virtual void populate_mesh(bool delay_field_data_allocation = true);
+      bool populate_mesh_elements_and_nodes(bool delay_field_data_allocation);
+      void populate_mesh_sidesets(bool i_started_modification_cycle);
 
       // Read/generate the field-data for the mesh, including
       // coordinates, attributes and distribution factors.
@@ -627,35 +673,32 @@ namespace impl
       // Valid types are "exodus", "catalyst".
       size_t create_output_mesh(const std::string &filename,
 				DatabasePurpose purpose,
-                                char const* type = "exodus");
+                                char const* type = "exodus", bool openFileImmediately = true);
       size_t create_output_mesh(const std::string &filename,
                                 DatabasePurpose purpose,
                                 double time,
-                                char const* type = "exodus");
+                                char const* type = "exodus", bool openFileImmediately = true);
       size_t create_output_mesh(const std::string &filename,
 				DatabasePurpose purpose,
 				Ioss::PropertyManager &properties,
-                                char const* type = "exodus");
+                                char const* type = "exodus", bool openFileImmediately = true);
       size_t create_output_mesh(const std::string &filename,
 				DatabasePurpose purpose,
 				Ioss::PropertyManager &properties,
                                 double time,
-                                char const* type = "exodus");
+                                char const* type = "exodus", bool openFileImmediately = true);
 
       void write_output_mesh(size_t output_file_index);
 
-      void add_field(size_t output_file_index,
-		     stk::mesh::FieldBase &field);
-      void add_field(size_t output_file_index,
-		     stk::mesh::FieldBase &field,
-		     const std::string &db_name);
-      void add_field(size_t output_file_index,
-                     stk::mesh::FieldBase &field,
-                     stk::mesh::EntityRank var_type);
-      void add_field(size_t output_file_index,
-                     stk::mesh::FieldBase &field,
-                     stk::mesh::EntityRank var_type,
-                     const std::string &db_name);
+      void add_field(size_t output_file_index, stk::mesh::FieldBase &field);
+      void add_field(size_t output_file_index, stk::mesh::FieldBase &field, const std::string &db_name);
+      void add_field(size_t output_file_index, stk::mesh::FieldBase &field, stk::mesh::EntityRank var_type, const std::string &db_name);
+      void add_field(size_t output_file_index, stk::mesh::FieldBase &field, stk::mesh::EntityRank var_type, const OutputVariableParams &var);
+
+      void add_user_data(size_t output_file_index,
+                     const std::vector<std::string> &parts,
+                     const std::string &db_name,
+                     stk::io::DataLocation loc);
       bool has_global(size_t output_file_index,
                       const std::string &globalVarName) const;
       void add_global_ref(size_t output_file_index,
@@ -851,6 +894,9 @@ namespace impl
       // Returns 4 or 8 based on several hueristics to determine
       // the integer size required for an output database.
       int check_integer_size_requirements();
+      void create_surface_to_block_mapping();
+
+      std::vector<stk::mesh::Entity> get_output_entities(size_t output_index, const stk::mesh::BulkData& bulk_data, const std::string &name);
 
       //-END
     protected:
@@ -865,6 +911,7 @@ namespace impl
       void stk_mesh_resolve_node_sharing() { bulk_data().resolve_node_sharing(); }
       void stk_mesh_modification_end_after_node_sharing_resolution() { bulk_data().modification_end_after_node_sharing_resolution(); }
     private:
+      void create_sideset_observer();
       void create_ioss_region();
       void validate_output_file_index(size_t output_file_index) const;
       void validate_heartbeat_file_index(size_t heartbeat_file_index) const;
@@ -898,6 +945,7 @@ namespace impl
       Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
 
 
+      stk::mesh::Selector m_active_selector;
       Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
 
       const stk::mesh::ConnectivityMap* m_connectivity_map;
@@ -964,15 +1012,40 @@ namespace impl
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
+                                                     stk::topology::rank_t rank,
                                                      Teuchos::RCP<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_output_selector(my_selector);
+      m_output_files[output_file_index]->set_output_selector(rank, my_selector);
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
+                                                     stk::topology::rank_t rank,
                                                      stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_output_selector(Teuchos::rcpFromRef(my_selector));
+      m_output_files[output_file_index]->set_output_selector(rank, Teuchos::rcpFromRef(my_selector));
+    }
+
+    inline void StkMeshIoBroker::set_ghosting_filter(size_t output_file_index, bool hasGhosting) {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->has_ghosting(hasGhosting);
+    }
+
+    inline void StkMeshIoBroker::set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity) {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->has_adaptivity(hasAdaptivity);
+    }
+
+    inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
+      validate_output_file_index(output_file_index);
+      m_output_files[output_file_index]->is_skin_mesh(skinMesh);
+    }
+
+    inline stk::mesh::Selector StkMeshIoBroker::get_active_selector() {
+      return m_active_selector;
+    }
+
+    inline void StkMeshIoBroker::set_active_selector(stk::mesh::Selector my_selector) {
+      m_active_selector = my_selector;
     }
 
     inline Teuchos::RCP<stk::mesh::Selector> StkMeshIoBroker::deprecated_selector() {

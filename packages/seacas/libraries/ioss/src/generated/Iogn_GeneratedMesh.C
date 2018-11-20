@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
-#include <cstdlib> // for strtod, nullptr, exit, etc
+#include <cstdlib> // for nullptr, exit, etc
 #include <cstring> // for memcpy
 #include <generated/Iogn_GeneratedMesh.h>
 #include <iomanip>  // for operator<<, setw
@@ -275,18 +275,18 @@ namespace Iogn {
         // Option of the form  "scale:xs,ys,zs
         auto tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 3);
-        sclX = std::strtod(tokens[0].c_str(), nullptr);
-        sclY = std::strtod(tokens[1].c_str(), nullptr);
-        sclZ = std::strtod(tokens[2].c_str(), nullptr);
+        sclX = std::stod(tokens[0]);
+        sclY = std::stod(tokens[1]);
+        sclZ = std::stod(tokens[2]);
       }
 
       else if (option[0] == "offset") {
         // Option of the form  "offset:xo,yo,zo
         auto tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 3);
-        offX = std::strtod(tokens[0].c_str(), nullptr);
-        offY = std::strtod(tokens[1].c_str(), nullptr);
-        offZ = std::strtod(tokens[2].c_str(), nullptr);
+        offX = std::stod(tokens[0]);
+        offY = std::stod(tokens[1]);
+        offZ = std::stod(tokens[2]);
       }
 
       else if (option[0] == "zdecomp") {
@@ -314,12 +314,12 @@ namespace Iogn {
         // Bounding-Box Option of the form  "bbox:xmin,ymin,zmin,xmax,ymax,zmaxo
         auto tokens = Ioss::tokenize(option[1], ",");
         assert(tokens.size() == 6);
-        double xmin = std::strtod(tokens[0].c_str(), nullptr);
-        double ymin = std::strtod(tokens[1].c_str(), nullptr);
-        double zmin = std::strtod(tokens[2].c_str(), nullptr);
-        double xmax = std::strtod(tokens[3].c_str(), nullptr);
-        double ymax = std::strtod(tokens[4].c_str(), nullptr);
-        double zmax = std::strtod(tokens[5].c_str(), nullptr);
+        double xmin = std::stod(tokens[0]);
+        double ymin = std::stod(tokens[1]);
+        double zmin = std::stod(tokens[2]);
+        double xmax = std::stod(tokens[3]);
+        double ymax = std::stod(tokens[4]);
+        double zmax = std::stod(tokens[5]);
 
         set_bbox(xmin, ymin, zmin, xmax, ymax, zmax);
       }
@@ -330,7 +330,7 @@ namespace Iogn {
         assert(tokens.size() % 2 == 0);
         for (size_t ir = 0; ir < tokens.size();) {
           std::string axis         = tokens[ir++];
-          double      angle_degree = std::strtod(tokens[ir++].c_str(), nullptr);
+          double      angle_degree = std::stod(tokens[ir++]);
           set_rotation(axis, angle_degree);
         }
       }

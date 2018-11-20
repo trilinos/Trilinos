@@ -101,7 +101,7 @@ class Integrator_GradBasisTimesScalar
   std::size_t _basis_index;
 
   // Temporary variable to store tmp = multipliers * vector
-  Kokkos::DynRankView<ScalarT,PHX::Device> _tmp;
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> _tmp;
 
 }; // end of class Integrator_GradBasisTimesScalar
 

@@ -1,8 +1,5 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-//#define __KOKKOSBATCHED_INTEL_MKL__
-//#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__
-
 #include <iomanip>
 
 #include "KokkosBatched_Util.hpp"
@@ -17,6 +14,8 @@
 
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
+
+//#undef __KOKKOSBATCHED_INTEL_MKL_BATCHED__
 
 namespace KokkosBatched {
   namespace Experimental {
@@ -375,214 +374,209 @@ namespace KokkosBatched {
           Kokkos::View<VectorType***,Kokkos::LayoutRight,HostSpaceType>
             a("a", N, BlkSize, BlkSize),
             b("b", N, BlkSize, NumCols);
-        
+          
           {
             double tavg = 0, tmin = tmax;
+
+            MKL_COMPACT_PACK format;
+
+            if (VectorLength == 4)                 format = MKL_COMPACT_AVX;
+            else if (VectorLength == 8)            format = MKL_COMPACT_AVX512;
           
-            MKL_INT blksize[1] = { BlkSize };
-            MKL_INT numcols[1] = { NumCols };
+            double one = 1.0;
+            if (format == MKL_COMPACT_AVX512 || format == MKL_COMPACT_AVX) {
+              for (int iter=iter_begin;iter<iter_end;++iter) {
+                // flush
+                flush.run();
+                
+                // initialize matrices
+                Kokkos::deep_copy(a, amat_simd);
+                Kokkos::deep_copy(b, bmat_simd);
+                
+                HostSpaceType::fence();
+                timer.reset();
+                
+                switch (test) {
+                case 0: {
+                  MKL_SIDE side = MKL_LEFT;
+                  MKL_UPLO uplo = MKL_LOWER;
+                  MKL_TRANSPOSE transA = MKL_NOTRANS;
+                  MKL_DIAG diag = MKL_UNIT;
 
-            MKL_INT lda[1] = { a.stride_1() };
-            MKL_INT ldb[1] = { b.stride_1() };
-          
-            double one[1] = { 1.0 };
-            MKL_INT size_per_grp[1] = { N*VectorLength };
-
-            compact_t A_p, B_p;
-            A_p.layout = CblasRowMajor;
-            A_p.rows = blksize;
-            A_p.cols = blksize;
-            A_p.stride = lda;
-            A_p.group_count = 1;
-            A_p.size_per_group = size_per_grp;
-            A_p.format = VectorLength;
-            A_p.mat = (double*)a.data();
-          
-            B_p.layout = CblasRowMajor;
-            B_p.rows = blksize;
-            B_p.cols = numcols;
-            B_p.stride = ldb;
-            B_p.group_count = 1;
-            B_p.size_per_group = size_per_grp;
-            B_p.format = VectorLength;
-            B_p.mat = (double*)b.data();
-
-            for (int iter=iter_begin;iter<iter_end;++iter) {
-              // flush
-              flush.run();
-
-              // initialize matrices
-              Kokkos::deep_copy(a, amat_simd);
-              Kokkos::deep_copy(b, bmat_simd);
-
-              HostSpaceType::fence();
-              timer.reset();
-
-              switch (test) {
-              case 0: {
-                CBLAS_SIDE side[1] = {CblasLeft};
-                CBLAS_UPLO uplo[1] = {CblasLower};
-                CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-                CBLAS_DIAG diag[1] = {CblasUnit};
-
-                cblas_dtrsm_compute_batch(side, uplo, transA, diag,
-                                          one,
-                                          &A_p,
-                                          &B_p);
-                break;
+                  mkl_dtrsm_compact(MKL_ROW_MAJOR,
+                                    side, uplo, transA, diag,
+                                    BlkSize, NumCols,
+                                    one,
+                                    (const double*)a.data(), a.stride_1(),
+                                    (      double*)b.data(), b.stride_1(),
+                                    format, (MKL_INT)N*VectorLength);
+                  break;
+                }
+                case 1: {
+                  MKL_SIDE side = MKL_LEFT;
+                  MKL_UPLO uplo = MKL_LOWER;
+                  MKL_TRANSPOSE transA = MKL_NOTRANS;
+                  MKL_DIAG diag = MKL_NONUNIT;
+                  
+                  mkl_dtrsm_compact(MKL_ROW_MAJOR,
+                                    side, uplo, transA, diag,
+                                    BlkSize, NumCols,
+                                    one,
+                                    (const double*)a.data(), a.stride_1(),
+                                    (      double*)b.data(), b.stride_1(),
+                                    format, (MKL_INT)N*VectorLength);
+                  break;
+                }
+                case 2: {
+                  MKL_SIDE side = MKL_RIGHT;
+                  MKL_UPLO uplo = MKL_UPPER;
+                  MKL_TRANSPOSE transA = MKL_NOTRANS;
+                  MKL_DIAG diag = MKL_UNIT;
+                  
+                  mkl_dtrsm_compact(MKL_ROW_MAJOR,
+                                    side, uplo, transA, diag,
+                                    BlkSize, NumCols,
+                                    one,
+                                    (const double*)a.data(), a.stride_1(),
+                                    (      double*)b.data(), b.stride_1(),
+                                    format, (MKL_INT)N*VectorLength);
+                  break;
+                }
+                case 3: {
+                  MKL_SIDE side = MKL_RIGHT;
+                  MKL_UPLO uplo = MKL_UPPER;
+                  MKL_TRANSPOSE transA = MKL_NOTRANS;
+                  MKL_DIAG diag = MKL_NONUNIT;
+                  
+                  mkl_dtrsm_compact(MKL_ROW_MAJOR,
+                                    side, uplo, transA, diag,
+                                    BlkSize, NumCols,
+                                    one,
+                                    (const double*)a.data(), a.stride_1(),
+                                    (      double*)b.data(), b.stride_1(),
+                                    format, (MKL_INT)N*VectorLength);
+                  break;
+                }
+                case 4: {
+                  MKL_SIDE side = MKL_LEFT;
+                  MKL_UPLO uplo = MKL_UPPER;
+                  MKL_TRANSPOSE transA = MKL_NOTRANS;
+                  MKL_DIAG diag = MKL_NONUNIT;
+                  
+                  mkl_dtrsm_compact(MKL_ROW_MAJOR,
+                                    side, uplo, transA, diag,
+                                    BlkSize, NumCols,
+                                    one,
+                                    (const double*)a.data(), a.stride_1(),
+                                    (      double*)b.data(), b.stride_1(),
+                                    format, (MKL_INT)N*VectorLength);
+                  break;
+                }
+                }
+                
+                HostSpaceType::fence();
+                const double t = timer.seconds();
+                tmin = std::min(tmin, t);
+                tavg += (iter >= 0)*t;
               }
-              case 1: {
-                CBLAS_SIDE side[1] = {CblasLeft};
-                CBLAS_UPLO uplo[1] = {CblasLower};
-                CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-                CBLAS_DIAG diag[1] = {CblasNonUnit};
-
-                cblas_dtrsm_compute_batch(side, uplo, transA, diag,
-                                          one,
-                                          &A_p,
-                                          &B_p);
-                break;
-              }
-              case 2: {
-                CBLAS_SIDE side[1] = {CblasRight};
-                CBLAS_UPLO uplo[1] = {CblasUpper};
-                CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-                CBLAS_DIAG diag[1] = {CblasUnit};
-
-                cblas_dtrsm_compute_batch(side, uplo, transA, diag,
-                                          one,
-                                          &A_p,
-                                          &B_p);
-                break;
-              }
-              case 3: {
-                CBLAS_SIDE side[1] = {CblasRight};
-                CBLAS_UPLO uplo[1] = {CblasUpper};
-                CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-                CBLAS_DIAG diag[1] = {CblasNonUnit};
-
-                cblas_dtrsm_compute_batch(side, uplo, transA, diag,
-                                          one,
-                                          &A_p,
-                                          &B_p);
-                break;
-              }
-              case 4: {
-                CBLAS_SIDE side[1] = {CblasLeft};
-                CBLAS_UPLO uplo[1] = {CblasUpper};
-                CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
-                CBLAS_DIAG diag[1] = {CblasNonUnit};
-
-                cblas_dtrsm_compute_batch(side, uplo, transA, diag,
-                                          one,
-                                          &A_p,
-                                          &B_p);
-                break;
-              }
-              }
-            
-              HostSpaceType::fence();
-              const double t = timer.seconds();
-              tmin = std::min(tmin, t);
-              tavg += (iter >= 0)*t;
+              tavg /= iter_end;
+              
+              double diff = 0;
+              for (int i=0,iend=bref.extent(0);i<iend;++i)
+                for (int j=0,jend=bref.extent(1);j<jend;++j)
+                  for (int k=0,kend=bref.extent(2);k<kend;++k)
+                    diff += std::abs(bref(i,j,k) - b(i/VectorLength,j,k)[i%VectorLength]);
+              
+              std::cout << std::setw(10) << "MKL Cmpt"
+                        << " BlkSize = " << std::setw(3) << BlkSize
+                        << " NumCols = " << std::setw(3) << NumCols
+                        << " time = " << std::scientific << tmin
+                        << " avg flop/s = " << (flop/tavg)
+                        << " max flop/s = " << (flop/tmin)
+                        << " diff to ref = " << diff
+                        << std::endl;
             }
-            tavg /= iter_end;
-
-            double diff = 0;
-            for (int i=0,iend=bref.extent(0);i<iend;++i)
-              for (int j=0,jend=bref.extent(1);j<jend;++j)
-                for (int k=0,kend=bref.extent(2);k<kend;++k)
-                  diff += std::abs(bref(i,j,k) - b(i/VectorLength,j,k)[i%VectorLength]);
-
-            std::cout << std::setw(10) << "MKL Cmpt"
-                      << " BlkSize = " << std::setw(3) << BlkSize
-                      << " NumCols = " << std::setw(3) << NumCols
-                      << " time = " << std::scientific << tmin
-                      << " avg flop/s = " << (flop/tavg)
-                      << " max flop/s = " << (flop/tmin)
-                      << " diff to ref = " << diff
-                      << std::endl;
           }
         }
 #endif
 
 #endif
 
-        ///
-        /// Plain version (comparable to micro BLAS version)
-        ///
-        {
-          Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType>
-            a("a", N*VectorLength, BlkSize, BlkSize),
-            b("b", N*VectorLength, BlkSize, NumCols);
+        // ///
+        // /// Plain version (comparable to micro BLAS version)
+        // ///
+        // {
+        //   Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType>
+        //     a("a", N*VectorLength, BlkSize, BlkSize),
+        //     b("b", N*VectorLength, BlkSize, NumCols);
 
-          {
-            double tavg = 0, tmin = tmax;
-            for (int iter=iter_begin;iter<iter_end;++iter) {
-              // flush
-              flush.run();
+        //   {
+        //     double tavg = 0, tmin = tmax;
+        //     for (int iter=iter_begin;iter<iter_end;++iter) {
+        //       // flush
+        //       flush.run();
 
-              // initialize matrices
-              Kokkos::deep_copy(a, amat);
-              Kokkos::deep_copy(b, bmat);
+        //       // initialize matrices
+        //       Kokkos::deep_copy(a, amat);
+        //       Kokkos::deep_copy(b, bmat);
 
-              HostSpaceType::fence();
-              timer.reset();
+        //       HostSpaceType::fence();
+        //       timer.reset();
 
-              Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
-              Kokkos::parallel_for
-                (policy,
-                 KOKKOS_LAMBDA(const int k) {
-                  auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
-                  auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
+        //       Kokkos::RangePolicy<HostSpaceType,ScheduleType> policy(0, N*VectorLength);
+        //       Kokkos::parallel_for
+        //         (policy,
+        //          KOKKOS_LAMBDA(const int k) {
+        //           auto aa = Kokkos::subview(a, k, Kokkos::ALL(), Kokkos::ALL());
+        //           auto bb = Kokkos::subview(b, k, Kokkos::ALL(), Kokkos::ALL());
 
-                  switch (test) {
-                  case 0: 
-                    SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-                      invoke(1.0, aa, bb);
-                    break;
-                  case 1:
-                    SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                      invoke(1.0, aa, bb);
-                    break;
-                  case 2:
-                    SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
-                      invoke(1.0, aa, bb);
-                    break;
-                  case 3:
-                    SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                      invoke(1.0, aa, bb);
-                    break;
-                  case 4:
-                    SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
-                      invoke(1.0, aa, bb);
-                    break;
-                  }
-                });
+        //           switch (test) {
+        //           case 0: 
+        //             SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
+        //               invoke(1.0, aa, bb);
+        //             break;
+        //           case 1:
+        //             SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+        //               invoke(1.0, aa, bb);
+        //             break;
+        //           case 2:
+        //             SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::Unit,AlgoTagType>::
+        //               invoke(1.0, aa, bb);
+        //             break;
+        //           case 3:
+        //             SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+        //               invoke(1.0, aa, bb);
+        //             break;
+        //           case 4:
+        //             SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Diag::NonUnit,AlgoTagType>::
+        //               invoke(1.0, aa, bb);
+        //             break;
+        //           }
+        //         });
 
-              HostSpaceType::fence();
-              const double t = timer.seconds();
-              tmin = std::min(tmin, t);
-              tavg += (iter >= 0)*t;
-            }
-            tavg /= iter_end;
+        //       HostSpaceType::fence();
+        //       const double t = timer.seconds();
+        //       tmin = std::min(tmin, t);
+        //       tavg += (iter >= 0)*t;
+        //     }
+        //     tavg /= iter_end;
 
-            double diff = 0;
-            for (int i=0,iend=bref.extent(0);i<iend;++i)
-              for (int j=0,jend=bref.extent(1);j<jend;++j)
-                for (int k=0,kend=bref.extent(2);k<kend;++k)
-                  diff += std::abs(bref(i,j,k) - b(i,j,k));
+        //     double diff = 0;
+        //     for (int i=0,iend=bref.extent(0);i<iend;++i)
+        //       for (int j=0,jend=bref.extent(1);j<jend;++j)
+        //         for (int k=0,kend=bref.extent(2);k<kend;++k)
+        //           diff += std::abs(bref(i,j,k) - b(i,j,k));
 
-            std::cout << std::setw(10) << "KK Scalar"
-                      << " BlkSize = " << std::setw(3) << BlkSize
-                      << " NumCols = " << std::setw(3) << NumCols
-                      << " time = " << std::scientific << tmin
-                      << " avg flop/s = " << (flop/tavg)
-                      << " max flop/s = " << (flop/tmin)
-                      << " diff to ref = " << diff
-                      << std::endl;
-          }
-        }
+        //     std::cout << std::setw(10) << "KK Scalar"
+        //               << " BlkSize = " << std::setw(3) << BlkSize
+        //               << " NumCols = " << std::setw(3) << NumCols
+        //               << " time = " << std::scientific << tmin
+        //               << " avg flop/s = " << (flop/tavg)
+        //               << " max flop/s = " << (flop/tmin)
+        //               << " diff to ref = " << diff
+        //               << std::endl;
+        //   }
+        // }
 
         ///
         /// SIMD with appropriate data layout

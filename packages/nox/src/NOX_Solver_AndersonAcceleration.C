@@ -52,6 +52,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
+#include "NOX_Observer.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -62,6 +63,7 @@
 #include "NOX_Solver_SolverUtils.H"
 #include "NOX_LineSearch_Generic.H"
 #include "NOX_LineSearch_Factory.H"
+#include "NOX_SolverStats.hpp"
 #include <cmath>
 
 NOX::Solver::AndersonAcceleration::
@@ -79,7 +81,7 @@ AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils();
-  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   init();
 }
 
@@ -162,14 +164,33 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnPtr->setX(initialGuess);
   testPtr = t;
-  init();
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  nStore = 0;
+  workVec->init(0.0);
+  status = NOX::StatusTest::Unconverged;
 }
 
 void NOX::Solver::AndersonAcceleration::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
-  init();
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  nIter = 0;
+  nStore = 0;
+  workVec->init(0.0);
+  status = NOX::StatusTest::Unconverged;
+}
+
+void NOX::Solver::AndersonAcceleration::
+reset()
+{
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  nIter = 0;
+  nStore = 0;
+  workVec->init(0.0);
+  status = NOX::StatusTest::Unconverged;
 }
 
 NOX::Solver::AndersonAcceleration::~AndersonAcceleration()
@@ -178,18 +199,20 @@ NOX::Solver::AndersonAcceleration::~AndersonAcceleration()
 }
 
 
-NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::getStatus()
+NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::getStatus() const
 {
   return status;
 }
 
 NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
   Teuchos::ParameterList lsParams = paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
   // On the first step, do some initializations
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
+
     // Compute F of initital guess
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
@@ -213,7 +236,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
     // First check status
     if (status != NOX::StatusTest::Unconverged) {
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -239,7 +262,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       {
         utilsPtr->out() << "NOX::Solver::AndersonAcceleratino::iterate - line search failed" << std::endl;
         status = NOX::StatusTest::Failed;
-        prePostOperator.runPostIterate(*this);
+        observer->runPostIterate(*this);
         printUpdate();
         return status;
       }
@@ -253,7 +276,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     {
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - unable to compute F" << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -263,15 +286,16 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
     //Update iteration count
     nIter++;
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
 
   // First check status
   if (status != NOX::StatusTest::Unconverged) {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -367,14 +391,16 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   workVec->update(mixParam,*precF);
   for (int ii=0; ii<nStore; ii++)
     workVec->update(-gamma(ii,0), *(xMat[ii]), -Rgamma(ii,0),*(qMat[ii]),1.0);
+  observer->runPreSolutionUpdate(*workVec,*this);
   bool ok = lineSearchPtr->compute(*solnPtr, stepSize, *workVec, *this);
+  observer->runPostSolutionUpdate(*this);
   if (!ok)
   {
     if (stepSize == 0.0)
     {
-      utilsPtr->out() << "NOX::Solver::AndersonAcceleratino::iterate - line search failed" << std::endl;
+      utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - line search failed" << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -382,24 +408,25 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - using recovery step for line search" << std::endl;
   }
 
-  // Compute F for new current solution in case the line search didn't .
+  // Compute F for new current solution in case the line search didn't.
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
 
   // Update iteration count
   nIter++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Evaluate the current status.
   status = testPtr->checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
   return status;
@@ -407,7 +434,9 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
 NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
@@ -417,7 +446,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::solve()
   outputParams.set("Nonlinear Iterations", nIter);
   outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }
@@ -519,6 +548,12 @@ const Teuchos::ParameterList&
 NOX::Solver::AndersonAcceleration::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::AndersonAcceleration::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

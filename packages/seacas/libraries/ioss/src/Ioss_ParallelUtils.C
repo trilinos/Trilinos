@@ -67,7 +67,7 @@ namespace {
     return oper;
   }
 #endif
-}
+} // namespace
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator) : communicator_(the_communicator) {}
 
@@ -174,7 +174,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, int &value,
   std::string str_value;
   bool        success = get_environment(name, str_value, sync_parallel);
   if (success) {
-    value = std::atoi(str_value.c_str());
+    value = std::stoi(str_value);
   }
   return success;
 }
@@ -463,6 +463,7 @@ template void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
 template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
 template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
 template void Ioss::ParallelUtils::all_gather(int64_t, std::vector<int64_t> &) const;
+template void Ioss::ParallelUtils::all_gather(std::vector<int> &, std::vector<int> &) const;
 
 template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T> &result) const
 {
@@ -496,7 +497,7 @@ template <typename T> void Ioss::ParallelUtils::all_gather(T my_value, std::vect
                                       mpi_type(T()), communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
-      errmsg << "Ioss::ParallelUtils::gather - MPI_Gather failed";
+      errmsg << "Ioss::ParallelUtils::gather - MPI_Allgather failed";
       IOSS_ERROR(errmsg);
     }
   }
@@ -505,6 +506,29 @@ template <typename T> void Ioss::ParallelUtils::all_gather(T my_value, std::vect
   }
 #else
   result[0] = my_value;
+#endif
+}
+
+template <typename T>
+void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &result) const
+{
+  result.resize(parallel_size() * my_values.size());
+#ifdef SEACAS_HAVE_MPI
+  if (parallel_size() > 1) {
+    const int success =
+        MPI_Allgather(my_values.data(), my_values.size(), mpi_type(T()), (void *)result.data(),
+                      my_values.size(), mpi_type(T()), communicator_);
+    if (success != MPI_SUCCESS) {
+      std::ostringstream errmsg;
+      errmsg << "Ioss::ParallelUtils::gather - MPI_Allgather failed";
+      IOSS_ERROR(errmsg);
+    }
+  }
+  else {
+    result = my_values;
+  }
+#else
+  result    = my_values;
 #endif
 }
 

@@ -52,7 +52,6 @@
 #include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
-namespace Classes {
   /// \class RowMatrix
   /// \brief A read-only, row-oriented interface to a sparse matrix.
   ///
@@ -78,10 +77,10 @@ namespace Classes {
   /// implementations of RowMatrix, which do useful things like
   /// wrapping an existing matrix to view only certain desired
   /// entries.
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class RowMatrix :
     virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     virtual public SrcDistObject,
@@ -564,7 +563,6 @@ namespace Classes {
           Distributor& distor) const;
     //@}
   }; // class RowMatrix
-} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_ROWMATRIX_DECL_HPP

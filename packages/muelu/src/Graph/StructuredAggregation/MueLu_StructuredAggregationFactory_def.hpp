@@ -78,6 +78,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
+    SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 #undef  SET_VALID_ENTRY
 
     // general variables needed in StructuredAggregationFactory
@@ -328,6 +329,8 @@ namespace MueLu {
     Set(currentLevel, "lCoarseNodesPerDim", geoData->getLocalCoarseNodesPerDir());
     Set(currentLevel, "coarseCoordinatesFineMap", coarseCoordinatesFineMap);
     Set(currentLevel, "coarseCoordinatesMap", coarseCoordinatesMap);
+    Set(currentLevel, "interpolationOrder", interpolationOrder);
+    Set(currentLevel, "numDimensions", numDimensions);
 
   } // Build
 } //namespace MueLu

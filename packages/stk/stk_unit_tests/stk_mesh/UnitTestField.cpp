@@ -81,6 +81,8 @@ typedef shards::ArrayDimTag::size_type size_type;
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ATAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( BTAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( CTAG )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( DTAG )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ETAG )
 
 TEST(UnitTestField, testCartesian)
 {
@@ -181,38 +183,47 @@ TEST(UnitTestField, testFieldMaxSize)
   std::ostringstream oss; // to test printing of things w/out spamming cout
 
   // specifications for some test fields
-  typedef stk::mesh::Field<double>                rank_zero_field;
-  typedef stk::mesh::Field<double,ATAG>           rank_one_field;
-  typedef stk::mesh::Field<double,ATAG,BTAG>      rank_two_field;
-  typedef stk::mesh::Field<double,ATAG,BTAG,CTAG> rank_three_field;
+  typedef stk::mesh::Field<double>                          rank_zero_field;
+  typedef stk::mesh::Field<double,ATAG>                     rank_one_field;
+  typedef stk::mesh::Field<double,ATAG,BTAG>                rank_two_field;
+  typedef stk::mesh::Field<double,ATAG,BTAG,CTAG>           rank_three_field;
+  typedef stk::mesh::Field<double,ATAG,BTAG,CTAG,DTAG>      rank_four_field;
+  typedef stk::mesh::Field<double,ATAG,BTAG,CTAG,DTAG,ETAG> rank_five_field;
 
   const std::string name0("test_field_0");
   const std::string name1("test_field_1");
   const std::string name2("test_field_2");
   const std::string name3("test_field_3");
+  const std::string name4("test_field_4");
+  const std::string name5("test_field_5");
 
   const int spatial_dimension = 3;
   stk::mesh::MetaData meta_data( spatial_dimension );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
-  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( NODE_RANK, name0 );
-  rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  NODE_RANK, name1 );
-  rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(  NODE_RANK, name2 );
+  rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field  >( NODE_RANK, name0 );
+  rank_one_field   & f1 = meta_data.declare_field< rank_one_field   >( NODE_RANK, name1 );
+  rank_two_field   & f2 = meta_data.declare_field< rank_two_field   >( NODE_RANK, name2 );
   rank_three_field & f3 = meta_data.declare_field< rank_three_field >( NODE_RANK, name3 );
+  rank_four_field  & f4 = meta_data.declare_field< rank_four_field  >( NODE_RANK, name4 );
+  rank_five_field  & f5 = meta_data.declare_field< rank_five_field  >( NODE_RANK, name5 );
 
   stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
   stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
   stk::mesh::Part & p2 = meta_data.declare_part("P2", NODE_RANK );
   stk::mesh::Part & p3 = meta_data.declare_part("P3", NODE_RANK );
+  stk::mesh::Part & p4 = meta_data.declare_part("P4", NODE_RANK );
+  stk::mesh::Part & p5 = meta_data.declare_part("P5", NODE_RANK );
 
-  stk::mesh::put_field_on_mesh( f0 , p0 , (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f1 , p1 , 10 , (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f2 , p2 , 10 , 20 , (stk::mesh::FieldTraits<rank_two_field>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh( f3 , p3 , 10 , 20 , 30 , (stk::mesh::FieldTraits<rank_three_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f0, p0, (stk::mesh::FieldTraits<rank_zero_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f1, p1, 10, (stk::mesh::FieldTraits<rank_one_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f2, p2, 10, 20, (stk::mesh::FieldTraits<rank_two_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f3, p3, 10, 20, 30, (stk::mesh::FieldTraits<rank_three_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f4, p4, 10, 20, 30, 40, (stk::mesh::FieldTraits<rank_four_field>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh( f5, p5, 10, 20, 30, 40, 50, (stk::mesh::FieldTraits<rank_five_field>::data_type*) nullptr);
 
   meta_data.commit();
 
-  // SCALAR FIELDS:
   EXPECT_EQ( f0.max_size(stk::topology::NODE_RANK), 1u );
   EXPECT_EQ( f0.max_size(stk::topology::EDGE_RANK), 0u );
   EXPECT_EQ( f0.max_size(stk::topology::FACE_RANK), 0u );
@@ -233,10 +244,22 @@ TEST(UnitTestField, testFieldMaxSize)
   EXPECT_EQ( f3.max_size(stk::topology::FACE_RANK), 0u );
   EXPECT_EQ( f3.max_size(stk::topology::ELEMENT_RANK), 0u );
 
+  EXPECT_EQ( f4.max_size(stk::topology::NODE_RANK), 240000u );
+  EXPECT_EQ( f4.max_size(stk::topology::EDGE_RANK), 0u );
+  EXPECT_EQ( f4.max_size(stk::topology::FACE_RANK), 0u );
+  EXPECT_EQ( f4.max_size(stk::topology::ELEMENT_RANK), 0u );
+
+  EXPECT_EQ( f5.max_size(stk::topology::NODE_RANK), 12000000u );
+  EXPECT_EQ( f5.max_size(stk::topology::EDGE_RANK), 0u );
+  EXPECT_EQ( f5.max_size(stk::topology::FACE_RANK), 0u );
+  EXPECT_EQ( f5.max_size(stk::topology::ELEMENT_RANK), 0u );
+
   EXPECT_EQ( f0.field_array_rank(), 0u ); // Field Rank NOT entity rank
   EXPECT_EQ( f1.field_array_rank(), 1u );
   EXPECT_EQ( f2.field_array_rank(), 2u );
   EXPECT_EQ( f3.field_array_rank(), 3u );
+  EXPECT_EQ( f4.field_array_rank(), 4u );
+  EXPECT_EQ( f5.field_array_rank(), 5u );
 
 }
 
@@ -424,6 +447,8 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( ATAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( BTAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( CTAG )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( DTAG )
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( ETAG )
 
 
 TEST(UnitTestField, writeFieldsWithSameName)

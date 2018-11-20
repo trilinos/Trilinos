@@ -22,10 +22,8 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   std::string stepperType)
 {
-  this->setTableau(Teuchos::null, stepperType);
-  this->setParameterList(Teuchos::null);
+  this->setTableau(stepperType);
   this->setModel(appModel);
-  this->setObserver();
   this->initialize();
 }
 
@@ -34,10 +32,9 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
-  this->setTableau(pList, "RK Explicit 4 Stage");
+  this->setTableau(pList);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setObserver();
   this->initialize();
 }
 
@@ -47,10 +44,9 @@ StepperExplicitRK<Scalar>::StepperExplicitRK(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
-  this->setTableau(pList, stepperType);
+  this->setTableau(stepperType);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setObserver();
   this->initialize();
 }
 
@@ -188,19 +184,37 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
 }
 
 template<class Scalar>
-void StepperExplicitRK<Scalar>::setTableau(
-  Teuchos::RCP<Teuchos::ParameterList> pList,
-  std::string stepperType)
+void StepperExplicitRK<Scalar>::setTableau(std::string stepperType)
 {
   if (stepperType == "") {
-    if (pList == Teuchos::null)
-      stepperType = "RK Explicit 4 Stage";
-    else
-      stepperType =
-        pList->get<std::string>("Stepper Type", "RK Explicit 4 Stage");
+    this->setTableau();
+  } else {
+    ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
   }
 
-  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, pList);
+  TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
+    std::logic_error,
+       "Error - StepperExplicitRK received an implicit Butcher Tableau!\n"
+    << "  Stepper Type = " << stepperType << "\n");
+  description_ = ERK_ButcherTableau_->description();
+}
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setTableau(
+  Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (this->stepperPL_ == Teuchos::null)
+      this->stepperPL_ = this->getDefaultParameters();
+  } else {
+    this->stepperPL_ = pList;
+  }
+
+  std::string stepperType =
+    this->stepperPL_->template get<std::string>("Stepper Type",
+                                                "RK Explicit 4 Stage");
+  ERK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
 
   TEUCHOS_TEST_FOR_EXCEPTION(ERK_ButcherTableau_->isImplicit() == true,
     std::logic_error,
@@ -243,6 +257,10 @@ void StepperExplicitRK<Scalar>::initialize()
   TEUCHOS_TEST_FOR_EXCEPTION( appModel_ == Teuchos::null, std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperExplicitRK::initialize()\n");
+
+  this->setTableau(stepperPL_);
+  this->setParameterList(stepperPL_);
+  this->setObserver();
 
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
@@ -327,7 +345,7 @@ void StepperExplicitRK<Scalar>::takeStep(
 
     // At this point, the stepper has passed.
     // but when using adaptive time stepping, the embedded method can change the step status
-    workingState->getStepperState()->stepperStatus_ = Status::PASSED;
+    workingState->setSolutionStatus(Status::PASSED);
 
     if (ERK_ButcherTableau_->isEmbedded() and stepperPL_->get<bool>("Use Embedded")){
 
@@ -358,13 +376,12 @@ void StepperExplicitRK<Scalar>::takeStep(
        //compute: || ee / sc ||
        assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
        Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
-       Scalar err = Thyra::norm_inf(*sc);
+       Scalar err = std::abs(Thyra::norm_inf(*sc));
        metaData->setErrorRel(err);
 
        // test if step should be rejected
-       if (err > 1.0){
-          workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-       }
+       if (std::isinf(err) || std::isnan(err)) workingState->setSolutionStatus(Status::FAILED);
+       else if (err > Teuchos::as<Scalar>(1.0)) workingState->setSolutionStatus(Status::FAILED);
     }
 
     workingState->setOrder(this->getOrder());
@@ -460,7 +477,13 @@ StepperExplicitRK<Scalar>::getDefaultParameters() const
     "'Whether to use Embedded Stepper (if available) or not\n"
     "  'true' - Stepper will compute embedded solution and is adaptive.\n"
     "  'false' - Stepper is not embedded(adaptive).\n");
-  pl->setParameters(*(ERK_ButcherTableau_->getValidParameters()));
+  if (ERK_ButcherTableau_ == Teuchos::null) {
+    auto ERK_ButcherTableau =
+      createRKBT<Scalar>("RK Explicit 4 Stage", Teuchos::null);
+    pl->setParameters(*(ERK_ButcherTableau->getValidParameters()));
+  } else {
+    pl->setParameters(*(ERK_ButcherTableau_->getValidParameters()));
+  }
   return pl;
 }
 

@@ -366,9 +366,6 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
                          "Belos::FixedPointIter::initialize(): FixedPointIterationState does not have initial residual.");
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(!lp_->getRightPrec().is_null(),std::invalid_argument,
-                               "Belos::FixedPointIter::initialize(): Does not work with right preconditioning");
-
     // The solver is initialized
     initialized_ = true;
   }
@@ -388,41 +385,74 @@ class FixedPointIter : virtual public FixedPointIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    // const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero(); // unused
+    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero(); // unused
 
     // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
-    Teuchos::RCP<const MV> rhs = lp_->getCurrRHSVec();
 
     // Temp vector
     Teuchos::RCP<MV> tmp = MVT::Clone( *R_, numRHS_ );
 
-    ////////////////////////////////////////////////////////////////
-    // Iterate until the status test tells us to stop.
-    //
-    while (stest_->checkStatus(this) != Passed) {
+    if (lp_->getRightPrec() != Teuchos::null) {
+      // Set rhs to initial residual
+      Teuchos::RCP<MV> rhs = MVT::CloneCopy( *R_ );
 
-      // Increment the iteration
-      iter_++;
+      // Zero initial guess
+      MVT::MvInit( *Z_, zero );
 
-      // Compute initial preconditioned residual
-      if ( lp_->getLeftPrec() != Teuchos::null ) {
-        lp_->applyLeftPrec( *R_, *Z_ );
-      }
-      else {
-        Z_ = R_;
-      }
+      ////////////////////////////////////////////////////////////////
+      // Iterate until the status test tells us to stop.
+      //
+      while (stest_->checkStatus(this) != Passed) {
 
-      // Update solution vector
-      MVT::Assign(*cur_soln_vec,*tmp);
-      MVT::MvAddMv(one,*tmp,one,*Z_,*cur_soln_vec);
-      lp_->updateSolution();
+        // Increment the iteration
+        iter_++;
 
-      // Compute new residual
-      lp_->applyOp(*cur_soln_vec,*tmp);
-      MVT::MvAddMv(one,*rhs,-one,*tmp,*R_);
+        // Apply preconditioner
+        lp_->applyRightPrec( *R_, *tmp );
 
-    } // end while (sTest_->checkStatus(this) != Passed)
+        // Update solution vector
+        MVT::MvAddMv( one, *cur_soln_vec, one, *tmp, *cur_soln_vec );
+        lp_->updateSolution();
+
+        // Update solution vector
+        MVT::MvAddMv( one, *Z_, one, *tmp, *Z_ );
+
+        // Compute new residual
+        lp_->applyOp (*Z_, *tmp );
+        MVT::MvAddMv( one, *rhs, -one, *tmp, *R_ );
+
+      } // end while (sTest_->checkStatus(this) != Passed)
+
+    } else {
+      Teuchos::RCP<const MV> rhs = lp_->getCurrRHSVec();
+
+      ////////////////////////////////////////////////////////////////
+      // Iterate until the status test tells us to stop.
+      //
+      while (stest_->checkStatus(this) != Passed) {
+
+        // Increment the iteration
+        iter_++;
+
+        // Compute initial preconditioned residual
+        if ( lp_->getLeftPrec() != Teuchos::null ) {
+          lp_->applyLeftPrec( *R_, *Z_ );
+        }
+        else {
+          Z_ = R_;
+        }
+
+        // Update solution vector
+        MVT::MvAddMv(one,*cur_soln_vec,one,*Z_,*cur_soln_vec);
+        lp_->updateSolution();
+
+        // Compute new residual
+        lp_->applyOp(*cur_soln_vec,*tmp);
+        MVT::MvAddMv(one,*rhs,-one,*tmp,*R_);
+
+      } // end while (sTest_->checkStatus(this) != Passed)
+    }
   }
 
 } // end Belos namespace

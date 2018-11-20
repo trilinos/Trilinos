@@ -80,7 +80,6 @@ from . import _IsorropiaEpetra
 
 // Local include files
 #define NO_IMPORT_ARRAY
-#define SWIG_FILE_WITH_INIT
 #include "numpy_include.hpp"
 %}
 
@@ -132,6 +131,11 @@ from . import _IsorropiaEpetra
 %ignore *::operator=;
 %ignore *::operator<<;
 %ignore operator<<;
+
+// Configuration
+%include "PyTrilinos_config.h"
+%include "Isorropia_config.h"
+%include "Isorropia_ConfigDefs.hpp"
 
 // Teuchos interface import
 %import "Teuchos.i"

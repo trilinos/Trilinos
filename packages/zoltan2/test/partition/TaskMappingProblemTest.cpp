@@ -265,11 +265,11 @@ void test_distributed_input_adapter(
 
   if (global_tcomm->getRank() == 0){
     std::cout << "METRICS FOR THE FIRST CASE - TWO PHASE MAPPING" << std::endl;
-    metricObject_1->printMetrics(cout);
+    metricObject_1->printMetrics(std::cout);
     std::cout << "METRICS FOR THE SECOND CASE - TWO PHASE MAPPING - INITIAL ASSIGNMENT ARE ASSUMED TO BE A PART" << std::endl;
-    metricObject_2->printMetrics(cout);
+    metricObject_2->printMetrics(std::cout);
     std::cout << "METRICS FOR THE THIRD CASE - ONE PHASE MAPPING - EACH ELEMENT IS ASSUMED TO BE IN UNIQUE PART AT  THE BEGINNING" << std::endl;
-    metricObject_3->printMetrics(cout);
+    metricObject_3->printMetrics(std::cout);
   }
 
   for (int i = 0; i < 3; i++) delete [] partCenters[i];
@@ -374,7 +374,7 @@ void test_serial_input_adapter(
 
   if (global_tcomm->getRank() == 0){
     std::cout << "METRICS FOR THE SERIAL CASE - ONE PHASE MAPPING - EACH ELEMENT IS ASSUMED TO BE IN UNIQUE PART AT  THE BEGINNING" << std::endl;
-    metricObject_3->printMetrics(cout);
+    metricObject_3->printMetrics(std::cout);
   }
 
   for (int i = 0; i < 3; i++) delete [] partCenters[i];
@@ -451,15 +451,15 @@ int main(int narg, char *arg[]){
 #endif
 
     if (global_tcomm->getRank() == 0){
-      cout << "PASS" << endl;
+      std::cout << "PASS" << std::endl;
     }
   }
   catch(std::string &s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 
   catch(char * s){
-    cerr << s << endl;
+    std::cerr << s << std::endl;
   }
 }
 

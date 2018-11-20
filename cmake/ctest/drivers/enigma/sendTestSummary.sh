@@ -32,10 +32,10 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT="/space/nightlyTesting/Trilinos/packages/muelu/utils/misc/drakify-email.pl"
+HTMLPERLSCRIPT="/data/nightlyTesting/Trilinos/packages/muelu/utils/misc/drakify-email.pl"
 #root of cdash testing directory
-TESTLOCATION="/space/nightlyTesting"
-LOGBACKUPDIRECTORY="/space/nightlyTesting/logs"
+TESTLOCATION="/data/nightlyTesting"
+LOGBACKUPDIRECTORY="/data/nightlyTesting/logs"
 
 #packages to be summarized
 PATTERN="(Xpetra|MueLu)"

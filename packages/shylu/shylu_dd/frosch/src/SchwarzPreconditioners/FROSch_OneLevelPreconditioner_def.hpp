@@ -52,14 +52,25 @@ namespace FROSch {
     SchwarzPreconditioner<SC,LO,GO,NO> (parameterList,k->getRangeMap()->getComm()),
     K_ (k),
     SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm())),
-    OverlappingOperator_ ()
+    MultiplicativeOperator_ (new MultiplicativeOperator<SC,LO,GO,NO>(k,parameterList)),
+    OverlappingOperator_ (),
+    UseMultiplicative_(false)
     {
         if (!this->ParameterList_->get("OverlappingOperator Type","AlgebraicOverlappingOperator").compare("AlgebraicOverlappingOperator")) {
             OverlappingOperator_ = AlgebraicOverlappingOperatorPtr(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
         } else {
             FROSCH_ASSERT(0!=0,"OverlappingOperator Type unkown.");
         }
-        SumOperator_->addOperator(OverlappingOperator_);
+        if (!this->ParameterList_->get("Level Combination","Additive").compare("Multiplicative")) {
+            UseMultiplicative_ = true;
+        }
+        if (UseMultiplicative_) {
+            MultiplicativeOperator_->addOperator(OverlappingOperator_);
+        }
+        else{
+            SumOperator_->addOperator(OverlappingOperator_);
+        }
+
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -113,7 +124,12 @@ namespace FROSch {
                                                     SC alpha,
                                                     SC beta) const
     {
-        return SumOperator_->apply(x,y,true,mode,alpha,beta);
+        if (UseMultiplicative_) {
+            return MultiplicativeOperator_->apply(x,y,true,mode,alpha,beta);
+        }
+        else{
+            return SumOperator_->apply(x,y,true,mode,alpha,beta);
+        }
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -132,13 +148,27 @@ namespace FROSch {
     void OneLevelPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                         const Teuchos::EVerbosityLevel verbLevel) const
     {
-        SumOperator_->describe(out,verbLevel);
+        if (UseMultiplicative_) {
+            MultiplicativeOperator_->describe(out,verbLevel);
+        }
+        else{
+            SumOperator_->describe(out,verbLevel);
+        }
+
     }
     
     template <class SC,class LO,class GO,class NO>
     std::string OneLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "One-Level Preconditioner";
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int OneLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    {
+        K_ = k;
+        OverlappingOperator_->resetMatrix(K_);
+        return 0;
     }
     
 }

@@ -130,7 +130,7 @@ namespace Ioex {
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
                 exodusFilePtr);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exodusFilePtr, __func__, errmsg, status);
       }
     }
   }
@@ -159,7 +159,7 @@ namespace Ioex {
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to read last_written_time attribute from file id %d",
                 exodusFilePtr);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exodusFilePtr, __func__, errmsg, status);
         found = false;
       }
     }
@@ -206,7 +206,7 @@ namespace Ioex {
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to read processor info attribute from file id %d",
                 exodusFilePtr);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exodusFilePtr, __func__, errmsg, status);
         return (EX_FATAL) != 0;
       }
     }
@@ -310,7 +310,7 @@ namespace Ioex {
     std::size_t found  = str_id.find_first_not_of("0123456789");
     if (found == std::string::npos) {
       // All digits...
-      return std::atoi(str_id.c_str());
+      return std::stoi(str_id);
     }
 
     return 0;
@@ -482,10 +482,7 @@ namespace Ioex {
     }
     errmsg << " Please report to gdsjaar@sandia.gov if you need help.";
 
-    ex_err(nullptr, nullptr, EX_PRTLASTMSG);
-    if (exoid > 0) {
-      ex_close(exoid);
-    }
+    ex_err_fn(exoid, nullptr, nullptr, EX_PRTLASTMSG);
     IOSS_ERROR(errmsg);
   }
 
@@ -584,8 +581,8 @@ namespace Ioex {
     // array consistent.
 
     // Get all element blocks in region...
-    bool                        omitted        = false;
-    Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
+    bool                               omitted        = false;
+    const Ioss::ElementBlockContainer &element_blocks = region->get_element_blocks();
     for (const auto &block : element_blocks) {
 
       if (Ioss::Utils::block_is_omitted(block)) {

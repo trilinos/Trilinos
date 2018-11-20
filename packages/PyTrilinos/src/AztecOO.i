@@ -121,7 +121,7 @@ struct OperatorData
 #endif
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -162,7 +162,7 @@ struct OperatorData
 %include "exception.i"
 
 // External Trilinos interface imports
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %import "Epetra.i"
 #endif
 #ifdef HAVE_AZTECOO_TEUCHOS

@@ -127,6 +127,7 @@ compute(NOX::Abstract::Vector& dir,
 
     // Compute the Modified Newton direction
     status = oldJacobianGrp.applyJacobianInverse(paramsPtr->sublist("Modified-Newton").sublist("Linear Solver"), soln.getF(), dir);
+    oldJacobianGrp.logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
     dir.scale(-1.0);
 
     // It didn't converge, but maybe we can recover.

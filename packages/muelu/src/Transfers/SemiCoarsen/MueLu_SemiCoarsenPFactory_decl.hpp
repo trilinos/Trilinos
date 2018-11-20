@@ -141,7 +141,8 @@ namespace MueLu {
     LO FindCpts(LO const PtsPerLine, LO const CoarsenRate, LO const Thin, LO **LayerCpts) const;
     LO MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
                                   LO const VertLineId[], LO const DofsPerNode, RCP<Matrix>& Amat,
-                                  RCP<Matrix>& P, RCP<const Map>& coarseMap) const;
+                                  RCP<Matrix>& P, RCP<const Map>& coarseMap, 
+                                  const RCP<MultiVector> fineNullspace, RCP<MultiVector>& coarseNullspace) const;
 
     mutable bool bTransferCoordinates_; //< boolean which is true if coordinate information is available to be transferred to coarse coordinate information
   }; //class SemiCoarsenPFactory

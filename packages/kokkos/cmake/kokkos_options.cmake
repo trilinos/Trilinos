@@ -79,6 +79,7 @@ list(APPEND KOKKOS_ARCH_LIST
      ARMv80          # (HOST) ARMv8.0 Compatible CPU
      ARMv81          # (HOST) ARMv8.1 Compatible CPU
      ARMv8-ThunderX  # (HOST) ARMv8 Cavium ThunderX CPU
+     ARMv8-TX2       # (HOST) ARMv8 Cavium ThunderX2 CPU
      WSM             # (HOST) Intel Westmere CPU
      SNB             # (HOST) Intel Sandy/Ivy Bridge CPUs
      HSW             # (HOST) Intel Haswell CPUs
@@ -121,11 +122,18 @@ list(APPEND KOKKOS_DEVICES_LIST
 # List of possible TPLs for Kokkos
 # From Makefile.kokkos: Options: hwloc,librt,experimental_memkind
 set(KOKKOS_USE_TPLS_LIST)
+if(APPLE)
+list(APPEND KOKKOS_USE_TPLS_LIST
+    HWLOC          # hwloc
+    MEMKIND        # experimental_memkind
+    )
+else()
 list(APPEND KOKKOS_USE_TPLS_LIST
     HWLOC          # hwloc
     LIBRT          # librt
     MEMKIND        # experimental_memkind
     )
+endif()
 # Map of cmake variables to Makefile variables
 set(KOKKOS_INTERNAL_HWLOC hwloc)
 set(KOKKOS_INTERNAL_LIBRT librt)
@@ -170,6 +178,7 @@ set(KOKKOS_INTERNAL_LAMBDA enable_lambda)
 
 set(tmpr "\n       ")
 string(REPLACE ";" ${tmpr} KOKKOS_INTERNAL_ARCH_DOCSTR "${KOKKOS_ARCH_LIST}")
+set(KOKKOS_INTERNAL_ARCH_DOCSTR "${tmpr}${KOKKOS_INTERNAL_ARCH_DOCSTR}")
 # This would be useful, but we use Foo_ENABLE mechanisms
 #string(REPLACE ";" ${tmpr} KOKKOS_INTERNAL_DEVICES_DOCSTR "${KOKKOS_DEVICES_LIST}")
 #string(REPLACE ";" ${tmpr} KOKKOS_INTERNAL_USE_TPLS_DOCSTR "${KOKKOS_USE_TPLS_LIST}")

@@ -403,7 +403,7 @@ int main(int narg, char *arg[]) {
       rcp(new quality_t(ia, &params, CommT, &problem.getSolution()));
 
     if (!me) {
-      metricObject->printMetrics(cout);
+      metricObject->printMetrics(std::cout);
     }
   }
   else {

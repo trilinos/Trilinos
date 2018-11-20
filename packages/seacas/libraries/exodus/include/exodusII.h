@@ -69,8 +69,8 @@
 #endif
 
 /* EXODUS version number */
-#define EX_API_VERS 7.13f
-#define EX_API_VERS_NODOT 713
+#define EX_API_VERS 7.17f
+#define EX_API_VERS_NODOT 717
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -618,8 +618,9 @@ EXODUS_EXPORT int ex_get_num_props(int exoid, ex_entity_type obj_type);
 EXODUS_EXPORT int ex_large_model(int exoid);
 EXODUS_EXPORT size_t ex_header_size(int exoid);
 
-EXODUS_EXPORT void        ex_err(const char *module_name, const char *message, int err_num);
-EXODUS_EXPORT void        ex_set_err(const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_err_fn(int exoid, const char *module_name, const char *message, int err_num);
+EXODUS_EXPORT void ex_set_err(const char *module_name, const char *message, int err_num);
 EXODUS_EXPORT const char *ex_strerror(int err_num);
 EXODUS_EXPORT void        ex_get_err(const char **msg, const char **func, int *err_num);
 EXODUS_EXPORT int         ex_opts(int options);
@@ -628,6 +629,8 @@ EXODUS_EXPORT int ex_inquire(int exoid, int req_info, void_int * /*ret_int*/, fl
 EXODUS_EXPORT int64_t ex_inquire_int(int exoid, int req_info);
 EXODUS_EXPORT int     ex_int64_status(int exoid);
 EXODUS_EXPORT int     ex_set_int64_status(int exoid, int mode);
+
+EXODUS_EXPORT void ex_print_config(void);
 
 /** Note that the max name length setting is global at this time; not specific
  * to a particular database; however, the exoid option is passed to give

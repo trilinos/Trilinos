@@ -273,8 +273,8 @@ main (int argc, char *argv[])
           ParameterList mueluParams;
           if (inputList.isSublist("MueLu"))
             mueluParams = inputList.sublist("MueLu");
-          MueLu::ParameterListInterpreter<ST> mueLuFactory(mueluParams);
-          RCP<MueLu::Hierarchy<ST> > H =
+          MueLu::ParameterListInterpreter<ST, int, int, Xpetra::EpetraNode> mueLuFactory(mueluParams);
+          RCP<MueLu::Hierarchy<ST, int, int, Xpetra::EpetraNode> > H =
             mueLuFactory.CreateHierarchy();
           H->setVerbLevel(Teuchos::VERB_HIGH);
           H->GetLevel(0)->Set("A", mueluA);

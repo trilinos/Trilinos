@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 			} else {
 				assert(0!=0);
 			}
-			// RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout)); UniqueMap->describe(*fancy,Teuchos::VERB_EXTREME); UniqueMap->getComm()->barrier(); UniqueMap->getComm()->barrier();
+            
 			if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING PRECONDITIONER...";
 
 			RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(K,sublist(parameterList,"TwoLevelPreconditioner")));
@@ -236,12 +236,12 @@ int main(int argc, char *argv[])
 			TwoLevelPrec->compute();
 			if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";
 
-			RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-			RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-
-			xSolution->putScalar(0.0);
-			xRightHandSide->putScalar(1.0);
-
+            RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+            RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+            
+            xSolution->putScalar(0.0);
+            xRightHandSide->putScalar(1.0);
+            
 			RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpK = rcp(new XpetraOp<SC, LO, GO, NO>(K));
 			RCP<OperatorT<MultiVector<SC,LO,GO,NO> > > OpP = rcp(new XpetraOp<SC, LO, GO, NO>(TwoLevelPrec));
 

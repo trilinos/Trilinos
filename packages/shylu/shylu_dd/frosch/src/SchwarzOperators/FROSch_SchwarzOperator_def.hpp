@@ -114,6 +114,15 @@ namespace FROSch {
         return IsComputed_;
     }
     
+    template<class SC,class LO,class GO,class NO>
+    int SchwarzOperator<SC,LO,GO,NO>::resetMatrix(SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr &k) {
+    // Maybe set IsComputed_ = false ? -> Go through code to be saver/cleaner
+    // This function must be actively called by the user, and is only for recycling purposes.
+    // The preconditioner is still computed and this point or the preconditioner was never computed and can now be computed with the matrix k now.
+        K_ = k;
+        return 0;
+    }
+
 }
 
 #endif

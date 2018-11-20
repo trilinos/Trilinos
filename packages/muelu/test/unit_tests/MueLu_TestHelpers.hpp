@@ -158,7 +158,8 @@ namespace MueLuTests {
     public:
 
       typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-      typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+      typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+      typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
       //
       // Method that creates a map containing a specified number of local elements per process.

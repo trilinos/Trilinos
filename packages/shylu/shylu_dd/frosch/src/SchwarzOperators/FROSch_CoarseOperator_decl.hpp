@@ -58,7 +58,7 @@ namespace FROSch {
     public:
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CommPtr CommPtr;
-        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::Map Map;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         
@@ -69,6 +69,7 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtrVecPtr ExporterPtrVecPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterList    ParameterList;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
@@ -76,13 +77,18 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
+
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstLOVecView ConstLOVecView;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstGOVecView ConstGOVecView;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView ConstSCVecView;
-        
         
         CoarseOperator(CrsMatrixPtr k,
                        ParameterListPtr parameterList);
@@ -109,6 +115,7 @@ namespace FROSch {
         
         virtual void applyPhi(MultiVector& x,
                              MultiVector& y) const;
+
         
     protected:
         
@@ -116,7 +123,7 @@ namespace FROSch {
         
         CrsMatrixPtr buildCoarseMatrix();
         
-        virtual int buildCoarseSolveMap(CrsMatrixPtr k0);
+        virtual int buildCoarseSolveMap(CrsMatrixPtr &k0);
         
         
         CommPtr CoarseSolveComm_;
@@ -132,12 +139,14 @@ namespace FROSch {
         MapPtrVecPtr GatheringMaps_;
         MapPtr CoarseSolveMap_;
         MapPtr CoarseSolveRepeatedMap_;
+        GOVecPtr BlockCoarseDimension_;
         
         SubdomainSolverPtr CoarseSolver_;
         
         ParameterListPtr DistributionList_;
         
         ExporterPtrVecPtr CoarseSolveExporters_;
+        
     };
     
 }

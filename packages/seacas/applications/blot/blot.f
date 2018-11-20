@@ -82,7 +82,7 @@ C   --     found on the standard output device.
 C   --   o The plots on the specified graphics device.
 C   --   o A GRAFAID neutral file on unit 20.
 C   --   o A EXPLORE listing file on unit 21.
-C
+
 C   --Developed at Sandia National Laboratories.
 C   --
 C   --Current author and code sponsor: John Glick
@@ -661,9 +661,9 @@ C      --Handle error reading variable names
       NVARSS = MAX (0, NVARSS)
 
       IF (EXODUS) THEN
-        CALL PRNAME ('*', -1, namlen, 
-     *    NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
-     &    C(KNAMES+NAMLEN*(KNAMHV-1)), C(KNAMES+NAMLEN*(KNAMGV-1)),
+        CALL PRNAME (-1, namlen, 
+     *    NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
+     &    C(KNAMES+NAMLEN*(KNAMGV-1)),
      &    C(KNAMES+NAMLEN*(KNAMNV-1)), C(KNAMES+NAMLEN*(KNAMEV-1)),
      &    C(KNAMES+NAMLEN*(KNAMNS-1)), C(KNAMES+NAMLEN*(KNAMSS-1)))
       END IF

@@ -68,9 +68,6 @@
 #include <Zoltan2_EvaluatePartition.hpp>
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
 using std::bad_alloc;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -111,7 +108,7 @@ std::string trim_copy(
 
 // Zoltan1 query functions
 bool getArgumentValue(std::string &argumentid, double &argumentValue, std::string argumentline){
-  std::stringstream stream(std::stringstream::in | std::std::stringstream::out);
+  std::stringstream stream(std::stringstream::in | std::stringstream::out);
   stream << argumentline;
   getline(stream, argumentid, '=');
   if (stream.eof()){
@@ -277,9 +274,9 @@ const RCP<tMVector_t> getMeshCoordinates(
 
   if (rank == 0){
     if (diff > .01)
-      cout << "Warning: Difference " << diff*100 << " percent" << endl;
-    cout << "Mesh size: " << xdim << "x" << ydim << "x" <<
-      zdim << ", " << num << " vertices." << endl;
+      std::cout << "Warning: Difference " << diff*100 << " percent" << std::endl;
+    std::cout << "Mesh size: " << xdim << "x" << ydim << "x" <<
+      zdim << ", " << num << " vertices." << std::endl;
   }
 
   // Divide coordinates.
@@ -458,7 +455,7 @@ int main(int narg, char *arg[])
   MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
   if (rank==0)
-    cout << "Number of processes: " << nprocs << endl;
+    std::cout << "Number of processes: " << nprocs << std::endl;
 
   // Default values
   //double numGlobalCoords = 1000;
@@ -485,7 +482,7 @@ int main(int narg, char *arg[])
   GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t> *gg = new GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>(geoparams,comm);
 #ifdef HAVE_ZOLTAN2_OMP
   double end = omp_get_wtime();
-  cout << "GeometricGen Time:" << end - begin << endl;
+  std::cout << "GeometricGen Time:" << end - begin << std::endl;
 #endif
   int coord_dim = gg->getCoordinateDimension();
   int nWeights = gg->getNumWeights();
@@ -508,7 +505,7 @@ int main(int narg, char *arg[])
   zgno_t globalSize = static_cast<zgno_t>(numGlobalPoints);
   delete gg;
 
-  cout << "coord_dim:" << coord_dim << " nWeights:" << nWeights << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << endl;
+  std::cout << "coord_dim:" << coord_dim << " nWeights:" << nWeights << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << std::endl;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalPoints,
@@ -553,12 +550,12 @@ int main(int narg, char *arg[])
   if (rc != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL){
     if (rc == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED){
       if (rank==0)
-        cout << "PASS" << endl;
+        std::cout << "PASS" << std::endl;
       return 1;
     }
     else{
       if (rank==0)
-        cout << "FAIL" << endl;
+        std::cout << "FAIL" << std::endl;
       return 0;
     }
   }
@@ -598,14 +595,14 @@ int main(int narg, char *arg[])
   comm->barrier();
   for (int p=0; p < nprocs; p++){
     if (p==rank){
-      cout << "Rank " << rank << ", " << numLocalCoords << "coords" << endl;
+      std::cout << "Rank " << rank << ", " << numLocalCoords << "coords" << std::endl;
       const zscalar_t *x = coordinates->getData(0).getRawPtr();
       const zscalar_t *y = coordinates->getData(1).getRawPtr();
       const zscalar_t *z = coordinates->getData(2).getRawPtr();
       for (zlno_t i=0; i < numLocalCoords; i++)
-        cout << " " << x[i] << " " << y[i] << " " << z[i] << endl;
+        std::cout << " " << x[i] << " " << y[i] << " " << z[i] << std::endl;
     }
-    cout.flush();
+    std::cout.flush();
     comm->barrier();
   }
 #endif

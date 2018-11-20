@@ -48,7 +48,7 @@
 #include "AnasaziConfigDefs.hpp"
 
 // Anasazi include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "Anasaziepetra_DLLExportMacro.h"
 #endif
 #include "AnasaziVersion.cpp"
@@ -76,7 +76,7 @@
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "AnasaziEpetraAdapter.hpp"
 #endif
 

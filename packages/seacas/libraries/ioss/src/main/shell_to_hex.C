@@ -310,11 +310,11 @@ namespace {
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::NodeBlockContainer                 nbs = region.get_node_blocks();
+    const Ioss::NodeBlockContainer &         nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
     int                                      id  = 1;
     while (i != nbs.end()) {
-      std::string name = (*i)->name();
+      const std::string &name = (*i)->name();
       if (debug) {
         std::cerr << name << ", ";
       }
@@ -337,11 +337,11 @@ namespace {
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    Ioss::ElementBlockContainer                 ebs            = region.get_element_blocks();
+    const Ioss::ElementBlockContainer &         ebs            = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i              = ebs.begin();
     int                                         total_elements = 0;
     while (i != ebs.end()) {
-      std::string name = (*i)->name();
+      const std::string &name = (*i)->name();
       if (debug) {
         std::cerr << name << ", ";
       }
@@ -411,10 +411,10 @@ namespace {
     std::fill(node_normal.begin(), node_normal.end(), 0.0);
 
     // Iterate over the element blocks and calculate node normals
-    std::vector<int>            conn;
-    std::vector<int>            output_conn;
-    Ioss::ElementBlockContainer ebs     = region.get_element_blocks();
-    Ioss::ElementBlockContainer out_ebs = output_region.get_element_blocks();
+    std::vector<int>                   conn;
+    std::vector<int>                   output_conn;
+    const Ioss::ElementBlockContainer &ebs     = region.get_element_blocks();
+    const Ioss::ElementBlockContainer &out_ebs = output_region.get_element_blocks();
 
     Ioss::ElementBlockContainer::const_iterator ib     = ebs.begin();
     Ioss::ElementBlockContainer::const_iterator out_ib = out_ebs.begin();
@@ -423,7 +423,6 @@ namespace {
       ++ib;
       Ioss::ElementBlock *out_eb = *out_ib;
       ++out_ib;
-      std::string name = (*eb).name();
 
       int num_elem          = eb->entity_count();
       int num_node_per_elem = eb->topology()->number_nodes();

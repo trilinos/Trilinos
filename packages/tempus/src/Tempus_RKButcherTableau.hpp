@@ -2333,7 +2333,8 @@ class IRK1StageTheta_RKBT :
     // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      pl->get<std::string>("Stepper Type") != this->description()
+      pl->get<std::string>("Stepper Type") != this->description() and
+      pl->get<std::string>("Stepper Type") != "Implicit Midpoint"
       ,std::runtime_error,
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));

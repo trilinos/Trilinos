@@ -57,7 +57,6 @@
 #include "Teuchos_CommHelpers.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -324,8 +323,6 @@ namespace Classes {
     return Teuchos::rcp_const_cast<V> (this->offsetView (subMap, offset));
   }
 
-} // namespace Classes
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   createCopy (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src)
@@ -352,9 +349,7 @@ namespace Classes {
 ///
 /// \warning This macro must be invoked within the Tpetra namespace!
 #define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
-  namespace Classes { \
-    template class Vector< SCALAR , LO , GO , NODE >; \
-  } \
+  template class Vector< SCALAR , LO , GO , NODE >; \
   template Vector< SCALAR , LO , GO , NODE > createCopy (const Vector< SCALAR , LO , GO , NODE >& src);
 
 #endif // TPETRA_VECTOR_DEF_HPP

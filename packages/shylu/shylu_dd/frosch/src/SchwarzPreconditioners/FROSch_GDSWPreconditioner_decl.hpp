@@ -43,7 +43,7 @@
 #define _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 
 #include <string>
-
+#include <FROSch_OneLevelPreconditioner_def.hpp>
 #include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
 #include <FROSch_GDSWCoarseOperator_def.hpp>
 

@@ -52,9 +52,6 @@
 // C++
 #include <string>
 
-// Kokkos
-#include "Kokkos_DynRankView.hpp"
-
 // Panzer
 #include "Panzer_EvaluatorStyle.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
@@ -67,12 +64,12 @@ namespace panzer
 {
   /**
    *  \brief Computes \f$ Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx
-             \f$.
+   *         \f$.
    *
    *  Evaluates the integral
    *  \f[
-        Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx,
-      \f]
+   *    Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx,
+   *  \f]
    *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc., are
    *  some fields that depend on position, \f$ \vec{s} \f$ is some
    *  vector-valued function, and \f$ \phi \f$ is some basis.
@@ -90,8 +87,8 @@ namespace panzer
        *
        *  Creates an `Evaluator` to evaluate the integral
        *  \f[
-            Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx,
-          \f]
+       *    Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx,
+       *  \f]
        *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
        *  are some fields that depend on position, \f$ \vec{s} \f$ is some
        *  vector-valued function, and \f$ \phi \f$ is some basis.
@@ -105,7 +102,7 @@ namespace panzer
        *  \param[in] fluxName   The name of the vector-valued function being
        *                        integrated (\f$ \vec{s} \f$).
        *  \param[in] basis      The basis that you'd like to use (\f$ \phi
-                                \f$).
+       *                        \f$).
        *  \param[in] ir         The integration rule that you'd like to use.
        *  \param[in] multiplier The scalar multiplier out in front of the
        *                        integral you're computing (\f$ M \f$).  If not
@@ -141,8 +138,8 @@ namespace panzer
        *
        *  Creates an `Evaluator` to evaluate the integral
        *  \f[
-            Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx,
-          \f]
+       *    Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\nabla\phi(x)\,dx,
+       *  \f]
        *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
        *  are some fields that depend on position, \f$ \vec{s} \f$ is some
        *  vector-valued function, and \f$ \phi \f$ is some basis.
@@ -150,8 +147,8 @@ namespace panzer
        *  \note This constructor exists to preserve the older way of creating
        *        an `Evaluator` with a `ParameterList`; however, it is
        *        _strongly_ advised that you _not_ use this `ParameterList`
-       *        Constructor, but rather that you favor either of the other
-       *        constructors with their compile-time argument checking instead.
+       *        Constructor, but rather that you favor the main constructor
+       *        with its compile-time argument checking instead.
        *
        *  \param[in] p A `ParameterList` of the form
                        \code{.xml}
@@ -171,7 +168,7 @@ namespace panzer
        *               - "Flux Name" is the name of the vector-valued function
        *                 being integrated (\f$ \vec{s} \f$),
        *               - "Basis" is the basis that you'd like to use (\f$ \phi
-                         \f$),
+       *                 \f$),
        *               - "IR" is the integration rule that you'd like to use,
        *               - "Multiplier" is the scalar multiplier out in front of
        *                 the integral you're computing (\f$ M \f$), and
@@ -188,14 +185,12 @@ namespace panzer
       /**
        *  \brief Post-Registration Setup.
        *
-       *  Sets the number of nodes and quadrature points, sets the basis index,
-       *  sets the contributed field data in the field manager (if applicable),
-       *  and then creates the `tmp_` `Kokkos::View`.
+       *  Sets the basis index, and gets the Kokkos::View versions of the field
+       *  multiplier, if there are any.
        *
        *  \param[in] sd Essentially a list of `Workset`s, which are collections
        *                of cells (elements) that all live on a single process.
-       *  \param[in] fm The field manager, used in setting the field data for
-       *                the contributed field, if there is one.
+       *  \param[in] fm This is an unused part of the `Evaluator` interface.
        */
       void
       postRegistrationSetup(
@@ -227,11 +222,11 @@ namespace panzer
       /**
        *  \brief Perform the integration.
        *
-       *  Generally speaking, for a given cell in the `Workset`, this routine    // JMG:  Fill this out.                          
+       *  Generally speaking, for a given cell in the `Workset`, this routine
        *  loops over quadrature points, vector dimensions, and bases to perform
        *  the integration, scaling the vector field to be integrated by the
        *  multiplier (\f$ M \f$) and any field multipliers (\f$ a(x) \f$, \f$
-          b(x) \f$, etc.).
+       *  b(x) \f$, etc.).
        *
        *  \note Optimizations are made for the cases in which we have no field
        *        multipliers or only a single one.
@@ -245,7 +240,7 @@ namespace panzer
       void
       operator()(
         const FieldMultTag<NUM_FIELD_MULT>& tag,
-        const std::size_t&                  cell) const;
+        const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;
 
     private:
 
@@ -293,7 +288,7 @@ namespace panzer
 
       /**
        *  \brief The scalar multiplier out in front of the integral (\f$ M
-                 \f$).
+       *         \f$).
        */
       double multiplier_;
 
@@ -309,17 +304,7 @@ namespace panzer
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      Kokkos::View<Kokkos::View<const ScalarT**>*> kokkosFieldMults_;
-
-      /**
-       *  \brief The number of quadrature points for each cell.
-       */
-      int numQP_;
-
-      /**
-       *  \brief The number of dimensions in the vector field \f$ \vec{s} \f$.
-       */
-      int numDim_;
+    Kokkos::View<Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*> kokkosFieldMults_;
 
       /**
        *  \brief The name of the basis we're using.

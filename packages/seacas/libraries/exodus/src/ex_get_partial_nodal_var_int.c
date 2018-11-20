@@ -80,25 +80,12 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
   EX_FUNC_ENTER();
   ex_check_valid_file_id(exoid, __func__);
 
-  /* Verify that time_step is within bounds */
-  {
-    int num_time_steps = ex_inquire_int(exoid, EX_INQ_TIME);
-    if (time_step <= 0 || time_step > num_time_steps) {
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: time_step is out-of-range. Value = %d, valid "
-               "range is 1 to %d in file id %d",
-               time_step, num_time_steps, exoid);
-      ex_err(__func__, errmsg, EX_BADPARAM);
-      EX_FUNC_LEAVE(EX_FATAL);
-    }
-  }
-
   if (ex_large_model(exoid) == 0) {
     /* read values of the nodal variable */
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variables in file id %d",
                exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN);
     }
 
@@ -116,7 +103,7 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
     if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
                nodal_var_index, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN);
     }
 
@@ -139,7 +126,7 @@ int ex_get_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

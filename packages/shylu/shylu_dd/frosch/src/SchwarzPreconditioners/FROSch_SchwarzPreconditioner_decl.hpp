@@ -46,6 +46,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 
 #include <FROSch_SumOperator_def.hpp>
+#include <FROSch_MultiplicativeOperator_def.hpp>
 #include <FROSch_AlgebraicOverlappingOperator_def.hpp>
 #include <FROSch_GDSWCoarseOperator_def.hpp>
 #include <FROSch_RGDSWCoarseOperator_def.hpp>
@@ -67,6 +68,7 @@ namespace FROSch {
         typedef Teuchos::RCP<Map> MapPtr;
         typedef Teuchos::RCP<const Map> ConstMapPtr;
         typedef Teuchos::ArrayRCP<MapPtr> MapPtrVecPtr;
+        typedef Teuchos::ArrayRCP<MapPtrVecPtr> MapPtrVecPtr2D;
         
         typedef Xpetra::Matrix<SC,LO,GO,NO> CrsMatrix;
         typedef Teuchos::RCP<CrsMatrix> CrsMatrixPtr;
@@ -77,6 +79,7 @@ namespace FROSch {
         typedef Teuchos::RCP<Teuchos::ParameterList> ParameterListPtr;
         
         typedef Teuchos::RCP<SumOperator<SC,LO,GO,NO> > SumOperatorPtr;
+        typedef Teuchos::RCP<MultiplicativeOperator<SC,LO,GO,NO> > MultiplicativeOperatorPtr;
         typedef Teuchos::RCP<OverlappingOperator<SC,LO,GO,NO> > OverlappingOperatorPtr;
         typedef Teuchos::RCP<AlgebraicOverlappingOperator<SC,LO,GO,NO> > AlgebraicOverlappingOperatorPtr;
         typedef Teuchos::RCP<CoarseOperator<SC,LO,GO,NO> > CoarseOperatorPtr;
@@ -90,6 +93,14 @@ namespace FROSch {
         
         typedef Teuchos::ArrayRCP<SC> SCVecPtr;
 
+        typedef Teuchos::ArrayRCP<UN> UNVecPtr;
+        
+        typedef Teuchos::ArrayRCP<LO> LOVecPtr;
+        
+        typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
+        
+        typedef Teuchos::Array<GO>          GOVec;
+        typedef Teuchos::Array<GOVec>       GOVec2D;
         
         SchwarzPreconditioner(ParameterListPtr parameterList,
                               CommPtr comm);

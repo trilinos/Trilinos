@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.07 (2018/04/30)";
+  const char *       version_string = "5.09 (2018/08/01)";
 
   void output_copyright();
 } // namespace
@@ -77,7 +77,9 @@ namespace SEAMS {
 
   Aprepro::~Aprepro()
   {
-    outputStream.top()->flush();
+    if (!outputStream.empty()) {
+      outputStream.top()->flush();
+    }
 
     if ((stringScanner != nullptr) && stringScanner != lexer) {
       delete stringScanner;
@@ -846,7 +848,7 @@ namespace SEAMS {
       history_data hist;
       hist.original     = original;
       hist.substitution = substitution;
-      hist.index        = outputStream.top()->tellp();
+      hist.index        = outputStream.empty() ? std::streampos(0) : outputStream.top()->tellp();
 
       history.push_back(hist);
     }

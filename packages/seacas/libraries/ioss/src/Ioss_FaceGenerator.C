@@ -296,9 +296,11 @@ namespace Ioss {
 
     size_t numel = region_.get_property("element_count").get_int();
 
-    faces_.reserve(3.3 * numel);
+    size_t reserve = 3.2 * numel;
+    faces_.reserve(reserve);
+    std::cout << "Initial Hash Reserve = " << reserve << "\t" << faces_.bucket_count() << "\n";
 
-    Ioss::ElementBlockContainer ebs = region_.get_element_blocks();
+    const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
     for (auto eb : ebs) {
       const Ioss::ElementTopology *topo = eb->topology();
 

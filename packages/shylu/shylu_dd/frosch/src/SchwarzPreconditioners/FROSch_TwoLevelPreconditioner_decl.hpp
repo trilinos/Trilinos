@@ -107,7 +107,8 @@ namespace FROSch {
                       const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
         
         std::string description() const;
-        
+
+        int resetMatrix(CrsMatrixPtr &k);
         
     protected:
         

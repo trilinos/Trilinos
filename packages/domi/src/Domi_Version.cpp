@@ -47,7 +47,7 @@ namespace Domi
 
 std::string Version()
 {
-  return std::string("Domi for Trilinos Version 12.10 (Dev)");
+  return std::string("Domi for Trilinos Version 12.12 (Dev)");
 }
 
 }  // namespace Domi

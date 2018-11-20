@@ -302,8 +302,6 @@ namespace Tpetra {
                                                                typename CrsMatrixType::node_type> >& rangeMap,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-namespace Classes {
-
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
   ///   lets users read or modify entries.
@@ -417,10 +415,10 @@ namespace Classes {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<char, LocalOrdinal, GlobalOrdinal, Node>,
@@ -3275,7 +3273,7 @@ namespace Classes {
       typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node> DMV;
       typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MMV;
       typedef typename Node::device_type::memory_space dev_mem_space;
-      typedef Kokkos::HostSpace host_mem_space;
+      typedef typename MMV::dual_view_type::t_host::device_type host_mem_space;
       typedef typename Graph::local_graph_type k_local_graph_type;
       typedef typename k_local_graph_type::size_type offset_type;
       const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
@@ -3297,10 +3295,10 @@ namespace Classes {
       // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
       // runs on host.  (See comments below.)  Thus, we need to access
       // the host versions of these data.
-      const_cast<DMV&> (B).template sync<host_mem_space> ();
-      X.template sync<host_mem_space> ();
-      X.template modify<host_mem_space> ();
-      const_cast<MMV&> (D).template sync<host_mem_space> ();
+      const_cast<DMV&> (B).sync_host ();
+      X.sync_host ();
+      X.modify_host ();
+      const_cast<MMV&> (D).sync_host ();
 
       auto B_lcl = B.template getLocalView<host_mem_space> ();
       auto X_lcl = X.template getLocalView<host_mem_space> ();
@@ -3379,7 +3377,7 @@ namespace Classes {
       typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node> DMV;
       typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MMV;
       typedef typename Node::device_type::memory_space dev_mem_space;
-      typedef Kokkos::HostSpace host_mem_space;
+      typedef typename MMV::dual_view_type::t_host::device_type host_mem_space;
       typedef typename Graph::local_graph_type k_local_graph_type;
       typedef typename k_local_graph_type::size_type offset_type;
       const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
@@ -3406,10 +3404,10 @@ namespace Classes {
       // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
       // runs on host.  (See comments below.)  Thus, we need to access
       // the host versions of these data.
-      const_cast<DMV&> (B).template sync<host_mem_space> ();
-      X.template sync<host_mem_space> ();
-      X.template modify<host_mem_space> ();
-      const_cast<MMV&> (D).template sync<host_mem_space> ();
+      const_cast<DMV&> (B).sync_host ();
+      X.sync_host ();
+      X.modify_host ();
+      const_cast<MMV&> (D).sync_host ();
 
       auto B_lcl = B.template getLocalView<host_mem_space> ();
       auto X_lcl = X.template getLocalView<host_mem_space> ();
@@ -4892,7 +4890,6 @@ namespace Classes {
       }
     };
   }; // class CrsMatrix
-} // namespace Classes
 
   /** \brief Non-member function to create an empty CrsMatrix given a
         row map and a non-zero profile.
@@ -4921,10 +4918,10 @@ namespace Classes {
                                                typename CrsMatrixType::node_type>& importer,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-				                               typename CrsMatrixType::node_type> >& domainMap,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-				                               typename CrsMatrixType::node_type> >& rangeMap,
+                                                               typename CrsMatrixType::node_type> >& rangeMap,
                                   const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     Teuchos::RCP<CrsMatrixType> destMatrix;
@@ -4962,7 +4959,7 @@ namespace Classes {
                                                typename CrsMatrixType::node_type>& exporter,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
-				                               typename CrsMatrixType::node_type> >& domainMap,
+                                                               typename CrsMatrixType::node_type> >& domainMap,
                                   const Teuchos::RCP<const Map<typename CrsMatrixType::local_ordinal_type,
                                                                typename CrsMatrixType::global_ordinal_type,
                                                                typename CrsMatrixType::node_type> >& rangeMap,

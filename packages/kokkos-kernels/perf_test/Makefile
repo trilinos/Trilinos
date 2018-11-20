@@ -1,4 +1,3 @@
-
 #=======================================================================
 #=================== Settings ==========================================
 #=======================================================================
@@ -19,7 +18,7 @@ CXX = g++
 
 CXXFLAGS = -O3 -g
 LINK = ${CXX}
-LINKFLAGS =  
+LINKFLAGS =
 
 DEPFLAGS = -M
 
@@ -71,11 +70,16 @@ COMMON_HEADERS = $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/../test_common/*
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/perf_test/../test_common/*.hpp)
 
 #removing this for now, as those blas tests have teuchos dependency.
-#EXECUTABLES = $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/blas/*cpp) 
+#EXECUTABLES = $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/blas/*cpp)
 
 EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/sparse/*cpp)
-EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/graph/*cpp) 
-EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/../test_common/*cpp) 
+EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/graph/*cpp)
+EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/../test_common/*cpp)
+
+# Build yaml dependent performance class unit tests
+ifeq (${KOKKOSKERNELS_INTERNAL_ENABLE_YAML}, 1)
+  EXECUTABLES += $(wildcard ${KOKKOSKERNELS_SRC_PATH}/perf_test/performance/*cpp)
+endif
 
 
 
@@ -117,7 +121,7 @@ build: $(TEST_TARGETS)
 %.exe:%.o $(KOKKOS_LINK_DEPENDS) $(KOKKOSKERNELS_LINK_DEPENDS) $(TEST_HEADERS)
 	$(LINK) $(EXTRA_PATH) $< $(KOKKOSKERNELS_LDFLAGS) $(KOKKOSKERNELS_LIBS) $(KOKKOS_LIBS) $(LIB) $(KOKKOS_LDFLAGS) $(LDFLAGS) -o $@
 
-%.o:%.cpp $(KOKKOS_CPP_DEPENDS) $(KOKKOSKERNELS_CPP_DEPENDS) $(TEST_HEADERS) 
+%.o:%.cpp $(KOKKOS_CPP_DEPENDS) $(KOKKOSKERNELS_CPP_DEPENDS) $(TEST_HEADERS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOSKERNELS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(INC) $(CXXFLAGS) $(EXTRA_INC) -I. -c $< -o $(notdir $@)
 
 #depend:

@@ -32,11 +32,6 @@ IF (${PACKAGE_NAME}_ENABLE_SerialNode)
   MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::SerialNode class was deprecated long ago and is no longer supported.")
 ENDIF()
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TPINode)
-IF (${PACKAGE_NAME}_ENABLE_TPINode)
-  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::TPINode class was deprecated long ago and has since been removed.")
-ENDIF()
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OpenMPNode)
 IF (${PACKAGE_NAME}_ENABLE_OpenMPNode)
   MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set ${PROJECT_NAME}_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")

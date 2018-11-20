@@ -174,6 +174,9 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 #endif
 
+  options_.enroll("file_per_state", Ioss::GetLongOption::NoValue,
+                  "put transient data for each timestep in separate file (EXPERMENTAL)", nullptr);
+
   options_.enroll(
       "split_times", Ioss::GetLongOption::MandatoryValue,
       "If non-zero, then put <$val> timesteps in each file. Then close file and start new file.",
@@ -217,6 +220,12 @@ void IOShell::Interface::enroll_options()
       "delay", Ioss::GetLongOption::MandatoryValue,
       "Sleep for <$val> seconds between timestep output to simulate application calculation time",
       nullptr);
+
+  options_.enroll("flush_interval", Ioss::GetLongOption::MandatoryValue,
+                  "Specify the number of steps between database flushes.\n"
+                  "\t\tIf not specified, then the default database-dependent setting is used.\n"
+                  "\t\tA value of 0 disables flushing.",
+                  nullptr);
 
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
@@ -405,6 +414,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     debug = true;
   }
 
+  if (options_.retrieve("file_per_state") != nullptr) {
+    file_per_state = true;
+  }
+
   if (options_.retrieve("quiet") != nullptr) {
     quiet = true;
   }
@@ -545,6 +558,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("append_after_time");
     if (temp != nullptr) {
       append_time = std::strtod(temp, nullptr);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("flush_interval");
+    if (temp != nullptr) {
+      flush_interval = std::strtod(temp, nullptr);
     }
   }
 

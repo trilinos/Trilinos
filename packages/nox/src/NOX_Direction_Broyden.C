@@ -305,6 +305,9 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr,
                            soln.getF(),
                            dir);
+
+  oldJacobianGrpPtr->logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
+
   if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to apply Jacobian inverse");
   dir.scale(-1.0);

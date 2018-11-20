@@ -22,7 +22,7 @@ available and how to use them, see the document:
 Requirements
 ============
 
-* CMake 2.8.11 or newer
+* CMake 3.10.0 or newer
 * A C and C++ compiler
 * Optionally a Fortran compiler
 * Optionally an installation of MPI

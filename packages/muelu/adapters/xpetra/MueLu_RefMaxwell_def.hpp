@@ -147,6 +147,23 @@ namespace MueLu {
 
     Teuchos::TimeMonitor tmCompute(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute"));
 
+    VerbLevel oldVerbLevel = VerboseObject::GetDefaultVerbLevel();
+    {
+      std::map<std::string, MsgType> verbMap;
+      verbMap["none"]    = None;
+      verbMap["low"]     = Low;
+      verbMap["medium"]  = Medium;
+      verbMap["high"]    = High;
+      verbMap["extreme"] = Extreme;
+      verbMap["test"]    = Test;
+
+      std::string verbosityLevel = parameterList_.get<std::string>("verbosity", "medium");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(verbMap.count(verbosityLevel) == 0, Exceptions::RuntimeError,
+                                 "Invalid verbosity level: \"" << verbosityLevel << "\"");
+      VerboseObject::SetDefaultVerbLevel(verbMap[verbosityLevel]);
+    }
+
     bool defaultFilter = false;
 
     // Remove zero entries from D0 if necessary.
@@ -552,6 +569,8 @@ namespace MueLu {
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A22.mat"), *A22_);
     }
+
+    VerboseObject::SetDefaultVerbLevel(oldVerbLevel);
   }
 
 
@@ -1060,8 +1079,10 @@ namespace MueLu {
       Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
         MultiplyRAP(*P11_, true, *SM_Matrix_, false, *P11_, false, *Matrix1, true, true);
     }
-    if (parameterList_.get<bool>("rap: fix zero diagonals", true))
-      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Matrix1, true, GetOStream(Warnings1));
+    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
+      const double threshold = parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps());
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Matrix1, true, GetOStream(Warnings1), threshold);
+    }
 
     if(disable_addon_==true) {
       // if add-on is not chosen

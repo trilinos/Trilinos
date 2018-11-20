@@ -46,11 +46,16 @@
 #ifndef MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP
 #define MUELU_GEOMETRICINTERPOLATIONPFACTORY_DECL_HPP
 
+// Teuchos includes for dense linear algebra
+#include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_SerialDenseVector.hpp>
+#include <Teuchos_SerialDenseSolver.hpp>
+
+#include "Xpetra_CrsGraph.hpp"
+
 #include "MueLu_PFactory.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
-
-#include "Xpetra_CrsGraph.hpp"
 
 namespace MueLu{
 
@@ -60,6 +65,10 @@ namespace MueLu{
 #include "MueLu_UseShortNames.hpp"
 
   public:
+
+    // Declare useful types
+    using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+    using realvaluedmultivector_type = Xpetra::MultiVector<real_type,LO,GO,Node>;
 
     //! @name Constructors/Destructors.
     //@{
@@ -90,7 +99,16 @@ namespace MueLu{
 
   private:
     void BuildConstantP(RCP<Matrix>& P, RCP<CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const;
-    void BuildLinearP(RCP<Matrix>& P, RCP<CrsGraph>& prolongatorGraph) const;
+    void BuildLinearP(RCP<Matrix>& A, RCP<CrsGraph>& prolongatorGraph,
+                      RCP<realvaluedmultivector_type>& fineCoordinates,
+                      RCP<realvaluedmultivector_type>& ghostCoordinates,
+                      const int numDimensions, RCP<Matrix>& P) const;
+    void ComputeLinearInterpolationStencil(const int numDimensions, const int numInterpolationPoints,
+                                           const Array<Array<real_type> > coord,
+                                           Array<real_type>& stencil) const;
+    void GetInterpolationFunctions(const LO numDimensions,
+                                   const Teuchos::SerialDenseVector<LO,real_type> parametricCoordinates,
+                                   real_type functions[4][8]) const;
 
   }; // class GeometricInterpolationPFactory
 

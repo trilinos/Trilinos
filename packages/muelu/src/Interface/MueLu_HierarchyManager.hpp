@@ -135,6 +135,19 @@ namespace MueLu {
     virtual void SetupHierarchy(Hierarchy& H) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!H.GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError, "No fine level operator");
 
+      RCP<Level>    l0 = H.GetLevel(0);
+      RCP<Operator> Op = l0->Get<RCP<Operator> >("A");
+      // Check that user-supplied nullspace dimension is at least as large as NumPDEs
+      if (l0->IsAvailable("Nullspace")) {
+        RCP<Matrix> A = Teuchos::rcp_dynamic_cast<Matrix>(Op);
+        if (A != Teuchos::null) {
+          Teuchos::RCP<MultiVector> nullspace = l0->Get<RCP<MultiVector>>("Nullspace");
+          TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(A->GetFixedBlockSize()) > nullspace->getNumVectors(), Exceptions::RuntimeError, "user-provided nullspace has fewer vectors (" << nullspace->getNumVectors() << ") than number of PDE equations (" << A->GetFixedBlockSize() << ")");
+        } else {
+          this->GetOStream(Warnings0) << "Skipping dimension check of user-supplied nullspace because user-supplied operator is not a matrix" << std::endl;
+        }
+      }
+
 #ifdef HAVE_MUELU_DEBUG
       // Reset factories' data used for debugging
       for (int i = 0; i < levelManagers_.size(); i++)
@@ -144,8 +157,6 @@ namespace MueLu {
 
       // Setup Matrix
       // TODO: I should certainly undo this somewhere...
-      RCP<Level>    l0 = H.GetLevel(0);
-      RCP<Operator> Op = l0->Get<RCP<Operator> >("A");
 
       Xpetra::UnderlyingLib lib = Op->getDomainMap()->lib();
       H.setlib(lib);
@@ -233,9 +244,7 @@ namespace MueLu {
       // FIXME: Should allow specification of NumVectors on parameterlist
       H.AllocateLevelMultiVectors(1);
       
-      RCP<Teuchos::FancyOStream> fos = this->getOStream();
-      fos->setOutputToRootOnly(0);
-      H.describe(*fos, verbosity_);
+      H.describe(H.GetOStream(Runtime0), verbosity_);
 
       // When we reuse hierarchy, it is necessary that we don't
       // change the number of levels. We also cannot make requests

@@ -48,7 +48,6 @@
 #include "Tpetra_Directory_decl.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
   template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::Directory () :
@@ -280,7 +279,6 @@ namespace Classes {
     return os.str ();
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -290,9 +288,6 @@ namespace Classes {
 //
 
 #define TPETRA_DIRECTORY_INSTANT(LO,GO,NODE) \
-  \
-  namespace Classes { \
-  template class Directory< LO , GO , NODE >; \
-  }
+  template class Directory< LO , GO , NODE >;
 
 #endif // TPETRA_DIRECTORY_HPP

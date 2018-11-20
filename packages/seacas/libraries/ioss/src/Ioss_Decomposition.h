@@ -104,7 +104,16 @@ namespace Ioss {
   class SetDecompositionData
   {
   public:
-    SetDecompositionData() = default;
+    SetDecompositionData()                             = default;
+    SetDecompositionData(const SetDecompositionData &) = delete;
+    SetDecompositionData(SetDecompositionData &&)      = default;
+
+    ~SetDecompositionData()
+    {
+      if (setComm_ != MPI_COMM_NULL) {
+        MPI_Comm_free(&setComm_);
+      }
+    }
 
     const std::string &name() const { return name_; }
     int64_t            id() const { return id_; }
@@ -131,7 +140,8 @@ namespace Ioss {
     size_t distributionFactorCount{0};
     double distributionFactorValue{
         0.0}; // If distributionFactorConstant == true, the constant value
-    bool distributionFactorConstant{false}; // T if all distribution factors the same value.
+    MPI_Comm setComm_{MPI_COMM_NULL};
+    bool     distributionFactorConstant{false}; // T if all distribution factors the same value.
   };
 
   template <typename INT> class Decomposition

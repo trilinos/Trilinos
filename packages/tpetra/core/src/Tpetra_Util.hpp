@@ -880,12 +880,12 @@ namespace Tpetra {
       static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
                      "The input DualView must have rank 1.");
       TEUCHOS_TEST_FOR_EXCEPTION
-        (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
+        (x.need_sync_host (), std::logic_error, "The "
          "input Kokkos::DualView was most recently modified on device, but this "
          "function needs the host view of the data to be the most recently "
          "modified.");
 
-      auto x_host = x.template view<Kokkos::HostSpace> ();
+      auto x_host = x.view_host ();
       typedef typename DualViewType::t_dev::value_type value_type;
       return Teuchos::ArrayView<value_type> (x_host.data (),
                                              x_host.extent (0));
@@ -921,8 +921,8 @@ namespace Tpetra {
       Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
       Kokkos::DualView<T*, DT> x_out (label, len);
       if (leaveOnHost) {
-        x_out.template modify<HMS> ();
-        Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
+        x_out.modify_host ();
+        Kokkos::deep_copy (x_out.view_host (), x_in);
       }
       else {
         x_out.template modify<DMS> ();
@@ -941,8 +941,8 @@ namespace Tpetra {
     template<class DualViewType>
     std::string dualViewStatusToString (const DualViewType& dv, const char name[])
     {
-      const auto host = dv.modified_host ();
-      const auto dev = dv.modified_host ();
+      const auto host = dv.need_sync_device();
+      const auto dev = dv.need_sync_host();
 
       std::ostringstream os;
       os << name << ": {size: " << dv.extent (0)

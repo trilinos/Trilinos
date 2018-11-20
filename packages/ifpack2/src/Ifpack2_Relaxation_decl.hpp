@@ -678,14 +678,9 @@ private:
                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
   void MTGaussSeidel (
-      const crs_matrix_type* crsMat,
-      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
-      const scalar_type& dampingFactor,
-      const Tpetra::ESweepDirection direction,
-      const int numSweeps,
-      const bool zeroInitialGuess) const;
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      const Tpetra::ESweepDirection direction) const;
 
   //! Apply symmetric Gauss-Seidel for a Tpetra::RowMatrix specialization.
   void ApplyInverseSGS_RowMatrix(

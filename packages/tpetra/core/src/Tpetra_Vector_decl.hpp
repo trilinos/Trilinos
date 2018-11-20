@@ -55,7 +55,6 @@
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
 /// \class Vector
 /// \brief A distributed dense vector.
@@ -75,10 +74,10 @@ namespace Classes {
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.  Please see the documentation of MultiVector for more
 /// details.
-template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-          class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
@@ -390,7 +389,6 @@ public:
               Teuchos::Describable::verbLevel_default) const;
   //@}
 }; // class Vector
-} // namespace Classes
 
 /// \brief Return a deep copy of the given Vector.
 /// \relatesalso Vector

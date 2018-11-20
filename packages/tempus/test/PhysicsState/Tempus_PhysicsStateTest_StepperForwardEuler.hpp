@@ -77,7 +77,7 @@ public:
     counter++;
     pSC->setCounter(counter);
 
-    workingState->getStepperState()->stepperStatus_ = Tempus::Status::PASSED;
+    workingState->setSolutionStatus(Tempus::Status::PASSED);
     workingState->setOrder(this->getOrder());
     this->stepperFEObserver_->observeEndTakeStep(solutionHistory, *this);
   }

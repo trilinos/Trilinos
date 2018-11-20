@@ -100,7 +100,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -139,7 +139,7 @@ example subdirectory of the PyTrilinos package:
 // External Trilinos package imports
 %import "Teuchos.i"
 
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
 %import  "Epetra.i"
@@ -159,7 +159,7 @@ Epetra = PyTrilinos.Epetra
 // Teuchos::RCP handling
 %teuchos_rcp(MLAPI::DoubleVector)
 %teuchos_rcp(MLAPI::ML_Operator_Box)
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %teuchos_rcp(ML_Epetra::MultiLevelPreconditioner)
 #endif
 
@@ -612,7 +612,7 @@ MultiVector::Delete;
 // MLAPI_Operator support //
 ////////////////////////////
 %include "MLAPI_Operator.h"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 namespace MLAPI
 {
 %extend Operator
@@ -675,7 +675,7 @@ namespace MLAPI
 ////////////////////////////////
 // PyTrilinos_ML_Util support //
 ////////////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %include "PyTrilinos_ML_Util.hpp"
 %extend PyTrilinos::PyMatrix
 {
@@ -726,7 +726,7 @@ namespace MLAPI
 // ml_MultiLevelPreconditioner support //
 /////////////////////////////////////////
 %include "ml_MultiLevelPreconditioner.h"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 namespace ML_Epetra
 {
 %extend MultiLevelPreconditioner
@@ -787,7 +787,7 @@ namespace MLAPI
 //////////////////////////////////////
 // MLAPI_EpetraBaseOperator support //
 //////////////////////////////////////
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %teuchos_rcp(MLAPI::EpetraBaseOperator)
 %include "MLAPI_EpetraBaseOperator.h"
 #endif

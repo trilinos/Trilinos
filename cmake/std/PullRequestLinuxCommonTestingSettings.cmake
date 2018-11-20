@@ -54,7 +54,7 @@ set (Trilinos_TRACE_ADD_TEST ON CACHE BOOL "Set by default for PR testing")
 
 set (TPL_ENABLE_Scotch ON CACHE BOOL "Set by default for PR testing")
 # Disable test that was enabled when Scotch TPL was enabled (#2051, #2052)
-set (Zoltan2_orderingTestDriverExample_MPI_1_DISABLE ONCACHE BOOL "Set by default for PR testing")
+set (Zoltan2_orderingTestDriverExample_MPI_1_DISABLE ON CACHE BOOL "Set by default for PR testing")
 
 # Disable long-failing Piro test until it can be fixed (#826)
 set (Piro_EpetraSolver_MPI_4_DISABLE ON CACHE BOOL "Set by default for PR testing")

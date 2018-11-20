@@ -431,6 +431,10 @@ namespace MueLu {
   void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+
     auto A             = Get< RCP<Matrix> >           (fineLevel, "A");
     auto aggregates    = Get< RCP<Aggregates_kokkos> >(fineLevel, "Aggregates");
     auto amalgInfo     = Get< RCP<AmalgamationInfo> > (fineLevel, "UnAmalgamationInfo");

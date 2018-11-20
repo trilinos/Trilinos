@@ -113,13 +113,6 @@ TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
     }
 }
 
-//void fails_build() { Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int& i) { std::max(1, 2); }); }
-//TEST_F(NodalVolumeCalculator, fails)  { fails_build(); }
-
-//KOKKOS_INLINE_FUNCTION double my_max(double a, double b) { return std::max(a, b); }
-//void builds_ok() { Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int& i) { my_max(1, 2); }); }
-//TEST_F(NodalVolumeCalculator, builds) { builds_ok(); }
-
 void run_vector_gpu_test()
 {
     size_t n = 10;
@@ -136,5 +129,4 @@ TEST(StkVectorGpuTest, gpu_runs)
 {
     run_vector_gpu_test();
 }
-
 

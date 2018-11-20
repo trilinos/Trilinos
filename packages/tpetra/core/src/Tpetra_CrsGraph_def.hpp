@@ -221,8 +221,6 @@ namespace Tpetra {
 
   } // namespace Details
 
-namespace Classes {
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
@@ -6703,7 +6701,7 @@ namespace Classes {
 
     {
       // packAndPrepare* methods modify numExportPacketsPerLID_.
-      destGraph->numExportPacketsPerLID_.template modify<Kokkos::HostSpace>();
+      destGraph->numExportPacketsPerLID_.modify_host();
       Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
 
@@ -6724,10 +6722,10 @@ namespace Classes {
           // Make sure that host has the latest version, since we're
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
-          destGraph->numExportPacketsPerLID_.template sync<Kokkos::HostSpace>();
+          destGraph->numExportPacketsPerLID_.sync_host();
           Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
-          destGraph->numImportPacketsPerLID_.template sync<Kokkos::HostSpace>();
+          destGraph->numImportPacketsPerLID_.sync_host();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
           Distor.doReversePostsAndWaits(numExportPacketsPerLID, 1,
@@ -6740,12 +6738,12 @@ namespace Classes {
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets);
-          destGraph->imports_.template modify<Kokkos::HostSpace>();
+          destGraph->imports_.modify_host();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView(destGraph->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destGraph->exports_.template sync<Kokkos::HostSpace>();
+          destGraph->exports_.sync_host();
           Teuchos::ArrayView<const packet_type> hostExports =
             getArrayViewFromDualView(destGraph->exports_);
           Distor.doReversePostsAndWaits(hostExports,
@@ -6754,12 +6752,12 @@ namespace Classes {
                                          numImportPacketsPerLID);
         }
         else { // constant number of packets per LI
-          destGraph->imports_.template modify<Kokkos::HostSpace>();
+          destGraph->imports_.modify_host();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView(destGraph->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destGraph->exports_.template sync<Kokkos::HostSpace>();
+          destGraph->exports_.sync_host();
           Teuchos::ArrayView<const packet_type> hostExports =
             getArrayViewFromDualView(destGraph->exports_);
           Distor.doReversePostsAndWaits(hostExports,
@@ -6772,10 +6770,10 @@ namespace Classes {
           // Make sure that host has the latest version, since we're
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
-          destGraph->numExportPacketsPerLID_.template sync<Kokkos::HostSpace>();
+          destGraph->numExportPacketsPerLID_.sync_host();
           Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
-          destGraph->numImportPacketsPerLID_.template sync<Kokkos::HostSpace>();
+          destGraph->numImportPacketsPerLID_.sync_host();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
           Distor.doPostsAndWaits(numExportPacketsPerLID, 1,
@@ -6788,12 +6786,12 @@ namespace Classes {
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets);
-          destGraph->imports_.template modify<Kokkos::HostSpace>();
+          destGraph->imports_.modify_host();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView(destGraph->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destGraph->exports_.template sync<Kokkos::HostSpace>();
+          destGraph->exports_.sync_host();
           Teuchos::ArrayView<const packet_type> hostExports =
             getArrayViewFromDualView(destGraph->exports_);
           Distor.doPostsAndWaits(hostExports,
@@ -6802,12 +6800,12 @@ namespace Classes {
                                   numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
-          destGraph->imports_.template modify<Kokkos::HostSpace>();
+          destGraph->imports_.modify_host();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView(destGraph->imports_);
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
-          destGraph->exports_.template sync<Kokkos::HostSpace>();
+          destGraph->exports_.sync_host();
           Teuchos::ArrayView<const packet_type> hostExports =
             getArrayViewFromDualView(destGraph->exports_);
           Distor.doPostsAndWaits(hostExports,
@@ -6826,10 +6824,10 @@ namespace Classes {
 #endif
 
     // Backwards compatibility measure.  We'll use this again below.
-    destGraph->numImportPacketsPerLID_.template sync<Kokkos::HostSpace>();
+    destGraph->numImportPacketsPerLID_.sync_host();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-    destGraph->imports_.template sync<Kokkos::HostSpace>();
+    destGraph->imports_.sync_host();
     Teuchos::ArrayView<const packet_type> hostImports =
       getArrayViewFromDualView(destGraph->imports_);
     size_t mynnz =
@@ -7006,7 +7004,6 @@ namespace Classes {
     transferAndFillComplete(destGraph, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 //
@@ -7015,7 +7012,7 @@ namespace Classes {
 // Must be expanded from within the Tpetra namespace!
 //
 #define TPETRA_CRSGRAPH_GRAPH_INSTANT(LO,GO,NODE) \
-  namespace Classes { template class CrsGraph< LO , GO , NODE >; }
+  template class CrsGraph< LO , GO , NODE >;
 
 #define TPETRA_CRSGRAPH_IMPORT_AND_FILL_COMPLETE_INSTANT(LO,GO,NODE) \
   template<>                                                                        \

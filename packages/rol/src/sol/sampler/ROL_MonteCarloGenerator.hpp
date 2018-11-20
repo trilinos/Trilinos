@@ -67,6 +67,8 @@ private:
   const bool useDist_;
   const std::vector<ROL::Ptr<Distribution<Real> > > dist_;
 
+  const int seed_;
+
   Real ierf(Real input) const {
     std::vector<Real> coeff;
     Real pi = ROL::ScalarTraits<Real>::pi(), zero(0), one(1), two(2), tol(1e-4);
@@ -94,7 +96,7 @@ private:
   }
 
   std::vector<std::vector<Real> > sample(int nSamp, bool store = true) {
-    srand(123454321);
+    srand(seed_);
     const Real zero(0), one(1), two(2), tol(0.1);
     int rank = SampleGenerator<Real>::batchID();
     const int dim = (!useDist_ ? data_.size() : dist_.size());
@@ -159,7 +161,8 @@ public:
                       const ROL::Ptr<BatchManager<Real> > &bman, 
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0)
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(false),
@@ -171,7 +174,8 @@ public:
       sum_ng_(0),
       sum_ng2_(0), 
       useDist_(true),
-      dist_(dist) {
+      dist_(dist),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
     ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
@@ -183,7 +187,8 @@ public:
                       const ROL::Ptr<BatchManager<Real> > &bman,  
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0)
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(false),
@@ -194,7 +199,8 @@ public:
       sum_val2_(0),
       sum_ng_(0),
       sum_ng2_(0),
-      useDist_(false) {
+      useDist_(false),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
     ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 
@@ -219,7 +225,8 @@ public:
                       const ROL::Ptr<BatchManager<Real> > &bman,
                       const bool use_SA = false,
                       const bool adaptive = false,
-                      const int numNewSamps = 0 )
+                      const int numNewSamps = 0,
+                      const int seed = 123454321)
     : SampleGenerator<Real>(bman),
       nSamp_(nSamp),
       use_normal_(true),
@@ -230,7 +237,8 @@ public:
       sum_val2_(0),
       sum_ng_(0),
       sum_ng2_(0), 
-      useDist_(false) {
+      useDist_(false),
+      seed_(seed) {
     int nProc = SampleGenerator<Real>::numBatches();
     ROL_TEST_FOR_EXCEPTION( nSamp_ < nProc, std::invalid_argument,
       ">>> ERROR (ROL::MonteCarloGenerator): Total number of samples is less than the number of batches!"); 

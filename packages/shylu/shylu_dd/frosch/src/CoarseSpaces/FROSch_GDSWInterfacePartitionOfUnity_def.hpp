@@ -54,7 +54,7 @@ namespace FROSch {
                                                                               MapPtr nodesMap,
                                                                               MapPtrVecPtr dofsMaps,
                                                                               ParameterListPtr parameterList) :
-    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,sublist(parameterList,"GDSW")),
+    InterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList),
     UseVertices_ (false),
     UseShortEdges_ (false),
     UseStraightEdges_ (false),
@@ -144,7 +144,9 @@ namespace FROSch {
     int GDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::sortInterface(CrsMatrixPtr matrix,
                                                                   MultiVectorPtr nodeList)
     {
-        this->DDInterface_->divideUnconnectedEntities(matrix);
+        if (this->ParameterList_->get("Test Unconnected Interface",true)) {
+            this->DDInterface_->divideUnconnectedEntities(matrix);
+        }
         this->DDInterface_->sortEntities(nodeList);
         
         return 0;

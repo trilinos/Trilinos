@@ -184,12 +184,12 @@ TEST_CASE("cube_2blocks", "[cube_2blocks]")
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "5x2x5"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{6, 1, 6}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{6, 6, 1});
+      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{6, 1, 6}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{6, 6, 1}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "5x5x3"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{6, 6, 1}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{6, 1, 6});
+      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{6, 6, 1}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{6, 1, 6}});
   double load_balance_tolerance = 1.2;
 
   for (size_t proc_count = 2; proc_count < 8; proc_count += 2) {
@@ -205,19 +205,19 @@ TEST_CASE("bump", "[bump_zgc]")
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "2x2x1"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{3, 1, 1},
-      Ioss::IJK_t{3, 3, 2}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 3, 2});
+      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{3, 1, 1}},
+      Ioss::IJK_t{{3, 3, 2}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 3, 2}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "2x2x1"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 3, 2}, Ioss::IJK_t{3, 1, 1}, Ioss::IJK_t{3, 3, 2});
+      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A2", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{3, 1, 1},
-      Ioss::IJK_t{3, 3, 2}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 3, 2});
+      "A2", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{3, 1, 1}},
+      Ioss::IJK_t{{3, 3, 2}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 3, 2}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "2x2x1"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 3, 2}, Ioss::IJK_t{3, 1, 1}, Ioss::IJK_t{3, 3, 2});
+      "B2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   double load_balance_tolerance = 1.2;
 
   for (size_t proc_count = 2; proc_count < 8; proc_count += 2) {
@@ -233,19 +233,19 @@ TEST_CASE("bump_loose", "[bump_loose_zgc]")
   std::vector<Iocgns::StructuredZoneData *> zones;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "2x2x1"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{3, 1, 1},
-      Ioss::IJK_t{3, 3, 2}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 3, 2});
+      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{3, 1, 1}},
+      Ioss::IJK_t{{3, 3, 2}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 3, 2}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "2x2x1"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 3, 2}, Ioss::IJK_t{3, 1, 1}, Ioss::IJK_t{3, 3, 2});
+      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A2", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{3, 1, 1},
-      Ioss::IJK_t{3, 3, 2}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 3, 2});
+      "A2", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{3, 1, 1}},
+      Ioss::IJK_t{{3, 3, 2}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 3, 2}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "2x2x1"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 3, 2}, Ioss::IJK_t{3, 1, 1}, Ioss::IJK_t{3, 3, 2});
+      "B2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 3, 2}}, Ioss::IJK_t{{3, 1, 1}}, Ioss::IJK_t{{3, 3, 2}});
   double load_balance_tolerance = 1.4;
 
   for (size_t proc_count = 2; proc_count < 8; proc_count++) {
@@ -276,30 +276,30 @@ TEST_CASE("farmer plenum", "[farmer_plenum]")
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "56x128x48"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{57, 1, 1},
-      Ioss::IJK_t{57, 33, 49}, Ioss::IJK_t{33, 1, 1}, Ioss::IJK_t{1, 1, 49});
+      "A1", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{57, 1, 1}},
+      Ioss::IJK_t{{57, 33, 49}}, Ioss::IJK_t{{33, 1, 1}}, Ioss::IJK_t{{1, 1, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{57, 33, 1},
-      Ioss::IJK_t{57, 65, 49}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 33, 49});
+      "A2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{57, 33, 1}},
+      Ioss::IJK_t{{57, 65, 49}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 33, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A3", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{57, 65, 1},
-      Ioss::IJK_t{57, 97, 49}, Ioss::IJK_t{1, 33, 1}, Ioss::IJK_t{1, 65, 49});
+      "A3", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{57, 65, 1}},
+      Ioss::IJK_t{{57, 97, 49}}, Ioss::IJK_t{{1, 33, 1}}, Ioss::IJK_t{{1, 65, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A4", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{57, 97, 1},
-      Ioss::IJK_t{57, 129, 49}, Ioss::IJK_t{1, 65, 1}, Ioss::IJK_t{33, 65, 49});
+      "A4", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{57, 97, 1}},
+      Ioss::IJK_t{{57, 129, 49}}, Ioss::IJK_t{{1, 65, 1}}, Ioss::IJK_t{{33, 65, 49}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x64x48"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 49}, Ioss::IJK_t{57, 33, 1}, Ioss::IJK_t{57, 1, 49});
+      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 49}}, Ioss::IJK_t{{57, 33, 1}}, Ioss::IJK_t{{57, 1, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B2", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 33, 49}, Ioss::IJK_t{57, 33, 1}, Ioss::IJK_t{57, 65, 49});
+      "B2", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 33, 49}}, Ioss::IJK_t{{57, 33, 1}}, Ioss::IJK_t{{57, 65, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B3", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 33, 1},
-      Ioss::IJK_t{1, 65, 49}, Ioss::IJK_t{57, 65, 1}, Ioss::IJK_t{57, 97, 49});
+      "B3", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 33, 1}},
+      Ioss::IJK_t{{1, 65, 49}}, Ioss::IJK_t{{57, 65, 1}}, Ioss::IJK_t{{57, 97, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B4", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{1, 65, 1},
-      Ioss::IJK_t{33, 65, 49}, Ioss::IJK_t{57, 97, 1}, Ioss::IJK_t{57, 129, 49});
+      "B4", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{1, 65, 1}},
+      Ioss::IJK_t{{33, 65, 49}}, Ioss::IJK_t{{57, 97, 1}}, Ioss::IJK_t{{57, 129, 49}});
 
   double load_balance_tolerance = 1.1;
 
@@ -316,104 +316,104 @@ TEST_CASE("grv-nose", "[grv-nose]")
   int                                       zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "16x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A1", zones.back()->m_zone, "zone4", 5, Ioss::IJK_t{-2, -1, -3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{33, 1, 1});
+      "A1", zones.back()->m_zone, "zone4", 5, Ioss::IJK_t{{-2, -1, -3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{33, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A2", zones.back()->m_zone, "zone2", 3, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{17, 1, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 17, 129});
+      "A2", zones.back()->m_zone, "zone2", 3, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{17, 1, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 17, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A3", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{-1, 2, -3}, Ioss::IJK_t{17, 1, 1},
-      Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{33, 17, 1});
+      "A3", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{{-1, 2, -3}}, Ioss::IJK_t{{17, 1, 1}},
+      Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{33, 17, 1}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B11", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "B11", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B14", zones.back()->m_zone, "zone8", 9, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{65, 1, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{65, 17, 129});
+      "B14", zones.back()->m_zone, "zone8", 9, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{65, 1, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{65, 17, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B15", zones.back()->m_zone, "zone9", 10, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{65, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{65, 1, 129});
+      "B15", zones.back()->m_zone, "zone9", 10, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{65, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{65, 1, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "16x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B2", zones.back()->m_zone, "zone1", 1, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{17, 1, 129});
+      "B2", zones.back()->m_zone, "zone1", 1, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{17, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A4", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{-2, -1, -3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{33, 1, 1});
+      "A4", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{{-2, -1, -3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{33, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A5", zones.back()->m_zone, "zone6", 7, Ioss::IJK_t{1, -2, -3}, Ioss::IJK_t{17, 1, 1},
-      Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 1, 1});
+      "A5", zones.back()->m_zone, "zone6", 7, Ioss::IJK_t{{1, -2, -3}}, Ioss::IJK_t{{17, 1, 1}},
+      Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 1, 1}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B4", zones.back()->m_zone, "zone2", 3, Ioss::IJK_t{-2, -1, -3}, Ioss::IJK_t{33, 1, 1},
-      Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{1, 17, 1});
+      "B4", zones.back()->m_zone, "zone2", 3, Ioss::IJK_t{{-2, -1, -3}}, Ioss::IJK_t{{33, 1, 1}},
+      Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{1, 17, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A6", zones.back()->m_zone, "zone6", 7, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{33, 1, 1}, Ioss::IJK_t{1, 1, 129});
+      "A6", zones.back()->m_zone, "zone6", 7, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{33, 1, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A7", zones.back()->m_zone, "zone9", 10, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "A7", zones.back()->m_zone, "zone9", 10, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A8", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{33, 1, 129});
+      "A8", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{33, 1, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B1", zones.back()->m_zone, "zone1", 1, Ioss::IJK_t{-2, -1, -3}, Ioss::IJK_t{33, 1, 1},
-      Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{1, 17, 1});
+      "B1", zones.back()->m_zone, "zone1", 1, Ioss::IJK_t{{-2, -1, -3}}, Ioss::IJK_t{{33, 1, 1}},
+      Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{1, 17, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A9", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{33, 17, 129});
+      "A9", zones.back()->m_zone, "zone5", 6, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{33, 17, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A10", zones.back()->m_zone, "zone8", 9, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "A10", zones.back()->m_zone, "zone8", 9, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B3", zones.back()->m_zone, "zone1", 1, Ioss::IJK_t{-1, 2, -3}, Ioss::IJK_t{33, 1, 1},
-      Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{17, 1, 129}, Ioss::IJK_t{17, 17, 1});
+      "B3", zones.back()->m_zone, "zone1", 1, Ioss::IJK_t{{-1, 2, -3}}, Ioss::IJK_t{{33, 1, 1}},
+      Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{17, 1, 129}}, Ioss::IJK_t{{17, 17, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B8", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{33, 17, 129});
+      "B8", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{33, 17, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B9", zones.back()->m_zone, "zone4", 5, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{33, 1, 129});
+      "B9", zones.back()->m_zone, "zone4", 5, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{33, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A11", zones.back()->m_zone, "zone10", 2, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "A11", zones.back()->m_zone, "zone10", 2, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B5", zones.back()->m_zone, "zone2", 3, Ioss::IJK_t{1, -2, -3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{17, 17, 129}, Ioss::IJK_t{17, 1, 1});
+      "B5", zones.back()->m_zone, "zone2", 3, Ioss::IJK_t{{1, -2, -3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{17, 17, 129}}, Ioss::IJK_t{{17, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B6", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{33, 1, 1}, Ioss::IJK_t{1, 1, 129});
+      "B6", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{33, 1, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A12", zones.back()->m_zone, "zone7", 8, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{33, 1, 1},
-      Ioss::IJK_t{33, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 17, 129});
+      "A12", zones.back()->m_zone, "zone7", 8, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{33, 1, 1}},
+      Ioss::IJK_t{{33, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 17, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B12", zones.back()->m_zone, "zone6", 7, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{33, 1, 1}, Ioss::IJK_t{33, 17, 129});
+      "B12", zones.back()->m_zone, "zone6", 7, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{33, 1, 1}}, Ioss::IJK_t{{33, 17, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A13", zones.back()->m_zone, "zone9", 10, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{65, 1, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{65, 17, 129});
+      "A13", zones.back()->m_zone, "zone9", 10, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{65, 1, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{65, 17, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B10", zones.back()->m_zone, "zone4", 5, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "B10", zones.back()->m_zone, "zone4", 5, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A14", zones.back()->m_zone, "zone10", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{65, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{65, 1, 129});
+      "A14", zones.back()->m_zone, "zone10", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{65, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{65, 1, 129}});
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "64x16x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B7", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{-1, -2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "B7", zones.back()->m_zone, "zone3", 4, Ioss::IJK_t{{-1, -2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B13", zones.back()->m_zone, "zone7", 8, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{65, 17, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{65, 1, 129});
+      "B13", zones.back()->m_zone, "zone7", 8, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{65, 17, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{65, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A15", zones.back()->m_zone, "zone10", 2, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{65, 1, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{65, 17, 129});
+      "A15", zones.back()->m_zone, "zone10", 2, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{65, 1, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{65, 17, 129}});
 
   for (size_t proc_count = 3; proc_count <= 384; proc_count *= 2) {
     std::string name = "GRV-Nose_ProcCount_" + std::to_string(proc_count);
@@ -448,6 +448,37 @@ TEST_CASE("grv", "[grv]")
 
   for (size_t proc_count = 2; proc_count < 16; proc_count++) {
     std::string name = "GRV_ProcCount_" + std::to_string(proc_count);
+    SECTION(name)
+    {
+      double load_balance_tolerance = 1.3;
+      check_split_assign(zones, load_balance_tolerance, proc_count, .7);
+    }
+  }
+  cleanup(zones);
+}
+
+TEST_CASE("grv-large", "[grv-large]")
+{
+  std::vector<Iocgns::StructuredZoneData *> zones;
+
+  int zone = 1;
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x16x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x32x32"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x16x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
+  zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x64x64"));
+
+  for (size_t proc_count = 2; proc_count < 8192; proc_count *= 2) {
+    std::string name = "GRV-LARGE_ProcCount_" + std::to_string(proc_count);
     SECTION(name)
     {
       double load_balance_tolerance = 1.3;
@@ -573,231 +604,231 @@ TEST_CASE("farmer_h1_mk21", "[h1_mk21]")
   int zone = 1;
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "192x64x88"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A1", zones.back()->m_zone, "zone3", 3, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{65, 1, 89}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 65, 89});
+      "A1", zones.back()->m_zone, "zone3", 3, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{65, 1, 89}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 65, 89}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{-3, -1, 2}, Ioss::IJK_t{129, 1, 1},
-      Ioss::IJK_t{193, 1, 89}, Ioss::IJK_t{1, 1, 65}, Ioss::IJK_t{1, 89, 1});
+      "A2", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{-3, -1, 2}}, Ioss::IJK_t{{129, 1, 1}},
+      Ioss::IJK_t{{193, 1, 89}}, Ioss::IJK_t{{1, 1, 65}}, Ioss::IJK_t{{1, 89, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A3", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{2, 1, -3}, Ioss::IJK_t{65, 1, 1},
-      Ioss::IJK_t{129, 1, 65}, Ioss::IJK_t{73, 33, 65}, Ioss::IJK_t{73, 97, 1});
+      "A3", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{2, 1, -3}}, Ioss::IJK_t{{65, 1, 1}},
+      Ioss::IJK_t{{129, 1, 65}}, Ioss::IJK_t{{73, 33, 65}}, Ioss::IJK_t{{73, 97, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A4", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{-3, 2, 1}, Ioss::IJK_t{65, 1, 65},
-      Ioss::IJK_t{129, 1, 73}, Ioss::IJK_t{1, 49, 97}, Ioss::IJK_t{9, 49, 33});
+      "A4", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{-3, 2, 1}}, Ioss::IJK_t{{65, 1, 65}},
+      Ioss::IJK_t{{129, 1, 73}}, Ioss::IJK_t{{1, 49, 97}}, Ioss::IJK_t{{9, 49, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A5", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{3, 1, 2}, Ioss::IJK_t{65, 1, 73},
-      Ioss::IJK_t{129, 1, 89}, Ioss::IJK_t{57, 177, 33}, Ioss::IJK_t{57, 193, 97});
+      "A5", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{3, 1, 2}}, Ioss::IJK_t{{65, 1, 73}},
+      Ioss::IJK_t{{129, 1, 89}}, Ioss::IJK_t{{57, 177, 33}}, Ioss::IJK_t{{57, 193, 97}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x88x64"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B2", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{-2, 3, -1}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 89, 65}, Ioss::IJK_t{193, 1, 1}, Ioss::IJK_t{129, 1, 89});
+      "B2", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{-2, 3, -1}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 89, 65}}, Ioss::IJK_t{{193, 1, 1}}, Ioss::IJK_t{{129, 1, 89}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A6", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{2, -3, -1}, Ioss::IJK_t{1, 1, 65},
-      Ioss::IJK_t{33, 65, 65}, Ioss::IJK_t{73, 97, 65}, Ioss::IJK_t{73, 129, 1});
+      "A6", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{2, -3, -1}}, Ioss::IJK_t{{1, 1, 65}},
+      Ioss::IJK_t{{33, 65, 65}}, Ioss::IJK_t{{73, 97, 65}}, Ioss::IJK_t{{73, 129, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A7", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{-3, 1, -2}, Ioss::IJK_t{1, 65, 65},
-      Ioss::IJK_t{33, 73, 65}, Ioss::IJK_t{1, 49, 33}, Ioss::IJK_t{9, 49, 1});
+      "A7", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{-3, 1, -2}}, Ioss::IJK_t{{1, 65, 65}},
+      Ioss::IJK_t{{33, 73, 65}}, Ioss::IJK_t{{1, 49, 33}}, Ioss::IJK_t{{9, 49, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A8", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{3, 2, -1}, Ioss::IJK_t{1, 73, 65},
-      Ioss::IJK_t{33, 89, 65}, Ioss::IJK_t{57, 177, 97}, Ioss::IJK_t{57, 193, 129});
+      "A8", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{3, 2, -1}}, Ioss::IJK_t{{1, 73, 65}},
+      Ioss::IJK_t{{33, 89, 65}}, Ioss::IJK_t{{57, 177, 97}}, Ioss::IJK_t{{57, 193, 129}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x64x88"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 65, 89}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{65, 1, 89});
+      "B1", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 65, 89}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{65, 1, 89}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A9", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{-2, -1, -3}, Ioss::IJK_t{1, 65, 1},
-      Ioss::IJK_t{33, 65, 65}, Ioss::IJK_t{73, 33, 65}, Ioss::IJK_t{73, 1, 1});
+      "A9", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{-2, -1, -3}}, Ioss::IJK_t{{1, 65, 1}},
+      Ioss::IJK_t{{33, 65, 65}}, Ioss::IJK_t{{73, 33, 65}}, Ioss::IJK_t{{73, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A10", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{3, -2, 1}, Ioss::IJK_t{1, 65, 65},
-      Ioss::IJK_t{33, 65, 73}, Ioss::IJK_t{1, 49, 97}, Ioss::IJK_t{9, 49, 129});
+      "A10", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{3, -2, 1}}, Ioss::IJK_t{{1, 65, 65}},
+      Ioss::IJK_t{{33, 65, 73}}, Ioss::IJK_t{{1, 49, 97}}, Ioss::IJK_t{{9, 49, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A11", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{-3, -1, 2}, Ioss::IJK_t{1, 65, 73},
-      Ioss::IJK_t{33, 65, 89}, Ioss::IJK_t{57, 177, 33}, Ioss::IJK_t{57, 193, 1});
+      "A11", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{-3, -1, 2}}, Ioss::IJK_t{{1, 65, 73}},
+      Ioss::IJK_t{{33, 65, 89}}, Ioss::IJK_t{{57, 177, 33}}, Ioss::IJK_t{{57, 193, 1}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "56x128x48"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A12", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{57, 129, 1}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{57, 1, 129});
+      "A12", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{57, 129, 1}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{57, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A13", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{57, 1, 1},
-      Ioss::IJK_t{57, 33, 49}, Ioss::IJK_t{33, 1, 1}, Ioss::IJK_t{1, 1, 49});
+      "A13", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{57, 1, 1}},
+      Ioss::IJK_t{{57, 33, 49}}, Ioss::IJK_t{{33, 1, 1}}, Ioss::IJK_t{{1, 1, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A14", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{57, 33, 1},
-      Ioss::IJK_t{57, 97, 49}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{1, 65, 49});
+      "A14", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{57, 33, 1}},
+      Ioss::IJK_t{{57, 97, 49}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{1, 65, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A15", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{57, 97, 1},
-      Ioss::IJK_t{57, 129, 49}, Ioss::IJK_t{1, 65, 1}, Ioss::IJK_t{33, 65, 49});
+      "A15", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{57, 97, 1}},
+      Ioss::IJK_t{{57, 129, 49}}, Ioss::IJK_t{{1, 65, 1}}, Ioss::IJK_t{{33, 65, 49}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x64x48"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B13", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 49}, Ioss::IJK_t{57, 33, 1}, Ioss::IJK_t{57, 1, 49});
+      "B13", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 49}}, Ioss::IJK_t{{57, 33, 1}}, Ioss::IJK_t{{57, 1, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B14", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 65, 49}, Ioss::IJK_t{57, 33, 1}, Ioss::IJK_t{57, 97, 49});
+      "B14", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 65, 49}}, Ioss::IJK_t{{57, 33, 1}}, Ioss::IJK_t{{57, 97, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B15", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{1, 65, 1},
-      Ioss::IJK_t{33, 65, 49}, Ioss::IJK_t{57, 97, 1}, Ioss::IJK_t{57, 129, 49});
+      "B15", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{1, 65, 1}},
+      Ioss::IJK_t{{33, 65, 49}}, Ioss::IJK_t{{57, 97, 1}}, Ioss::IJK_t{{57, 129, 49}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A16", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 65, 1}, Ioss::IJK_t{1, 1, 129}, Ioss::IJK_t{33, 65, 129});
+      "A16", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 65, 1}}, Ioss::IJK_t{{1, 1, 129}}, Ioss::IJK_t{{33, 65, 129}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "56x192x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B5", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{2, 3, 1}, Ioss::IJK_t{57, 177, 33},
-      Ioss::IJK_t{57, 193, 97}, Ioss::IJK_t{65, 1, 73}, Ioss::IJK_t{129, 1, 89});
+      "B5", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{2, 3, 1}}, Ioss::IJK_t{{57, 177, 33}},
+      Ioss::IJK_t{{57, 193, 97}}, Ioss::IJK_t{{65, 1, 73}}, Ioss::IJK_t{{129, 1, 89}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B8", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{-3, 2, 1}, Ioss::IJK_t{57, 177, 97},
-      Ioss::IJK_t{57, 193, 129}, Ioss::IJK_t{1, 73, 65}, Ioss::IJK_t{33, 89, 65});
+      "B8", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{-3, 2, 1}}, Ioss::IJK_t{{57, 177, 97}},
+      Ioss::IJK_t{{57, 193, 129}}, Ioss::IJK_t{{1, 73, 65}}, Ioss::IJK_t{{33, 89, 65}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B11", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{-2, 3, -1}, Ioss::IJK_t{57, 177, 1},
-      Ioss::IJK_t{57, 193, 33}, Ioss::IJK_t{33, 65, 73}, Ioss::IJK_t{1, 65, 89});
+      "B11", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{{-2, 3, -1}}, Ioss::IJK_t{{57, 177, 1}},
+      Ioss::IJK_t{{57, 193, 33}}, Ioss::IJK_t{{33, 65, 73}}, Ioss::IJK_t{{1, 65, 89}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B12", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{57, 1, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{57, 129, 1});
+      "B12", zones.back()->m_zone, "zone04", 4, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{57, 1, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{57, 129, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A17", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{-2, -3, 1}, Ioss::IJK_t{57, 1, 97},
-      Ioss::IJK_t{57, 129, 129}, Ioss::IJK_t{1, 65, 129}, Ioss::IJK_t{33, 65, 1});
+      "A17", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{{-2, -3, 1}}, Ioss::IJK_t{{57, 1, 97}},
+      Ioss::IJK_t{{57, 129, 129}}, Ioss::IJK_t{{1, 65, 129}}, Ioss::IJK_t{{33, 65, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A18", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{57, 1, 33},
-      Ioss::IJK_t{57, 129, 97}, Ioss::IJK_t{1, 1, 129}, Ioss::IJK_t{1, 65, 1});
+      "A18", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{57, 1, 33}},
+      Ioss::IJK_t{{57, 129, 97}}, Ioss::IJK_t{{1, 1, 129}}, Ioss::IJK_t{{1, 65, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A19", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{2, -3, -1}, Ioss::IJK_t{57, 1, 1},
-      Ioss::IJK_t{57, 129, 33}, Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{1, 1, 1});
+      "A19", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{{2, -3, -1}}, Ioss::IJK_t{{57, 1, 1}},
+      Ioss::IJK_t{{57, 129, 33}}, Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{1, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A20", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{-1, 2, -3}, Ioss::IJK_t{57, 129, 1},
-      Ioss::IJK_t{57, 177, 129}, Ioss::IJK_t{9, 1, 129}, Ioss::IJK_t{9, 49, 1});
+      "A20", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{-1, 2, -3}}, Ioss::IJK_t{{57, 129, 1}},
+      Ioss::IJK_t{{57, 177, 129}}, Ioss::IJK_t{{9, 1, 129}}, Ioss::IJK_t{{9, 49, 1}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "72x128x64"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B3", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{2, 1, -3}, Ioss::IJK_t{73, 33, 1},
-      Ioss::IJK_t{73, 97, 65}, Ioss::IJK_t{65, 1, 65}, Ioss::IJK_t{129, 1, 1});
+      "B3", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{2, 1, -3}}, Ioss::IJK_t{{73, 33, 1}},
+      Ioss::IJK_t{{73, 97, 65}}, Ioss::IJK_t{{65, 1, 65}}, Ioss::IJK_t{{129, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B6", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{-3, 1, -2}, Ioss::IJK_t{73, 97, 1},
-      Ioss::IJK_t{73, 129, 65}, Ioss::IJK_t{1, 65, 65}, Ioss::IJK_t{33, 1, 65});
+      "B6", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{-3, 1, -2}}, Ioss::IJK_t{{73, 97, 1}},
+      Ioss::IJK_t{{73, 129, 65}}, Ioss::IJK_t{{1, 65, 65}}, Ioss::IJK_t{{33, 1, 65}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B9", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{-2, -1, -3}, Ioss::IJK_t{73, 1, 1},
-      Ioss::IJK_t{73, 33, 65}, Ioss::IJK_t{33, 65, 65}, Ioss::IJK_t{1, 65, 1});
+      "B9", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{{-2, -1, -3}}, Ioss::IJK_t{{73, 1, 1}},
+      Ioss::IJK_t{{73, 33, 65}}, Ioss::IJK_t{{33, 65, 65}}, Ioss::IJK_t{{1, 65, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A21", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{57, 33, 1}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{57, 1, 33});
+      "A21", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{57, 33, 1}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{57, 1, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A22", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{57, 1, 1},
-      Ioss::IJK_t{73, 129, 1}, Ioss::IJK_t{129, 1, 17}, Ioss::IJK_t{1, 17, 17});
+      "A22", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{57, 1, 1}},
+      Ioss::IJK_t{{73, 129, 1}}, Ioss::IJK_t{{129, 1, 17}}, Ioss::IJK_t{{1, 17, 17}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A23", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 33, 1},
-      Ioss::IJK_t{57, 97, 1}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{57, 1, 65});
+      "A23", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 33, 1}},
+      Ioss::IJK_t{{57, 97, 1}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{57, 1, 65}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A24", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{1, 97, 1},
-      Ioss::IJK_t{57, 129, 1}, Ioss::IJK_t{1, 81, 33}, Ioss::IJK_t{57, 81, 1});
+      "A24", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 97, 1}},
+      Ioss::IJK_t{{57, 129, 1}}, Ioss::IJK_t{{1, 81, 33}}, Ioss::IJK_t{{57, 81, 1}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "56x80x32"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B21", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{57, 1, 33}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{57, 33, 1});
+      "B21", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{57, 1, 33}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{57, 33, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B24", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 81, 1},
-      Ioss::IJK_t{57, 81, 33}, Ioss::IJK_t{1, 129, 1}, Ioss::IJK_t{57, 97, 1});
+      "B24", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 81, 1}},
+      Ioss::IJK_t{{57, 81, 33}}, Ioss::IJK_t{{1, 129, 1}}, Ioss::IJK_t{{57, 97, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A25", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{2, 1, -3}, Ioss::IJK_t{57, 1, 1},
-      Ioss::IJK_t{57, 9, 33}, Ioss::IJK_t{1, 1, 129}, Ioss::IJK_t{9, 1, 97});
+      "A25", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{2, 1, -3}}, Ioss::IJK_t{{57, 1, 1}},
+      Ioss::IJK_t{{57, 9, 33}}, Ioss::IJK_t{{1, 1, 129}}, Ioss::IJK_t{{9, 1, 97}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A26", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{3, 2, -1}, Ioss::IJK_t{57, 9, 1},
-      Ioss::IJK_t{57, 73, 33}, Ioss::IJK_t{33, 1, 1}, Ioss::IJK_t{1, 65, 1});
+      "A26", zones.back()->m_zone, "zone11", 11, Ioss::IJK_t{{3, 2, -1}}, Ioss::IJK_t{{57, 9, 1}},
+      Ioss::IJK_t{{57, 73, 33}}, Ioss::IJK_t{{33, 1, 1}}, Ioss::IJK_t{{1, 65, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A27", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{2, -1, 3}, Ioss::IJK_t{57, 73, 1},
-      Ioss::IJK_t{57, 81, 33}, Ioss::IJK_t{9, 1, 1}, Ioss::IJK_t{1, 1, 33});
+      "A27", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{2, -1, 3}}, Ioss::IJK_t{{57, 73, 1}},
+      Ioss::IJK_t{{57, 81, 33}}, Ioss::IJK_t{{9, 1, 1}}, Ioss::IJK_t{{1, 1, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A28", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 33},
-      Ioss::IJK_t{57, 9, 33}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{57, 9, 1});
+      "A28", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 33}},
+      Ioss::IJK_t{{57, 9, 33}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{57, 9, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A29", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 9, 33},
-      Ioss::IJK_t{57, 73, 33}, Ioss::IJK_t{1, 9, 1}, Ioss::IJK_t{57, 9, 65});
+      "A29", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 9, 33}},
+      Ioss::IJK_t{{57, 73, 33}}, Ioss::IJK_t{{1, 9, 1}}, Ioss::IJK_t{{57, 9, 65}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A30", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{1, -2, -3}, Ioss::IJK_t{1, 73, 33},
-      Ioss::IJK_t{57, 81, 33}, Ioss::IJK_t{1, 9, 65}, Ioss::IJK_t{57, 1, 65});
+      "A30", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{{1, -2, -3}}, Ioss::IJK_t{{1, 73, 33}},
+      Ioss::IJK_t{{57, 81, 33}}, Ioss::IJK_t{{1, 9, 65}}, Ioss::IJK_t{{57, 1, 65}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "8x48x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B4", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{3, 2, -1}, Ioss::IJK_t{1, 49, 33},
-      Ioss::IJK_t{9, 49, 97}, Ioss::IJK_t{129, 1, 65}, Ioss::IJK_t{65, 1, 73});
+      "B4", zones.back()->m_zone, "zone01", 1, Ioss::IJK_t{{3, 2, -1}}, Ioss::IJK_t{{1, 49, 33}},
+      Ioss::IJK_t{{9, 49, 97}}, Ioss::IJK_t{{129, 1, 65}}, Ioss::IJK_t{{65, 1, 73}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B7", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{2, -3, -1}, Ioss::IJK_t{1, 49, 1},
-      Ioss::IJK_t{9, 49, 33}, Ioss::IJK_t{33, 65, 65}, Ioss::IJK_t{1, 73, 65});
+      "B7", zones.back()->m_zone, "zone02", 2, Ioss::IJK_t{{2, -3, -1}}, Ioss::IJK_t{{1, 49, 1}},
+      Ioss::IJK_t{{9, 49, 33}}, Ioss::IJK_t{{33, 65, 65}}, Ioss::IJK_t{{1, 73, 65}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B10", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{3, -2, 1}, Ioss::IJK_t{1, 49, 97},
-      Ioss::IJK_t{9, 49, 129}, Ioss::IJK_t{1, 65, 65}, Ioss::IJK_t{33, 65, 73});
+      "B10", zones.back()->m_zone, "zone03", 3, Ioss::IJK_t{{3, -2, 1}}, Ioss::IJK_t{{1, 49, 97}},
+      Ioss::IJK_t{{9, 49, 129}}, Ioss::IJK_t{{1, 65, 65}}, Ioss::IJK_t{{33, 65, 73}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B20", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{-1, 2, -3}, Ioss::IJK_t{9, 1, 1},
-      Ioss::IJK_t{9, 49, 129}, Ioss::IJK_t{57, 129, 129}, Ioss::IJK_t{57, 177, 1});
+      "B20", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{-1, 2, -3}}, Ioss::IJK_t{{9, 1, 1}},
+      Ioss::IJK_t{{9, 49, 129}}, Ioss::IJK_t{{57, 129, 129}}, Ioss::IJK_t{{57, 177, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B25", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{2, 1, -3}, Ioss::IJK_t{1, 1, 97},
-      Ioss::IJK_t{9, 1, 129}, Ioss::IJK_t{57, 1, 33}, Ioss::IJK_t{57, 9, 1});
+      "B25", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{2, 1, -3}}, Ioss::IJK_t{{1, 1, 97}},
+      Ioss::IJK_t{{9, 1, 129}}, Ioss::IJK_t{{57, 1, 33}}, Ioss::IJK_t{{57, 9, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B27", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{9, 1, 33}, Ioss::IJK_t{57, 81, 1}, Ioss::IJK_t{57, 73, 33});
+      "B27", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{9, 1, 33}}, Ioss::IJK_t{{57, 81, 1}}, Ioss::IJK_t{{57, 73, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A31", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{-2, -3, 1}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 17, 129}, Ioss::IJK_t{1, 1, 17}, Ioss::IJK_t{129, 1, 1});
+      "A31", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{{-2, -3, 1}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 17, 129}}, Ioss::IJK_t{{1, 1, 17}}, Ioss::IJK_t{{129, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A32", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{-3, 2, 1}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{1, 33, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{129, 17, 1});
+      "A32", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{{-3, 2, 1}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{1, 33, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{129, 17, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A33", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{2, 3, 1}, Ioss::IJK_t{1, 33, 1},
-      Ioss::IJK_t{1, 49, 129}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{129, 17, 17});
+      "A33", zones.back()->m_zone, "zone10", 10, Ioss::IJK_t{{2, 3, 1}}, Ioss::IJK_t{{1, 33, 1}},
+      Ioss::IJK_t{{1, 49, 129}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{129, 17, 17}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "A34", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{2, 1, -3}, Ioss::IJK_t{1, 1, 33},
-      Ioss::IJK_t{9, 1, 97}, Ioss::IJK_t{57, 1, 65}, Ioss::IJK_t{57, 9, 1});
+      "A34", zones.back()->m_zone, "zone12", 12, Ioss::IJK_t{{2, 1, -3}}, Ioss::IJK_t{{1, 1, 33}},
+      Ioss::IJK_t{{9, 1, 97}}, Ioss::IJK_t{{57, 1, 65}}, Ioss::IJK_t{{57, 9, 1}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "128x16x16"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B22", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{-2, 1, 3}, Ioss::IJK_t{1, 1, 17},
-      Ioss::IJK_t{129, 17, 17}, Ioss::IJK_t{57, 129, 1}, Ioss::IJK_t{73, 1, 1});
+      "B22", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{-2, 1, 3}}, Ioss::IJK_t{{1, 1, 17}},
+      Ioss::IJK_t{{129, 17, 17}}, Ioss::IJK_t{{57, 129, 1}}, Ioss::IJK_t{{73, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B31", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{3, -1, -2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{129, 1, 17}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 1, 129});
+      "B31", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{3, -1, -2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{129, 1, 17}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B32", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{3, 2, -1}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{129, 17, 1}, Ioss::IJK_t{1, 17, 1}, Ioss::IJK_t{1, 33, 129});
+      "B32", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{3, 2, -1}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{129, 17, 1}}, Ioss::IJK_t{{1, 17, 1}}, Ioss::IJK_t{{1, 33, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B33", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{3, 1, 2}, Ioss::IJK_t{1, 17, 1},
-      Ioss::IJK_t{129, 17, 17}, Ioss::IJK_t{1, 33, 1}, Ioss::IJK_t{1, 49, 129});
+      "B33", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{3, 1, 2}}, Ioss::IJK_t{{1, 17, 1}},
+      Ioss::IJK_t{{129, 17, 17}}, Ioss::IJK_t{{1, 33, 1}}, Ioss::IJK_t{{1, 49, 129}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "32x64x128"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B16", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 129},
-      Ioss::IJK_t{33, 65, 129}, Ioss::IJK_t{1, 1, 1}, Ioss::IJK_t{33, 65, 1});
+      "B16", zones.back()->m_zone, "zone05", 5, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 129}},
+      Ioss::IJK_t{{33, 65, 129}}, Ioss::IJK_t{{1, 1, 1}}, Ioss::IJK_t{{33, 65, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B17", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{3, -1, -2}, Ioss::IJK_t{1, 65, 1},
-      Ioss::IJK_t{33, 65, 129}, Ioss::IJK_t{57, 129, 97}, Ioss::IJK_t{57, 1, 129});
+      "B17", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{3, -1, -2}}, Ioss::IJK_t{{1, 65, 1}},
+      Ioss::IJK_t{{33, 65, 129}}, Ioss::IJK_t{{57, 129, 97}}, Ioss::IJK_t{{57, 1, 129}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B18", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{1, 3, -2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{1, 65, 129}, Ioss::IJK_t{57, 129, 33}, Ioss::IJK_t{57, 1, 97});
+      "B18", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{1, 3, -2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{1, 65, 129}}, Ioss::IJK_t{{57, 129, 33}}, Ioss::IJK_t{{57, 1, 97}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B19", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{-3, 1, -2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 1, 129}, Ioss::IJK_t{57, 129, 33}, Ioss::IJK_t{57, 1, 1});
+      "B19", zones.back()->m_zone, "zone06", 6, Ioss::IJK_t{{-3, 1, -2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 1, 129}}, Ioss::IJK_t{{57, 129, 33}}, Ioss::IJK_t{{57, 1, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B26", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{-3, 2, 1}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{33, 65, 1}, Ioss::IJK_t{57, 9, 33}, Ioss::IJK_t{57, 73, 1});
+      "B26", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{-3, 2, 1}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{33, 65, 1}}, Ioss::IJK_t{{57, 9, 33}}, Ioss::IJK_t{{57, 73, 1}});
 
   zones.push_back(new Iocgns::StructuredZoneData(zone++, "56x8x64"));
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B23", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{57, 1, 65}, Ioss::IJK_t{1, 33, 1}, Ioss::IJK_t{57, 97, 1});
+      "B23", zones.back()->m_zone, "zone07", 7, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{57, 1, 65}}, Ioss::IJK_t{{1, 33, 1}}, Ioss::IJK_t{{57, 97, 1}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B28", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{1, 2, 3}, Ioss::IJK_t{1, 1, 1},
-      Ioss::IJK_t{57, 9, 1}, Ioss::IJK_t{1, 1, 33}, Ioss::IJK_t{57, 9, 33});
+      "B28", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{1, 2, 3}}, Ioss::IJK_t{{1, 1, 1}},
+      Ioss::IJK_t{{57, 9, 1}}, Ioss::IJK_t{{1, 1, 33}}, Ioss::IJK_t{{57, 9, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B29", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{1, -3, 2}, Ioss::IJK_t{1, 9, 1},
-      Ioss::IJK_t{57, 9, 65}, Ioss::IJK_t{1, 9, 33}, Ioss::IJK_t{57, 73, 33});
+      "B29", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{1, -3, 2}}, Ioss::IJK_t{{1, 9, 1}},
+      Ioss::IJK_t{{57, 9, 65}}, Ioss::IJK_t{{1, 9, 33}}, Ioss::IJK_t{{57, 73, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B30", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{1, -2, -3}, Ioss::IJK_t{1, 1, 65},
-      Ioss::IJK_t{57, 9, 65}, Ioss::IJK_t{1, 81, 33}, Ioss::IJK_t{57, 73, 33});
+      "B30", zones.back()->m_zone, "zone08", 8, Ioss::IJK_t{{1, -2, -3}}, Ioss::IJK_t{{1, 1, 65}},
+      Ioss::IJK_t{{57, 9, 65}}, Ioss::IJK_t{{1, 81, 33}}, Ioss::IJK_t{{57, 73, 33}});
   zones.back()->m_zoneConnectivity.emplace_back(
-      "B34", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{2, 1, -3}, Ioss::IJK_t{57, 1, 1},
-      Ioss::IJK_t{57, 9, 65}, Ioss::IJK_t{1, 1, 97}, Ioss::IJK_t{9, 1, 33});
+      "B34", zones.back()->m_zone, "zone09", 9, Ioss::IJK_t{{2, 1, -3}}, Ioss::IJK_t{{57, 1, 1}},
+      Ioss::IJK_t{{57, 9, 65}}, Ioss::IJK_t{{1, 1, 97}}, Ioss::IJK_t{{9, 1, 33}});
 
   double load_balance_tolerance = 1.2;
 
@@ -826,7 +857,7 @@ TEST_CASE("bc-257x129x2", "[bc-257x129x2]")
   cleanup(zones);
 }
 
-TEST_CASE("6billion", "[6billion]")
+TEST_CASE("64GiElem", "[64GiElem]")
 {
   std::vector<Iocgns::StructuredZoneData *> zones;
 
@@ -836,7 +867,7 @@ TEST_CASE("6billion", "[6billion]")
   double load_balance_tolerance = 1.01;
 
   for (size_t proc_count = 2; proc_count <= 1 << 15; proc_count *= 2) {
-    std::string name = "Billion_PC_" + std::to_string(proc_count);
+    std::string name = "64GiElem_PC_" + std::to_string(proc_count);
     SECTION(name) { check_split_assign(zones, load_balance_tolerance, proc_count); }
   }
   cleanup(zones);

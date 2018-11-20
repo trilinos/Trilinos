@@ -331,7 +331,7 @@ namespace Ioss {
 
   Region::~Region()
   {
-    // Do anything to the database to make it consistent prior to closing and desctructing...
+    // Do anything to the database to make it consistent prior to closing and destructing...
     get_database()->finalize_database();
 
     // Region owns all sub-grouping entities it contains...
@@ -657,9 +657,9 @@ namespace Ioss {
         }
       }
 
-        // GroupingEntity consistency check:
-        // -- debug and parallel     -- default to true; can disable via environment variable
-        // -- non-debug and parallel -- default to false; can enable via environment variable
+      // GroupingEntity consistency check:
+      // -- debug and parallel     -- default to true; can disable via environment variable
+      // -- non-debug and parallel -- default to false; can enable via environment variable
 #ifndef NDEBUG
       bool check_consistency = true;
 #else
@@ -905,7 +905,7 @@ namespace Ioss {
         currentState = state;
       }
       DatabaseIO *db = get_database();
-      db->begin_state(this, state, time);
+      db->begin_state(state, time);
     }
     return time;
   }
@@ -938,7 +938,7 @@ namespace Ioss {
         time = stateTimes[0];
       }
     }
-    db->end_state(this, state, time);
+    db->end_state(state, time);
     currentState = -1;
     return time;
   }
@@ -1356,8 +1356,8 @@ namespace Ioss {
   bool Region::add_alias__(const GroupingEntity *ge)
   {
     // See if an entity with this name already exists...
-    std::string db_name = ge->name();
-    std::string alias   = get_alias__(db_name);
+    const std::string &db_name = ge->name();
+    std::string        alias   = get_alias__(db_name);
 
     if (!alias.empty()) {
       const GroupingEntity *old_ge = get_entity(db_name);

@@ -160,9 +160,9 @@ namespace {
       return;
     }
 
-      //========================================================================
-      // OUTPUT ...
-      //========================================================================
+    //========================================================================
+    // OUTPUT ...
+    //========================================================================
 #if 0
     if (dbi->util().parallel_size() > 1) {
       properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
@@ -380,7 +380,7 @@ namespace {
         // Find this sideblock on the parent block...
         auto &bc_name = fb->name();
         for (auto &bc : sb_parent->m_boundaryConditions) {
-          auto bc_compose = bc.m_famName + "/" + sb_parent->name();
+          auto bc_compose = bc.m_bcName + "/" + sb_parent->name();
           if (bc_name == bc_compose) {
             std::vector<int> elem_side;
             if (bc.get_face_count() > 0) {
@@ -515,9 +515,9 @@ namespace {
     for (auto ss : ssets) {
       const std::string &name = ss->name();
 
-      int                      ss_sides = 0;
-      auto                     surf     = new Ioss::SideSet(output_region.get_database(), name);
-      Ioss::SideBlockContainer fbs      = ss->get_side_blocks();
+      int                             ss_sides = 0;
+      auto                            surf = new Ioss::SideSet(output_region.get_database(), name);
+      const Ioss::SideBlockContainer &fbs  = ss->get_side_blocks();
       for (auto fb : fbs) {
         const std::string &fbname   = fb->name();
         std::string        fbtype   = fb->get_property("topology_type").get_string();

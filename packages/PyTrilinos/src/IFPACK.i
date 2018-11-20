@@ -92,7 +92,7 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 
 // NumPy include
@@ -124,7 +124,7 @@ example subdirectory of the PyTrilinos package:
 
 // External Trilinos modules
 %import "Teuchos.i"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 %ignore Epetra_Version();
 %import "Epetra.i"
 #endif

@@ -75,8 +75,6 @@ using Teuchos::rcp;
 using Teuchos::tuple;
 
 using std::string;
-using std::endl;
-using std::cout;
 
 int main()
 {
@@ -172,12 +170,12 @@ int main()
   Teuchos::XMLParameterListWriter plw;
   Teuchos::XMLObject obj = plw.toXML(pl);
 
-  cout << "Parameter list: " << endl;
-  cout << obj << endl;
+  std::cout << "Parameter list: " << std::endl;
+  std::cout << obj << std::endl;
 
   std::ofstream of;
   of.open("params.xml");
-  of << obj << endl;
+  of << obj << std::endl;
   of.close();
 
   // Read parameter list in from XML file.
@@ -186,7 +184,7 @@ int main()
   Teuchos::ParameterList newpl = rdr.getParameters();
   Teuchos::XMLObject objnew = plw.toXML(newpl);
 
-  cout << "After reading in from XML file: " << endl;
-  cout << objnew << endl;
+  std::cout << "After reading in from XML file: " << std::endl;
+  std::cout << objnew << std::endl;
 }
 

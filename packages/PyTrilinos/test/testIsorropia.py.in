@@ -64,57 +64,62 @@ class PartitionerTestCase(unittest.TestCase):
     def setUp(self):
         nRows = 10
         self.pList = Teuchos.ParameterList()
-        self.pList.set("PARTITIONING METHOD", "CYCLIC")
-        self.pDictionary = {"PARTITIONING METHOD":"CYCLIC"}
+        self.pList.set("partitioning method", "cyclic")
+        self.sublist = self.pList.sublist("Zoltan")
+        self.sublist.set("debug_level", "0")
+        self.quiet = {"debug_level": "0"}
+        self.pDictionary = {"partitioning method": "cyclic",
+                            "Zoltan": self.quiet}
         self.map = Epetra.Map(nRows, 0, comm)
         self.crsg = buildGraph(comm, comm.NumProc()*10)
-        
-        
         self.part = Isorropia.Epetra.Partitioner(self.crsg, self.pList)
         self.costs = Isorropia.Epetra.CostDescriber()
-#        self.pv = LOCA.ParameterVector()
-#        self.pv.addParameter("Zero"     )
-#        self.pv.addParameter("One", 1.0 )
-#        self.pv.addParameter("Pi" , 3.14)
-
-
 
     def testAlwaysPasses(self):
-        "Test Isorropia.alwaysPasses"
+        """
+        Test Isorropia.alwaysPasses
+        """
         self.assertEquals(0, 0.0)
 
     def testConstructor0(self):
-        """Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+        """
+        Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now)"""
+			 bool compute_partitioning_now)
+        """
         part = Isorropia.Epetra.Partitioner(self.crsg, self.pList, True)
         self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
         part = Isorropia.Epetra.Partitioner(self.crsg, self.pDictionary, True)
         self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
 
     def testConstructor1(self):
-        """Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+        """
+        Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now)"""
+			 bool compute_partitioning_now)
+        """
         part = Isorropia.Epetra.Partitioner(self.crsg, self.costs, self.pList, True)
         self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
 
     def testConstructor2(self):
-        """Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+        """
+        Test Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
                          Teuchos::RCP<const Epetra_MultiVector> coords,
 			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now)"""
+			 bool compute_partitioning_now)
+        """
         coords = Epetra.MultiVector(self.map, 2, True)
         part = Isorropia.Epetra.Partitioner(self.crsg, coords, self.pList, True)
         self.failUnless(isinstance(part, Isorropia.Epetra.Partitioner))
 
-
-
     def testCreateNewMap(self):
-        """Test createNewMap()"""
+        """
+        Test createNewMap()
+        """
         ## Don't actually do any partitioning
-        part = Isorropia.Epetra.Partitioner(self.crsg, {"PARTITIONING METHOD":"BLOCK"}, False)
+        part = Isorropia.Epetra.Partitioner(self.crsg, {"partitioning method": "block",
+                                                        "Zoltan": self.quiet}, False)
         newMap = part.createNewMap()
         self.failUnless(newMap.IsOneToOne())
         myElems = newMap.MyGlobalElements()
@@ -122,7 +127,9 @@ class PartitionerTestCase(unittest.TestCase):
             self.failUnless(elem // 10 == comm.MyPID())
 
     def testCyclicPartition(self):
-        """Test Cyclic 1D Partitioning, relies on createNewMap()"""
+        """
+        Test Cyclic 1D Partitioning, relies on createNewMap()
+        """
         part = Isorropia.Epetra.Partitioner(self.crsg, self.pList, True)
         newMap = part.createNewMap()
         self.failUnless(newMap.IsOneToOne())
@@ -130,18 +137,20 @@ class PartitionerTestCase(unittest.TestCase):
         for elem in myElems:
             self.failUnless(elem % comm.NumProc() == comm.MyPID())
 
-
-    ## As written, this will fail if the random partition is cyclic. However, 
-    ## it appears that the random partitioning uses the same seed every time, in 
-    ## which case it should pass every time, or fail every time (the small cases
-    ## I've tested don't fail, and as numProc() grows the probability of randomly
-    ## partitioning as cyclic drops quickly)
+    # As written, this will fail if the random partition is cyclic. However, it
+    # appears that the random partitioning uses the same seed every time, in
+    # which case it should pass every time, or fail every time (the small cases
+    # I've tested don't fail, and as numProc() grows the probability of randomly
+    # partitioning as cyclic drops quickly)
     def testRepartitioning(self):
-        """Test compute(True) forces repartitioning, relies on createNewMap()"""
-        part = Isorropia.Epetra.Partitioner(self.crsg, {"PARTITIONING METHOD":"RANDOM"}, True)
+        """
+        Test compute(True) forces repartitioning, relies on createNewMap()
+        """
+        part = Isorropia.Epetra.Partitioner(self.crsg, {"partitioning method": "random",
+                                                        "Zoltan": self.quiet}, True)
         newMap = part.createNewMap()
         myFirstElems = newMap.MyGlobalElements()
-        part.setParameters({"PARTITIONING METHOD":"CYCLIC"})
+        part.setParameters({"partitioning method": "cyclic", "Zoltan": self.quiet})
         part.compute(True)
         newMap = part.createNewMap()
         isEqual = True

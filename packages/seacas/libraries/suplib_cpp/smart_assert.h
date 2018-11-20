@@ -328,13 +328,13 @@ namespace smart_assert {
   inline Assert make_assert(const char *expr) { return Assert(expr); }
 } // namespace smart_assert
 
-  ////////////////////////////////////////////////////////
-  // macro trickery
+////////////////////////////////////////////////////////
+// macro trickery
 
-  // note: NEVER define SMART_ASSERT_DEBUG directly
-  // (it will be overridden);
-  //
-  // #define SMART_ASSERT_DEBUG_MODE instead
+// note: NEVER define SMART_ASSERT_DEBUG directly
+// (it will be overridden);
+//
+// #define SMART_ASSERT_DEBUG_MODE instead
 
 #ifdef SMART_ASSERT_DEBUG_MODE
 #if SMART_ASSERT_DEBUG_MODE == 1

@@ -1311,9 +1311,9 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
 
       // transfer strided/blocked map information
-      if (blocks_[r*Cols()+c] != Teuchos::null &&
+      /*      if (blocks_[r*Cols()+c] != Teuchos::null &&
           blocks_[r*Cols()+c]->IsView("stridedMaps") == false)
-        blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));
+          blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));*/
       return blocks_[r*Cols()+c];
     }
 

@@ -41,6 +41,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -72,10 +73,11 @@ namespace SEAMS {
 
 namespace {
   std::unordered_map<size_t, std::vector<std::string>> tokenized_strings;
+
   std::vector<std::string> &get_tokenized_strings(const char *string, const char *delm)
   {
     // key is address of string + hash of delimiter
-    size_t key = *string + SEAMS::hash_symbol(delm);
+    size_t key = std::hash<std::string>{}(string) + std::hash<std::string>{}(delm);
     if (tokenized_strings.find(key) == tokenized_strings.end()) {
       std::string temp       = string;
       auto        tokens     = SEAMS::tokenize(temp, delm);
@@ -1104,7 +1106,7 @@ namespace SEAMS {
           auto tokens = tokenize(line, delim);
           for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
-              array_data->data[idx++] = atof(tokens[i].c_str());
+              array_data->data[idx++] = std::stod(tokens[i]);
             }
             else {
               array_data->data[idx++] = 0.0;
@@ -1151,7 +1153,7 @@ namespace SEAMS {
           auto tokens = tokenize(line, delim);
           for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
-              array_data->data[idx++] = atof(tokens[i].c_str());
+              array_data->data[idx++] = std::stod(tokens[i]);
             }
             else {
               array_data->data[idx++] = 0.0;
@@ -1166,4 +1168,16 @@ namespace SEAMS {
     return nullptr;
   }
 
+  array *do_array_from_string(const char *string, const char *delm)
+  {
+    auto tokens     = SEAMS::tokenize(string, delm);
+    auto array_data = new array(tokens.size(), 1);
+
+    int idx = 0;
+    for (const auto &token : tokens) {
+      array_data->data[idx++] = std::stod(token);
+    }
+    assert(idx == array_data->rows);
+    return array_data;
+  }
 } // namespace SEAMS

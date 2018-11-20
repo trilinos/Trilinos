@@ -81,7 +81,6 @@ bool SideSetEntryLess::operator()(const SideSetEntry& lhs, const SideSetEntry& r
         else
             return false;
     }
-    return false;
 }
 
 //////////////

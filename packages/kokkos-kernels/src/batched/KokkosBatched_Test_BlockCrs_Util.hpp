@@ -651,7 +651,7 @@ namespace KokkosBatched {
         _y = y.Values();
 
         Kokkos::RangePolicy<ExecSpace> policy(0, _x.extent(1)*_blocksize);
-        Kokkos::parallel_for(policy, *this);
+        Kokkos::parallel_for("BlockCrsMatrixVectorProductByRow::run", policy, *this);
       }
     };
 

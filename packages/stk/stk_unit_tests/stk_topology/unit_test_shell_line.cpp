@@ -66,23 +66,23 @@ TEST( stk_topology, shell_line_2)
   const char a[] = "ab";
   {
     const char b[] = "ab";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,0u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
   }
 
   {
     const char b[] = "ba";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,1u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
   }
 
   {
     char edge[2];
-    t.edge_nodes(a,0,edge);
-    t.edge_topology().equivalent(edge,"ab");
+    t.edge_nodes((char*)a,0,(char*)edge);
+    t.edge_topology().equivalent((char*)edge,(char*)"ab");
 
-    t.edge_nodes(a,1,edge);
-    t.edge_topology().equivalent(edge,"ba");
+    t.edge_nodes((char*)a,1,(char*)edge);
+    t.edge_topology().equivalent((char*)edge,(char*)"ba");
   }
 }
 
@@ -118,23 +118,23 @@ TEST( stk_topology, shell_line_3)
   const char a[] = "abc";
   {
     const char b[] = "abc";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,0u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
   }
 
   {
     const char b[] = "bac";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,1u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
   }
 
   {
     char edge[3];
-    t.edge_nodes(a,0,edge);
-    t.edge_topology().equivalent(edge,"abc");
+    t.edge_nodes((char*)a,0,(char*)edge);
+    t.edge_topology().equivalent((char*)edge,(char*)"abc");
 
-    t.edge_nodes(a,1,edge);
-    t.edge_topology().equivalent(edge,"bac");
+    t.edge_nodes((char*)a,1,(char*)edge);
+    t.edge_topology().equivalent((char*)edge,(char*)"bac");
   }
 }
 

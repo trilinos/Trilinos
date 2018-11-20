@@ -60,8 +60,13 @@ namespace FROSch {
             CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
         } else {
             FROSCH_ASSERT(0!=0,"CoarseOperator Type unkown.");
-        } // Todo: Möglichkeit die einzelnen Level auszuschalten
-        this->SumOperator_->addOperator(CoarseOperator_);
+        } // TODO: Add ability to disable individual levels
+        if (this->UseMultiplicative_) {
+            this->MultiplicativeOperator_->addOperator(CoarseOperator_);
+        }
+        else{
+            this->SumOperator_->addOperator(CoarseOperator_);
+        }
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -212,7 +217,18 @@ namespace FROSch {
     {
         return "GDSW Preconditioner";
     }
-    
+
+    template <class SC,class LO,class GO,class NO>
+    int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(CrsMatrixPtr &k)
+    {
+        this->K_ = k;
+        this->OverlappingOperator_->resetMatrix(this->K_);
+        if (this->ParameterList_->get("TwoLevel",true)) {
+            CoarseOperator_->resetMatrix(this->K_);
+            if (this->UseMultiplicative_) this->MultiplicativeOperator_->resetMatrix(this->K_);
+        }
+        return 0;
+    }
 }
 
 #endif

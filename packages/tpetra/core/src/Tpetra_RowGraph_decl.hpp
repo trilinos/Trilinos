@@ -50,7 +50,6 @@
 #include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
-namespace Classes {
 
   /// \class RowGraph
   /// \brief An abstract interface for graphs accessed by rows.
@@ -64,9 +63,9 @@ namespace Classes {
   ///   documentation of Map for requirements.
   /// \tparam Node The Kokkos Node type.  See the documentation of Map
   ///   for requirements.
-  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class RowGraph :
     virtual public Teuchos::Describable,
     public Packable<GlobalOrdinal, LocalOrdinal> {
@@ -309,7 +308,6 @@ namespace Classes {
           Distributor& distor) const;
     //@}
   }; // class RowGraph
-} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_ROWGRAPH_DECL_HPP

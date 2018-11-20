@@ -56,7 +56,6 @@
 #include <memory>
 
 namespace Tpetra {
-namespace Classes {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
@@ -789,7 +788,7 @@ namespace Classes {
         // an output argument).  If there are, constantNumPackets will
         // come back nonzero.  Otherwise, the source will fill the
         // numExportPacketsPerLID_ array.
-        numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+        numExportPacketsPerLID_.modify_host ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (numExportPacketsPerLID_);
 
@@ -806,8 +805,8 @@ namespace Classes {
         Kokkos::View<const packet_type*, Kokkos::HostSpace,
           Kokkos::MemoryUnmanaged> exportsOldK (exportsOld.getRawPtr (),
                                                 exportsLen);
-        exports_.template modify<Kokkos::HostSpace> ();
-        Kokkos::deep_copy (exports_.template view<Kokkos::HostSpace> (),
+        exports_.modify_host ();
+        Kokkos::deep_copy (exports_.view_host (),
                            exportsOldK);
       }
     }
@@ -866,15 +865,15 @@ namespace Classes {
             // Make sure that host has the latest version, since we're
             // using the version on host.  If host has the latest
             // version already, syncing to host does nothing.
-            numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numExportPacketsPerLID_.sync_host ();
             Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
               getArrayViewFromDualView (numExportPacketsPerLID_);
 
             // numImportPacketsPerLID_ is the output array here, so
             // mark it as modified.  It's strictly output, so we don't
             // have to sync from device.
-            //numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
-            numImportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+            //numImportPacketsPerLID_.sync_host ();
+            numImportPacketsPerLID_.modify_host ();
             Teuchos::ArrayView<size_t> numImportPacketsPerLID =
               getArrayViewFromDualView (numImportPacketsPerLID_);
             distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
@@ -898,10 +897,10 @@ namespace Classes {
             // output here.  Similarly, we don't need to mark exports_
             // as modified, since it is read only here. This legacy
             // version of doTransfer only uses host arrays.
-            imports_.template modify<Kokkos::HostSpace> ();
+            imports_.modify_host ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            exports_.template sync<Kokkos::HostSpace> ();
+            exports_.sync_host ();
             Teuchos::ArrayView<const packet_type> hostExports =
               getArrayViewFromDualView (exports_);
             distor.doReversePostsAndWaits (hostExports,
@@ -914,10 +913,10 @@ namespace Classes {
             // output here.  Similarly, we don't need to mark exports_
             // as modified, since it is read only here. This legacy
             // version of doTransfer only uses host arrays.
-            imports_.template modify<Kokkos::HostSpace> ();
+            imports_.modify_host ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            exports_.template sync<Kokkos::HostSpace> ();
+            exports_.sync_host ();
             Teuchos::ArrayView<const packet_type> hostExports =
               getArrayViewFromDualView (exports_);
             distor.doReversePostsAndWaits (hostExports,
@@ -935,15 +934,15 @@ namespace Classes {
             // Make sure that host has the latest version, since we're
             // using the version on host.  If host has the latest
             // version already, syncing to host does nothing.
-            numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numExportPacketsPerLID_.sync_host ();
             Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
               getArrayViewFromDualView (numExportPacketsPerLID_);
 
             // numImportPacketsPerLID_ is the output array here, so
             // mark it as modified.  It's strictly output, so we don't
             // have to sync from device.
-            //numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
-            numImportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+            //numImportPacketsPerLID_.sync_host ();
+            numImportPacketsPerLID_.modify_host ();
             Teuchos::ArrayView<size_t> numImportPacketsPerLID =
               getArrayViewFromDualView (numImportPacketsPerLID_);
             distor.doPostsAndWaits (numExportPacketsPerLID, 1,
@@ -967,10 +966,10 @@ namespace Classes {
             // output here.  Similarly, we don't need to mark exports_
             // as modified, since it is read only here. This legacy
             // version of doTransfer only uses host arrays.
-            imports_.template modify<Kokkos::HostSpace> ();
+            imports_.modify_host ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            exports_.template sync<Kokkos::HostSpace> ();
+            exports_.sync_host ();
             Teuchos::ArrayView<const packet_type> hostExports =
               getArrayViewFromDualView (exports_);
             distor.doPostsAndWaits (hostExports,
@@ -983,10 +982,10 @@ namespace Classes {
             // output here.  Similarly, we don't need to mark exports_
             // as modified, since it is read only here. This legacy
             // version of doTransfer only uses host arrays.
-            imports_.template modify<Kokkos::HostSpace> ();
+            imports_.modify_host ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            exports_.template sync<Kokkos::HostSpace> ();
+            exports_.sync_host ();
             Teuchos::ArrayView<const packet_type> hostExports =
               getArrayViewFromDualView (exports_);
             distor.doPostsAndWaits (hostExports,
@@ -1002,13 +1001,13 @@ namespace Classes {
           // We don't need to sync imports_, because it is only for
           // output here.  This legacy version of doTransfer only uses
           // host arrays.
-          imports_.template modify<Kokkos::HostSpace> ();
+          imports_.modify_host ();
           Teuchos::ArrayView<packet_type> hostImports =
             getArrayViewFromDualView (imports_);
           // NOTE (mfh 25 Apr 2016) unpackAndCombine doesn't actually
           // change its numImportPacketsPerLID argument, so we don't
           // have to mark it modified here.
-          numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          numImportPacketsPerLID_.sync_host ();
           // FIXME (mfh 25 Apr 2016) unpackAndCombine doesn't actually
           // change its numImportPacketsPerLID argument, so we should
           // be able to use a const Teuchos::ArrayView here.
@@ -1081,19 +1080,15 @@ namespace Classes {
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
-    typedef typename Kokkos::DualView<LO*, DT>::t_dev::execution_space DES;
-    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space DMS; // unused
-    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space HMS; // unused
+    using DES = typename Kokkos::DualView<LO*, DT>::t_dev::execution_space;
 
     // DistObject's communication buffers (exports_,
     // numExportPacketsPerLID_, imports_, and numImportPacketsPerLID_)
     // may have different memory spaces than device_type would
-    // indicate.  See GitHub issue #1088.  Abbreviations: "communication
-    // host memory space" and "communication device memory space."
-    typedef typename Kokkos::DualView<size_t*,
-      buffer_device_type>::t_dev::memory_space CDMS;
-    typedef typename Kokkos::DualView<size_t*,
-      buffer_device_type>::t_host::memory_space CHMS;
+    // indicate.  See GitHub issue #1088.  CDMS is short for
+    // "communication device memory space."
+    using CDMS = typename Kokkos::DualView<size_t*,
+      buffer_device_type>::t_dev::memory_space;
 
     // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
     // copious debug output to std::cerr on every MPI process.  This
@@ -1236,11 +1231,7 @@ namespace Classes {
         // Alternately, make packAndPrepareNew take a "commOnHost"
         // argument to tell it where to leave the data?
         if (commOnHost) {
-          typedef typename Kokkos::View<char*, buffer_device_type>::HostMirror::device_type
-            buffer_host_device_type;
-          typedef typename buffer_host_device_type::memory_space
-            buffer_host_memory_space;
-          this->exports_.template sync<buffer_host_memory_space> ();
+          this->exports_.sync_host ();
         }
         else { // ! commOnHost
           typedef typename buffer_device_type::memory_space buffer_dev_memory_space;
@@ -1328,11 +1319,11 @@ namespace Classes {
             }
             size_t totalImportPackets = 0;
             if (commOnHost) {
-              this->numExportPacketsPerLID_.template sync<CHMS> ();
-              this->numImportPacketsPerLID_.template sync<CHMS> ();
-              this->numImportPacketsPerLID_.template modify<CHMS> (); // output argument
-              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<CHMS> ());
-              auto numImp_h = this->numImportPacketsPerLID_.template view<CHMS> ();
+              this->numExportPacketsPerLID_.sync_host ();
+              this->numImportPacketsPerLID_.sync_host ();
+              this->numImportPacketsPerLID_.modify_host (); // output argument
+              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.view_host ());
+              auto numImp_h = this->numImportPacketsPerLID_.view_host ();
 
               // MPI communication happens here.
               distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
@@ -1373,8 +1364,8 @@ namespace Classes {
             // launch MPI communication on host, we will need
             // numExportPacketsPerLID and numImportPacketsPerLID on
             // host.
-            this->numExportPacketsPerLID_.template sync<CHMS> ();
-            this->numImportPacketsPerLID_.template sync<CHMS> ();
+            this->numExportPacketsPerLID_.sync_host ();
+            this->numImportPacketsPerLID_.sync_host ();
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
             // doReversePostsAndWaits currently want
@@ -1390,14 +1381,13 @@ namespace Classes {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.modified_device() = 0;
-            this->imports_.modified_host() = 0;
-
+            this->imports_.clear_sync_state();
+           
             if (commOnHost) {
-              this->imports_.template modify<CHMS> ();
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
+              this->imports_.modify_host ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.view_host ()),
                                              numExportPacketsPerLID_av,
-                                             this->imports_.template view<CHMS> (),
+                                             this->imports_.view_host (),
                                              numImportPacketsPerLID_av);
             }
             else {
@@ -1426,14 +1416,13 @@ namespace Classes {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.modified_device() = 0;
-            this->imports_.modified_host() = 0;
+            this->imports_.clear_sync_state();
 
             if (commOnHost) {
-              this->imports_.template modify<CHMS> ();
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
+              this->imports_.modify_host ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.view_host ()),
                                              constantNumPackets,
-                                             this->imports_.template view<CHMS> ());
+                                             this->imports_.view_host ());
             }
             else { // pack on device
               this->imports_.template modify<CDMS> ();
@@ -1458,11 +1447,11 @@ namespace Classes {
 
             size_t totalImportPackets = 0;
             if (commOnHost) {
-              this->numExportPacketsPerLID_.template sync<CHMS> ();
-              this->numImportPacketsPerLID_.template sync<CHMS> ();
-              this->numImportPacketsPerLID_.template modify<CHMS> (); // output argument
-              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<CHMS> ());
-              auto numImp_h = this->numImportPacketsPerLID_.template view<CHMS> ();
+              this->numExportPacketsPerLID_.sync_host ();
+              this->numImportPacketsPerLID_.sync_host ();
+              this->numImportPacketsPerLID_.modify_host (); // output argument
+              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.view_host ());
+              auto numImp_h = this->numImportPacketsPerLID_.view_host ();
 
               // MPI communication happens here.
               distor.doPostsAndWaits (numExp_h, 1, numImp_h);
@@ -1496,8 +1485,8 @@ namespace Classes {
             // launch MPI communication on host, we will need
             // numExportPacketsPerLID and numImportPacketsPerLID on
             // host.
-            this->numExportPacketsPerLID_.template sync<CHMS> ();
-            this->numImportPacketsPerLID_.template sync<CHMS> ();
+            this->numExportPacketsPerLID_.sync_host ();
+            this->numImportPacketsPerLID_.sync_host ();
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
             // doReversePostsAndWaits currently want
@@ -1513,14 +1502,13 @@ namespace Classes {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.modified_device() = 0;
-            this->imports_.modified_host() = 0;
+            this->imports_.clear_sync_state();
 
             if (commOnHost) {
-              this->imports_.template modify<CHMS> ();
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
+              this->imports_.modify_host ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.view_host ()),
                                       numExportPacketsPerLID_av,
-                                      this->imports_.template view<CHMS> (),
+                                      this->imports_.view_host (),
                                       numImportPacketsPerLID_av);
             }
             else { // pack on device
@@ -1545,8 +1533,7 @@ namespace Classes {
             // prevent spurious debug-mode errors (e.g., "modified on
             // both device and host"), we first need to clear its
             // "modified" flags.
-            this->imports_.modified_device() = 0;
-            this->imports_.modified_host() = 0;
+            this->imports_.clear_sync_state();
 
             if (commOnHost) {
               if (verbose) {
@@ -1554,10 +1541,10 @@ namespace Classes {
                 os << *prefix << "7.2. Comm buffers on host" << endl;
                 std::cerr << os.str ();
               }
-              this->imports_.template modify<CHMS> ();
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
+              this->imports_.modify_host ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.view_host ()),
                                       constantNumPackets,
-                                      this->imports_.template view<CHMS> ());
+                                      this->imports_.view_host ());
             }
             else { // pack on device
               if (verbose) {
@@ -1636,8 +1623,6 @@ namespace Classes {
   releaseViews () const
   {}
 
-} // namespace Classes
-
   template<class DistObjectType>
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input,
@@ -1667,12 +1652,12 @@ namespace Classes {
 
 // Explicit instantiation macro for general DistObject.
 #define TPETRA_DISTOBJECT_INSTANT(SCALAR, LO, GO, NODE) \
-  namespace Classes { template class DistObject< SCALAR , LO , GO , NODE >; }
+  template class DistObject< SCALAR , LO , GO , NODE >;
 
 // Explicit instantiation macro for DistObject<char, ...>.
 // The "SLGN" stuff above doesn't work for Packet=char.
 #define TPETRA_DISTOBJECT_INSTANT_CHAR(LO, GO, NODE) \
-  namespace Classes { template class DistObject< char , LO , GO , NODE >; }
+  template class DistObject< char , LO , GO , NODE >;
 
 } // namespace Tpetra
 

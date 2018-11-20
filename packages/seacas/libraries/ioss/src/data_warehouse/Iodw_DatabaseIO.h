@@ -113,9 +113,6 @@ namespace Iodw {
     bool begin__(Ioss::State state) override { return false; };
     bool end__(Ioss::State state) override { return false; };
 
-    bool begin_state__(Ioss::Region *region, int state, double time) override { return false; };
-    bool end_state__(Ioss::Region *region, int state, double time) override { return false; };
-
     void read_region();
     void read_communication_metadata();
 

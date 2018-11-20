@@ -21,9 +21,14 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     DynamicNavierStokesDataCopy
     SOURCE_FILES
       input.xml
-      plotresults.m
-      plotFlow.m
       plotControl.m
+      plotFlow.m
+      plotInitialFlow.m
+      flowMovie.m
+      vorticity.m
+      trisurfMovie.m
+      plotmesh.m
+      parseData.m
       channel.txt
       channel.jou
       process.sh

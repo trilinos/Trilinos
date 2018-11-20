@@ -44,7 +44,8 @@
 #include <algorithm> // for lower_bound, copy, etc
 #include <cassert>   // for assert
 #include <climits>   // for INT_MAX
-#include <cstdlib>   // for exit, EXIT_FAILURE
+#include <cmath>
+#include <cstdlib> // for exit, EXIT_FAILURE
 #include <cstring>
 #include <iostream> // for operator<<, ostringstream, etc
 #include <iterator> // for distance
@@ -62,7 +63,7 @@
 #endif
 
 namespace {
-// ZOLTAN Callback functions...
+  // ZOLTAN Callback functions...
 
 #if !defined(NO_ZOLTAN_SUPPORT)
   int zoltan_num_dim(void *data, int *ierr)
@@ -505,12 +506,16 @@ namespace Iopx {
         for (size_t i = 0; i < set_count; i++) {
           node_sets[i].hasEntities.resize(m_processorCount);
           node_sets[i].root_ = m_processorCount;
+          int count          = 0;
           for (int p = 0; p < m_processorCount; p++) {
             if (p < node_sets[i].root_ && has_nodes[p * set_count + i] != 0) {
               node_sets[i].root_ = p;
             }
             node_sets[i].hasEntities[p] = has_nodes[p * set_count + i];
+            count += has_nodes[p * set_count + i];
           }
+          int color = node_sets[i].hasEntities[m_processor] ? 1 : MPI_UNDEFINED;
+          MPI_Comm_split(comm_, color, m_processor, &node_sets[i].setComm_);
         }
       }
 
@@ -653,12 +658,16 @@ namespace Iopx {
         for (size_t i = 0; i < set_count; i++) {
           side_sets[i].hasEntities.resize(m_processorCount);
           side_sets[i].root_ = m_processorCount;
+          int count          = 0;
           for (int p = 0; p < m_processorCount; p++) {
             if (p < side_sets[i].root_ && has_elems[p * set_count + i] != 0) {
               side_sets[i].root_ = p;
             }
             side_sets[i].hasEntities[p] = has_elems[p * set_count + i];
+            count += has_elems[p * set_count + i];
           }
+          int color = side_sets[i].hasEntities[m_processor] ? 1 : MPI_UNDEFINED;
+          MPI_Comm_split(comm_, color, m_processor, &side_sets[i].setComm_);
         }
       }
 

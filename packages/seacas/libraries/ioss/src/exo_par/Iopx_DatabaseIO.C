@@ -350,43 +350,6 @@ namespace Iopx {
     return true;
   }
 
-  bool DatabaseIO::ok__(bool write_message, std::string *error_msg, int *bad_count) const
-  {
-    // For input, we try to open the existing file.
-
-    // For output, we do not want to overwrite or clobber the output
-    // file if it already exists since the app might be reading the restart
-    // data from this file and then later clobbering it and then writing
-    // restart data to the same file. So, for output, we first check
-    // whether the file exists and if it it and is writable, assume
-    // that we can later create a new or append to existing file.
-
-    // Returns the number of processors on which this file is *NOT* ok in 'bad_count' if not null.
-    // Will return 'true' only if file ok on all processors.
-
-    if (fileExists) {
-      // File has already been opened at least once...
-      return dbState != Ioss::STATE_INVALID;
-    }
-
-    bool abort_if_error = false;
-    bool is_ok;
-    if (is_input()) {
-      is_ok = open_input_file(write_message, error_msg, bad_count, abort_if_error);
-    }
-    else {
-      // See if file exists... Don't overwrite (yet) it it exists.
-      bool overwrite = false;
-      is_ok = handle_output_file(write_message, error_msg, bad_count, overwrite, abort_if_error);
-      // Close all open files...
-      if (exodusFilePtr >= 0) {
-        ex_close(exodusFilePtr);
-        exodusFilePtr = -1;
-      }
-    }
-    return is_ok;
-  }
-
   bool DatabaseIO::open_input_file(bool write_message, std::string *error_msg, int *bad_count,
                                    bool abort_if_error) const
   {
@@ -406,11 +369,8 @@ namespace Iopx {
     }
 #endif
 
-    int par_mode = get_parallel_io_mode(properties);
-
-    MPI_Info    info        = MPI_INFO_NULL;
-    int         app_opt_val = ex_opts(EX_VERBOSE);
-    std::string filename    = get_filename();
+    MPI_Info    info     = MPI_INFO_NULL;
+    std::string filename = get_filename();
 
     // See bug description in thread at
     // https://www.open-mpi.org/community/lists/users/2015/01/26167.php and
@@ -433,7 +393,9 @@ namespace Iopx {
     Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
     double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
 
-    exodusFilePtr = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
+    int par_mode    = get_parallel_io_mode(properties);
+    int app_opt_val = ex_opts(EX_VERBOSE);
+    exodusFilePtr   = ex_open_par(filename.c_str(), EX_READ | par_mode | mode, &cpu_word_size,
                                 &io_word_size, &version, util().communicator(), info);
 
     if (do_timer) {
@@ -450,24 +412,7 @@ namespace Iopx {
     bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
     if (is_ok) {
-      assert(exodusFilePtr >= 0);
-      // Check byte-size of integers stored on the database...
-      if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
-        if (myProcessor == 0) {
-          std::cerr << "IOSS: Input database contains 8-byte integers. Setting Ioss to use 8-byte "
-                       "integers.\n";
-        }
-        ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
-        set_int_byte_size_api(Ioss::USE_INT64_API);
-      }
-
-      // Check for maximum name length used on the input file.
-      int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      if (max_name_length > maximumNameLength) {
-        maximumNameLength = max_name_length;
-      }
-
-      ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+      finalize_file_open();
     }
     ex_opts(app_opt_val); // Reset back to what it was.
     return is_ok;
@@ -597,30 +542,7 @@ namespace Iopx {
     return is_ok;
   }
 
-  int DatabaseIO::get_file_pointer() const
-  {
-    // Returns the file_pointer used to access the file on disk.
-    // Checks that the file is open and if not, opens it first.
-
-    if (exodusFilePtr < 0) {
-      bool write_message  = true;
-      bool abort_if_error = true;
-      if (is_input()) {
-        open_input_file(write_message, nullptr, nullptr, abort_if_error);
-      }
-      else {
-        bool overwrite = true;
-        handle_output_file(write_message, nullptr, nullptr, overwrite, abort_if_error);
-      }
-
-      if (!m_groupName.empty()) {
-        ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
-      }
-    }
-    assert(exodusFilePtr >= 0);
-    fileExists = true;
-    return exodusFilePtr;
-  }
+  int DatabaseIO::get_file_pointer() const { return Ioex::DatabaseIO::get_file_pointer(); }
 
   int DatabaseIO::free_file_pointer() const
   {
@@ -1182,7 +1104,7 @@ namespace Iopx {
         }
 
         if (!blockInclusions.empty()) {
-          auto blocks = get_region()->get_element_blocks();
+          const auto &blocks = get_region()->get_element_blocks();
           for (auto &block : blocks) {
             block->property_add(Ioss::Property(std::string("omitted"), 1));
           }
@@ -1216,7 +1138,7 @@ namespace Iopx {
 
     nodeConnectivityStatus.resize(nodeCount);
 
-    Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+    const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
 
     for (Ioss::ElementBlock *block : element_blocks) {
@@ -1463,12 +1385,12 @@ namespace Iopx {
             // Seed the topo_map map with <block->name, side_topo>
             // pairs so we are sure that all processors have the same
             // starting topo_map (size and order).
-            Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+            const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
             assert(Ioss::Utils::check_block_order(element_blocks));
 
             for (Ioss::ElementBlock *block : element_blocks) {
               if (!Ioss::Utils::block_is_omitted(block)) {
-                std::string                  name         = block->name();
+                const std::string &          name         = block->name();
                 const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
                 if (common_ftopo != nullptr) {
                   // All sides of this element block's topology have the same topology
@@ -4327,7 +4249,7 @@ void DatabaseIO::write_meta_data()
 {
   Ioss::Region *region = get_region();
 
-  Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
+  const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
   assert(node_blocks.size() == 1);
   nodeCount        = node_blocks[0]->entity_count();
   spatialDimension = node_blocks[0]->get_property("component_degree").get_int();
@@ -4340,18 +4262,13 @@ void DatabaseIO::write_meta_data()
     std::strncpy(the_title, title_str.c_str(), max_line_length);
   }
   else {
-    std::strncpy(the_title, "Sierra Output Default Title", max_line_length);
+    std::strncpy(the_title, "IOSS Output Default Title", max_line_length);
   }
   the_title[max_line_length] = '\0';
 
-  bool            file_per_processor = false;
-  Ioex::Mesh      mesh(spatialDimension, the_title, file_per_processor);
-  Ioex::NodeBlock N(*node_blocks[0]);
-  mesh.nodeblocks.push_back(N);
-
   // Edge Blocks --
   {
-    Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
+    const Ioss::EdgeBlockContainer &edge_blocks = region->get_edge_blocks();
     assert(Ioss::Utils::check_block_order(edge_blocks));
     for (auto &edge_block : edge_blocks) {
       Ioex::set_id(edge_block, EX_EDGE_BLOCK, &ids_);
@@ -4362,15 +4279,13 @@ void DatabaseIO::write_meta_data()
       edgeCount += edge_block->entity_count();
       // Set ids of all entities that do not have "id" property...
       Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
-      Ioex::EdgeBlock T(*(edge_block));
-      mesh.edgeblocks.push_back(T);
     }
-    m_groupCount[EX_EDGE_BLOCK] = mesh.edgeblocks.size();
+    m_groupCount[EX_EDGE_BLOCK] = edge_blocks.size();
   }
 
   // Face Blocks --
   {
-    Ioss::FaceBlockContainer face_blocks = region->get_face_blocks();
+    const Ioss::FaceBlockContainer &face_blocks = region->get_face_blocks();
     assert(Ioss::Utils::check_block_order(face_blocks));
     // Set ids of all entities that have "id" property...
     for (auto &face_block : face_blocks) {
@@ -4382,15 +4297,13 @@ void DatabaseIO::write_meta_data()
       faceCount += face_block->entity_count();
       // Set ids of all entities that do not have "id" property...
       Ioex::get_id(face_block, EX_FACE_BLOCK, &ids_);
-      Ioex::FaceBlock T(*(face_block));
-      mesh.faceblocks.push_back(T);
     }
-    m_groupCount[EX_FACE_BLOCK] = mesh.faceblocks.size();
+    m_groupCount[EX_FACE_BLOCK] = face_blocks.size();
   }
 
   // Element Blocks --
   {
-    Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
+    const Ioss::ElementBlockContainer &element_blocks = region->get_element_blocks();
     assert(Ioss::Utils::check_block_order(element_blocks));
     // Set ids of all entities that have "id" property...
     for (auto &element_block : element_blocks) {
@@ -4402,75 +4315,65 @@ void DatabaseIO::write_meta_data()
       elementCount += element_block->entity_count();
       // Set ids of all entities that do not have "id" property...
       Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
-      Ioex::ElemBlock T(*(element_block));
-      mesh.elemblocks.push_back(T);
     }
-    m_groupCount[EX_ELEM_BLOCK] = mesh.elemblocks.size();
+    m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
   }
 
   // Nodesets ...
   {
-    Ioss::NodeSetContainer nodesets = region->get_nodesets();
+    const Ioss::NodeSetContainer &nodesets = region->get_nodesets();
     for (auto &set : nodesets) {
       Ioex::set_id(set, EX_NODE_SET, &ids_);
     }
 
     for (auto &set : nodesets) {
       Ioex::get_id(set, EX_NODE_SET, &ids_);
-      const Ioex::NodeSet T(*(set));
-      mesh.nodesets.push_back(T);
     }
-    m_groupCount[EX_NODE_SET] = mesh.nodesets.size();
+    m_groupCount[EX_NODE_SET] = nodesets.size();
   }
 
   // Edgesets ...
   {
-    Ioss::EdgeSetContainer edgesets = region->get_edgesets();
+    const Ioss::EdgeSetContainer &edgesets = region->get_edgesets();
     for (auto &set : edgesets) {
       Ioex::set_id(set, EX_EDGE_SET, &ids_);
     }
 
     for (auto &set : edgesets) {
       Ioex::get_id(set, EX_EDGE_SET, &ids_);
-      const Ioex::EdgeSet T(*(set));
-      mesh.edgesets.push_back(T);
     }
-    m_groupCount[EX_EDGE_SET] = mesh.edgesets.size();
+    m_groupCount[EX_EDGE_SET] = edgesets.size();
   }
 
   // Facesets ...
   {
-    Ioss::FaceSetContainer facesets = region->get_facesets();
+    const Ioss::FaceSetContainer &facesets = region->get_facesets();
     for (auto &set : facesets) {
       Ioex::set_id(set, EX_FACE_SET, &ids_);
     }
 
     for (auto &set : facesets) {
       Ioex::get_id(set, EX_FACE_SET, &ids_);
-      const Ioex::FaceSet T(*(set));
-      mesh.facesets.push_back(T);
     }
-    m_groupCount[EX_FACE_SET] = mesh.facesets.size();
+    m_groupCount[EX_FACE_SET] = facesets.size();
   }
 
   // Elementsets ...
   {
-    Ioss::ElementSetContainer elementsets = region->get_elementsets();
+    const Ioss::ElementSetContainer &elementsets = region->get_elementsets();
     for (auto &set : elementsets) {
       Ioex::set_id(set, EX_ELEM_SET, &ids_);
     }
 
     for (auto &set : elementsets) {
       Ioex::get_id(set, EX_ELEM_SET, &ids_);
-      const Ioex::ElemSet T(*(set));
-      mesh.elemsets.push_back(T);
     }
-    m_groupCount[EX_ELEM_SET] = mesh.elemsets.size();
+    m_groupCount[EX_ELEM_SET] = elementsets.size();
   }
 
   // SideSets ...
   {
-    Ioss::SideSetContainer ssets = region->get_sidesets();
+    const Ioss::SideSetContainer &ssets = region->get_sidesets();
     for (auto &set : ssets) {
       Ioex::set_id(set, EX_SIDE_SET, &ids_);
     }
@@ -4483,7 +4386,7 @@ void DatabaseIO::write_meta_data()
       int64_t entity_count = 0;
       int64_t df_count     = 0;
 
-      Ioss::SideBlockContainer side_blocks = set->get_side_blocks();
+      const Ioss::SideBlockContainer &side_blocks = set->get_side_blocks();
       for (auto &block : side_blocks) {
         // Add  "*_offset" properties to specify at what offset
         // the data for this block appears in the containing set.
@@ -4504,15 +4407,11 @@ void DatabaseIO::write_meta_data()
       new_entity->property_add(Ioss::Property("entity_count", entity_count));
       new_entity->property_add(Ioss::Property("distribution_factor_count", df_count));
     }
-
-    for (auto &set : ssets) {
-      // Add a SideSet corresponding to this SideSet/SideBlock
-      Ioex::SideSet T(*set);
-      mesh.sidesets.push_back(T);
-    }
-    m_groupCount[EX_SIDE_SET] = mesh.sidesets.size();
+    m_groupCount[EX_SIDE_SET] = ssets.size();
   }
 
+  bool       file_per_processor = false;
+  Ioex::Mesh mesh(spatialDimension, the_title, file_per_processor);
   {
     if (!properties.exists("OMIT_QA_RECORDS")) {
       put_qa();
@@ -4520,6 +4419,8 @@ void DatabaseIO::write_meta_data()
     if (!properties.exists("OMIT_INFO_RECORDS")) {
       put_info();
     }
+
+    mesh.populate(region);
 
     // Write the metadata to the exodusII file...
     Ioex::Internals data(get_file_pointer(), maximumNameLength, util());
@@ -4543,17 +4444,17 @@ void DatabaseIO::write_meta_data()
   // processor begins...
 
   node_blocks[0]->property_add(Ioss::Property("processor_offset", mesh.nodeblocks[0].procOffset));
-  Ioss::EdgeBlockContainer edge_blocks = region->get_edge_blocks();
+  const Ioss::EdgeBlockContainer &edge_blocks = region->get_edge_blocks();
   for (size_t i = 0; i < edge_blocks.size(); i++) {
     edge_blocks[i]->property_add(Ioss::Property("processor_offset", mesh.edgeblocks[i].procOffset));
   }
-  Ioss::FaceBlockContainer face_blocks = region->get_face_blocks();
+  const Ioss::FaceBlockContainer &face_blocks = region->get_face_blocks();
   for (size_t i = 0; i < face_blocks.size(); i++) {
     face_blocks[i]->property_add(Ioss::Property("processor_offset", mesh.faceblocks[i].procOffset));
   }
 
-  int64_t                     offset         = 0; // Offset into global element map...
-  Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
+  int64_t                            offset         = 0; // Offset into global element map...
+  const Ioss::ElementBlockContainer &element_blocks = region->get_element_blocks();
   for (size_t i = 0; i < element_blocks.size(); i++) {
     element_blocks[i]->property_add(Ioss::Property("global_map_offset", offset));
     offset += mesh.elemblocks[i].entityCount;
@@ -4561,30 +4462,30 @@ void DatabaseIO::write_meta_data()
         Ioss::Property("processor_offset", mesh.elemblocks[i].procOffset));
   }
 
-  Ioss::NodeSetContainer nodesets = region->get_nodesets();
+  const Ioss::NodeSetContainer &nodesets = region->get_nodesets();
   for (size_t i = 0; i < nodesets.size(); i++) {
     nodesets[i]->property_add(Ioss::Property("processor_offset", mesh.nodesets[i].procOffset));
   }
-  Ioss::EdgeSetContainer edgesets = region->get_edgesets();
+  const Ioss::EdgeSetContainer &edgesets = region->get_edgesets();
   for (size_t i = 0; i < edgesets.size(); i++) {
     edgesets[i]->property_add(Ioss::Property("processor_offset", mesh.edgesets[i].procOffset));
   }
-  Ioss::FaceSetContainer facesets = region->get_facesets();
+  const Ioss::FaceSetContainer &facesets = region->get_facesets();
   for (size_t i = 0; i < facesets.size(); i++) {
     facesets[i]->property_add(Ioss::Property("processor_offset", mesh.facesets[i].procOffset));
   }
-  Ioss::ElementSetContainer elementsets = region->get_elementsets();
+  const Ioss::ElementSetContainer &elementsets = region->get_elementsets();
   for (size_t i = 0; i < facesets.size(); i++) {
     elementsets[i]->property_add(Ioss::Property("processor_offset", mesh.elemsets[i].procOffset));
   }
 
-  Ioss::SideSetContainer ssets = region->get_sidesets();
+  const Ioss::SideSetContainer &ssets = region->get_sidesets();
   for (size_t i = 0; i < ssets.size(); i++) {
     ssets[i]->property_add(Ioss::Property("processor_offset", mesh.sidesets[i].procOffset));
     ssets[i]->property_add(Ioss::Property("processor_df_offset", mesh.sidesets[i].dfProcOffset));
 
     // Propagate down to owned sideblocks...
-    Ioss::SideBlockContainer side_blocks = ssets[i]->get_side_blocks();
+    const Ioss::SideBlockContainer &side_blocks = ssets[i]->get_side_blocks();
     for (auto &block : side_blocks) {
       block->property_add(Ioss::Property("processor_offset", mesh.sidesets[i].procOffset));
       block->property_add(Ioss::Property("processor_df_offset", mesh.sidesets[i].dfProcOffset));
@@ -4608,7 +4509,7 @@ void DatabaseIO::create_implicit_global_map() const
   compose.create_implicit_global_map(nodeOwningProcessor, nodeGlobalImplicitMap, nodeMap,
                                      &locally_owned_count, &processor_offset);
 
-  Ioss::NodeBlockContainer node_blocks = get_region()->get_node_blocks();
+  const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
   if (!node_blocks[0]->property_exists("locally_owned_count")) {
     node_blocks[0]->property_add(Ioss::Property("locally_owned_count", locally_owned_count));
   }
@@ -4628,7 +4529,7 @@ void DatabaseIO::output_node_map() const
   // the nodeMap.map and nodeGlobalImplicitMap are defined.
 
   if (metaDataWritten && !nodeMap.map().empty() && !nodeGlobalImplicitMap.empty()) {
-    Ioss::NodeBlockContainer node_blocks = get_region()->get_node_blocks();
+    const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
     assert(node_blocks[0]->property_exists("processor_offset"));
     assert(node_blocks[0]->property_exists("locally_owned_count"));
     size_t processor_offset    = node_blocks[0]->get_property("processor_offset").get_int();

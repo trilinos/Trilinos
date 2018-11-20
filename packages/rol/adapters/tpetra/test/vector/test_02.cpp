@@ -53,7 +53,7 @@
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
 typedef double RealT;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::SimulatedVector<RealT>   PV;
 
   GlobalMPISession mpiSession(&argc, &argv);
-  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   ROL::Ptr<ROL::TpetraTeuchosBatchManager<RealT> > bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
 
   int iprint = argc - 1;

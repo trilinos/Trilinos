@@ -42,16 +42,29 @@
 */
 
 #include "Tpetra_TestingUtilities.hpp"
-#include "Tpetra_Details_gemm.hpp"
 #include "Tpetra_Map.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
+
+// kokkos kernels
+#include "KokkosBlas.hpp"
+#include "KokkosKernels_Utils.hpp"
+
 #include <typeinfo>
 
 namespace {
   using std::endl;
   typedef int LO;
+
+  LO M = 13;
+
+  TEUCHOS_STATIC_SETUP()
+  {
+    Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP ();
+    clp.setOption ("M", &M, "First matrix dimension M");
+  }
+
 
   template<class ValueType,
            const bool isInteger = std::is_integral<ValueType>::value>
@@ -204,7 +217,7 @@ namespace {
           B_norm = (curAbs > B_norm) ? curAbs : B_norm;
         }
       }
-      Kokkos::deep_copy (C2, A_orig);
+      Kokkos::deep_copy (C2, C_orig);
       for (LO i = 0; i < static_cast<LO> (C2.extent (0)); ++i) {
         for (LO j = 0; j < static_cast<LO> (C2.extent (1)); ++j) {
           const mag_type curAbs =
@@ -214,9 +227,9 @@ namespace {
       }
     }
 
-    const LO A2_stride = Tpetra::Details::Blas::getStride2DView (A2);
-    const LO B2_stride = Tpetra::Details::Blas::getStride2DView (B2);
-    const LO C2_stride = Tpetra::Details::Blas::getStride2DView (C2);
+    const LO A2_stride = A2.stride(1); 
+    const LO B2_stride = B2.stride(1);
+    const LO C2_stride = C2.stride(1);
 
     typedef Kokkos::ArithTraits<coeff_type> KAT;
     const coeff_type zero = KAT::zero ();
@@ -261,7 +274,7 @@ namespace {
         Kokkos::deep_copy (C2, C_orig);
 
         {
-          ::Tpetra::Details::Blas::gemm (trans_A, trans_B, alpha, A, B, beta, C);
+          KokkosBlas::gemm(&trans_A, &trans_B, alpha, A, B, beta, C);
           const Teuchos::ETransp teuchosTransA = trans_A_is_trans ?
             (trans_A_is_conj ? Teuchos::CONJ_TRANS : Teuchos::TRANS) :
             Teuchos::NO_TRANS;
@@ -291,19 +304,18 @@ namespace {
           const bool wrong = (maxErr > bound);
           if (wrong) {
             TEST_ASSERT( false );
-            out << "Comparing Tpetra::Details::Blas::gemm against "
+            out << "Comparing KokkosBlas::gemm against "
               "Teuchos::BLAS::GEMM: Max error " << maxErr << " > error bound "
                 << bound << endl;
           }
         }
 
-        // Repeat test for the "default" Tpetra::Details::Blas::gemm implementation.
+        // Repeat test for the "default" KokkosBlas::gemm implementation.
         {
           Kokkos::deep_copy (A, A_orig);
           Kokkos::deep_copy (B, B_orig);
           Kokkos::deep_copy (C, C_orig);
-          ::Tpetra::Details::Blas::Default::gemm (trans_A, trans_B, alpha,
-                                                  A, B, beta, C);
+          KokkosBlas::gemm(&trans_A, &trans_B, alpha, A, B, beta, C);
           Kokkos::deep_copy (C_host, C);
         }
 
@@ -319,7 +331,7 @@ namespace {
           const bool wrong = (maxErr > bound);
           if (wrong) {
             TEST_ASSERT( false );
-            out << "Comparing Tpetra::Details::Blas::Default::gemm against "
+            out << "Comparing KokkosBlas::Default::gemm against "
               "Teuchos::BLAS::GEMM: Max error " << maxErr << " > error bound "
                 << bound << endl;
           }
@@ -385,7 +397,7 @@ namespace {
     typedef map_type::device_type device_type;
 
     Teuchos::OSTab tab0 (out);
-    out << "Test \"Tpetra::Details::Blas::gemm\"" << endl;
+    out << "Test \"KokkosBlas::gemm\"" << endl;
     Teuchos::OSTab tab1 (out);
 
     auto comm = Tpetra::TestingUtilities::getDefaultComm ();
@@ -394,12 +406,17 @@ namespace {
     Tpetra::Map<> map (comm->getSize (), 1, 0, comm);
 
     auto randPool = preparePseudorandomNumberGenerator<device_type> ();
-    const LO m_vals[] = {1, 2, 5, 13};
     const LO n_vals[] = {1, 2, 5, 13};
     const LO k_vals[] = {1, 2, 5, 13};
-    for (LO m : m_vals) {
+
+    if (comm->getRank() == 0) std::cout << std::endl;
+    LO m = M;
+    {
       for (LO n : n_vals) {
         for (LO k : k_vals) {
+          if (comm->getRank() == 0) 
+            std::cout << "Testing m,n,k = " << m << "," << n << "," << k 
+                      << std::endl;
           testGemmVsTeuchosBlas<entry_type, coeff_type, device_type> (out,
                                                                       success,
                                                                       randPool,

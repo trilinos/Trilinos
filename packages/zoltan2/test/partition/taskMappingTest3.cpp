@@ -212,7 +212,7 @@ int main(int narg, char *arg[]){
     typedef inputAdapter_t::part_t part_t;
 
     //if (narg != 3){
-    //    cout << "Usage: " << arg[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
+    //    std::cout << "Usage: " << arg[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << std::endl;
     //    exit(1);
     //}
     part_t numParts = 0;
@@ -251,7 +251,7 @@ int main(int narg, char *arg[]){
         numParts = jobZ*jobY*jobX;
 
         //numProcs = numParts;
-        //cout << "part:" << numParts << " proc:" << procfile << endl;
+        //std::cout << "part:" << numParts << " proc:" << procfile << std::endl;
         if (taskGraphFile == "" || taskCoordFile == "")
         {
 
@@ -374,17 +374,17 @@ int main(int narg, char *arg[]){
         part_t *proc_to_task_xadj_ = new part_t[numProcs+1];
         part_t *proc_to_task_adj_ = new part_t[numParts];
 /*
-        cout << "procDim:" << procDim <<
+        std::cout << "procDim:" << procDim <<
                 " numProcs:" << numProcs <<
                 " coordDim:" << coordDim <<
-                " numParts" << numParts << endl;
+                " numParts" << numParts << std::endl;
 
         for(part_t j = 0; j < numProcs; ++j){
-            cout << "proc - coord:" << j << " " << procCoordinates[0][j]<< " " << procCoordinates[1][j]<< " " << procCoordinates[2][j] << endl;
+            std::cout << "proc - coord:" << j << " " << procCoordinates[0][j]<< " " << procCoordinates[1][j]<< " " << procCoordinates[2][j] << std::endl;
         }
 
         for(part_t j = 0; j < numParts; ++j){
-            cout << "part - coord:" << j << " " << partCenters[0][j]<< " " << partCenters[1][j]<< " " << partCenters[2][j] << endl;
+            std::cout << "part - coord:" << j << " " << partCenters[0][j]<< " " << partCenters[1][j]<< " " << partCenters[2][j] << std::endl;
         }
 */
         /*
@@ -424,7 +424,7 @@ int main(int narg, char *arg[]){
                 );
 
         if (tcomm->getRank() == 0){
-            cout << "PASS" << endl;
+            std::cout << "PASS" << std::endl;
         }
         /*
         delete ctm;
@@ -443,11 +443,11 @@ int main(int narg, char *arg[]){
         delete [] procCoordinates;
     }
     catch(std::string &s){
-        cerr << s << endl;
+        std::cerr << s << std::endl;
     }
 
     catch(char * s){
-        cerr << s << endl;
+        std::cerr << s << std::endl;
     }
 }
 

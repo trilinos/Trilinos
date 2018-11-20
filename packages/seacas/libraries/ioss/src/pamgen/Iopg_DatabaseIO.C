@@ -127,9 +127,7 @@ namespace Iopg {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), spatialDimension(3),
-        nodeBlockCount(0), elementBlockCount(0), nodesetCount(0), sidesetCount(0),
-        commsetNodeCount(0), commsetElemCount(0)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {
     if (is_input()) {
       dbState = Ioss::STATE_UNKNOWN;
@@ -783,11 +781,11 @@ namespace Iopg {
           // Seed the topo_map map with <block->name, face_topo>
           // pairs so we are sure that all processors have the same
           // starting topo_map (size and order).
-          Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+          const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
           for (int i = 0; i < elementBlockCount; i++) {
             Ioss::ElementBlock *         block        = element_blocks[i];
-            std::string                  name         = block->name();
+            const std::string &          name         = block->name();
             const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
             if (common_ftopo != nullptr) {
               // All sides of this element block's topology have the same topology
@@ -969,13 +967,6 @@ namespace Iopg {
 bool DatabaseIO::begin__(Ioss::State /* state */) { return true; }
 
 bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
-
-bool DatabaseIO::begin_state__(Ioss::Region *region, int /* state */, double time) { return true; }
-
-bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
-{
-  return true;
-}
 
 int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                        void *data, size_t data_size) const
@@ -1599,7 +1590,7 @@ void DatabaseIO::compute_block_membership(Ioss::SideBlock *         sideblock,
     util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
   }
 
-  Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
+  const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
   for (int i = 0; i < elementBlockCount; i++) {
     if (block_ids[i] == 1) {
