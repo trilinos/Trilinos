@@ -1759,13 +1759,11 @@ private:
     }
 #ifdef _OPENMP
     int nthreads_obtained(0);
-#ifdef _OPENMP
 #pragma omp parallel num_threads(m_numThreads)
-#endif
     {
       nthreads_obtained = m_numThreads = omp_get_num_threads();
     }
-    BDDC_TEST_FOR_EXCEPTION(ntrheads_obtained != m_numThreads, 
+    BDDC_TEST_FOR_EXCEPTION(nthreads_obtained != m_numThreads, 
 			    std::runtime_error, "invalid nthreads_obtained");
     m_work1T = new SX*[m_numThreads];
     m_work2T = new SX*[m_numThreads];
