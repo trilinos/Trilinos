@@ -1080,19 +1080,15 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
-    typedef typename Kokkos::DualView<LO*, DT>::t_dev::execution_space DES;
-    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space DMS; // unused
-    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space HMS; // unused
+    using DES = typename Kokkos::DualView<LO*, DT>::t_dev::execution_space;
 
     // DistObject's communication buffers (exports_,
     // numExportPacketsPerLID_, imports_, and numImportPacketsPerLID_)
     // may have different memory spaces than device_type would
-    // indicate.  See GitHub issue #1088.  Abbreviations: "communication
-    // host memory space" and "communication device memory space."
-    typedef typename Kokkos::DualView<size_t*,
-      buffer_device_type>::t_dev::memory_space CDMS;
-    typedef typename Kokkos::DualView<size_t*,
-      buffer_device_type>::t_host::memory_space CHMS;
+    // indicate.  See GitHub issue #1088.  CDMS is short for
+    // "communication device memory space."
+    using CDMS = typename Kokkos::DualView<size_t*,
+      buffer_device_type>::t_dev::memory_space;
 
     // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
     // copious debug output to std::cerr on every MPI process.  This
@@ -1235,10 +1231,6 @@ namespace Tpetra {
         // Alternately, make packAndPrepareNew take a "commOnHost"
         // argument to tell it where to leave the data?
         if (commOnHost) {
-          typedef typename Kokkos::View<char*, buffer_device_type>::HostMirror::device_type
-            buffer_host_device_type;
-          typedef typename buffer_host_device_type::memory_space
-            buffer_host_memory_space;
           this->exports_.sync_host ();
         }
         else { // ! commOnHost
