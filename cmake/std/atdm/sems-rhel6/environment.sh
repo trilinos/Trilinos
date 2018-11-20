@@ -2,7 +2,7 @@
 #
 # Set up env on a SEMS NFS mounted RHEL6 for ATMD builds of Trilinos
 #
-# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
 ################################################################################
 
@@ -16,7 +16,7 @@ else
   echo
   echo "***"
   echo "*** ERROR: Specifying KOKKOS_ARCH is not supported on RHEL6 ATDM builds"
-  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from ATDM_CONFIG_JOB_NAME=$ATDM_CONFIG_JOB_NAME"
+  echo "*** remove '$ATDM_CONFIG_KOKKOS_ARCH' from ATDM_CONFIG_BUILD_NAME=$ATDM_CONFIG_BUILD_NAME"
   echo "***"
   return
 fi
