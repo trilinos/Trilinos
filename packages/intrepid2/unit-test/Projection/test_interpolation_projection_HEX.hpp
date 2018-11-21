@@ -1474,11 +1474,11 @@ int InterpolationProjectionHex(const bool verbose) {
                 diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsHDiv(ic,k)));
             }
 
-            if(diffErr > pow(7, degree)*tol) { //heuristic relation on how round-off error depends on degree
+            if(diffErr > pow(8, degree)*tol) { //heuristic relation on how round-off error depends on degree
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               *outStream << "HDIV_I" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << " (tol: " << pow(8, degree)*tol << ")" << std::endl;
             }
           }
 
