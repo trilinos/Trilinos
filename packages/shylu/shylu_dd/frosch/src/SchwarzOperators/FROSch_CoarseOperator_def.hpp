@@ -175,8 +175,7 @@ namespace FROSch {
 
         //------------------------------------------------------------------------------------------------------------------------
         // Communicate coarse matrix
-        
-        if (DistributionList_->get("Type","linear").compare("Zoltan2")) {
+        if (!DistributionList_->get("Type","linear").compare("linear")) {
             CoarseSolveExporters_[0] = Xpetra::ExportFactory<LO,GO,NO>::Build(CoarseMap_,GatheringMaps_[0]);
             
             CrsMatrixPtr tmpCoarseMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(GatheringMaps_[0],k0->getGlobalMaxNumRowEntries());
@@ -216,11 +215,12 @@ namespace FROSch {
                 CoarseSolver_->compute();
                 
             }
-
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+        } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
+            //------------------------------------------------------------------------------------------------------------------------
+            //coarse matrix already communicated with Zoltan2. Communicate to CoarseSolveComm.
+            //------------------------------------------------------------------------------------------------------------------------
             
-        }    //------------------------------------------------------------------------------------------------------------------------
-        else{//coarse matrix already communicated with Zoltan2. Communicate to CoarseSolveComm.
-             //------------------------------------------------------------------------------------------------------------------------
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
                 CoarseMatrix_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(CoarseSolveMap_,k0->getGlobalMaxNumRowEntries());
@@ -259,6 +259,9 @@ namespace FROSch {
 
             }
             //------------------------------------------------------------------------------------------------------------------------
+#endif
+        } else {
+            FROSCH_ASSERT(false,"Distribution Type unknown!");
         }
 
        
@@ -303,7 +306,7 @@ namespace FROSch {
         } else if (NumProcsCoarseSolve_<-1) {
             NumProcsCoarseSolve_ = round(pow(1.0*this->MpiComm_->getSize(), 1./(-NumProcsCoarseSolve_)));
         } else {
-            FROSCH_ASSERT(0!=0,"This should never happen...");
+            FROSCH_ASSERT(false,"This should never happen...");
         }
         
         NumProcsCoarseSolve_ = (LO)  NumProcsCoarseSolve_ * fac;
@@ -364,11 +367,9 @@ namespace FROSch {
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,tmpCoarseMap->getNodeElementList(),0,CoarseSolveComm_);
             
-        }
-        else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
-#ifndef HAVE_SHYLU_DDFROSCH_ZOLTAN2
-      FROSCH_ASSERT(false,"CoarseOperator uses Zoltan2 for repartitioning coarse problem, but Trilinos not compiled with Zoltan2. Change setting or compile with Zoltan2.")
-#endif
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+        } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
+            
             Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
             GatheringMaps_.resize(1);
@@ -402,9 +403,9 @@ namespace FROSch {
             GOVec elementList(tmpCoarseMap->getNodeElementList());
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,elementList,0,CoarseSolveComm_);
-            
+#endif
         } else {
-            FROSCH_ASSERT(0!=0,"Distribution type not defined...");
+            FROSCH_ASSERT(false,"Distribution type not defined...");
         }
         
         if (this->Verbose_) {

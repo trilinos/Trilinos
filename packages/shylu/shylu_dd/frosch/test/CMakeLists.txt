@@ -1,14 +1,13 @@
+IF(ShyLU_DDFROSch_ENABLE_Epetra)
+
 ADD_SUBDIRECTORIES(
-#    Laplacian_Epetra
-    Laplacian_Tpetra
-    TwoLevelPreconditioner    
-#    InterfaceSets
     Import_Tpetra
-    LocalPartitionOfUnityBasis
-#    InterfacePartitionOfUnity
-    TwoLevelPreconditionerInputFiles
+    InterfacePartitionOfUnity
+# Disabled because of Epetra
+    # InterfaceSets
+# Disabled because of Epetra
+    # LocalPartitionOfUnityBasis
     Thyra_Xpetra
-    Thyra_Tpetra
-#  Thyra_Xpetra_PrecBlock
-#  TwoLevelPreconditionerBlockInputFiles
 )
+
+ENDIF()

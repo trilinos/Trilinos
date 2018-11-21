@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 				color=0;
 			}
 		} else {
-			assert(0!=0);
+			assert(false);
 		}
 
 		MPI_Comm_split(CommWorld.Comm(),color,CommWorld.MyPID(),&COMM);

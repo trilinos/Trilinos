@@ -122,7 +122,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::checkForLinearDependencies()
     {
-        FROSCH_ASSERT(0!=0,"This is not implemented yet.");
+        FROSCH_ASSERT(false,"This is not implemented yet.");
         return 0;
     }
     

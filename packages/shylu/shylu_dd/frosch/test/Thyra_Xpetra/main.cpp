@@ -27,7 +27,7 @@
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
-#include <Thyra_BelosLinearOpWithSolveFactory.hpp>
+//#include <Thyra_BelosLinearOpWithSolveFactory.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
 #include <Thyra_TpetraLinearOp.hpp>
@@ -39,11 +39,11 @@
 #include <Thyra_EpetraLinearOp.hpp>
 #include <Thyra_VectorSpaceBase_def.hpp>
 #include <Thyra_VectorSpaceBase_decl.hpp>
-#include <Thyra_BelosLinearOpWithSolve_def.hpp>
-#include <Thyra_BelosLinearOpWithSolveFactory_def.hpp>
+//#include <Thyra_BelosLinearOpWithSolve_def.hpp>
+//#include <Thyra_BelosLinearOpWithSolveFactory_def.hpp>
 
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+//#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Stratimikos_FROSchXpetra.hpp>
 
 // Xpetra include
@@ -51,15 +51,15 @@
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
-#include "Thyra_FROSchXpetraFactory_def.hpp"
+#include "Thyra_FROSchFactory_def.hpp"
 
 
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
-typedef EpetraNode NO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
+typedef DefaultNode NO;
 
 
 using namespace std;
@@ -67,6 +67,7 @@ using namespace Teuchos;
 using namespace Xpetra;
 using namespace FROSch;
 using namespace Belos;
+using namespace Thyra;
 
 int main(int argc, char *argv[])
 {
@@ -82,15 +83,19 @@ int main(int argc, char *argv[])
         int M = 4;
         My_CLP.setOption("M",&M,"H / h.");
         int Dimension = 2;
-        My_CLP.setOption("Dim",&Dimension,"Dimension.");
-        int Overlap = 1;
-        My_CLP.setOption("Overlap",&Overlap,"Overlap.");
+        My_CLP.setOption("DIM",&Dimension,"Dimension.");
+        int Overlap = 0;
+        My_CLP.setOption("O",&Overlap,"Overlap.");
+        int NumberOfBlocks = 1;
+        My_CLP.setOption("NB",&NumberOfBlocks,"Number of blocks.");
         int DofsPerNode = 1;
         My_CLP.setOption("DPN",&DofsPerNode,"Dofs per node.");
-        int DOFOrdering = 0;
-        My_CLP.setOption("Ordering",&DOFOrdering,"Dofs ordering (NodeWise=0,DimensionWise=1,Custom=2).");
-        string xmlFile = "xpetra_ParameterList.xml";
-        My_CLP.setOption("List",&xmlFile,"File name of the parameter list.");
+        int DofOrdering = 0;
+        My_CLP.setOption("ORD",&DofOrdering,"Dofs ordering (NodeWise=0, DimensionWise=1, Custom=2).");
+        string xmlFile = "ParameterList.xml";
+        My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
+        bool useepetra = false;
+        My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
         
         My_CLP.recogniseAllOptions(true);
         My_CLP.throwExceptions(false);
@@ -115,7 +120,14 @@ int main(int argc, char *argv[])
                 color=0;
             }
         } else {
-            assert(0!=0);
+            assert(false);
+        }
+        
+        UnderlyingLib xpetraLib = UseTpetra;
+        if (useepetra) {
+            xpetraLib = UseEpetra;
+        } else {
+            xpetraLib = UseTpetra;
         }
         
         MPI_Comm_split(CommWorld.Comm(),color,CommWorld.MyPID(),&COMM);
@@ -125,119 +137,156 @@ int main(int argc, char *argv[])
             
             RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
             
-             /*if(Comm->MyPID()==0) {
+            if(Comm->MyPID()==0) {
                 cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
                 parameterList->print(cout);
                 cout << "--------------------------------------------------------------------------------\n\n";
-            }*/
+            }
             
             if (Comm->MyPID()==0) cout << "----------------ASSEMBLY-----------\n";
             
-            ParameterList GalerList;
-            GalerList.set("nx", N*M);
-            GalerList.set("ny", N*M);
-            GalerList.set("nz", N*M);
-            GalerList.set("mx", N);
-            GalerList.set("my", N);
-            GalerList.set("mz", N);
+            Array<RCP<Matrix<SC,LO,GO,NO> > > K(NumberOfBlocks);
+            Array<RCP<Map<LO,GO,NO> > > RepeatedMaps(NumberOfBlocks);
+            Array<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
             
-            RCP<Epetra_Map> UniqueMapEpetra;
-            RCP<Epetra_CrsMatrix> KEpetra;
-            Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::null;
-            
-            if (Dimension==2) {
-                UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian2D", *Comm, GalerList));
-                KEpetra.reset(Galeri::CreateCrsMatrix("Laplace2D", UniqueMapEpetra.get(), GalerList));
-                epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", UniqueMapEpetra.get(), GalerList));
+            for (UN block=0; block<(UN) NumberOfBlocks; block++) {
+                
+                ParameterList GalerList;
+                GalerList.set("nx", int(N*(block+1)*M));
+                GalerList.set("ny", int(N*(block+1)*M));
+                GalerList.set("nz", int(N*(block+1)*M));
+                GalerList.set("mx", int(N));
+                GalerList.set("my", int(N));
+                GalerList.set("mz", int(N));
+                
+                RCP<Epetra_Map> UniqueMapEpetra;
+                RCP<Epetra_CrsMatrix> KEpetra;
+                Teuchos::RCP<Epetra_MultiVector> epCoord = Teuchos::null;
 
-            } else if (Dimension==3) {
-                UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
-                KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
-                epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("3D", UniqueMapEpetra.get(), GalerList));
+                if (Dimension==2) {
+                    UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian2D", *Comm, GalerList));
+                    KEpetra.reset(Galeri::CreateCrsMatrix("Laplace2D", UniqueMapEpetra.get(), GalerList));
+                    epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("2D", UniqueMapEpetra.get(), GalerList));
+                    
+                } else if (Dimension==3) {
+                    UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
+                    KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
+                    epCoord = Teuchos::rcp(Galeri::CreateCartesianCoordinates("3D", UniqueMapEpetra.get(), GalerList));
+                }
+                
+                Coordinates[block] = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*epCoord,TeuchosComm);
+                
+                RCP<Map<LO,GO,NO> > UniqueMap;
+                
+                if (DofOrdering == 0) {
+                    Array<GO> uniqueMapArray(max(DofsPerNode-block,(UN) 1)*UniqueMapEpetra->NumMyElements());
+                    for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                            uniqueMapArray[max(DofsPerNode-block,(UN) 1)*i+j] = max(DofsPerNode-block,(UN) 1)*UniqueMapEpetra->GID(i)+j;
+                        }
+                    }
+                    
+                    UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,TeuchosComm);
+                    K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
+                    for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                        LO numEntries;
+                        GO* indices;
+                        SC* values;
+                        KEpetra->ExtractMyRowView(i,numEntries,values,indices);
+                        
+                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                            Array<GO> indicesArray(numEntries);
+                            ArrayView<SC> valuesArrayView(values,numEntries);
+                            for (LO k=0; k<numEntries; k++) {
+                                indicesArray[k] = max(DofsPerNode-block,(UN) 1)*KEpetra->ColMap().GID(indices[k])+j;
+                            }
+                            K[block]->insertGlobalValues(max(DofsPerNode-block,(UN) 1)*KEpetra->RowMap().GID(i)+j,indicesArray(),valuesArrayView);
+                        }
+                    }
+                    K[block]->fillComplete();
+                } else if (DofOrdering == 1) {
+                    Array<GO> uniqueMapArray(max(DofsPerNode-block,(UN) 1)*UniqueMapEpetra->NumMyElements());
+                    for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                            uniqueMapArray[i+UniqueMapEpetra->NumMyElements()*j] = UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j;
+                        }
+                    }
+                    
+                    UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,TeuchosComm);
+                    K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
+                    for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
+                        LO numEntries;
+                        GO* indices;
+                        SC* values;
+                        KEpetra->ExtractMyRowView(i,numEntries,values,indices);
+                        
+                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                            Array<GO> indicesArray(numEntries);
+                            ArrayView<SC> valuesArrayView(values,numEntries);
+                            for (LO k=0; k<numEntries; k++) {
+                                indicesArray[k] = KEpetra->ColMap().GID(indices[k])+(KEpetra->ColMap().MaxAllGID()+1)*j;
+                            }
+                            K[block]->insertGlobalValues(UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j,indicesArray(),valuesArrayView);
+                        }
+                    }
+                    K[block]->fillComplete();
+                } else if (DofOrdering == 2) {
+                    assert(false); // TODO: Andere Sortierung implementieren
+                } else {
+                    assert(false);
+                }
+                
+                RepeatedMaps[block] = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K[block]); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); RepeatedMaps[block]->describe(*fancy,Teuchos::VERB_EXTREME);
             }
             
-            RCP<Map<LO,GO,NO> > UniqueMap;
-            RCP<Matrix<SC,LO,GO,NO> > K;
-            
-            if (DOFOrdering == 0) {
-                Array<GO> uniqueMapArray(DofsPerNode*UniqueMapEpetra->NumMyElements());
-                for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-                    for (LO j=0; j<DofsPerNode; j++) {
-                        uniqueMapArray[DofsPerNode*i+j] = DofsPerNode*UniqueMapEpetra->GID(i)+j;
-                    }
-                }
+            RCP<Matrix<SC,LO,GO,NO> > KMonolithic;
+            if (NumberOfBlocks>1) {
                 
-                UniqueMap = MapFactory<LO,GO,NO>::Build(UseEpetra,-1,uniqueMapArray(),0,TeuchosComm);
-                K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
-                for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-                    LO numEntries;
-                    GO* indices;
-                    SC* values;
-                    KEpetra->ExtractMyRowView(i,numEntries,values,indices);
-                    
-                    for (LO j=0; j<DofsPerNode; j++) {
-                        Array<GO> indicesArray(numEntries);
-                        ArrayView<SC> valuesArrayView(values,numEntries);
-                        for (LO k=0; k<numEntries; k++) {
-                            indicesArray[k] = DofsPerNode*KEpetra->ColMap().GID(indices[k])+j;
-                        }
-                        K->insertGlobalValues(DofsPerNode*KEpetra->RowMap().GID(i)+j,indicesArray(),valuesArrayView);
+                Array<GO> uniqueMapArray(0);
+                GO tmpOffset = 0;
+                for (UN block=0; block<(UN) NumberOfBlocks; block++) {
+                    Teuchos::ArrayView<const GO> tmpGIDs = K[block]->getMap()->getNodeElementList();
+                    for (LO i=0; i<tmpGIDs.size(); i++) {
+                        uniqueMapArray.push_back(tmpGIDs[i]+tmpOffset);
                     }
+                    tmpOffset += K[block]->getMap()->getMaxGlobalIndex();
                 }
-                K->fillComplete();
-            } else if (DOFOrdering == 1) {
-                Array<GO> uniqueMapArray(DofsPerNode*UniqueMapEpetra->NumMyElements());
-                for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-                    for (LO j=0; j<DofsPerNode; j++) {
-                        uniqueMapArray[i+UniqueMapEpetra->NumMyElements()*j] = UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j;
-                    }
-                }
+                RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,TeuchosComm);
                 
-                UniqueMap = MapFactory<LO,GO,NO>::Build(UseEpetra,-1,uniqueMapArray(),0,TeuchosComm);
-                K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
-                for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-                    LO numEntries;
-                    GO* indices;
-                    SC* values;
-                    KEpetra->ExtractMyRowView(i,numEntries,values,indices);
-                    
-                    for (LO j=0; j<DofsPerNode; j++) {
-                        Array<GO> indicesArray(numEntries);
-                        ArrayView<SC> valuesArrayView(values,numEntries);
-                        for (LO k=0; k<numEntries; k++) {
-                            indicesArray[k] = KEpetra->ColMap().GID(indices[k])+(KEpetra->ColMap().MaxAllGID()+1)*j;
+                tmpOffset = 0;
+                KMonolithic = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMapMonolithic,K[0]->getGlobalMaxNumRowEntries());
+                for (UN block=0; block<(UN) NumberOfBlocks; block++) {
+                    for (LO i=0; i<(LO) K[block]->getNodeNumRows(); i++) {
+                        ArrayView<const LO> indices;
+                        ArrayView<const SC> values;
+                        K[block]->getLocalRowView(i,indices,values);
+                        Array<GO> indicesGlobal(indices.size());
+                        for (UN j=0; j<indices.size(); j++) {
+                            indicesGlobal[j] = K[block]->getColMap()->getGlobalElement(indices[j])+tmpOffset;
                         }
-                        K->insertGlobalValues(UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j,indicesArray(),valuesArrayView);
+                        KMonolithic->insertGlobalValues(K[block]->getMap()->getGlobalElement(i)+tmpOffset,indicesGlobal(),values);
                     }
+                    tmpOffset += K[block]->getMap()->getMaxGlobalIndex();
                 }
-                K->fillComplete();
-            } else if (DOFOrdering == 2) {
-                assert(0!=0); // TODO: Andere Sortierung implementieren
+                KMonolithic->fillComplete();
+            } else if (NumberOfBlocks==1) {
+                KMonolithic = K[0];
             } else {
-                assert(0!=0);
+                assert(false);
             }
             
-           
-            RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-            RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+            RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
+            RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
             
             xSolution->putScalar(0.0);
             xRightHandSide->putScalar(1.0);
             
-            
-            Teuchos::RCP<Xpetra::CrsMatrix<SC, LO, GO, NO > > exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<int,NO>(KEpetra));
-            Teuchos::RCP<CrsMatrixWrap<SC,LO,GO> > exAWrap = Teuchos::rcp(new CrsMatrixWrap<SC,LO,GO> (exA));
-            
-            RCP<Xpetra::MultiVector<SC,LO,GO,NO> >Coord = ConvertToXpetra<SC,LO,GO,NO>(UseEpetra,*epCoord,TeuchosComm);
-            
-            RCP<Xpetra::Map<LO,GO,NO> > RepMapX = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K);
+            //RCP<MultiVector<SC,LO,GO,NO> > Coord = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*epCoord,TeuchosComm);
       
-            
-            
-            RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(exAWrap->getCrsMatrix());
-            RCP<Thyra::MultiVectorBase<SC> >thyraX =
-            Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> >(Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
-            RCP<const Thyra::MultiVectorBase<SC> >thyraB = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
+            CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*KMonolithic);
+            RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());
+            RCP<MultiVectorBase<SC> >thyraX = Teuchos::rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
+            RCP<const MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
             
@@ -245,9 +294,29 @@ int main(int argc, char *argv[])
             if (Comm->MyPID()==0) cout << "----------------Stratimikos LinearSolverBuilder-----------\n";
            
             //-----------Set Coordinates and RepMap in ParameterList--------------------------
-           // RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
-           // sublist(plList,"TwoLevelPreconditioner")->set("Coordinates",Coord);
-           // sublist(plList,"TwoLevelPreconditioner")->set("RepeatedMap",RepMapX);
+            RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
+            if (NumberOfBlocks>1) {
+                assert(false);
+            } else if (NumberOfBlocks==1) {
+                sublist(plList,"FROSch")->set("Repeated Map",RepeatedMaps[0]);
+                // sublist(plList,"FROSch")->set("Coordinates List",Coordinates[0]); // Does not work yet...
+                
+                sublist(plList,"FROSch")->set("Dimension",Dimension);
+                sublist(plList,"FROSch")->set("Overlap",Overlap);
+                
+                string DofOrderingString;
+                if (DofOrdering == 0) {
+                    DofOrderingString = "NodeWise";
+                } else if (DofOrdering == 1) {
+                    DofOrderingString = "DimensionWise";
+                } else {
+                    assert(false);
+                }
+                sublist(plList,"FROSch")->set("DofOrdering",DofOrderingString);
+                sublist(plList,"FROSch")->set("DofsPerNode",DofsPerNode);
+            } else {
+                assert(false);
+            }
 
             Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
             Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
@@ -263,7 +332,7 @@ int main(int argc, char *argv[])
         
             
             
-            RCP<Thyra::LinearOpWithSolveFactoryBase<SC> > lowsFactory =
+            RCP<LinearOpWithSolveFactoryBase<SC> > lowsFactory =
             linearSolverBuilder.createLinearSolveStrategy("");
             
             lowsFactory->setOStream(out);
@@ -273,39 +342,19 @@ int main(int argc, char *argv[])
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
             if (Comm->MyPID()==0) cout << "----------------Thyra LinearOpWithSolve-----------\n";
 
-            RCP<Thyra::LinearOpWithSolveBase<SC> > lows =
-                 Thyra::linearOpWithSolve(*lowsFactory, K_thyra);
+            RCP<LinearOpWithSolveBase<SC> > lows =
+                 linearOpWithSolve(*lowsFactory, K_thyra);
             
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
   
             if (Comm->MyPID()==0) cout << "----------------Solve-----------\n";
-            Thyra::SolveStatus<double> status =
-            Thyra::solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+            SolveStatus<double> status =
+            solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
             
             
             Comm->Barrier();
             if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-            
-            //Check Solution
-            const RCP<const Thyra::VectorSpaceBase<double> > XY_domain = thyraX->domain();
-            
-            Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > DomainM = K->getDomainMap();
-            
-            Teuchos::RCP<const Xpetra::Map<LO,GO,NO> >RangeM = K->getRangeMap();
-            
-            RCP<const Xpetra::EpetraMapT<GO,NO> > eDomainM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(DomainM);
-            
-            const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
-            
-            RCP<const Xpetra::EpetraMapT<GO,NO> > eRangeM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(RangeM);
-            
-            const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
-            
-            RCP<const Epetra_MultiVector> X;
-            
-            X = Thyra::get_Epetra_MultiVector(epetraDomain, thyraX );
-            std::cout<<*X;
             
         }
         MPI_Comm_free(&COMM);

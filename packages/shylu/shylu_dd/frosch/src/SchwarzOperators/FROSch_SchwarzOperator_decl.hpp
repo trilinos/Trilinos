@@ -50,6 +50,8 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
+#include <ShyLU_DDFROSch_config.h>
+
 #include <FROSch_DDInterface_def.hpp>
 #include <FROSch_EntitySet_def.hpp>
 
