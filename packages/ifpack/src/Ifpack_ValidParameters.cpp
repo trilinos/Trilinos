@@ -143,10 +143,12 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
 
   // Ifpack_Hypre.cpp
   Teuchos::ParameterList dummy;
+  dummy.disableRecursiveValidation();
   List.set("hypre: Solver", "PCG");
   List.set("hypre: Preconditioner", "Euclid");
   List.set("hypre: SolveOrPrecondition", "Solver");
   List.set("hypre: Solver functions", dummy);
+
   List.set("hypre: Preconditioner functions", dummy);
   List.set("hypre: NumFunctions", 0);
 
