@@ -107,7 +107,7 @@ namespace FROSch {
         
         virtual int initialize()
         {
-            FROSCH_ASSERT(0!=0," IPOUHarmonicCoarseOperator cannot be built without a repeated Map");
+            FROSCH_ASSERT(false," IPOUHarmonicCoarseOperator cannot be built without a repeated Map");
             return 0;
         };
         

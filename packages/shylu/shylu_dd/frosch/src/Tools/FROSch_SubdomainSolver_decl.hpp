@@ -44,6 +44,8 @@
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
+#include <ShyLU_DDFROSch_config.h>
+
 #include "Epetra_LinearProblem.h"
 
 #include "Amesos_ConfigDefs.h"
@@ -57,11 +59,12 @@
 #include <BelosXpetraAdapter.hpp>
 #include <BelosSolverFactory.hpp>
 
-
+#ifdef HAVE_SHYLU_DDMUELU
 //#include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <MueLu_Utilities.hpp>
+#endif
 
 namespace FROSch {
     
@@ -111,8 +114,10 @@ namespace FROSch {
         typedef Teuchos::RCP<Amesos2::Solver<EpetraCrsMatrix,EpetraMultiVector> > Amesos2SolverEpetraPtr;
         typedef Teuchos::RCP<Amesos2::Solver<TpetraCrsMatrix,TpetraMultiVector> > Amesos2SolverTpetraPtr;
         
+#ifdef HAVE_SHYLU_DDMUELU
         typedef Teuchos::RCP<MueLu::HierarchyManager<SC,LO,GO,NO> > MueLuFactoryPtr;
         typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
+#endif
         
         SubdomainSolver(CrsMatrixPtr k,
                         ParameterListPtr parameterList,
@@ -157,8 +162,10 @@ namespace FROSch {
         Amesos2SolverEpetraPtr Amesos2SolverEpetra_;
         Amesos2SolverTpetraPtr Amesos2SolverTpetra_;
         
+#ifdef HAVE_SHYLU_DDMUELU
         MueLuFactoryPtr MueLuFactory_;
         MueLuHierarchyPtr MueLuHierarchy_;
+#endif
         
         Teuchos::RCP<Belos::LinearProblem<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > >  BelosLinearProblem_;
         Teuchos::RCP<Belos::SolverManager<SC,Xpetra::MultiVector<SC,LO,GO,NO>,Belos::OperatorT<Xpetra::MultiVector<SC,LO,GO,NO> > > > BelosSolverManager_;

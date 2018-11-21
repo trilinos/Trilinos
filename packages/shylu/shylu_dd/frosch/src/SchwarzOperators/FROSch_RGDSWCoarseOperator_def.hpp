@@ -619,7 +619,7 @@ namespace FROSch {
             }
             case 2:
             {
-                FROSCH_ASSERT(0!=0,"Only options 1 and 3 are implemented so far...");
+                FROSCH_ASSERT(false,"Only options 1 and 3 are implemented so far...");
                 break;
             }
             case 3:
@@ -1124,7 +1124,7 @@ namespace FROSch {
             }
             default:
             {
-                FROSCH_ASSERT(0!=0,"Only options 1 and 3 are implemented so far...");
+                FROSCH_ASSERT(false,"Only options 1 and 3 are implemented so far...");
                 break;
             }
         }

@@ -147,7 +147,7 @@ namespace FROSch {
     void GDSWCoarseOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                    const Teuchos::EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(0!=0,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -646,7 +646,7 @@ namespace FROSch {
                 }
                 ii+=2;
             } else {
-                FROSCH_ASSERT(0!=0,"The dimension is neither 2 nor 3!");
+                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
             }
         }
         
@@ -728,7 +728,7 @@ namespace FROSch {
                 }
                 ii+=2;
             } else {
-                FROSCH_ASSERT(0!=0,"The dimension is neither 2 nor 3!");
+                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
             }
         }
         
@@ -796,7 +796,7 @@ namespace FROSch {
                 }
                 ii+=3;
             } else {
-                FROSCH_ASSERT(0!=0,"The dimension is neither 2 nor 3!");
+                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
             }
         }
         

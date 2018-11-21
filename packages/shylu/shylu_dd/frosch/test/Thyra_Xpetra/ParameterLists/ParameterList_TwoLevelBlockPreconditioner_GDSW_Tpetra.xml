@@ -32,7 +32,7 @@
           <ParameterList name="AlgebraicOverlappingOperator">
               <ParameterList name="Solver">
                   <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                  <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                  <Parameter name="Solver"                                    type="string"   value="klu"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                       <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -75,7 +75,7 @@
               
               <ParameterList name="ExtensionSolver">
                   <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                  <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                  <Parameter name="Solver"                                    type="string"   value="klu"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                       <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -112,7 +112,7 @@
               
               <ParameterList name="CoarseSolver">
                   <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                  <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                  <Parameter name="Solver"                                    type="string"   value="klu"/>
                   <ParameterList name="Amesos">
                       <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                       <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
