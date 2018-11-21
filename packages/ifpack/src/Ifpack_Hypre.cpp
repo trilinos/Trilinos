@@ -73,7 +73,8 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   NumFunsToCall_(0),
   SolverType_(PCG),
   PrecondType_(Euclid),
-  UsePreconditioner_(false)
+  UsePreconditioner_(false),
+  Dump_(false)
 {
   IsSolverSetup_ = new bool[1];
   IsPrecondSetup_ = new bool[1];
@@ -167,6 +168,17 @@ int Ifpack_Hypre::Initialize(){
   IFPACK_CHK_ERR(SetSolverType(SolverType_));
   IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
   CallFunctions();
+
+  if (!Coords_.is_null()) {
+    SetCoordinates(Solver, Coords_);
+    SetCoordinates(Preconditioner, Coords_);
+  }
+
+  if (!G_.is_null()) {
+    SetDiscreteGradient(Solver, G_);
+    SetDiscreteGradient(Preconditioner, G_);
+  }
+
   if(UsePreconditioner_){
     if(SolverPrecondPtr_ != NULL){
       IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
@@ -278,6 +290,13 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
     }
   }
 
+  if (list.isSublist("Coordinates") && list.sublist("Coordinates").isType<Teuchos::RCP<Epetra_MultiVector> >("Coordinates"))
+    Coords_ = list.sublist("Coordinates").get<Teuchos::RCP<Epetra_MultiVector> >("Coordinates");
+  if (list.isSublist("Operators") && list.sublist("Operators").isType<Teuchos::RCP<const Epetra_CrsMatrix> >("G"))
+    G_ = list.sublist("Operators").get<Teuchos::RCP<const Epetra_CrsMatrix> >("G");
+
+  Dump_ = list.get("hypre: Dump", false);
+
   return 0;
 } //SetParameters()
 
@@ -347,6 +366,141 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
   }
   return 0;
 } //SetParameter() - set type of solver
+
+//==============================================================================
+int Ifpack_Hypre::SetDiscreteGradient(Hypre_Chooser chooser, Teuchos::RCP<const Epetra_CrsMatrix> G){
+
+  RCP<Epetra_Map> GloballyContiguousRowMap;
+  RCP<Epetra_Map> GloballyContiguousColMap;
+  {
+    // Must create GloballyContiguous RowMap (which is a permutation of A_'s
+    // RowMap) and the corresponding permuted ColumnMap.
+    //   Epetra_GID  --------->   LID   ----------> HYPRE_GID
+    //           via RowMap.LID()       via GloballyContiguousRowMap.GID()
+    GloballyContiguousRowMap = rcp(new Epetra_Map(G->DomainMap().NumGlobalElements(),
+            G->DomainMap().NumMyElements(), 0, Comm()));
+    Epetra_Import importer(G->RowMatrixColMap(), G->DomainMap());
+    Epetra_IntVector MyGIDsHYPRE(G->DomainMap());
+    for (int i=0; i!=G->DomainMap().NumMyElements(); ++i)
+      MyGIDsHYPRE[i] = GloballyContiguousRowMap->GID(i);
+    // import the HYPRE GIDs
+    Epetra_IntVector ColGIDsHYPRE(G->RowMatrixColMap());
+    IFPACK_CHK_ERR(ColGIDsHYPRE.Import(MyGIDsHYPRE, importer, Insert, 0));
+    // Make a HYPRE numbering-based column map.
+    GloballyContiguousColMap = rcp(new Epetra_Map(
+        G->RowMatrixColMap().NumGlobalElements(),
+        ColGIDsHYPRE.MyLength(), &ColGIDsHYPRE[0], 0, Comm()));
+  }
+
+  MPI_Comm comm = GetMpiComm();
+  int ilower = GloballyContiguousRowMap_->MinMyGID();
+  int iupper = GloballyContiguousRowMap_->MaxMyGID();
+  int jlower = GloballyContiguousRowMap->MinMyGID();
+  int jupper = GloballyContiguousRowMap->MaxMyGID();
+  IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, jlower, jupper, &HypreG_));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreG_, HYPRE_PARCSR));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreG_));
+
+  for(int i = 0; i < G->NumMyRows(); i++){
+    int numElements;
+    IFPACK_CHK_ERR(G->NumMyRowEntries(i,numElements));
+    std::vector<int> indices; indices.resize(numElements);
+    std::vector<double> values; values.resize(numElements);
+    int numEntries;
+    IFPACK_CHK_ERR(G->ExtractMyRowCopy(i, numElements, numEntries, values.data(), indices.data()));
+    for(int j = 0; j < numEntries; j++){
+      indices[j] = GloballyContiguousColMap->GID(indices[j]);
+    }
+    int GlobalRow[1];
+    GlobalRow[0] = GloballyContiguousRowMap_->GID(i);
+    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, indices.data(), values.data()));
+  }
+  IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreG_));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreG_, (void**)&ParMatrixG_));
+
+  if (Dump_)
+    HYPRE_ParCSRMatrixPrint(ParMatrixG_,"G.mat");
+
+  if (chooser == Solver) {
+    if(SolverType_ == AMS)
+      HYPRE_AMSSetDiscreteGradient(Solver_, ParMatrixG_);
+  } else {
+    if(PrecondType_ == AMS)
+      HYPRE_AMSSetDiscreteGradient(Preconditioner_, ParMatrixG_);
+  }
+
+  return 0;
+} //SetDiscreteGradient()
+
+//==============================================================================
+int Ifpack_Hypre::SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_MultiVector> coords) {
+
+  if (!(((chooser == Solver) && (SolverType_ == AMS)) ||
+        ((chooser == Preconditioner) && (PrecondType_ == AMS))))
+    return 0;
+
+  double *xPtr;
+  double *yPtr;
+  double *zPtr;
+
+  IFPACK_CHK_ERR(((*coords)(0))->ExtractView(&xPtr));
+  IFPACK_CHK_ERR(((*coords)(1))->ExtractView(&yPtr));
+  IFPACK_CHK_ERR(((*coords)(2))->ExtractView(&zPtr));
+
+  MPI_Comm comm = GetMpiComm();
+  int ilower = GloballyContiguousRowMap_->MinMyGID();
+  int iupper = GloballyContiguousRowMap_->MaxMyGID();
+
+  int NumEntries = iupper-ilower+1;
+  std::vector<int> indices; indices.resize(NumEntries);
+
+  int k = 0;
+  for(int i = ilower; i <= iupper; i++){
+    indices[k] = i;
+    k++;
+  }
+
+  IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &xHypre_));
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(xHypre_, HYPRE_PARCSR));
+  IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(xHypre_));
+
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(xHypre_,NumEntries,&indices[0],xPtr));
+  IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(xHypre_));
+  IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(xHypre_, (void**) &xPar_));
+
+  IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &yHypre_));
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(yHypre_, HYPRE_PARCSR));
+  IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(yHypre_));
+
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(yHypre_,NumEntries,&indices[0],yPtr));
+  IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(yHypre_));
+  IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(yHypre_, (void**) &yPar_));
+
+  IFPACK_CHK_ERR(HYPRE_IJVectorCreate(comm, ilower, iupper, &zHypre_));
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetObjectType(zHypre_, HYPRE_PARCSR));
+  IFPACK_CHK_ERR(HYPRE_IJVectorInitialize(zHypre_));
+
+  IFPACK_CHK_ERR(HYPRE_IJVectorSetValues(zHypre_,NumEntries,&indices[0],zPtr));
+  IFPACK_CHK_ERR(HYPRE_IJVectorAssemble(zHypre_));
+  IFPACK_CHK_ERR(HYPRE_IJVectorGetObject(zHypre_, (void**) &zPar_));
+
+  if (Dump_) {
+    HYPRE_ParVectorPrint(xPar_,"coordX.dat");
+    HYPRE_ParVectorPrint(yPar_,"coordY.dat");
+    HYPRE_ParVectorPrint(zPar_,"coordZ.dat");
+  }
+
+  if (chooser == Solver) {
+    if(SolverType_ == AMS)
+      HYPRE_AMSSetCoordinateVectors(Solver_, xPar_, yPar_, zPar_);
+  } else {
+    if(PrecondType_ == AMS)
+      HYPRE_AMSSetCoordinateVectors(Preconditioner_, xPar_, yPar_, zPar_);
+  }
+
+  return 0;
+
+} //SetCoordinates
 
 //==============================================================================
 int Ifpack_Hypre::Compute(){
@@ -715,6 +869,8 @@ int Ifpack_Hypre::CopyEpetraToHypre(){
   }
   IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
   IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+  if (Dump_)
+    HYPRE_ParCSRMatrixPrint(ParMatrix_,"A.mat");
   return 0;
 } //CopyEpetraToHypre()
 

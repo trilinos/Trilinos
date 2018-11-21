@@ -521,6 +521,12 @@ public:
   */
     int SetParameter(Hypre_Chooser chooser) { SolveOrPrec_ = chooser; return 0;}
 
+  //! Set coordinates
+    int SetCoordinates(Hypre_Chooser chooser, Teuchos::RCP<Epetra_MultiVector> coords);
+
+  //! Set discrete gradient
+    int SetDiscreteGradient(Hypre_Chooser chooser, Teuchos::RCP<const Epetra_CrsMatrix> G);
+
   //! Call all the function pointers stored in this object.
     int CallFunctions() const;
 
@@ -796,6 +802,13 @@ private:
   mutable HYPRE_IJMatrix HypreA_;
   //! Pointer to the CSR (same matrix)
   mutable HYPRE_ParCSRMatrix ParMatrix_;
+
+  Teuchos::RCP<const Epetra_CrsMatrix> G_;
+  //! The Hypre matrix created in SetDiscreteGradient)
+  mutable HYPRE_IJMatrix HypreG_;
+  //! Pointer to the CSR (same matrix)
+  mutable HYPRE_ParCSRMatrix ParMatrixG_;
+
   //! The Hypre Vector for input
   mutable HYPRE_IJVector XHypre_;
   //! The Hypre Vector for output
@@ -806,6 +819,15 @@ private:
   mutable hypre_ParVector *YVec_;
   mutable hypre_Vector *XLocal_;
   mutable hypre_Vector *YLocal_;
+
+  Teuchos::RCP<Epetra_MultiVector> Coords_;
+  mutable HYPRE_IJVector xHypre_;
+  mutable HYPRE_IJVector yHypre_;
+  mutable HYPRE_IJVector zHypre_;
+  mutable HYPRE_ParVector xPar_;
+  mutable HYPRE_ParVector yPar_;
+  mutable HYPRE_ParVector zPar_;
+
   //! The Hypre Solver if doing a solve
   mutable HYPRE_Solver Solver_;
   //! The Hypre Solver if applying preconditioner
@@ -838,6 +860,8 @@ private:
   bool UsePreconditioner_;
   //! This contains a list of function pointers that will be called in compute
   std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
+  //! Should information be dumped to files
+  bool Dump_;
 };
 
 #endif // HAVE_HYPRE
