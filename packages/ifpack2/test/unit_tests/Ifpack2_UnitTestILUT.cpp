@@ -57,6 +57,8 @@
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_ILUT.hpp>
 
+#include <type_traits>
+
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
@@ -202,10 +204,86 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test2, Scalar, LocalOrdinal, Glob
   TEST_ASSERT(numFill1 < numFill2);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, Test3, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  const global_size_t num_rows_per_proc = 10;
+  auto rowMap = tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node> (num_rows_per_proc);
+  auto A = tif_utest::create_banded_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (rowMap, 5);
+
+  using prec_type = Ifpack2::ILUT<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >;
+  using mag_type = decltype (prec_type (A).getAbsoluteThreshold ());
+
+  // Check that setParameters does not change any parameters until it
+  // checks that all parameters are valid.
+  {
+    prec_type prec (A);
+    {
+      Teuchos::ParameterList params;
+      params.set ("fact: ilut level-of-fill", 1.5); // valid, not default
+      params.set ("fact: absolute threshold", 0.3); // valid, not default
+      params.set ("fact: relative threshold", 0.25); // valid, not default
+      params.set ("fact: relax value", 0.20); // valid, not default
+      params.set ("fact: drop tolerance", 0.15); // valid, not default
+      TEST_NOTHROW( prec.setParameters (params) );
+    }
+    {
+      Teuchos::ParameterList params;
+      params.set ("fact: ilut level-of-fill", 0.9); // invalid
+      params.set ("fact: absolute threshold", 0.25); // valid, not default
+      params.set ("fact: relative threshold", 0.2); // valid, not default
+      params.set ("fact: relax value", 0.15); // valid, not default
+      params.set ("fact: drop tolerance", 0.1); // valid, not default
+
+      TEST_THROW( prec.setParameters (params), std::runtime_error );
+      // Fill level is double, not mag_type, because it depends on
+      // LocalOrdinal, not on Scalar.
+      TEST_EQUALITY( prec.getLevelOfFill (), double (1.5) ); // this is properly double
+      TEST_EQUALITY( prec.getAbsoluteThreshold (), mag_type (0.3) );
+      TEST_EQUALITY( prec.getRelativeThreshold (), mag_type (0.25) );
+      TEST_EQUALITY( prec.getRelaxValue (), mag_type (0.20) );
+      TEST_EQUALITY( prec.getDropTolerance (), mag_type (0.15) );
+    }
+  }
+
+  // Repeat above test, but set parameters using mag_type, not double
+  // (except for "fact: ilut level-of-fill", which is always double).
+  if (! std::is_same<mag_type, double>::value) {
+    prec_type prec (A);
+    {
+      Teuchos::ParameterList params;
+      params.set ("fact: ilut level-of-fill", 1.5); // valid, not default
+      params.set ("fact: absolute threshold", mag_type (0.3)); // valid, not default
+      params.set ("fact: relative threshold", mag_type (0.25)); // valid, not default
+      params.set ("fact: relax value", mag_type (0.20)); // valid, not default
+      params.set ("fact: drop tolerance", mag_type (0.15)); // valid, not default
+      TEST_NOTHROW( prec.setParameters (params) );
+    }
+    {
+      Teuchos::ParameterList params;
+      params.set ("fact: ilut level-of-fill", 0.9); // invalid
+      params.set ("fact: absolute threshold", mag_type (0.25)); // valid, not default
+      params.set ("fact: relative threshold", mag_type (0.2)); // valid, not default
+      params.set ("fact: relax value", mag_type (0.15)); // valid, not default
+      params.set ("fact: drop tolerance", mag_type (0.1)); // valid, not default
+
+      TEST_THROW( prec.setParameters (params), std::runtime_error );
+      // Fill level is double, not mag_type, because it depends on
+      // LocalOrdinal, not on Scalar.
+      TEST_EQUALITY( prec.getLevelOfFill (), double (1.5) );
+      TEST_EQUALITY( prec.getAbsoluteThreshold (), mag_type (0.3) );
+      TEST_EQUALITY( prec.getRelativeThreshold (), mag_type (0.25) );
+      TEST_EQUALITY( prec.getRelaxValue (), mag_type (0.20) );
+      TEST_EQUALITY( prec.getDropTolerance (), mag_type (0.15) );
+    }
+  }
+}
+
+
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test2, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2ILUT, Test3, Scalar, LocalOrdinal,GlobalOrdinal)
 
 #include "Ifpack2_ETIHelperMacros.h"
 
@@ -217,4 +295,3 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 IFPACK2_INSTANTIATE_SLG_REAL( UNIT_TEST_GROUP_SC_LO_GO )
 
 } // namespace (anonymous)
-
