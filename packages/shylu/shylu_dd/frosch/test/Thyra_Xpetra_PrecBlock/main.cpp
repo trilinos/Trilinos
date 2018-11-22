@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
             
             
             ///////////////////
-            // Repeated Maps //
+            // Repeated Map //
             ///////////////////
             Epetra_Map *repeatedMapEpetraVelo;
             hDF5IO->Read(groupNameRepeatedMapVelo,repeatedMapEpetraVelo);
