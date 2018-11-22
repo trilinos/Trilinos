@@ -7,7 +7,7 @@ ADD_SUBDIRECTORIES(
     # InterfaceSets
 # Disabled because of Epetra
     # LocalPartitionOfUnityBasis
-    Thyra_Xpetra
+    Thyra_Xpetra_Laplace
 )
 
 ENDIF()
