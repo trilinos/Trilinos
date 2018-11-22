@@ -76,6 +76,10 @@
 #include <Epetra_config.h>
 
 //FROSch
+#include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
+#include <FROSch_GDSWPreconditioner_def.hpp>
+#include <FROSch_RGDSWPreconditioner_def.hpp>
+#include <FROSch_OneLevelPreconditioner_def.hpp>
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 #include <Thyra_FROSchLinearOp_def.hpp>

@@ -20,9 +20,6 @@
 #include <BelosSolverFactory.hpp>
 #include <BelosPseudoBlockGmresSolMgr.hpp>
 
-#include <FROSch_GDSWPreconditioner_def.hpp>
-#include <FROSch_RGDSWPreconditioner_def.hpp>
-
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
@@ -52,6 +49,9 @@
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchFactory_def.hpp"
+#include <FROSch_Tools_def.hpp>
+
+#include "EpetraExt_RowMatrixOut.h"
 
 
 typedef unsigned UN;
@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
         My_CLP.setOption("NB",&NumberOfBlocks,"Number of blocks.");
         int DofsPerNode = 1;
         My_CLP.setOption("DPN",&DofsPerNode,"Dofs per node.");
-        int DofOrdering = 0;
-        My_CLP.setOption("ORD",&DofOrdering,"Dofs ordering (NodeWise=0, DimensionWise=1, Custom=2).");
+        int DOFOrdering = 0;
+        My_CLP.setOption("ORD",&DOFOrdering,"Dofs ordering (NodeWise=0, DimensionWise=1, Custom=2).");
         string xmlFile = "ParameterList.xml";
         My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
         bool useepetra = false;
@@ -108,7 +108,6 @@ int main(int argc, char *argv[])
         int N;
         MPI_Comm COMM;
         int color=1;
-        //bool onFirstLevelComm=false;
         if (Dimension == 2) {
             N = (int) (pow(CommWorld.NumProc(),1/2.) + 100*numeric_limits<double>::epsilon()); // 1/H
             if (CommWorld.MyPID()<N*N) {
@@ -137,19 +136,16 @@ int main(int argc, char *argv[])
             
             RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
             
-            if(Comm->MyPID()==0) {
-                cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
-                parameterList->print(cout);
-                cout << "--------------------------------------------------------------------------------\n\n";
-            }
-            
-            if (Comm->MyPID()==0) cout << "----------------ASSEMBLY-----------\n";
-            
-            Array<RCP<Matrix<SC,LO,GO,NO> > > K(NumberOfBlocks);
-            Array<RCP<Map<LO,GO,NO> > > RepeatedMaps(NumberOfBlocks);
-            Array<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
+            ArrayRCP<RCP<Matrix<SC,LO,GO,NO> > > K(NumberOfBlocks);
+            ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedMaps(NumberOfBlocks);
+            ArrayRCP<RCP<MultiVector<SC,LO,GO,NO> > > Coordinates(NumberOfBlocks);
+            ArrayRCP<UN> dofsPerNodeVector(NumberOfBlocks);
             
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
+                Comm->Barrier();
+                if (Comm->MyPID()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
+                
+                dofsPerNodeVector[block] = max(DofsPerNode-block,(UN) 1);
                 
                 ParameterList GalerList;
                 GalerList.set("nx", int(N*(block+1)*M));
@@ -178,11 +174,11 @@ int main(int argc, char *argv[])
                 
                 RCP<Map<LO,GO,NO> > UniqueMap;
                 
-                if (DofOrdering == 0) {
-                    Array<GO> uniqueMapArray(max(DofsPerNode-block,(UN) 1)*UniqueMapEpetra->NumMyElements());
+                if (DOFOrdering == 0) {
+                    Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapEpetra->NumMyElements());
                     for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
-                            uniqueMapArray[max(DofsPerNode-block,(UN) 1)*i+j] = max(DofsPerNode-block,(UN) 1)*UniqueMapEpetra->GID(i)+j;
+                        for (UN j=0; j<dofsPerNodeVector[block]; j++) {
+                            uniqueMapArray[dofsPerNodeVector[block]*i+j] = dofsPerNodeVector[block]*UniqueMapEpetra->GID(i)+j;
                         }
                     }
                     
@@ -194,20 +190,20 @@ int main(int argc, char *argv[])
                         SC* values;
                         KEpetra->ExtractMyRowView(i,numEntries,values,indices);
                         
-                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                        for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                             Array<GO> indicesArray(numEntries);
                             ArrayView<SC> valuesArrayView(values,numEntries);
                             for (LO k=0; k<numEntries; k++) {
-                                indicesArray[k] = max(DofsPerNode-block,(UN) 1)*KEpetra->ColMap().GID(indices[k])+j;
+                                indicesArray[k] = dofsPerNodeVector[block]*KEpetra->ColMap().GID(indices[k])+j;
                             }
-                            K[block]->insertGlobalValues(max(DofsPerNode-block,(UN) 1)*KEpetra->RowMap().GID(i)+j,indicesArray(),valuesArrayView);
+                            K[block]->insertGlobalValues(dofsPerNodeVector[block]*KEpetra->RowMap().GID(i)+j,indicesArray(),valuesArrayView);
                         }
                     }
                     K[block]->fillComplete();
-                } else if (DofOrdering == 1) {
-                    Array<GO> uniqueMapArray(max(DofsPerNode-block,(UN) 1)*UniqueMapEpetra->NumMyElements());
+                } else if (DOFOrdering == 1) {
+                    Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapEpetra->NumMyElements());
                     for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                        for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                             uniqueMapArray[i+UniqueMapEpetra->NumMyElements()*j] = UniqueMapEpetra->GID(i)+(UniqueMapEpetra->MaxAllGID()+1)*j;
                         }
                     }
@@ -220,7 +216,7 @@ int main(int argc, char *argv[])
                         SC* values;
                         KEpetra->ExtractMyRowView(i,numEntries,values,indices);
                         
-                        for (UN j=0; j<max(DofsPerNode-block,(UN) 1); j++) {
+                        for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                             Array<GO> indicesArray(numEntries);
                             ArrayView<SC> valuesArrayView(values,numEntries);
                             for (LO k=0; k<numEntries; k++) {
@@ -230,7 +226,7 @@ int main(int argc, char *argv[])
                         }
                     }
                     K[block]->fillComplete();
-                } else if (DofOrdering == 2) {
+                } else if (DOFOrdering == 2) {
                     assert(false); // TODO: Andere Sortierung implementieren
                 } else {
                     assert(false);
@@ -238,6 +234,9 @@ int main(int argc, char *argv[])
                 
                 RepeatedMaps[block] = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K[block]); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); RepeatedMaps[block]->describe(*fancy,Teuchos::VERB_EXTREME);
             }
+            
+            Comm->Barrier();
+            if (Comm->MyPID()==0) cout << "##############################\n# Assembly Monolythic System #\n##############################\n" << endl;
             
             RCP<Matrix<SC,LO,GO,NO> > KMonolithic;
             if (NumberOfBlocks>1) {
@@ -249,7 +248,7 @@ int main(int argc, char *argv[])
                     for (LO i=0; i<tmpGIDs.size(); i++) {
                         uniqueMapArray.push_back(tmpGIDs[i]+tmpOffset);
                     }
-                    tmpOffset += K[block]->getMap()->getMaxGlobalIndex();
+                    tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex();
                 }
                 RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,TeuchosComm);
                 
@@ -266,7 +265,7 @@ int main(int argc, char *argv[])
                         }
                         KMonolithic->insertGlobalValues(K[block]->getMap()->getGlobalElement(i)+tmpOffset,indicesGlobal(),values);
                     }
-                    tmpOffset += K[block]->getMap()->getMaxGlobalIndex();
+                    tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex();
                 }
                 KMonolithic->fillComplete();
             } else if (NumberOfBlocks==1) {
@@ -274,29 +273,41 @@ int main(int argc, char *argv[])
             } else {
                 assert(false);
             }
-            
+
             RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
             RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(KMonolithic->getMap(),1);
             
             xSolution->putScalar(0.0);
             xRightHandSide->putScalar(1.0);
-            
-            //RCP<MultiVector<SC,LO,GO,NO> > Coord = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*epCoord,TeuchosComm);
       
             CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*KMonolithic);
             RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());
             RCP<MultiVectorBase<SC> >thyraX = Teuchos::rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
             RCP<const MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
-            Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-            
-            Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------Stratimikos LinearSolverBuilder-----------\n";
-           
+
             //-----------Set Coordinates and RepMap in ParameterList--------------------------
             RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
             if (NumberOfBlocks>1) {
-                assert(false);
+                sublist(plList,"FROSch")->set("Repeated Map Vector",RepeatedMaps);
+                
+                sublist(plList,"FROSch")->set("Dimension",Dimension);
+                sublist(plList,"FROSch")->set("Overlap",Overlap);
+                
+                ArrayRCP<DofOrdering> dofOrderings(NumberOfBlocks);
+                if (DOFOrdering == 0) {
+                    for (UN block=0; block<(UN) NumberOfBlocks; block++) {
+                        dofOrderings[block] = NodeWise;
+                    }
+                } else if (DOFOrdering == 1) {
+                    for (UN block=0; block<(UN) NumberOfBlocks; block++) {
+                        dofOrderings[block] = DimensionWise;
+                    }
+                } else {
+                    assert(false);
+                }
+                
+                sublist(plList,"FROSch")->set("DofOrdering Vector",dofOrderings);
+                sublist(plList,"FROSch")->set("DofsPerNode Vector",dofsPerNodeVector);
             } else if (NumberOfBlocks==1) {
                 sublist(plList,"FROSch")->set("Repeated Map",RepeatedMaps[0]);
                 // sublist(plList,"FROSch")->set("Coordinates List",Coordinates[0]); // Does not work yet...
@@ -305,9 +316,9 @@ int main(int argc, char *argv[])
                 sublist(plList,"FROSch")->set("Overlap",Overlap);
                 
                 string DofOrderingString;
-                if (DofOrdering == 0) {
+                if (DOFOrdering == 0) {
                     DofOrderingString = "NodeWise";
-                } else if (DofOrdering == 1) {
+                } else if (DOFOrdering == 1) {
                     DofOrderingString = "DimensionWise";
                 } else {
                     assert(false);
@@ -317,20 +328,21 @@ int main(int argc, char *argv[])
             } else {
                 assert(false);
             }
-
+            
+            if(Comm->MyPID()==0) {
+                cout << "##################\n# Parameter List #\n##################" << endl;
+                parameterList->print(cout);
+                cout << endl;
+            }
+            
+            Comm->Barrier();
+            if (Comm->MyPID()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
             Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
             Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
-            
             linearSolverBuilder.setParameterList(parameterList);
-
             
             Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-            
-            Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------Thyra PrepForSolve-----------\n";
-        
-            
+            if (Comm->MyPID()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
             
             RCP<LinearOpWithSolveFactoryBase<SC> > lowsFactory =
             linearSolverBuilder.createLinearSolveStrategy("");
@@ -339,22 +351,18 @@ int main(int argc, char *argv[])
             lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
             
             Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-            if (Comm->MyPID()==0) cout << "----------------Thyra LinearOpWithSolve-----------\n";
+            if (Comm->MyPID()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
 
             RCP<LinearOpWithSolveBase<SC> > lows =
                  linearOpWithSolve(*lowsFactory, K_thyra);
             
             Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------done-----------\n";
-  
-            if (Comm->MyPID()==0) cout << "----------------Solve-----------\n";
+            if (Comm->MyPID()==0) cout << "\n#########\n# Solve #\n#########" << endl;
             SolveStatus<double> status =
             solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
             
-            
             Comm->Barrier();
-            if (Comm->MyPID()==0) cout << "----------------done-----------\n";
+            if (Comm->MyPID()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
             
         }
         MPI_Comm_free(&COMM);
