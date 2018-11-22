@@ -1,5 +1,5 @@
 TRIBITS_ADD_EXECUTABLE(
-thyra_xpetra
+thyra_xpetra_laplace
 SOURCES main.cpp
 )
 
@@ -12,64 +12,64 @@ ParameterLists
 ######################
 ## Epetra
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN2_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN2_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN2_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN2_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN3_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN3_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN3_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN3_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -78,64 +78,64 @@ NUM_MPI_PROCS 8
 ## Tpetra
 IF(ShyLU_DDFROSch_ENABLE_Tpetra)
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN2_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN2_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM2_DPN2_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM2_DPN2_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN3_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN3_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_GDSWP_DIM3_DPN3_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_GDSWP_DIM3_DPN3_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -147,64 +147,64 @@ ENDIF()
 #######################
 ## Epetra
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN2_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN2_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN2_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN2_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN3_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN3_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN3_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN3_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -213,64 +213,64 @@ NUM_MPI_PROCS 8
 ## Tpetra
 IF(ShyLU_DDFROSch_ENABLE_Tpetra)
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN2_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN2_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM2_DPN2_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM2_DPN2_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN3_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN3_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_RGDSWP_DIM3_DPN3_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_RGDSWP_DIM3_DPN3_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -282,64 +282,64 @@ ENDIF()
 ###############################
 ## Epetra
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN2_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN2_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN2_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN2_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN3_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN3_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN3_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN3_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -348,64 +348,64 @@ NUM_MPI_PROCS 8
 ## Tpetra
 IF(ShyLU_DDFROSch_ENABLE_Tpetra)
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN2_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN2_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM2_DPN2_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM2_DPN2_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN3_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN3_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_GDSW_DIM3_DPN3_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_GDSW_DIM3_DPN3_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -417,64 +417,64 @@ ENDIF()
 ################################
 ## Epetra
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN2_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN2_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN2_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN2_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN3_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN3_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN3_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN3_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -483,64 +483,64 @@ NUM_MPI_PROCS 8
 ## Tpetra
 IF(ShyLU_DDFROSch_ENABLE_Tpetra)
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN2_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN2_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM2_DPN2_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM2_DPN2_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN3_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN3_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_RGDSW_DIM3_DPN3_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_RGDSW_DIM3_DPN3_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -553,64 +553,64 @@ ENDIF()
 #######################################
 ## Epetra
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN2_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN2_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN2_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN2_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN3_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN3_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN3_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN3_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -619,64 +619,64 @@ NUM_MPI_PROCS 8
 ## Tpetra
 IF(ShyLU_DDFROSch_ENABLE_Tpetra)
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN2_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN2_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM2_DPN2_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM2_DPN2_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN3_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN3_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLP_IPOUHarmonic_DIM3_DPN3_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLP_IPOUHarmonic_DIM3_DPN3_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=1 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -688,64 +688,64 @@ ENDIF()
 ####################################
 ## Epetra
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN2_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN2_ORD0_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN2_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN2_ORD1_EPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN1_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN1_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN3_ORD0_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN3_ORD0_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN1_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN1_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN3_ORD1_EPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN3_ORD1_EPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Epetra.xml --USEEPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
@@ -754,64 +754,64 @@ NUM_MPI_PROCS 8
 ## Tpetra
 IF(ShyLU_DDFROSch_ENABLE_Tpetra)
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN2_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN2_ORD0_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=2 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM2_DPN2_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM2_DPN2_ORD1_TPETRA
 ARGS "--M=4 --DIM=2 --O=1 --NB=2 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN1_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN1_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=1 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN3_ORD0_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN3_ORD0_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=3 --ORD=0 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN1_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN1_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=1 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
 
 TRIBITS_ADD_TEST(
-thyra_xpetra
-NAME test_thyra_xpetra_TLBP_GDSW_DIM3_DPN3_ORD1_TPETRA
+thyra_xpetra_laplace
+NAME test_thyra_xpetra_laplace_TLBP_GDSW_DIM3_DPN3_ORD1_TPETRA
 ARGS "--M=4 --DIM=3 --O=1 --NB=2 --DPN=3 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelBlockPreconditioner_GDSW_Tpetra.xml --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8

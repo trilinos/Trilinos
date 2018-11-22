@@ -1,5 +1,3 @@
-IF(ShyLU_DDFROSch_ENABLE_Epetra)
-
 ADD_SUBDIRECTORIES(
     Import_Tpetra
     InterfacePartitionOfUnity
@@ -9,5 +7,3 @@ ADD_SUBDIRECTORIES(
     # LocalPartitionOfUnityBasis
     Thyra_Xpetra_Laplace
 )
-
-ENDIF()
