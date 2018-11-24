@@ -12,7 +12,6 @@
 #include <regex>
 #include <iterator>
 
-
 TEUCHOS_UNIT_TEST(PerformanceMonitorBase, UnsortedMergeUnion) {
 
   const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
@@ -184,6 +183,15 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 
   // Print to screen
   timer.report(out, comm, options);
+
+  // Enable all optional printing options
+  options.output_fraction = true;
+  options.output_total_updates = true;
+  options.output_minmax = true;
+  options.output_histogram = true;
+  options.num_histogram = 3;
+  options.align_columns = true;
+  timer.report(out, comm, options);
 }
 
 
@@ -198,7 +206,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 
   // Test the set and get stacked timer methods on TimeMonitor
   const auto timeMonitorDefaultStackedTimer = Teuchos::TimeMonitor::getStackedTimer();
-  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("StackedTimerTest::TimeMonitorInteroperability"));
+  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("TM:Interoperability"));
   TEST_ASSERT(nonnull(timeMonitorDefaultStackedTimer));
   TEST_ASSERT(nonnull(timer));
   TEST_ASSERT(timeMonitorDefaultStackedTimer != timer);
@@ -258,6 +266,10 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   options.num_histogram=3;
   options.output_fraction=true;
   timer->report(out, comm, options);
+
+  // Enable aligned output
+  options.align_columns = true;
+  timer->report(out, comm, options);
 }
 
 // Overlapping timers are not allowed in a StackedTimer, but are in
@@ -265,7 +277,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 // TimeMonitor by default, we have seen this error - a throw from the
 // stacked timer. In every instance so far, the intention was not to
 // actually overlap but a constructor/destructor ordering issue
-// (suually involving RCPs). To prevent tests from failing,
+// (usually involving RCPs). To prevent tests from failing,
 // StackedTimer now automatically shuts itself off if it detects
 // overlaped timers in a TimeMonitor instance, reports a warning on
 // how to fix and allows the code to continue runnning. Where this has
