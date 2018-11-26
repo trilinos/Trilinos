@@ -66,8 +66,8 @@ namespace { // (anonymous)
     typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
     typedef Teuchos::ScalarTraits<SC> STS;
     
-    SC ONE = STS::one();
-    SC ZERO = STS::zero();
+    typename MV::impl_scalar_type ONE = STS::one();
+    typename MV::impl_scalar_type ZERO = STS::zero();
 
     // Problem parameters
     size_t vector_size = 125000;

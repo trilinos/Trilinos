@@ -201,7 +201,7 @@ namespace Intrepid2 {
 
     virtual
     const char* getName() const {
-      return "Intrepid2_Constant_FEM";
+      return "Intrepid2_HVOL_C0_FEM";
     }
   };
 }

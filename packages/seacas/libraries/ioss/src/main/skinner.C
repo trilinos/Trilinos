@@ -305,7 +305,7 @@ namespace {
       }
     }
 
-    if (interface.netcdf4) {
+    if (interface.netcdf4_) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
 

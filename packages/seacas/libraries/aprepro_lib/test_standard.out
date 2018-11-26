@@ -183,4 +183,21 @@ $ Test variable deletion
 
 0  This should print warning about undefined variable
 
+$ Test extract
+test string is found
+
+
+$ Test string tokenization optimization
+1
+51,52,53,54,61,62,63,64
+71,72,73,74,81,82,83,84
+Word 1 of list1 and list2 are 51 and 71
+Word 2 of list1 and list2 are 52 and 72
+Word 3 of list1 and list2 are 53 and 73
+Word 4 of list1 and list2 are 54 and 74
+Word 5 of list1 and list2 are 61 and 81
+Word 6 of list1 and list2 are 62 and 82
+Word 7 of list1 and list2 are 63 and 83
+Word 8 of list1 and list2 are 64 and 84
+
 $End of test file

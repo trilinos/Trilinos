@@ -292,13 +292,16 @@ namespace panzer
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells
     // in the Workset and execute operator()() above.
-    const int vector_size = panzer::HP::inst().vectorSize<ScalarT>();
-    if (fieldMults_.size() == 0)
-      parallel_for(TeamPolicy<FieldMultTag<0>,PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size), *this);
-    else if (fieldMults_.size() == 1)
-      parallel_for(TeamPolicy<FieldMultTag<1>,PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size), *this);
-    else
-      parallel_for(TeamPolicy<FieldMultTag<-1>,PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size), *this);
+    if (fieldMults_.size() == 0) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
+      parallel_for(policy, *this);
+    } else if (fieldMults_.size() == 1) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
+      parallel_for(policy, *this);
+    } else {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
+      parallel_for(policy, *this);
+    }
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////

@@ -55,14 +55,14 @@ namespace Intrepid2 {
   template<typename SpT, typename PT, typename WT>
   Teuchos::RCP<Cubature<SpT,PT,WT> > 
   DefaultCubatureFactory::
-  create( const shards::CellTopology       cellTopology,
+  create( unsigned topologyKey,
           const std::vector<ordinal_type> &degree,
           const EPolyType                  polytype ) {
 
     // Create generic cubature.
     Teuchos::RCP<Cubature<SpT,PT,WT> > r_val;
 
-    switch (cellTopology.getBaseCellTopologyData()->key) {
+    switch (topologyKey) {
     case shards::Line<>::key: {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
@@ -142,14 +142,14 @@ namespace Intrepid2 {
       break;
     }
     default: {
-      INTREPID2_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key)         &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::ShellQuadrilateral<>::key)    &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key)      &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key)       &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key)          &&
-                                      (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ),
+      INTREPID2_TEST_FOR_EXCEPTION( ( (topologyKey != shards::Line<>::key)               &&
+                                      (topologyKey != shards::Triangle<>::key)           &&
+                                      (topologyKey != shards::Quadrilateral<>::key)      &&
+                                      (topologyKey != shards::ShellQuadrilateral<>::key) &&
+                                      (topologyKey != shards::Tetrahedron<>::key)        &&
+                                      (topologyKey != shards::Hexahedron<>::key)         &&
+                                      (topologyKey != shards::Pyramid<>::key)            &&
+                                      (topologyKey != shards::Wedge<>::key) ),
                                     std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Invalid cell topology prevents cubature creation.");
     }
@@ -157,16 +157,36 @@ namespace Intrepid2 {
     return r_val;
   }
 
+  template<typename SpT, typename PT, typename WT>
+  Teuchos::RCP<Cubature<SpT,PT,WT> >
+  DefaultCubatureFactory::
+  create( const shards::CellTopology       cellTopology,
+          const std::vector<ordinal_type> &degree,
+          const EPolyType                  polytype) {
+       return create<SpT,PT,WT>(cellTopology.getBaseKey(), degree, polytype);
+  }
+
 
   template<typename SpT, typename PT, typename WT>
   Teuchos::RCP<Cubature<SpT,PT,WT> > 
+  DefaultCubatureFactory::
+  create( unsigned topologyKey,
+          const ordinal_type         degree,
+          const EPolyType            polytype ) {
+    // uniform order for 3 axes
+    const std::vector<ordinal_type> degreeArray(3, degree);
+    return create<SpT,PT,WT>(topologyKey, degreeArray, polytype);
+  }
+
+  template<typename SpT, typename PT, typename WT>
+  Teuchos::RCP<Cubature<SpT,PT,WT> >
   DefaultCubatureFactory::
   create( const shards::CellTopology cellTopology,
           const ordinal_type         degree,
           const EPolyType            polytype ) {
     // uniform order for 3 axes
     const std::vector<ordinal_type> degreeArray(3, degree);
-    return create<SpT,PT,WT>(cellTopology, degreeArray, polytype);
+    return create<SpT,PT,WT>(cellTopology.getBaseKey(), degreeArray, polytype);
   }
 
 

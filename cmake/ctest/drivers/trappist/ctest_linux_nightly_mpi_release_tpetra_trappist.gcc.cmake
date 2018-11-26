@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-broken.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trappist.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,41 +62,20 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc-broken.cm
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME BROKEN_Tpetra_NO_INT)
+SET(BUILD_DIR_NAME OPENMPI_1.10.1_RELEASE_DEV_Tpetra_gcc)
 SET(CTEST_PARALLEL_LEVEL 8)
-SET(CTEST_TEST_TYPE Experimental)
+SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK  Nightly)      # Set CDash board to Nightly
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Xpetra)
+SET(Trilinos_PACKAGES Tpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  ### ETI ###
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-    "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
-    "-DTeuchos_ENABLE_COMPLEX:BOOL=ON"
-    "-DTpetra_INST_INT_INT:BOOL=OFF"
-    "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
-    "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=ON"
-    "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
-    "-DTpetra_INST_SERIAL:BOOL=ON"
-    "-DKokkos_ENABLE_Serial:BOOL=ON"
-
-  ### MISC ###
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
-  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
-
-  ### TPLS ###
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
-      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
-      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
-  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DTPL_ENABLE_HWLOC:BOOL=OFF"
-
-  ### PACKAGES CONFIGURATION ###
-      "-DMueLu_ENABLE_Experimental:BOOL=ON"
-      "-DXpetra_ENABLE_Experimental:BOOL=ON"
-  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=ON"
+  "-DTrilinos_ENABLE_COMPLEX_DOUBLE=ON"
+  "-DTPL_ENABLE_SuperLU=OFF"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )
 
 #

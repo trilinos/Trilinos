@@ -348,7 +348,6 @@ namespace Iovs {
     }
 
     {
-      Ioss::SerializeIO serializeIO__(this);
       dbState = Ioss::STATE_UNKNOWN;
     }
 
@@ -357,7 +356,7 @@ namespace Iovs {
 
   // Default versions do nothing at this time...
   // Will be used for global variables...
-  bool DatabaseIO::begin_state__(Ioss::Region *region, int state, double time)
+  bool DatabaseIO::begin_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 
@@ -372,7 +371,7 @@ namespace Iovs {
     return true;
   }
 
-  bool DatabaseIO::end_state__(Ioss::Region * /*region*/, int state, double time)
+  bool DatabaseIO::end_state__(int state, double time)
   {
     Ioss::SerializeIO serializeIO__(this);
 

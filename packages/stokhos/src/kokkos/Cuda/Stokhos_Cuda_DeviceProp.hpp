@@ -115,13 +115,12 @@ namespace Stokhos {
       if (compute_capability_major == 7) {
         if (compute_capability_minor == 0) {
           shared_memory_capacity = 96 * 1024;
-          max_shmem_per_block = 96 * 1024;
         }
         else {
           shared_memory_capacity = 64 * 1024;
-          max_shmem_per_block = 64 * 1024;
         }
 
+        max_shmem_per_block = 48 * 1024;
         max_regs_per_block = 64 * 1024;
         max_regs_per_sm = 64 * 1024;
         shared_memory_granularity = 256;

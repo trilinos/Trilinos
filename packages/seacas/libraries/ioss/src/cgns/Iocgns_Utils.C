@@ -179,7 +179,7 @@ namespace {
     }
   }
 
-  int extract_trailing_int(char *name)
+  int extract_trailing_int(const char *name)
   {
     // 'name' consists of an arbitrary number of characters followed by
     // zero or more digits.  Return the integer value of the contiguous
@@ -417,19 +417,19 @@ void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *functio
   IOSS_ERROR(errmsg);
 }
 
-CG_ZoneType_t Iocgns::Utils::check_zone_type(int cgnsFilePtr)
+CG_ZoneType_t Iocgns::Utils::check_zone_type(int cgns_file_ptr)
 {
   // ========================================================================
   // Get the number of zones (element/structured blocks) in the mesh...
   int base      = 1;
   int num_zones = 0;
-  CGCHECKNP(cg_nzones(cgnsFilePtr, base, &num_zones));
+  CGCHECKNP(cg_nzones(cgns_file_ptr, base, &num_zones));
 
   CG_ZoneType_t common_zone_type = CG_ZoneTypeNull;
 
   for (int zone = 1; zone <= num_zones; zone++) {
     CG_ZoneType_t zone_type;
-    CGCHECKNP(cg_zone_type(cgnsFilePtr, base, zone, &zone_type));
+    CGCHECKNP(cg_zone_type(cgns_file_ptr, base, zone, &zone_type));
 
     if (common_zone_type == CG_ZoneTypeNull) {
       common_zone_type = zone_type;
@@ -939,6 +939,8 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
       idx += 6;
     }
     // Transfer Zone Grid Connectivity...
+    std::set<std::string>
+        zgc_names; // Used to detect duplicate zgc names in parallel but non-parallel-io case
     for (const auto &zgc : sb->m_zoneConnectivity) {
       if (zgc.is_valid() && zgc.is_active()) {
         int                zgc_idx = 0;
@@ -956,8 +958,17 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
             connect_name = std::to_string(zgc.m_ownerGUID) + "--" + std::to_string(zgc.m_donorGUID);
           }
           else {
-            if (zgc.m_ownerProcessor != zgc.m_donorProcessor) {
-              connect_name += "_proc-" + std::to_string(zgc.m_donorProcessor);
+            auto iter = zgc_names.insert(connect_name);
+            if (!iter.second) {
+              // Name collision...
+              for (char c = 'A'; c <= 'Z'; c++) {
+                std::string potential = connect_name + c;
+                iter                  = zgc_names.insert(potential);
+                if (iter.second) {
+                  connect_name = potential;
+                  break;
+                }
+              }
             }
           }
           donor_name += "_proc-";
@@ -1133,22 +1144,22 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   }
 }
 
-int Iocgns::Utils::find_solution_index(int cgnsFilePtr, int base, int zone, int step,
+int Iocgns::Utils::find_solution_index(int cgns_file_ptr, int base, int zone, int step,
                                        CG_GridLocation_t location)
 {
   auto str_step = std::to_string(step);
   int  nsols    = 0;
-  CGCHECKNP(cg_nsols(cgnsFilePtr, base, zone, &nsols));
+  CGCHECKNP(cg_nsols(cgns_file_ptr, base, zone, &nsols));
   bool location_matches = false;
   for (int i = 0; i < nsols; i++) {
     CG_GridLocation_t db_location;
     char              db_name[CGNS_MAX_NAME_LENGTH + 1];
-    CGCHECKNP(cg_sol_info(cgnsFilePtr, base, zone, i + 1, db_name, &db_location));
+    CGCHECKNP(cg_sol_info(cgns_file_ptr, base, zone, i + 1, db_name, &db_location));
     if (location == db_location) {
       location_matches = true;
       // Check if steps match.
       // NOTE: Using non-standard "Descriptor_t" node in FlowSolution_t
-      CGCHECKNP(cg_goto(cgnsFilePtr, base, "Zone_t", zone, "FlowSolution_t", i + 1, "end"));
+      CGCHECKNP(cg_goto(cgns_file_ptr, base, "Zone_t", zone, "FlowSolution_t", i + 1, "end"));
       int descriptor_count = 0;
       CGCHECKNP(cg_ndescriptors(&descriptor_count));
 
@@ -1172,34 +1183,39 @@ int Iocgns::Utils::find_solution_index(int cgnsFilePtr, int base, int zone, int 
       if (!found_step_descriptor) {
         // There was no Descriptor_t node with the name "step",
         // Try to decode the step from the FlowSolution_t name.
-        int nstep = extract_trailing_int(db_name);
-        if (nstep == step) {
-          return i + 1;
+        // If `db_name` does not have `Step` or `step` in name,
+        // then don't search
+        if (strcasestr(db_name, "step") != NULL) {
+          int nstep = extract_trailing_int(db_name);
+          if (nstep == step) {
+            return i + 1;
+          }
         }
       }
     }
   }
 
-  if (nsols == 1 && location_matches) {
-    return 1;
+  if (location_matches) {
+    return step;
   }
+
   std::cerr << "WARNING: CGNS: Could not find valid solution index for step " << step << ", zone "
             << zone << ", and location " << GridLocationName[location] << "\n";
   return 0;
 }
 
-void Iocgns::Utils::add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db)
+void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
 {
   int base         = 1;
   int num_families = 0;
-  CGCHECKNP(cg_nfamilies(cgnsFilePtr, base, &num_families));
+  CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
 
   for (int family = 1; family <= num_families; family++) {
     char        name[CGNS_MAX_NAME_LENGTH + 1];
     CG_BCType_t bocotype;
     int         num_bc  = 0;
     int         num_geo = 0;
-    CGCHECKNP(cg_family_read(cgnsFilePtr, base, family, name, &num_bc, &num_geo));
+    CGCHECKNP(cg_family_read(cgns_file_ptr, base, family, name, &num_bc, &num_geo));
 
 #if IOSS_DEBUG_OUTPUT
     if (db->parallel_rank() == 0) {
@@ -1211,9 +1227,9 @@ void Iocgns::Utils::add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db)
       // Create a sideset...
       std::string ss_name(name); // Use name here before cg_fambc_read call overwrites it...
 
-      CGCHECKNP(cg_fambc_read(cgnsFilePtr, base, family, 1, name, &bocotype));
+      CGCHECKNP(cg_fambc_read(cgns_file_ptr, base, family, 1, name, &bocotype));
 
-      CGCHECKNP(cg_goto(cgnsFilePtr, base, "Family_t", family, "end"));
+      CGCHECKNP(cg_goto(cgns_file_ptr, base, "Family_t", family, "end"));
       int ndescriptors = 0;
       int id           = 0;
       CGCHECKNP(cg_ndescriptors(&ndescriptors));
@@ -1432,28 +1448,28 @@ Iocgns::Utils::resolve_processor_shared_nodes(Ioss::Region &region, int my_proce
   return shared_nodes;
 }
 
-void Iocgns::Utils::add_structured_boundary_conditions(int                    cgnsFilePtr,
+void Iocgns::Utils::add_structured_boundary_conditions(int                    cgns_file_ptr,
                                                        Ioss::StructuredBlock *block,
                                                        bool                   is_parallel_io)
 {
   // `is_parallel_io` is true if all processors reading single file.
   // `is_parallel_io` is false if serial, or each processor reading its own file (fpp)
   if (is_parallel_io) {
-    add_structured_boundary_conditions_pio(cgnsFilePtr, block);
+    add_structured_boundary_conditions_pio(cgns_file_ptr, block);
   }
   else {
-    add_structured_boundary_conditions_fpp(cgnsFilePtr, block);
+    add_structured_boundary_conditions_fpp(cgns_file_ptr, block);
   }
 }
 
-void Iocgns::Utils::add_structured_boundary_conditions_pio(int                    cgnsFilePtr,
+void Iocgns::Utils::add_structured_boundary_conditions_pio(int                    cgns_file_ptr,
                                                            Ioss::StructuredBlock *block)
 {
   int base = block->get_property("base").get_int();
   int zone = get_db_zone(block);
 
   // Called by Parallel run reading single file only.
-  // The 'cgnsFilePtr' is for the serial file on processor 0.
+  // The 'cgns_file_ptr' is for the serial file on processor 0.
   // Read all CGNS data on processor 0 and then broadcast to other processors.
   // Data needed:
   // * boco_name (CGNS_MAX_NAME_LENGTH + 1 chars)
@@ -1463,7 +1479,7 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
   int num_bcs = 0;
   int rank    = block->get_database()->util().parallel_rank();
   if (rank == 0) {
-    CGCHECKNP(cg_nbocos(cgnsFilePtr, base, zone, &num_bcs));
+    CGCHECKNP(cg_nbocos(cgns_file_ptr, base, zone, &num_bcs));
   }
 
 #ifdef SEACAS_HAVE_MPI
@@ -1492,20 +1508,20 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
       int               ndataset;
 
       // All we really want from this is 'boco_name'
-      CGCHECKNP(cg_boco_info(cgnsFilePtr, base, zone, ibc + 1, boco_name, &bocotype, &ptset_type,
+      CGCHECKNP(cg_boco_info(cgns_file_ptr, base, zone, ibc + 1, boco_name, &bocotype, &ptset_type,
                              &npnts, nullptr, &NormalListSize, &NormalDataType, &ndataset));
 
       if (bocotype == CG_FamilySpecified) {
         // Get family name associated with this boco_name
         CGCHECKNP(
-            cg_goto(cgnsFilePtr, base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
+            cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
         CGCHECKNP(cg_famname_read(fam_name));
       }
       else {
         strncpy(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
       }
 
-      CGCHECKNP(cg_boco_read(cgnsFilePtr, base, zone, ibc + 1, range, nullptr));
+      CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
 
       strncpy(&bc_names[off_name], boco_name, CGNS_MAX_NAME_LENGTH + 1);
       off_name += (CGNS_MAX_NAME_LENGTH + 1);
@@ -1570,17 +1586,17 @@ void Iocgns::Utils::add_structured_boundary_conditions_pio(int                  
   }
 }
 
-void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                    cgnsFilePtr,
+void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                    cgns_file_ptr,
                                                            Ioss::StructuredBlock *block)
 {
   int base = block->get_property("base").get_int();
   int zone = get_db_zone(block);
 
   // Called by both parallel fpp and serial runs.
-  // In parallel, the 'cgnsFilePtr' is specific for each processor
+  // In parallel, the 'cgns_file_ptr' is specific for each processor
 
   int num_bcs = 0;
-  CGCHECKNP(cg_nbocos(cgnsFilePtr, base, zone, &num_bcs));
+  CGCHECKNP(cg_nbocos(cgns_file_ptr, base, zone, &num_bcs));
 
   for (int ibc = 0; ibc < num_bcs; ibc++) {
     char              boco_name[CGNS_MAX_NAME_LENGTH + 1];
@@ -1594,19 +1610,20 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
     cgsize_t          range[6];
 
     // All we really want from this is 'boco_name'
-    CGCHECKNP(cg_boco_info(cgnsFilePtr, base, zone, ibc + 1, boco_name, &bocotype, &ptset_type,
+    CGCHECKNP(cg_boco_info(cgns_file_ptr, base, zone, ibc + 1, boco_name, &bocotype, &ptset_type,
                            &npnts, nullptr, &NormalListSize, &NormalDataType, &ndataset));
 
     if (bocotype == CG_FamilySpecified) {
       // Get family name associated with this boco_name
-      CGCHECKNP(cg_goto(cgnsFilePtr, base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
+      CGCHECKNP(
+          cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
       CGCHECKNP(cg_famname_read(fam_name));
     }
     else {
       strncpy(fam_name, boco_name, CGNS_MAX_NAME_LENGTH);
     }
 
-    CGCHECKNP(cg_boco_read(cgnsFilePtr, base, zone, ibc + 1, range, nullptr));
+    CGCHECKNP(cg_boco_read(cgns_file_ptr, base, zone, ibc + 1, range, nullptr));
 
     // There are some BC that are applied on an edge or a vertex;
     // Don't want those (yet?), so filter them out at this time...
@@ -1640,14 +1657,14 @@ void Iocgns::Utils::add_structured_boundary_conditions_fpp(int                  
   }
 }
 
-void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double> &timesteps,
+void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<double> &timesteps,
                                       Ioss::Region *region, int myProcessor, bool is_parallel_io)
 {
   int base = 1;
-  CGCHECK(cg_biter_write(cgnsFilePtr, base, "TimeIterValues", timesteps.size()));
+  CGCHECK(cg_biter_write(cgns_file_ptr, base, "TimeIterValues", timesteps.size()));
 
   // Now write the timestep time values...
-  CGCHECK(cg_goto(cgnsFilePtr, base, "BaseIterativeData_t", 1, "end"));
+  CGCHECK(cg_goto(cgns_file_ptr, base, "BaseIterativeData_t", 1, "end"));
   cgsize_t dimtv[1] = {(cgsize_t)timesteps.size()};
   CGCHECK(cg_array_write("TimeValues", CG_RealDouble, 1, dimtv, timesteps.data()));
 
@@ -1658,16 +1675,7 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
 
   bool has_nodal_fields = nblock->field_count(Ioss::Field::TRANSIENT) > 0;
 
-  cgsize_t          dim[2] = {32, (cgsize_t)timesteps.size()};
-  std::vector<char> names(32 * timesteps.size(), ' ');
-  for (size_t state = 0; state < timesteps.size(); state++) {
-    // This name is the "postfix" or common portion of all FlowSolution names...
-    std::string name = "SolutionAtStep" + std::to_string(state + 1);
-    std::strncpy(&names[state * 32], name.c_str(), 32);
-    for (size_t i = name.size(); i < 32; i++) {
-      names[state * 32 + i] = ' ';
-    }
-  }
+  cgsize_t dim[2] = {32, (cgsize_t)timesteps.size()};
 
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
@@ -1675,9 +1683,30 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
     int              zone = get_db_zone(block);
     std::vector<int> indices(timesteps.size());
     bool             has_cell_center_fields = block->field_count(Ioss::Field::TRANSIENT) > 0;
+    std::string      base_type;
+    if (has_nodal_fields && !has_cell_center_fields) {
+      base_type = "VertexSolutionAtStep";
+    }
+    else if (!has_nodal_fields && has_cell_center_fields) {
+      base_type = "CellCenterSolutionAtStep";
+    }
+    else {
+      base_type = "SolutionAtStep";
+    }
+
+    std::vector<char> names(32 * timesteps.size(), ' ');
+    for (size_t state = 0; state < timesteps.size(); state++) {
+      // This name is the "postfix" or common portion of all FlowSolution names...
+      std::string name = base_type + std::to_string(state + 1);
+      std::strncpy(&names[state * 32], name.c_str(), 32);
+      for (size_t i = name.size(); i < 32; i++) {
+        names[state * 32 + i] = ' ';
+      }
+    }
+
     if (has_cell_center_fields || has_nodal_fields) {
-      CGCHECK(cg_ziter_write(cgnsFilePtr, base, zone, "ZoneIterativeData"));
-      CGCHECK(cg_goto(cgnsFilePtr, base, "Zone_t", zone, "ZoneIterativeData_t", 1, "end"));
+      CGCHECK(cg_ziter_write(cgns_file_ptr, base, zone, "ZoneIterativeData"));
+      CGCHECK(cg_goto(cgns_file_ptr, base, "Zone_t", zone, "ZoneIterativeData_t", 1, "end"));
       CGCHECK(cg_array_write("FlowSolutionPointers", CG_Character, 2, dim, names.data()));
 
       if (has_nodal_fields) {
@@ -1720,7 +1749,7 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
   }
 }
 
-void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<double> &timesteps,
+void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector<double> &timesteps,
                                             Ioss::Region *region, bool enable_field_recognition,
                                             char suffix_separator, int myProcessor,
                                             bool is_parallel_io)
@@ -1737,23 +1766,23 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
     int z = get_db_zone(block);
 
     int sol_count = 0;
-    CGCHECK(cg_nsols(cgnsFilePtr, b, z, &sol_count));
+    CGCHECK(cg_nsols(cgns_file_ptr, b, z, &sol_count));
     int sol_per_step = sol_count / (int)timesteps.size();
     assert(sol_count % (int)timesteps.size() == 0);
 
     for (int sol = 1; sol <= sol_per_step; sol++) {
       char              solution_name[CGNS_MAX_NAME_LENGTH + 1];
       CG_GridLocation_t grid_loc;
-      CGCHECK(cg_sol_info(cgnsFilePtr, b, z, sol, solution_name, &grid_loc));
+      CGCHECK(cg_sol_info(cgns_file_ptr, b, z, sol, solution_name, &grid_loc));
 
       int field_count = 0;
-      CGCHECK(cg_nfields(cgnsFilePtr, b, z, sol, &field_count));
+      CGCHECK(cg_nfields(cgns_file_ptr, b, z, sol, &field_count));
 
       char **field_names = Ioss::Utils::get_name_array(field_count, CGNS_MAX_NAME_LENGTH + 1);
       for (int field = 1; field <= field_count; field++) {
         CG_DataType_t data_type;
         char          field_name[CGNS_MAX_NAME_LENGTH + 1];
-        CGCHECK(cg_field_info(cgnsFilePtr, b, z, sol, field, &data_type, field_name));
+        CGCHECK(cg_field_info(cgns_file_ptr, b, z, sol, field, &data_type, field_name));
         std::strncpy(field_names[field - 1], field_name, CGNS_MAX_NAME_LENGTH);
       }
 
@@ -1811,18 +1840,18 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
   }
 }
 
-int Iocgns::Utils::get_step_times(int cgnsFilePtr, std::vector<double> &timesteps,
+int Iocgns::Utils::get_step_times(int cgns_file_ptr, std::vector<double> &timesteps,
                                   Ioss::Region *region, double timeScaleFactor, int myProcessor)
 {
   int  base          = 1;
   int  num_timesteps = 0;
   char bitername[CGNS_MAX_NAME_LENGTH + 1];
-  int  ierr = cg_biter_read(cgnsFilePtr, base, bitername, &num_timesteps);
+  int  ierr = cg_biter_read(cgns_file_ptr, base, bitername, &num_timesteps);
   if (ierr == CG_NODE_NOT_FOUND) {
     return num_timesteps;
   }
   if (ierr == CG_ERROR) {
-    Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);
+    Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, myProcessor);
   }
 
   if (num_timesteps <= 0) {
@@ -1830,7 +1859,7 @@ int Iocgns::Utils::get_step_times(int cgnsFilePtr, std::vector<double> &timestep
   }
 
   // Read the timestep time values.
-  CGCHECK(cg_goto(cgnsFilePtr, base, "BaseIterativeData_t", 1, "end"));
+  CGCHECK(cg_goto(cgns_file_ptr, base, "BaseIterativeData_t", 1, "end"));
   std::vector<double> times(num_timesteps);
   CGCHECK(cg_array_read_as(1, CG_RealDouble, times.data()));
 

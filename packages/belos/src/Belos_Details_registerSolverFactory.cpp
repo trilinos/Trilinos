@@ -51,6 +51,7 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosFixedPointSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosGmresPolySolMgr.hpp"
 #include "BelosLSQRSolMgr.hpp"
 #include "BelosMinresSolMgr.hpp"
 #include "BelosPCPGSolMgr.hpp"
@@ -88,6 +89,7 @@ void registerSolverFactory () {
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(BlockGmresSolMgr, "BLOCK GMRES")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(FixedPointSolMgr, "FIXED POINT")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(GCRODRSolMgr, "GCRODR")
+  BELOS_DEFINE_REGISTER_SOLVER_MANAGER(GmresPolySolMgr, "HYBRID BLOCK GMRES")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(LSQRSolMgr, "LSQR")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(MinresSolMgr, "MINRES")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(PCPGSolMgr, "PCPG")
