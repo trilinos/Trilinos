@@ -221,42 +221,24 @@ namespace Thyra {
             SchwarzPreconditioner = TLP;            
         } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
             ArrayRCP<RCP<Map<LO,GO,NO> > > RepeatedMaps = Teuchos::null;
-            GOVecPtr maxBlockGIDs;
             UNVecPtr dofsPerNodeVector;
             DofOrderingVecPtr dofOrderings;
             
             FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
             FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
             if(paramList_->isParameter("Repeated Map Vector")) {
-                ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedMapsTmp = ExtractVectorFromParameterList<RCP<Map<LO,GO,NO> > >(*paramList_,"Repeated Map Vector");
-                RepeatedMaps = repeatedMapsTmp;
-                maxBlockGIDs.resize(repeatedMapsTmp.size());
-                
-                GO tmpOffset = 0;
-                for (UN i=0; i<RepeatedMaps.size(); i++) {
-                    ArrayView<const GO> gIDs = repeatedMapsTmp[i]->getNodeElementList();
-                    Array<GO> gIDsOffset(gIDs.size());
-                    
-                    for (UN j=0; j<gIDs.size(); j++) {
-                        gIDsOffset[j] = gIDs[j] + tmpOffset;
-                    }
-                    RepeatedMaps[i] = MapFactory<LO,GO,NO>::Build(RepeatedMaps[i]->lib(),-1,gIDsOffset,0,A->getRowMap()->getComm());
-                    maxBlockGIDs[i] = RepeatedMaps[i]->getMaxAllGlobalIndex();
-                    tmpOffset = maxBlockGIDs[i]+1;
-                }
-                
+                RepeatedMaps = ExtractVectorFromParameterList<RCP<Map<LO,GO,NO> > >(*paramList_,"Repeated Map Vector");
                 dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
                 dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
             } else {
                 FROSCH_ASSERT(false,"Currently, TwoLevelBlockPreconditioner cannot be constructed without Repeated Maps.");
             }
             
-            FROSCH_ASSERT(RepeatedMaps.size()==maxBlockGIDs.size(),"RepeatedMaps.size()!=maxBlockGIDs.size()");
             FROSCH_ASSERT(RepeatedMaps.size()==dofsPerNodeVector.size(),"RepeatedMaps.size()!=dofsPerNodeVector.size()");
             FROSCH_ASSERT(RepeatedMaps.size()==dofOrderings.size(),"RepeatedMaps.size()!=dofOrderings.size()");
             
             RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP(new TwoLevelBlockPreconditioner<SC,LO,GO,NO>(A,paramList_));
-            TLBP->initialize(paramList_->get("Dimension",3),dofsPerNodeVector,dofOrderings,maxBlockGIDs,paramList_->get("Overlap",1),RepeatedMaps);
+            TLBP->initialize(paramList_->get("Dimension",3),dofsPerNodeVector,dofOrderings,paramList_->get("Overlap",1),RepeatedMaps);
             SchwarzPreconditioner = TLBP;
         } else {
             FROSCH_ASSERT(false,"FROSch Preconditioner Type is unknown.");
