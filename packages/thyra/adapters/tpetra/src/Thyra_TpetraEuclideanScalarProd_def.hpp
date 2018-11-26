@@ -71,10 +71,17 @@ void TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarPr
     X_tpetra->dot(*Y_tpetra, scalarProds_out);
   } else {
     // If one of the casts succeeded, sync that MV to host space
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (nonnull(X_tpetra))
       Teuchos::rcp_const_cast<TMV>(X_tpetra)->template sync<Kokkos::HostSpace>();
     if (nonnull(Y_tpetra))
       Teuchos::rcp_const_cast<TMV>(Y_tpetra)->template sync<Kokkos::HostSpace>();
+#else
+    if (nonnull(X_tpetra))
+      Teuchos::rcp_const_cast<TMV>(X_tpetra)->sync_host ();
+    if (nonnull(Y_tpetra))
+      Teuchos::rcp_const_cast<TMV>(Y_tpetra)->sync_host ();
+#endif
 
     EuclideanScalarProd<Scalar>::scalarProdsImpl(X, Y, scalarProds_out);
   }

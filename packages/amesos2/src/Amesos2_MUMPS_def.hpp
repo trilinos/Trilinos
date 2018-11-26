@@ -275,7 +275,7 @@ namespace Amesos2
     
     
     #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+    Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
     #endif
 
     if ( is_contiguous_ == true ) {

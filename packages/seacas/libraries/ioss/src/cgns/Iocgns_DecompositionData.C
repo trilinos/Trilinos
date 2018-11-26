@@ -126,7 +126,7 @@ namespace {
 #endif
 
   // These are used for structured parallel decomposition...
-  void create_zone_data(int cgnsSerFilePtr, int cgnsFilePtr,
+  void create_zone_data(int cgnsSerFilePtr, int cgns_file_ptr,
                         std::vector<Iocgns::StructuredZoneData *> &zones, MPI_Comm comm)
   {
     Ioss::ParallelUtils par_util(comm);
@@ -134,14 +134,14 @@ namespace {
     int                 base        = 1;
     int                 num_zones   = 0;
 
-    CGCHECK(cg_nzones(cgnsFilePtr, base, &num_zones));
+    CGCHECK(cg_nzones(cgns_file_ptr, base, &num_zones));
 
     std::map<std::string, int> zone_name_map;
 
     for (cgsize_t zone = 1; zone <= num_zones; zone++) {
       cgsize_t size[9];
       char     zone_name[CGNS_MAX_NAME_LENGTH + 1];
-      CGCHECK(cg_zone_read(cgnsFilePtr, base, zone, zone_name, size));
+      CGCHECK(cg_zone_read(cgns_file_ptr, base, zone, zone_name, size));
       zone_name_map[zone_name] = zone;
 
       SMART_ASSERT(size[0] - 1 == size[3])(size[0])(size[3]);
@@ -313,7 +313,7 @@ namespace {
     }
   }
 
-  void set_line_decomposition(int cgnsFilePtr, const std::string &line_decomposition,
+  void set_line_decomposition(int cgns_file_ptr, const std::string &line_decomposition,
                               std::vector<Iocgns::StructuredZoneData *> &zones)
   {
     // The "line_decomposition" string is a list of 0 or more BC
@@ -328,7 +328,7 @@ namespace {
     // Get names of all valid 'bcs' on the mesh
     int base         = 1;
     int num_families = 0;
-    CGCHECKNP(cg_nfamilies(cgnsFilePtr, base, &num_families));
+    CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
 
     std::vector<std::string> families;
     families.reserve(num_families);
@@ -336,7 +336,7 @@ namespace {
       char name[CGNS_MAX_NAME_LENGTH + 1];
       int  num_bc  = 0;
       int  num_geo = 0;
-      CGCHECKNP(cg_family_read(cgnsFilePtr, base, family, name, &num_bc, &num_geo));
+      CGCHECKNP(cg_family_read(cgns_file_ptr, base, family, name, &num_bc, &num_geo));
       if (num_bc > 0) {
         Ioss::Utils::fixup_name(name);
         families.push_back(name);
@@ -366,7 +366,7 @@ namespace {
       // perpendicular to this face.
       int izone = zone->m_zone;
       int num_bcs;
-      CGCHECKNP(cg_nbocos(cgnsFilePtr, base, izone, &num_bcs));
+      CGCHECKNP(cg_nbocos(cgns_file_ptr, base, izone, &num_bcs));
 
       for (int ibc = 0; ibc < num_bcs; ibc++) {
         char              boconame[CGNS_MAX_NAME_LENGTH + 1];
@@ -378,20 +378,21 @@ namespace {
         int               ndataset;
 
         // All we really want from this is 'boconame'
-        CGCHECKNP(cg_boco_info(cgnsFilePtr, base, izone, ibc + 1, boconame, &bocotype, &ptset_type,
-                               &npnts, nullptr, &NormalListSize, &NormalDataType, &ndataset));
+        CGCHECKNP(cg_boco_info(cgns_file_ptr, base, izone, ibc + 1, boconame, &bocotype,
+                               &ptset_type, &npnts, nullptr, &NormalListSize, &NormalDataType,
+                               &ndataset));
 
         if (bocotype == CG_FamilySpecified) {
           // Need to get boconame from cg_famname_read
           CGCHECKNP(
-              cg_goto(cgnsFilePtr, base, "Zone_t", izone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
+              cg_goto(cgns_file_ptr, base, "Zone_t", izone, "ZoneBC_t", 1, "BC_t", ibc + 1, "end"));
           CGCHECKNP(cg_famname_read(boconame));
         }
 
         Ioss::Utils::fixup_name(boconame);
         if (std::find(bcs.begin(), bcs.end(), boconame) != bcs.end()) {
           cgsize_t range[6];
-          CGCHECKNP(cg_boco_read(cgnsFilePtr, base, izone, ibc + 1, range, nullptr));
+          CGCHECKNP(cg_boco_read(cgns_file_ptr, base, izone, ibc + 1, range, nullptr));
 
           // There are some BC that are applied on an edge or a vertex;
           // Don't want those, so filter them out at this time...

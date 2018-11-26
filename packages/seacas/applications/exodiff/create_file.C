@@ -445,11 +445,13 @@ namespace {
         }
 
         if (set2 == nullptr) {
-          *diff_found = true;
-          std::ostringstream diff;
-          diff << "exodiff: DIFFERENCE " << label << " id " << set1->Id()
-               << " exists in first file but not the second...\n";
-          DIFF_OUT(diff);
+          if (interface.map_flag != PARTIAL) {
+            *diff_found = true;
+            std::ostringstream diff;
+            diff << "exodiff: DIFFERENCE " << label << " id " << set1->Id()
+                 << " exists in first file but not the second...\n";
+            DIFF_OUT(diff);
+          }
           continue;
         }
 

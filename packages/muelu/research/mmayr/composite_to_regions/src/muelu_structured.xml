@@ -1,5 +1,5 @@
 <ParameterList name="MueLu">
-  
+
   <!-- Configuration of the Xpetra operator (fine level) -->
   <ParameterList name="Matrix">
     <Parameter name="PDE equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->

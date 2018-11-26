@@ -204,7 +204,7 @@ TEST_F( TestCategory, gemm_float ) {
     test_gemm<float,float,float,TestExecSpace> ("NT",alpha,beta);
     test_gemm<float,float,float,TestExecSpace> ("TT",alpha,beta);
 
-    alpha = 4.5f
+    alpha = 4.5f;
     beta = 0.0f;
     test_gemm<float,float,float,TestExecSpace> ("NN",alpha,beta);
     test_gemm<float,float,float,TestExecSpace> ("TN",alpha,beta);

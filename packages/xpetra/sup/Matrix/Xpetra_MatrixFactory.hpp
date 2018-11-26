@@ -99,6 +99,7 @@ namespace Xpetra {
         if (oldTCrsOp != Teuchos::null) {
           RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
           RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(Teuchos::as<RCP<CrsMatrix> >(newTCrsOp)));
+          newOp->SetFixedBlockSize(A->GetFixedBlockSize());
 
           return newOp;
         } else {
@@ -137,7 +138,7 @@ namespace Xpetra {
          // Underlying matrix is Epetra
          RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrixT<GlobalOrdinal,Node>(*oldECrsOp));
          RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap  (newECrsOp));
-
+         newOp->SetFixedBlockSize(A->GetFixedBlockSize());
          return newOp;
        }
    #endif
@@ -149,7 +150,7 @@ namespace Xpetra {
        if (oldTCrsOp != Teuchos::null) {
          RCP<CrsMatrix>     newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
          RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap(newTCrsOp));
-
+          newOp->SetFixedBlockSize(A->GetFixedBlockSize());
          return newOp;
        }
    #else
@@ -188,7 +189,7 @@ namespace Xpetra {
         // Underlying matrix is Epetra
         RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrixT<GlobalOrdinal,Node>(*oldECrsOp));
         RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap  (newECrsOp));
-
+        newOp->SetFixedBlockSize(A->GetFixedBlockSize());
         return newOp;
       }
   #endif
@@ -200,7 +201,7 @@ namespace Xpetra {
       if (oldTCrsOp != Teuchos::null) {
         RCP<CrsMatrix>     newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
         RCP<CrsMatrixWrap> newOp    (new CrsMatrixWrap(newTCrsOp));
-
+        newOp->SetFixedBlockSize(A->GetFixedBlockSize());
         return newOp;
       }
   #else

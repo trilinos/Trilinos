@@ -104,7 +104,7 @@ namespace KokkosBatched {
         // C (m x n), A(m x k), B(k x n)
         return TeamGemmInternal<Algo::Gemm::Unblocked>::
           invoke(member,
-                 C.extent(0), C.extent(1), A.extent(1),
+                 C.extent(0), C.extent(1), A.extent(0),
                  alpha, 
                  A.data(), A.stride_1(), A.stride_0(),
                  B.data(), B.stride_0(), B.stride_1(),
@@ -131,7 +131,7 @@ namespace KokkosBatched {
         // C (m x n), A(m x k), B(k x n)
         return TeamGemmInternal<Algo::Gemm::Blocked>::
           invoke(member,
-                 C.extent(0), C.extent(1), A.extent(1),
+                 C.extent(0), C.extent(1), A.extent(0),
                  alpha, 
                  A.data(), A.stride_1(), A.stride_0(),
                  B.data(), B.stride_0(), B.stride_1(),
@@ -222,7 +222,7 @@ namespace KokkosBatched {
         // C (m x n), A(m x k), B(k x n)
         return TeamGemmInternal<Algo::Gemm::Unblocked>::
           invoke(member,
-                 C.extent(0), C.extent(1), A.extent(1),
+                 C.extent(0), C.extent(1), A.extent(0),
                  alpha, 
                  A.data(), A.stride_1(), A.stride_0(),
                  B.data(), B.stride_1(), B.stride_0(),
@@ -249,7 +249,7 @@ namespace KokkosBatched {
         // C (m x n), A(m x k), B(k x n)
         return TeamGemmInternal<Algo::Gemm::Blocked>::
           invoke(member,
-                 C.extent(0), C.extent(1), A.extent(1),
+                 C.extent(0), C.extent(1), A.extent(0),
                  alpha, 
                  A.data(), A.stride_1(), A.stride_0(),
                  B.data(), B.stride_1(), B.stride_0(),

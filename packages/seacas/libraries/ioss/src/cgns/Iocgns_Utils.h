@@ -46,14 +46,21 @@
 #include <string>
 
 // Used in Iocgns_DatabaseIO.C and Iocgns_ParallelDatabase.C
+// non-Member function -- can't access m_cgnsFilePtr; make sure cgns_file_ptr is passed in...
 #define CGCHECK(funcall)                                                                           \
   if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);             \
+    Iocgns::Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, myProcessor);           \
+  }
+
+// Member function -- can access m_cgnsFilePtr
+#define CGCHECKM(funcall)                                                                          \
+  if ((funcall) != CG_OK) {                                                                        \
+    Iocgns::Utils::cgns_error(m_cgnsFilePtr, __FILE__, __func__, __LINE__, myProcessor);           \
   }
 
 #define CGCHECKNP(funcall)                                                                         \
   if ((funcall) != CG_OK) {                                                                        \
-    Iocgns::Utils::cgns_error(cgnsFilePtr, __FILE__, __func__, __LINE__, -1);                      \
+    Iocgns::Utils::cgns_error(cgns_file_ptr, __FILE__, __func__, __LINE__, -1);                    \
   }
 
 // Used in Iocgns_Decomposition.C
@@ -171,9 +178,9 @@ namespace Iocgns {
     static void          write_flow_solution_metadata(int file_ptr, Ioss::Region *region, int state,
                                                       int *vertex_solution_index,
                                                       int *cell_center_solution_index, bool is_parallel_io);
-    static int           find_solution_index(int cgnsFilePtr, int base, int zone, int step,
+    static int           find_solution_index(int cgns_file_ptr, int base, int zone, int step,
                                              CG_GridLocation_t location);
-    static CG_ZoneType_t check_zone_type(int cgnsFilePtr);
+    static CG_ZoneType_t check_zone_type(int cgns_file_ptr);
     static size_t        common_write_meta_data(int file_ptr, const Ioss::Region &region,
                                                 std::vector<size_t> &zone_offset, bool is_parallel);
     static size_t        resolve_nodes(Ioss::Region &region, int my_processor, bool is_parallel);
@@ -182,19 +189,19 @@ namespace Iocgns {
 
     static CG_ElementType_t map_topology_to_cgns(const std::string &name);
     static std::string      map_cgns_to_topology_type(CG_ElementType_t type);
-    static void             add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db);
-    static void add_structured_boundary_conditions(int cgnsFilePtr, Ioss::StructuredBlock *block,
+    static void             add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db);
+    static void add_structured_boundary_conditions(int cgns_file_ptr, Ioss::StructuredBlock *block,
                                                    bool is_parallel_io);
-    static void add_structured_boundary_conditions_fpp(int                    cgnsFilePtr,
+    static void add_structured_boundary_conditions_fpp(int                    cgns_file_ptr,
                                                        Ioss::StructuredBlock *block);
-    static void add_structured_boundary_conditions_pio(int                    cgnsFilePtr,
+    static void add_structured_boundary_conditions_pio(int                    cgns_file_ptr,
                                                        Ioss::StructuredBlock *block);
 
-    static void finalize_database(int cgnsFilePtr, const std::vector<double> &timesteps,
+    static void finalize_database(int cgns_file_ptr, const std::vector<double> &timesteps,
                                   Ioss::Region *region, int myProcessor, bool is_parallel_io);
-    static int get_step_times(int cgnsFilePtr, std::vector<double> &timesteps, Ioss::Region *region,
-                              double timeScaleFactor, int myProcessor);
-    static void add_transient_variables(int cgnsFilePtr, const std::vector<double> &timesteps,
+    static int  get_step_times(int cgns_file_ptr, std::vector<double> &timesteps,
+                               Ioss::Region *region, double timeScaleFactor, int myProcessor);
+    static void add_transient_variables(int cgns_file_ptr, const std::vector<double> &timesteps,
                                         Ioss::Region *region, bool enable_field_recognition,
                                         char suffix_separator, int myProcessor,
                                         bool is_parallel_io);

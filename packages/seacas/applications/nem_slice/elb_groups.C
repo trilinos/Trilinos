@@ -85,13 +85,12 @@ extern int ilog2i(size_t n);
  *   - "1-20/40-45/5-10 21-41   1-4,11-20       42,43,45   5-10 31-41
  *
  *****************************************************************************/
-template int parse_groups(int *el_blk_ids, int *el_blk_cnts, Mesh_Description<int> *mesh,
+template int parse_groups(Mesh_Description<int> *mesh,
                           Problem_Description *prob);
-template int parse_groups(int64_t *el_blk_ids, int64_t *el_blk_cnts,
-                          Mesh_Description<int64_t> *mesh, Problem_Description *prob);
+template int parse_groups(Mesh_Description<int64_t> *mesh, Problem_Description *prob);
 
 template <typename INT>
-int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
+int parse_groups(Mesh_Description<INT> *mesh,
                  Problem_Description *prob)
 {
   char *id;
@@ -101,8 +100,7 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
 
   /* allocate memory for the groups */
   prob->group_no = (int *)malloc(mesh->num_el_blks * sizeof(int));
-  mesh->eb_cnts  = (INT *)malloc(mesh->num_el_blks * sizeof(INT));
-  if (!(prob->group_no) || !(mesh->eb_cnts)) {
+  if (!(prob->group_no)) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
@@ -110,7 +108,6 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
   /* prepare the group number array, and copy the element block counts */
   for (size_t i = 0; i < mesh->num_el_blks; i++) {
     prob->group_no[i] = -1;
-    mesh->eb_cnts[i]  = el_blk_cnts[i];
   }
 
   /* convert any comma's to blank spaces in the designator string */
@@ -127,7 +124,7 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
     if (*id == '/') {
       id++;
     }
-    scandescriptor(id, el_blk_ids, i, mesh->num_el_blks, prob);
+    scandescriptor(id, mesh->eb_ids.data(), i, mesh->num_el_blks, prob);
     id = strchr(id, '/');
     i++;
   } while (id != nullptr);
@@ -154,7 +151,7 @@ int parse_groups(INT *el_blk_ids, INT *el_blk_cnts, Mesh_Description<INT> *mesh,
     printf("Block ID and associated groups:\n");
     printf("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {
-      printf("%8lu%8lu%8d%8s\n", (size_t)el_blk_ids[i], (size_t)mesh->eb_cnts[i], prob->group_no[i],
+      printf("%8lu%8lu%8d%8s\n", (size_t)mesh->eb_ids[i], (size_t)mesh->eb_cnts[i], prob->group_no[i],
              elem_name_from_enum(mesh->elem_type[first_el]));
       first_el += mesh->eb_cnts[i];
     }

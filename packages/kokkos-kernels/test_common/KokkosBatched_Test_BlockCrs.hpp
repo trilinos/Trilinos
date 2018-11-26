@@ -300,26 +300,25 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
-            typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
 
             int team_size = 0;
 
             // this is what cuda allows
-            const int max_cuda_blocksize 
-              = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+            const int max_team_size = 
+              policy_type(_ntridiag, Kokkos::AUTO, VectorLength).team_size_max(functor_type(), Kokkos::ParallelForTag());
 
             // this is what algorithm allows
             if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
               const int mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
               const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
               // - max parallelism in gemm / 2 (no idea...)
-              team_size = min(max(mblk*mblk/2,1), max_cuda_blocksize/VectorLength/2);
-              std::cout << "KokkosBatched::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              team_size = std::min(std::max(mblk*mblk/2,1), max_team_size/2);
+              std::cout << "KokkosBatched::TeamTag::Blocked::TeamSize:: " << team_size << " " << (max_team_size) << "\n";
             } else {
               // - max parallelism in trsm * scheduling efficiency 2
               // - max cuda team size / scheduling efficiency 2
-              team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
-              std::cout << "KokkosBatched::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+              team_size = std::min(std::max(_blocksize*2,4), max_team_size/2);
+              std::cout << "KokkosBatched::TeamTag::Unblocked::TeamSize:: " << team_size << " " << (max_team_size) << "\n";
             }
 
             const policy_type policy(_ntridiag, team_size, VectorLength);
@@ -329,7 +328,6 @@ namespace KokkosBatched {
           case 2: {
             typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
             typedef Kokkos::TeamPolicy<exec_space,TeamShmemTag> policy_type;
-            typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
             const int per_team_scratch 
               = ScratchViewType<packed_view_type>::shmem_size(VectorLength, _blocksize, _blocksize);
@@ -339,24 +337,24 @@ namespace KokkosBatched {
               int team_size = 0;
               
               // this is what cuda allows
-              const int max_cuda_blocksize 
-                = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>
-                (functor_type(), VectorLength, per_team_scratch, 0);
+              const int max_team_size =
+                policy_type(_ntridiag, Kokkos::AUTO, VectorLength).set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch))
+                .team_size_max(functor_type(), Kokkos::ParallelForTag());   
               
               // this is what algorithm allows
               if (std::is_same<Gemm_AlgoTagType,Algo::Gemm::Blocked>::value) {
                 const int mb = Algo::Gemm::Blocked::mb<typename exec_space::memory_space>();
                 const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
                 // - max parallelism in gemm / 2 (no idea...)
-                team_size = min(max(mblk*mblk/2,1), max_cuda_blocksize/VectorLength/2);
-                std::cout << "KokkosBatched::TeamShmemTag::Blocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                team_size = std::min(std::max(mblk*mblk/2,1), max_team_size/2);
+                std::cout << "KokkosBatched::TeamShmemTag::Blocked::TeamSize:: " << team_size << " " << (max_team_size) << "\n";
               } else {
-                team_size = min(max(_blocksize*2,4), max_cuda_blocksize/VectorLength/2);
-                std::cout << "KokkosBatched::TeamShmemTag::Unblocked::TeamSize:: " << team_size << " " << (max_cuda_blocksize/VectorLength) << "\n";
+                team_size = std::min(std::max(_blocksize*2,4), max_team_size/2);
+                std::cout << "KokkosBatched::TeamShmemTag::Unblocked::TeamSize:: " << team_size << " " << (max_team_size) << "\n";
               }
               
-              policy_type policy(_ntridiag, team_size, VectorLength);
-              Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
+              policy_type policy = policy_type(_ntridiag, team_size, VectorLength).set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch));
+              Kokkos::parallel_for(policy, *this);
             } 
             break;
           }
@@ -833,23 +831,22 @@ namespace KokkosBatched {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(__KOKKOSBATCHED_TEST_ENABLE_CUDA__)
           case 1: {
             typedef Kokkos::TeamPolicy<exec_space,TeamTag> policy_type;
-            typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
             
             int team_size = 0;
             
             // this is what cuda allows
-            const int max_cuda_blocksize 
-              = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+            const int max_team_size = 
+              policy_type(_ntridiag, Kokkos::AUTO, VectorLength).team_size_max(functor_type(), Kokkos::ParallelForTag());
 
             // this is what algorithm allows
             if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
               const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
               const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
-              team_size = min(max(mblk/2,1), max_cuda_blocksize/VectorLength/2);
+              team_size = std::min(std::max(mblk/2,1), int(max_team_size/2));
             } else {
               // in solve phase, max peak parallelism is same as blocksize (one iteration)
               // better to give blocksize/2 
-              team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
+              team_size = std::min(std::max(_blocksize/2,4), int(max_team_size/2));
             }
             
             const policy_type policy(_ntridiag, team_size, VectorLength);
@@ -859,8 +856,7 @@ namespace KokkosBatched {
           case 2: {
             typedef Kokkos::View<ValueType***,exec_space> packed_view_type;
             typedef Kokkos::TeamPolicy<exec_space,TeamShmemTag> policy_type;
-            typedef Kokkos::Impl::ParallelFor<functor_type,policy_type,exec_space> parallel_for_type;
-            
+
             const int per_team_scratch 
               = ScratchViewType<packed_view_type>::shmem_size(VectorLength, _m, _blocksize);
 
@@ -869,20 +865,21 @@ namespace KokkosBatched {
               int team_size = 0;
               
               // this is what cuda allows
-              const int max_cuda_blocksize 
-                = Kokkos::Impl::cuda_get_max_block_size<parallel_for_type>(functor_type(), VectorLength, 0, 0);
+              const int max_team_size =
+                policy_type(_ntridiag, Kokkos::AUTO, VectorLength).set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch))
+                .team_size_max(functor_type(), Kokkos::ParallelForTag());   
               
               // this is what algorithm allows
               if (std::is_same<Gemv_AlgoTagType,Algo::Gemv::Blocked>::value) {
                 const int mb = Algo::Gemv::Blocked::mb<typename exec_space::memory_space>();
                 const int mp = _blocksize%mb, mblk = (_blocksize/mb) + (mp>0);
-                team_size = min(max(mblk/2,1), max_cuda_blocksize/VectorLength/2);
+                team_size = std::min(std::max(mblk/2,1), int(max_team_size/2));
               } else {
-                team_size = min(max(_blocksize/2,4), max_cuda_blocksize/VectorLength/2);
+                team_size = std::min(std::max(_blocksize/2,4), int(max_team_size/2));
               }
               
-              policy_type policy(_ntridiag, team_size, VectorLength);
-              Kokkos::parallel_for(policy.set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch)), *this);
+              policy_type policy = policy_type(_ntridiag, team_size, VectorLength).set_scratch_size(_shmemlvl, Kokkos::PerTeam(per_team_scratch));;
+              Kokkos::parallel_for(policy, *this);
             }
             break;
           }

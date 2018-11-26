@@ -167,7 +167,7 @@ namespace {
     rhs(1) = 200.0;
     rhs(2) = 300.0;
 
-    scalar_vec_type true_rhs("truerhs",3,1);
+    scalar_vec_type true_rhs("truerhs",3);
     for(int i=0; i<3; i++)
       true_rhs(i) = rhs(i);
 
@@ -266,7 +266,7 @@ namespace {
     rhs(1) = 200.0;
     rhs(2) = 300.0;
 
-    scalar_vec_type true_rhs("truerhs",3,1);
+    scalar_vec_type true_rhs("truerhs",3);
     for(int i=0; i<3; i++)
       true_rhs(i) = rhs(i);
 

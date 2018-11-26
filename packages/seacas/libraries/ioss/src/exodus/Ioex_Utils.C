@@ -483,9 +483,6 @@ namespace Ioex {
     errmsg << " Please report to gdsjaar@sandia.gov if you need help.";
 
     ex_err_fn(exoid, nullptr, nullptr, EX_PRTLASTMSG);
-    if (exoid > 0) {
-      ex_close(exoid);
-    }
     IOSS_ERROR(errmsg);
   }
 

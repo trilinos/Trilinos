@@ -214,8 +214,17 @@ public:
     }
 
     /// Return the working state
-    Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const
-      { return workingState_; }
+    Teuchos::RCP<SolutionState<Scalar> > getWorkingState(bool warn=true) const
+    {
+      if (workingState_ == Teuchos::null && warn) {
+        Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"SolutionHistory::getWorkingState()");
+        *out << "Warning - WorkingState is null and likely has been promoted.  "
+             << "You might want to call getCurrentState() instead.\n"
+             << std::endl;
+      }
+      return workingState_;
+    }
 
     /// Get the number of states
     int getNumStates() const {return history_->size();}

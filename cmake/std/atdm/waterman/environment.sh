@@ -2,7 +2,7 @@
 #
 # Set up env on waterman for ATMD builds of Trilinos
 #
-# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
 ################################################################################
 
@@ -53,7 +53,7 @@ fi
 echo "Using waterman compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
 export ATDM_CONFIG_USE_NINJA=ON
-export ATDM_CONFIG_BUILD_COUNT=128
+export ATDM_CONFIG_BUILD_COUNT=64
 # NOTE: Above settings are used for building on a Dual-Socket POWER9 with 8
 # cores per socket.
 
@@ -129,6 +129,6 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=4"
+export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=4"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

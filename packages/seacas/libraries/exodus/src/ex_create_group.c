@@ -72,7 +72,7 @@ int ex_create_group(int parent_id, const char *group_name)
   snprintf(errmsg, MAX_ERR_LENGTH,
            "ERROR: Group capabilities are not available in this netcdf "
            "version--not netcdf4");
-  ex_err_fn(exoid, __func__, errmsg, NC_ENOTNC4);
+  ex_err(__func__, errmsg, NC_ENOTNC4);
   EX_FUNC_LEAVE(EX_FATAL);
 #endif
 }
