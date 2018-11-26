@@ -258,6 +258,8 @@ namespace MueLu {
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
+  "<Parameter name=\"matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
+  "<Parameter name=\"isMatrixMatrix\_TransferAndFillComplete \" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
@@ -663,6 +665,10 @@ namespace MueLu {
          ("rap: triple product","rap: triple product")
       
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
+      
+         ("matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount ","matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount ")
+      
+         ("isMatrixMatrix\_TransferAndFillComplete ","isMatrixMatrix\_TransferAndFillComplete ")
       
          ("reuse: type","reuse: type")
       
