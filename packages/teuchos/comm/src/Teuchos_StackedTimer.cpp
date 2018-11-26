@@ -259,7 +259,29 @@ StackedTimer::computeColumnWidthsForAligment(std::string prefix,
     }
 
     printed[i] = true;
-    computeColumnWidthsForAligment(flat_names_[i], level+1, printed, sum_[i]/active_[i], options);
+    double sub_time = computeColumnWidthsForAligment(flat_names_[i], level+1, printed, sum_[i]/active_[i], options);
+
+    // Print Remainder
+    if (sub_time > 0 ) {
+      if (options.print_names_before_values) {
+        std::ostringstream tmp;
+        for (int l=0; l<=level; ++l)
+          tmp << "|   ";
+        tmp << "Remainder: ";
+        alignments_.timer_names_ = std::max(alignments_.timer_names_,tmp.str().size());
+      }
+      {
+        std::ostringstream tmp;
+        tmp << sum_[i]/active_[i]- sub_time;
+        alignments_.average_time_ = std::max(alignments_.average_time_,tmp.str().size());
+      }
+      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) ) {
+        std::ostringstream tmp;
+        tmp << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
+        alignments_.fraction_ = std::max(alignments_.fraction_,tmp.str().size());
+      }
+    }
+
     total_time += sum_[i]/active_[i];
   }
   return total_time;
@@ -286,7 +308,7 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
       continue;
 
     // Output the indentation level
-    {
+    if (options.print_names_before_values) {
       std::ostringstream tmp;
       for (int l=0; l<level; ++l) {
         tmp << "|   ";
@@ -361,6 +383,13 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
         os << tmp.str();
       }
     }
+    else if ( options.output_minmax) {
+      // this block keeps alignment for single rank timers
+      size_t offset = alignments_.min_ + alignments_.max_ + alignments_.stddev_;
+      for (size_t j=0; j < offset; ++j)
+        os << " ";
+    }
+
     // Output histogram
     if ( options.output_histogram && active_[i] >1 ) {
       std::ostringstream tmp;
@@ -376,22 +405,74 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
         os << std::left << std::setw(alignments_.histogram_);
       os << tmp.str();
     }
+    else if ( options.output_histogram) {
+      // this block keeps alignment for single rank timers
+      for (size_t j=0; j < alignments_.histogram_; ++j)
+        os << " ";
+    }
+
+    if (not options.print_names_before_values) {
+      std::ostringstream tmp;
+      tmp << " ";
+      for (int l=0; l<level; ++l) {
+        tmp << "|   ";
+      }
+      // Output the timer name
+      tmp << split_names.second << ": ";
+      os << tmp.str();
+    }
+
     os << std::endl;
     printed[i] = true;
     double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_[i]/active_[i], options);
+
+    // Print Remainder
     if (sub_time > 0 ) {
-      std::ostringstream tmp;
-      for (int l=0; l<=level; ++l)
-        tmp << "|   ";
-      tmp << "Remainder: ";
-      if (options.align_columns)
-        os << std::left << std::setw(alignments_.timer_names_);
-      os << tmp.str();
-      if (options.align_columns)
-        os << std::left << std::setw(alignments_.average_time_);
-      os << sum_[i]/active_[i]- sub_time;
-      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) )
-        os << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
+      if (options.print_names_before_values) {
+        std::ostringstream tmp;
+        for (int l=0; l<=level; ++l)
+          tmp << "|   ";
+        tmp << "Remainder: ";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.timer_names_);
+        os << tmp.str();
+      }
+      {
+        std::ostringstream tmp;
+        tmp << sum_[i]/active_[i]- sub_time;
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.average_time_);
+        os << tmp.str();
+      }
+      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) ) {
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.fraction_);
+        std::ostringstream tmp;
+        tmp << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
+        os << tmp.str();
+      }
+      if (not options.print_names_before_values) {
+        {
+          size_t offset = 0;
+          offset += alignments_.count_;
+          if (options.output_total_updates)
+            offset += alignments_.total_updates_;
+          if (options.output_minmax)
+            offset += alignments_.min_ + alignments_.max_ + alignments_.stddev_;
+          if (options.output_histogram)
+            offset += alignments_.histogram_;
+          for (size_t j=0; j < offset; ++j)
+            os << " ";
+        }
+        std::ostringstream tmp;
+        tmp << " ";
+        for (int l=0; l<=level; ++l)
+          tmp << "|   ";
+        tmp << "Remainder: ";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.timer_names_);
+        os << tmp.str();
+      }
       os << std::endl;
     }
     total_time += sum_[i]/active_[i];
@@ -406,8 +487,8 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   collectRemoteData(comm, options);
   if (rank(*comm) == 0 ) {
     if (options.print_warnings) {
-      os << "*** Teuchos::StackedTimer::report() - Remainder for a block will be ***"
-         << "\n*** incorrect if a timer in the block does not exist on every rank  ***"
+      os << "*** Teuchos::StackedTimer::report() - Remainder for a level will be ***"
+         << "\n*** incorrect if a timer in the level does not exist on every rank  ***"
          << "\n*** of the MPI Communicator.                                        ***"
          << std::endl;
     }

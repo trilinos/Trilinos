@@ -507,7 +507,7 @@ public:
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
                       output_minmax(false), num_histogram(10), max_levels(INT_MAX),
-                      print_warnings(true), align_columns(false) {}
+                      print_warnings(true), align_columns(false), print_names_before_values(true) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
@@ -516,6 +516,7 @@ public:
     int max_levels;
     bool print_warnings;
     bool align_columns;
+    bool print_names_before_values;
   };
 
   /**

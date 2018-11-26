@@ -182,15 +182,24 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 #endif
 
   // Print to screen
-  timer.report(out, comm, options);
+  out << "\n### Printing default report ###" << std::endl;
+  Teuchos::StackedTimer::OutputOptions defaultOptions;
+  timer.report(out, comm, defaultOptions);
 
-  // Enable all optional printing options
+  // Test some options
+  out << "\n### Printing aligned_column with timers names on left ###" << std::endl;
   options.output_fraction = true;
   options.output_total_updates = true;
   options.output_minmax = true;
   options.output_histogram = true;
   options.num_histogram = 3;
   options.align_columns = true;
+  timer.report(out, comm, options);
+
+  // Toggle names before values
+  TEST_EQUALITY(options.print_names_before_values,true);
+  out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  options.print_names_before_values = false;
   timer.report(out, comm, options);
 }
 
@@ -262,13 +271,18 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 #endif
 
   Teuchos::StackedTimer::OutputOptions options;
+  out << "\n### Printing default report ###" << std::endl;
   options.output_histogram=true;
   options.num_histogram=3;
   options.output_fraction=true;
   timer->report(out, comm, options);
 
-  // Enable aligned output
+  out << "\n### Printing aligned_column with timers names on left ###" << std::endl;
   options.align_columns = true;
+  timer->report(out, comm, options);
+
+  out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  options.print_names_before_values = false;
   timer->report(out, comm, options);
 }
 
