@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
         xpetraLib = UseTpetra;
     }
     
-    RCP<const Teuchos::Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
+    RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
     
     if (color==0) {
         
@@ -176,12 +176,12 @@ int main(int argc, char *argv[])
             Comm->barrier();
             if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
             
-            dofsPerNodeVector[block] = max(DofsPerNode-block,(UN) 1);
+            dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1); std::cout << dofsPerNodeVector[block] << std::endl;
             
             ParameterList GaleriList;
-            GaleriList.set("nx", int(N*(block+1)*M));
-            GaleriList.set("ny", int(N*(block+1)*M));
-            GaleriList.set("nz", int(N*(block+1)*M));
+            GaleriList.set("nx", int(N*(M+block)));
+            GaleriList.set("ny", int(N*(M+block)));
+            GaleriList.set("nz", int(N*(M+block)));
             GaleriList.set("mx", int(N));
             GaleriList.set("my", int(N));
             GaleriList.set("mz", int(N));
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
                 assert(false);
             }
             
-            RepeatedMaps[block] = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K[block]); //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); RepeatedMaps[block]->describe(*fancy,Teuchos::VERB_EXTREME);
+            RepeatedMaps[block] = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K[block]); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
         }
         
         Comm->barrier();
@@ -270,11 +270,11 @@ int main(int argc, char *argv[])
             Array<GO> uniqueMapArray(0);
             GO tmpOffset = 0;
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
-                Teuchos::ArrayView<const GO> tmpgetGlobalElements = K[block]->getMap()->getNodeElementList();
+                ArrayView<const GO> tmpgetGlobalElements = K[block]->getMap()->getNodeElementList();
                 for (LO i=0; i<tmpgetGlobalElements.size(); i++) {
                     uniqueMapArray.push_back(tmpgetGlobalElements[i]+tmpOffset);
                 }
-                tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex();
+                tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex()+1;
             }
             RCP<Map<LO,GO,NO> > UniqueMapMonolithic = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
             
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
                     }
                     KMonolithic->insertGlobalValues(K[block]->getMap()->getGlobalElement(i)+tmpOffset,indicesGlobal(),values);
                 }
-                tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex();
+                tmpOffset += K[block]->getMap()->getMaxAllGlobalIndex()+1;
             }
             KMonolithic->fillComplete();
         } else if (NumberOfBlocks==1) {
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
         
         CrsMatrixWrap<SC,LO,GO,NO>& crsWrapK = dynamic_cast<CrsMatrixWrap<SC,LO,GO,NO>&>(*KMonolithic);
         RCP<const LinearOpBase<SC> > K_thyra = ThyraUtils<SC,LO,GO,NO>::toThyra(crsWrapK.getCrsMatrix());
-        RCP<MultiVectorBase<SC> >thyraX = Teuchos::rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
+        RCP<MultiVectorBase<SC> >thyraX = rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
         RCP<const MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
         
         //-----------Set Coordinates and RepMap in ParameterList--------------------------

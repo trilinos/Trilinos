@@ -221,12 +221,12 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     int HarmonicCoarseOperator<SC,LO,GO,NO>::computeAndFillPhi(CrsMatrixPtr repeatedMatrix,
-                                                           MapPtr repeatedMap,
-                                                           MapPtr coarseMap,
-                                                           GOVecView indicesGammaDofsAll,
-                                                           GOVecView indicesIDofsAll,
-                                                           CrsMatrixPtr kII,
-                                                           CrsMatrixPtr kIGamma)
+                                                               MapPtr repeatedMap,
+                                                               MapPtr coarseMap,
+                                                               GOVecView indicesGammaDofsAll,
+                                                               GOVecView indicesIDofsAll,
+                                                               CrsMatrixPtr kII,
+                                                               CrsMatrixPtr kIGamma)
     {
         this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
         MultiVectorPtr mVtmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());

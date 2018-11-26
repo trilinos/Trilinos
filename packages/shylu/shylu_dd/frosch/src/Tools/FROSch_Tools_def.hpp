@@ -72,9 +72,8 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > BuildRepeatedSubMaps(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > matrix,
-                                                                                  Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps){
-        
-    
+                                                                                  Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > subMaps)
+    {
         Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
             Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > subMatrixII;
@@ -360,21 +359,19 @@ namespace FROSch {
         FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
         
         Teuchos::Array<GO> elementList(mapVector[0]->getNodeElementList());
-//        GO priorEntries = mapVector[0]->getMaxAllGlobalIndex() + 1;
-        GO globalNumEntries = mapVector[0]->getGlobalNumElements();
+        GO tmpOffset = 0;
         for (unsigned i=1; i<mapVector.size(); i++) {
             LO nodeNumElements = mapVector[i]->getNodeNumElements();
-
+            tmpOffset += mapVector[i-1]->getMaxAllGlobalIndex()+1;
+            
             Teuchos::Array<GO> subElementList(nodeNumElements);
             for (LO j=0; j<nodeNumElements; j++) {
-                subElementList.at(j) = mapVector[i]->getGlobalElement(j);
+                subElementList.at(j) = mapVector[i]->getGlobalElement(j)+tmpOffset;
             }
 
             elementList.insert(elementList.end(),subElementList.begin(),subElementList.end());
-            //priorEntries += mapVector[i]->getMaxAllGlobalIndex() + 1;
-            globalNumEntries += mapVector[i]->getGlobalNumElements();
         }
-        return Xpetra::MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),globalNumEntries,elementList,0,mapVector[0]->getComm());
+        return Xpetra::MapFactory<LO,GO,NO>::Build(mapVector[0]->lib(),-1,elementList(),0,mapVector[0]->getComm());
     }
 
     template <class LO,class GO,class NO>
@@ -388,8 +385,10 @@ namespace FROSch {
         nodesMapVec = Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > (numberBlocks);
         dofMapsVec = Teuchos::ArrayRCP<Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > > (numberBlocks);
 
+        GO tmpOffset = 0;
         for (unsigned i = 0 ; i < numberBlocks; i++) {
-            BuildDofMaps(mapVec[i],dofsPerNodeVec[i],dofOrderingVec[i],nodesMapVec[i],dofMapsVec[i]);
+            BuildDofMaps(mapVec[i],dofsPerNodeVec[i],dofOrderingVec[i],nodesMapVec[i],dofMapsVec[i],tmpOffset);
+            tmpOffset += mapVec[i]->getMaxAllGlobalIndex()+1;
         }
         
         return 0;
@@ -401,7 +400,8 @@ namespace FROSch {
                      unsigned dofsPerNode,
                      unsigned dofOrdering,
                      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
-                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps)
+                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps,
+                     GO offset)
     {
         //if (map->getComm()->getRank()==0) std::cout << "WARNING: BuildDofMaps is yet to be tested...\n";
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
@@ -416,7 +416,7 @@ namespace FROSch {
             for (unsigned i=0; i<nodes.size(); i++) {
                 nodes[i] = map->getGlobalElement(dofsPerNode*i)/dofsPerNode;
                 for (unsigned j=0; j<dofsPerNode; j++) {
-                    dofs[j][i] = dofsPerNode*nodes[i]+j;
+                    dofs[j][i] = dofsPerNode*nodes[i]+j+offset;
                 }
             }
         } else if (dofOrdering == 1) {
@@ -424,7 +424,7 @@ namespace FROSch {
             for (unsigned i=0; i<nodes.size(); i++) {
                 nodes[i] = map->getGlobalElement(i);
                 for (unsigned j=0; j<dofsPerNode; j++) {
-                    dofs[j][i] = nodes[i]+j*numGlobalIDs/dofsPerNode;
+                    dofs[j][i] = nodes[i]+j*numGlobalIDs/dofsPerNode+offset;
                 }
             }
         } else {
@@ -843,8 +843,8 @@ namespace FROSch {
 
 
     template <class SC, class LO, class GO,class NO>
-    Teuchos::RCP<Epetra_MultiVector > ConvertToEpetra(Xpetra::MultiVector<SC,LO,GO,NO> &vector,
-                                                                    Teuchos::RCP<Epetra_Comm> epetraComm)
+    Teuchos::RCP<Epetra_MultiVector> ConvertToEpetra(const Xpetra::MultiVector<SC,LO,GO,NO> &vector,
+                                                     Teuchos::RCP<Epetra_Comm> epetraComm)
     {
         Teuchos::RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*vector.getMap(),epetraComm);
         Teuchos::RCP<Epetra_MultiVector > multiVector(new Epetra_MultiVector(*map,vector.getNumVectors()));
@@ -854,6 +854,30 @@ namespace FROSch {
             }
         }
         return multiVector;
+    }
+
+    template <class SC, class LO,class GO, class NO>
+    Teuchos::RCP<Epetra_CrsMatrix> ConvertToEpetra(const Xpetra::Matrix<SC,LO,GO,NO> &matrix,
+                                                   Teuchos::RCP<Epetra_Comm> epetraComm)
+    {
+    
+        Teuchos::RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*matrix.getMap(),epetraComm);
+        Teuchos::RCP<Epetra_CrsMatrix> matrixEpetra(new Epetra_CrsMatrix(Copy,*map,matrix.getGlobalMaxNumRowEntries()));
+        Teuchos::ArrayView<const SC> valuesArrayView;
+        Teuchos::ArrayView<const LO> indicesArrayView;
+    
+        for (LO i=0; i<(LO) matrix.getRowMap()->getNodeNumElements(); i++) {
+            matrix.getLocalRowView(i, indicesArrayView, valuesArrayView);
+            Teuchos::Array<GO> indicesGlobal(indicesArrayView.size());
+            for (LO j=0; j<indicesArrayView.size(); j++) {
+                indicesGlobal[j] = matrix.getColMap()->getGlobalElement(indicesArrayView[j]);
+            }
+            if (indicesArrayView.size()>0) {
+                matrixEpetra->InsertGlobalValues(matrix.getRowMap()->getGlobalElement(i), indicesArrayView.size(), &(valuesArrayView[0]), &(indicesGlobal[0]));
+            }
+        }
+        matrixEpetra->FillComplete();
+        return matrixEpetra;
     }
 
 

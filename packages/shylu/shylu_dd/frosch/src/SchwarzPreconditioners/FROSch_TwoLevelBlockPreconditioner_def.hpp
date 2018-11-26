@@ -81,7 +81,6 @@ namespace FROSch {
     int TwoLevelBlockPreconditioner<SC,LO,GO,NO>::initialize(UN dimension,
                                                              UNVecPtr dofsPerNodeVec,
                                                              DofOrderingVecPtr dofOrderingVec,
-                                                             GOVecPtr blockMaxGIDVec,
                                                              int overlap,
                                                              MapPtrVecPtr repeatedMapVec,
                                                              MultiVectorPtrVecPtr nullSpaceBasisVec,
@@ -92,22 +91,22 @@ namespace FROSch {
         ////////////
         // Checks //
         ////////////
-        UN nmbBlocks = blockMaxGIDVec.size();
+        UN nmbBlocks = dofsPerNodeVec.size();
         for (UN i = 0; i < dofOrderingVec.size(); i++ ) {
             DofOrdering dofOrdering = dofOrderingVec[i];
             FROSCH_ASSERT(dofOrdering == NodeWise || dofOrdering == DimensionWise || dofOrdering == Custom,"ERROR: Specify a valid DofOrdering.");
         }
         int ret = 0;
-        //////////
-        // Maps //
-        //////////
-        if (repeatedMapVec.is_null()) {
-            ConstMapPtr tmpMap =  this->K_->getRowMap();
-            MapPtrVecPtr subMapVec = BuildSubMaps(tmpMap,blockMaxGIDVec);// Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
-            repeatedMapVec = BuildRepeatedSubMaps(this->K_,subMapVec);
+//        //////////
+//        // Maps //
+//        //////////
+//        if (repeatedMapVec.is_null()) {
+//            ConstMapPtr tmpMap =  this->K_->getRowMap();
+//            MapPtrVecPtr subMapVec = BuildSubMaps(tmpMap,blockMaxGIDVec);// Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
+//            repeatedMapVec = BuildRepeatedSubMaps(this->K_,subMapVec);
+//        
+//        }
         
-        }
-        RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(std::cout));
         // Build dofsMaps and repeatedNodesMap
         MapPtrVecPtr repeatedNodesMapVec;
         if (dofsMapsVec.is_null()) {
@@ -151,9 +150,11 @@ namespace FROSch {
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,repeatedMap);
             for (UN i=0; i<dirichletBoundaryDofs.size(); i++) {
                 LO subNumber = -1;
-                for (UN j = (blockMaxGIDVec.size()); j > 0; j--) {
-                    if (dirichletBoundaryDofs[i] <= blockMaxGIDVec[j-1]) {
-                        subNumber = j-1;
+                for (UN j = dofsMapsVec.size(); j > 0 ; j--) {
+                    for (UN k=0; k<dofsMapsVec[j-1].size(); k++) {
+                        if ( dirichletBoundaryDofs[i] <= dofsMapsVec[j-1][k]->getMaxAllGlobalIndex() ) {
+                            subNumber = j-1;
+                        }
                     }
                 }
                 dirichletBoundaryDofsVec[subNumber][counterSub[subNumber]] = dirichletBoundaryDofs[i];
@@ -166,7 +167,6 @@ namespace FROSch {
             }
             
         }
-
         ////////////////////////////////////
         // Initialize OverlappingOperator //
         ////////////////////////////////////

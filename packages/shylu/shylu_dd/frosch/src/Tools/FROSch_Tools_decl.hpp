@@ -92,7 +92,8 @@ namespace FROSch {
                      unsigned dofsPerNode,
                      unsigned dofOrdering,
                      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &nodesMap,
-                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps);
+                     Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &dofMaps,
+                     GO offset = 0);
 
     template <class LO,class GO,class NO>
     int BuildDofMapsVec(const Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > mapVec,
@@ -159,15 +160,19 @@ namespace FROSch {
     
     template <class SC>
     Teuchos::ArrayRCP<SC> ExtractVectorFromParameterList(Teuchos::ParameterList& paramList,
-                                                               std::string nameVector="Vector");
+                                                         std::string nameVector="Vector");
     
     template <class LO,class GO,class NO>
     Teuchos::RCP<Epetra_Map> ConvertToEpetra(const Xpetra::Map<LO,GO,NO> &map,
                                              Teuchos::RCP<Epetra_Comm> epetraComm);
     
     template <class SC, class LO,class GO, class NO>
-    Teuchos::RCP<Epetra_MultiVector > ConvertToEpetra(Xpetra::MultiVector<SC,LO,GO,NO> &vector,
-                                                                    Teuchos::RCP<Epetra_Comm> epetraComm);
+    Teuchos::RCP<Epetra_MultiVector> ConvertToEpetra(const Xpetra::MultiVector<SC,LO,GO,NO> &vector,
+                                                     Teuchos::RCP<Epetra_Comm> epetraComm);
+    
+    template <class SC, class LO,class GO, class NO>
+    Teuchos::RCP<Epetra_CrsMatrix> ConvertToEpetra(const Xpetra::Matrix<SC,LO,GO,NO> &matrix,
+                                                   Teuchos::RCP<Epetra_Comm> epetraComm);
     
     template <class LO>
     Teuchos::Array<LO> GetIndicesFromString(std::string string);

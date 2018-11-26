@@ -37,3 +37,6 @@
 20.11.2018 Alexander Heinlein:
     - Allow different coarse spaces for the different blocks in TwoLevelBlockPreconditioner
     - Add the possiblity to add coordinates in TwoLevelBlockPreconditioner
+
+22.11.2018 Alexander Heinlein:
+    - What to do with '#define FROSCH_OFFSET_MAPS'?
