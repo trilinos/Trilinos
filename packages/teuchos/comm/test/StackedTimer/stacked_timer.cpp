@@ -282,7 +282,19 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
   timer->report(out, comm, options);
 
   out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  // options.print_names_before_values=false requires that
+  // options.align_output=true. The code will automatically fix this
+  // and print a warning if warnings are enabled. Testing this here by
+  // specifying the incorrect logic.
+  options.align_columns = false;
   options.print_names_before_values = false;
+  timer->report(out, comm, options);
+
+  //Testing limited number of levels in printing
+  out << "\n### Printing with max_levels=2 ###" << std::endl;
+  options.max_levels=2;
+  options.align_columns = true;
+  options.print_names_before_values = true;
   timer->report(out, comm, options);
 }
 
