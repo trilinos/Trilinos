@@ -60,7 +60,6 @@
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
 #include "MueLu_Utilities.hpp"
-#include "Tpetra_Details_Behavior.hpp"
 
 namespace MueLu {
 
@@ -149,15 +148,6 @@ namespace MueLu {
     // By default, we don't need global constants for SaP
     APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
     APparams->set("compute global constants",APparams->get("compute global constants",false));
-// *** pass the MM parameters in both the sublist, and as top level parameters
-    auto &APpsub = APparams->sublist( "matrixmatrix: kernel params",false);
-    bool isMM  = APparams->get("isMatrixMatrix_TransferAndFillComplete",false);
-    int  mmOCC = APparams->get("MM_TAFC_OptimizationCoreCount",Tpetra::Details::Behavior::TAFC_OptimizationCoreCount ());
-	
-    APpsub.set("isMatrixMatrix_TransferAndFillComplete", isMM);
-    APpsub.set("MM_TAFC_OptimizationCoreCount", mmOCC);
-// *** 
-
     SC dampingFactor      = as<SC>(pL.get<double>("sa: damping factor"));
     LO maxEigenIterations = as<LO>(pL.get<int>   ("sa: eigenvalue estimate num iterations"));
     bool estimateMaxEigen =        pL.get<bool>  ("sa: calculate eigenvalue estimate");

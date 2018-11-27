@@ -1136,7 +1136,7 @@
       <visible>false</visible>
     </parameter>
      <parameter>
-      <name>matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount </name>
+      <name>matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount </name>
       <type>int</type>
       <description>Core Count above which the
 optimized neighbor discovery is used for Importer construction, for some matrix
@@ -1146,7 +1146,7 @@ multiplication operations.</description>
       <visible>false</visible>
     </parameter>
     <parameter>
-      <name>isMatrixMatrix\_TransferAndFillComplete </name>
+      <name>isMatrixMatrix_TransferAndFillComplete </name>
       <type>bool</type>
       <description>Try to use the
 optimized neighbor discovery for Importer construction.</description>

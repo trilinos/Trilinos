@@ -258,8 +258,8 @@ namespace MueLu {
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
-  "<Parameter name=\"matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
-  "<Parameter name=\"isMatrixMatrix\_TransferAndFillComplete \" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
+  "<Parameter name=\"isMatrixMatrix_TransferAndFillComplete \" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
@@ -666,9 +666,9 @@ namespace MueLu {
       
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
       
-         ("matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount ","matrixmatrix: kernel params:MM\_TAFC\_OptimizationCoreCount ")
+         ("matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount ","matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount ")
       
-         ("isMatrixMatrix\_TransferAndFillComplete ","isMatrixMatrix\_TransferAndFillComplete ")
+         ("isMatrixMatrix_TransferAndFillComplete ","isMatrixMatrix_TransferAndFillComplete ")
       
          ("reuse: type","reuse: type")
       
