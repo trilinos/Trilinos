@@ -73,7 +73,7 @@ namespace panzer {
 
   template<typename LO, typename GO>
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-  panzer::L2Projection<LO,GO>::buildMassMatrix()
+  panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping)
   {
     TEUCHOS_ASSERT(setupCalled_);
 
@@ -129,29 +129,70 @@ namespace panzer {
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
           const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
-          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+          if ( use_lumping ) {
+            Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+              double total_mass = 0.0, trace = 0.0;
 
-            LO cLIDs[256];
-            const int numIds = static_cast<int>(localIds.extent(1));
-            for(int i=0;i<numIds;++i)
-              cLIDs[i] = localIds(cell,i);
+              LO cLIDs[256];
+              const int numIds = static_cast<int>(localIds.extent(1));
+              for(int i=0;i<numIds;++i)
+                cLIDs[i] = localIds(cell,i);
 
-            double vals[256];
-            const int numQP = static_cast<int>(unweightedBasis.extent(2));
+              double vals[256]={0.0};
+              const int numQP = static_cast<int>(unweightedBasis.extent(2));
 
-            for (int qp=0; qp < numQP; ++qp) {
+              for (int row=0; row < numBasisPoints; ++row) {
+                for (int col=0; col < numIds; ++col) {
+                  for (int qp=0; qp < numQP; ++qp) {
+                    auto tmp = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                    total_mass += tmp;
+                    if (col == row )
+                      trace += tmp;
+                  }
+                }
+              }
+
+              for (int row=0; row < numBasisPoints; ++row) {
+                for (int col=0; col < numBasisPoints; ++col)
+                  vals[col] = 0;
+
+                int offset = kOffsets(row);
+                LO lid = localIds(cell,offset);
+                int col = row;
+                vals[col] = 0.0;
+                for (int qp=0; qp < numQP; ++qp)
+                  vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp)*total_mass/trace;
+
+                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+              }
+            });
+
+          } else {
+            Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+
+              LO cLIDs[256];
+              const int numIds = static_cast<int>(localIds.extent(1));
+              for(int i=0;i<numIds;++i)
+                cLIDs[i] = localIds(cell,i);
+
+              double vals[256];
+              const int numQP = static_cast<int>(unweightedBasis.extent(2));
+
               for (int row=0; row < numBasisPoints; ++row) {
                 int offset = kOffsets(row);
                 LO lid = localIds(cell,offset);
 
-                for (int col=0; col < numIds; ++col)
-                  vals[col] = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
-
+                for (int col=0; col < numIds; ++col) {
+                  vals[col] = 0.0;
+                  for (int qp=0; qp < numQP; ++qp)
+                    vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                }
                 M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
-              }
-            }
 
-          });
+              }
+
+            });
+          }
         }
       }
     } else {
@@ -230,7 +271,7 @@ namespace panzer {
   panzer::L2Projection<LO,GO>::buildInverseLumpedMassMatrix()
   {
     using Teuchos::rcp;
-    const auto massMatrix = this->buildMassMatrix();
+    const auto massMatrix = this->buildMassMatrix(true);
     const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getDomainMap(),1,true));
     const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getRangeMap(),1,false));
     tmp->putScalar(1.0);
