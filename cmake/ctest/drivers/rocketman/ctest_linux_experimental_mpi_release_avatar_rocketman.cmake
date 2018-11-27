@@ -86,11 +86,10 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Boost=ON"
   "-DTPL_ENABLE_BoostLib=ON"
   "-DTPL_ENABLE_X11=OFF"
-  "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src;/home/csiefer/avatar/a
-vatar/util/fclib-1.6.1/modules"
+  "-DAvatar_INCLUDE_DIRS=/home/csiefer/avatar/avatar/src;/home/csiefer/avatar/avatar/util/fclib-1.6.1/modules"
   "-DAvatar_LIBRARY_DIRS=/home/csiefer/avatar/build/src;/home/csiefer/avatar/build/util/fclib-1.6.1/modules"
   "-DTPL_Avatar_LIBRARIES='/home/csiefer/avatar/build/src/libavatar.a /home/csiefer/avatar/build/util/fclib-1.6.1/modules/libfclib.a'"
-  "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-L/home/csiefer/avatar/TPLs/lib -lgsl -lgslcblas'"
+  "-DTrilinos_EXTRA_LINK_FLAGS:STRING='-Wl,-rpath,/home/csiefer/avatar/TPLs/lib -L/home/csiefer/avatar/TPLs/lib -lgsl -lgslcblas'"
 )
 
 #
