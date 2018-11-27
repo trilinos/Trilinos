@@ -57,11 +57,11 @@ namespace ROL {
 
 template<typename Real>
 class SerialFunction {
-
-  using PV = PartitionedVector<Real>;
+public:
   using size_type = typename std::vector<Real>::size_type;
 
 private:
+  using PV = PartitionedVector<Real>;
 
   Ptr<Vector<Real>>             u_initial_;                // Initial condition 
   Ptr<Vector<Real>>             u_zero_;                   // Zero state vector

@@ -107,7 +107,7 @@ int main( int argc, char* argv[] )
     (*outStream) << "**************************************************" << std::endl;
     run_test_buildCommunicators(MPI_COMM_WORLD, outStream);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }

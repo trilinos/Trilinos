@@ -363,7 +363,7 @@ public:
         // FIXME-A: Change the Nt+1 back to Nt...
     }
     else {
-      timeDomainConstraint_->setTimeStamp(localTimeStamps);
+      timeDomainConstraint_->setTimeStampsPtr(localTimeStamps);
         // FIXME-A: Change the Nt+1 back to Nt...
       timeDomainConstraint_->setInitialCondition(*ui);
     }

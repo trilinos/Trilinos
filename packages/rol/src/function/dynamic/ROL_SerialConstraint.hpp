@@ -66,17 +66,18 @@ class SerialConstraint : public Constraint_SimOpt<Real>,
 private:
 
   using PV = PartitionedVector<Real>;  
-  using size_type = typename std::vector<Real>::size_type;
   using SerialFunction<Real>::ts;
   using SerialFunction<Real>::clone;
+
+  Ptr<DynamicConstraint<Real>>  con_; // Constraint over a single time step
+
+public:
+
+  using size_type = typename std::vector<Real>::size_type;
   using SerialFunction<Real>::numTimeSteps;
   using SerialFunction<Real>::getZeroState;
   using SerialFunction<Real>::getInitialCondition;
   using SerialFunction<Real>::getSkipInitialCondition;
-
-  Ptr<DynamicConstraint<Real>>  con_; // Constraint over a single time step
-
-public: 
 
   SerialConstraint( const Ptr<DynamicConstraint<Real>>& con, 
                     const Vector<Real>& u_initial, 

@@ -69,19 +69,19 @@ template<typename Real>
 class SerialObjective : public Objective_SimOpt<Real>,
                         public SerialFunction<Real> {
 private:
-
   using PV = PartitionedVector<Real>;  
-  using size_type = typename std::vector<Real>::size_type;
   using SerialFunction<Real>::ts;
   using SerialFunction<Real>::clone;
-  using SerialFunction<Real>::numTimeSteps;
-  using SerialFunction<Real>::getZeroState;
-  using SerialFunction<Real>::getInitialCondition;
-  using SerialFunction<Real>::getSkipInitialCondition;
 
   Ptr<DynamicObjective<Real>>  obj_;        // Objective over a single time step
 
 public:
+
+  using size_type = typename std::vector<Real>::size_type;
+  using SerialFunction<Real>::numTimeSteps;
+  using SerialFunction<Real>::getZeroState;
+  using SerialFunction<Real>::getInitialCondition;
+  using SerialFunction<Real>::getSkipInitialCondition;
 
   SerialObjective( const Ptr<DynamicObjective<Real>>& obj,
                    const Vector<Real>& u_initial,

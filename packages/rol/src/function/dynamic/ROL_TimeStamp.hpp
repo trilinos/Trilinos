@@ -59,7 +59,7 @@ namespace ROL {
 
 template<typename> struct TimeStamp;
 
-// Alias for pointer vector of tyomestamps
+// Alias for pointer vector of TimeStamp objects
 template<typename Real>
 using TimeStampsPtr = Ptr<std::vector<TimeStamp<Real>>>;
 
