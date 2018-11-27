@@ -3,7 +3,8 @@
 
 #include "Teuchos_StackedTimer.hpp"
 #include <limits>
-
+#include <algorithm>
+#include <sstream>
 
 namespace Teuchos {
 
@@ -16,7 +17,7 @@ void error_out(const std::string& msg, const bool)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,msg);
 }
-  
+
 
 void
 StackedTimer::LevelTimer::report(std::ostream &os) {
@@ -35,7 +36,7 @@ StackedTimer::LevelTimer::report(std::ostream &os) {
   os << "Remainder: " << accumulatedTime() - t_total<<std::endl;
 
 }
-  
+
 BaseTimer::TimeInfo
 StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;
@@ -74,6 +75,7 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
   int num_names = flat_names_.size();
   sum_.resize(num_names);
   count_.resize(num_names);
+  updates_.resize(num_names);
   active_.resize(num_names);
 
   if (options.output_minmax || options.output_histogram) {
@@ -162,9 +164,15 @@ std::pair<std::string, std::string> getPrefix(const std::string &name) {
   return std::pair<std::string, std::string>(std::string(""), name);
 }
 
-
 double
-StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time, const OutputOptions &options) {
+StackedTimer::computeColumnWidthsForAligment(std::string prefix,
+                                             int print_level,
+                                             std::vector<bool> &printed,
+                                             double parent_time,
+                                             const OutputOptions &options)
+{
+  // This replicates printLevel but counts column width instead of
+  // printing to ostream. This must be kept in sync with printLevel()
   double total_time = 0.0;
 
   for (int i=0; i<flat_names_.size(); ++i ) {
@@ -177,30 +185,68 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
     if ( prefix != split_names.first)
       continue;
 
-    // Output the data
-    for (int l=0; l<level; ++l)
-      os << "|   ";
-    os << split_names.second << ": ";
+    // Output the indentation level and timer name
+    {
+      std::ostringstream os;
+      for (int l=0; l<level; ++l)
+        os << "|   ";
+      // Output the timer name
+      os << split_names.second << ": ";
+      alignments_.timer_names_= std::max(alignments_.timer_names_,os.str().size());
+    }
+
     // output averge time
-    os << sum_[i]/active_[i];
+    {
+      std::ostringstream os;
+      os << sum_[i]/active_[i];
+      alignments_.average_time_ = std::max(alignments_.average_time_,os.str().size());
+    }
+
     // output percentage
-    if ( options.output_fraction && parent_time>0)
+    if ( options.output_fraction && parent_time>0) {
+      std::ostringstream os;
       os << " - "<<sum_[i]/active_[i]/parent_time*100<<"%";
+      alignments_.fraction_ = std::max(alignments_.fraction_,os.str().size());
+    }
+
     // output count
-    os << " ["<<count_[i]/active_[i]<<"]";
+    {
+      std::ostringstream os;
+      os << " ["<<count_[i]/active_[i]<<"]";
+      alignments_.count_ = std::max(alignments_.count_,os.str().size());
+    }
+
     // output total counts
-    if ( options.output_total_updates )
+    if ( options.output_total_updates) {
+      std::ostringstream os;
       os << " ("<<updates_[i]/active_[i]<<")";
+      alignments_.total_updates_ = std::max(alignments_.total_updates_,os.str().size());
+    }
+
     // Output min and maxs
     if ( options.output_minmax && active_[i]>1) {
-      os << " {min="<<min_[i]<<", max="<<max_[i];
-      if (active_[i]>1)
-        os<<", std dev="<<sqrt(std::max<double>(sum_sq_[i]-sum_[i]*sum_[i]/active_[i],0.0)/(active_[i]-1));
-      os << "}";
+      {
+        std::ostringstream os;
+        os << " {min=" << min_[i];
+        alignments_.min_ = std::max(alignments_.min_,os.str().size());
+      }
+      {
+        std::ostringstream os;
+        os << ", max=" << max_[i];
+        if (active_[i] <= 1)
+          os << "}";
+        alignments_.max_ = std::max(alignments_.max_,os.str().size());
+      }
+      if (active_[i]>1) {
+        std::ostringstream os;
+        os << ", std dev=" << sqrt(std::max<double>(sum_sq_[i]-sum_[i]*sum_[i]/active_[i],0.0)/(active_[i]-1));
+        os << "}";
+        alignments_.stddev_ = std::max(alignments_.stddev_,os.str().size());
+      }
     }
     // Output histogram
     if ( options.output_histogram && active_[i] >1 ) {
-      // dump the histogram
+      std::ostringstream os;
       os << " <";
       for (int h=0;h<options.num_histogram; ++h) {
         if (h)
@@ -209,17 +255,225 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
           os << hist_[h][i];
       }
       os << ">";
+      alignments_.histogram_ = std::max(alignments_.histogram_,os.str().size());
     }
+
+    printed[i] = true;
+    double sub_time = computeColumnWidthsForAligment(flat_names_[i], level+1, printed, sum_[i]/active_[i], options);
+
+    // Print Remainder
+    if (sub_time > 0 ) {
+      if (options.print_names_before_values) {
+        std::ostringstream tmp;
+        for (int l=0; l<=level; ++l)
+          tmp << "|   ";
+        tmp << "Remainder: ";
+        alignments_.timer_names_ = std::max(alignments_.timer_names_,tmp.str().size());
+      }
+      {
+        std::ostringstream tmp;
+        tmp << sum_[i]/active_[i]- sub_time;
+        alignments_.average_time_ = std::max(alignments_.average_time_,tmp.str().size());
+      }
+      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) ) {
+        std::ostringstream tmp;
+        tmp << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
+        alignments_.fraction_ = std::max(alignments_.fraction_,tmp.str().size());
+      }
+    }
+
+    total_time += sum_[i]/active_[i];
+  }
+  return total_time;
+}
+
+double
+StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os, std::vector<bool> &printed, double parent_time, const OutputOptions &options)
+{
+  // NOTE: If you change the outputting format or logic in this
+  // function, you must make a corresponding change to the function
+  // computeColumnWidthsForAlignment() or the alignments will be
+  // incorrect if the user requests aligned output!
+
+  double total_time = 0.0;
+
+  for (int i=0; i<flat_names_.size(); ++i ) {
+    if (printed[i])
+      continue;
+    int level = std::count(flat_names_[i].begin(), flat_names_[i].end(), '@');
+    if ( (level != print_level) || (level >= options.max_levels) )
+      continue;
+    auto split_names = getPrefix(flat_names_[i]);
+    if ( prefix != split_names.first)
+      continue;
+
+    // Output the indentation level
+    if (options.print_names_before_values) {
+      std::ostringstream tmp;
+      for (int l=0; l<level; ++l) {
+        tmp << "|   ";
+      }
+      // Output the timer name
+      tmp << split_names.second << ": ";
+      if (options.align_columns)
+        os << std::left << std::setw(alignments_.timer_names_);
+      os << tmp.str();
+    }
+    // output averge time
+    {
+      std::ostringstream tmp;
+      tmp << sum_[i]/active_[i];
+      if (options.align_columns)
+        os << std::left << std::setw(alignments_.average_time_);
+      os << tmp.str();
+    }
+    // output percentage
+    if ( options.output_fraction && parent_time>0) {
+      std::ostringstream tmp;
+      tmp << " - "<<sum_[i]/active_[i]/parent_time*100<<"%";
+      if (options.align_columns)
+        os << std::left << std::setw(alignments_.fraction_);
+      os << tmp.str();
+    }
+    // to keep alignment for later columns if requested
+    else if (options.output_fraction) {
+      if (options.align_columns)
+        os << std::setw(alignments_.fraction_) << " ";
+    }
+    // output count
+    {
+      std::ostringstream tmp;
+      tmp << " ["<<count_[i]/active_[i]<<"]";
+      if (options.align_columns)
+        os << std::left << std::setw(alignments_.count_);
+      os << tmp.str();
+    }
+    // output total counts
+    if ( options.output_total_updates ) {
+      std::ostringstream tmp;
+      tmp << " ("<<updates_[i]/active_[i]<<")";
+      if (options.align_columns)
+        os << std::left << std::setw(alignments_.total_updates_);
+      os << tmp.str();
+    }
+    // Output min and maxs
+    if ( options.output_minmax && active_[i]>1) {
+      {
+        std::ostringstream tmp;
+        tmp << " {min="<<min_[i];
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.min_);
+        os << tmp.str();
+      }
+      {
+        std::ostringstream tmp;
+        tmp <<", max="<<max_[i];
+        if (active_[i] <= 1)
+          tmp << "}";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.max_);
+        os << tmp.str();
+      }
+      if (active_[i]>1) {
+        std::ostringstream tmp;
+        tmp << ", std dev="<<sqrt(std::max<double>(sum_sq_[i]-sum_[i]*sum_[i]/active_[i],0.0)/(active_[i]-1));
+        tmp << "}";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.stddev_);
+        os << tmp.str();
+      }
+    }
+    else if ( options.output_minmax) {
+      // this block keeps alignment for single rank timers
+      size_t offset = alignments_.min_ + alignments_.max_ + alignments_.stddev_;
+      for (size_t j=0; j < offset; ++j)
+        os << " ";
+    }
+
+    // Output histogram
+    if ( options.output_histogram && active_[i] >1 ) {
+      std::ostringstream tmp;
+      tmp << " <";
+      for (int h=0;h<options.num_histogram; ++h) {
+        if (h)
+          tmp <<", "<<hist_[h][i];
+        else
+          tmp << hist_[h][i];
+      }
+      tmp << ">";
+      if (options.align_columns)
+        os << std::left << std::setw(alignments_.histogram_);
+      os << tmp.str();
+    }
+    else if ( options.output_histogram) {
+      // this block keeps alignment for single rank timers
+      for (size_t j=0; j < alignments_.histogram_; ++j)
+        os << " ";
+    }
+
+    if (not options.print_names_before_values) {
+      std::ostringstream tmp;
+      tmp << " ";
+      for (int l=0; l<level; ++l) {
+        tmp << "|   ";
+      }
+      // Output the timer name
+      tmp << split_names.second << ": ";
+      os << tmp.str();
+    }
+
     os << std::endl;
     printed[i] = true;
     double sub_time = printLevel(flat_names_[i], level+1, os, printed, sum_[i]/active_[i], options);
+
+    // Print Remainder
     if (sub_time > 0 ) {
-      for (int l=0; l<=level; ++l)
-        os << "|   ";
-      os << "Remainder: " <<  sum_[i]/active_[i]- sub_time;
-      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) )
-        os << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
-      os <<std::endl;
+      if (options.print_names_before_values) {
+        std::ostringstream tmp;
+        for (int l=0; l<=level; ++l)
+          tmp << "|   ";
+        tmp << "Remainder: ";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.timer_names_);
+        os << tmp.str();
+      }
+      {
+        std::ostringstream tmp;
+        tmp << sum_[i]/active_[i]- sub_time;
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.average_time_);
+        os << tmp.str();
+      }
+      if ( options.output_fraction && (sum_[i]/active_[i] > 0.) ) {
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.fraction_);
+        std::ostringstream tmp;
+        tmp << " - "<< (sum_[i]/active_[i]- sub_time)/(sum_[i]/active_[i])*100 << "%";
+        os << tmp.str();
+      }
+      if (not options.print_names_before_values) {
+        {
+          size_t offset = 0;
+          offset += alignments_.count_;
+          if (options.output_total_updates)
+            offset += alignments_.total_updates_;
+          if (options.output_minmax)
+            offset += alignments_.min_ + alignments_.max_ + alignments_.stddev_;
+          if (options.output_histogram)
+            offset += alignments_.histogram_;
+          for (size_t j=0; j < offset; ++j)
+            os << " ";
+        }
+        std::ostringstream tmp;
+        tmp << " ";
+        for (int l=0; l<=level; ++l)
+          tmp << "|   ";
+        tmp << "Remainder: ";
+        if (options.align_columns)
+          os << std::left << std::setw(alignments_.timer_names_);
+        os << tmp.str();
+      }
+      os << std::endl;
     }
     total_time += sum_[i]/active_[i];
   }
@@ -233,15 +487,28 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
   collectRemoteData(comm, options);
   if (rank(*comm) == 0 ) {
     if (options.print_warnings) {
-      os << "*** Teuchos::StackedTimer::report() - Remainder for a block will be ***"
-         << "\n*** incorrect if a timer in the block does not exist on every rank  ***"
+      os << "*** Teuchos::StackedTimer::report() - Remainder for a level will be ***"
+         << "\n*** incorrect if a timer in the level does not exist on every rank  ***"
          << "\n*** of the MPI Communicator.                                        ***"
          << std::endl;
     }
     if ( (options.max_levels != INT_MAX) && options.print_warnings) {
-      os << "Teuchos::StackedTimer::report() - max_levels set to " << options.max_levels
-         << ", to print more levels, increase value of OutputOptions::max_levels." << std::endl;
+      os << "Teuchos::StackedTimer::report() - max_levels manually set to " << options.max_levels
+         << ". \nTo print more levels, increase value of OutputOptions::max_levels." << std::endl;
     }
+    if (options.align_columns) {
+      std::vector<bool> printed(flat_names_.size(), false);
+      computeColumnWidthsForAligment("", 0, printed, 0., options);
+    }
+    if (not options.print_names_before_values and not options.align_columns) {
+      options.align_columns = true;
+      if (options.print_warnings)
+        os << "Teuchos::StackedTimer::report() - option print_names_before_values=false "
+           << "\nrequires that the option align_columns=true too. Setting the value for "
+           << "\nalign_column to true."
+           << std::endl;
+    }
+
     std::vector<bool> printed(flat_names_.size(), false);
     printLevel("", 0, os, printed, 0., options);
   }
