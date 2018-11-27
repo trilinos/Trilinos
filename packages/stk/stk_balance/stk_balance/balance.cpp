@@ -161,6 +161,15 @@ void initial_decomp_and_balance(stk::mesh::BulkData &bulk,
 
 void run_stk_balance_with_settings(const std::string& outputFilename, const std::string& exodusFilename, MPI_Comm comm, stk::balance::BalanceSettings& graphOptions)
 {
+    const std::string trimmedInputName = (exodusFilename.substr(0,2) == "./") ? exodusFilename.substr(2) : exodusFilename;
+    const std::string trimmedOutputName = (outputFilename.substr(0,2) == "./") ? outputFilename.substr(2) : outputFilename;
+    const bool isSerial = (stk::parallel_machine_size(comm) == 1);
+    const bool inputEqualsOutput = (trimmedOutputName == trimmedInputName);
+    ThrowRequireMsg(!(isSerial && inputEqualsOutput),
+                    "Running on 1 MPI rank and input-file ("<<exodusFilename
+                     <<") == output-file, doing nothing. Specify outputDirectory if you "
+                     <<"wish to copy the input-file to an output-file of the same name.");
+
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
     initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);

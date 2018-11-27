@@ -51,6 +51,8 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldState
 #include "stk_mesh/base/Part.hpp"        // for Part
 #include "stk_mesh/base/MetaData.hpp"
+#include "stk_io/MeshField.hpp"
+#include "stk_io/FieldAndName.hpp"
 
 namespace Ioss { class ElementTopology; }
 namespace Ioss { class EntityBlock; }
@@ -66,7 +68,6 @@ namespace stk { namespace mesh { class Selector; } }
 
 namespace stk {
 namespace io {
-
 
 struct OutputParams
 {
@@ -85,44 +86,107 @@ public:
         initialize_output_selectors();
     }
 
-    Ioss::Region &io_region() const { ThrowRequireMsg(m_ioRegion != nullptr, "Region is null"); return *m_ioRegion; }
-    const mesh::BulkData &bulk_data() const {return m_bulkData;}
+    Ioss::Region &io_region() const {
+        ThrowRequireMsg(m_ioRegion != nullptr, "Region is null"); return *m_ioRegion;
+    }
+    const mesh::BulkData &bulk_data() const {
+        return m_bulkData;
+    }
 
-    const stk::mesh::Selector *get_subset_selector() const {return m_subsetSelector;}
-    void set_subset_selector(const stk::mesh::Selector *subset_selector) {m_subsetSelector = subset_selector;}
-    bool has_subset_selector() const {return nullptr != m_subsetSelector;}
+    const stk::mesh::Selector *get_subset_selector() const {
+        return m_subsetSelector;
+    }
+    void set_subset_selector(const stk::mesh::Selector *subset_selector) {
+        m_subsetSelector = subset_selector;
+    }
+    bool has_subset_selector() const {
+        return nullptr != m_subsetSelector;
+    }
 
-    const stk::mesh::Selector *get_shared_selector() const {return m_sharedSelector;}
-    void set_shared_selector(const stk::mesh::Selector *shared_selector) {m_sharedSelector = shared_selector;}
-    bool has_shared_selector() const {return nullptr != m_sharedSelector;}
+    const stk::mesh::Selector *get_shared_selector() const {
+        return m_sharedSelector;
+    }
+    void set_shared_selector(const stk::mesh::Selector *shared_selector) {
+        m_sharedSelector = shared_selector;
+    }
+    bool has_shared_selector() const {
+        return nullptr != m_sharedSelector;
+    }
 
-    const stk::mesh::Selector *get_output_selector(stk::topology::rank_t rank) const {return is_valid_rank(rank) ? m_outputSelector[rank] : nullptr;}
-    void set_output_selector(stk::topology::rank_t rank, const stk::mesh::Selector *output_selector) { if(is_valid_rank(rank)) {m_outputSelector[rank] = output_selector;} }
-    bool has_output_selector(stk::topology::rank_t rank) const {return is_valid_rank(rank) ? (nullptr != m_outputSelector[rank]) : false;}
+    const stk::mesh::Selector *get_output_selector(stk::topology::rank_t rank) const {
+        return is_valid_rank(rank) ? m_outputSelector[rank] : nullptr;
+    }
+    void set_output_selector(stk::topology::rank_t rank, const stk::mesh::Selector *output_selector) {
+        if(is_valid_rank(rank)) {
+            m_outputSelector[rank] = output_selector;
+        }
+    }
+    bool has_output_selector(stk::topology::rank_t rank) const {
+        return is_valid_rank(rank) ? (nullptr != m_outputSelector[rank]) : false;
+    }
 
-    bool get_sort_stk_parts_by_name() const {return m_sortStkPartsByName;}
-    void set_sort_stk_parts_by_name(const bool sortStkPartsByName) {m_sortStkPartsByName = sortStkPartsByName;}
+    bool get_sort_stk_parts_by_name() const {
+        return m_sortStkPartsByName;
+    }
+    void set_sort_stk_parts_by_name(const bool sortStkPartsByName) {
+        m_sortStkPartsByName = sortStkPartsByName;
+    }
 
-    bool get_use_nodeset_for_block_node_fields() const {return m_useNodesetForBlockNodeFields;}
-    void set_use_nodeset_for_block_node_fields(const bool useNodesetForBlockNodeFields) {m_useNodesetForBlockNodeFields = useNodesetForBlockNodeFields;}
+    bool get_use_nodeset_for_block_node_fields() const {
+        return m_useNodesetForBlockNodeFields;
+    }
+    void set_use_nodeset_for_block_node_fields(const bool useNodesetForBlockNodeFields) {
+        m_useNodesetForBlockNodeFields = useNodesetForBlockNodeFields;
+    }
 
-    bool get_use_nodeset_for_sideset_node_fields() const {return m_useNodesetForSidesetNodeFields;}
-    void set_use_nodeset_for_sideset_node_fields(const bool useNodesetForSidesetNodeFields) {m_useNodesetForSidesetNodeFields = useNodesetForSidesetNodeFields;}
+    bool get_use_nodeset_for_sideset_node_fields() const {
+        return m_useNodesetForSidesetNodeFields;
+    }
+    void set_use_nodeset_for_sideset_node_fields(const bool useNodesetForSidesetNodeFields) {
+        m_useNodesetForSidesetNodeFields = useNodesetForSidesetNodeFields;
+    }
 
-    bool check_field_existence_when_creating_nodesets() const {return m_checkFieldExistenceWhenCreatingNodesets;}
-    void check_field_existence_when_creating_nodesets(const bool checkFieldExistenceWhenCreatingNodesets) {m_checkFieldExistenceWhenCreatingNodesets = checkFieldExistenceWhenCreatingNodesets;}
+    bool check_field_existence_when_creating_nodesets() const {
+        return m_checkFieldExistenceWhenCreatingNodesets;
+    }
+    void check_field_existence_when_creating_nodesets(const bool checkFieldExistenceWhenCreatingNodesets) {
+        m_checkFieldExistenceWhenCreatingNodesets = checkFieldExistenceWhenCreatingNodesets;
+    }
 
-    bool get_use_part_id_for_output() const {return m_usePartIdForOutput;}
-    void set_use_part_id_for_output(const bool usePartIdForOutput) {m_usePartIdForOutput = usePartIdForOutput;}
+    bool get_use_part_id_for_output() const {
+        return m_usePartIdForOutput;
+    }
+    void set_use_part_id_for_output(const bool usePartIdForOutput) {
+        m_usePartIdForOutput = usePartIdForOutput;
+    }
 
-    bool get_has_ghosting() const {return m_hasGhosting;}
-    void set_has_ghosting(const bool hasGhosting) {m_hasGhosting = hasGhosting;}
+    bool get_has_ghosting() const {
+        return m_hasGhosting;
+    }
+    void set_has_ghosting(const bool hasGhosting) {
+        m_hasGhosting = hasGhosting;
+    }
 
-    bool get_has_adaptivity() const {return m_hasAdaptivity;}
-    void set_has_adaptivity(const bool hasAdaptivity) {m_hasAdaptivity = hasAdaptivity;}
+    bool get_has_adaptivity() const {
+        return m_hasAdaptivity;
+    }
+    void set_has_adaptivity(const bool hasAdaptivity) {
+        m_hasAdaptivity = hasAdaptivity;
+    }
 
-    bool get_is_skin_mesh() const {return m_isSkinMesh;}
-    void set_is_skin_mesh(const bool skinMesh) {m_isSkinMesh = skinMesh;}
+    bool get_is_skin_mesh() const {
+        return m_isSkinMesh;
+    }
+    void set_is_skin_mesh(const bool skinMesh) {
+        m_isSkinMesh = skinMesh;
+    }
+
+    const std::vector<stk::io::FieldAndName>& get_additional_attribute_fields() const {
+        return m_additionalAttributeFields;
+    }
+    void set_additional_attribute_fields(const std::vector<stk::io::FieldAndName>& additionalAttributeFields) {
+        m_additionalAttributeFields = additionalAttributeFields;
+    }
 
 private:
     OutputParams();
@@ -150,6 +214,7 @@ private:
     bool m_hasGhosting = false;
     bool m_hasAdaptivity = false;
     bool m_isSkinMesh = false;
+    std::vector<stk::io::FieldAndName> m_additionalAttributeFields;
 };
 
 }//namespace io

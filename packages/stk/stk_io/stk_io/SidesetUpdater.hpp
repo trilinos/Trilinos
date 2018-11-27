@@ -118,6 +118,8 @@ private:
     bool internalSidesetWarningHasBeenIssued;
 };
 
+void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag);
+
 }} // end stk mesh namespaces
 
 #endif

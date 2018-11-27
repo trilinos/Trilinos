@@ -42,6 +42,9 @@
 #include <algorithm>                               // for swap
 #include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/InputFile.hpp>
+#include <stk_io/OutputFile.hpp>
+#include <stk_io/Heartbeat.hpp>
 #include <stk_io/MeshField.hpp>                    // for MeshField, etc
 #include <stk_mesh/base/BulkData.hpp>              // for BulkData
 #include <stk_mesh/base/Selector.hpp>              // for Selector
@@ -66,12 +69,6 @@ namespace stk { namespace mesh { struct ConnectivityMap; } }
 // #######################   End Clang Header Tool Managed Headers  ########################
 namespace stk { namespace mesh { class BulkData; } }
 
-
-
-
-
-
-
 namespace Ioss { class DatabaseIO; }
 
 namespace stk {
@@ -87,243 +84,6 @@ namespace stk {
         std::string time;
     };
 
-    // ------------------------------------------------------------------------
-    struct GlobalAnyVariable {
-      GlobalAnyVariable(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
-	: m_name(name), m_value(value), m_type(type)
-      {}
-
-      std::string m_name;
-      const boost::any *m_value;
-      stk::util::ParameterType::Type m_type;
-    };
-
-namespace impl
-{
-    class OutputFile
-    {
-    public:
-      OutputFile(const std::string &filename, MPI_Comm communicator, DatabasePurpose db_type,
-		 Ioss::PropertyManager& property_manager, const Ioss::Region *input_region,
-		 char const* type = "exodus", bool openFileImmediately = true)
-        : m_current_output_step(-1), m_use_nodeset_for_block_nodes_fields(false), m_use_nodeset_for_sideset_nodes_fields(false),
-          m_check_field_existence_when_creating_nodesets(true), m_use_part_id_for_output(true),
-          m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
-          m_appending_to_mesh(false),
-          m_has_ghosting(false),
-          m_has_adaptivity(false),
-          m_is_skin_mesh(false),
-	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr), m_shared_selector(nullptr),
-	  m_multiStateSuffixes(nullptr)
-      {
-	initialize_output_selectors();
-	setup_output_file(filename, communicator, property_manager, type, openFileImmediately);
-
-	initialize_output_selectors();
-      }
-
-      OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
-		 DatabasePurpose db_type, const Ioss::Region *input_region)
-        : m_current_output_step(-1), m_use_nodeset_for_block_nodes_fields(false), m_use_nodeset_for_sideset_nodes_fields(false),
-          m_check_field_existence_when_creating_nodesets(true), m_use_part_id_for_output(true),
-          m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
-          m_appending_to_mesh(false),
-          m_has_ghosting(false),
-          m_has_adaptivity(false),
-          m_is_skin_mesh(false),
-	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr), m_shared_selector(nullptr),
-	  m_multiStateSuffixes(nullptr)
-      {
-	m_region = ioss_output_region;
-	m_mesh_defined = true;
-	initialize_output_selectors();
-      }
-      Teuchos::RCP<Ioss::Region> get_output_io_region() {
-	return m_region;
-      }
-      ~OutputFile();
-
-      void set_input_region(const Ioss::Region *input_region);
-
-      void setup_output_params(OutputParams &params);
-
-      bool set_multistate_suffixes(std::vector<std::string>& multiStateSuffixes);
-
-      void write_output_mesh(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
-      void flush_output() const;
-      void add_field(stk::mesh::FieldBase &field, const std::string &alternate_name, stk::mesh::EntityRank var_type);
-      void add_field(stk::mesh::FieldBase &field, const OutputVariableParams &var, stk::mesh::EntityRank var_type);
-      void add_user_data(const std::vector<std::string>& userData, const std::string &alternate_name, stk::io::DataLocation loc);
-      bool has_global(const std::string &globalVarName) const;
-      void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
-      void add_global_ref(const std::string &variableName, const boost::any *value, stk::util::ParameterType::Type type);
-      void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
-      void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
-      void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
-
-      void write_global(const std::string &variableName,
-			const boost::any &value, stk::util::ParameterType::Type type);
-      void write_global(const std::string &variableName, double globalVarData);
-      void write_global(const std::string &variableName, int globalVarData);
-      void write_global(const std::string &variableName, std::vector<double>& globalVarData);
-      void write_global(const std::string &variableName, std::vector<int>& globalVarData);
-
-      void begin_output_step(double time, const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
-      void end_output_step();
-
-      int write_defined_output_fields(const stk::mesh::BulkData& bulk_data, const stk::mesh::FieldState *state = nullptr);
-      int write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
-                                                          std::vector<stk::mesh::Part*>& selectOutputElementParts,
-                                                          const stk::mesh::FieldState *state = nullptr);
-
-      int process_output_request(double time, const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
-
-      void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
-      void set_shared_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
-
-      void set_output_selector(stk::topology::rank_t rank, Teuchos::RCP<stk::mesh::Selector> my_selector);
-
-      bool use_nodeset_for_block_nodes_fields() const;
-      void use_nodeset_for_block_nodes_fields(bool true_false);
-
-      bool use_nodeset_for_sideset_nodes_fields() const;
-      void use_nodeset_for_sideset_nodes_fields(bool true_false);
-      
-      bool check_field_existence_when_creating_nodesets() const;
-      void check_field_existence_when_creating_nodesets(bool true_false);
-
-      bool use_part_id_for_output() const;
-      void use_part_id_for_output(bool true_false);
-
-      bool has_ghosting() const;
-      void has_ghosting(bool hasGhosting);
-
-      bool has_adaptivity() const;
-      void has_adaptivity(bool hasAdaptivity);
-
-      bool is_skin_mesh() const;
-      void is_skin_mesh(bool skinMesh);
-
-      Ioss::DatabaseIO *get_output_database();
-
-      std::vector<stk::mesh::Entity> get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name);
-
-    private:
-      void define_output_fields(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
-      void setup_output_file(const std::string &filename, MPI_Comm communicator,
-			     Ioss::PropertyManager &property_manager,
-                             char const* type = "exodus", bool openFileImmediately = true);
-      void initialize_output_selectors()
-      {
-          m_output_selector[stk::topology::NODE_RANK].reset();
-          m_output_selector[stk::topology::EDGE_RANK].reset();
-          m_output_selector[stk::topology::FACE_RANK].reset();
-          m_output_selector[stk::topology::ELEM_RANK].reset();
-      }
-
-      int m_current_output_step;
-      bool m_use_nodeset_for_block_nodes_fields;
-      bool m_use_nodeset_for_sideset_nodes_fields;
-      bool m_check_field_existence_when_creating_nodesets;
-      bool m_use_part_id_for_output;
-      bool m_mesh_defined;
-      bool m_fields_defined;
-      bool m_non_any_global_variables_defined;
-      bool m_appending_to_mesh;
-      bool m_has_ghosting;
-      bool m_has_adaptivity;
-      bool m_is_skin_mesh;
-      DatabasePurpose m_db_purpose;
-      const Ioss::Region* m_input_region;
-      Teuchos::RCP<stk::mesh::Selector> m_subset_selector;
-      Teuchos::RCP<stk::mesh::Selector> m_shared_selector;
-      Teuchos::RCP<stk::mesh::Selector> m_output_selector[stk::topology::ELEM_RANK+1];
-      Teuchos::RCP<Ioss::Region> m_region;
-      std::vector<stk::io::FieldAndName> m_named_fields;
-      std::vector<stk::io::UserDataAndName> m_user_data;
-
-      // Global fields that can be output automatically without app calling write_global.
-      std::vector<GlobalAnyVariable> m_global_any_fields; 
-
-      std::vector<std::string>* m_multiStateSuffixes = nullptr;
-
-      OutputFile(const OutputFile &);
-      const OutputFile & operator=(const OutputFile &);
-    };
-}
-
-    // ========================================================================
-    // ========================================================================    
-    enum HeartbeatType {
-      BINARY = 1, /* Exodus (history file) */
-      CSV,        /* Comma-seperated values */
-      TS_CSV,     /* same as CSV except lines preceded by timestamp*/
-      TEXT,       /* Same as CSV except fields separated by tab (by default) */
-      TS_TEXT,    /* same as TEXT except lines preceded by timestamp*/
-      SPYHIS,     /* Format for use in spyhis plotter */
-      NONE        /* Ignored in this class, can be used by apps */
-    };
-
-namespace impl
-{
-    // ========================================================================
-    class Heartbeat {
-    public:
-      Heartbeat(const std::string &filename, HeartbeatType db_type,
-                Ioss::PropertyManager properties, MPI_Comm comm,
-                bool openFileImmediately = true);
-      ~Heartbeat() {};
-      
-      void define_global_ref(const std::string &variableName,
-                          const boost::any *value,
-                          stk::util::ParameterType::Type type,
-                          int copies = 1,
-                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
-
-      void define_global_ref(const std::string &name,
-                          const boost::any *value,
-                          const std::string &storage,
-                          Ioss::Field::BasicType dataType,
-                          int copies = 1,
-                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
-
-      void add_global_ref(const std::string &variableName,
-                          const boost::any *value,
-                          stk::util::ParameterType::Type type,
-                          int copies = 1,
-                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
-
-      void add_global_ref(const std::string &name,
-                          const boost::any *value,
-                          const std::string &storage,
-                          Ioss::Field::BasicType dataType,
-                          int copies = 1,
-                          Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
-
-      void process_output(int step, double time);
-      void process_output_pre_write(int step, double time);
-      void process_output_write(int step, double time);
-      void process_output_post_write(int step, double time);
-
-      void flush_output() const;
-      Teuchos::RCP<Ioss::Region> get_heartbeat_io_region() {
-          return m_region;
-      }
-
-      void begin_define_transient();
-      void end_define_transient();
-
-      bool has_global(const std::string &name);
-
-    private:
-      std::vector<GlobalAnyVariable> m_fields;
-      Teuchos::RCP<Ioss::Region> m_region;
-      
-      int m_current_step;
-      int m_processor;
-    };
-}
-    // ========================================================================    
     //-BEGIN
     class StkMeshIoBroker {
     public:
@@ -432,12 +192,12 @@ namespace impl
       void set_sideset_face_creation_behavior(SideSetFaceCreationBehavior behavior)
       {
           ThrowRequireWithSierraHelpMsg(behavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST);
-          m_sideset_face_creation_behavior = behavior;
+          m_sidesetFaceCreationBehavior = behavior;
       }
 
       void set_auto_load_attributes(bool shouldAutoLoadAttributes)
       {
-          m_auto_load_attributes = shouldAutoLoadAttributes;
+          m_autoLoadAttributes = shouldAutoLoadAttributes;
       }
 
       // Create the Ioss::DatabaseIO associated with the specified filename
@@ -518,7 +278,7 @@ namespace impl
       void remove_mesh_database(size_t input_file_index);
 
       size_t set_active_mesh(size_t input_file_index);
-      size_t get_active_mesh() const {return m_active_mesh_index;}
+      size_t get_active_mesh() const {return m_activeMeshIndex;}
       
       // Read/Generate the metadata for mesh of the specified type. By
       // default, all entities in the mesh (nodeblocks, element blocks,
@@ -695,6 +455,8 @@ namespace impl
       void add_field(size_t output_file_index, stk::mesh::FieldBase &field, stk::mesh::EntityRank var_type, const std::string &db_name);
       void add_field(size_t output_file_index, stk::mesh::FieldBase &field, stk::mesh::EntityRank var_type, const OutputVariableParams &var);
 
+      void add_attribute_field(size_t output_file_index, stk::mesh::FieldBase &field, const OutputVariableParams &var);
+
       void add_user_data(size_t output_file_index,
                      const std::vector<std::string> &parts,
                      const std::string &db_name,
@@ -824,11 +586,11 @@ namespace impl
 
       // Special RCP getters for meta_data and bulk_data. Use these to handoff
       // meta/bulk data to classes that also track meta/bulk data via RCP.
-      Teuchos::RCP<stk::mesh::MetaData> meta_data_rcp() { return m_meta_data; }
-      Teuchos::RCP<stk::mesh::BulkData> bulk_data_rcp() { return m_bulk_data; }
+      Teuchos::RCP<stk::mesh::MetaData> meta_data_rcp() { return m_metaData; }
+      Teuchos::RCP<stk::mesh::BulkData> bulk_data_rcp() { return m_bulkData; }
 
-      Teuchos::RCP<const stk::mesh::MetaData> meta_data_rcp() const { return m_meta_data; }
-      Teuchos::RCP<const stk::mesh::BulkData> bulk_data_rcp() const { return m_bulk_data; }
+      Teuchos::RCP<const stk::mesh::MetaData> meta_data_rcp() const { return m_metaData; }
+      Teuchos::RCP<const stk::mesh::BulkData> bulk_data_rcp() const { return m_bulkData; }
 
       // Return the coordinate field for this mesh.
       stk::mesh::FieldBase const& get_coordinate_field();
@@ -845,19 +607,19 @@ namespace impl
       // visualization packages do not handle nodeset fields as well
       // as they handle nodal field.  This function specifies how the
       // user application wants the fields output.  
-      bool use_nodeset_for_block_nodes_fields(size_t output_index) const;
-      void use_nodeset_for_block_nodes_fields(size_t output_index,
-					     bool true_false);
-      bool use_nodeset_for_sideset_nodes_fields(size_t output_index) const;
-      void use_nodeset_for_sideset_nodes_fields(size_t output_index,
-                                             bool true_false);
-      bool use_nodeset_for_part_nodes_fields(size_t output_index) const;
-      void use_nodeset_for_part_nodes_fields(size_t output_index,
-                                             bool true_false);
-      bool check_field_existence_when_creating_nodesets(size_t output_index) const;
-      void check_field_existence_when_creating_nodesets(size_t output_index,
-                                                        bool true_false);
-      void use_part_id_for_output(size_t output_file_index, bool true_false);
+      bool use_nodeset_for_block_nodes_fields(size_t outputIndex) const;
+      void use_nodeset_for_block_nodes_fields(size_t outputIndex,
+					     bool flag);
+      bool use_nodeset_for_sideset_nodes_fields(size_t outputIndex) const;
+      void use_nodeset_for_sideset_nodes_fields(size_t outputIndex,
+                                             bool flag);
+      bool use_nodeset_for_part_nodes_fields(size_t outputIndex) const;
+      void use_nodeset_for_part_nodes_fields(size_t outputIndex,
+                                             bool flag);
+      bool check_field_existence_when_creating_nodesets(size_t outputIndex) const;
+      void check_field_existence_when_creating_nodesets(size_t outputIndex,
+                                                        bool flag);
+      void use_part_id_for_output(size_t output_file_index, bool flag);
       bool use_part_id_for_output(size_t output_file_index) const;
 
       void set_option_to_not_collapse_sequenced_fields();
@@ -876,14 +638,15 @@ namespace impl
       void set_attribute_field_ordering_stored_by_part_ordinal(const std::vector<std::vector<int>> &ordering);
       void fill_coordinate_frames(std::vector<int>& ids, std::vector<double>& coords, std::vector<char>& tags);
       std::string get_output_filename(size_t outputIndex);
+
       bool is_output_index_valid(size_t outputIndex);
       bool is_input_index_valid(size_t outputIndex);
 
-      Ioss::DatabaseIO *get_input_database(size_t input_index);
-      Ioss::DatabaseIO *get_output_database(size_t output_index);
+      Ioss::DatabaseIO *get_input_database(size_t inputIndex);
+      Ioss::DatabaseIO *get_output_database(size_t outputIndex);
 
-      bool set_input_multistate_suffixes(size_t input_index, std::vector<std::string>& multiStateSuffixes);
-      bool set_output_multistate_suffixes(size_t output_index, std::vector<std::string>& multiStateSuffixes);
+      bool set_input_multistate_suffixes(size_t inputIndex, std::vector<std::string>& multiStateSuffixes);
+      bool set_output_multistate_suffixes(size_t outputIndex, std::vector<std::string>& multiStateSuffixes);
 
       void set_reference_input_region(size_t outputIndex, StkMeshIoBroker& inputBroker);
 
@@ -896,13 +659,12 @@ namespace impl
       int check_integer_size_requirements();
       void create_surface_to_block_mapping();
 
-      std::vector<stk::mesh::Entity> get_output_entities(size_t output_index, const stk::mesh::BulkData& bulk_data, const std::string &name);
-
+      std::vector<stk::mesh::Entity> get_output_entities(size_t outputIndex, const stk::mesh::BulkData& bulk_data, const std::string &name);
       //-END
     protected:
       void set_sideset_face_creation_behavior_for_testing(SideSetFaceCreationBehavior behavior)
       {
-          m_sideset_face_creation_behavior = behavior;
+          m_sidesetFaceCreationBehavior = behavior;
       }
 
     protected:
@@ -936,40 +698,40 @@ namespace impl
       // | INTEGER_SIZE_DB       | 4 or 8 indicating byte size of integers stored on the database.
       // | INTEGER_SIZE_API      | 4 or 8 indicating byte size of integers used in api functions.
       // | LOGGING               | (true/false) to enable/disable logging of field input/output
-      Ioss::PropertyManager m_property_manager;
+      Ioss::PropertyManager m_propertyManager;
 
       stk::ParallelMachine m_communicator;
-      std::vector<std::string>       m_rank_names; // Optional rank name vector.
+      std::vector<std::string>       m_rankNames; // Optional rank name vector.
 
-      Teuchos::RCP<stk::mesh::MetaData>  m_meta_data;
-      Teuchos::RCP<stk::mesh::BulkData>  m_bulk_data;
+      Teuchos::RCP<stk::mesh::MetaData>  m_metaData;
+      Teuchos::RCP<stk::mesh::BulkData>  m_bulkData;
 
 
-      stk::mesh::Selector m_active_selector;
-      Teuchos::RCP<stk::mesh::Selector> m_deprecated_selector;
+      stk::mesh::Selector m_activeSelector;
+      Teuchos::RCP<stk::mesh::Selector> m_deprecatedSelector;
 
-      const stk::mesh::ConnectivityMap* m_connectivity_map;
+      const stk::mesh::ConnectivityMap* m_connectivityMap;
     protected:
       std::vector<std::vector<int>> attributeFieldOrderingByPartOrdinal;
-      std::vector<Teuchos::RCP<impl::OutputFile> > m_output_files;
+      std::vector<Teuchos::RCP<impl::OutputFile> > m_outputFiles;
     private:
       std::vector<Teuchos::RCP<impl::Heartbeat> > m_heartbeat;
     protected:
-      std::vector<Teuchos::RCP<InputFile> > m_input_files;
+      std::vector<Teuchos::RCP<InputFile> > m_inputFiles;
     private:
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
     void store_attribute_field_ordering();
 
     protected:
-      size_t m_active_mesh_index;
-      SideSetFaceCreationBehavior m_sideset_face_creation_behavior;
-      bool m_auto_load_attributes;
+      size_t m_activeMeshIndex;
+      SideSetFaceCreationBehavior m_sidesetFaceCreationBehavior;
+      bool m_autoLoadAttributes;
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {
       validate_output_file_index(output_file_index);
-      return m_output_files[output_file_index]->get_output_io_region();
+      return m_outputFiles[output_file_index]->get_output_io_region();
     }
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_heartbeat_io_region(size_t heartbeat_file_index) {
@@ -990,70 +752,70 @@ namespace impl
     inline void StkMeshIoBroker::set_subset_selector(size_t output_file_index,
 						     Teuchos::RCP<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_subset_selector(my_selector);
+      m_outputFiles[output_file_index]->set_subset_selector(my_selector);
     }
 
     inline void StkMeshIoBroker::set_subset_selector(size_t output_file_index,
 						     stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_subset_selector(Teuchos::rcpFromRef(my_selector));
+      m_outputFiles[output_file_index]->set_subset_selector(Teuchos::rcpFromRef(my_selector));
     }
 
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,
                                                      Teuchos::RCP<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_shared_selector(my_selector);
+      m_outputFiles[output_file_index]->set_shared_selector(my_selector);
     }
 
     inline void StkMeshIoBroker::set_shared_selector(size_t output_file_index,
                                                      stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_shared_selector(Teuchos::rcpFromRef(my_selector));
+      m_outputFiles[output_file_index]->set_shared_selector(Teuchos::rcpFromRef(my_selector));
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
                                                      stk::topology::rank_t rank,
                                                      Teuchos::RCP<stk::mesh::Selector> my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_output_selector(rank, my_selector);
+      m_outputFiles[output_file_index]->set_output_selector(rank, my_selector);
     }
 
     inline void StkMeshIoBroker::set_output_selector(size_t output_file_index,
                                                      stk::topology::rank_t rank,
                                                      stk::mesh::Selector &my_selector) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->set_output_selector(rank, Teuchos::rcpFromRef(my_selector));
+      m_outputFiles[output_file_index]->set_output_selector(rank, Teuchos::rcpFromRef(my_selector));
     }
 
     inline void StkMeshIoBroker::set_ghosting_filter(size_t output_file_index, bool hasGhosting) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->has_ghosting(hasGhosting);
+      m_outputFiles[output_file_index]->has_ghosting(hasGhosting);
     }
 
     inline void StkMeshIoBroker::set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->has_adaptivity(hasAdaptivity);
+      m_outputFiles[output_file_index]->has_adaptivity(hasAdaptivity);
     }
 
     inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
       validate_output_file_index(output_file_index);
-      m_output_files[output_file_index]->is_skin_mesh(skinMesh);
+      m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
     }
 
     inline stk::mesh::Selector StkMeshIoBroker::get_active_selector() {
-      return m_active_selector;
+      return m_activeSelector;
     }
 
     inline void StkMeshIoBroker::set_active_selector(stk::mesh::Selector my_selector) {
-      m_active_selector = my_selector;
+      m_activeSelector = my_selector;
     }
 
     inline Teuchos::RCP<stk::mesh::Selector> StkMeshIoBroker::deprecated_selector() {
-      return m_deprecated_selector;
+      return m_deprecatedSelector;
     }
     
     inline void StkMeshIoBroker::deprecated_set_selector(Teuchos::RCP<stk::mesh::Selector> my_selector) {
-      m_deprecated_selector = my_selector;
+      m_deprecatedSelector = my_selector;
     }
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
@@ -1134,36 +896,36 @@ namespace impl
 
     inline bool StkMeshIoBroker::is_meta_data_null() const
     {
-      return Teuchos::is_null(m_meta_data);
+      return Teuchos::is_null(m_metaData);
     }
 
     inline bool StkMeshIoBroker::is_bulk_data_null() const
     {
-      return Teuchos::is_null(m_bulk_data);
+      return Teuchos::is_null(m_bulkData);
     }
 
     inline stk::mesh::MetaData &StkMeshIoBroker::meta_data()
     {
-      ThrowAssert( !Teuchos::is_null(m_meta_data)) ;
-      return *m_meta_data;
+      ThrowAssert( !Teuchos::is_null(m_metaData)) ;
+      return *m_metaData;
     }
 
     inline stk::mesh::BulkData &StkMeshIoBroker::bulk_data()
     {
-      ThrowAssert( !Teuchos::is_null(m_bulk_data)) ;
-      return *m_bulk_data;
+      ThrowAssert( !Teuchos::is_null(m_bulkData)) ;
+      return *m_bulkData;
     }
 
     inline const stk::mesh::MetaData &StkMeshIoBroker::meta_data() const
     {
-      ThrowAssert( !Teuchos::is_null(m_meta_data)) ;
-      return *m_meta_data;
+      ThrowAssert( !Teuchos::is_null(m_metaData)) ;
+      return *m_metaData;
     }
 
     inline const stk::mesh::BulkData &StkMeshIoBroker::bulk_data() const
     {
-      ThrowAssert( !Teuchos::is_null(m_bulk_data)) ;
-      return *m_bulk_data;
+      ThrowAssert( !Teuchos::is_null(m_bulkData)) ;
+      return *m_bulkData;
     }
   }
 }

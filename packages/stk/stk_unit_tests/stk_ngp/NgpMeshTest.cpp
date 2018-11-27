@@ -55,7 +55,7 @@
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/StkVector.hpp>
+#include <stk_util/util/StkNgpVector.hpp>
 #include "stk_mesh/base/FieldParallel.hpp"
 
 #include <limits>
@@ -67,7 +67,7 @@ public:
     {
         setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
 
-        stk::Vector<double> numNodesVec("numNodes", 1);
+        stk::NgpVector<double> numNodesVec("numNodes", 1);
 
         ngp::Mesh ngpMesh(get_bulk());
         Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
@@ -116,7 +116,7 @@ TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
 void run_vector_gpu_test()
 {
     size_t n = 10;
-    stk::Vector<double> vec("vec", n);
+    stk::NgpVector<double> vec("vec", n);
     Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i)
     {
         vec.device_get(i) = i;

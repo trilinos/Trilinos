@@ -162,7 +162,7 @@ protected:
 
 class MeshFixture : public MeshFixtureNoTest, public ::testing::Test {
  protected:
-  MeshFixture(){};
+  MeshFixture(){}
   MeshFixture(unsigned spatial_dim) : MeshFixtureNoTest(spatial_dim) {}
   MeshFixture(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
   : MeshFixtureNoTest(spatial_dim,entityRankNames){}

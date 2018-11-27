@@ -30,14 +30,12 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef PACKAGES_STK_STK_LEARNING_KOKKOS_NGPDYNAMICMESH_H_
-#define PACKAGES_STK_STK_LEARNING_KOKKOS_NGPDYNAMICMESH_H_
+#ifndef STK_NGP_NGPDYNAMICMESH_H_
+#define STK_NGP_NGPDYNAMICMESH_H_
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MemoryPool.hpp>
-#include <stk_util/util/StkVector.hpp>
-
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
@@ -51,6 +49,7 @@
 
 #include <stk_ngp/NgpSpaces.hpp>
 #include <stk_ngp/NgpMesh.hpp>
+#include <stk_util/util/StkNgpVector.hpp>
 
 #ifdef KOKKOS_HAVE_CUDA
   typedef Kokkos::Cuda Device;
@@ -93,7 +92,7 @@ bool all_parts_match(const UnmanagedPartOrdViewType& lhsParts, const UnmanagedPa
 }
 
 struct DynamicBucket {
-    typedef Entities<const stk::mesh::Entity *> ConnectedNodes;
+    typedef Entities<const stk::mesh::Entity> ConnectedNodes;
 
     STK_FUNCTION
     DynamicBucket()
@@ -283,7 +282,7 @@ public:
         return hostMeshIndices(entity.local_offset());
     }
 
-    stk::Vector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
+    stk::NgpVector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
     {
         return ngp::get_bucket_ids(get_bulk_on_host(), rank, selector);
     }
@@ -581,4 +580,4 @@ private:
 }
 
 
-#endif /* PACKAGES_STK_STK_LEARNING_KOKKOS_NGPMESH_H_ */
+#endif /* STK_NGP_NGPMESH_H_ */

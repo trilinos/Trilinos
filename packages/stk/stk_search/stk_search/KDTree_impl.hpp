@@ -40,6 +40,7 @@
 #include <cmath>                        // for fabs
 #include <stk_search/KDTree_Threaded_Sort.hpp>    // for ThreadedSort
 #include <utility>                      // for pair, make_pair
+#include <stk_math/StkMath.hpp>         // for stk::math::max, stk::math::min
 
 
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -49,13 +50,13 @@ namespace stk {
 
 ///< Set output box to contain both input boxes
 template <typename BoxType>
-inline void UnionBoxes(const BoxType& inBox1, const BoxType& inBox2, BoxType& outputBox) {
-  outputBox.set_box(std::min(inBox1.get_x_min(), inBox2.get_x_min()),
-                    std::min(inBox1.get_y_min(), inBox2.get_y_min()),
-                    std::min(inBox1.get_z_min(), inBox2.get_z_min()),
-                    std::max(inBox1.get_x_max(), inBox2.get_x_max()),
-                    std::max(inBox1.get_y_max(), inBox2.get_y_max()),
-                    std::max(inBox1.get_z_max(), inBox2.get_z_max()));
+KOKKOS_INLINE_FUNCTION void UnionBoxes(const BoxType& inBox1, const BoxType& inBox2, BoxType& outputBox) {
+  outputBox.set_box(stk::math::min(inBox1.get_x_min(), inBox2.get_x_min()),
+                    stk::math::min(inBox1.get_y_min(), inBox2.get_y_min()),
+                    stk::math::min(inBox1.get_z_min(), inBox2.get_z_min()),
+                    stk::math::max(inBox1.get_x_max(), inBox2.get_x_max()),
+                    stk::math::max(inBox1.get_y_max(), inBox2.get_y_max()),
+                    stk::math::max(inBox1.get_z_max(), inBox2.get_z_max()));
 }
 
 
