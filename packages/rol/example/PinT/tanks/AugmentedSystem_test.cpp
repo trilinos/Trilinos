@@ -88,7 +88,7 @@ int main( int argc, char* argv[] )
     run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
@@ -221,7 +221,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   ROL::RandomizeVector<RealT>(*r_1);
   ROL::RandomizeVector<RealT>(*r_2);
 
-  int numSolves = 1;
+//  int numSolves = 1; // Unusued
 /*
   std::clock_t timer_total = 0;
   for(int i=0;i<numSolves;i++) {

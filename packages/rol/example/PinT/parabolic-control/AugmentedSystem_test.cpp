@@ -91,7 +91,7 @@ int main( int argc, char* argv[] )
     run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
@@ -142,8 +142,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
-  using Bounds            = ROL::Bounds<RealT>;
+  // using size_type         = std::vector<RealT>::size_type;  // Unused
+  // using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   auto timer = Teuchos::TimeMonitor::getStackedTimer();
@@ -161,7 +161,8 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   // Parse input parameter list
   ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
-  bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+  // Unusued
+  // bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
   uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
   uint nt         = pl->get("Temporal Discretization",   100); // Set temporal discretization.
   RealT T         = pl->get("End Time",                  1.0); // Set end time.
@@ -275,7 +276,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
       kkt_err->set(*kkt_x_out);
       kkt_err->axpy(-1.0,*kkt_x_in);                                                   // err = x_{i+1} - x
-      RealT norm = kkt_err->norm() / kkt_b->norm();
+      // RealT norm = kkt_err->norm() / kkt_b->norm(); // Unused
       // if(myRank==0)
       //   (*outStream) << "NORM JACOBI= " << norm << std::endl;
     }

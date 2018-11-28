@@ -674,7 +674,7 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
 
-  auto & out = *outStream;
+  // auto & out = *outStream; // Unused
   std::stringstream ss;  // for errors
 
   int numRanks = -1;
@@ -826,7 +826,7 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
     result &= (std::fabs(dt - cd.totalTime/(ts_2->size()-1.0)) <= 1e-14); // make sure step size is correct
     *outStream << std::endl << dt << " or " << cd.totalTime/(ts_2->size()-1.0) << std::endl;
 
-    for(int i=1;i<ts_2->size();i++) {
+    for(size_type i=1;i<ts_2->size();i++) {
       auto stamp = ts_2->at(i);
 
       result &= (stamp.t.size() == 2);

@@ -604,7 +604,7 @@ public:
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
 
-    int timeRank = pint_u.communicators().getTimeRank();
+    // int timeRank = pint_u.communicators().getTimeRank(); // Unused
     const std::vector<int> & stencil = pint_jv.stencil();
 
     // assert a forward stencil
@@ -664,8 +664,8 @@ public:
     pint_v.boundaryExchange();
     pint_u.boundaryExchange();
     pint_z.boundaryExchange();
-
-    int timeRank = pint_u.communicators().getTimeRank();
+//  Unused
+//    int timeRank = pint_u.communicators().getTimeRank();
     const std::vector<int> & stencil = pint_jv.stencil();
 
     // assert a forward stencil
@@ -1082,7 +1082,8 @@ public:
                                Real &tol,
                                int level) 
    {
-     int timeRank = pint_u.communicators().getTimeRank();
+//  Unused
+//     int timeRank = pint_u.communicators().getTimeRank();
 
      // update the old time information
      pint_ijv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1));
@@ -1214,7 +1215,7 @@ public:
      // we now build the satmps to be distributed to other processors, we are halfing the size
      auto & fineStamps = *stamps_[level-1];
      std::vector<ROL::TimeStamp<Real>> sourceStamps((fineStamps.size()-1)/2); 
-     for(int i=1;i<fineStamps.size();i+=2) {
+     for(size_type i=1;i<fineStamps.size();i+=2) {
        auto & stamp = sourceStamps[(i-1)/2];
 
        // buld a stamp skipping one step
@@ -1534,11 +1535,12 @@ public:
      // build a STL vector with the fine vectors
      int startIndex = (comm->getTimeRank() % 2==0) ? -1 : 0;
      std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors(pint_local.numOwnedSteps()-startIndex);
-     bool is_null = false;
+     bool is_null = false; // Unused
      for(int i=startIndex;i<pint_local.numOwnedSteps();i++) {
        localVectors[i-startIndex] = pint_local.getVectorPtr(i); 
-       if(ROL::is_nullPtr(localVectors[i-startIndex]))
-         is_null = true; 
+       is_null =  ROL::is_nullPtr(localVectors[i-startIndex]);
+//       if(ROL::is_nullPtr(localVectors[i-startIndex]))
+//         is_null = true; 
      }
 
      // now send the coarse vectors this to the coarse data structure
