@@ -235,6 +235,10 @@ TEST_F(NGP_Kokkos, bucket0)
 
 TEST_F(NGP_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
+
     MyApp app;
 
     GpuGatherBucketScratchData scratch(*app.bulk);
