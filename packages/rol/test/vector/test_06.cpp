@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     ROL::printVectorFunctionCalls(xpf, *outStream);
   }
 
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

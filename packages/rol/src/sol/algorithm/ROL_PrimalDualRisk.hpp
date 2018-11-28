@@ -188,7 +188,7 @@ public:
   }
 
   void run(std::ostream &outStream = std::cout) {
-    const Real zero(0), one(1);
+    const Real /*zero(0),*/ one(1);
     int spiter(0);
     iter_ = 0; converged_ = true; lnorm_ = ROL_INF<Real>();
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;

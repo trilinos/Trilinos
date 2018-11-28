@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     errorFlag += ((*xbin_ptr)[3]==1.0 ? 0 : 1);
     errorFlag += ((*xbin_ptr)[9]==1.0 ? 0 : 1);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

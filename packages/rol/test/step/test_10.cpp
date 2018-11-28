@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     }
     *outStream << std::endl << "Norm of Error: " << err << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try

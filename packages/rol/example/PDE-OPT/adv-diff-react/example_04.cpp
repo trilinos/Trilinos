@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
       print<RealT>(*objReduced,*zp,*sampler_dist,nsamp_dist,comm,name.str());
     }
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

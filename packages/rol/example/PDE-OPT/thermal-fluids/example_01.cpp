@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
     RealT val = obj0->value(*up,*zp,tol);
     *outStream << "Vorticity Value: " << val << std::endl;
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     err->set(x); err->axpy(-1.,*xMY);
     errorFlag += ((err->norm() > 1.e-7*x.norm()) ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

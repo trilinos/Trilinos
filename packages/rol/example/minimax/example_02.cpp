@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     *outStream <<   "Relative Error: " << error/z.norm() << "\n";
     errorFlag = ((error > 1e4*std::sqrt(ROL::ROL_EPSILON<RealT>())) ? 1 : 0);
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

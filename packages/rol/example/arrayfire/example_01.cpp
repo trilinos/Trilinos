@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     //af_print(*x_ptr);
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try

@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
                << data->computeStateError(u_ptr) << std::endl;
 
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
