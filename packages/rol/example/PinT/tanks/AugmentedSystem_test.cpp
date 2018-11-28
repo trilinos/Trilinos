@@ -88,7 +88,7 @@ int main( int argc, char* argv[] )
     run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
-  catch (std::logic_errorstd::logic_error err err) {
+  catch (std::logic_error err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
