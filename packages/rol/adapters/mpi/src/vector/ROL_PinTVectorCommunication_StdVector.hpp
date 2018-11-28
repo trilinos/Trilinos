@@ -59,6 +59,9 @@ namespace ROL {
 template <class Real> 
 class PinTVectorCommunication_StdVector : public PinTVectorCommunication<Real> {
 public:
+
+  virtual ~PinTVectorCommunication_StdVector() {}
+ 
   /**
    * \brief Send a vector to a neighboring processor.
    */

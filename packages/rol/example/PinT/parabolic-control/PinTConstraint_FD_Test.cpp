@@ -129,8 +129,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
 //  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-  using Bounds            = ROL::Bounds<RealT>;
-  using PartitionedVector = ROL::PartitionedVector<RealT>;
+//  using Bounds            = ROL::Bounds<RealT>;
+//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   int numRanks = -1;
   int myRank = -1;
@@ -145,7 +145,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
   // Parse input parameter list
   ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
-  bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+  // bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
   uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
   uint nt         = pl->get("Temporal Discretization",   128); // Set temporal discretization.
   RealT T         = pl->get("End Time",                  1.0); // Set end time.

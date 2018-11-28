@@ -168,10 +168,10 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   using ROL::makePtrFromRef;
 
   using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
+//  using size_type         = std::vector<RealT>::size_type;
 //  using ValidateFunction  = ROL::ValidateFunction<RealT>;
-  using Bounds            = ROL::Bounds<RealT>;
-  using PartitionedVector = ROL::PartitionedVector<RealT>;
+//  using Bounds            = ROL::Bounds<RealT>;
+//  using PartitionedVector = ROL::PartitionedVector<RealT>;
 
   int numRanks = -1;
   int myRank = -1;
@@ -186,7 +186,7 @@ buildPinTConstraint(int local_Nt,MPI_Comm comm, const ROL::Ptr<std::ostream> & o
 
   // Parse input parameter list
   ROL::Ptr<ROL::ParameterList> pl = ROL::getParametersFromXmlFile("input_ex01.xml");
-  bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
+ // bool derivCheck = pl->get("Derivative Check",         true); // Check derivatives.
   uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
   uint nt         = local_Nt * numRanks;
   RealT T         = pl->get("End Time",                  1.0); // Set end time.
@@ -429,7 +429,7 @@ void run_test_restrictVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outS
       ones->setScalar(1.0); 
       for( size_type k=0;k < static_cast<size_type>(pint_state_crs.numOwnedVectors()); k++ ) {
         // make virtual variables negative
-        double scaling = (k % 2 == 0) ? -1.0 : 1.0;
+        //double scaling = (k % 2 == 0) ? -1.0 : 1.0;
 
         auto current = pint_state_crs.getVectorPtr(k-1);
         double dot_product = current->dot(*ones);
@@ -606,7 +606,8 @@ void run_test_prolongVectors(MPI_Comm comm, const ROL::Ptr<std::ostream> & outSt
       // check the state prolong (read comment for prolong to understand what this is checking)
       //////////////////////////////////////////////
       
-      int dim_state = pint_state_crs.getVectorPtr(-1)->dimension();
+//      int dim_state = pint_state_crs.getVectorPtr(-1)->dimension();
+
 
       // check the left most vectors
       {
@@ -741,7 +742,7 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
   using RealT             = double;
   using size_type         = std::vector<RealT>::size_type;
 
-  auto & out = *outStream;
+//  auto & out = *outStream;
   std::stringstream ss;  // for errors
 
   int numRanks = -1;
@@ -893,7 +894,7 @@ void run_test_buildCommunicators(MPI_Comm comm, const ROL::Ptr<std::ostream> & o
     result &= (std::fabs(dt - cd.totalTime/(ts_2->size()-1.0)) <= 1e-14); // make sure step size is correct
     *outStream << std::endl << dt << " or " << cd.totalTime/(ts_2->size()-1.0) << std::endl;
 
-    for(int i=1;i<ts_2->size();i++) {
+    for(size_type i=1;i<ts_2->size();i++) {
       auto stamp = ts_2->at(i);
 
       result &= (stamp.t.size() == 2);

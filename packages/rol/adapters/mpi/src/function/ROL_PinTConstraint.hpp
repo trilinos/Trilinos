@@ -1534,10 +1534,10 @@ public:
      // build a STL vector with the fine vectors
      int startIndex = (comm->getTimeRank() % 2==0) ? -1 : 0;
      std::vector<ROL::Ptr<ROL::Vector<Real>>> localVectors(pint_local.numOwnedSteps()-startIndex);
-     bool is_null = false; // Unused
+     // bool is_null = false; // Unused
      for(int i=startIndex;i<pint_local.numOwnedSteps();i++) {
        localVectors[i-startIndex] = pint_local.getVectorPtr(i); 
-       is_null =  ROL::is_nullPtr(localVectors[i-startIndex]);
+       // is_null =  ROL::is_nullPtr(localVectors[i-startIndex]);
 //       if(ROL::is_nullPtr(localVectors[i-startIndex]))
 //         is_null = true; 
      }
