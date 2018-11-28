@@ -56,6 +56,7 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #endif
+
 namespace FROSch {
     
     enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
