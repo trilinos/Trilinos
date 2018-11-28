@@ -167,28 +167,28 @@ public:
   }
 
   virtual void hessVec_un_un( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+                              const V& z, const TS& timeStamp ) const override {
     hv.set(v);
     hv.scale(0.5*(timeStamp.t.at(1)-timeStamp.t.at(0)));
   }
 
   virtual void hessVec_un_z( V& hv, const V& v, const V& uo, const V& un, 
-                             const V& z, const TS& timeStamp ) const {
+                             const V& z, const TS& timeStamp ) const override {
     hv.zero();
   }
 
   virtual void hessVec_z_uo( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+                              const V& z, const TS& timeStamp ) const override {
     hv.zero();
   }
 
   virtual void hessVec_z_un( V& hv, const V& v, const V& uo, const V& un, 
-                              const V& z, const TS& timeStamp ) const {
+                              const V& z, const TS& timeStamp ) const override {
     hv.zero();
   }
 
   virtual void hessVec_z_z( V& hv, const V& v, const V& uo, const V& un, 
-                             const V& z, const TS& timeStamp ) const {
+                             const V& z, const TS& timeStamp ) const override {
     hv.set(v);
     hv.scale(alpha_*(timeStamp.t.at(1)-timeStamp.t.at(0)));
   }
