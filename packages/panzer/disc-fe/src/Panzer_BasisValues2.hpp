@@ -175,6 +175,11 @@ namespace panzer {
                               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
                               const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
 
+    void evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+                             const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+                             const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                             const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
+
     void evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
                               const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
