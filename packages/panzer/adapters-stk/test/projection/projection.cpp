@@ -45,6 +45,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
@@ -670,7 +671,6 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   auto timer = Teuchos::TimeMonitor::getStackedTimer();
   timer->start("Total Time");
 
-  const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
   const int numXElements = 4;
   const int numYElements = 2;
@@ -791,7 +791,7 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
     for(int r = 0; r < 4; r++){
       cols[0] = lids(i,r);
       cols[1] = lids(i,(r+2)%4);
-      int num_insert =  localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
+      localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
     }
   });
   PHX::Device::fence();
@@ -812,4 +812,420 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   double norm = connMassMatrix->getFrobeniusNorm();
   double tol = 1.0e-14;
   TEST_COMPARE(error,<,tol*norm);
+}
+
+// This is to demonstrate the issue with row sum lumping as opposed to
+// proportional lumping.
+TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
+{
+  using namespace Teuchos;
+  using namespace panzer;
+  using namespace panzer_stk;
+
+  RCP<MpiComm<int>> comm = rcp(new MpiComm<int>(MPI_COMM_WORLD));
+
+  auto timer = Teuchos::TimeMonitor::getStackedTimer();
+  timer->start("Total Time");
+
+  const int numProcs = comm->getSize();
+  const int numXElements = 3;
+  const int numYElements = numXElements;
+  const double boxLength = 1.0;
+  TEUCHOS_ASSERT(numXElements >= numProcs);
+
+  RCP<panzer_stk::STK_Interface> mesh;
+  {
+    PANZER_FUNC_TIME_MONITOR("L2Projection: mesh construction");
+    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+    pl->set("X Blocks",1);
+    pl->set("Y Blocks",1);
+    pl->set("X Elements",numXElements);
+    pl->set("Y Elements",numYElements);
+    pl->set("X Procs",numProcs);
+    pl->set("Y Procs",1);
+    pl->set("X0",0.0);
+    pl->set("Y0",0.0);
+    pl->set("Xf",boxLength);
+    pl->set("Yf",boxLength);
+    panzer_stk::SquareTriMeshFactory factory;
+    factory.setParameterList(pl);
+    mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+  }
+
+  // Build Worksets
+
+  const int basisOrder = 1;
+  BasisDescriptor hgradBD(basisOrder,"HGrad");
+
+  const int intOrder = 2;
+  IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
+
+  WorksetNeeds worksetNeeds;
+  worksetNeeds.addBasis(hgradBD);
+  worksetNeeds.addIntegrator(integrationDescriptor);
+
+  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
+  std::map<std::string,WorksetNeeds> eblockNeeds;
+  for (const auto& block : eBlockNames)
+    eblockNeeds[block] = worksetNeeds;
+  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
+
+  // Build Connection Manager
+  using LO = int;
+  using GO = panzer::Ordinal64;
+  timer->start("ConnManager ctor");
+  const RCP<panzer::ConnManager<LO,GO> > connManager = rcp(new panzer_stk::STKConnManager<GO>(mesh));
+  timer->stop("ConnManager ctor");
+
+  // Set up bases for projections
+  auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
+
+  auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
+  RCP<const panzer::FieldPattern> hgradFP(new panzer::Intrepid2FieldPattern(hgradBasis));
+
+  // Build source DOF Manager that mimics multi-fluid plasma dof manager
+  timer->start("Build sourceGlobalIndexer");
+  RCP<panzer::DOFManager<LO,GO>> sourceGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  sourceGlobalIndexer->addField("PHI",hgradFP); // Electric Potential for ES
+  sourceGlobalIndexer->addField("Chaff0",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("Chaff1",hgradFP); // Dummy
+  sourceGlobalIndexer->addField("Chaff2",hgradFP); // Dummy
+  sourceGlobalIndexer->buildGlobalUnknowns();
+  timer->stop("Build sourceGlobalIndexer");
+
+  // Build Target DOF Manager (Separate scalar fields on hgrad)
+  timer->start("Build targetGlobalIndexer");
+  RCP<panzer::DOFManager<LO,GO>> targetGlobalIndexer = rcp(new panzer::DOFManager<LO,GO>(connManager,*comm->getRawMpiComm()));
+  targetGlobalIndexer->addField("Projection to Mesh Vertices",hgradFP);
+  targetGlobalIndexer->buildGlobalUnknowns();
+  timer->stop("Build targetGlobalIndexer");
+
+  // Build projection factory
+  timer->start("projectionFactory.setup()");
+  panzer::L2Projection<LO,GO> projectionFactory;
+  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
+  projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
+  timer->stop("projectionFactory.setup()");
+
+  TEST_ASSERT(nonnull(projectionFactory.getTargetGlobalIndexer()));
+
+  // Build mass matrix
+  timer->start("projectionFactory.buildMassMatrix()");
+  auto massMatrix = projectionFactory.buildMassMatrix();
+  timer->stop("projectionFactory.buildMassMatrix()");
+  massMatrix->print(out);
+  massMatrix->getRowMap()->describe(out,Teuchos::EVerbosityLevel::VERB_EXTREME);
+  massMatrix->getColMap()->describe(out,Teuchos::EVerbosityLevel::VERB_EXTREME);
+
+  // Build rhs matrix
+  timer->start("projectionFactory.buildRHSMatrix()");
+  const int xDir = 0;
+  const int yDir = 1;
+  using NodeType = Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>;
+  auto rhsMatrix_PHI = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD);          // Project value from scalar basis
+  auto rhsMatrix_DPHI_DX = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,xDir); // Project gradient from scalar basis
+  auto rhsMatrix_DPHI_DY = projectionFactory.buildRHSMatrix(*sourceGlobalIndexer,Teuchos::null,"PHI",hgradBD,yDir); // Project gradient from scalar basis
+  timer->stop("projectionFactory.buildRHSMatrix()");
+
+  // Store in vector for convenience
+  std::vector<RCP<Tpetra::CrsMatrix<double,LO,GO,NodeType>>> rhsMatrices;
+  rhsMatrices.push_back(rhsMatrix_PHI);
+  rhsMatrices.push_back(rhsMatrix_DPHI_DX);
+  rhsMatrices.push_back(rhsMatrix_DPHI_DY);
+
+  // Create a Names vector for output
+  std::vector<std::string> names;
+  names.push_back("PHI");
+  names.push_back("DPHI_DX");
+  names.push_back("DPHI_DY");
+
+  // Allocate the source vector
+  timer->start("Allocate Source Vector");
+  using VectorType = Tpetra::Vector<double,LO,GO,NodeType>;
+  auto sourceValues = rcp(new VectorType(rhsMatrix_PHI->getDomainMap(),true));
+  timer->stop("Allocate Source Vector");
+
+  // Fill the source vector.
+  timer->start("Fill Source Vector");
+  auto hostSourceValues = Kokkos::create_mirror_view(sourceValues->getLocalView<PHX::Device>());
+  {
+    const int PHI_Index = sourceGlobalIndexer->getFieldNum("PHI");
+
+    std::vector<std::string> elementBlockNames;
+    sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
+    for (const auto& block : elementBlockNames) {
+
+      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+      const auto worksets = worksetContainer->getWorksets(wd);
+      for (const auto& workset : *worksets) {
+
+        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                sourceGlobalIndexer->getElementBlockGIDCount(block));
+        // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
+
+        // Create vector to store if LID is owned
+        timer->start("Create isOwned view");
+        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        {
+          std::vector<GO> cellGIDs(localIds.extent(1));
+          std::vector<bool> cellOwnedIds(localIds.extent(1));
+          for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
+            // Assumes UVM
+            sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            sourceGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
+            for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
+              isOwned(cell,i) = cellOwnedIds[i];
+          }
+        }
+        timer->stop("Create isOwned view");
+
+        const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
+        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& coords = basisValues.basis_coordinates;
+        const auto& x = sourceValues->getLocalView<PHX::Device>();
+        const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
+
+        Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+          for (int basis=0; basis < numBasisPHI; ++basis) {
+            const int lid = localIds(cell,offsetsPHI(basis));
+            if (isOwned(cell,offsetsPHI(basis)))
+              x(lid,0) = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1);
+          }
+        });
+      }
+    }
+  }
+
+  timer->stop("Fill Source Vector");
+
+  // Assemble RHS vectors using matvec
+  timer->start("Allocate RHS Vectors");
+  auto rhs_PHI = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_DPHI_DX = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  auto rhs_DPHI_DY = rcp(new VectorType(massMatrix->getDomainMap(),true));
+  timer->stop("Allocate RHS Vectors");
+
+  // Store in vector for convenience
+  std::vector<RCP<VectorType>> rhs;
+  rhs.push_back(rhs_PHI);
+  rhs.push_back(rhs_DPHI_DX);
+  rhs.push_back(rhs_DPHI_DY);
+
+  timer->start("Assemble RHS Vectors");
+  for (size_t i=0; i < rhs.size(); ++i)
+    rhsMatrices[i]->apply(*sourceValues,*rhs[i]);
+  timer->stop("Assemble RHS Vectors");
+
+  // Build RHS Multivector target for efficient consistent matrix solve
+  timer->start("Copy RHS Values into MV");
+  const auto targetRangeMap = massMatrix->getRangeMap();
+  const int numVectors = 3; // PHI, DPHI_DX, DPHI_XY
+  const auto rhsMV = rcp(new Tpetra::MultiVector<double,LO,GO,NodeType>(targetRangeMap,numVectors,false));
+  const auto mvView = rhsMV->getLocalView<NodeType>();
+  TEST_EQUALITY(mvView.extent(1),static_cast<size_t>(numVectors));
+  for (int col=0; col < numVectors; ++col) {
+    const auto source = rhs[col]->getLocalView<NodeType>();
+    const int numEntries = source.extent(0);
+    Kokkos::parallel_for(numEntries, KOKKOS_LAMBDA (const int& i) { mvView(i,col) = source(i,0); });
+    PHX::Device::fence();
+  }
+  timer->stop("Copy RHS Values into MV");
+
+  // Solve the multiple matrices
+  using MV = Tpetra::MultiVector<double,LO,GO,NodeType>;
+  using OP = Tpetra::Operator<double,LO,GO,NodeType>;
+  const auto solutionMV = rcp(new Tpetra::MultiVector<double,LO,GO,NodeType>(targetRangeMap,numVectors,true));
+  const auto problem = rcp(new Belos::LinearProblem<double,MV,OP>(massMatrix, solutionMV, rhsMV));
+  problem->setProblem();
+
+  TEST_ASSERT(nonnull(massMatrix));
+  TEST_ASSERT(nonnull(solutionMV));
+  TEST_ASSERT(nonnull(rhsMV));
+  TEST_ASSERT(nonnull(problem));
+
+  timer->start("Create Belos Solver");
+  RCP<ParameterList> pl = parameterList("L2 Consistent Projection Linear Solver");
+  pl->set("Num Blocks", 100); // Max Krylov vectors to store
+  pl->set("Maximum Iterations", 100);
+  pl->set("Convergence Tolerance", 1e-8);
+  pl->set("output Frequency",1); // all iterations
+  pl->set("Verbosity", Belos::Errors | Belos::Warnings | Belos::IterationDetails| Belos::FinalSummary);
+  Belos::SolverFactory<double,MV,OP> belosFactory;
+  const auto solver = belosFactory.create("GMRES",pl);
+  solver->setProblem(problem);
+  timer->stop("Create Belos Solver");
+
+  timer->start("Belos Solve");
+  const auto result = solver->solve();
+  timer->stop("Belos Solve");
+
+  TEST_EQUALITY(result,Belos::Converged);
+
+  // Check the final values on host
+  out << "Checking CONSISTENT values!" << std::endl;
+  timer->start("Check CONSISTENT Projected Values on Host");
+  {
+    const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
+    Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
+    PHX::Device::fence();
+
+    const int phiIndex = 0;
+    const int dphiDxIndex = 1;
+    const int dphiDyIndex = 2;
+    double tol = 1.0e-4;
+
+    std::vector<std::string> elementBlockNames;
+    sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
+    for (const auto& block : elementBlockNames) {
+
+      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+      const auto worksets = worksetContainer->getWorksets(wd);
+      for (const auto& workset : *worksets) {
+        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                targetGlobalIndexer->getElementBlockGIDCount(block));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
+
+        // Create vector to store if LID is owned
+        timer->start("Create isOwned view");
+        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        {
+          std::vector<GO> cellGIDs(localIds.extent(1));
+          std::vector<bool> cellOwnedIds(localIds.extent(1));
+          for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
+            // Assumes UVM
+            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
+            for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
+              isOwned(cell,i) = cellOwnedIds[i];
+          }
+        }
+        timer->stop("Create isOwned view");
+
+        const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
+        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& coords = basisValues.basis_coordinates;
+        const int numBasis = static_cast<int>(offsets.size());
+
+        for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
+          for (int basis=0; basis < numBasis; ++basis) {
+            if (isOwned(cell,offsets[basis])) {
+              const int lid = localIds(cell,offsets[basis]);
+              const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1);
+              TEST_FLOATING_EQUALITY(hostValues(lid,phiIndex), phiGold, tol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,dphiDxIndex), 1.0, tol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,dphiDyIndex), 2.0, tol);
+            }
+          }
+        }
+      }
+    }
+  }
+  timer->stop("Check CONSISTENT Projected Values on Host");
+
+  // ***************************
+  // Now test lumped mass matrix
+  // ***************************
+  timer->start("projectionFactory.buildInverseLumpedMassMatrix()");
+  auto invLumpedMassMatrix = projectionFactory.buildInverseLumpedMassMatrix();
+  timer->stop("projectionFactory.buildInverseLumpedMassMatrix()");
+
+  timer->start("apply lumped mass matrix");
+  {
+    auto x = solutionMV->getLocalView<PHX::Device>();
+    auto rhsMV_k = rhsMV->getLocalView<PHX::Device>();
+    const auto ilmm = invLumpedMassMatrix->getLocalView<PHX::Device>();
+    const int numEntries = static_cast<int>(x.extent(0));
+    Kokkos::parallel_for(numEntries,KOKKOS_LAMBDA (const int i)
+      {
+        for (int field=0; field < numVectors; ++field)
+          x(i,field) = ilmm(i,0) * rhsMV_k(i,field);
+      });
+    PHX::Device::fence();
+    solutionMV->template modify<PHX::Device>();
+  }
+  timer->stop("apply lumped mass matrix");
+
+  // Check the final values on host
+  out << "Checking LUMPED values!" << std::endl;
+  timer->start("Check LUMPED Projected Values on Host");
+  {
+    const auto hostValues = Kokkos::create_mirror_view(solutionMV->getLocalView<PHX::Device>());
+    Kokkos::deep_copy(hostValues,solutionMV->getLocalView<PHX::Device>());
+    PHX::Device::fence();
+
+    const int phiIndex = 0;
+    const int dphiDxIndex = 1;
+    const int dphiDyIndex = 2;
+    // NOTE: Lumping generates significant errors when the meshes are
+    // very coarse (such as in this unit test). We see
+    // superconvergence on the interior points of this axis aligned
+    // mesh and for the constant fields, thus can can tighten the
+    // tolerances for some fields. Refining the mesh results in more
+    // accurate projected values.
+    double looseTol = 0.5;
+    double superconvergedTol = 1.0e-4;
+
+    std::vector<std::string> elementBlockNames;
+    sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
+    for (const auto& block : elementBlockNames) {
+
+      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+      const auto worksets = worksetContainer->getWorksets(wd);
+      for (const auto& workset : *worksets) {
+        Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                targetGlobalIndexer->getElementBlockGIDCount(block));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
+
+        // Create vector to store if LID is owned
+        timer->start("Create isOwned view");
+        Kokkos::View<bool**,PHX::Device> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        {
+          std::vector<GO> cellGIDs(localIds.extent(1));
+          std::vector<bool> cellOwnedIds(localIds.extent(1));
+          for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
+            // Assumes UVM
+            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
+            for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
+              isOwned(cell,i) = cellOwnedIds[i];
+          }
+        }
+        timer->stop("Create isOwned view");
+
+        const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
+        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& coords = basisValues.basis_coordinates;
+        const int numBasis = static_cast<int>(offsets.size());
+
+        for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
+          for (int basis=0; basis < numBasis; ++basis) {
+            if (isOwned(cell,offsets[basis])) {
+              const int lid = localIds(cell,offsets[basis]);
+              const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1);
+              TEST_FLOATING_EQUALITY(hostValues(lid,phiIndex), phiGold, looseTol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,dphiDxIndex), 1.0, superconvergedTol);
+              TEST_FLOATING_EQUALITY(hostValues(lid,dphiDyIndex), 2.0, superconvergedTol);
+            }
+          }
+        }
+      }
+    }
+  }
+  timer->stop("Check LUMPED Projected Values on Host");
+
+  timer->stop("Total Time");
+
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = true;
+  options.output_minmax = true;
+  options.output_histogram = false;
+  options.num_histogram = 5;
+  timer->report(out,comm,options);
 }
