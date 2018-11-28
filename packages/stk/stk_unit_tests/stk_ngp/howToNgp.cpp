@@ -14,6 +14,7 @@
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_io/FillMesh.hpp>
@@ -146,6 +147,9 @@ void run_connected_node_test(const stk::mesh::BulkData& bulk)
 
 TEST_F(NgpHowTo, loopOverElemNodes)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
     double init = 0.0;
@@ -211,6 +215,9 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
 
 TEST_F(NgpHowTo, loopOverElemFaces)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
@@ -273,6 +280,9 @@ void run_connected_face_ordinal_test(const stk::mesh::BulkData& bulk)
 
 TEST_F(NgpHowTo, loopOverElemFaceOrdinals)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
@@ -349,6 +359,9 @@ void run_connected_face_permutation_test(const stk::mesh::BulkData& bulk)
 
 TEST_F(NgpHowTo, loopOverElemFacePermutations)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
     stk::mesh::Part& sidePart = get_meta().declare_part("SidePart");
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
     double init = 0.0;
@@ -417,6 +430,9 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
 
 TEST_F(NgpHowTo, anotherElemFacesTest)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
     auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);

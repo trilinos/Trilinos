@@ -32,6 +32,7 @@ IF (STK_ENABLE_UnitMain)
   TRIBITS_ADD_LIBRARY(
     stk_unit_main
     SOURCES ${UNIT_MAIN_SOURCES}
+    DEPLIBS stk_unit_test_utils
   )
 ENDIF()
 
