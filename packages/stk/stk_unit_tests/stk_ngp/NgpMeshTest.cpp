@@ -88,6 +88,9 @@ TEST_F(NgpMeshTest, get_nodes_using_FastMeshIndex)
 class EntityIndexSpace : public stk::unit_test_util::MeshFixture {};
 TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
     setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
     std::vector<unsigned> entityToLocalOffset(get_bulk().get_size_of_entity_index_space(), 0);
 

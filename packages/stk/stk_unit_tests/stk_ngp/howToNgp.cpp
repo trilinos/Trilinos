@@ -507,6 +507,12 @@ void test_ngp_mesh_construction(const stk::mesh::BulkData& bulk)
 TEST_F(NgpHowTo, ngpMeshConstruction)
 {
     std::string exodusFileName = stk::unit_test_util::get_option("-mesh", "generated:20x20x20|sideset:xXyYzZ");
+
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1 && exodusFileName == "generated:20x20x20|sideset:xXyYzZ") {
+      std::cout<<"NgpHowTo.ngpMeshConstruction Only runs in parallel if user specified a mesh." << std::endl;
+      return;
+    }
+
     std::cout << "Using mesh: " << exodusFileName << std::endl;
 
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
