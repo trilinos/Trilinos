@@ -143,8 +143,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 
     comm->barrier();
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
-    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
+    auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
+    auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
     // Read matrices in from files
     // maps for nodal and edge matrices
@@ -220,7 +220,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     tm = Teuchos::null;
 
     if (solverName == "Belos") {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc")));
+        auto tm2 = TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc"));
 
       // construct preconditioner
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
@@ -259,9 +259,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       solver = factory->create("Block CG",belosParams);
 
       comm->barrier();
-      tm = Teuchos::null;
 
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+      auto tm3 = TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve"));
 
       // set problem and solve
       solver -> setProblem( problem );
@@ -275,7 +274,6 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     }
     comm->barrier();
-    tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
 
     if (printTimings) {
@@ -354,8 +352,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 
     comm->barrier();
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
-    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
+    auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
+    auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
     // Read matrices in from files
     // maps for nodal and edge matrices
@@ -432,7 +430,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     tm = Teuchos::null;
 
     if (solverName == "Belos") {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc")));
+      auto tm2 = TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc");
 
       // construct preconditioner
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
@@ -471,9 +469,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       solver = factory->create("Pseudo Block CG",belosParams);
 
       comm->barrier();
-      tm = Teuchos::null;
 
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+      auto tm3 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // set problem and solve
       solver -> setProblem( problem );
@@ -488,7 +485,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 #ifdef HAVE_MUELU_STRATIMIKOS
     if (solverName == "Stratimikos") {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Stratimikos solver")));
+      auto tm4 = TimeMonitor::getNewTimer("Maxwell: 2 - Build Stratimikos solver");
 
       // Build the rest of the Stratimikos list
       Teuchos::ParameterList SList;
@@ -527,8 +524,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
 
       comm->barrier();
-      tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+
+      auto tm5 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // Solve Ax = b.
       Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
@@ -538,7 +535,6 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 #endif
     comm->barrier();
-    tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
 
     if (printTimings) {
