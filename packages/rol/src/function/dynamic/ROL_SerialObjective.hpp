@@ -107,7 +107,7 @@ public:
   virtual void gradient_1(       Vector<Real>& g, 
                            const Vector<Real>& u, 
                            const Vector<Real>& z, 
-                           Real& tol ) {
+                           Real& tol ) override {
 
     auto& gp  = partition(g);
     auto& up  = partition(u);
@@ -131,7 +131,7 @@ public:
   virtual void gradient_2(       Vector<Real>& g, 
                            const Vector<Real>& u, 
                            const Vector<Real>& z, 
-                           Real& tol ) {
+                           Real& tol ) override {
 
     auto& gp = partition(g);
     auto& up = partition(u);
@@ -149,7 +149,7 @@ public:
                            const Vector<Real>& v,
                            const Vector<Real>& u, 
                            const Vector<Real>& z, 
-                           Real& tol ) {
+                           Real& tol ) override {
 
     auto& hvp = partition(hv);   auto& vp  = partition(v);
     auto& up  = partition(u);    auto& zp  = partition(z);
@@ -184,7 +184,7 @@ public:
                            const Vector<Real>& v,
                            const Vector<Real>& u,  
                            const Vector<Real>& z, 
-                           Real& tol ) {
+                           Real& tol ) override {
 
     auto& hvp = partition(hv);   auto& vp  = partition(v);
     auto& up  = partition(u);    auto& zp  = partition(z);
@@ -208,7 +208,7 @@ public:
                             const Vector<Real>& v,
                             const Vector<Real>& u,  
                             const Vector<Real>& z, 
-                            Real& tol ) {
+                            Real& tol ) override {
 
     auto& hvp = partition(hv);   auto& vp  = partition(v);
     auto& up  = partition(u);    auto& zp  = partition(z);

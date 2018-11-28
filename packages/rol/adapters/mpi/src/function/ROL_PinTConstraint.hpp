@@ -205,7 +205,6 @@ public:
     , omega_(2.0/3.0)
     , omegaCoarse_(1.0)
     , globalScale_(0.99e0)
-    , globalScale_(0.99e0)
   { }
 
   /**
@@ -1150,7 +1149,7 @@ public:
                                     const Vector<Real> &v,
                                     const Vector<Real> &x,
                                     const Vector<Real> &g,
-                                    Real &tol) 
+                                    Real &tol) override
    {
      assert(false);
    }
