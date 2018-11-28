@@ -47,11 +47,6 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
-#include <Xpetra_CrsMatrixWrap.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
-
 // Galeri::Xpetra
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
@@ -82,15 +77,19 @@
 //#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Stratimikos_FROSchXpetra.hpp>
 
+#include <Tpetra_Core.hpp>
+
 // Xpetra include
+#include <Xpetra_CrsMatrixWrap.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#endif
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
 #include "Thyra_FROSchLinearOp_def.hpp"
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
-
-#include <Tpetra_Core.hpp>
 
 
 typedef unsigned UN;
@@ -140,8 +139,7 @@ int main(int argc, char *argv[])
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
-        MPI_Finalize();
-        return 0;
+        return(EXIT_SUCCESS);
     }
     
     int N;
@@ -179,8 +177,7 @@ int main(int argc, char *argv[])
         ArrayRCP<UN> dofsPerNodeVector(NumberOfBlocks);
         
         for (UN block=0; block<(UN) NumberOfBlocks; block++) {
-            Comm->barrier();
-            if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
+            Comm->barrier(); if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
             
             dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1);
             
@@ -267,8 +264,7 @@ int main(int argc, char *argv[])
             RepeatedMaps[block] = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K[block]); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
         }
         
-        Comm->barrier();
-        if (Comm->getRank()==0) cout << "##############################\n# Assembly Monolythic System #\n##############################\n" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Monolythic System #\n##############################\n" << endl;
         
         RCP<Matrix<SC,LO,GO,NO> > KMonolithic;
         if (NumberOfBlocks>1) {
@@ -319,11 +315,10 @@ int main(int argc, char *argv[])
         
         //-----------Set Coordinates and RepMap in ParameterList--------------------------
         RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
+        sublist(plList,"FROSch")->set("Dimension",Dimension);
+        sublist(plList,"FROSch")->set("Overlap",Overlap);
         if (NumberOfBlocks>1) {
             sublist(plList,"FROSch")->set("Repeated Map Vector",RepeatedMaps);
-            
-            sublist(plList,"FROSch")->set("Dimension",Dimension);
-            sublist(plList,"FROSch")->set("Overlap",Overlap);
             
             ArrayRCP<DofOrdering> dofOrderings(NumberOfBlocks);
             if (DOFOrdering == 0) {
@@ -344,9 +339,6 @@ int main(int argc, char *argv[])
             sublist(plList,"FROSch")->set("Repeated Map",RepeatedMaps[0]);
             // sublist(plList,"FROSch")->set("Coordinates List",Coordinates[0]); // Does not work yet...
             
-            sublist(plList,"FROSch")->set("Dimension",Dimension);
-            sublist(plList,"FROSch")->set("Overlap",Overlap);
-            
             string DofOrderingString;
             if (DOFOrdering == 0) {
                 DofOrderingString = "NodeWise";
@@ -361,20 +353,19 @@ int main(int argc, char *argv[])
             assert(false);
         }
         
+        Comm->barrier();
         if(Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;
         }
         
-        Comm->barrier();
-        if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
         
-        Comm->barrier();
-        if (Comm->getRank()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
         
         RCP<LinearOpWithSolveFactoryBase<SC> > lowsFactory =
         linearSolverBuilder.createLinearSolveStrategy("");
@@ -382,20 +373,16 @@ int main(int argc, char *argv[])
         lowsFactory->setOStream(out);
         lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
         
-        Comm->barrier();
-        if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
         
         RCP<LinearOpWithSolveBase<SC> > lows =
         linearOpWithSolve(*lowsFactory, K_thyra);
         
-        Comm->barrier();
-        if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
         SolveStatus<double> status =
         solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
         
-        Comm->barrier();
-        if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
-        
+        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;        
     }
     
     return(EXIT_SUCCESS);
