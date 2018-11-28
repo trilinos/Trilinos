@@ -46,6 +46,10 @@
 #include <math.h>
 #include <string.h>
 
+#include "ShyLU_DDBDDC_config.h"
+
+#if defined(HAVE_SHYLU_DDBDDC_SUPERLU)
+
 #include "shylu_SolverBaseBDDC.hpp"
 #include "shylu_errorBDDC.hpp"
 #include "shylu_SolverSuperLU.hpp"
@@ -103,5 +107,6 @@ template class SolverSuperLU<float>;
 
 } // namespace bddc
 
+#endif // HAVE_SHYLU_DDBDDC_SUPERLU
 
   
