@@ -42,10 +42,58 @@
 #ifndef THYRA_FROSCH_LINEAR_OP_DECL_HPP
 #define THYRA_FROSCH_LINEAR_OP_DECL_HPP
 
+#include <ShyLU_DDFROSch_config.h>
+
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
+
+//Thyra
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOpBase.hpp"
+#endif
+#include "Thyra_SpmdMultiVectorBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_AssertOp.hpp"
+#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_LinearOpDefaultBase.hpp"
-#include "Xpetra_Operator.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+
+//Teuchos
+#include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_getConst.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include <Teuchos_PtrDecl.hpp>
+#include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
+//FROSch
+#include <FROSch_Tools_def.hpp>
+
+//Xpetra
+#include "Xpetra_MapExtractor.hpp"
+#include <Xpetra_CrsMatrixWrap.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include <Xpetra_EpetraCrsMatrix.hpp>
+#endif
+#include <Xpetra_Parameters.hpp>
+#include "Xpetra_Operator.hpp"
+#include "Xpetra_ThyraUtils.hpp"
+
+//Epetra
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include <Epetra_MpiComm.h>
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_RowMatrix.h"
+#endif
 
 namespace Thyra {
     
@@ -134,14 +182,11 @@ namespace Thyra {
         xpetraOperator_;
         
         template<class XpetraOperator_t>
-        void initializeImpl(
-                            const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+        void initializeImpl(const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                             const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
                             const RCP<XpetraOperator_t> &xpetraOperator,
                             bool bIsEpetra,
-                            bool bIsTpetra
-                            );
-        
+                            bool bIsTpetra);
     };
     
     
@@ -151,13 +196,11 @@ namespace Thyra {
      */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP<FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-    fROSchLinearOp(
-                   const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+    fROSchLinearOp(const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
                    const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
                    bool bIsEpetra,
-                   bool bIsTpetra
-                   )
+                   bool bIsTpetra)
     {
         const RCP<FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
         Teuchos::rcp(new FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
@@ -172,13 +215,11 @@ namespace Thyra {
      */
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     RCP<const FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-    constFROSchLinearOp(
-                        const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+    constFROSchLinearOp(const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
                         const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
                         const RCP<const Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
                         bool bIsEpetra,
-                        bool bIsTpetra
-                        )
+                        bool bIsTpetra)
     {
         const RCP<FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
         Teuchos::rcp(new FROSchLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
@@ -187,6 +228,8 @@ namespace Thyra {
     }
     
 }  // namespace Thyra
+
+#endif
 
 #endif // THYRA_XPETRA_LINEAR_OP_DECL_HPP
 

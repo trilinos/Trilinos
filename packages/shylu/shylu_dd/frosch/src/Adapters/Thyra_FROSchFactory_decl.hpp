@@ -42,12 +42,15 @@
 #ifndef THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
 #define THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
 
+#include <ShyLU_DDFROSch_config.h>
+
 //Thyra
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_TpetraLinearOp.hpp"
+#endif
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
@@ -67,13 +70,17 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_ThyraUtils.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_EpetraMap.hpp>
+#endif
 
 //Epetra
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_config.h>
+#endif
 
 //FROSch
 #include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
@@ -83,11 +90,13 @@
 #include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 #include <Thyra_FROSchLinearOp_def.hpp>
+#include <FROSch_Tools_def.hpp>
 
 #include "Kokkos_DefaultNode.hpp"
 
 namespace Thyra {
     
+    using namespace FROSch;
     using namespace Teuchos;
     
     template <class SC,class LO,class GO,class NO=KokkosClassic::DefaultNode::DefaultNodeType>

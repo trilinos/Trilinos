@@ -39,6 +39,12 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef THYRA_FROSCH_XPETRA_FACTORY_HPP
+#define THYRA_FROSCH_XPETRA_FACTORY_HPP
+
+#include <ShyLU_DDFROSch_config.h>
+
+#ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include "Thyra_FROSchFactory_def.hpp"
@@ -75,5 +81,6 @@ namespace Stratimikos {
     
 } // namespace Stratimikos
 
+#endif
 
-
+#endif

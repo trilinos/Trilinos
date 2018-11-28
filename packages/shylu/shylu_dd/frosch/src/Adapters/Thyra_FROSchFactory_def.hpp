@@ -43,9 +43,6 @@
 #define THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
 
 #include "Thyra_FROSchFactory_decl.hpp"
-#include <Teuchos_XMLParameterListCoreHelpers.hpp>
-
-#include <FROSch_Tools_def.hpp>
 
 namespace Thyra {
     

@@ -39,6 +39,8 @@
 // ************************************************************************
 //@HEADER
 
+#include <ShyLU_DDFROSch_config.h>
+
 #include <mpi.h>
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -46,7 +48,9 @@
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 #include <Xpetra_CrsMatrixWrap.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
+#endif
 
 // Galeri::Xpetra
 #include "Galeri_XpetraProblemFactory.hpp"
@@ -68,7 +72,9 @@
 #include <Thyra_TpetraThyraWrappers.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_VectorStdOps.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Thyra_EpetraLinearOp.hpp>
+#endif
 #include <Thyra_VectorSpaceBase_def.hpp>
 #include <Thyra_VectorSpaceBase_decl.hpp>
 
@@ -176,7 +182,7 @@ int main(int argc, char *argv[])
             Comm->barrier();
             if (Comm->getRank()==0) cout << "###################\n# Assembly Block " << block << " #\n###################\n" << endl;
             
-            dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1); std::cout << dofsPerNodeVector[block] << std::endl;
+            dofsPerNodeVector[block] = (UN) max(int(DofsPerNode-block),1);
             
             ParameterList GaleriList;
             GaleriList.set("nx", int(N*(M+block)));

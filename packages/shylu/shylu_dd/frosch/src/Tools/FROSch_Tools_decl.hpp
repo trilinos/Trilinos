@@ -44,12 +44,12 @@
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
+#include <ShyLU_DDFROSch_config.h>
+
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_ExportFactory.hpp>
-
-#include <ShyLU_DDFROSch_config.h>
 
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
 #include <Zoltan2_MatrixAdapter.hpp>
@@ -139,6 +139,7 @@ namespace FROSch {
                                                                    Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > dofsMaps,
                                                                    Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > nodeList = Teuchos::null);
     
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
                                                          const Epetra_BlockMap &map,
@@ -153,15 +154,17 @@ namespace FROSch {
     Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
                                                                     Epetra_MultiVector &vector,
                                                                     Teuchos::RCP<const Teuchos::Comm<int> > comm);
+#endif
     
-    template <class SC>
-    Teuchos::RCP<SC> ExtractPtrFromParameterList(Teuchos::ParameterList& paramList,
-                                                 std::string namePtr="Ptr");
+    template <class Type>
+    Teuchos::RCP<Type> ExtractPtrFromParameterList(Teuchos::ParameterList& paramList,
+                                                   std::string namePtr="Ptr");
     
-    template <class SC>
-    Teuchos::ArrayRCP<SC> ExtractVectorFromParameterList(Teuchos::ParameterList& paramList,
-                                                         std::string nameVector="Vector");
+    template <class Type>
+    Teuchos::ArrayRCP<Type> ExtractVectorFromParameterList(Teuchos::ParameterList& paramList,
+                                                           std::string nameVector="Vector");
     
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
     template <class LO,class GO,class NO>
     Teuchos::RCP<Epetra_Map> ConvertToEpetra(const Xpetra::Map<LO,GO,NO> &map,
                                              Teuchos::RCP<Epetra_Comm> epetraComm);
@@ -173,6 +176,7 @@ namespace FROSch {
     template <class SC, class LO,class GO, class NO>
     Teuchos::RCP<Epetra_CrsMatrix> ConvertToEpetra(const Xpetra::Matrix<SC,LO,GO,NO> &matrix,
                                                    Teuchos::RCP<Epetra_Comm> epetraComm);
+#endif
     
     template <class LO>
     Teuchos::Array<LO> GetIndicesFromString(std::string string);

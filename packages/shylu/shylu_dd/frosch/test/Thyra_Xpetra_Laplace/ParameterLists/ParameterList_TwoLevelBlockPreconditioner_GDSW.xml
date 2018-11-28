@@ -18,16 +18,20 @@
     <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
     <ParameterList name="Preconditioner Types">
         <ParameterList name="FROSch">
-            <Parameter name="FROSch Preconditioner Type"                        type="string"   value="GDSWPreconditioner"/>
+            <Parameter name="FROSch Preconditioner Type"                        type="string"   value="TwoLevelBlockPreconditioner"/>
             
-            <ParameterList name="OneLevelOperator">
+            <Parameter name="OverlappingOperator Type"                          type="string"   value="AlgebraicOverlappingOperator"/>
+            <Parameter name="CoarseOperator Type"                               type="string"   value="GDSWCoarseOperator"/>
+            <Parameter name="Null Space Type"                                   type="string"   value="Laplace"/>
+            
+            <ParameterList name="AlgebraicOverlappingOperator">
                 <ParameterList name="Solver">
                     <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                    <Parameter name="Solver"                                    type="string"   value="klu"/>
+                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 </ParameterList>
             </ParameterList>
             
-            <ParameterList name="GDSWOperator">
+            <ParameterList name="GDSWCoarseOperator">
                 <ParameterList name="Blocks">
                     <ParameterList name="1">
                         <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
@@ -48,7 +52,7 @@
                 
                 <ParameterList name="ExtensionSolver">
                     <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                    <Parameter name="Solver"                                    type="string"   value="klu"/>
+                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 </ParameterList>
                 
                 <ParameterList name="Distribution">
@@ -60,9 +64,8 @@
                 
                 <ParameterList name="CoarseSolver">
                     <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                    <Parameter name="Solver"                                    type="string"   value="klu"/>
+                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 </ParameterList>
-                
             </ParameterList>
             
         </ParameterList>
