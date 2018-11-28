@@ -42,50 +42,14 @@
 #ifndef THYRA_FROSCH_LINEAR_OP_DEF_HPP
 #define THYRA_FROSCH_LINEAR_OP_DEF_HPP
 
-//Thyra
-
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_SpmdMultiVectorBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_AssertOp.hpp"
 #include "Thyra_FROSchLinearOp_decl.hpp"
-#include "Thyra_LinearOpBase.hpp"
-#include "Thyra_EpetraLinearOpBase.hpp"
-#include "Thyra_ScaledLinearOpBase.hpp"
-#include "Thyra_RowStatLinearOpBase.hpp"
-#include "Thyra_SpmdVectorSpaceBase.hpp"
-//Teuchos
-#include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_getConst.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include <Teuchos_PtrDecl.hpp>
-#include "Teuchos_TypeNameTraits.hpp"
 
-//FROSch
-#include <FROSch_Tools_def.hpp>
-
-//Xpetra
-#include "Xpetra_MapExtractor.hpp"
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_Parameters.hpp>
-
-//Epetra
-#include <Epetra_MpiComm.h>
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_RowMatrix.h"
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
 
 namespace Thyra {
     
     using namespace std;
-    using namespace Belos;
+//    using namespace Belos;
     using namespace FROSch;
     using namespace Teuchos;
     using namespace Xpetra;
@@ -183,6 +147,7 @@ namespace Thyra {
             default: FROSCH_ASSERT(false,"Thyra::XpetraLinearOp::apply. Unknown value for M_trans. Only NOTRANS, TRANS and CONJTRANS are supported.");
         }
         //Epetra NodeType
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         if(this->bIsEpetra_){
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
             
@@ -202,8 +167,7 @@ namespace Thyra {
         
             RCP<Epetra_MultiVector> Y;
        
-            THYRA_FUNC_TIME_MONITOR_DIFF(
-                                         "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
+            THYRA_FUNC_TIME_MONITOR_DIFF("Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
             // X
             X = get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
             RCP<Epetra_MultiVector> X_nonconst = rcp_const_cast<Epetra_MultiVector>(X);
@@ -214,14 +178,16 @@ namespace Thyra {
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
 
         } //Tpetra NodeType
-        else if(bIsTpetra_){
-            const RCP<const MultiVector<SC,LO,GO,NO> > xX =
-            ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromRef(X_in), comm);
+        else
+#endif
+        if(bIsTpetra_){
+            const RCP<const MultiVector<SC,LO,GO,NO> > xX = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromRef(X_in), comm);
             xY = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromPtr(Y_inout), comm);
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
             
         } else {
-            std::cout<<"Only Implemented for Epetra and Tpetra\n";
+            FROSCH_ASSERT(false,"There is a problem with the underlying lib in FROSchLinearOp.");
+            //åstd::cout<<"Only Implemented for Epetra and Tpetra\n";
         }
         
         RCP<MultiVectorBase<SC> >thyraX =
@@ -270,5 +236,6 @@ namespace Thyra {
     
 } // namespace Thyra
 
+#endif
 
 #endif  // THYRA_XPETRA_LINEAR_OP_HPP

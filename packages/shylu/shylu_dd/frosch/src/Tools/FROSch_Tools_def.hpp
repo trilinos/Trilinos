@@ -43,6 +43,7 @@
 #define _FROSCH_TOOLS_DEF_HPP
 
 #include <FROSch_Tools_decl.hpp>
+
 namespace FROSch {
     
     template <class LO,class GO,class NO>
@@ -729,6 +730,7 @@ namespace FROSch {
         return nullSpaceBasis;
     }
     
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
     template <class LO,class GO,class NO>
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > ConvertToXpetra(Xpetra::UnderlyingLib lib,
                                                          const Epetra_BlockMap &map,
@@ -747,8 +749,6 @@ namespace FROSch {
                                                                Epetra_CrsMatrix &matrix,
                                                                Teuchos::RCP<const Teuchos::Comm<int> > comm)
     {
-        
-
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > rowMap = ConvertToXpetra<LO,GO,NO>(lib,matrix.RowMap(),comm);
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > xmatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(rowMap,matrix.MaxNumEntries());
         for (unsigned i=0; i<xmatrix->getNodeNumRows(); i++) {
@@ -789,12 +789,13 @@ namespace FROSch {
         }
         return xMultiVector;
     }
+#endif
 
-    template <class SC>
-    Teuchos::RCP<SC> ExtractPtrFromParameterList(Teuchos::ParameterList& paramList,
-                                                 std::string namePtr)
+    template <class Type>
+    Teuchos::RCP<Type> ExtractPtrFromParameterList(Teuchos::ParameterList& paramList,
+                                                   std::string namePtr)
     {
-        Teuchos::RCP<SC> pointer = Teuchos::null;
+        Teuchos::RCP<Type> pointer = Teuchos::null;
         
         if(paramList.isParameter(namePtr) == false)
             return pointer;
@@ -808,11 +809,11 @@ namespace FROSch {
         return pointer;
     }
 
-    template <class SC>
-    Teuchos::ArrayRCP<SC> ExtractVectorFromParameterList(Teuchos::ParameterList& paramList,
+    template <class Type>
+    Teuchos::ArrayRCP<Type> ExtractVectorFromParameterList(Teuchos::ParameterList& paramList,
                                                            std::string nameVector)
     {
-        Teuchos::ArrayRCP<SC> vector = Teuchos::null;
+        Teuchos::ArrayRCP<Type> vector = Teuchos::null;
         
         if(paramList.isParameter(nameVector) == false)
             return vector;
@@ -826,11 +827,11 @@ namespace FROSch {
         return vector;
     }
 
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
     template <class LO,class GO,class NO>
     Teuchos::RCP<Epetra_Map> ConvertToEpetra(const Xpetra::Map<LO,GO,NO> &map,
-                                            Teuchos::RCP<Epetra_Comm> epetraComm)
+                                             Teuchos::RCP<Epetra_Comm> epetraComm)
     {
-
         Teuchos::ArrayView<const GO> elementList = map.getNodeElementList();
 
         GO numGlobalElements = map.getGlobalNumElements();
@@ -860,7 +861,6 @@ namespace FROSch {
     Teuchos::RCP<Epetra_CrsMatrix> ConvertToEpetra(const Xpetra::Matrix<SC,LO,GO,NO> &matrix,
                                                    Teuchos::RCP<Epetra_Comm> epetraComm)
     {
-    
         Teuchos::RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*matrix.getMap(),epetraComm);
         Teuchos::RCP<Epetra_CrsMatrix> matrixEpetra(new Epetra_CrsMatrix(Copy,*map,matrix.getGlobalMaxNumRowEntries()));
         Teuchos::ArrayView<const SC> valuesArrayView;
@@ -879,7 +879,7 @@ namespace FROSch {
         matrixEpetra->FillComplete();
         return matrixEpetra;
     }
-
+#endif
 
     template <class LO>
     Teuchos::Array<LO> GetIndicesFromString(std::string string, LO dummy){
