@@ -37,8 +37,9 @@
 
 #include <algorithm> // std::transform
 #include <cctype> // std::toupper
-#include <sstream>
 #include <functional>
+#include <memory> // std::unique_ptr
+#include <sstream>
 
 namespace { // (anonymous)
 
