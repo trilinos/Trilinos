@@ -200,6 +200,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                          Teuchos::ArrayRCP<LocalOrdinal>& type3LIDs,
                          Teuchos::RCP<const Teuchos::Comm<int> >& rcomm)
 {
+#ifdef HAVE_TPETRACORE_MPI
     using Teuchos::TimeMonitor;
     using ::Tpetra::Details::Behavior;
     using Kokkos::AllowPadding;
@@ -215,6 +216,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     std::ostringstream errstr;
     bool error = false;
     auto const comm             = MyDomainMap->getComm();
+
     MPI_Comm rawComm            = getRawMpiComm(*comm);
     const int MyPID             = rcomm->getRank ();
 
@@ -264,45 +266,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     // do this as C array to avoid Teuchos::Array value initialization of all reserved memory
     Teuchos::Array< Teuchos::ArrayRCP<pidgidpair_t > > RSB(NumRecvs);
 
-    if(0) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-        TimeMonitor rsb(*TimeMonitor::getNewTimer(prefix + std::string("isMMallaRCPbuild")));
-#endif
-        for(uint i=0;i<NumRecvs;++i) {
-            RSB[i] = Teuchos::arcp(new pidgidpair_t[NumExportLIDs],0,NumExportLIDs,true);
-            assert(RSB[i].size() == (uint)NumExportLIDs);
-        }
-        // note that if NumExportLIDs is 0, ExportLIDs.is_null()==true
-        for(size_t i=0; i < NumExportLIDs; i++) {
-            LO lid = ExportLIDs[i];
-            GO exp_pid = ExportPIDs[i];
-            for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
-                int pid_order = RemotePIDOrder[colind[j]];
-
-                if(pid_order!=-1) {
-                    GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
-                    auto tpair = pidgidpair_t(exp_pid,gid);
-                    // don't use a set here
-                    // NOTE: This would be more efficient if 
-                    // Reverse Iterators were used in the find, as
-                    // gid order tends to follow lid order, generally.
-                    if(std::find(RSB[pid_order].begin(),RSB[pid_order].begin()+ReverseSendSizes[pid_order],tpair)
-                       == RSB[pid_order].begin()+ReverseSendSizes[pid_order])
-                    {
-                        RSB[pid_order][ReverseSendSizes[pid_order]]=tpair;
-                        ReverseSendSizes[pid_order]++;
-                        if(ReverseSendSizes[pid_order] == RSB[pid_order].size()) {
-                            int newsize = RSB[pid_order].size()*2;
-                            auto tmp = Teuchos::arcp(new pidgidpair_t[newsize],0,newsize,true);
-                            std::copy(RSB[pid_order],RSB[pid_order]+RSB[pid_order].size(),tmp);
-                            RSB[pid_order]=tmp;                     
-                        }
-                    }
-                }
-            }
-        }
-    }
-    else {
+    {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         TimeMonitor set_all(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSB")));
 #endif
@@ -320,34 +284,34 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         Teuchos::Array<std::set<pidgidpair_t>> pidsets(NumRecvs);
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-        TimeMonitor set_insert(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBinsert")));
+            TimeMonitor set_insert(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBinsert")));
 #endif  
-        for(size_t i=0; i < NumExportLIDs; i++) {
-            LO lid = ExportLIDs[i];
-            GO exp_pid = ExportPIDs[i];
-            for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
-                int pid_order = RemotePIDOrder[colind[j]];
-                if(pid_order!=-1) {
-                    GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
-                    auto tpair = pidgidpair_t(exp_pid,gid);
-                    pidsets[pid_order].insert(pidsets[pid_order].end(),tpair);
+            for(size_t i=0; i < NumExportLIDs; i++) {
+                LO lid = ExportLIDs[i];
+                GO exp_pid = ExportPIDs[i];
+                for(auto j=rowptr[lid]; j<rowptr[lid+1]; j++){
+                    int pid_order = RemotePIDOrder[colind[j]];
+                    if(pid_order!=-1) {
+                        GO gid = MyColMap->getGlobalElement(colind[j]); //Epetra SM.GCID46 =>sm->graph-> {colmap(colind)}
+                        auto tpair = pidgidpair_t(exp_pid,gid);
+                        pidsets[pid_order].insert(pidsets[pid_order].end(),tpair);
+                    }
                 }
             }
-        }
         }
 
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
             TimeMonitor set_cpy(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBcpy")));
 #endif  
-        int jj = 0;
-        for(auto &&ps : pidsets)  {
-            auto s = ps.size();
-            RSB[jj] = Teuchos::arcp(new pidgidpair_t[ s ],0, s ,true);
-            std::copy(ps.begin(),ps.end(),RSB[jj]);
-            ReverseSendSizes[jj]=s;
-            ++jj;
-        }
+            int jj = 0;
+            for(auto &&ps : pidsets)  {
+                auto s = ps.size();
+                RSB[jj] = Teuchos::arcp(new pidgidpair_t[ s ],0, s ,true);
+                std::copy(ps.begin(),ps.end(),RSB[jj]);
+                ReverseSendSizes[jj]=s;
+                ++jj;
+            }
         }
     } // end of set based packing.
 
@@ -386,6 +350,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     Teuchos::Array<MPI_Status> rawBstatus(rawBreq.size());
     const int err1 = MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
                                   rawBstatus.getRawPtr());
+
 
 #ifdef HAVE_TPETRA_DEBUG
     if(err1) {
@@ -477,6 +442,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         comm->barrier();
         MPI_Abort (MPI_COMM_WORLD, -1);
     }
+#endif
 }
 
 // Note: This should get merged with the other Tpetra sort routines eventually.

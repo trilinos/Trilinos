@@ -271,11 +271,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
         *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-
+      tm3 = Teuchos::null;
     }
     comm->barrier();
     globalTimeMonitor = Teuchos::null;
-
+    
     if (printTimings) {
       RCP<Teuchos::ParameterList> reportParams = rcp(new Teuchos::ParameterList);
       if (timingsFormat == "yaml") {
@@ -481,7 +481,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
         *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-
+      tm3 = Teuchos::null;
     }
 #ifdef HAVE_MUELU_STRATIMIKOS
     if (solverName == "Stratimikos") {
@@ -525,6 +525,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
       comm->barrier();
 
+      tm4 = Teuchos::null;
       auto tm5 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // Solve Ax = b.
@@ -532,6 +533,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       std::cout << status << std::endl;
 
       success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+      tm5 = Teuchos::null;
     }
 #endif
     comm->barrier();

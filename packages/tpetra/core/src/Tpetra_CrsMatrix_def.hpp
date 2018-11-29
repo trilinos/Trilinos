@@ -8187,7 +8187,7 @@ namespace Tpetra {
       if(reverseMode) isMM = false;
     }
 
-   
+#ifdef HAVE_TPETRACORE_MPI
     MPI_Request rawRequest = MPI_REQUEST_NULL;
     MPI_Comm rawComm            = getRawMpiComm(*getComm());
 
@@ -8200,6 +8200,8 @@ namespace Tpetra {
         bool mismatch = source_vals != target_vals;
         immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
     }
+#endif
+
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
@@ -8877,14 +8879,14 @@ namespace Tpetra {
     Teuchos::ParameterList esfc_params;
 
     RCP<import_type> MyImport;
-
+#ifdef HAVE_TPETRACORE_MPI
     // now resolve the non-blocking allreduce on reduced_mismatch;
     MPI_Status stat;
     int mmwaiterr = 0;
     if(isMM) mmwaiterr = MPI_Wait (&rawRequest,&stat); 
     (void)mmwaiterr;
     if(isMM && reduced_mismatch) isMM = false; 
-
+#endif
 
     if( isMM && !MyImporter.is_null()) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -9066,8 +9068,11 @@ namespace Tpetra {
         
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
-#endif
         esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
+#else
+	esfc_params.set("Timer Label",std::string("notMM eSFC"));
+#endif
+
         if(!params.is_null())
             esfc_params.set("compute global constants",params->get("compute global constants",true));
         destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
