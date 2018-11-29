@@ -40,6 +40,7 @@
 #include <functional>
 #include <memory> // std::unique_ptr
 #include <sstream>
+#include <tuple>
 
 namespace { // (anonymous)
 
@@ -69,12 +70,12 @@ tpetraToEpetraComm (const Teuchos::Comm<int>& tpetraComm)
 
 #if defined(HAVE_TPETRACORE_MPI) && defined(HAVE_MPI)
   MPI_Comm rawMpiComm = Tpetra::Details::extractMpiCommFromTeuchos (tpetraComm);
-  std::unique_ptr<Epetra_MpiComm> epetraMpiComm (new Epetra_MpiComm (rawMpiComm));
-  return epetraMpiComm;
+  std::unique_ptr<Epetra_MpiComm> retComm (new Epetra_MpiComm (rawMpiComm));
 #else
-  std::unique_ptr<Epetra_SerialComm> epetraSerialComm (new Epetra_SerialComm);
-  return epetraSerialComm;
+  std::unique_ptr<Epetra_SerialComm> retComm (new Epetra_SerialComm);
 #endif
+
+  return std::move (retComm);
 }
 
 // Given a Tpetra::Map map_t, and comm_e, the result of
@@ -140,7 +141,6 @@ deep_copy (Epetra_Vector& X_e,
   using host_memory_space = Kokkos::HostSpace;
   using host_device_type = Kokkos::Device<host_execution_space, host_memory_space>;
   using host_view_type = Kokkos::View<double*, Kokkos::LayoutLeft, host_device_type>;
-
 
   int lclErrCode = 0;
 
@@ -481,7 +481,10 @@ tpetraToEpetraLinearSystem (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
 						  domMap_e, ranMap_e);
   Epetra_Vector x_e = tpetraToEpetraVector (x_t, domMap_e);
   Epetra_Vector b_e = tpetraToEpetraVector (b_t, ranMap_e);
-  return {A_e, x_e, b_e};
+
+  // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+  //return {A_e, x_e, b_e};
+  return std::make_tuple (A_e, x_e, b_e);
 }
 
 #endif // defined(HAVE_IFPACK2_EPETRA)
@@ -528,7 +531,9 @@ solveEpetraLinearSystemWithAztecOO (std::tuple<Epetra_CrsMatrix, Epetra_Vector, 
   }
   errCode = solver.SetAztecOption (AZ_solver, aztecOO_solverType);
   if (errCode != 0) {
-    return {-1.0, 0, false};
+    // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+    //return {-1.0, 0, false};
+    return std::make_tuple (-1.0, 0, false); 
   }
 
   errCode = solver.Iterate (maxNumIters, convTol);
@@ -542,7 +547,9 @@ solveEpetraLinearSystemWithAztecOO (std::tuple<Epetra_CrsMatrix, Epetra_Vector, 
   else { // negative means error code
     success = false;
   }
-  return {solver.ScaledResidual (), solver.NumIters (), success};
+  // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+  //return {solver.ScaledResidual (), solver.NumIters (), success};
+  return std::make_tuple (solver.ScaledResidual (), solver.NumIters (), success);
 }
 
 #endif // defined(HAVE_IFPACK2_AZTECOO) && defined(HAVE_IFPACK2_EPETRA)
@@ -673,7 +680,9 @@ bicgstab_aztecoo (MV& x,
   scaled_r_norm = rec_residual / b_norm;
   rhon = dot (r_tld, r);
   if (scaled_r_norm <= tol) {
-    return {scaled_r_norm, 0, true};
+    // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+    //return {scaled_r_norm, 0, true};
+    return std::make_tuple (scaled_r_norm, 0, true);
   }
 
   for (iter = 1; iter <= max_it; ++iter) {
@@ -683,7 +692,9 @@ bicgstab_aztecoo (MV& x,
       actual_residual = norm (v);
       scaled_r_norm = actual_residual / b_norm;
       std::cerr << "Uh oh, breakdown" << std::endl;
-      return {scaled_r_norm, iter, false};
+      // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+      //return {scaled_r_norm, iter, false};
+      return std::make_tuple (scaled_r_norm, iter, false); 
     }
 
     beta = (rhon / rhonm1) * (alpha / omega);
@@ -718,7 +729,9 @@ bicgstab_aztecoo (MV& x,
 	residual (v, b, A, x); // v = b - A*x;
 	actual_residual = norm (v);
 	scaled_r_norm = actual_residual / b_norm;
-	return {scaled_r_norm, iter, false};
+	// Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+	//return {scaled_r_norm, iter, false};
+	return std::make_tuple (scaled_r_norm, iter, false);
       }
       else {
 	brkdown_tol = 0.1 * STS::magnitude (sigma);
@@ -761,11 +774,15 @@ bicgstab_aztecoo (MV& x,
     scaled_r_norm = rec_residual / b_norm;
     rhon = dot (r, r_tld);
     if (scaled_r_norm <= tol) {
-      return {scaled_r_norm, 0, true};
+      // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+      //return {scaled_r_norm, 0, true};
+      return std::make_tuple (scaled_r_norm, 0, true);
     }
   }
 
-  return {scaled_r_norm, iter, scaled_r_norm <= tol};
+  // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+  //return {scaled_r_norm, iter, scaled_r_norm <= tol};
+  return std::make_tuple (scaled_r_norm, iter, scaled_r_norm <= tol);
 }
 
 template<class MV, class OP>
@@ -786,7 +803,9 @@ bicgstab_no_prec_paper (MV& x,
   const mag_type b_norm = norm (b);
   if (b_norm == STS::zero ()) {
     x.putScalar (STS::zero ());
-    return {STM::zero (), 0, true};
+    // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+    //return {STM::zero (), 0, true};
+    return std::make_tuple (STM::zero (), 0, true);
   }
   dot_type rho_cur = STS::one ();
   dot_type rho_prv = STS::one ();
@@ -800,7 +819,9 @@ bicgstab_no_prec_paper (MV& x,
   mag_type r_norm = norm (r);
   mag_type scaled_r_norm = r_norm / b_norm;
   if (r_norm / b_norm <= tol) {
-    return {scaled_r_norm, 0, true};
+    // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+    //return {scaled_r_norm, 0, true};
+    return std::make_tuple (scaled_r_norm, 0, true);
   }
   MV r_hat (r, Teuchos::Copy);
 
@@ -848,7 +869,9 @@ bicgstab_no_prec_paper (MV& x,
       const mag_type actual_r_norm = norm (tmp);
       const mag_type actual_scaled_r_norm = actual_r_norm / b_norm;
       std::cerr << "!!! Actual scaled r norm: " << actual_scaled_r_norm << std::endl;
-      return {scaled_r_norm, iter, true};
+      // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+      //return {scaled_r_norm, iter, true};
+      return std::make_tuple (scaled_r_norm, iter, true);
     }
 
     rho_prv = rho_cur; // don't forget this!
@@ -860,7 +883,9 @@ bicgstab_no_prec_paper (MV& x,
     const mag_type actual_scaled_r_norm = actual_r_norm / b_norm;
     std::cerr << "!!! Actual scaled r norm: " << actual_scaled_r_norm << std::endl;
   }
-  return {scaled_r_norm, max_it, scaled_r_norm <= tol};
+  // Clang accepts the commented-out line, but GCC 4.9.3 (-std=c++11) does not.
+  //return {scaled_r_norm, max_it, scaled_r_norm <= tol};
+  return std::make_tuple (scaled_r_norm, max_it, scaled_r_norm <= tol);
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -1991,7 +2016,7 @@ public:
     postScaleSolutionVectors (X);
 
     typename Teuchos::ScalarTraits<scalar_type>::magnitudeType tol {-1.0};
-    try {
+    try { // not every Belos solver implements this
       tol = solver_->achievedTol ();
     }
     catch (...) {}
