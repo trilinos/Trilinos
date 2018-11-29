@@ -74,6 +74,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: rebalance P and R");
+    SET_VALID_ENTRY("repartition: rebalance Nullspace");
     SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef  SET_VALID_ENTRY
@@ -105,7 +106,8 @@ namespace MueLu {
 
     if (pL.get<std::string>("type") == "Interpolation") {
       Input(coarseLevel, "P");
-      Input(coarseLevel, "Nullspace");
+      if (pL.get<bool>("repartition: rebalance Nullspace"))
+        Input(coarseLevel, "Nullspace");
       if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
         Input(coarseLevel, "Coordinates");
 
