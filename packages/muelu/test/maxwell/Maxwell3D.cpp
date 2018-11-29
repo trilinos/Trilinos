@@ -259,7 +259,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       solver = factory->create("Block CG",belosParams);
 
       comm->barrier();
-
+      tm2 =  Teuchos::null;
       auto tm3 = TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve"));
 
       // set problem and solve

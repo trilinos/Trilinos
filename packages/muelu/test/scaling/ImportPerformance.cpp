@@ -168,7 +168,7 @@ Epetra_Map * convert_lightweightmap_to_map(const EpetraExt::LightweightMap & A, 
 
 
 Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::LightweightCrsMatrix & A) {
-  TimeMonitor tm(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: MapConstructor"));
+  auto  tm = TimeMonitor::getNewTimer("OptimizedTransfer: Convert: MapConstructor");
   const Epetra_Comm & Comm = A.DomainMap_.Comm();
 
   // Build Maps
@@ -180,8 +180,9 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
   int N=RowMap->NumMyElements();
   int nnz = A.colind_.size();
 
+  tm = Teuchos::null;
   // Copy pointers over
-  TimeMonitor tm2(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: Data Copy"));
+  auto  tm2= TimeMonitor::getNewTimer("OptimizedTransfer: Convert: Data Copy");
   Epetra_IntSerialDenseVector & rowptr = Aout->ExpertExtractIndexOffset();
   Epetra_IntSerialDenseVector & colind = Aout->ExpertExtractIndices();
   double *& vals = Aout->ExpertExtractValues();
@@ -196,14 +197,15 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
     colind[i] = A.colind_[i];
     vals[i]  = A.vals_[i];
   }
-
-  TimeMonitor tm3(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: BuildRemote"));
+  tm2 = Teuchos::null;
+  auto tm3= TimeMonitor::getNewTimer("OptimizedTransfer: Convert: BuildRemote");
 
   // Get RemotePIDs
   std::vector<int> RemotePIDs_;
   build_remote_pids(Comm.MyPID(),A.ColMapOwningPIDs_,RemotePIDs_);
 
-  TimeMonitor tm4(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: BuildImport"));
+  tm3 = Teuchos::null;
+  auto tm4= TimeMonitor::getNewTimer("OptimizedTransfer: Convert: BuildImport");
 
   // Importer build
   const int * ExportLIDs = A.ExportLIDs_.size()?&A.ExportLIDs_[0]:0;
@@ -211,7 +213,8 @@ Epetra_CrsMatrix* convert_lightweightcrsmatrix_to_crsmatrix(const EpetraExt::Lig
   const int * RemotePIDs = RemotePIDs_.size()?&RemotePIDs_[0]:0;
   Epetra_Import * Importer = new Epetra_Import(*ColMap,A.DomainMap_,RemotePIDs_.size(),RemotePIDs,A.ExportLIDs_.size(),ExportLIDs,ExportPIDs);
 
-  TimeMonitor tm5(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert: ESFC"));
+  tm4 = Teuchos::null;
+  auto tm5 = TimeMonitor::getNewTimer("OptimizedTransfer: Convert: ESFC");
 
   // ESFC
   Aout->ExpertStaticFillComplete(A.DomainMap_,*RowMap,Importer,0);
@@ -370,7 +373,7 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // ==================
     // Optimized Transfer
     // ==================
-    TimeMonitor tm(*TimeMonitor::getNewTimer("OptimizedTransfer: Import"));
+    auto tm = TimeMonitor::getNewTimer("OptimizedTransfer: Import");
     crs_matrix_struct_type Pview;
     Tpetra::MMdetails::import_and_extract_views(*Pu,Au->getColMap(), Pview, Au->getGraph()->getImporter(), false,"ImportPerf: ");
 
@@ -381,7 +384,8 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // ==================
     // Use the columnmap from Aopt and build an importer ex nihilo
 
-    TimeMonitor tm2(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport"));
+    tm = Teuchos::null;
+    auto tm2 = TimeMonitor::getNewTimer("NaiveTransfer: BuildImport");
     import_type NaiveImport(Pview.importMatrix->getColMap(),Pu->getDomainMap());
     Au->getComm()->barrier();
 
@@ -397,7 +401,8 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // Optimized Transfer
     // ==================
     // Build the LightweightCrsMatrix
-    TimeMonitor tm3(*TimeMonitor::getNewTimer("OptimizedTransfer: Import"));
+
+    auto tm3 = TimeMonitor::getNewTimer("OptimizedTransfer: Import");
     EpetraExt::CrsMatrixStruct Pview;
     bool SortGhosts=true;
 
@@ -411,8 +416,8 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
       EpetraExt::import_only<long long>(*Pu,Au->ColMap(),Pview,Au->Importer(),SortGhosts,"ImportPerf: ");
 #endif
     }
-
-    TimeMonitor tm4(*TimeMonitor::getNewTimer("OptimizedTransfer: Convert"));
+    tm3 = Teuchos::null;
+    auto tm4 = TimeMonitor::getNewTimer("OptimizedTransfer: Convert");
     Epetra_CrsMatrix *Aopt = convert_lightweightcrsmatrix_to_crsmatrix(*Pview.importMatrix);
 
     Au->Comm().Barrier();
@@ -420,7 +425,8 @@ void TestTransfer(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,
     // Naive Transfer
     // ==================
     // Use the columnmap from Aopt and build an importer ex nihilo
-    TimeMonitor tm5(*TimeMonitor::getNewTimer("NaiveTransfer: BuildImport"));
+    tm4 = Teuchos::null;
+    auto tm5 = TimeMonitor::getNewTimer("NaiveTransfer: BuildImport");
     const Epetra_Map &NaiveColMap = Aopt->ColMap();
     Epetra_Import NaiveImport(NaiveColMap,Pu->DomainMap());
 
