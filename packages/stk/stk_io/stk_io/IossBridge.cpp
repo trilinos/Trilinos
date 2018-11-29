@@ -130,7 +130,6 @@ namespace {
   static const std::string matrix_33("matrix_33");
 
   const std::string base_stk_part_name = "_base_stk_part_name";
-  const std::string entity_nodes_suffix = "_n";
 
 
   stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
@@ -478,6 +477,73 @@ namespace {
       }
     }
   }
+
+  void process_element_attributes_for_define(stk::io::OutputParams &params, stk::mesh::Part &part)
+  {
+      stk::mesh::EntityRank rank = stk::mesh::EntityRank::ELEM_RANK;
+
+      ThrowRequireMsg(part.primary_entity_rank() == rank, "Input part is not ELEM_RANK");
+
+      const std::vector<stk::io::FieldAndName>& additionalFields = params.get_additional_attribute_fields();
+
+      Ioss::Region & io_region = params.io_region();
+      stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
+      Ioss::ElementBlock* io_block = io_region.get_element_block(stk::io::getPartName(part));
+
+      for(const stk::io::FieldAndName& attribute : additionalFields) {
+          if(attribute.apply_to_entity(io_block)) {
+              const stk::mesh::FieldBase *stkField = attribute.field();
+
+              ThrowRequireMsg(stkField->entity_rank() == rank, "Input attribute field: " + stkField->name() + " is not ELEM_RANK");
+              stk::mesh::PartVector relevantParts;
+              relevantParts.push_back(&part);
+              stk::io::superset_mesh_parts(part, relevantParts);
+              relevantParts.push_back(&meta.universal_part());
+//                relevantParts.push_back(&region->mesh_meta_data().active_part());
+
+              if(stkField->defined_on_any(relevantParts)) {
+                  const std::string dbName = attribute.db_name();
+                  if(!io_block->field_exists(dbName)) {
+                      int eb_size = io_block->get_property("entity_count").get_int();
+
+                      const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*stkField, rank, relevantParts);
+                      ThrowRequireMsg(res.num_scalars_per_entity() != 0,
+                                      "Could not find a restriction for field: " + stkField->name() + " on part: " + part.name());
+                      stk::io::FieldType fieldType;
+                      stk::io::get_io_field_type(stkField, res, &fieldType);
+                      io_block->field_add(Ioss::Field(dbName, fieldType.type, fieldType.name, Ioss::Field::ATTRIBUTE, eb_size));
+                  }
+              }
+          }
+      }
+  }
+
+  void process_element_attributes_for_output(stk::io::OutputParams &params, stk::mesh::Part &part)
+  {
+      stk::mesh::EntityRank rank = stk::mesh::EntityRank::ELEM_RANK;
+
+      ThrowRequireMsg(part.primary_entity_rank() == rank, "Input part is not ELEM_RANK");
+
+      const std::vector<stk::io::FieldAndName>& additionalFields = params.get_additional_attribute_fields();
+
+      Ioss::Region & io_region = params.io_region();
+      Ioss::ElementBlock* ioBlock = io_region.get_element_block(stk::io::getPartName(part));
+
+      for(const stk::io::FieldAndName& attribute : additionalFields) {
+          if(attribute.apply_to_entity(ioBlock)) {
+              const stk::mesh::FieldBase *stkField = attribute.field();
+
+              ThrowRequireMsg(stkField->entity_rank() == rank, "Input attribute field: " + stkField->name() + " is not ELEM_RANK");
+
+              const std::string dbName = attribute.db_name();
+
+              std::vector<stk::mesh::Entity> entities;
+              stk::io::get_output_entity_list(ioBlock, rank, params, entities);
+              stk::io::field_data_to_ioss(params.bulk_data(), stkField, entities, ioBlock, dbName, Ioss::Field::ATTRIBUTE);
+          }
+      }
+  }
+
 }//namespace <empty>
 
 
@@ -546,6 +612,26 @@ namespace stk {
         set_ioss_part_attribute<T>(part, value);
     }
 
+
+    struct IossDerivedNodesetAttribute
+    {
+      bool value;
+    };
+
+    void set_derived_nodeset_attribute(stk::mesh::Part& part, const bool hasAttribute)
+    {
+        set_ioss_part_attribute<IossDerivedNodesetAttribute>(part, hasAttribute);
+    }
+
+    bool has_derived_nodeset_attribute(stk::mesh::Part& part)
+    {
+        return has_ioss_part_attribute<IossDerivedNodesetAttribute>(part);
+    }
+
+    bool get_derived_nodeset_attribute(stk::mesh::Part& part)
+    {
+        return get_ioss_part_attribute<IossDerivedNodesetAttribute>(part);
+    }
 
 
     struct IossOriginalPartId
@@ -813,6 +899,10 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
+    bool has_io_part_attribute(mesh::Part & part)
+    {
+        return (part.attribute<Ioss::GroupingEntity>() != nullptr);
+    }
 
     void put_io_part_attribute(mesh::Part & part)
     {
@@ -957,6 +1047,7 @@ namespace stk {
           {
               Ioss::VariableType::get_field_type_mapping(f->name(), &storage);
           }
+
           entity->field_add(Ioss::Field(name, field_type.type, storage,
                                         field_type.copies, filter_role, entity_size));
           if (entity->type() == Ioss::NODEBLOCK) {
@@ -1371,9 +1462,9 @@ namespace stk {
     }
 
     void get_output_entity_list(Ioss::GroupingEntity *io_entity,
-                         stk::mesh::EntityRank part_type,
-                         OutputParams &params,
-                         std::vector<stk::mesh::Entity> &entities)
+                                stk::mesh::EntityRank part_type,
+                                OutputParams &params,
+                                std::vector<stk::mesh::Entity> &entities)
     {
       const stk::mesh::BulkData &bulk = params.bulk_data();
       ThrowRequireMsg(!io_entity->get_database()->is_input(), "Database is input type");
@@ -1381,10 +1472,8 @@ namespace stk {
 
       mesh::Selector *select = reinterpret_cast<mesh::Selector*>(io_entity->get_property(s_internal_selector_name).get_pointer());
 
-      if(io_entity->type() == Ioss::NODEBLOCK)
-      {
+      if(io_entity->type() == Ioss::NODEBLOCK) {
           get_selected_nodes(params, *select, entities);
-
       } else {
           get_selected_entities(*select, bulk.buckets(part_type), entities);
       }
@@ -1859,7 +1948,7 @@ namespace stk {
         ioss_add_fields(part, part_primary_entity_rank(part), side_block, Ioss::Field::ATTRIBUTE);
 
         if(create_nodeset) {
-            std::string nodes_name = getPartName(part) + entity_nodes_suffix;
+            std::string nodes_name = getPartName(part) + s_entity_nodes_suffix;
             define_node_set(params, part, nodes_name, true);
         }
       }
@@ -1890,6 +1979,10 @@ namespace stk {
               } else {
                   create_nodesets = true;
               }
+          }
+
+          if(has_derived_nodeset_attribute(part)) {
+              create_nodesets = get_derived_nodeset_attribute(part);
           }
 
           return create_nodesets;
@@ -2014,6 +2107,7 @@ namespace stk {
 
         // Add the attribute fields.
         ioss_add_fields(part, part_primary_entity_rank(part), eb, Ioss::Field::ATTRIBUTE);
+        process_element_attributes_for_define(params, part);
 
         set_attribute_field_order(bulk, attributeOrdering, part, eb);
 
@@ -2022,7 +2116,7 @@ namespace stk {
         // and output the fields on that nodeset...
         if (params.get_use_nodeset_for_block_node_fields() &&
             will_output_lower_rank_fields(part, stk::topology::NODE_RANK)) {
-          std::string nodes_name = getPartName(part) + entity_nodes_suffix;
+          std::string nodes_name = getPartName(part) + s_entity_nodes_suffix;
           define_node_set(params, part, nodes_name, true);
         }
       }
@@ -2172,7 +2266,7 @@ namespace stk {
            else if ((rank == stk::topology::ELEMENT_RANK) && isValidForOutput) {
              define_element_block(params, *part, attributeOrdering, order_blocks_by_creation_order);
            }
-           else if (rank == meta_data.side_rank()) {
+           else if ((rank == stk::topology::FACE_RANK) || (rank == stk::topology::EDGE_RANK)) {
              define_side_set(params, *part);
            }
          }
@@ -2383,6 +2477,8 @@ namespace stk {
             }
           }
         }
+
+        process_element_attributes_for_output(params, *part);
       }
 
       template <typename INT>
@@ -2435,6 +2531,25 @@ namespace stk {
           if (res.num_scalars_per_entity() > 0) {
             stk::io::field_data_to_ioss(bulk, df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
           }
+        } else {
+            assert(ns->field_exists("distribution_factors"));
+            size_t df_size = ns->get_field("distribution_factors").raw_count();
+            std::vector<double> df;
+            df.reserve(df_size);
+
+            const auto* const nodeFactorVar = get_distribution_factor_field(*part);
+
+            if(nodeFactorVar != nullptr) {
+              for(auto& node : nodes) {
+                df.push_back(*(double*)stk::mesh::field_data(*nodeFactorVar, node));
+              }
+            } else {
+              size_t count = nodes.size();
+              for(size_t i = 0; i < count; ++i) {
+                df.push_back(1.0);
+              }
+            }
+            ns->put_field_data("distribution_factors", df);
         }
 
         const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();

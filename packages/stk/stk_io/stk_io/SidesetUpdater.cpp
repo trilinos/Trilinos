@@ -265,7 +265,7 @@ void SidesetUpdater::fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
 
 void SidesetUpdater::set_reduced_values(const std::vector<size_t> &reducedValues)
 {
-    if(bulkData.was_mesh_modified_since_sideset_creation())
+    if(bulkData.was_mesh_modified_since_sideset_creation() && isActive)
     {
         reconstruct_noninternal_sidesets(reducedValues);
     }
@@ -335,6 +335,15 @@ void SidesetUpdater::entity_parts_removed(stk::mesh::Entity entity, const stk::m
 void SidesetUpdater::set_active(bool active)
 {
     isActive = active;
+}
+
+
+void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag)
+{
+    std::vector<SidesetUpdater*> updaters = bulk.get_observer_type<SidesetUpdater>();
+    for(SidesetUpdater* updater : updaters) {
+        updater->set_active(flag);
+    }
 }
 
 } } //namespaces

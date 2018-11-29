@@ -184,7 +184,19 @@ class FieldBase
 
   unsigned length(const stk::mesh::Part& part) const;
 
-  bool defined_on_any(const stk::mesh::ConstPartVector& parts) const;
+  template<typename PARTVECTOR>
+  bool defined_on_any(const PARTVECTOR& parts) const
+  {
+    bool defined_on_any_part = false;
+    size_t i = 0;
+    while(!defined_on_any_part && i < parts.size()) {
+      defined_on_any_part = defined_on_any_part || defined_on(*parts[i]);
+      ++i;
+    }
+
+    return defined_on_any_part;
+  }
+
   bool defined_on(const stk::mesh::Part& part) const;
 
 private:

@@ -30,8 +30,8 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef PACKAGES_STK_STK_LEARNING_KOKKOS_NGPFIELD_H_
-#define PACKAGES_STK_STK_LEARNING_KOKKOS_NGPFIELD_H_
+#ifndef STK_NGP_NGPFIELD_H_
+#define STK_NGP_NGPFIELD_H_
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
@@ -44,15 +44,29 @@ constexpr unsigned INVALID_ORDINAL = 9999999;
 
 template<typename T> class ConstStkFieldAdapter;
 
+class FieldBase
+{
+public:
+  STK_FUNCTION FieldBase() = default;
+  STK_FUNCTION virtual ~FieldBase() {}
+};
+
+
 template<typename T>
-class StkFieldAdapter
+class StkFieldAdapter : public FieldBase
 {
 public:
     typedef T value_type;
 
-    StkFieldAdapter() : field(nullptr) { }
+    StkFieldAdapter()
+      : FieldBase(),
+        field(nullptr) { }
 
-    StkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(&f) { }
+    StkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f)
+      : FieldBase(),
+        field(&f) { }
+
+    virtual ~StkFieldAdapter() = default;
 
     T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
@@ -102,22 +116,28 @@ private:
 };
 
 template<typename T>
-class ConstStkFieldAdapter
+class ConstStkFieldAdapter : public FieldBase
 {
 public:
     typedef T value_type;
 
-    ConstStkFieldAdapter() : stkFieldAdapter() { }
+    ConstStkFieldAdapter()
+      : FieldBase(),
+        stkFieldAdapter() { }
 
     ConstStkFieldAdapter(const StkFieldAdapter<T> &sfa)
-    :   stkFieldAdapter(sfa)
+      : FieldBase(),
+        stkFieldAdapter(sfa)
     {
     }
 
     ConstStkFieldAdapter(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f)
-    :   stkFieldAdapter(b, f)
+      : FieldBase(),
+        stkFieldAdapter(b, f)
     {
     }
+
+    virtual ~ConstStkFieldAdapter() = default;
 
     const T& get(const StkMeshAdapter& ngpMesh, stk::mesh::Entity entity, int component) const
     {
@@ -162,11 +182,15 @@ private:
 template<typename T> class ConstStaticField;
 
 template<typename T>
-class StaticField {
+class StaticField : public FieldBase
+{
 public:
     typedef T value_type;
 
-    StaticField() : rank(stk::topology::NODE_RANK), ordinal(INVALID_ORDINAL) { }
+    STK_FUNCTION
+    StaticField()
+      : FieldBase(),
+        rank(stk::topology::NODE_RANK), ordinal(INVALID_ORDINAL) { }
 
     void construct_view(const std::string& name, unsigned numBuckets, unsigned numPerEntity) {
 #ifdef KOKKOS_HAVE_CUDA
@@ -178,7 +202,10 @@ public:
     }
 
     StaticField(stk::mesh::EntityRank r, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    : deviceData(), rank(r), ordinal(INVALID_ORDINAL)
+      : FieldBase(),
+        deviceData(),
+        rank(r),
+        ordinal(INVALID_ORDINAL)
     {
       // const stk::mesh::BucketVector& buckets = bulk.get_buckets(rank, selector);
         const stk::mesh::BucketVector& allBuckets = bulk.buckets(rank);
@@ -189,7 +216,10 @@ public:
     }
 
     StaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
-    : deviceData(), rank(field.entity_rank()), ordinal(field.mesh_meta_data_ordinal())
+      : FieldBase(),
+        deviceData(),
+        rank(field.entity_rank()),
+        ordinal(field.mesh_meta_data_ordinal())
     {
         stk::mesh::Selector selector = stk::mesh::selectField(field);
         const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
@@ -222,7 +252,8 @@ public:
     }
 
     STK_FUNCTION StaticField(const StaticField &) = default;
-    STK_FUNCTION ~StaticField(){}
+
+    STK_FUNCTION virtual ~StaticField() {}
 
     template <typename Mesh> STK_FUNCTION
     T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
@@ -315,25 +346,32 @@ private:
 };
 
 template<typename T>
-class ConstStaticField {
+class ConstStaticField : public FieldBase
+{
 public:
     typedef T value_type;
 
-    ConstStaticField() { }
+    STK_FUNCTION
+    ConstStaticField()
+      : FieldBase() { }
 
-    ConstStaticField(const StaticField<T> &sf) :
+    ConstStaticField(const StaticField<T> &sf)
+      : FieldBase(),
         staticField(sf),
         constDeviceData(staticField.deviceData)
     {
     }
 
     ConstStaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
-    :   staticField(bulk, field),
+      : FieldBase(),
+        staticField(bulk, field),
         constDeviceData(staticField.deviceData)
     {
     }
 
-    STK_FUNCTION ~ConstStaticField(){}
+    STK_FUNCTION ConstStaticField(const ConstStaticField &) = default;
+
+    STK_FUNCTION virtual ~ConstStaticField() {}
 
     template <typename Mesh> STK_FUNCTION
     T get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
@@ -396,4 +434,4 @@ private:
 }
 
 
-#endif /* PACKAGES_STK_STK_LEARNING_KOKKOS_NGPFIELD_H_ */
+#endif /* STK_NGP_NGPFIELD_H_ */

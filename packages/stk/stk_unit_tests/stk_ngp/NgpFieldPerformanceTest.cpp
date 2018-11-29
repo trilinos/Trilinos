@@ -113,7 +113,6 @@ protected:
     stk::mesh::Field<double, stk::mesh::Cartesian3d> *centroid;
 };
 
-
 TEST_F(NgpFieldPerf, constFieldDataAccessIsFasterThanFieldDataAccess)
 {
     declare_centroid_field();
@@ -122,9 +121,16 @@ TEST_F(NgpFieldPerf, constFieldDataAccessIsFasterThanFieldDataAccess)
     double constTime = time_field_data_access<ngp::ConstField<double>>();
     double nonConstTime = time_field_data_access<ngp::Field<double>>();
     std::cerr << "non-const time: " << nonConstTime << ", const time: " << constTime << '\n';
+
+    //only expect nonConstTime to be faster in release-mode, on cude, for large problem sizes
+    if (stk::unit_test_util::get_command_line_option<int>("-dim",20) >= 60)
+    {
+#ifdef NDEBUG
 #ifdef KOKKOS_HAVE_CUDA
     EXPECT_LT(constTime, nonConstTime);
 #endif
+#endif
+    }
 }
 
 }

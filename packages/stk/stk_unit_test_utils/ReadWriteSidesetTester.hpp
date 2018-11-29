@@ -105,7 +105,7 @@ public:
 
     virtual void write_output_mesh(size_t output_file_index)
     {
-      m_output_files[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
+      m_outputFiles[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
     }
 };
 

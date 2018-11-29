@@ -45,6 +45,8 @@
 
 #include <math.h>
 #include <assert.h>
+#include <algorithm>
+#include <string>
 
 namespace stk {
   namespace io {

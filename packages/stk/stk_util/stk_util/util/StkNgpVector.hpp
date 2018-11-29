@@ -40,29 +40,29 @@ namespace stk
 {
 
 template <typename Datatype>
-class Vector
+class NgpVector
 {
 public:
-    Vector(const std::string &n) : mSize(0), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
+    NgpVector(const std::string &n) : mSize(0), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
     {
     }
-    Vector() : Vector(get_default_name())
+    NgpVector() : NgpVector(get_default_name())
     {
     }
-    Vector(const std::string &n, size_t s) : mSize(s), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
+    NgpVector(const std::string &n, size_t s) : mSize(s), deviceVals(n, mSize), hostVals(Kokkos::create_mirror_view(deviceVals))
     {
     }
-    Vector(size_t s) : Vector(get_default_name(), s)
+    NgpVector(size_t s) : NgpVector(get_default_name(), s)
     {
     }
-    Vector(const std::string &n, size_t s, Datatype init) : Vector(n, s)
+    NgpVector(const std::string &n, size_t s, Datatype init) : NgpVector(n, s)
     {
         Kokkos::deep_copy(hostVals, init);
     }
-    Vector(size_t s, Datatype init) : Vector(get_default_name(), s, init)
+    NgpVector(size_t s, Datatype init) : NgpVector(get_default_name(), s, init)
     {
     }
-    ~Vector() {}
+    ~NgpVector() {}
 
     std::string name() const { return hostVals.label(); }
 
