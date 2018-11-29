@@ -413,6 +413,10 @@ public:
                             const std::vector<PartVector>& add_parts,
                             const std::vector<PartVector>& remove_parts);
 
+  void batch_change_entity_parts( const stk::mesh::EntityVector& entities, // Mod Mark
+                            const PartVector& add_parts,
+                            const PartVector& remove_parts);
+
   /** \brief  Request the destruction an entity on the local process.
    *
    * \paragraph destroy_requirements  Requirements

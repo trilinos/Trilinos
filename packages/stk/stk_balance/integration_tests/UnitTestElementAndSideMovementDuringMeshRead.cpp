@@ -39,7 +39,7 @@ public:
 
     virtual void populate_mesh(bool delay_field_data_allocation)
     {
-        validate_input_file_index(m_active_mesh_index);
+        validate_input_file_index(m_activeMeshIndex);
 
         create_bulk_data();
 
@@ -49,7 +49,7 @@ public:
 
         bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read - step 1");
 
-        Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
+        Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
         bool ints64bit = stk::io::db_api_int_size(region) == 8;
         if (ints64bit) {
           stk::io::process_nodeblocks<int64_t>(*region,    bulk_data());
@@ -70,7 +70,7 @@ public:
         bulk_data().modification_begin();
 
         bulk_data().initialize_face_adjacent_element_graph();
-        stk::io::process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sideset_face_creation_behavior);
+        stk::io::process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
 
         bulk_data().modification_end();
 
