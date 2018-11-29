@@ -53,7 +53,13 @@ int main(int argc, const char**argv)
     stk::parallel::require_file_exists(balanceOptions.inFile, execName, quickExample, comm);
 
     stk::balance::print_running_msg(execName, balanceOptions, comm);
-    stk::balance::run_stk_rebalance(balanceOptions.outputDirectory, balanceOptions.inFile, balanceOptions.appTypeDefaults, comm);
+    try {
+        stk::balance::run_stk_rebalance(balanceOptions.outputDirectory, balanceOptions.inFile, balanceOptions.appTypeDefaults, comm);
+    }
+    catch(std::exception& e)
+    {
+        std::cerr<<e.what()<<std::endl;
+    }
 
     MPI_Finalize();
     return 0;

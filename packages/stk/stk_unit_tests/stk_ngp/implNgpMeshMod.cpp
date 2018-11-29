@@ -61,7 +61,7 @@ void test_bucket_part_info(stk::mesh::BulkData& bulk)
 {
     ngp::DynamicMesh ngpMesh(bulk);
 
-    unsigned numResults = 5;
+    unsigned numResults = 6;
     IntViewType result = ngp_unit_test_utils::create_dualview<IntViewType>("result",numResults);
 
     stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, 8);
@@ -79,6 +79,16 @@ void test_bucket_part_info(stk::mesh::BulkData& bulk)
       result.d_view(2) = deviceNode8==node8 ? 1 : 0;
       result.d_view(3) = bucket.is_member(firstPartOrd) ? 1 : 0;
       result.d_view(4) = bucket.is_member(lastPartOrd) ? 1 : 0;
+      unsigned numElemBuckets = ngpMesh.num_buckets(stk::topology::ELEM_RANK);
+      NGP_ThrowRequire(2u == numElemBuckets);
+      const ngp::DynamicBucket& bucket0 = ngpMesh.get_bucket(stk::topology::ELEM_RANK, 0);
+      const ngp::UnmanagedPartOrdViewType& parts0 = bucket0.get_parts();
+      const ngp::DynamicBucket& bucket1 = ngpMesh.get_bucket(stk::topology::ELEM_RANK, 1);
+      const ngp::UnmanagedPartOrdViewType& parts1 = bucket1.get_parts();
+      unsigned numParts0 = parts0(0);
+      unsigned numParts1 = parts1(0);
+      NGP_ThrowRequire(numParts0 == numParts1);
+      result.d_view(5) = ngp::all_parts_match(parts0, parts1) ? 0 : 1; //expecting false
     });
 
     result.modify<IntViewType::execution_space>();
