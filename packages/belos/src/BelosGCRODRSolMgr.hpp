@@ -2060,7 +2060,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
   int i, j;
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  //ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
   // Real and imaginary eigenvalue components
   std::vector<MagnitudeType> wr(m), wi(m);
@@ -2073,11 +2073,6 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
 
   // Sorted order of harmonic Ritz values, also used for DGEEV
   std::vector<int> iperm(m);
-
-  // Size of workspace and workspace for DGEEV
-  int lwork = 4*m;
-  std::vector<ScalarType> work(lwork);
-  std::vector<MagnitudeType> rwork(lwork);
 
   // Output info
   int info = 0;
@@ -2094,16 +2089,27 @@ int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
 
   // Compute H_m + d*H_m^{-H}*e_m*e_m^H
   ScalarType d = HH(m, m-1) * HH(m, m-1);
-  Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( Teuchos::Copy, HH, HH.numRows(), HH.numCols() );
+  Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( Teuchos::Copy, HH, m, m );
   for( i=0; i<m; ++i )
     harmHH(i, m-1) += d * e_m[i];
 
   // Revise to do query for optimal workspace first
   // Create simple storage for the left eigenvectors, which we don't care about.
-  const int ldvl = m;
+  const int ldvl = 1;
   ScalarType* vl = 0;
-  //lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
-  //            vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
+
+  // Size of workspace and workspace for DGEEV
+  int lwork = -1;
+  std::vector<ScalarType> work(1);
+  std::vector<MagnitudeType> rwork(2*m);
+
+  // First query GEEV for the optimal workspace size
+  lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
+              vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
+
+  lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
+  work.resize( lwork );
+
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
               vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");

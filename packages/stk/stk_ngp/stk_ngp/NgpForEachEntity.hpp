@@ -30,12 +30,12 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef PACKAGES_STK_STK_LEARNING_KOKKOS_FOREACHENTITY_H_
-#define PACKAGES_STK_STK_LEARNING_KOKKOS_FOREACHENTITY_H_
+#ifndef STK_NGP_FOREACHENTITY_H_
+#define STK_NGP_FOREACHENTITY_H_
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
-#include <stk_util/util/StkVector.hpp>
+#include <stk_util/util/StkNgpVector.hpp>
 
 namespace ngp {
 
@@ -60,7 +60,7 @@ template <typename Mesh, typename AlgorithmPerEntity>
 struct TeamFunctor
 {
     STK_FUNCTION
-    TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::Vector<unsigned> b, const AlgorithmPerEntity f) :
+    TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
         mesh(m),
         rank(r),
         bucketIds(b),
@@ -78,14 +78,14 @@ struct TeamFunctor
     }
     const Mesh mesh;
     const stk::mesh::EntityRank rank;
-    stk::Vector<unsigned> bucketIds;
+    stk::NgpVector<unsigned> bucketIds;
     const AlgorithmPerEntity functor;
 };
 
 template <typename Mesh, typename AlgorithmPerEntity>
 void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
 {
-    stk::Vector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
+    stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
     unsigned numBuckets = bucketIds.size();
     Kokkos::parallel_for(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
                          TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, bucketIds, functor));
@@ -107,4 +107,4 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh
 }
 
 
-#endif /* PACKAGES_STK_STK_LEARNING_KOKKOS_FOREACHENTITY_H_ */
+#endif /* STK_NGP_FOREACHENTITY_H_ */
