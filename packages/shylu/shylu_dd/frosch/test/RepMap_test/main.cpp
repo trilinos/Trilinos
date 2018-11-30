@@ -55,11 +55,13 @@
 #include "FROSch_Tools_def.hpp"
 
 typedef unsigned UN;
+typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode; // Hier Default verwenden???
-typedef EpetraNode NO;
+typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
+//typedef KokkosClassic::DefaultNode::DefaultNodeType  EpetraNode;
+//typedef EpetraNode NO;
 
 using namespace std;
 using namespace Teuchos;
@@ -72,37 +74,30 @@ int main(int argc, char *argv[])
     MPI_Init(&argc,&argv);
     
     {
-          Epetra_MpiComm Comm(MPI_COMM_WORLD);
-        int NumMyElements = 0;         // NODES assigned to this processor
-        int NumMyExternalElements = 0; // nodes used by this proc, but not hosted
+        int NumMyElements = 0;                                          // NODES assigned to this processor
+        int NumMyExternalElements = 0;                             // nodes used by this proc, but not hosted
         int NumMyTotalElements = 0;
-        int FE_NumMyElements = 0;      // TRIANGLES assigned to this processor
-        Teuchos::Array<GO> MyGlobalElements(8);    // nodes assigned to this processor
-        Teuchos::Array<GO> FEelements(8);
-        // elements assigned to this proc
-        Teuchos::Array<Teuchos::Array<long long> > E(8); // store the element graph connectivity
+        int FE_NumMyElements = 0;                                    // TRIANGLES assigned to this processor
+        Teuchos::Array<GO> MyGlobalElements(8);           // nodes assigned to this processor
+        Teuchos::Array<GO> FEelements(8);                     // elements assigned to this proc
+        Epetra_IntSerialDenseMatrix E;                             // store the element graph connectivity
         Epetra_IntSerialDenseMatrix ElementNodeList;
-        Teuchos::Array<Teuchos::Array<long long> > NodesInElement(8);
-        
+        Teuchos::Array<Teuchos::Array<GO> > NodesInElement(8);
         
         Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = Teuchos::rcp(new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
         
-        
-        string xmlFile = "xpetra_ParameterList.xml";
-        Teuchos::RCP<Teuchos::ParameterList> parameterList = Teuchos::getParametersFromXmlFile(xmlFile);
         
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
         
         
         int MyPID=TeuchosComm->getRank();
+        
         switch (MyPID){
-            case 0:
+                case 0:
                 NumMyElements = 6;
                 NumMyExternalElements = 4;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
                 FE_NumMyElements = 8;
-                
-                
                 
                 MyGlobalElements[0] = 0;
                 MyGlobalElements[1] = 1;
@@ -145,7 +140,7 @@ int main(int argc, char *argv[])
                 NodesInElement.at(7).at(0) = 3 ; NodesInElement.at(7).at(1) = 4; NodesInElement.at(7).at(2) = 9;
                 break;
                 
-            case 1:
+                case 1:
                 NumMyElements = 6;
                 NumMyExternalElements = 4;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -191,7 +186,7 @@ int main(int argc, char *argv[])
                                                                                                          
                                                                                                          2) = 14;
                 break;
-            case 2:
+                case 2:
                 NumMyElements = 6;
                 NumMyExternalElements = 4;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -235,7 +230,7 @@ int main(int argc, char *argv[])
                 NodesInElement.at(6).at(0) = 13 ; NodesInElement.at(6).at(1) = 18; NodesInElement.at(6).at(2) = 19;
                 NodesInElement.at(7).at(0) = 13 ; NodesInElement.at(7).at(1) = 14; NodesInElement.at(7).at(2) = 19;
                 break;
-            case 3:
+                case 3:
                 NumMyElements = 7;
                 NumMyExternalElements = 3;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -283,154 +278,150 @@ int main(int argc, char *argv[])
                 
                 break;
         }
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0) cout<<"Set Up Map finished\n";
         
-        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseEpetra,-1,FEelements(),0,TeuchosComm);
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,FEelements(),0,TeuchosComm);
         
-        //Mapg->describe(*fancy,Teuchos::VERB_EXTREME);
+        Teuchos::RCP<Xpetra::TpetraMap<LO,GO,NO> > MapT = Teuchos::rcp(new Xpetra::TpetraMap<LO,GO,NO>  (32,FEelements(),0,TeuchosComm));
+        
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<" Map build\n";
         
         
-        Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> >
-        NodeEleList  = Xpetra::MultiVectorFactory<GO,LO,GO,NO>::Build(Mapg,3);
-        for(int i = 0;i<8;i++){
-            for(int j = 0;j<3;j++)
-                NodeEleList->replaceLocalValue(i,j,NodesInElement.at(i).at(j));
+        switch( MyPID ) {
+                case 0:
+                E.Shape(FE_NumMyElements,4);
+                //graph connectivity
+                E(0,0) = 1; E(0,1) = 9;   E(0,2) = 0;  E(0,3) = 0;
+                E(1,0) = 0; E(1,1) = 2;   E(1,2) = 1;  E(1,3) = 1;
+                E(2,0) = 1; E(2,1) = 3;   E(2,2) = 11; E(2,3) = 2;
+                E(3,0) = 2; E(3,1) = 4;   E(3,2) = 3;  E(3,3) = 3;
+                E(4,0) = 3; E(4,1) = 5;   E(4,2) = 13; E(4,3) = 4;
+                E(5,0) = 4; E(5,1) = 6;   E(5,2) = 5;  E(5,3) = 5;
+                E(6,0) = 5; E(6,1) = 7;   E(6,2) = 15; E(6,3) = 6;
+                E(7,0) = 6; E(7,1) = 7;   E(7,2) = 7;  E(7,3) = 7;
+                break;
+                case 1:
+                E.Shape(FE_NumMyElements,4);
+                
+                
+                //graph connectivity
+                E(0,0) = 9;   E(0,1) = 17;  E(0,2) = 8;    E(0,3) = 8;
+                E(1,0) = 0;   E(1,1) = 8;   E(1,2) = 10;   E(1,3) = 9;
+                E(2,0) = 9;   E(2,1) = 11;  E(2,2) = 19;   E(2,3) = 10;
+                E(3,0) = 2;   E(3,1) = 10;  E(3,2) = 12;   E(3,3) = 11;
+                E(4,0) = 11;  E(4,1) = 13;  E(4,2) = 21;   E(4,3) = 12;
+                E(5,0) = 4;   E(5,1) = 12;  E(5,2) = 14;   E(5,3) = 13;
+                E(6,0) = 13;  E(6,1) = 15;  E(6,2) = 23;   E(6,3) = 14;
+                E(7,0) = 6;   E(7,1) = 14;  E(7,2) = 15;   E(7,3) = 15;
+                break;
+                case 2:
+                E.Shape(FE_NumMyElements,4);
+                
+                //graph connectivity
+                E(0,0) = 17; E(0,1) = 25; E(0,2) = 16;   E(0,3) = 16;
+                E(1,0) = 8;  E(1,1) = 16; E(1,2) = 18;   E(1,3) = 17;
+                E(2,0) = 17; E(2,1) = 19; E(2,2) = 27;   E(2,3) = 18;
+                E(3,0) = 10; E(3,1) = 18; E(3,2) = 20;   E(3,3) = 19;
+                E(4,0) = 19; E(4,1) = 21; E(4,2) = 29;   E(4,3) = 20;
+                E(5,0) = 12; E(5,1) = 20; E(5,2) = 22;   E(5,3) = 21;
+                E(6,0) = 21; E(6,1) = 23; E(6,2) = 31;   E(6,3) = 22;
+                E(7,0) = 14; E(7,1) = 22; E(7,2) = 23;   E(7,3) = 23;
+                break;
+                case 3:
+                E.Shape(FE_NumMyElements,4);
+                //graph connectivity
+                E(0,0) = 25; E(0,1) = 24; E(0,2) = 24;   E(0,3) = 24;
+                E(1,0) = 16; E(1,1) = 24;  E(1,2) = 26;  E(1,3) = 25;
+                E(2,0) = 25; E(2,1) = 27;  E(2,2) = 26;  E(2,3) = 26;
+                E(3,0) = 18; E(3,1) = 26;  E(3,2) = 28;  E(3,3) = 27;
+                E(4,0) = 27; E(4,1) = 29;  E(4,2) = 28;  E(4,3) = 28;
+                E(5,0) = 20; E(5,1) = 28;  E(5,2) = 30;  E(5,3) = 29;
+                E(6,0) = 29; E(6,1) = 31;  E(6,2) = 30;  E(6,3) = 30;
+                E(7,0) = 22; E(7,1) = 30;  E(7,2) = 31;  E(7,3) = 31;
+                break;
         }
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"Element Connectivity\n";
         
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"NodeEleList\n";
-    
-    switch( MyPID ) {
-        case 0:
-            E.at(0).resize(4);
-            E.at(1).resize(4);
-            E.at(2).resize(4);
-            E.at(3).resize(4);
-            E.at(4).resize(4);
-            E.at(5).resize(4);
-            E.at(6).resize(4);
-            E.at(7).resize(4);
-            //graph connectivity
-            E.at(0).at(0) = 1; E.at(0).at(1) = 9;   E.at(0).at(2) = 0;  E.at(0).at(3) = 0;
-            E.at(1).at(0) = 0; E.at(1).at(1) = 2;   E.at(1).at(2) = 1;  E.at(1).at(3) = 1;
-            E.at(2).at(0) = 1; E.at(2).at(1) = 3;   E.at(2).at(2) = 11; E.at(2).at(3) = 2;
-            E.at(3).at(0) = 2; E.at(3).at(1) = 4;   E.at(3).at(2) = 3;  E.at(3).at(3) = 3;
-            E.at(4).at(0) = 3; E.at(4).at(1) = 5;   E.at(4).at(2) = 13; E.at(4).at(3) = 4;
-            E.at(5).at(0) = 4; E.at(5).at(1) = 6;   E.at(5).at(2) = 5;  E.at(5).at(3) = 5;
-            E.at(6).at(0) = 5; E.at(6).at(1) = 7;   E.at(6).at(2) = 15; E.at(6).at(3) = 6;
-            E.at(7).at(0) = 6; E.at(7).at(1) = 7;   E.at(7).at(2) = 7;  E.at(7).at(3) = 7;
-            break;
-        case 1:
-            E.at(0).resize(4);
-            E.at(1).resize(4);
-            E.at(2).resize(4);
-            E.at(3).resize(4);
-            E.at(4).resize(4);
-            E.at(5).resize(4);
-            E.at(6).resize(4);
-            E.at(7).resize(4);
+        
+        const Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > Xgraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(Mapg,4);
+        const int MaxNnzRow = 8;
+        const int MaxNnzRowg = 4 ;
+        
+        int Element, MyRow, GlobalRow, GlobalCol;
+        Teuchos::ArrayView<int> array;
+        Teuchos::Array<int> v(1);
+        v[0] = 1.0;
+        Teuchos::Array<int> gcol(1);
+        Teuchos::Array<int> indi(3);
+        int numGentry = 4;
+        
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"329\n";
+        
+        for(  int Element=0 ; Element<FE_NumMyElements ; Element++ )
+        {
+            // variables used inside
+            int GlobalRow;
+            int MyRow;
+            int GlobalCol;
+            int count;
+            Teuchos::Array<int> indices(4);
+            // get the global and local number of this row
+            MyRow = Element;
+            GlobalRow = MyRow+MyPID*8;
             
-            //graph connectivity
-            E.at(0).at(0) = 9;   E.at(0).at(1) = 17;  E.at(0).at(2) = 8;    E.at(0).at(3) = 8;
-            E.at(1).at(0) = 0;   E.at(1).at(1) = 8;   E.at(1).at(2) = 10;   E.at(1).at(3) = 9;
-            E.at(2).at(0) = 9;   E.at(2).at(1) = 11;  E.at(2).at(2) = 19;   E.at(2).at(3) = 10;
-            E.at(3).at(0) = 2;   E.at(3).at(1) = 10;  E.at(3).at(2) = 12;   E.at(3).at(3) = 11;
-            E.at(4).at(0) = 11;  E.at(4).at(1) = 13;  E.at(4).at(2) = 21;   E.at(4).at(3) = 12;
-            E.at(5).at(0) = 4;   E.at(5).at(1) = 12;  E.at(5).at(2) = 14;   E.at(5).at(3) = 13;
-            E.at(6).at(0) = 13;  E.at(6).at(1) = 15;  E.at(6).at(2) = 23;   E.at(6).at(3) = 14;
-            E.at(7).at(0) = 6;   E.at(7).at(1) = 14;  E.at(7).at(2) = 15;   E.at(7).at(3) = 15;
-            break;
-        case 2:
-            E.at(0).resize(4);
-            E.at(1).resize(4);
-            E.at(2).resize(4);
-            E.at(3).resize(4);
-            E.at(4).resize(4);
-            E.at(5).resize(4);
-            E.at(6).resize(4);
-            E.at(7).resize(4);
-            
-            //graph connectivity
-            E.at(0).at(0) = 17; E.at(0).at(1) = 25; E.at(0).at(2) = 16;   E.at(0).at(3) = 16;
-            E.at(1).at(0) = 8;  E.at(1).at(1) = 16; E.at(1).at(2) = 18;   E.at(1).at(3) = 17;
-            E.at(2).at(0) = 17; E.at(2).at(1) = 19; E.at(2).at(2) = 27;   E.at(2).at(3) = 18;
-            E.at(3).at(0) = 10; E.at(3).at(1) = 18; E.at(3).at(2) = 20;   E.at(3).at(3) = 19;
-            E.at(4).at(0) = 19; E.at(4).at(1) = 21; E.at(4).at(2) = 29;   E.at(4).at(3) = 20;
-            E.at(5).at(0) = 12; E.at(5).at(1) = 20; E.at(5).at(2) = 22;   E.at(5).at(3) = 21;
-            E.at(6).at(0) = 21; E.at(6).at(1) = 23; E.at(6).at(2) = 31;   E.at(6).at(3) = 22;
-            E.at(7).at(0) = 14; E.at(7).at(1) = 22; E.at(7).at(2) = 23;   E.at(7).at(3) = 23;
-            break;
-        case 3:
-            E.at(0).resize(4);
-            E.at(1).resize(4);
-            E.at(2).resize(4);
-            E.at(3).resize(4);
-            E.at(4).resize(4);
-            E.at(5).resize(4);
-            E.at(6).resize(4);
-            E.at(7).resize(4);
-
-            //graph connectivity
-            E.at(0).at(0) = 25; E.at(0).at(1) = 24;  E.at(0).at(2) = 24;  E.at(0).at(3) = 24;
-            E.at(1).at(0) = 16; E.at(1).at(1) = 24;  E.at(1).at(2) = 26;  E.at(1).at(3) = 25;
-            E.at(2).at(0) = 25; E.at(2).at(1) = 27;  E.at(2).at(2) = 26;  E.at(2).at(3) = 26;
-            E.at(3).at(0) = 18; E.at(3).at(1) = 26;  E.at(3).at(2) = 28;  E.at(3).at(3) = 27;
-            E.at(4).at(0) = 27; E.at(4).at(1) = 29;  E.at(4).at(2) = 28;  E.at(4).at(3) = 28;
-            E.at(5).at(0) = 20; E.at(5).at(1) = 28;  E.at(5).at(2) = 30;  E.at(5).at(3) = 29;
-            E.at(6).at(0) = 29; E.at(6).at(1) = 31;  E.at(6).at(2) = 30;  E.at(6).at(3) = 30;
-            E.at(7).at(0) = 22; E.at(7).at(1) = 30;  E.at(7).at(2) = 31;  E.at(7).at(3) = 31;
-            break;
-    }
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"E\n";
-        
-        Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> >
-        conV  = Xpetra::MultiVectorFactory<GO,LO,GO,NO>::Build(Mapg,4);
-        
-        Teuchos::ArrayRCP<const GO> conVarray;
-        std::vector<std::vector<GO> > vecCon (4);
-        std::vector<LO> c(4);
-        Teuchos::RCP<const std::vector<GO> > vecSave;
-        for(int j = 0;j<4;j++){
-            c.at(j) = j;
-            for(int i = 0;i<8;i++)
-            conV->replaceLocalValue(i,j,E.at(i).at(j));
-            conVarray = conV->getData(j);
-            vecSave = get_std_vector(conVarray);
-            vecCon.at(j) = *vecSave;
-        }
-        //Teuchos::RCP<Xpetra::CrsMatrixWrap<GO,LO,GO> > conWrap (Mapg,4);
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"Wrap\n";
-    
-        /*std::vector<LO> e(4);
-        std::vector<LO> c(4);
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"vector\n";
-        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> >
-        connection  = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(Mapg,4);
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"crs Matrix\n";
-        for(int i = 0;i<8;i++){
-            for(int k = 0;k<4;k++){
-                e.at(k) = E.at(i).at(k);
-                c.at(k) = k;
+            if( MyRow < FE_NumMyElements) {
+                for( int j=0 ; j<4 ; j++ ) {
+                    gcol[0] = E(Element,j);
+                    indices[j] = E(Element,j);
+                }
+                numGentry = indices.size();
+                Xgraph->insertGlobalIndices(GlobalRow,indices());
             }
-            Teuchos::ArrayView<GO> con (e);
-            connection->replaceLocalValues(i,c,e);
         }
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"connection\n";*/
+        Xgraph->fillComplete();
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"Xgraph\n";
         
         
-        //Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>
-        //const(connection,NodeEleList,parameterList);
-        Comm.Barrier();    Comm.Barrier();    Comm.Barrier();
-        if(MyPID == 0) cout<<"Zoltan\n";
-    
-    
         
+        
+        Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > map = Xpetra::MapFactory<LO, GO, NO>::createUniformContigMap(Xpetra::UseTpetra,Mapg->getGlobalNumElements(), TeuchosComm);
+        
+        
+        //Node ElementList in B---------------------------------------------------------------------
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > B = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (Mapg, 3));
+        
+        const size_t numMyElements = MapT->getNodeNumElements ();
+        size_t numLocalElements = MapT->getMaxLocalIndex();
+        Teuchos::ArrayView<const GO> myGlobalElements = MapT->getNodeElementList();
+        
+        std::vector<GO> col_vec(3);
+        std::vector<int> val_ele(3);
+        for(int i = 0;i<3;i++)
+        {
+            col_vec.at(i) =i;
+            
+        }
+        Teuchos::ArrayView<GO> cols(col_vec);
+        
+        for (size_t i = 0; i < numMyElements; ++i){
+            for(int j = 0 ;j<3;j++){
+                val_ele.at(j) = NodesInElement.at(i).at(j);
+            }
+            Teuchos::ArrayView<GO> vals(val_ele);
+            //NodeEleList->insertGlobalValues(i*(TeuchosComm->getRank()+1),cols,vals);
+            B->insertGlobalValues (myGlobalElements[i],cols, vals);
+        }
+        B->fillComplete();
+        //B->describe(*fancy,Teuchos::VERB_EXTREME);
+        string xmlFile = "xpetra_ParameterList.xml";
+        Teuchos::RCP<Teuchos::ParameterList> parameterList = Teuchos::getParametersFromXmlFile(xmlFile);
+        
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(Xgraph,B,parameterList,TeuchosComm);
     }
     
     MPI_Finalize();
