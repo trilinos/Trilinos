@@ -889,7 +889,7 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> >ExtractRepeatedMapFromParameterList(Teuchos:
 #endif
         return 0;
     }
-template <class SC, class LO, class GO, class NO>
+/*template <class SC, class LO, class GO, class NO>
 Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::CrsMatrix<SC,LO,GO,NO> > connection, Teuchos::RCP<Xpetra::MultiVector<GO,LO,GO,NO> > NodeElementList, Teuchos::RCP<Teuchos::ParameterList> parameterList){
     //connection: alternativ in Sparse Matrix...
 
@@ -972,7 +972,7 @@ Teuchos::RCP<Xpetra::Map<LO,GO,NO> > BuildRepMap_Zoltan(Teuchos::RCP<Xpetra::Crs
     return RepeatedMap;
 
     
-}
+}*/
 
 
 }//Namespace
