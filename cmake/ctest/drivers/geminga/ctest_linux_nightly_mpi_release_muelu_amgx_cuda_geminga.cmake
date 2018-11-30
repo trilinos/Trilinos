@@ -98,12 +98,18 @@ SET(EXTRA_CONFIGURE_OPTIONS
     "-DAmgX_LIBRARY_DIRS=/usr/local/amgx/lib" 
     "-DAmgX_INCLUDE_DIRS=/usr/local/amgx/include"
 
-
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+
+  # Disable Pamgen and Shards due to weird nvcc errors
+  "-DTPL_ENALE_Pamgen:BOOL=OFF"
+  "-DTPL_ENALE_Shards:BOOL=OFF"
+
+
+
 )
 
 #
