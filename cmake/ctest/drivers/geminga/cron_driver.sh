@@ -98,7 +98,7 @@ echo "Configuration = $CTEST_CONFIGURATION"
 env
 
 export CUDA_LAUNCH_BLOCKING=1
-
+export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 # Machine independent cron_driver:
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
