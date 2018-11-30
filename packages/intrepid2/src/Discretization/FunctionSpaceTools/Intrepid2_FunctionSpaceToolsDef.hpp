@@ -68,7 +68,7 @@ namespace Intrepid2 {
       }
     }
 #endif
-      Kokkos::deep_copy(output, input);
+      RealSpaceTools<SpT>::clone(output, input);
     }
     else
       ArrayTools<SpT>::cloneFields(output, input);

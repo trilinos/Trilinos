@@ -343,6 +343,13 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # buid's tweaks file
 #
 
+IF(ATDM_USE_CUDA)
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample_DISABLE ON)
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-1_DISABLE ON)
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-2_DISABLE ON)
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Quad-Order-3_DISABLE ON)
+  ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-2_DISABLE ON)
+ENDIF()
 
 #
 # H) ATDM env config install hooks
@@ -353,7 +360,7 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 
 IF (COMMAND INSTALL)
 
-SET(ATDM_CONFIG_SCRIPTS_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/atdm-trilinos)
+  SET(ATDM_CONFIG_SCRIPTS_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/atdm-trilinos)
 
   INSTALL( FILES ${CMAKE_CURRENT_LIST_DIR}/load-env.sh
     DESTINATION ${ATDM_CONFIG_SCRIPTS_INSTALL_DIR} )
