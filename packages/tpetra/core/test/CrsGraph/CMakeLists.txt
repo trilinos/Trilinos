@@ -25,6 +25,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsGraph_UnitTests_Swap
+  SOURCES
+  CrsGraph_UnitTests_Swap
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  ${MAXNP}
+  COMM serial mpi
+  FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_ReindexColumns
   SOURCES
     CrsGraph_ReindexColumns
