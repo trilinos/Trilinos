@@ -82,7 +82,7 @@ module load kokkos-cuda/8.0.44
 module load kokkos-openmpi/1.8.7/cuda
 module load sems-superlu/4.3
 module load sems-hdf5/1.8.12/parallel
-module load sems-netcdf/4.3.2/base
+module load sems-netcdf/4.4.1/exo_parallel
 # See Trilinos github issue #2115.
 export OMPI_CXX=/home/jhu/code/trilinos-test/trilinos/packages/kokkos/bin/nvcc_wrapper
 
@@ -98,7 +98,7 @@ echo "Configuration = $CTEST_CONFIGURATION"
 env
 
 export CUDA_LAUNCH_BLOCKING=1
-
+export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 # Machine independent cron_driver:
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
@@ -107,8 +107,7 @@ $SCRIPT_DIR/../cron_driver.py
 #module unload cuda
 #module unload gcc
 #module unload openmpi
-
-module unload sems-netcdf/4.3.2/base
+module load sems-netcdf/4.4.1/exo_parallel
 module unload sems-hdf5/1.8.12/parallel
 module load sems-superlu/4.3
 module unload kokkos-openmpi/1.8.7/cuda

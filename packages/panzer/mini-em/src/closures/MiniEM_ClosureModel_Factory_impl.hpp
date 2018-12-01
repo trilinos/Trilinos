@@ -20,6 +20,7 @@
 #include "MiniEM_Permittivity.hpp"
 #include "MiniEM_Conductivity.hpp"
 #include "MiniEM_TensorConductivity.hpp"
+#include "MiniEM_VariableTensorConductivity.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -138,9 +139,36 @@ buildClosureModels(const std::string& model_id,
       }
       if(type=="TENSOR CONDUCTIVITY") {
         double sigma = plist.get<double>("sigma");
+        double betax = plist.get<double>("betax");
+        double betay = plist.get<double>("betay");
+        double betaz = plist.get<double>("betaz");
         std::string DoF = plist.get<std::string>("DoF Name");
 	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::TensorConductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,DoF));
+	  rcp(new mini_em::TensorConductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma,betax,betay,betaz,DoF));
+	evaluators->push_back(e);
+
+        found = true;
+      }
+      if(type=="VARIABLE TENSOR CONDUCTIVITY") {
+        double sigma0 = plist.get<double>("sigma0");
+        double betax0 = plist.get<double>("betax0");
+        double betay0 = plist.get<double>("betay0");
+        double betaz0 = plist.get<double>("betaz0");
+        double sigma1 = plist.get<double>("sigma1");
+        double betax1 = plist.get<double>("betax1");
+        double betay1 = plist.get<double>("betay1");
+        double betaz1 = plist.get<double>("betaz1");
+        double sigma2 = plist.get<double>("sigma2");
+        double betax2 = plist.get<double>("betax2");
+        double betay2 = plist.get<double>("betay2");
+        double betaz2 = plist.get<double>("betaz2");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::VariableTensorConductivity<EvalT,panzer::Traits>(key,*ir,fl,sigma0,sigma1,sigma2,
+                                                                            betax0,betay0,betaz0,
+                                                                            betax1,betay1,betaz1,
+                                                                            betax2,betay2,betaz2,
+                                                                            DoF));
 	evaluators->push_back(e);
 
         found = true;

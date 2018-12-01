@@ -6481,7 +6481,6 @@ namespace Tpetra {
     using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
-    typedef Kokkos::HostSpace host_mem_space;
     typedef typename device_type::memory_space dev_mem_space;
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";

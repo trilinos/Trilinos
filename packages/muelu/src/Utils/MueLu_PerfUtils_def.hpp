@@ -226,6 +226,69 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintImporterInfo(RCP<const Import> importer, const std::string& msgTag) {
+
+    typedef Xpetra::global_size_t global_size_t;
+
+    std::ostringstream ss;
+
+    // Create communicator only for active processes
+    RCP<const Teuchos::Comm<int> > origComm = importer->getSourceMap()->getComm();
+    bool activeProc = true;
+    int numActiveProcs = origComm->getSize();
+#ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(origComm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+#endif
+    int root = 0;
+
+    std::string outstr;
+    ParameterList absList;
+    absList.set("print abs", true);
+
+    typedef std::map<int,size_t> map_type;
+    map_type neighMap;
+    ArrayView<const int> exportPIDs = importer->getExportPIDs();
+    if (exportPIDs.size())
+      for (int i = 0; i < exportPIDs.size(); i++)
+        neighMap[exportPIDs[i]]++;
+
+    // Communication volume
+    size_t numImportSend = 0;
+    size_t numMsgs       = 0;
+    size_t minMsg        = 0;
+    size_t maxMsg        = 0;
+
+    if(activeProc) {
+      numImportSend = importer->getNumExportIDs();
+      numMsgs       = neighMap.size();
+      map_type::const_iterator it = std::min_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
+      minMsg        = (it != neighMap.end() ? it->second : 0);
+      it = std::max_element(neighMap.begin(), neighMap.end(), cmp_less<map_type>);
+      maxMsg        = (it != neighMap.end() ? it->second : 0);
+    }
+
+    ss << msgTag << " Communication info"     << std::endl;
+    ss << msgTag << "   # num import send : " << stringStats<global_size_t>(origComm, numActiveProcs, numImportSend)                      << std::endl;
+    ss << msgTag << "   # num msgs        : " << stringStats<global_size_t>(origComm, numActiveProcs,       numMsgs, rcpFromRef(absList)) << std::endl;
+    ss << msgTag << "   # min msg size    : " << stringStats<global_size_t>(origComm, numActiveProcs,        minMsg)                      << std::endl;
+    ss << msgTag << "   # max msg size    : " << stringStats<global_size_t>(origComm, numActiveProcs,        maxMsg)                      << std::endl;
+
+
+    outstr = ss.str();
+
+#ifdef HAVE_MPI
+    int strLength = outstr.size();
+    MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
+    if (origComm->getRank() != root)
+      outstr.resize(strLength);
+    MPI_Bcast(&outstr[0], strLength, MPI_CHAR, root, rawComm);
+#endif
+
+    return outstr;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CommPattern(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
     if (!CheckMatrix(A))
       return "";

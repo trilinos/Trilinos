@@ -50,10 +50,6 @@ namespace MueLu {
     typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
     typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
 
-    std::string timerName = "MueLu setup time";
-    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
-    tm->start();
-
     bool hasParamList = inParamList.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
@@ -61,6 +57,21 @@ namespace MueLu {
     // Rip off non-serializable data before validation
     Teuchos::ParameterList nonSerialList,paramList;
     MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
+
+    std::string label;
+    if (hasParamList && paramList.isParameter("hierarchy label")) {
+      label = paramList.get<std::string>("hierarchy label");
+      paramList.remove("hierarchy label");
+    } else
+      label = op->getObjectLabel();
+
+    std::string timerName;
+    if (label != "")
+      timerName = "MueLu setup time (" + label + ")";
+    else
+      timerName = "MueLu setup time";
+    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -71,12 +82,6 @@ namespace MueLu {
     }
 
     // Create Hierarchy
-    std::string label;
-    if (hasParamList && paramList.isParameter("hierarchy label")) {
-      label = paramList.get<std::string>("hierarchy label");
-      paramList.remove("hierarchy label");
-    } else
-      label = op->getObjectLabel();
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);
     H->setlib(op->getDomainMap()->lib());
 
@@ -85,6 +90,7 @@ namespace MueLu {
 
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
+    H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
 
     // Set coordinates if available
     if (coords != Teuchos::null)
@@ -125,10 +131,6 @@ namespace MueLu {
     typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
     typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
 
-    std::string timerName = "MueLu setup time";
-    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
-    tm->start();
-
     bool hasParamList = inParamList.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
@@ -136,6 +138,21 @@ namespace MueLu {
     // Rip off non-serializable data before validation
     Teuchos::ParameterList nonSerialList,paramList;
     MueLu::ExtractNonSerializableData(inParamList, paramList, nonSerialList);
+
+    std::string label;
+    if (hasParamList && paramList.isParameter("hierarchy label")) {
+      label = paramList.get<std::string>("hierarchy label");
+      paramList.remove("hierarchy label");
+    } else
+      label = op->getObjectLabel();
+
+    std::string timerName;
+    if (label != "")
+      timerName = "MueLu setup time (" + label + ")";
+    else
+      timerName = "MueLu setup time";
+    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -146,7 +163,7 @@ namespace MueLu {
     }
 
     // Create Hierarchy
-    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);
     H->setlib(op->getDomainMap()->lib());
 
     // Stick the non-serializible data on the hierarchy.
@@ -154,6 +171,7 @@ namespace MueLu {
 
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
+    H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
 
     mueLuFactory->SetupHierarchy(*H);
 
@@ -185,7 +203,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReuseXpetraPreconditioner(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                                  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& H) {
-    std::string timerName = "MueLu setup time";
+    std::string label = H->GetLevel(0)->getObjectLabel();
+
+    std::string timerName;
+    if (label != "")
+      timerName = "MueLu setup time (" + label + ")";
+    else
+      timerName = "MueLu setup time";
     RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
     tm->start();
 
