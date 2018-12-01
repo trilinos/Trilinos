@@ -115,47 +115,31 @@ TEUCHOS_STATIC_SETUP()
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 {
-    out << "Hi, I'm a unit test" << std::endl;
-
-#if defined(WCMCLEN_EXPERIMENTAL)
     using Teuchos::Comm;
-    using Teuchos::outArg;
     using Teuchos::RCP;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
-    typedef Tpetra::CrsGraph<LO, GO, Node> GRAPH;
-    typedef Tpetra::Map<LO, GO, Node>      map_type;
+    using Teuchos::outArg;
 
-    const GST            INVALID  = Teuchos::OrdinalTraits<GST>::invalid();
-    RCP<const Comm<int>> comm     = getDefaultComm();
-    const int            numProcs = comm->getSize();
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
+    typedef Tpetra::Map<LO, GO, Node>      map_t;
 
-    if(numProcs > 1)
-    {
-        const size_t numLocal = 1;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
 
-        RCP<const map_type> rmap = rcp(new map_type(INVALID, numLocal, 0, comm));
-        RCP<const map_type> cmap = rcp(new map_type(INVALID, numLocal, 0, comm));
+    RCP<const Comm<int>> comm = getDefaultComm();
 
-        // must allocate enough for all submitted indices.
-        RCP<GRAPH> G = rcp(new GRAPH(rmap, cmap, 2, StaticProfile));
-        TEST_EQUALITY_CONST(G->hasColMap(), true);
-        const GO myrowind = rmap->getGlobalElement(0);
-    }
-    // All procs fail if any node fails
-    int lclSuccess = success ? 1 : 0;
-    int gblSuccess = 1;
+    const int numProcs = comm->getSize();
 
-    if(gblSuccess == 1)
-    {
-        out << "Succeeded on all processes!" << endl;
-    }
-    else
-    {
-        out << "FAILED on at least one process!" << endl;
-    }
+    out << ">>> CrsGraph::swap() Unit Test" << std::endl;
+    std::cout << "[" << comm->getRank() << "] - numProcs: " << numProcs << std::endl;
 
-#endif      // WCMCLEN_EXPERIMENTAL
+    success=true;
+
+    const size_t numLocal = 1;
+
+    RCP<const map_t> rmap = rcp(new map_t(INVALID, numLocal, 0, comm));
+    RCP<const map_t> cmap = rcp(new map_t(INVALID, numLocal, 0, comm));
+
+    RCP<graph_t> graph = rcp(new graph_t(rmap, cmap, 2, StaticProfile));
+
 }
 
 
