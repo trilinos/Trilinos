@@ -4557,10 +4557,9 @@ namespace Tpetra {
     /// collectives over the matrix's communicator.  The current
     /// Tpetra implementation of this method does nothing.
     ///
+  public:
     /// This method is called in fillComplete().
     void computeGlobalConstants();
-
-  public:
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
   protected:

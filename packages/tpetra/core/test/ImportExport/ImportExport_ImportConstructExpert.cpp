@@ -135,6 +135,7 @@ namespace {
       127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
       179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
       233, 239, 241, 251, 257, 263, 269, 271};
+
     int idx=0;
     block_type curBlk ("curBlk", blkSize, blkSize);
 
@@ -168,6 +169,7 @@ namespace {
     // Still need to get remote GID's, and export LID's.
 
     Teuchos::Array<LO> saveremoteLIDs = G->getImporter()->getRemoteLIDs();
+
     Teuchos::Array<LO> remoteLIDs = G->getImporter()->getRemoteLIDs();
 
     Teuchos::Array<GO> remoteGIDs(remoteLIDs.size());
@@ -179,14 +181,11 @@ namespace {
     const Teuchos::ArrayView<const LO> exportLIDs      = G->getImporter()->getExportLIDs();
     const Teuchos::ArrayView<const int> userExportPIDs = G->getImporter()->getExportPIDs();
 
-
     Tpetra::Import<LO,GO,NT> newimport(source,
                                        target,
                                        userRemotePIDs,
-                                       remoteGIDs,
                                        exportLIDs,
                                        userExportPIDs ,
-                                       false,
                                        Teuchos::null,
                                        Teuchos::null ); // plist == null
 
@@ -195,17 +194,20 @@ namespace {
 
 
     Teuchos::Array<LO> newexportLIDs = newimport.getExportLIDs();
+
+    const int rank = newsource->getComm()->getRank();
     if(newexportLIDs.size()!=exportLIDs.size())
       {
-        out <<" newexportLIDs.size does not match exportLIDs.size()"<<endl;
-        out <<" oldExportLIDs "<<exportLIDs<<endl;
-        out <<" newExportLIDs "<<newexportLIDs<<endl;
+
+        out <<"Rank "<<rank<<" newexportLIDs.size does not match exportLIDs.size()"<<endl;
+        out <<"Rank "<<rank<<" oldExportLIDs "<<exportLIDs<<endl;
+        out <<"Rank "<<rank<<" newExportLIDs "<<newexportLIDs<<endl;
         success = false;
       }
     else
       for(size_type i=0;i<exportLIDs.size();++i)
         if(exportLIDs[i]!=newexportLIDs[i]) {
-          out <<" exportLIDs["<<i<<"] ="<<exportLIDs[i]<<" != newexportLIDs[i] = "<<newexportLIDs[i]<<endl;
+          out <<"Rank "<<rank<<" exportLIDs["<<i<<"] ="<<exportLIDs[i]<<" != newexportLIDs[i] = "<<newexportLIDs[i]<<endl;
           success = false;
           break;
         }
@@ -213,15 +215,15 @@ namespace {
     Teuchos::Array<LO> newremoteLIDs = newimport.getRemoteLIDs();
     if(newremoteLIDs.size()!=saveremoteLIDs.size())
       {
-        out <<" newremoteLIDs.size does not match remoteLIDs.size()"<<endl;
-        out <<" oldRemoteLIDs "<<saveremoteLIDs<<endl;
-        out <<" newRemoteLIDs "<<newremoteLIDs<<endl;
+        out <<"Rank "<<rank<<" newremoteLIDs.size does not match remoteLIDs.size()"<<endl;
+        out <<"Rank "<<rank<<" oldRemoteLIDs "<<saveremoteLIDs<<endl;
+        out <<"Rank "<<rank<<" newRemoteLIDs "<<newremoteLIDs<<endl;
         success = false;
       }
     else
       for(size_type i=0;i<saveremoteLIDs.size();++i)
         if(saveremoteLIDs[i]!=newremoteLIDs[i]) {
-          out <<" remoteLIDs["<<i<<"] ="<<remoteLIDs[i]<<" != newremoteLIDs[i] = "<<newremoteLIDs[i]<<endl;
+          out <<"Rank "<<rank<<" remoteLIDs["<<i<<"] ="<<remoteLIDs[i]<<" != newremoteLIDs[i] = "<<newremoteLIDs[i]<<endl;
           success = false;
           break;
         }
@@ -229,6 +231,9 @@ namespace {
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+    out<<" GlobalSuccess = "<<globalSuccess_int<<std::endl;
+
   }
 
   //

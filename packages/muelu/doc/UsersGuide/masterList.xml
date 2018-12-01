@@ -1153,8 +1153,27 @@
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>
-  </matrixmatrix>
+     <parameter>
+      <name>matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount </name>
+      <type>int</type>
+      <description>Core Count above which the
+optimized neighbor discovery is used for Importer construction, for some matrix
+multiplication operations.</description>
+      <default>3000 </default>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+    <parameter>
+      <name>isMatrixMatrix_TransferAndFillComplete </name>
+      <type>bool</type>
+      <description>Try to use the
+optimized neighbor discovery for Importer construction.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <default>false</default>
+      <visible>false</visible>
+    </parameter>
 
+  </matrixmatrix>
   <reuse>
 
     <parameter>
