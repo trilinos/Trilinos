@@ -240,6 +240,13 @@
         
 \cba{matrixmatrix: kernel params}{\parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
         
+\cbb{matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount }{int}{3000 }{Core Count above which the
+optimized neighbor discovery is used for Importer construction, for some matrix
+multiplication operations.}
+        
+\cbb{isMatrixMatrix_TransferAndFillComplete }{bool}{false}{Try to use the
+optimized neighbor discovery for Importer construction.}
+        
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
         
 \cbb{use external multigrid package}{string}{"none"}{Option to utilize external multigrid package for computations, for example allows for use of AMGX}
