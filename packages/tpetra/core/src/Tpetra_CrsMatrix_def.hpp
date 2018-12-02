@@ -59,31 +59,41 @@
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_createMirrorView.hpp"
-#include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_leftScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "KokkosSparse_getDiagCopy.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
+#include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
 #include <memory>
 #include <sstream>
 #include <typeinfo>
 #include <vector>
-
-#include <Teuchos_RCP.hpp>
-
-#include <Teuchos_FancyOStream.hpp>
 
 using Teuchos::rcpFromRef;
 
 namespace Tpetra {
 
 namespace { // (anonymous)
+
+  std::shared_ptr< ::Tpetra::Details::CommRequest>
+  iallreduceIntRaw (const int& localValue,
+		    int& globalValue,
+		    const ::Teuchos::EReductionType op,
+		    const Teuchos::Comm<int>& comm)
+  {
+    Kokkos::View<const int*, Kokkos::HostSpace> localView (&localValue);
+    Kokkos::View<int*, Kokkos::HostSpace> globalView (&globalValue);
+    return ::Tpetra::Details::iallreduce (localView, globalView, op, comm);
+  }
 
   template<class T, class BinaryFunction>
   T atomic_binary_function_update (volatile T* const dest,
@@ -4815,7 +4825,7 @@ namespace Tpetra {
       label = params->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     using Teuchos::TimeMonitor;
-    
+
     Teuchos::TimeMonitor all(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-all")));
 #endif
 
@@ -4839,7 +4849,7 @@ namespace Tpetra {
     if (callComputeGlobalConstants) {
         this->computeGlobalConstants ();
     }
-        
+
     {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         TimeMonitor  fLGAM(*TimeMonitor::getNewTimer(prefix + std::string("eSFC-M-fLGAM")));
@@ -8179,28 +8189,26 @@ namespace Tpetra {
       reverseMode = params->get ("Reverse Mode", reverseMode);
       restrictComm = params->get ("Restrict Communicator", restrictComm);
       auto & slist = params->sublist("matrixmatrix: kernel params",false);
-      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);   
+      isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
 
       if(getComm()->getSize() < mm_optimization_core_count && isMM)   isMM = false;
       if(reverseMode) isMM = false;
     }
 
-#ifdef HAVE_TPETRACORE_MPI
-    MPI_Request rawRequest = MPI_REQUEST_NULL;
-    MPI_Comm rawComm            = getRawMpiComm(*getComm());
-
-    bool reduced_mismatch = false; 
-    if(isMM) {
-        int immRedErr = 0;
-        // Test for pathological matrix transfer
-        bool source_vals = ! getGraph ()->getImporter ().is_null();
-        bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 || rowTransfer.getRemoteLIDs ().size() == 0);
-        bool mismatch = source_vals != target_vals;
-        immRedErr = MPI_Iallreduce(&mismatch,&reduced_mismatch,1,MPI::BOOL,MPI_LOR,rawComm,&rawRequest);
-    }
-#endif
-
+   // Only used in the sparse matrix-matrix multiply (isMM) case.
+   std::shared_ptr< ::Tpetra::Details::CommRequest> iallreduceRequest;
+   int mismatch = 0;
+   int reduced_mismatch = 0;
+   if (isMM) {
+     // Test for pathological matrix transfer
+     const bool source_vals = ! getGraph ()->getImporter ().is_null();
+     const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
+				 rowTransfer.getRemoteLIDs ().size() == 0);
+     mismatch = (source_vals != target_vals) ? 1 : 0;
+     iallreduceRequest = iallreduceIntRaw (mismatch, reduced_mismatch,
+					   Teuchos::REDUCE_MAX, * (getComm ()));
+   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
@@ -8622,12 +8630,12 @@ namespace Tpetra {
         destMat->numExportPacketsPerLID_.modify_host ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
             getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-        packCrsMatrixWithOwningPIDs (*this, 
+        packCrsMatrixWithOwningPIDs (*this,
                                      destMat->exports_,
-                                     numExportPacketsPerLID, 
+                                     numExportPacketsPerLID,
                                      ExportLIDs,
-                                     SourcePids, 
-                                     constantNumPackets, 
+                                     SourcePids,
+                                     constantNumPackets,
                                      Distor);
     }
 #endif // HAVE_TPETRA_DEBUG
@@ -8878,14 +8886,14 @@ namespace Tpetra {
     Teuchos::ParameterList esfc_params;
 
     RCP<import_type> MyImport;
-#ifdef HAVE_TPETRACORE_MPI
-    // now resolve the non-blocking allreduce on reduced_mismatch;
-    MPI_Status stat;
-    int mmwaiterr = 0;
-    if(isMM) mmwaiterr = MPI_Wait (&rawRequest,&stat); 
-    (void)mmwaiterr;
-    if(isMM && reduced_mismatch) isMM = false; 
-#endif
+
+    // Fulfull the non-blocking allreduce on reduced_mismatch.
+    if (iallreduceRequest.get () != nullptr) {
+      iallreduceRequest->wait ();
+      if (reduced_mismatch != 0) {
+	isMM = false;
+      }
+    }
 
     if( isMM && !MyImporter.is_null()) {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -8982,7 +8990,7 @@ namespace Tpetra {
         Teuchos::ArrayRCP<LO>  userExportLIDs = Teuchos::arcp(new LO[MyLen],0,MyLen,true);
         Teuchos::ArrayRCP<int> userExportPIDs = Teuchos::arcp(new int[MyLen],0,MyLen,true);
         int iloc = 0; // will be the size of the userExportLID/PIDs
-        
+
         while(i1 < Len1 || i2 < Len2 || i3 < Len3){
             int PID1 = (i1<Len1)?(EPID1[i1]):InfPID;
             int PID2 = (i2<Len2)?(EPID2[i2]):InfPID;
@@ -9024,7 +9032,7 @@ namespace Tpetra {
                 i3++;
             }
         }
-        
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         auto ismmIctor(*TimeMonitor::getNewTimer(prefix + std::string("isMMIportCtor")));
 #endif
@@ -9037,8 +9045,8 @@ namespace Tpetra {
                                           userExportPIDs.view(0,iloc).getConst(),
                                           plist)
             );
-        
-        
+
+
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
             TimeMonitor esfc (*TimeMonitor::getNewTimer(prefix + std::string("isMM::destMat->eSFC")));
@@ -9056,15 +9064,15 @@ namespace Tpetra {
         TimeMonitor MMnotMMblock (*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMblock")));
 #endif
 
-        
-#ifdef HAVE_TPETRA_MMM_TIMINGS      
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
         TimeMonitor  notMMIcTor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC notMMCreateImporter")));
 #endif
         Teuchos::RCP<Teuchos::ParameterList> mypars = rcp(new Teuchos::ParameterList);
         mypars->set("Timer Label","notMMFrom_tAFC");
         MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids, mypars));
-        
-        
+
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
         esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
@@ -9075,7 +9083,7 @@ namespace Tpetra {
         if(!params.is_null())
             esfc_params.set("compute global constants",params->get("compute global constants",true));
         destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(new Teuchos::ParameterList(esfc_params)));
-        
+
     }
   }
 
@@ -9225,4 +9233,3 @@ namespace Tpetra {
   TPETRA_CRSMATRIX_EXPORT_AND_FILL_COMPLETE_INSTANT_TWO(SCALAR, LO, GO, NODE)
 
 #endif // TPETRA_CRSMATRIX_DEF_HPP
-
