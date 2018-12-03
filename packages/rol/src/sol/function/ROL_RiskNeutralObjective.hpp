@@ -149,13 +149,14 @@ public:
       sumDual_   = (x.dual()).clone();
       firstUpdate_ = false;
     }
-    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
+//    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
+    ParametrizedObjective_->update(x,flag,iter);
     ValueSampler_->update(x);
     value_ = static_cast<Real>(0);
     if ( storage_ ) {
       value_storage_.clear();
     }
-    if ( flag && iter>=0 ) {
+    if ( flag ) { //&& iter>=0 ) {
       GradientSampler_->update(x);
       HessianSampler_->update(x);
       gradient_->zero();

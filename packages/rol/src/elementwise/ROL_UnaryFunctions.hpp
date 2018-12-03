@@ -258,7 +258,15 @@ public:
 
 };
 
-
+template<class Real>
+class Round : public UnaryFunction<Real> {
+public:
+  Round(void) {}
+  Real apply(const Real &x) const {
+    const Real half(0.5), fx = std::floor(x), cx = std::ceil(x);
+    return (x-fx < half ? fx : cx); 
+  }
+};
 
 // Evaluate g(f(x))
 template<class Real> 

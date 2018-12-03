@@ -534,6 +534,7 @@ private:
         rankState_ *= updateFactor_; // Perhaps there is a better update strategy
         rankState_  = (maxRank_ < rankState_ ? maxRank_ : rankState_);
         stateSketch_->setRank(rankState_);
+        isStateComputed_ = false;
         solveState(x);
       }
       else {
