@@ -1,34 +1,12 @@
 <ParameterList>
 
   <ParameterList name="Mesh">
-    <Parameter name="Source" type="string" value="Inline Mesh" />
-    <!-- <Parameter name="Source" type="string" value="Exodus File" /> -->
+    <Parameter name="Source" type="string" value="Exodus File" />
 
     <ParameterList name="Exodus File">
-      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <Parameter name="dt" type="double" value="1.5e-12"/>
       <ParameterList name="Exodus Parameters">
-        <Parameter name="File Name" type="string" value="blob/blob.g" />
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="Inline Mesh">
-      <Parameter name="Mesh Dimension" type="int" value="3"/>
-      <Parameter name="Mesh Type" type="string" value="quad"/>
-      <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
-      <Parameter name="CFL" type="double" value="4.0"/>
-      <ParameterList name="Mesh Factory Parameter List">
-        <Parameter name="X Blocks" type="int" value="1" />
-        <Parameter name="Y Blocks" type="int" value="1" />
-        <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="10" />
-        <Parameter name="Y Elements" type="int" value="10" />
-        <Parameter name="Z Elements" type="int" value="10" />
-        <!-- <ParameterList name="Periodic BCs"> -->
-        <!--   <Parameter name="Count" type="int" value="3"/> -->
-        <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
-        <!--   <Parameter name="Periodic Condition 2" type="string" value="yz-all 1e-8: left;right"/> -->
-        <!--   <Parameter name="Periodic Condition 3" type="string" value="xy-all 1e-8: front;back"/> -->
-        <!-- </ParameterList> -->
+        <Parameter name="File Name" type="string" value="blob-R2.g" />
       </ParameterList>
     </ParameterList>
 
@@ -36,11 +14,11 @@
 
 
   <ParameterList name="Block ID to Physics ID Mapping">
-    <Parameter name="eblock-0_0_0" type="string" value="Maxwell Physics"/>
+    <Parameter name="block_1" type="string" value="Maxwell Physics"/>
   </ParameterList>
 
   <ParameterList name="Block ID to Auxiliary Physics ID Mapping">
-    <Parameter name="eblock-0_0_0" type="string" value="Auxiliary Physics Block"/>
+    <Parameter name="block_1" type="string" value="Auxiliary Physics Block"/>
   </ParameterList>
 
    <ParameterList name="Assembly">
@@ -160,108 +138,21 @@
     <ParameterList name="Electromagnetic Energy">
       <Parameter name="Type" type="string" value="Functional"/>
       <Parameter name="Field Name" type="string" value="EM_ENERGY"/>
-      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Element Blocks" type="string" value="block_1"/>
       <Parameter name="Evaluation Types" type="string" value="Residual"/>
       <Parameter name="Requires Cell Integral" type="bool" value="true"/>
     </ParameterList>
     <ParameterList name="Electromagnetic Energy/dt^2">
       <Parameter name="Type" type="string" value="Functional"/>
       <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/>
-      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
+      <Parameter name="Element Blocks" type="string" value="block_1"/>
       <Parameter name="Evaluation Types" type="string" value="Residual"/>
       <Parameter name="Requires Cell Integral" type="bool" value="true"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">
-    <!-- Conditions on E-field -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="top"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="E_edge"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="bottom"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="E_edge"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="left"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="E_edge"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="right"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="E_edge"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="front"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="E_edge"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="back"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="E_edge"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-
-    <!-- Conditions on B-field -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="top"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="B_face"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="bottom"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="B_face"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="left"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="B_face"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="right"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="B_face"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="front"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="B_face"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList> -->
-    <!--   <Parameter name="Type" type="string" value="Dirichlet"/> -->
-    <!--   <Parameter name="Sideset ID" type="string" value="back"/> -->
-    <!--   <Parameter name="Element Block ID" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Equation Set Name" type="string" value="B_face"/> -->
-    <!--   <Parameter name="Strategy" type="string" value="Constant"/> -->
-    <!-- </ParameterList> -->
-
+    <!-- None -->
   </ParameterList>
 
   <ParameterList name="Auxiliary Boundary Conditions">
