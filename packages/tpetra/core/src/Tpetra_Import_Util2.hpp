@@ -232,8 +232,8 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
                                "Neighbor Discovery Should not be called with null Importer");
 
     Distributor & Distor            = MyImporter->getDistributor();
-    auto NumRecvs                   = Distor.getNumReceives();
-    auto NumSends                   = Distor.getNumSends();
+    const size_t NumRecvs           = Distor.getNumReceives();
+    const size_t NumSends           = Distor.getNumSends();
     auto RemoteLIDs                 = MyImporter->getRemoteLIDs();
     auto const ProcsFrom            = Distor.getProcsFrom();
     auto const ProcsTo              = Distor.getProcsTo();
@@ -248,12 +248,14 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     Teuchos::Array<int> RemotePIDOrder(numCols,-1);
 
     // For each remote ID, record index into ProcsFrom, who owns it.
-    for(uint i=0,j=0;i<NumRecvs;i++){
-        for(uint k=0;k<LengthsFrom[i];k++){
-            int pid=ProcsFrom[i];
-            if(pid!=MyPID ) RemotePIDOrder[RemoteLIDs[j]]=i;
-            j++;
+    for (size_t i = 0, j = 0; i < NumRecvs; ++i) {
+      for (size_t k = 0; k < LengthsFrom[i]; ++k) {
+        const int pid = ProcsFrom[i];
+        if (pid != MyPID) {
+          RemotePIDOrder[RemoteLIDs[j]] = i;
         }
+        j++;
+      }
     }
 
     // Step One: Start tacking the (GID,PID) pairs on the std sets
@@ -270,22 +272,22 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         TimeMonitor set_all(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSB")));
 #endif
-        
+
         // 25 Jul 2018: CBL
         // todo:std::unordered_set (hash table),
-        // with an adequate prereservation ("bucket count"). 
+        // with an adequate prereservation ("bucket count").
         // An onordered_set has to have a custom hasher for pid/gid pair
         // However, when pidsets is copied to RSB, it will be in key
-        // order _not_ in pid,gid order. (unlike std::set). 
+        // order _not_ in pid,gid order. (unlike std::set).
         // Impliment this with a reserve, and time BOTH building pidsets
         // _and_ the sort after the receive. Even if unordered_set saves
-        // time, if it causes the sort to be longer, it's not a win. 
+        // time, if it causes the sort to be longer, it's not a win.
 
         Teuchos::Array<std::set<pidgidpair_t>> pidsets(NumRecvs);
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
             TimeMonitor set_insert(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBinsert")));
-#endif  
+#endif
             for(size_t i=0; i < NumExportLIDs; i++) {
                 LO lid = ExportLIDs[i];
                 GO exp_pid = ExportPIDs[i];
@@ -303,7 +305,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
             TimeMonitor set_cpy(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBcpy")));
-#endif  
+#endif
             int jj = 0;
             for(auto &&ps : pidsets)  {
                 auto s = ps.size();
@@ -361,13 +363,13 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 #endif
 
     int totalexportpairrecsize = 0;
-    for(uint i = 0; i < NumSends; i++) {
-        totalexportpairrecsize += ReverseRecvSizes[i];
+    for (size_t i = 0; i < NumSends; ++i) {
+      totalexportpairrecsize += ReverseRecvSizes[i];
 #ifdef HAVE_TPETRA_DEBUG
-        if(ReverseRecvSizes[i]<0) {
-            errstr << MyPID << "E4 reverseNeighborDiscovery: got < 0 for receive size "<<ReverseRecvSizes[i]<<std::endl;
-            error=true;
-        }
+      if(ReverseRecvSizes[i]<0) {
+        errstr << MyPID << "E4 reverseNeighborDiscovery: got < 0 for receive size "<<ReverseRecvSizes[i]<<std::endl;
+        error=true;
+      }
 #endif
     }
     Teuchos::ArrayRCP<pidgidpair_t >AllReverseRecv= Teuchos::arcp(new pidgidpair_t[totalexportpairrecsize],0,totalexportpairrecsize,true);

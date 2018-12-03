@@ -86,9 +86,9 @@ namespace { // (anonymous)
 
   std::shared_ptr< ::Tpetra::Details::CommRequest>
   iallreduceIntRaw (const int& localValue,
-		    int& globalValue,
-		    const ::Teuchos::EReductionType op,
-		    const Teuchos::Comm<int>& comm)
+                    int& globalValue,
+                    const ::Teuchos::EReductionType op,
+                    const Teuchos::Comm<int>& comm)
   {
     Kokkos::View<const int*, Kokkos::HostSpace> localView (&localValue);
     Kokkos::View<int*, Kokkos::HostSpace> globalView (&globalValue);
@@ -8204,10 +8204,10 @@ namespace Tpetra {
      // Test for pathological matrix transfer
      const bool source_vals = ! getGraph ()->getImporter ().is_null();
      const bool target_vals = ! (rowTransfer.getExportLIDs ().size() == 0 ||
-				 rowTransfer.getRemoteLIDs ().size() == 0);
+                                 rowTransfer.getRemoteLIDs ().size() == 0);
      mismatch = (source_vals != target_vals) ? 1 : 0;
      iallreduceRequest = iallreduceIntRaw (mismatch, reduced_mismatch,
-					   Teuchos::REDUCE_MAX, * (getComm ()));
+                                           Teuchos::REDUCE_MAX, * (getComm ()));
    }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -8891,7 +8891,7 @@ namespace Tpetra {
     if (iallreduceRequest.get () != nullptr) {
       iallreduceRequest->wait ();
       if (reduced_mismatch != 0) {
-	isMM = false;
+        isMM = false;
       }
     }
 
@@ -8937,32 +8937,37 @@ namespace Tpetra {
         // from EpetraExt_MMHelpers.cpp: build_type2_exports
         std::vector<bool> IsOwned(numCols,true);
         std::vector<int>  SentTo(numCols,-1);
-        if(!MyImporter.is_null())
-            for(auto && rlid : MyImporter->getRemoteLIDs() ) // the remoteLIDs must be from sourcematrix
-                IsOwned[rlid]=false;
+        if (! MyImporter.is_null ()) {
+          for (auto && rlid : MyImporter->getRemoteLIDs()) { // the remoteLIDs must be from sourcematrix
+            IsOwned[rlid]=false;
+          }
+        }
 
         std::vector<std::pair<int,GO> > usrtg;
         usrtg.reserve(TEPID2.size());
 
-        for(uint i=0;i<TEPID2.size() ;++i) {
-            const LO  row = TELID2[i];
-            const int pid = TEPID2[i];
-            for(uint j=rowptr[row]; j<rowptr[row+1]; j++) {
-                    int col=colind[j];
-                    if(IsOwned[col] && SentTo[col]!=pid){
-                        SentTo[col]    = pid;
-                        GO gid = this->getColMap()->getGlobalElement(col); // *this is sourcematrix
-                        usrtg.push_back(std::pair<int,GO>(pid,gid));
-                    }
-            }
-        }
+	{
+	  const auto& colMap = * (this->getColMap ()); // *this is sourcematrix
+	  for (Array_size_type i = 0; i < TEPID2.size (); ++i) {
+	    const LO  row = TELID2[i];
+	    const int pid = TEPID2[i];
+	    for (auto j = rowptr[row]; j < rowptr[row+1]; ++j) {
+	      const int col = colind[j];
+	      if (IsOwned[col] && SentTo[col] != pid) {
+		SentTo[col]    = pid;
+		GO gid = colMap.getGlobalElement (col);
+		usrtg.push_back (std::pair<int,GO> (pid, gid));
+	      }
+	    }
+	  }
+	}
 // This sort can _not_ be omitted.[
         std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order
         auto eopg = std ::unique(usrtg.begin(),usrtg.end());
         // 25 Jul 2018: Could just ignore the entries at and after eopg.
         usrtg.erase(eopg,usrtg.end());
 
-        const uint type2_us_size= usrtg.size();
+        const Array_size_type type2_us_size = usrtg.size();
         Teuchos::ArrayRCP<int>  EPID2=Teuchos::arcp(new int[type2_us_size],0,type2_us_size,true);
         Teuchos::ArrayRCP< LO>  ELID2=Teuchos::arcp(new  LO[type2_us_size],0,type2_us_size,true);
 
@@ -9077,7 +9082,7 @@ namespace Tpetra {
         TimeMonitor  esfcnotmm(*TimeMonitor::getNewTimer(prefix + std::string("notMMdestMat->expertStaticFillComplete")));
         esfc_params.set("Timer Label",prefix+std::string("notMM eSFC"));
 #else
-	esfc_params.set("Timer Label",std::string("notMM eSFC"));
+        esfc_params.set("Timer Label",std::string("notMM eSFC"));
 #endif
 
         if(!params.is_null())
