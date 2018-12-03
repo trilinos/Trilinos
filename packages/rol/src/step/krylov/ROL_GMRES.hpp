@@ -87,8 +87,6 @@ public:
   
   GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false) {
 
-    
-    
     using std::vector; 
 
     Real zero(0);
@@ -166,8 +164,6 @@ public:
     (*s_)(0) = (*res_)[0];
 
     for( iter=0; iter<maxit; ++iter ) {
-
-      // std::cout << "iter = " << iter << "  rnorm = " << (*res_)[iter] << "  xnorm = " << x.norm() << "  bnorm = " << b.norm() << std::endl;
 
       if( useInexact_ ) {
         itol = rtol/(maxit*(*res_)[iter]);

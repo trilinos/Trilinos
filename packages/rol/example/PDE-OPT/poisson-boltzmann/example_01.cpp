@@ -67,6 +67,8 @@
 #include "pde_poisson_boltzmann.hpp"
 #include "obj_poisson_boltzmann.hpp"
 
+#include "ROL_OptimizationSolver.hpp"
+
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
@@ -152,6 +154,8 @@ int main(int argc, char *argv[]) {
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
+    RealT tol(1.e-8);
+    con->solve(*rp,*up,*zp,tol);
     ROL::Ptr<ROL::Step<RealT>>
       step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
     ROL::Ptr<ROL::StatusTest<RealT>>
@@ -161,7 +165,6 @@ int main(int argc, char *argv[]) {
 
     // Output.
     con->getAssembler()->printMeshData(*outStream);
-    RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
     con->outputTpetraVector(u_ptr,"state.txt");
     con->outputTpetraVector(z_ptr,"control.txt");
