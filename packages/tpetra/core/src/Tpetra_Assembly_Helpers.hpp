@@ -45,21 +45,21 @@
 namespace Tpetra {
 
 template<typename T>
-void beginFill(T t) { t.beginFill();}
+void beginFill(T& t) { t.beginFill();}
 
 template<typename T>
-void endFill(T t) { t.endFill();}
+void endFill(T& t) { t.endFill();}
 
 //! Helper function to begin fill on multiple FE{MultiVector|CrsMatrix} objects at once
 template<typename T, typename... Args>
-void beginFill(T t, Args... args) {
+void beginFill(T& t, Args... args) {
   t.beginFill();
   beginFill(args...);
 }
 
 //! Helper function to begin end on multiple FE{MultiVector|CrsMatrix} objects at once
 template<typename T, typename... Args>
-void endFill(T t, Args... args) {
+void endFill(T& t, Args... args) {
   t.endFill();
   endFill(args...);
 }
