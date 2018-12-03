@@ -79,7 +79,7 @@ namespace MueLu {
   void ToggleCoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Coordinate transfer toggle", coarseLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> xdMV;
 
     TEUCHOS_TEST_FOR_EXCEPTION(coordFacts_.size() != 2, Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: ToggleCoordinatesTransferFactory needs two different transfer operator strategies for toggling.");
 
