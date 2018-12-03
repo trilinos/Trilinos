@@ -145,6 +145,8 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
 
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType realType;
+
 #ifdef HAVE_MUELU_CUDA
     if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStart();
 #endif
@@ -806,7 +808,7 @@ namespace MueLu {
 #endif
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
       if (Coords_ != null)
-        Xpetra::IO<double, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
+        Xpetra::IO<realType, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
       Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
       Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.mat"), *P11_);
@@ -835,6 +837,7 @@ namespace MueLu {
 
     const SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
     const SC SC_ONE = Teuchos::ScalarTraits<SC>::one();
+    const Scalar half = SC_ONE / (SC_ONE + SC_ONE);
     size_t dim = Nullspace_->getNumVectors();
     size_t numLocalRows = SM_Matrix_->getNodeNumRows();
 
@@ -1017,7 +1020,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
-                                       P11vals(m) += 0.5 * v * n;
+                                       P11vals(m) += half * v * n;
                                      }
                                    }
                                  }
@@ -1041,7 +1044,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
-                                       P11vals(m) += 0.5 * v * n;
+                                       P11vals(m) += half * v * n;
                                      }
                                    }
                                  }
@@ -1164,7 +1167,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_DEBUG
                 TEUCHOS_ASSERT_EQUALITY(P11colind[m],jNew);
 #endif
-                  P11vals[m] += 0.5 * v * n;
+                  P11vals[m] += half * v * n;
               }
             }
           }
@@ -1187,7 +1190,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_DEBUG
                 TEUCHOS_ASSERT_EQUALITY(P11colind[m],jNew);
 #endif
-                  P11vals[m] += 0.5 * v * n;
+                  P11vals[m] += half * v * n;
               }
             }
           }
@@ -1243,14 +1246,14 @@ namespace MueLu {
                 if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
                   P11_status[jNew] = nnz;
                   P11colind[nnz] = jNew;
-                  P11vals[nnz] = 0.5 * v * n;
+                  P11vals[nnz] = half * v * n;
                   // or should it be
-                  // P11vals[nnz] = 0.5 * n;
+                  // P11vals[nnz] = half * n;
                   nnz++;
                 } else {
-                  P11vals[P11_status[jNew]] += 0.5 * v * n;
+                  P11vals[P11_status[jNew]] += half * v * n;
                   // or should it be
-                  // P11vals[P11_status[jNew]] += 0.5 * n;
+                  // P11vals[P11_status[jNew]] += half * n;
                 }
               }
             }
@@ -1275,14 +1278,14 @@ namespace MueLu {
                 if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
                   P11_status[jNew] = nnz;
                   P11colind[nnz] = jNew;
-                  P11vals[nnz] = 0.5 * v * n;
+                  P11vals[nnz] = half * v * n;
                   // or should it be
-                  // P11vals[nnz] = 0.5 * n;
+                  // P11vals[nnz] = half * n;
                   nnz++;
                 } else {
-                  P11vals[P11_status[jNew]] += 0.5 * v * n;
+                  P11vals[P11_status[jNew]] += half * v * n;
                   // or should it be
-                  // P11vals[P11_status[jNew]] += 0.5 * n;
+                  // P11vals[P11_status[jNew]] += half * n;
                 }
               }
             }
