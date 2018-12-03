@@ -83,8 +83,8 @@ int main(int argc, char *argv[]) {
     ROL::GetTestProblem<RealT>(optProblem,x0,z,ROL::TESTOPTPROBLEM_CANTILEVERBEAM);
 
     // Get Dimension of Problem
-    int dim = x0->dimension(); 
-    parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
+    // int dim = x0->dimension(); 
+    // parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
     // Check Derivatives
     optProblem->check(*outStream);

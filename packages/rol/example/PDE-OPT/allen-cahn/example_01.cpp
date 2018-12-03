@@ -223,7 +223,6 @@ int main(int argc, char *argv[]) {
 
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
     ROL::Ptr<ROL::Algorithm<RealT> > algo;
-    std::cout << "USE FULL SPACE: " << useFullSpace << std::endl;
     if ( useFullSpace ) {
       ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), bnd, con, pp);
       ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
