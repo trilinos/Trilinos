@@ -69,6 +69,12 @@
 /* Define if we have ML */
 #cmakedefine HAVE_IFPACK2_ML
 
+/* Define if we have AztecOO */
+#cmakedefine HAVE_IFPACK2_AZTECOO
+
+/* Define if we have Epetra */
+#cmakedefine HAVE_IFPACK2_EPETRA
+
 /* Define if we have ThyraTpetraAdapters */
 #cmakedefine HAVE_IFPACK2_THYRATPETRAADAPTERS
 
