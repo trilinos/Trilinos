@@ -64,8 +64,8 @@
               <ParameterList name="Ifpack2">
                 <Parameter name="Prec Type" type="string" value="relaxation"/>
                 <ParameterList name="Ifpack2 Settings">
-                  <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
-                  <Parameter name="relaxation: sweeps" type="int" value="2"/>
+                  <Parameter name="relaxation: type" type="string" value="Jacobi"/>
+                  <Parameter name="relaxation: sweeps" type="int" value="1"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

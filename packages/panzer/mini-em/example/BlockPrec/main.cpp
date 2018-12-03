@@ -82,6 +82,16 @@ void writeToExodus(double time_stamp,
     panzer::ResponseLibrary<panzer::Traits> & stkIOResponseLibrary,
     panzer_stk::STK_Interface & mesh);
 
+
+void updateParams(const std::string & xml,
+                  Teuchos::RCP<Teuchos::ParameterList> pl,
+                  const Teuchos::RCP<const Teuchos::MpiComm<int> > comm,
+                  const Teuchos::RCP<Teuchos::FancyOStream> out) {
+  *out << "Loading solver config from " << xml << std::endl;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xml,pl.ptr(),*comm);
+}
+
+
 /********************************************************************************
  * Sets up an electromagetics problem driven by a simple Gaussian current pulse
  * on the domain [0,1]^3. First order Maxwell equations with edge-face
@@ -299,6 +309,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     if (dt <= 0.0)
       return EXIT_FAILURE;
 
+    RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
     if (xml == "") {
       // Load a solver configuration
       // This input deck choice depends on
@@ -308,53 +319,49 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       // * node type
       if (solver == AUGMENTATION)
         if (linAlgebra == linAlgTpetra)
-          xml = "solverAugmentation.xml";
+          updateParams("solverAugmentation.xml", lin_solver_pl, comm, out);
         else
-          xml = "solverAugmentationEpetra.xml";
+          updateParams("solverAugmentationEpetra.xml", lin_solver_pl, comm, out);
       else if (solver == CG)
         if (linAlgebra == linAlgTpetra)
-          xml = "solverCG.xml";
+          updateParams("solverCG.xml", lin_solver_pl, comm, out);
         else
           return EXIT_FAILURE;
+      else if (solver == ML_REFMAXWELL)
+        updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
       else if (solver == MUELU_REFMAXWELL) {
         if (linAlgebra == linAlgTpetra) {
-          if (dim == 3)
-            xml = "solverMueLuRefMaxwell.xml";
-          else
-            xml = "solverMueLuRefMaxwell2D.xml";
+          updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
+
+          if (dim == 2)
+            updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
+
 #ifdef KOKKOS_ENABLE_OPENMP
           if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
             if (linAlgebra == linAlgTpetra)
-              xml = "solverMueLuRefMaxwellOpenMP.xml";
+              updateParams("solverMueLuRefMaxwellOpenMP.xml", lin_solver_pl, comm, out);
             else {
               std::cout << std::endl
                         << "WARNING" << std::endl
                         << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
                         << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
               return EXIT_FAILURE;
-              xml = "solverMueLuRefMaxwellEpetra.xml";
             }
           }
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
           if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
-            xml = "solverMueLuRefMaxwellCuda.xml";
+            updateParams("solverMueLuRefMaxwellCuda.xml", lin_solver_pl, comm, out);
 #endif
-        } else
-          if (dim == 3) {
-            xml = "solverMueLuRefMaxwellEpetra.xml";
-          } else {
-            std::cout << std::endl
-                      << "No configuration available for 2D + Epetra." << std::endl;
-            return EXIT_FAILURE;
-          }
-      } else if (solver == ML_REFMAXWELL) {
-        xml = "solverMLRefMaxwell.xml";
+        } else {
+          updateParams("solverMueLuRefMaxwellEpetra.xml", lin_solver_pl, comm, out);
+
+          if (dim == 2)
+            updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
+        }
       }
-    }
-    *out << "Loading solver config from " << xml << std::endl;
-    RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
+    } else
+      updateParams(xml, lin_solver_pl, comm, out);
     lin_solver_pl->print(*out);
 
     // The curl-curl term needs to be scaled by dt, the RefMaxwell augmentation needs 1/dt
