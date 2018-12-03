@@ -116,30 +116,102 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 {
     using Teuchos::Comm;
-    using Teuchos::RCP;
     using Teuchos::outArg;
+    using Teuchos::RCP;
 
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
     typedef Tpetra::Map<LO, GO, Node>      map_t;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+//    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
 
-    RCP<const Comm<int>> comm = getDefaultComm();
+    auto initialComm = getDefaultComm();
+    TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
 
-    const int numProcs = comm->getSize();
+    // Set up a communicator that has exactly two processors in it for the actual test.
+    const int color = (initialComm->getRank() < 2) ? 0 : 1;
+    const int key   = 0;
+    auto      comm  = initialComm->split(color, key);
 
-    out << ">>> CrsGraph::swap() Unit Test" << std::endl;
-    std::cout << "[" << comm->getRank() << "] - numProcs: " << numProcs << std::endl;
+    if(0 == color)
+    {
+        const int numProcs = comm->getSize();
+        const int myRank   = comm->getRank();
+        assert(numProcs == 2);
 
-    success=true;
+        out << ">>> CrsGraph::swap() Unit Test" << std::endl;
+        out << ">>> numProcs: " << numProcs << std::endl;
 
-    const size_t numLocal = 1;
+        success               = true;
+//        const size_t numLocal = 1;
 
-    RCP<const map_t> rmap = rcp(new map_t(INVALID, numLocal, 0, comm));
-    RCP<const map_t> cmap = rcp(new map_t(INVALID, numLocal, 0, comm));
+        //        RCP<const map_t> rmap = rcp(new map_t(INVALID, numLocal, 0, comm));
+        //        RCP<const map_t> cmap = rcp(new map_t(INVALID, numLocal, 0, comm));
 
-    RCP<graph_t> graph = rcp(new graph_t(rmap, cmap, 2, StaticProfile));
+        // Set up Row Map
+        const GO gblNumInds = 5;
+        const LO lclNumInds = (myRank == 0) ? 3 : 2;      // 3 on p0, 2 on p1 (works b/c we have exactly 2 processes)
 
+        std::vector<GO> myGIDs;
+        if(0 == myRank)
+        {
+            myGIDs = {0, 1, 3};
+        }
+        else if(1 == myRank)
+        {
+            myGIDs = {7, 10};
+        }
+
+        RCP<const map_t> rowMap(new map_t(gblNumInds, myGIDs.data(), lclNumInds, 0, comm));
+
+        Teuchos::ArrayRCP<size_t> numEntPerRow(lclNumInds);
+        if(0 == myRank)
+        {
+            numEntPerRow[0] = 2;      // (0,0), (0,11)
+            numEntPerRow[1] = 2;      // (1,3), (1,4)
+            numEntPerRow[2] = 1;      // (3,2)
+        }
+        else if(1 == myRank)
+        {
+            numEntPerRow[0] = 2;      // (7,5), (7,7)
+            numEntPerRow[1] = 1;      // (10,6)
+        }
+        RCP<graph_t> G1(new graph_t(rowMap, numEntPerRow, Tpetra::StaticProfile));
+
+        std::vector<GO> myGblInds(2);
+        if(0 == myRank)
+        {
+            myGblInds[0] = 0;
+            myGblInds[1] = 11;
+            G1->insertGlobalIndices(0, 2, myGblInds.data());      // (0,0), (0,11)
+            myGblInds[0] = 3;
+            myGblInds[1] = 4;
+            G1->insertGlobalIndices(1, 2, myGblInds.data());      // (1,3), (1,4)
+            myGblInds[0] = 2;
+            G1->insertGlobalIndices(3, 1, myGblInds.data());      // (3,2)
+        }
+        else if(1 == myRank)
+        {
+            myGblInds[0] = 5;
+            myGblInds[1] = 7;
+            G1->insertGlobalIndices(7, 2, myGblInds.data());      // (7,5), (7,7)
+            myGblInds[0] = 6;
+            G1->insertGlobalIndices(10, 1, myGblInds.data());      // (10,6)
+        }
+
+
+        RCP<const map_t> domainMap = rowMap;
+
+        const GO         indexBase = 0;
+        RCP<const map_t> rangeMap(new map_t(8, indexBase, comm));
+
+        G1->fillComplete(domainMap, rangeMap);
+
+        // RCP<graph_t> graph = rcp(new graph_t(rmap, cmap, 2, StaticProfile));
+    }
+    else
+    {
+        throw std::runtime_error("FAILED on comm split!");
+    }
 }
 
 
