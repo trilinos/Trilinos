@@ -354,15 +354,9 @@ namespace Ioss {
   }
 
   // Default versions do nothing...
-  bool DatabaseIO::begin_state__(Region * /* region */, int /* state */, double /* time */)
-  {
-    return true;
-  }
+  bool DatabaseIO::begin_state__(int /* state */, double /* time */) { return true; }
 
-  bool DatabaseIO::end_state__(Region * /* region */, int /* state */, double /* time */)
-  {
-    return true;
-  }
+  bool DatabaseIO::end_state__(int /* state */, double /* time */) { return true; }
 
   void DatabaseIO::handle_groups()
   {

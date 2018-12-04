@@ -47,10 +47,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       STANDARD_PASS_OUTPUT
       )
 
-    TRIBITS_ADD_EXECUTABLE(
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       BlockGmresPoly_Epetra_File_Ex
       SOURCES BlockGmresPolyEpetraExFile.cpp
       COMM serial mpi
+      ARGS "--verbose --filename=orsirr1.hb --precond=none --max-degree=5 --poly-type=Arnoldi"
+           "--verbose --filename=orsirr1.hb --precond=none --max-degree=5 --poly-type=Gmres"
       )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)

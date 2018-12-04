@@ -57,7 +57,7 @@ inline int does_entity_exist_in_list(const std::vector<stk::mesh::shared_entity_
         size_t num_nodes1 = shared_entities_this_proc[i].nodes.size();
         if (topo1 == topo2 && num_nodes1 == num_nodes2)
         {
-            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes, shared_entity_from_other_proc.nodes).first;
+            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes.data(), shared_entity_from_other_proc.nodes.data()).first;
             if (sameType)
             {
                 matching_index = i;

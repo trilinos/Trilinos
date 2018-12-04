@@ -130,8 +130,8 @@ public:
 
     // Side effects start below this point.
 
-    diag.template modify<Kokkos::HostSpace> ();
-    D_lcl_ = diag.template getLocalView<Kokkos::HostSpace> ();
+    diag.modify_host ();
+    D_lcl_ = diag.getLocalViewHost ();
     D_lcl_1d_ = Kokkos::subview (D_lcl_, Kokkos::ALL (), 0);
 
     Kokkos::RangePolicy<host_execution_space, LO> range (0, lclNumRows);

@@ -102,7 +102,7 @@ class Integrator_Scalar
 
   double multiplier;
 
-  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> tmp;
 
 public:
   // for testing purposes

@@ -103,73 +103,9 @@ class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 public:
     StkMeshIoBrokerTester() {}
 
-    virtual void populate_mesh(bool delay_field_data_allocation = true)
+    virtual void write_output_mesh(size_t output_file_index)
     {
-        stk::io::StkMeshIoBroker::populate_mesh(delay_field_data_allocation);
-        extract_sideset_data_from_io();
-    }
-
-    void write_output_mesh(size_t output_file_index)
-    {
-      m_output_files[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
-    }
-
-private:
-    int convert_to_zero_based_ordinal(int one_based_ordinal) const
-    {
-        return one_based_ordinal-1;
-    }
-
-    stk::mesh::SideSetEntry add_elem_side_pair(stk::mesh::Entity elem, int one_based_ordinal)
-    {
-        int zero_based_side_ordinal = convert_to_zero_based_ordinal(one_based_ordinal);
-        return stk::mesh::SideSetEntry{elem, zero_based_side_ordinal};
-    }
-
-    void convert_elem_sides_pairs_into_sideset(const stk::mesh::BulkData& bulk, const std::vector<int>& elem_side, stk::mesh::SideSet& sideset)
-    {
-        for(size_t is=0; is<elem_side.size() / 2; ++is)
-        {
-            stk::mesh::Entity const elem = bulk.get_entity(stk::topology::ELEMENT_RANK, elem_side[is*2]);
-            if (bulk.is_valid(elem))
-                sideset.push_back(add_elem_side_pair(elem, elem_side[is*2+1]));
-        }
-    }
-
-    void convert_block_to_sideset(const stk::mesh::BulkData& bulk, const Ioss::SideBlock* block, stk::mesh::SideSet& sideset)
-    {
-        if (stk::io::include_entity(block))
-        {
-            std::vector<int> elem_side ;
-            block->get_field_data("element_side", elem_side);
-            convert_elem_sides_pairs_into_sideset(bulk, elem_side, sideset);
-        }
-    }
-
-    void convert_ioss_sideset_to_stk_sideset(const stk::mesh::BulkData& bulk, const Ioss::SideSet* sset, stk::mesh::SideSet& sideset)
-    {
-        if(stk::io::include_entity(sset))
-        {
-            for (size_t i=0; i < sset->block_count(); i++)
-            {
-                Ioss::SideBlock *block = sset->get_block(i);
-                convert_block_to_sideset(bulk, block, sideset);
-            }
-        }
-    }
-
-private:
-    void extract_sideset_data_from_io()
-    {
-        stk::mesh::BulkData &bulk = this->bulk_data();
-        Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-        for ( const Ioss::SideSet * sset : region->get_sidesets() )
-        {
-            int id = sset->get_property("id").get_int();
-            stk::mesh::Part *surface_part = get_surface_part_with_id(bulk.mesh_meta_data(), id);
-            stk::mesh::SideSet &sideSet = bulk.create_sideset(stk::io::get_sideset_parent(*surface_part));
-            convert_ioss_sideset_to_stk_sideset(bulk, sset, sideSet);
-        }
+      m_outputFiles[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
     }
 };
 

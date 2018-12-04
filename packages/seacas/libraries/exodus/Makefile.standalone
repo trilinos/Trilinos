@@ -56,7 +56,7 @@ SYSTEM := Linux
 #========================================================================
 USING_NETCDF4 = "YES"
 
-NETCDF = /Users/gdsjaar/src/SEACAS
+NETCDF = /Users/gdsjaar/src/seacas
 NETCDF_INC = -I$(NETCDF)/include
 NETCDF_LIB = -L$(NETCDF)/lib -lnetcdf
 NCDUMP = ${NETCDF}/bin/ncdump
@@ -113,8 +113,8 @@ endif
 ifeq ($(COMPILER),GNU)
 CC	= gcc
 FC      = gfortran
-CCOPTIONS  = -O2 -Wall
-F77OPTIONS = -O2
+CCOPTIONS  = -Wall
+F77OPTIONS = 
 F77PREC    = -fdefault-real-8 -fdefault-integer-8 
 endif
 
@@ -129,7 +129,7 @@ CFLAGS = $(OPTIMIZE_FLAG) $(CCOPTIONS) $(STD_DEFINES) $(LOC_EXOII_INC) $(NETCDF_
 FFLAGS = $(OPTIMIZE_FLAG) $(F77OPTIONS) $(LOC_EXOII_INC)
 
 # Use include files locates in exodus/include
-LOC_EXOII_INC = -I../include 
+LOC_EXOII_INC = -I../include  -I../sierra
 
 
 SUBDIRS = src test

@@ -466,9 +466,9 @@ private:
     incidence_matrix_entries(),compress_second_matrix(true),
 
     multi_color_scale(1), mkl_sort_option(7), calculate_read_write_cost(false),
-	coloring_input_file(""),
-	coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
-	original_max_row_flops(std::numeric_limits<size_t>::max()), original_overall_flops(std::numeric_limits<size_t>::max()),
+    coloring_input_file(""),
+    coloring_output_file(""), min_hash_size_scale(1), compression_cut_off(0.85), first_level_hash_cut_off(0.50),
+    original_max_row_flops(std::numeric_limits<size_t>::max()), original_overall_flops(std::numeric_limits<size_t>::max()),
     persistent_a_xadj(), persistent_b_xadj(), persistent_a_adj(), persistent_b_adj(), MaxColDenseAcc(250001),
     mkl_keep_output(true),
     mkl_convert_to_1base(true), is_compression_single_step(false)
@@ -484,7 +484,7 @@ private:
 
   virtual ~SPGEMMHandle(){
 
-#ifdef KERNELS_HAVE_CUSgPARSE
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cuSPARSE_Handle();
 #endif
   };

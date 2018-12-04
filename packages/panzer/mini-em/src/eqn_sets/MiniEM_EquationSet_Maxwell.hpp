@@ -30,6 +30,7 @@ namespace mini_em {
       int dimension;
       std::string m_Efield_dof_name;
       std::string m_Bfield_dof_name;
+      std::string permittivity_, conductivity_, inverse_permeability_;
  };
 
 }

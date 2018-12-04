@@ -238,7 +238,7 @@ namespace { // (anonymous)
 #else
     return false;
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
-  }
+  }   
 
 } // namespace (anonymous)
 
@@ -286,6 +286,21 @@ bool Behavior::assumeMpiIsCudaAware ()
                                                    envVarName,
                                                    defaultValue);
 }
+
+int Behavior::TAFC_OptimizationCoreCount () 
+{
+    // only call getenv once, save the value.
+    static int savedval=-1;
+    if(savedval!=-1) return savedval;
+    const char* varVal = std::getenv ("MM_TAFC_OptimizationCoreCount");
+    if (varVal == NULL) {
+        savedval = 3000; 
+        return savedval; 
+    }
+    savedval = std::stoi(std::string(varVal));
+    return savedval;
+}
+
 
 bool Behavior::debug (const char name[])
 {

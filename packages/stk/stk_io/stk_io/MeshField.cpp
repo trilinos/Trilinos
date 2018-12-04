@@ -45,6 +45,8 @@
 
 #include <math.h>
 #include <assert.h>
+#include <algorithm>
+#include <string>
 
 namespace stk {
   namespace io {
@@ -161,7 +163,7 @@ double MeshField::restore_field_data_at_step(Ioss::Region *region,
       const stk::mesh::EntityRank rank = (*I).get_entity_rank();
       Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
       std::vector<stk::mesh::Entity> entity_list;
-      stk::io::get_entity_list(io_entity, rank, bulk, entity_list);
+      stk::io::get_input_entity_list(io_entity, rank, bulk, entity_list);
       const stk::mesh::Part *stk_part = (*I).get_stk_part();
       
       // If the field being restored is a nodal field stored on the
@@ -245,7 +247,7 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 
       std::vector<stk::mesh::Entity> entity_list;
       const stk::mesh::EntityRank rank = field_part.get_entity_rank();
-      stk::io::get_entity_list(io_entity, rank, bulk, entity_list);
+      stk::io::get_input_entity_list(io_entity, rank, bulk, entity_list);
       
       for (size_t i=0; i < entity_list.size(); ++i) {
 	if (bulk.is_valid(entity_list[i])) {

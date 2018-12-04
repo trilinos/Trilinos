@@ -79,7 +79,6 @@ void graph_color_symbolic(
       <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
   BaseGraphColoring *gc = NULL;
 
-
   switch (algorithm){
   case COLORING_SERIAL:
     gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
@@ -98,11 +97,17 @@ void graph_color_symbolic(
     gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
     break;
 
+  case COLORING_VBD:
+  case COLORING_VBDBIT:
+    typedef typename Impl::GraphColor_VBD <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBDGraphColoring;
+    gc = new VBDGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
+    break;
+
   case COLORING_EB:
     typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
     gc = new EBGraphColoring(num_rows, entries.extent(0),row_map, entries, gch);
     break;
- 
+
   case COLORING_SPGEMM:
   case COLORING_D2_MATRIX_SQUARED:
     //std::cout << ">>> WCMCLEN graph_color_symbolic (KokkosGraph_graph_color.hpp) [ COLORING_SPGEMM / COLORING_D2_MATRIX_SQUARED ]" << std::endl;
@@ -153,7 +158,6 @@ void graph_color(
     lno_nnz_view_t_ entries,
     bool is_symmetric = true)
 {
-  //std::cout << ">>> WCMCLEN graph_color (KokkosGraph_graph_color.hpp)" << std::endl;
   graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
 }
 

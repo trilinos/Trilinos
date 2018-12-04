@@ -563,9 +563,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<Kokkos::HostSpace> ();
-      auto X1_local = X1->template getLocalView<Kokkos::HostSpace> ();
-      auto X2_local = X2->template getLocalView<Kokkos::HostSpace> ();
+      auto X_local = X->getLocalViewHost ();
+      auto X1_local = X1->getLocalViewHost ();
+      auto X2_local = X2->getLocalViewHost ();
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.

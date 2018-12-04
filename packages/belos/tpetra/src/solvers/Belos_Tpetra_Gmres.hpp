@@ -333,10 +333,9 @@ private:
       // the preconditioner (if any) at this point.  Thus, we can use
       // Belos::OrthoManagerFactory here.
       Belos::OrthoManagerFactory<SC, MV, OP> factory;
-      Teuchos::RCP<const OP> M = this->getPreconditioner ();
       Teuchos::RCP<Belos::OutputManager<SC>> outMan; // can be null
       Teuchos::RCP<Teuchos::ParameterList> params; // can be null
-      ortho_ = factory.makeMatOrthoManager (ortho, M, outMan, "Belos", params);
+      ortho_ = factory.makeMatOrthoManager (ortho, Teuchos::null, outMan, "Belos", params);
       TEUCHOS_TEST_FOR_EXCEPTION
         (ortho_.get () == nullptr, std::runtime_error, "Gmres: Failed to "
          "create (Mat)OrthoManager of type \"" << ortho << "\".");
@@ -470,7 +469,13 @@ protected:
     int restart = input.resCycle;
     const SC zero = STS::zero ();
     const SC one  = STS::one ();
+
+    // initialize output parameters
     SolverOutput<SC> output {};
+    output.converged = false;
+    output.numRests = 0;
+    output.numIters = 0;
+
 
     if (outPtr != nullptr) {
       *outPtr << "Gmres" << endl;
@@ -491,13 +496,7 @@ protected:
     vec_type P = * (Q.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
-    if (input.precoSide == "right") {
-      M.apply (X, MP);
-      A.apply (MP, R);
-    }
-    else {
-      A.apply (X, R);
-    }
+    A.apply (X, R);
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // residual norm, not-preconditioned
     if (input.precoSide == "left") {
@@ -532,11 +531,6 @@ protected:
     dense_matrix_type  h (restart+1, 1, true); // for reorthogonalization
     std::vector<mag_type> cs (restart);
     std::vector<SC> sn (restart);
-
-    // initialize output parameters
-    output.converged = false;
-    output.numRests = 0;
-    output.numIters = 0;
 
     // initialize starting vector
     P.scale (one / b_norm);

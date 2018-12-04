@@ -55,8 +55,8 @@ namespace dof_functors {
 
 template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateDOFWithSens_Vector {
-  PHX::MDField<const ScalarT,Cell,Point> dof_basis;
-  PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip;
+  PHX::View<const ScalarT**> dof_basis; // <C,P>
+  PHX::View<ScalarT***> dof_ip; // <C,P,D>
   Array basis;
 
   int numFields;
@@ -65,26 +65,30 @@ class EvaluateDOFWithSens_Vector {
 public:
   typedef typename PHX::Device execution_space;
 
-  EvaluateDOFWithSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_basis,
-                             PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_ip,
+  EvaluateDOFWithSens_Vector(PHX::View<const ScalarT**> in_dof_basis,
+                             PHX::View<ScalarT***> in_dof_ip,
                              Array in_basis) 
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), basis(in_basis)
   {
-    numFields = basis.extent(1);
-    numPoints = basis.extent(2);
+    numFields = static_cast<int>(basis.extent(1));
+    numPoints = static_cast<int>(basis.extent(2));
   }
   KOKKOS_INLINE_FUNCTION
-  void operator()(const unsigned int cell) const
+  void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   {
-    for (int pt=0; pt<numPoints; pt++) {
-      for (int d=0; d<spaceDim; d++) {
+    const int cell = team.league_rank();
+
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numPoints),KOKKOS_LAMBDA (const int& pt) {
+      for (int d=0; d<spaceDim; ++d) {
         // first initialize to the right thing (prevents over writing with 0)
         // then loop over one less basis function
         dof_ip(cell,pt,d) = dof_basis(cell, 0) * basis(cell, 0, pt, d);
-        for (int bf=1; bf<numFields; bf++)
+	// The start index is one, not zero since we used the zero index for initialization above.
+	for (int bf=1; bf<numFields; ++bf) {
           dof_ip(cell,pt,d) += dof_basis(cell, bf) * basis(cell, bf, pt, d);
+	}
       }
-    }
+    });
   }
 };
 

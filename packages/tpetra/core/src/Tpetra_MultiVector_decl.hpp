@@ -1432,10 +1432,30 @@ namespace Tpetra {
       getDualView ().template sync<TargetDeviceType> ();
     }
 
+    //! Synchronize to Host
+    inline void sync_host () {
+      getDualView().sync_host();
+    }
+
+    //! Synchronize to Device
+    inline void sync_device () {
+      getDualView().sync_device();
+    }
+
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
     bool need_sync () const {
       return getDualView ().template need_sync<TargetDeviceType> ();
+    }
+
+    //! Whether this MultiVector needs synchronization to the host.
+    inline bool need_sync_host () const {
+      return getDualView().need_sync_host();
+    }
+
+    //! Whether this MultiVector needs synchronization to the device.
+    inline bool need_sync_device () const {
+      return getDualView().need_sync_device();
     }
 
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
@@ -1448,6 +1468,15 @@ namespace Tpetra {
       getDualView ().template modify<TargetDeviceType> ();
     }
 
+    /// \brief Mark data as modified on the device
+    inline void modify_device () {
+      getDualView().modify_device();
+    }
+
+    /// \brief Mark data as modified on the host
+    inline void modify_host () {
+      getDualView().modify_host();
+    }
     /// \brief Return a view of the local data on a specific device.
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
@@ -1488,6 +1517,16 @@ namespace Tpetra {
       typename dual_view_type::t_host>::type
     getLocalView () const {
       return getDualView ().template view<TargetDeviceType> ();
+    }
+
+    /// Return a local view on the host
+    typename dual_view_type::t_host getLocalViewHost () const {
+      return getDualView().view_host();
+    }
+
+    /// Return a local view on the device
+    typename dual_view_type::t_dev getLocalViewDevice () const {
+      return getDualView().view_device();
     }
 
     //@}
@@ -2481,15 +2520,15 @@ namespace Tpetra {
         // Device memory has the most recent version of src.
         dst.template modify<DES> (); // We are about to modify dst on device.
         // Copy from src to dst on device.
-        Details::localDeepCopyConstStride (dst.template getLocalView<DES> (),
-                                           src.template getLocalView<typename SN::device_type> ());
-        dst.template sync<HES> (); // Sync dst from device to host.
+        Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
+                                           src.getLocalViewDevice ());
+        dst.sync_host (); // Sync dst from device to host.
       }
       else { // Host memory has the most recent version of src.
         dst.template modify<HES> (); // We are about to modify dst on host.
         // Copy from src to dst on host.
-        Details::localDeepCopyConstStride (dst.template getLocalView<Kokkos::HostSpace> (),
-                                           src.template getLocalView<Kokkos::HostSpace> ());
+        Details::localDeepCopyConstStride (dst.getLocalViewHost (),
+                                           src.getLocalViewHost ());
         dst.template sync<DES> (); // Sync dst from host to device.
       }
     }
@@ -2514,7 +2553,7 @@ namespace Tpetra {
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and sync to device.
           whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
-          whichVecs.template modify<HES> ();
+          whichVecs.modify_host ();
 
           Teuchos::ArrayView<const size_t> src_whichVectors =
             getMultiVectorWhichVectors (src);
@@ -2527,15 +2566,15 @@ namespace Tpetra {
           // Mark the device version of dst's DualView as modified.
           dst.template modify<DES> ();
           // Copy from the selected vectors of src to dst, on the device.
-          Details::localDeepCopy (dst.template getLocalView<typename DN::device_type> (),
-                                  src.template getLocalView<typename SN::device_type> (),
+          Details::localDeepCopy (dst.getLocalViewDevice (),
+                                  src.getLocalViewDevice (),
                                   dst.isConstantStride (),
                                   src.isConstantStride (),
                                   whichVecs.d_view,
                                   whichVecs.d_view);
           // Sync dst's DualView to the host.  This is cheaper than
           // repeating the above copy from src to dst on the host.
-          dst.template sync<HES> ();
+          dst.sync_host ();
         }
         else { // host version of src was the most recently modified
           // Copy from the host version of src.
@@ -2552,8 +2591,8 @@ namespace Tpetra {
           // Copy from the selected vectors of src to dst, on the
           // host.  The function ignores the first instance of
           // 'whichVecs' in this case.
-          Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
-                                  src.template getLocalView<Kokkos::HostSpace> (),
+          Details::localDeepCopy (dst.getLocalViewHost (),
+                                  src.getLocalViewHost (),
                                   dst.isConstantStride (),
                                   src.isConstantStride (),
                                   whichVecs, whichVecs);
@@ -2595,7 +2634,7 @@ namespace Tpetra {
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
             // don't actually belong to dst's view.
-            dst.template sync<HES> ();
+            dst.sync_host ();
           }
           else { // host version of src was the most recently modified
             // Copy from the host version of src.
@@ -2612,8 +2651,8 @@ namespace Tpetra {
               whichVecs(i) = static_cast<DL> (dst_whichVectors[i]);
             }
             // Copy from src to the selected vectors of dst, on the host.
-            Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
-                                    src.template getLocalView<Kokkos::HostSpace> (),
+            Details::localDeepCopy (dst.getLocalViewHost (),
+                                    src.getLocalViewHost (),
                                     dst.isConstantStride (),
                                     src.isConstantStride (),
                                     whichVecs, whichVecs);
@@ -2695,8 +2734,8 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the host.
-            Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
-                                    src.template getLocalView<Kokkos::HostSpace> (),
+            Details::localDeepCopy (dst.getLocalViewHost (),
+                                    src.getLocalViewHost (),
                                     dst.isConstantStride (),
                                     src.isConstantStride (),
                                     whichVectorsDst, whichVectorsSrc);
@@ -2705,7 +2744,7 @@ namespace Tpetra {
             //
             // FIXME (mfh 29 Jul 2014) This may overwrite columns that
             // don't actually belong to dst's view.
-            dst.template sync<HES> ();
+            dst.sync_host ();
           }
         }
       }

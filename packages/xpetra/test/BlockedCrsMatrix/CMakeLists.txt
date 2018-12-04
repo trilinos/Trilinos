@@ -5,7 +5,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
     BlockedCrsMatrix_UnitTests
     SOURCES
       BlockedCrsMatrix_UnitTests
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+      ../Xpetra_UnitTests
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
@@ -15,7 +15,7 @@ IF (${PACKAGE_NAME}_ENABLE_Thyra)
     ThyraBlockedOperator_UnitTests
     SOURCES
       ThyraBlockedOperator_UnitTests
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+      ../Xpetra_UnitTests
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )

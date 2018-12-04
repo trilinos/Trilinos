@@ -76,8 +76,10 @@ public:
     typedef typename ViewTypeC::value_type scalar_type;
 
     scalar_type t = 0.0;
-    for (size_t j=0; j<n; ++j)
-      t += A(i,j)*b(j);
+    for (size_t j=0; j<n; ++j) {
+      scalar_type bb = b(j); // fix for Intel 17.0.1 with optimization
+      t += A(i,j)*bb;
+    }
     c(i) = t;
   }
 };

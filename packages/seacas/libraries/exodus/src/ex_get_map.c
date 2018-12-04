@@ -91,7 +91,7 @@ int ex_get_map(int exoid, void_int *elem_map)
   if ((status = nc_inq_dimlen(exoid, numelemdim, &num_elem)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of elements in file id %d",
              exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -123,7 +123,7 @@ int ex_get_map(int exoid, void_int *elem_map)
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element order map in file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

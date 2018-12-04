@@ -1,0 +1,89 @@
+#!/bin/bash -el
+ulimit -c 0
+
+KOKKOSKERNELS_BRANCH=$1
+TRILINOS_UPDATE_BRANCH=$2
+TRILINOS_PRISTINE_BRANCH=$3
+KOKKOS_UPDATE_BRANCH=$4
+
+if [ -z $KOKKOSKERNELS_BRANCH ]
+then
+  KOKKOSKERNELS_BRANCH=develop
+fi
+
+if [ -z $TRILINOS_UPDATE_BRANCH ]
+then
+  TRILINOS_UPDATE_BRANCH=develop
+fi
+
+if [ -z $TRILINOS_PRISTINE_BRANCH ]
+then
+  TRILINOS_PRISTINE_BRANCH=develop
+fi
+
+module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
+module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
+# Trilinos now requires cmake version >= 3.10.0
+module swap cmake/3.9.6 cmake/3.12.3
+export OMP_NUM_THREADS=8
+export JENKINS_DO_CUDA=ON
+export JENKINS_DO_OPENMP=OFF
+export JENKINS_DO_PTHREAD=OFF
+export JENKINS_DO_SERIAL=ON
+export JENKINS_DO_COMPLEX=OFF
+
+export JENKINS_ARCH="Power8,Pascal60"
+export JENKINS_ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_60 --expt-extended-lambda --std=c++11"
+export JENKINS_ARCH_C_FLAG="-mcpu=power8"
+export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
+export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp;m"
+
+export JENKINS_DO_TESTS=ON
+export JENKINS_DO_EXAMPLES=ON
+
+export QUEUE=rhel7G
+
+module load python
+
+export KOKKOSKERNELS_PATH=${PWD}/kokkos-kernels
+
+#Already done:
+if [ ! -d "${KOKKOSKERNELS_PATH}" ]; then
+  git clone https://github.com/kokkos/kokkos-kernels ${KOKKOSKERNELS_PATH}
+fi
+
+
+cd ${KOKKOSKERNELS_PATH}
+git checkout $KOKKOSKERNELS_BRANCH
+git pull
+cd ..
+
+if [ -n $KOKKOS_UPDATE_BRANCH ]
+then
+  export KOKKOS_PATH=${PWD}/kokkos
+
+  if [ -z $KOKKOS_UPDATE_BRANCH ]
+  then
+    KOKKOS_UPDATE_BRANCH=develop
+  fi
+
+  #Already done:
+  if [ ! -d "${KOKKOS_PATH}" ]; then
+    git clone https://github.com/kokkos/kokkos ${KOKKOS_PATH}
+  fi
+
+  cd ${KOKKOS_PATH}
+  git checkout $KOKKOS_UPDATE_BRANCH
+  git pull
+  cd ..
+fi
+
+export CUDA_LAUNCH_BLOCKING=1
+export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+
+source ${KOKKOSKERNELS_PATH}/scripts/trilinos-integration/prepare_trilinos_repos.sh $TRILINOS_UPDATE_BRANCH $TRILINOS_PRISTINE_BRANCH $KOKKOS_UPDATE_BRANCH
+
+export OMPI_CXX=${TRILINOS_UPDATED_PATH}/packages/kokkos/bin/nvcc_wrapper
+
+${TRILINOS_UPDATED_PATH}/sampleScripts/Sandia-SEMS/run_repo_comparison_lsf ${TRILINOS_UPDATED_PATH} ${TRILINOS_PRISTINE_PATH} ${TRILINOS_UPDATED_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-jenkins-all TestCompare ${QUEUE}
+

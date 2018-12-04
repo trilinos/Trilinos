@@ -55,12 +55,10 @@
 #include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/StkVector.hpp>
+#include <stk_util/util/StkNgpVector.hpp>
 #include "stk_mesh/base/FieldParallel.hpp"
 
 #include <limits>
-
-
 
 double calculate_element_volume(const stk::mesh::Entity* elemNodes,
                                 unsigned numElemNodes,
@@ -96,6 +94,7 @@ void calculate_nodal_volume_given_elem_nodes_stkmesh(const stk::mesh::Entity* el
 typedef Kokkos::TeamPolicy<ngp::HostExecSpace, ngp::ScheduleType> HostTeamPolicyType;
 typedef HostTeamPolicyType::member_type HostTeamHandleType;
 
+#ifndef KOKKOS_HAVE_CUDA
 void calculate_nodal_volume_stkmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField, int numRepeat)
 {
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
@@ -123,6 +122,7 @@ void calculate_nodal_volume_stkmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<
 
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
 }
+#endif
 
 void calculate_nodal_volume_stkmesh_entity_loop(stk::mesh::BulkData& mesh,
                                                 stk::mesh::Field<double>& nodalVolumeField,
@@ -221,10 +221,6 @@ void calculate_nodal_volume_entity_loop(stk::mesh::BulkData& mesh,
     double end = stk::wall_time();
     std::cerr << "Init: " << middle - start << ", Calc: " << end - middle << std::endl;
 }
-
-
-
-
 
 template <typename Algorithm>
 void repeat_for_each_entity_loop_for_algorithm(stk::mesh::BulkData& mesh,
@@ -435,6 +431,7 @@ protected:
         return stk::unit_test_util::get_command_line_option<int>("-n", 20);
     }
 
+#ifndef KOKKOS_HAVE_CUDA
     void test_nodal_volume_stkmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         create_mesh_and_fill_fields(auraOption, get_meta().universal_part());
@@ -445,6 +442,7 @@ protected:
         std::cout<<"\t\tstkmesh: "<<elapsedTime<<" seconds"<<std::endl;
         expect_nodal_volume(get_bulk(), get_meta().universal_part(), *nodalVolumeField, *numElemsPerNodeField, numRepeat);
     }
+#endif
 
     void test_nodal_volume_bucket_field_access(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
@@ -511,9 +509,11 @@ protected:
 TEST_F(NodalVolumeCalculator, nodalVolumeForEachEntityLoop_primerTest) {
     test_nodal_volume_entity_loop(stk::mesh::BulkData::NO_AUTO_AURA);
 }
+#ifndef KOKKOS_HAVE_CUDA
 TEST_F(NodalVolumeCalculator, stkMeshNodalVolume) {
     test_nodal_volume_stkmesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
+#endif
 TEST_F(NodalVolumeCalculator, nodalVolumeBucketFieldAccess) {
     test_nodal_volume_bucket_field_access(stk::mesh::BulkData::NO_AUTO_AURA);
 }

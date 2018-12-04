@@ -74,7 +74,7 @@ struct TeamDot<TeamType, XV, YV, false> {
   typedef typename IPT::dot_type dot_type;
 
   static KOKKOS_INLINE_FUNCTION dot_type team_dot (const TeamType& team, const XV& X, const YV& Y) {
-    dot_type result;
+    dot_type result = 0.0; //Kokkos::Details::ArithTraits<dot_type>zero();
     int N = X.extent(0);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& i, dot_type& val) {
       val += IPT::dot(X(i),Y(i));// X(i) * Y(i)

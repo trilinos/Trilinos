@@ -236,7 +236,7 @@ void SolutionHistory<Scalar>::initWorkingState()
 
     // If workingState_ has a valid pointer, we are still working on it,
     // i.e., step failed and trying again, so do not initialize it.
-    if (getWorkingState() != Teuchos::null) return;
+    if (getWorkingState(false) != Teuchos::null) return;
 
     Teuchos::RCP<SolutionState<Scalar> > newState;
     if (getNumStates() < storageLimit_) {
@@ -263,12 +263,20 @@ void SolutionHistory<Scalar>::promoteWorkingState()
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
     getWorkingState()->getMetaData();
-  md->setNFailures(std::max(0,md->getNFailures()-1));
-  md->setNConsecutiveFailures(0);
-  md->setSolutionStatus(Status::PASSED);
-  //md->setIsSynced(true);
-  md->setIsInterpolated(false);
-  workingState_ = Teuchos::null;
+
+  if ( md->getSolutionStatus() == Status::PASSED ) {
+    md->setNFailures(std::max(0,md->getNFailures()-1));
+    md->setNConsecutiveFailures(0);
+    md->setSolutionStatus(Status::PASSED);
+    //md->setIsSynced(true);
+    md->setIsInterpolated(false);
+    workingState_ = Teuchos::null;
+  } else {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"SolutionHistory::promoteWorkingState()");
+    *out << "Warning - WorkingState is not passing, so not promoted!\n"
+         << std::endl;
+  }
 }
 
 

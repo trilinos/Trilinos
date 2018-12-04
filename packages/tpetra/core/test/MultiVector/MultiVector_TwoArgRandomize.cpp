@@ -97,8 +97,8 @@ namespace { // (anonymous)
 
     bool allInRange = true;
     if (! STS::isComplex) {
-      X.template sync<Kokkos::HostSpace> ();
-      auto X_lcl = X.template getLocalView<Kokkos::HostSpace> ();
+      X.sync_host ();
+      auto X_lcl = X.getLocalViewHost ();
 
       for (LO j = 0; j < numVecs; ++j) {
         auto X_lcl_j = Kokkos::subview (X_lcl, Kokkos::ALL (), j);

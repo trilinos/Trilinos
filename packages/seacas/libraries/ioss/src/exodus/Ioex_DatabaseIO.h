@@ -116,7 +116,7 @@ namespace Ioex {
     // If 'bad_count' non-null, it counts the number of processors where the file does not exist.
     //    if ok returns false, but *bad_count==0, then the routine does not support this argument.
     bool ok__(bool write_message = false, std::string *error_message = nullptr,
-              int *bad_count = nullptr) const override = 0;
+              int *bad_count = nullptr) const override;
 
     bool open_group__(const std::string &group_name) override;
     bool create_subgroup__(const std::string &group_name) override;
@@ -126,8 +126,8 @@ namespace Ioex {
 
     void open_state_file(int state);
 
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
     void get_step_times__() override = 0;
 
     int maximum_symbol_length() const override { return maximumNameLength; }
@@ -213,12 +213,15 @@ namespace Ioex {
 
     void closeDatabase__() const override { free_file_pointer(); }
 
-  public:
-    // Temporarily made public for use during Salinas transition
-    // to using Ioss
     virtual int get_file_pointer() const = 0; // Open file and set exodusFilePtr.
-  protected:
+
     virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
+
+    virtual bool open_input_file(bool write_message, std::string *error_msg, int *bad_count,
+                                 bool abort_if_error) const                    = 0;
+    virtual bool handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
+                                    bool overwrite, bool abort_if_error) const = 0;
+    void         finalize_file_open() const;
 
     int  get_current_state() const; // Get current state with error checks and usage message.
     void put_qa();
@@ -316,8 +319,6 @@ namespace Ioex {
 
     mutable bool fileExists{false}; // False if file has never been opened/created
     mutable bool minimizeOpenFiles{false};
-    mutable bool filePerState{
-        false}; // Output transient data at each state (timestep) to separate file
 
     mutable bool blockAdjacenciesCalculated{false}; // True if the lazy creation of
     // block adjacencies has been calculated.

@@ -109,9 +109,9 @@ public:
   /// Start time step.
   virtual void startTimeStep()
     { integrator_->startTimeStep(); }
-  /// Only accept step after meeting time step criteria.
-  virtual void acceptTimeStep()
-    { integrator_->acceptTimeStep(); }
+  /// Check if time step has passed or failed.
+  virtual void checkTimeStep()
+    { integrator_->checkTimeStep(); }
   /// Perform tasks after end of integrator.
   virtual void endIntegrator()
     { integrator_->endIntegrator(); }

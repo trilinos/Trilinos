@@ -79,7 +79,7 @@ namespace {
        "function needs the host view of the data to be the most recently "
        "modified.");
 
-    auto x_host = x.template view<Kokkos::HostSpace> ();
+    auto x_host = x.view_host ();
     typedef typename DualViewType::t_dev::value_type value_type;
     return Teuchos::ArrayView<value_type> (x_host.data (),
                                            x_host.extent (0));
@@ -2094,7 +2094,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
         SourcePids(), constantNumPackets, distor);
 
     // This test reads exports on the host, so sync there.
-    exports.template sync<Kokkos::HostSpace> ();
+    exports.sync_host ();
     Teuchos::ArrayView<char> exports_av = getArrayViewFromDualView (exports);
 
     // Do the moral equivalent of doTransfer

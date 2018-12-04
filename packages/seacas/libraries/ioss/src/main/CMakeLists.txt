@@ -286,11 +286,11 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
 ENDIF()
 
 if ( CGNS_CGNSDIFF_BINARY )
-TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip
-   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc1.cgns
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_with_flush
+   TEST_0 EXEC io_shell ARGS --flush_interval 1 ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc1.cgns
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
-   TEST_1 EXEC io_shell ARGS sparc1.cgns sparc2.cgns
+   TEST_1 EXEC io_shell ARGS --flush_interval 1 sparc1.cgns sparc2.cgns
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc2.cgns

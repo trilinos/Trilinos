@@ -1,0 +1,28 @@
+<ParameterList name="BDDC">
+  <!-- Problem Type options: -->
+  <!--  Poisson-3D           -->
+  <!--  Elasticity-3D        -->
+  <!--  Poisson-2D           -->
+  <!--  Elasticity-3D        -->
+  <Parameter name="Problem Type String" type="string" value="Elasticity-3D"/>
+  <!-- Matrix Type options: -->
+  <!--  Symmetric           -->
+  <!--  NonSymmetric        -->
+  <Parameter name="Matrix Type"  type="string" value="Symmetric"/>
+  <Parameter name="numElemDir1"  type="int" value="5"/>
+  <Parameter name="numElemDir2"  type="int" value="6"/>
+  <Parameter name="numElemDir3"  type="int" value="7"/>
+  <!-- Precision options: -->
+  <!--  double            -->
+  <!--  single            -->
+  <Parameter name="Precision"  type="string" value="double"/>
+  <!-- Solver options:             -->
+  <!--  SuperLU                    -->
+  <!--  Pardiso (for Intel Builds) -->
+  <!--  LAPACK (banded solver)     -->
+  <!--  Tacho                      -->
+  <!--  KLU2                       -->
+  <Parameter name="Solver"  type="string" value="LAPACK"/>
+  <Parameter name="Number of Solves" type="int" value="50"/>
+  <Parameter name="Print Matrix" type="bool" value="false"/>
+</ParameterList>

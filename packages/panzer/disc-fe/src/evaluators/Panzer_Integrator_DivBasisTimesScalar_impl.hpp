@@ -59,6 +59,7 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_HierarchicParallelism.hpp"
 
 namespace panzer
 {
@@ -124,7 +125,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("BasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -209,15 +210,18 @@ namespace panzer
   Integrator_DivBasisTimesScalar<EvalT, Traits>::
   operator()(
     const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
-    const size_t&                       cell) const
+    const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   {
     using panzer::EvaluatorStyle;
+    const int cell = team.league_rank();
 
     // Initialize the evaluated field.
     const int numQP(scalar_.extent(1)), numBases(basis_.extent(1));
-    if (evalStyle_ == EvaluatorStyle::EVALUATES)
-      for (int basis(0); basis < numBases; ++basis)
-        field_(cell, basis) = 0.0;
+    if (evalStyle_ == EvaluatorStyle::EVALUATES) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
+	field_(cell, basis) = 0.0;
+      });
+    }
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
@@ -230,8 +234,9 @@ namespace panzer
       for (int qp(0); qp < numQP; ++qp)
       {
         tmp = multiplier_ * scalar_(cell, qp);
-        for (int basis(0); basis < numBases; ++basis)
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
           field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+	});
       } // end loop over the quadrature points
     }
     else if (NUM_FIELD_MULT == 1)
@@ -242,8 +247,9 @@ namespace panzer
       for (int qp(0); qp < numQP; ++qp)
       {
         tmp = multiplier_ * scalar_(cell, qp) * kokkosFieldMults_(0)(cell, qp);
-        for (int basis(0); basis < numBases; ++basis)
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
           field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+	});
       } // end loop over the quadrature points
     }
     else
@@ -259,8 +265,9 @@ namespace panzer
         for (int fm(0); fm < numFieldMults; ++fm)
           fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
         tmp = multiplier_ * scalar_(cell, qp) * fieldMultsTotal;
-        for (int basis(0); basis < numBases; ++basis)
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases),KOKKOS_LAMBDA (const int& basis) {
           field_(cell, basis) += basis_(cell, basis, qp) * tmp;
+	  });
       } // end loop over the quadrature points
     } // end if (NUM_FIELD_MULT == something)
   } // end of operator()
@@ -277,7 +284,7 @@ namespace panzer
     typename Traits::EvalData workset)
   {
     using Kokkos::parallel_for;
-    using Kokkos::RangePolicy;
+    using Kokkos::TeamPolicy;
 
     // Grab the basis information.
     basis_ = this->wda(workset).bases[basisIndex_]->weighted_div_basis;
@@ -285,12 +292,16 @@ namespace panzer
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells
     // in the Workset and execute operator()() above.
-    if (fieldMults_.size() == 0)
-      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
-    else if (fieldMults_.size() == 1)
-      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
-    else
-      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
+    if (fieldMults_.size() == 0) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
+      parallel_for(policy, *this);
+    } else if (fieldMults_.size() == 1) {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
+      parallel_for(policy, *this);
+    } else {
+      auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
+      parallel_for(policy, *this);
+    }
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////

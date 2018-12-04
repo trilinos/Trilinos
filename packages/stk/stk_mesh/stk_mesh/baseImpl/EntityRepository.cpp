@@ -81,7 +81,7 @@ EntityRepository::EntityRepository()
    m_create_cache(stk::topology::NUM_RANKS),
    m_update_cache(stk::topology::NUM_RANKS),
    m_destroy_cache(stk::topology::NUM_RANKS),
-   m_maxCreateCacheSize(128),
+   m_maxCreateCacheSize(512),
    m_maxUpdateCacheSize(4096)
 {
 }
@@ -135,10 +135,15 @@ void EntityRepository::clear_created_entity_cache(EntityRank rank) const
     std::sort(m_create_cache[rank].begin(), m_create_cache[rank].end());
     unsigned numOld = m_entities[rank].size();
     m_entities[rank].insert(m_entities[rank].end(), m_create_cache[rank].begin(), m_create_cache[rank].end());
-    EntityKeyEntityVector::iterator oldEnd = m_entities[rank].begin()+numOld;
-    const EntityKey& firstNewKey = m_create_cache[rank][0].first;
-    EntityKeyEntityVector::iterator loc = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
-    std::inplace_merge(loc, oldEnd, m_entities[rank].end());
+    if (numOld > 0) {
+      const EntityKey& firstNewKey = m_create_cache[rank][0].first;
+      const EntityKey& lastOldKey = m_entities[rank][numOld-1].first;
+      if (firstNewKey < lastOldKey) {
+        EntityKeyEntityVector::iterator oldEnd = m_entities[rank].begin()+numOld;
+        EntityKeyEntityVector::iterator loc = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
+        std::inplace_merge(loc, oldEnd, m_entities[rank].end());
+      }
+    }
     m_create_cache[rank].clear();
     size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
                           m_entities[stk::topology::ELEM_RANK].size());

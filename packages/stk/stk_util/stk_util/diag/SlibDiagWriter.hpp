@@ -42,7 +42,7 @@ namespace Slib {
 
 stk::diag::Writer &theDiagWriter();
 
-/// Macro <code>fmwkout</code> makes the coding look nicer.
+/// Macro <code>slibout</code> makes the coding look nicer.
 #define slibout sierra::Slib::theDiagWriter()
 
 /// Macro <code>SLIB_TRACE_ENABLED</code> enables the traceback and tracing when defined.

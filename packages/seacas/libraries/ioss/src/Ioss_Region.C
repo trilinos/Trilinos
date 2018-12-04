@@ -331,7 +331,7 @@ namespace Ioss {
 
   Region::~Region()
   {
-    // Do anything to the database to make it consistent prior to closing and desctructing...
+    // Do anything to the database to make it consistent prior to closing and destructing...
     get_database()->finalize_database();
 
     // Region owns all sub-grouping entities it contains...
@@ -905,7 +905,7 @@ namespace Ioss {
         currentState = state;
       }
       DatabaseIO *db = get_database();
-      db->begin_state(this, state, time);
+      db->begin_state(state, time);
     }
     return time;
   }
@@ -938,7 +938,7 @@ namespace Ioss {
         time = stateTimes[0];
       }
     }
-    db->end_state(this, state, time);
+    db->end_state(state, time);
     currentState = -1;
     return time;
   }

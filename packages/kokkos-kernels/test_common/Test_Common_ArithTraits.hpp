@@ -371,6 +371,18 @@ public:
       success = 0;
     }
 
+    if (AT::has_infinity) {
+      if (! AT::isInf (AT::infinity())) {
+        out << "AT::isInf (inf) != true" << endl;
+        success = 0;
+      }
+    }
+    if ( ! std::is_same< ScalarType, decltype(AT::infinity()) >::value )
+    {
+      std::cout << "AT::infinity() return value has wrong type" << endl;
+      success = 0;
+    }
+
     // Run the parent class' remaining tests, if any.
     const int parentSuccess = testHostImpl (out);
     success = success && parentSuccess;

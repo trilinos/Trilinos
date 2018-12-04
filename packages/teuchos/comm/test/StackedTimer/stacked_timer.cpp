@@ -12,7 +12,6 @@
 #include <regex>
 #include <iterator>
 
-
 TEUCHOS_UNIT_TEST(PerformanceMonitorBase, UnsortedMergeUnion) {
 
   const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
@@ -183,6 +182,24 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 #endif
 
   // Print to screen
+  out << "\n### Printing default report ###" << std::endl;
+  Teuchos::StackedTimer::OutputOptions defaultOptions;
+  timer.report(out, comm, defaultOptions);
+
+  // Test some options
+  out << "\n### Printing aligned_column with timers names on left ###" << std::endl;
+  options.output_fraction = true;
+  options.output_total_updates = true;
+  options.output_minmax = true;
+  options.output_histogram = true;
+  options.num_histogram = 3;
+  options.align_columns = true;
+  timer.report(out, comm, options);
+
+  // Toggle names before values
+  TEST_EQUALITY(options.print_names_before_values,true);
+  out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  options.print_names_before_values = false;
   timer.report(out, comm, options);
 }
 
@@ -198,7 +215,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 
   // Test the set and get stacked timer methods on TimeMonitor
   const auto timeMonitorDefaultStackedTimer = Teuchos::TimeMonitor::getStackedTimer();
-  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("StackedTimerTest::TimeMonitorInteroperability"));
+  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("TM:Interoperability"));
   TEST_ASSERT(nonnull(timeMonitorDefaultStackedTimer));
   TEST_ASSERT(nonnull(timer));
   TEST_ASSERT(timeMonitorDefaultStackedTimer != timer);
@@ -254,9 +271,30 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 #endif
 
   Teuchos::StackedTimer::OutputOptions options;
+  out << "\n### Printing default report ###" << std::endl;
   options.output_histogram=true;
   options.num_histogram=3;
   options.output_fraction=true;
+  timer->report(out, comm, options);
+
+  out << "\n### Printing aligned_column with timers names on left ###" << std::endl;
+  options.align_columns = true;
+  timer->report(out, comm, options);
+
+  out << "\n### Printing aligned_column with timers names on right ###" << std::endl;
+  // options.print_names_before_values=false requires that
+  // options.align_output=true. The code will automatically fix this
+  // and print a warning if warnings are enabled. Testing this here by
+  // specifying the incorrect logic.
+  options.align_columns = false;
+  options.print_names_before_values = false;
+  timer->report(out, comm, options);
+
+  //Testing limited number of levels in printing
+  out << "\n### Printing with max_levels=2 ###" << std::endl;
+  options.max_levels=2;
+  options.align_columns = true;
+  options.print_names_before_values = true;
   timer->report(out, comm, options);
 }
 
@@ -265,7 +303,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 // TimeMonitor by default, we have seen this error - a throw from the
 // stacked timer. In every instance so far, the intention was not to
 // actually overlap but a constructor/destructor ordering issue
-// (suually involving RCPs). To prevent tests from failing,
+// (usually involving RCPs). To prevent tests from failing,
 // StackedTimer now automatically shuts itself off if it detects
 // overlaped timers in a TimeMonitor instance, reports a warning on
 // how to fix and allows the code to continue runnning. Where this has

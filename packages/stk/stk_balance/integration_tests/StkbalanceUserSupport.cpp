@@ -391,50 +391,36 @@ int contactWeightForElementTopology(stk::topology type)
     {
     case stk::topology::PARTICLE:
         return 20;
-        break;
     case stk::topology::LINE_2:
     case stk::topology::BEAM_2:
         return 32;
-        break;
     case stk::topology::SHELL_TRIANGLE_3:
         return 14;
-        break;
     case stk::topology::SHELL_TRIANGLE_6:
         return 56;
-        break;
     case stk::topology::SHELL_QUADRILATERAL_4:
         return 24;
-        break;
     case stk::topology::SHELL_QUADRILATERAL_8:
         return 96;
-        break;
     case stk::topology::HEXAHEDRON_8:
         return 4;
-        break;
     case stk::topology::HEXAHEDRON_20:
         return 8;
-        break;
     case stk::topology::TETRAHEDRON_4:
         return 1;
-        break;
     case stk::topology::TETRAHEDRON_10:
         return 4;  //
-        break;
     case stk::topology::WEDGE_6:
         return 4;
-        break;
     case stk::topology::WEDGE_15:
         return 8;
-        break;
     default:
         if ( type.is_superelement( ))
         {
             return 10;
         }
         throw("Invalid Element Type In WeightsOfElement");
-        break;
     }
-    return 0;
 }
 
 TEST(Stkbalance, changeOptions)
@@ -514,7 +500,10 @@ class ToleranceTester : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(ToleranceTester, smDefaults)
 {
-    stk::balance::run_stk_rebalance(".", "gapped_plates.g", stk::balance::SM_DEFAULTS, MPI_COMM_WORLD);
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1)
+    {
+        stk::balance::run_stk_rebalance(".", "gapped_plates.g", stk::balance::SM_DEFAULTS, MPI_COMM_WORLD);
+    }
 
     setup_mesh("gapped_plates.g", stk::mesh::BulkData::NO_AUTO_AURA);
     for(unsigned i=1; i<101; i++)

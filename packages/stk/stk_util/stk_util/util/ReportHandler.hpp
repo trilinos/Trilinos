@@ -36,6 +36,8 @@
 
 #include <sstream>                      // for ostringstream
 #include <string>                       // for string
+#include <Kokkos_Core.hpp>
+#include "stk_util/stk_kokkos_macros.h"
 
 namespace stk {
 
@@ -202,17 +204,21 @@ void handle_invalid_arg(const char* expr,
 
 #ifdef __PRETTY_FUNCTION__
 
-#define COUT_TRACE  " Function::Line="<<__PRETTY_FUNCTION__<<":"<<__LINE__
-#define STK_STR_TRACE   (std::string(__FILE__) +  ":" + XSTK_STR_TRACE_LINE(__LINE__) + " in " + std::string(__PRETTY_FUNCTION__))
+#define COUT_TRACE  " Function::Line=" __PRETTY_FUNCTION__ ":" __LINE__
+#define STK_STR_TRACE   (__FILE__ ":" XSTK_STR_TRACE_LINE(__LINE__) " in " __PRETTY_FUNCTION__)
 
 #else
 
-#define COUT_TRACE  " File::Line="<<__FILE__<<":"<<__LINE__
-#define STK_STR_TRACE   (std::string(__FILE__) +  ":" + XSTK_STR_TRACE_LINE(__LINE__))
+#define COUT_TRACE  " File::Line=" __FILE__ ":" __LINE__
+#define STK_STR_TRACE   (__FILE__ ":" XSTK_STR_TRACE_LINE(__LINE__))
 
 #endif
 
 #define StackTrace std::string(std::string("  exception thrown from ") + stk::source_relative_path(STK_STR_TRACE))
+
+#define STRINGIZE(x) STRINGIZE2(x)
+#define STRINGIZE2(x) #x
+#define LINE_STRING STRINGIZE(__LINE__)
 
 // The do-while is necessary to prevent usage of this macro from changing
 // program semantics (e.g. dangling-else problem). The obvious implementation:
@@ -232,6 +238,39 @@ void handle_invalid_arg(const char* expr,
                     stk_util_internal_throw_require_oss );              \
     }                                                                   \
   } while (false)
+
+inline void ThrowMsgHost(bool expr, const char * exprString, const char * message, const std::string & location)
+{
+  throw std::logic_error(
+    std::string("Requirement( ") + exprString + " ) FAILED\n" +
+    "Error occured at: " + stk::source_relative_path(location) + "\n" +
+    "Error: " + message + "\n");
+}
+
+STK_INLINE_FUNCTION void ThrowMsgDevice(const char * message)
+{
+  Kokkos::abort(message);
+}
+
+inline void ThrowHost(bool expr, const char * exprString, const std::string & location)
+{
+  throw std::logic_error(
+    std::string("Requirement( ") + exprString + " ) FAILED\n" +
+    "Error occured at: " + stk::source_relative_path(location) + "\n");
+}
+
+inline void ThrowErrorMsgHost(const char * message, const std::string & location)
+{
+  throw std::runtime_error(
+    std::string("Error occured at: ") + stk::source_relative_path(location) + "\n" +
+    "Error: " + message + "\n");
+}
+
+STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
+{
+  Kokkos::abort(message);
+}
+
 
 // This generic macro is for unconditional throws. We pass "" as the expr
 // string, the handler should be smart enough to realize that this means there
@@ -315,6 +354,76 @@ void handle_invalid_arg(const char* expr,
 
 #define ThrowInvalidArgMsgIf(expr, message) ThrowGenericCond( !(expr), message, handle_invalid_arg)
 #define ThrowInvalidArgIf(expr)             ThrowInvalidArgMsgIf(expr, "")
+
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#define NGP_ThrowRequireMsg(expr, message)                  \
+do {                                                        \
+  if ( !(expr) ) {                                          \
+    ThrowMsgDevice(message ": " __FILE__ ":" LINE_STRING);  \
+  }                                                         \
+} while(false);
+#else
+#define NGP_ThrowRequireMsg(expr, message)              \
+do {                                                    \
+  if ( !(expr) ) {                                      \
+    ThrowMsgHost(expr, #expr, message, STK_STR_TRACE);  \
+  }                                                     \
+} while(false);
+#endif
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#define NGP_ThrowRequire(expr)                                 \
+do {                                                           \
+  if ( !(expr) ) {                                             \
+    ThrowMsgDevice("(" #expr "): " __FILE__ ":" LINE_STRING);  \
+  }                                                            \
+} while(false);
+#else
+#define NGP_ThrowRequire(expr)              \
+do {                                        \
+  if ( !(expr) ) {                          \
+    ThrowHost(expr, #expr, STK_STR_TRACE);  \
+  }                                         \
+} while(false);
+#endif
+
+#ifdef NDEBUG
+#  define NGP_ThrowAssert(expr)            (static_cast<void>(0))
+#  define NGP_ThrowAssertMsg(expr,message) (static_cast<void>(0))
+#else
+#  define NGP_ThrowAssert(expr)            NGP_ThrowRequire(expr)
+#  define NGP_ThrowAssertMsg(expr,message) NGP_ThrowRequireMsg(expr, message)
+#endif
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#define NGP_ThrowErrorMsgIf(expr, message) NGP_ThrowRequireMsg(!(expr), message);
+#else
+#define NGP_ThrowErrorMsgIf(expr, message)                       \
+do {                                                             \
+  if ( expr ) {                                                  \
+    ThrowMsgHost(expr, "!(" #expr ")", message, STK_STR_TRACE);  \
+  }                                                              \
+} while(false);
+#endif
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#define NGP_ThrowErrorIf(expr) NGP_ThrowRequireMsg(!(expr), "!(" #expr ")");
+#else
+#define NGP_ThrowErrorIf(expr)                       \
+do {                                                 \
+  if ( expr ) {                                      \
+    ThrowHost(expr, "!(" #expr ")", STK_STR_TRACE);  \
+  }                                                  \
+} while(false);
+#endif
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
+#define NGP_ThrowErrorMsg(message) ThrowErrorMsgDevice(message ": " __FILE__ ":" LINE_STRING);
+#else
+#define NGP_ThrowErrorMsg(message) ThrowErrorMsgHost(message, STK_STR_TRACE);
+#endif
+
 
 /**
  * @ingroup Exception

@@ -54,19 +54,22 @@ bool SideSetImpl<KEY>::does_sideset_exist(const stk::mesh::Part &part) const
 }
 
 template<typename KEY>
-SideSet& SideSetImpl<KEY>::create_sideset(KEY sideset_key)
+SideSet& SideSetImpl<KEY>::create_sideset(KEY sideset_key, bool fromInput)
 {
     ThrowRequire(m_sideSetData.find(sideset_key) == m_sideSetData.end());
     m_sideSetSyncCount = m_bulk.synchronized_count();
-    auto retValue = m_sideSetData.emplace(sideset_key, stk::mesh::SideSet());
-    auto iter =  retValue.first;
-    return iter->second;
+    m_sideSetData.emplace(sideset_key, stk::mesh::SideSet(fromInput));
+   auto iter = m_sideSetData.find(sideset_key);
+   ThrowRequire(iter != m_sideSetData.end());
+   return iter->second;
 }
 
 template<typename KEY>
-SideSet& SideSetImpl<KEY>::create_sideset(const stk::mesh::Part &part)
+SideSet& SideSetImpl<KEY>::create_sideset(const stk::mesh::Part &part, bool fromInput)
 {
-    return create_sideset(m_keyGenerator.generate_key(part));
+    SideSet& ss = create_sideset(m_keyGenerator.generate_key(part), fromInput);
+    ss.set_name(part.name());
+    return ss;
 }
 
 template<typename KEY>

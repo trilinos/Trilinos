@@ -60,7 +60,6 @@
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFrameworkTests  commonTools/framework           PT
   Gtest                 commonTools/gtest                 PT
-  ThreadPool            packages/ThreadPool               PT # Depends on Pthreads
   Kokkos                packages/kokkos                   PT
   Teuchos               packages/teuchos                  PT
   KokkosKernels         packages/kokkos-kernels           PT
@@ -81,9 +80,9 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Shards                packages/shards                   PT
   GlobiPack             packages/globipack                PT
   Triutils              packages/triutils                 PT
+  EpetraExt             packages/epetraext                PT	
   Tpetra                packages/tpetra                   PT
   TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PT # Auxiliary software.
-  EpetraExt             packages/epetraext                PT
   Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
@@ -131,7 +130,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   ROL                   packages/rol                      PT
   Piro                  packages/piro                     PT
   Panzer                packages/panzer                   PT
-  Sundance              packages/Sundance                 ST # Could be PT based on deps (BUG: 4669)
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
 #  ForTrilinos           packages/ForTrilinos              EX
   PyTrilinos            packages/PyTrilinos               ST

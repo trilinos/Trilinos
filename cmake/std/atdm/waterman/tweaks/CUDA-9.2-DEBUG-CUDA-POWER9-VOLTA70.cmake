@@ -1,8 +1,8 @@
 #disable from issue #2410
 ATDM_SET_ENABLE(TeuchosNumerics_LAPACK_test_MPI_1_DISABLE ON)
 
-#disable from issue #2466
-ATDM_SET_ENABLE(Belos_Tpetra_PseudoBlockCG_hb_test_MPI_4_DISABLE ON)
+# Disable timing out unit test in this debug build (#3336)
+ATDM_SET_ENABLE(KokkosContainers_UnitTest_Serial_MPI_1_DISABLE ON)
 
 # Disable some unit tests that run too slow in this DEBUG build (#2827)
 ATDM_SET_CACHE(KokkosKernels_sparse_serial_MPI_1_EXTRA_ARGS

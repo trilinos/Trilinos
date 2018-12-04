@@ -99,7 +99,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss stored in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -115,7 +115,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s id %" PRId64 " in id array in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -175,7 +175,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate the dist factors for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -198,7 +198,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of dist factors in %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -206,7 +206,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of dist factors in %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {

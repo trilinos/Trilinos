@@ -319,8 +319,13 @@ namespace Kokkos {
     typedef typename dual_view_type::t_dev device_type;
     typedef typename dual_view_type::t_host host_type;
     dual_view_type dual_view = mv.getDualView();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (dual_view.modified_host() > dual_view.modified_device())
       return dimension_scalar(dual_view.template view<device_type>());
+#else
+    if ( dual_view.need_sync_device() )
+    { return dimension_scalar(dual_view.template view<device_type>()); }
+#endif
     return dimension_scalar(dual_view.template view<host_type>());
   }
 
@@ -331,8 +336,13 @@ namespace Kokkos {
     typedef typename dual_view_type::t_dev device_type;
     typedef typename dual_view_type::t_host host_type;
     dual_view_type dual_view = v.getDualView();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (dual_view.modified_host() > dual_view.modified_device())
       return dimension_scalar(dual_view.template view<device_type>());
+#else
+    if ( dual_view.need_sync_device() )
+    { return dimension_scalar(dual_view.template view<device_type>()); }
+#endif
     return dimension_scalar(dual_view.template view<host_type>());
   }
 }
