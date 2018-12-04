@@ -622,7 +622,11 @@ $ cmake \
 
 $ make -j16
 
+# to run on the Haswell partition
 $ salloc -N 1 -p standard -J $ATDM_CONFIG_BUILD_NAME ctest -j16
+
+# to run on the KNL partition
+$ salloc -N 1 -p knl -J $ATDM_CONFIG_BUILD_NAME ctest -j16
 ```
 
 **NOTE:** Unlike some of the other machines, one must load the environment,

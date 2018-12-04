@@ -520,15 +520,17 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > X) {
+  RealValuedToScalarMultiVector(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > X) {
     RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+#if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
       // Need to cast the real-valued multivector to Scalar=complex
-      if (typeid(Scalar).name() == typeid(std::complex<double>).name()) {
+    if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
+        (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
         Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),X->getNumVectors());
         size_t numVecs = X->getNumVectors();
         for (size_t j=0;j<numVecs;j++) {
-          Teuchos::ArrayRCP<const double> XVec = X->getData(j);
+          Teuchos::ArrayRCP<const real_type> XVec = X->getData(j);
           Teuchos::ArrayRCP<Scalar> XVecScalar = Xscalar->getDataNonConst(j);
           for(size_t i = 0; i < static_cast<size_t>(XVec.size()); ++i)
             XVecScalar[i]=XVec[i];
