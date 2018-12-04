@@ -12,6 +12,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   SOURCE_FILES
   maxwell.xml maxwell2D.xml
+  maxwell-blob-R0.xml maxwell-blob-R1.xml maxwell-blob-R2.xml maxwell-blob-R3.xml maxwell-blob-R4.xml
   solverAugmentation.xml solverAugmentationEpetra.xml
   solverCG.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
