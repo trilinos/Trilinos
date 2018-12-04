@@ -173,141 +173,15 @@ class FECrsMatrix :
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
+
+  // FIXME: This constructor will be replaced  by FECrsGraph
     explicit FECrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-                          const Teuchos::RCP<const crs_graph_type>& offRankGraph,
+                          const Teuchos::RCP<const crs_graph_type>& overlapGraph,
                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
-    virtual ~FECrsMatrix ();
+    virtual ~FECrsMatrix () {}
 
-    //@}
-    //! @name Methods for inserting, modifying, or removing entries
-    //@{
-
-
-    /// \brief Sum into one or more sparse matrix entries, using
-    ///   global indices.
-    ///
-    /// This is a local operation; it does not involve communication.
-    /// However, if you sum into rows not owned by the calling
-    /// process, it may result in future communication in
-    /// globalAssemble() (which is called by fillComplete()).
-    ///
-    /// If \c globalRow is owned by the calling process, then this
-    /// method performs the sum-into operation right away.  Otherwise,
-    /// if the row is <i>not</i> owned by the calling process, this
-    /// method defers the sum-into operation until globalAssemble().
-    /// That method communicates data for nonowned rows to the
-    /// processes that own those rows.  Then, globalAssemble() does
-    /// one of the following:
-    /// <ul>
-    /// <li> It calls insertGlobalValues() for that data if the matrix
-    ///      has a dynamic graph. </li>
-    /// <li> It calls sumIntoGlobalValues() for that data if the matrix
-    ///      has a static graph.  The matrix silently ignores
-    ///      (row,column) pairs that do not exist in the graph.
-    /// </ul>
-    ///
-    /// \param globalRow [in] The global index of the row in which to
-    ///   sum into the matrix entries.
-    /// \param cols [in] One or more column indices.
-    /// \param vals [in] One or more values corresponding to those
-    ///   column indices.  <tt>vals[k]</tt> corresponds to
-    ///   <tt>cols[k]</tt>.
-    /// \param atomic [in] Whether to use atomic updates.
-    ///
-    /// \return The number of indices for which values were actually
-    ///   modified; the number of "correct" indices.
-    ///
-    /// This method has the same preconditions and return value
-    /// meaning as replaceGlobalValues() (which see).
-    LocalOrdinal
-    sumIntoGlobalValues (const GlobalOrdinal globalRow,
-                         const Teuchos::ArrayView<const GlobalOrdinal>& cols,
-                         const Teuchos::ArrayView<const Scalar>& vals,
-                         const bool atomic = useAtomicUpdatesByDefault);
-
-
-    /// \brief Epetra compatibility version of sumIntoGlobalValues
-    ///   (see above), that takes input as raw pointers instead of
-    ///   Kokkos::View.
-    ///
-    /// Arguments are the same and in the same order as those of
-    /// Epetra_CrsMatrix::SumIntoGlobalValues, except for \c atomic,
-    /// which is as above.
-    ///
-    /// \param globalRow [in] The global index of the row in which to
-    ///   sum into the matrix entries.
-    /// \param numEnt [in] Number of valid entries in \c vals and
-    ///   \c cols.  This has type \c LocalOrdinal because we assume
-    ///   that users will never want to insert more column indices
-    ///   in one call than the matrix has columns.
-    /// \param vals [in] \c numEnt values corresponding to the column
-    ///   indices in \c cols.  That is, \c vals[k] is the value
-    ///   corresponding to \c cols[k].
-    /// \param cols [in] \c numEnt global column indices.
-    /// \param atomic [in] Whether to use atomic updates.
-    ///
-    /// \return The number of indices for which values were actually
-    ///   modified; the number of "correct" indices.
-    LocalOrdinal
-    sumIntoGlobalValues (const GlobalOrdinal globalRow,
-                         const LocalOrdinal numEnt,
-                         const Scalar vals[],
-                         const GlobalOrdinal cols[],
-                         const bool atomic = useAtomicUpdatesByDefault);
-
-
-    /// \brief Sum into one or more sparse matrix entries, using global
-    ///   row and column indices.
-    ///
-    /// For global row index \c globalRow and globaal column indices
-    /// <tt>cols</tt>, perform the update <tt>A(globalRow, cols[k]) +=
-    /// vals[k]</tt>.  The row index and column indices must be valid
-    /// on the calling process, and all matrix entries <tt>A(globalRow,
-    /// cols[k])</tt> must already exist.  (This method does
-    /// <i>not</i> change the matrix's structure.)  If the row index
-    /// is valid, any invalid column indices are ignored, but counted
-    /// in the return value.
-    ///
-    /// This overload of the method takes the column indices and
-    /// values as Kokkos::View.
-    ///
-    /// \tparam GlobalIndicesViewType Kokkos::View specialization that
-    ///   is a 1-D array of GlobalOrdinal.
-    /// \tparam ImplScalarViewType Kokkos::View specialization that is
-    ///   a 1-D array of impl_scalar_type (usually the same as Scalar,
-    ///   unless Scalar is std::complex<T> for some T, in which case
-    ///   it is Kokkos::complex<T>).
-    ///
-    /// \param globalRow [in] Global index of a row.  This row
-    ///   <i>must</i> be owned by the calling process.
-    /// \param cols [in] Global indices of the columns whose entries we
-    ///   want to modify.
-    /// \param vals [in] Values corresponding to the above column
-    ///   indices.  <tt>vals(k)</tt> corresponds to <tt>cols(k)</tt>.
-    /// \param atomic [in] Whether to use atomic updates.
-    ///
-    /// \return The number of indices for which values were actually
-    ///   modified; the number of "correct" indices.
-    ///
-    /// This method has the same preconditions and return value
-    /// meaning as replaceGlobalValues() (which see).
-    #if 0
-    template<class GlobalIndicesViewType, class ImplScalarViewType>
-    LocalOrdinal
-    sumIntoGlobalValues(const GlobalOrdinal globalRow,
-                        const typename UnmanagedView<GlobalIndicesViewType>::type& inputInds,
-                        const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
-                        const bool atomic = useAtomicUpdatesByDefault) const;
-    #endif
-
-
-    //! Set all matrix entries equal to \c alpha.
-    void setAllToScalar (const Scalar& alpha);
-
-
-    //@}
     //! @name Transformational methods
     //@{
 
@@ -339,23 +213,40 @@ class FECrsMatrix :
     /// an exception, or it may silently drop the entries inserted
     /// into invalid rows.  Behavior may vary, depending on whether
     /// Tpetra was built with debug checking enabled.
-    void globalAssemble ();
+    void globalAssemble () {endFill();}
+
+    //! Migrates data to the non-overlapped mode
+    void endFill() {
+      if(*activeCrsMatrix_ == FE_ACTIVE_OVERLAP) {
+        doOverlapToLocal(Tpetra::ADD);
+        switchActiveCrsMatrix();
+      }
+      else
+        throw std::runtime_error("FECrsMatrix: Local CrsMatrix already active.  Cannot endFill()");
+    }
+
+    //! Activates the overlap mode for assembly
+    void beginFill()  {
+      // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
+      // like one should expect to do in a rational universe, should not cause an error.
+      if(*activeCrsMatrix_ == FE_ACTIVE_LOCAL) {
+        switchActiveCrsMatrix();
+      }
+    }
+
+ 
+    //! Migrate data from the overlap to the local matrix
+    // Since this is non-unique -> unique, we need a combine mode.
+    // Precondition: Overlap CrsMatrix must be active
+    void doOverlapToLocal(const CombineMode CM=Tpetra::ADD);
 
 
-    /// \brief Resume operations that may change the values or
-    ///   structure of the matrix.
-    ///
-    /// This method must be called as a collective operation.
-    ///
-    /// Calling fillComplete "freezes" both the values and the
-    /// structure of the matrix.  If you want to modify the matrix
-    /// again, you must first call resumeFill.  You then may not call
-    /// resumeFill again on that matrix until you first call
-    /// fillComplete.  You may make sequences of fillComplete,
-    /// resumeFill calls as many times as you wish.
-    ///
-    /// \post <tt>isFillActive() && ! isFillComplete()</tt>
-    void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    //! Migrate data from the local to the overlap map
+    // Precondition: Source Crsmatrix must be active
+    void doLocalToOverlap(const CombineMode CM=Tpetra::ADD);
+
+    //! Switches which CrsMatrix is active (without migrating data)
+    void switchActiveCrsMatrix();
 
 
   private:
@@ -371,26 +262,18 @@ class FECrsMatrix :
     operator= (const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
 
 
-    ///! Off-rank graph
-    //Teuchos::RCP<crs_graph_type> offRankGraph_;       // Don't need this
-    //@}
+    // Enum for activity
+    enum FEWhichActive
+    {
+      FE_ACTIVE_LOCAL,
+      FE_ACTIVE_OVERLAP
+    };
 
 
-    //! The offRank local sparse matrix.
-    Teuchos::RCP<crs_matrix_type> offRankMatrix_;
-
-
-    /// \brief Whether sumIntoLocalValues and sumIntoGlobalValues should use
-    ///        atomic updates by default.
-    ///
-    /// \warning This is an implementation detail
-    static const bool useAtomicUpdatesByDefault =
-    #ifdef KOKKOS_ENABLE_SERIAL
-        ! std::is_same<execution_space, Kokkos::Serial>::value;
-    #else
-        true;
-    #endif  // KOKKOS_ENABLE_SERIAL
-
+    // This is whichever multivector isn't currently active
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsMatrix_;
+    // This is in RCP to make shallow copies of the FECrsMatrix work correctly
+    Teuchos::RCP<FEWhichActive> activeCrsMatrix_;
 
 };    // end class FECrsMatrix
 
