@@ -88,7 +88,7 @@ namespace MueLuTests {
 
     void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac,
                                                const LO numDimension,
-                                               const Array<Array<double> > coord,
+                                               const Array<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coord,
                                                std::vector<double>& stencil)
       const{
       // Call the method to be tested.
@@ -101,7 +101,7 @@ namespace MueLuTests {
   void GGGetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
                         const LocalOrdinal numDimensions, const std::string mode,
                         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
-                        RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
+                        RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
                         RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                         Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
@@ -195,9 +195,9 @@ namespace MueLuTests {
 
     // Construct map and local coordinates
     Teuchos::Array<GO>     myGIDs(lNumPoints);
-    Teuchos::Array<double> myXCoords(lNumPoints);
-    Teuchos::Array<double> myYCoords(lNumPoints);
-    Teuchos::Array<double> myZCoords(lNumPoints);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myXCoords(lNumPoints);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myYCoords(lNumPoints);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myZCoords(lNumPoints);
     for(LO k = 0; k < lNodesPerDim[2]; ++k) {
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
@@ -209,16 +209,16 @@ namespace MueLuTests {
               + k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i;
           }
           myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
-            (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
+            (i + myXoffset) / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[0] - 1);
           myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
-            (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
+            (j + myYoffset) / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[1] - 1);
           myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
-            (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
+            (k + myZoffset) / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[2] - 1);
         }
       }
     }
 
-    Teuchos::Array<Teuchos::ArrayView<const double> > myCoordinates(numDimensions);
+    Teuchos::Array<Teuchos::ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > myCoordinates(numDimensions);
     if(numDimensions == 1) {
       myCoordinates[0] = myXCoords();
     } else if(numDimensions == 2) {
@@ -232,7 +232,7 @@ namespace MueLuTests {
 
     // Create the map and store coordinates using the above array views
     map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
-    Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(),
+    Coordinates = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(map, myCoordinates(),
                                                                      numDimensions);
 
     // small parameter list for Galeri
@@ -293,7 +293,7 @@ namespace MueLuTests {
     GeneralGeometricPFactoryTester<SC,LO,GO,Node> factTester;
 
     LO numDimension = 3;
-    Array<Array<double> > coord(9);
+    Array<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coord(9);
     for(int node = 0; node < 9; ++node) {coord[node].resize(3);}
     coord[0][0] = 0.3; coord[0][1] = 0.9; coord[0][2] = 0.1;
     coord[1][0] = 0.0; coord[1][1] = 0.0; coord[1][2] = 0.0;
@@ -307,7 +307,7 @@ namespace MueLuTests {
     std::vector<double> stencil(8);
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
-    double x = 0.0, y = 0.0, z = 0.0;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType x = 0.0, y = 0.0, z = 0.0;
     for(LO i = 0; i < 8; ++i) {
       x += stencil[i]*coord[i+1][0];
       y += stencil[i]*coord[i+1][1];
@@ -333,7 +333,7 @@ namespace MueLuTests {
     GeneralGeometricPFactoryTester<SC,LO,GO,Node> factTester;
 
     LO numDimension = 3;
-    Array<Array<double> > coord(9);
+    Array<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coord(9);
     for(int node = 0; node < 9; ++node) {coord[node].resize(3);}
     coord[0][0] = 1.1; coord[0][1] = 0.3; coord[0][2] = 0.8;
     coord[1][0] = 0.0; coord[1][1] = 0.0; coord[1][2] = 0.0;
@@ -347,7 +347,7 @@ namespace MueLuTests {
     std::vector<double> stencil(8);
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
-    double x = 0.0, y = 0.0, z = 0.0;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType x = 0.0, y = 0.0, z = 0.0;
     for(LO i = 0; i < 8; ++i) {
       x += stencil[i]*coord[i+1][0];
       y += stencil[i]*coord[i+1][1];
@@ -426,23 +426,23 @@ namespace MueLuTests {
     global_size_t numGlobalElements = numPoints;
     size_t numLocalElements = (comm->getRank() == 0 ? numPoints : 0);
     RCP<const Map> exportMap = MapFactory::Build(lib, numGlobalElements, numLocalElements, 0, comm);
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates
-      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > source_coordinates
+      = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(exportMap, 3);
     if (comm->getRank() == 0) {
       for(LO k = 0; k < gNodesPerDim[2]; ++k) {
         for(LO j = 0; j < gNodesPerDim[1]; ++j) {
           for(LO i = 0; i < gNodesPerDim[0]; ++i) {
             source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i]
-              = i / Teuchos::as<double>(gNodesPerDim[0]-1);
+              = i / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[0]-1);
             source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i]
-              = j / Teuchos::as<double>(gNodesPerDim[1]-1);
+              = j / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[1]-1);
             source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i]
-              = k / Teuchos::as<double>(gNodesPerDim[2]-1);
+              = k / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[2]-1);
           }
         }
       }
     }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(map,3);
     RCP<Xpetra::Export<LO,GO,Node> > coords_exporter = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
     coordinates->doExport(*source_coordinates, *coords_exporter, Xpetra::INSERT);
 
@@ -550,7 +550,7 @@ namespace MueLuTests {
       for(LO i = 0; i < 9; ++i) {
         if(std::abs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
       }
-      double linear_avg = std::abs(  coarse_data[0]
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType linear_avg = std::abs(  coarse_data[0]
                                    + coarse_data[1]
                                    + coarse_data[3]
                                    + coarse_data[4]) / 4.0;
@@ -633,23 +633,23 @@ namespace MueLuTests {
     global_size_t numGlobalElements = numPoints;
     size_t numLocalElements = (comm->getRank() == 0 ? numPoints : 0);
     RCP<const Map> exportMap = MapFactory::Build(lib, numGlobalElements, numLocalElements, 0, comm);
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(exportMap, 3);
     if (comm->getRank() == 0) {
       for(LO k = 0; k < gNodesPerDim[2]; ++k) {
         for(LO j = 0; j < gNodesPerDim[1]; ++j) {
           for(LO i = 0; i < gNodesPerDim[0]; ++i) {
             source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i]
-              = i / Teuchos::as<double>(gNodesPerDim[0]-1);
+              = i / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[0]-1);
             source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i]
-              = j / Teuchos::as<double>(gNodesPerDim[1]-1);
+              = j / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[1]-1);
             source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i]
-              = k / Teuchos::as<double>(gNodesPerDim[2]-1);
+              = k / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[2]-1);
           }
         }
       }
     }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates
-      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates
+      = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(map,3);
     RCP<Xpetra::Export<LO,GO,Node> > coords_exporter
       = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
     coordinates->doExport(*source_coordinates, *coords_exporter, Xpetra::INSERT);
@@ -791,7 +791,7 @@ namespace MueLuTests {
     LO numDimensions = 3;
 
     RCP<Matrix> Op;
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates;
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
@@ -998,7 +998,7 @@ namespace MueLuTests {
           is_injected_lvl1 = false;
         }
       }
-      double linear_avg = 0.0;
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType linear_avg = 0.0;
       for(auto ind : coarse_inds) {linear_avg += std::abs(coarse_data[ind]) / 8.0;}
       LO fine_iref = 0;
       if(comm->getSize() == 1) {fine_iref = 91;} else if(comm->getSize() == 4) {fine_iref = 55;}
@@ -1074,7 +1074,7 @@ namespace MueLuTests {
           is_injected_lvl2 = false;
         }
       }
-      double linear_avg = 0.0;
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType linear_avg = 0.0;
       for(auto ind : coarse_inds) {linear_avg += std::abs(coarse_data[ind]) / 8.0;}
       LO fine_iref = 0;
       if(comm->getSize() == 1) {fine_iref = 31;} else if(comm->getSize() == 4) {fine_iref = 21;}
@@ -1185,23 +1185,23 @@ namespace MueLuTests {
     global_size_t numGlobalElements = numPoints;
     size_t numLocalElements = (comm->getRank() == 0 ? numPoints : 0);
     RCP<const Map> exportMap = MapFactory::Build(lib, numGlobalElements, numLocalElements, 0, comm);
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(exportMap, 3);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > source_coordinates = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(exportMap, 3);
     if (comm->getRank() == 0) {
       for(LO k = 0; k < gNodesPerDim[2]; ++k) {
         for(LO j = 0; j < gNodesPerDim[1]; ++j) {
           for(LO i = 0; i < gNodesPerDim[0]; ++i) {
             source_coordinates->getDataNonConst(0)[k*ny*nx+j*nx+i]
-              = i / Teuchos::as<double>(gNodesPerDim[0]-1);
+              = i / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[0]-1);
             source_coordinates->getDataNonConst(1)[k*ny*nx+j*nx+i]
-              = j / Teuchos::as<double>(gNodesPerDim[1]-1);
+              = j / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[1]-1);
             source_coordinates->getDataNonConst(2)[k*ny*nx+j*nx+i]
-              = k / Teuchos::as<double>(gNodesPerDim[2]-1);
+              = k / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[2]-1);
           }
         }
       }
     }
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates
-      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map,3);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates
+      = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(map,3);
     RCP<Xpetra::Export<LO,GO,Node> > coords_exporter
       = Xpetra::ExportFactory<LO,GO,Node>::Build(exportMap, map);
     coordinates->doExport(*source_coordinates, *coords_exporter, Xpetra::INSERT);

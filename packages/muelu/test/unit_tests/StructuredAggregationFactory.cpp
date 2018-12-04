@@ -161,8 +161,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative1D
@@ -263,8 +264,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative2D
@@ -365,8 +367,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // GlobalLexiTentative3D
@@ -469,8 +472,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative1D
@@ -573,8 +577,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative2D
@@ -678,8 +683,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // LocalLexiTentative3D
@@ -790,8 +796,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative1D
@@ -902,8 +909,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative2D
@@ -1015,8 +1023,9 @@ namespace MueLuTests {
     Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<double>(diagVec->getGlobalLength()), 1e-12);
-    TEST_FLOATING_EQUALITY(diagVec->normInf(), 1.0,  1e-12);
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(diagVec->getGlobalLength()), 1e-12);
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm = Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0);
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), expectedNorm,  1e-12);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } // UncoupledLocalLexiTentative3D

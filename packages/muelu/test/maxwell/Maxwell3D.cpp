@@ -171,7 +171,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.mat", edge_map, Teuchos::null, node_map, edge_map);
     }
     // coordinates
-    RCP<Xpetra::MultiVector<double, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
@@ -199,7 +199,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     // set parameters
     std::string defaultXMLfile;
-    if (!TYPE_EQUAL(SC, std::complex<double>))
+    if (!TYPE_EQUAL(SC, std::complex<double>) && !TYPE_EQUAL(SC, std::complex<float>))
       defaultXMLfile = "Maxwell.xml";
     else
       defaultXMLfile = "Maxwell_complex.xml";
@@ -383,7 +383,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.mat", edge_map, Teuchos::null, node_map, edge_map);
     }
     // coordinates
-    RCP<Xpetra::MultiVector<double, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
