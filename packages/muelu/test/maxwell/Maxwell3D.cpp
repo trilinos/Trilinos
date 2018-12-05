@@ -220,7 +220,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     tm = Teuchos::null;
 
     if (solverName == "Belos") {
-        auto tm2 = TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc"));
+      auto tm2  = TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc");
 
       // construct preconditioner
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
@@ -259,8 +259,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       solver = factory->create("Block CG",belosParams);
 
       comm->barrier();
-      tm2 =  Teuchos::null;
-      auto tm3 = TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve"));
+      tm2=Teuchos::null;
+      auto tm3  = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // set problem and solve
       solver -> setProblem( problem );
