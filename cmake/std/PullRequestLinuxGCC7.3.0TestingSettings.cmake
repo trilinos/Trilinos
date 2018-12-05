@@ -4,7 +4,7 @@
 # appropriate set of SEMS modules must be loaded and accessible through the
 # SEMS NFS mount. (See the sems/PullRequestGCC*TestingEnv.sh files.)
 
-# Usage: cmake -C PullRequestLinuxGCC7.2.0TestingSettings.cmake
+# Usage: cmake -C PullRequestLinuxGCC7.3.0TestingSettings.cmake
 
 # Misc options typically added by CI testing mode in TriBITS
 
