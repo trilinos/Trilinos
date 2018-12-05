@@ -808,7 +808,7 @@ class ExplicitBogackiShampine32_RKBT :
  *      & \hat{b}^T
  *  \end{array}
  *  \;\;\;\;\mbox{ where }\;\;\;\;
- *  \begin{array}{c|cccc}  0  & 0    &     &      &     & \\
+ *  \begin{array}{c|ccccc}  0 & 0    &     &      &     & \\
  *                        1/3 & 1/3  & 0   &      &     & \\
  *                        1/3 & 1/6  & 1/6 & 0    &     & \\
  *                        1/2 & 1/8  & 0   & 3/8  &     & \\
