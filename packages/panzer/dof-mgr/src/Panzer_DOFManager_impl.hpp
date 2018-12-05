@@ -789,13 +789,9 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
   GO localsum=0;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_07-09 local_count");
-
-    typedef typename Tpetra::MultiVector<GO,Node> MV;
-    typedef typename MV::dual_view_type::t_dev KV;
-    typedef typename MV::dual_view_type::t_dev::memory_space DMS;
-    KV values = non_overlap_mv->template getLocalView<DMS>();
+    auto values = non_overlap_mv->getLocalViewDevice();
     auto mv_size = values.extent(0);
-    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
+    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,decltype(values)>(values),localsum);
     PHX::Device::fence();
   }
   
@@ -810,7 +806,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
 
     // do a prefix sum
     GO scanResult = 0;
-    Teuchos::scan<int, GO> (*getComm(), Teuchos::REDUCE_SUM, static_cast<int> (localsum), Teuchos::outArg (scanResult));
+    Teuchos::scan<int, GO> (*getComm(), Teuchos::REDUCE_SUM, static_cast<GO> (localsum), Teuchos::outArg (scanResult));
     myOffset = scanResult - localsum;
   }
 
@@ -938,12 +934,11 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
 
     // temporary working vector to fill each row in tagged array
     std::vector<int> working(overlap_mv->getNumVectors());
-    auto dual_view = overlap_mv->getDualView();
-    dual_view.sync_host();
+    overlap_mv->sync_host();
     PHX::Device::fence();
-    auto edittwoview_host = dual_view.view_host();
+    auto edittwoview_host = overlap_mv->getLocalViewHost();
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
-      // there has to be a field pattern assocaited with the block
+      // there has to be a field pattern associated with the block
       if(fa_fps_[b]==Teuchos::null)
         continue;
 
@@ -1317,15 +1312,15 @@ void DOFManager<LO,GO>::
 fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                          std::vector<std::vector< GO > > & elementGIDs,
                          const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
-                         const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
+                         const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & const_overlap_mv) const
 {
   using Teuchos::ArrayRCP;
 
   //To generate elementGIDs we need to go through all of the local elements.
-  auto dual_view = overlap_mv.getDualView();
-  dual_view.sync_host();
+  auto overlap_mv = const_cast<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType>&>(const_overlap_mv);
+  overlap_mv.sync_host();
   PHX::Device::fence();
-  auto twoview_host = dual_view.view_host();
+  const auto twoview_host = overlap_mv.getLocalViewHost();
 
   //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
   //we move from globalID to localID in the map and use our local value for something.
