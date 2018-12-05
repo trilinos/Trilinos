@@ -15,7 +15,7 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
   PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
   "Enable to use backwards compatible mode where multiple evaluators can be registered that evalaute the same field. Phalanx will use the first evaluator it finds. Default to OFF but unless Panzer is enabled. For backwards compatibility with Panzer users, we default this to ON."
-  ${PROJECT_NAME}_ENABLE_Panzer )
+  "${${PROJECT_NAME}_ENABLE_Panzer}" )
 MESSAGE(STATUS "Allow Multiple Evaluator Registration for Same Field: ${${PACKAGE_NAME}_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
