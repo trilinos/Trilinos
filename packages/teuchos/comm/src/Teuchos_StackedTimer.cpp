@@ -496,10 +496,6 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
       os << "Teuchos::StackedTimer::report() - max_levels manually set to " << options.max_levels
          << ". \nTo print more levels, increase value of OutputOptions::max_levels." << std::endl;
     }
-    if (options.align_columns) {
-      std::vector<bool> printed(flat_names_.size(), false);
-      computeColumnWidthsForAligment("", 0, printed, 0., options);
-    }
     if (not options.print_names_before_values and not options.align_columns) {
       options.align_columns = true;
       if (options.print_warnings)
@@ -507,6 +503,10 @@ StackedTimer::report(std::ostream &os, Teuchos::RCP<const Teuchos::Comm<int> > c
            << "\nrequires that the option align_columns=true too. Setting the value for "
            << "\nalign_column to true."
            << std::endl;
+    }
+    if (options.align_columns) {
+      std::vector<bool> printed(flat_names_.size(), false);
+      computeColumnWidthsForAligment("", 0, printed, 0., options);
     }
 
     std::vector<bool> printed(flat_names_.size(), false);
