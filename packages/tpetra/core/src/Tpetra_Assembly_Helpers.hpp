@@ -39,8 +39,9 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_ASSEMBLY_HELPERS_DECL_HPP
-#define TPETRA_ASSEMBLY_HELPERS_DECL_HPP
+#ifndef TPETRA_ASSEMBLY_HELPERS_HPP
+#define TPETRA_ASSEMBLY_HELPERS_HPP
+#include <utility>
 
 namespace Tpetra {
 
@@ -52,18 +53,18 @@ void endFill(T& t) { t.endFill();}
 
 //! Helper function to begin fill on multiple FE{MultiVector|CrsMatrix} objects at once
 template<typename T, typename... Args>
-void beginFill(T& t, Args... args) {
+void beginFill(T& t, Args&&... args) {
   t.beginFill();
-  beginFill(args...);
+  beginFill(std::forward<Args>(args)...);
 }
 
 //! Helper function to begin end on multiple FE{MultiVector|CrsMatrix} objects at once
 template<typename T, typename... Args>
-void endFill(T& t, Args... args) {
+void endFill(T& t, Args&&... args) {
   t.endFill();
-  endFill(args...);
+  endFill(std::forward<Args>(args)...);
 }
 
 }// namespace Tpetra
 
-#endif // TPETRA_ASSEMBLY_HELPERS_DECL_HPP
+#endif // TPETRA_ASSEMBLY_HELPERS_HPP
