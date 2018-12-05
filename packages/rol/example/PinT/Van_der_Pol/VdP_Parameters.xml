@@ -1,0 +1,6 @@
+<ParameterList name="Inputs">
+  <Parameter name="Total Time"           type="double" value="2.0" />
+  <Parameter name="Number of Time Steps" type="int"    value="100" />
+  <Parameter name="Initial Position"     type="double" value="1"   />
+  <Parameter name="Initial Velocity"     type="double" value="1"   />
+</ParameterList>

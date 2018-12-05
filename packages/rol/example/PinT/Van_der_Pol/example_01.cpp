@@ -51,6 +51,8 @@
 #include "ROL_SerialObjective.hpp"
 #include "ROL_SerialConstraint.hpp"
 
+#include "ROL_ParameterList.hpp"
+
 #include "VdP_DynamicConstraint.hpp"
 
 
@@ -70,8 +72,16 @@ int main( int argc, char* argv[] ) {
   auto outStream = makeStreamPtr( std::cout, argc > 1 );    
   int  errorFlag = 0;
 
-  RealT T = 2.0;       // Total time
-  size_type Nt = 100;  // Number of Time Steps
+  auto VdP_params = getParametersFromXmlFile( "VdP_Parameters.xml" );
+
+  RealT T = VdP_params->get("Total Time", 2.0); 
+  size_type Nt = static_cast<size_type>( VdP_params->get("Number of Time Steps",100) ); 
+
+  auto u_initial = makePtr<vector>(2);
+  (*u_initial)[0] = VdP_params->get("Initial Position",1.0);
+  (*u_initial)[1] = VdP_params->get("Initial Velocity",1.0);
+  
+  auto initialCondition = makePtr<SV>(u_initial);
 
   auto uo = makePtr<SV>( makePtr<vector>(2) );
   auto un = makePtr<SV>( makePtr<vector>(2) );
@@ -85,7 +95,6 @@ int main( int argc, char* argv[] ) {
   auto tracking = PV::create( *uo, Nt );
   tracking->zero();
 
-
   auto dyn_con = makePtr<VdP::DynamicConstraint<RealT>>();
 
   ValidateFunction<RealT> validator( 1, 13, 20, 11, true, *outStream);
@@ -93,7 +102,9 @@ int main( int argc, char* argv[] ) {
   *outStream << std::string(80,'-') << std::endl;
   *outStream << "\n\nChecking DynamicConstraint:\n\n";
 
-  DynamicConstraintCheck<RealT>::check( *dyn_con, validator, *uo, *un, *z,
+  auto timeStamps = TimeStamp<RealT>::make_uniform(0,T,{0.0,1.0},Nt);  
+
+  DynamicConstraintCheck<RealT>::check( *dyn_con, validator, *uo, *un, *z, timeStamps->at(1),
     { 
       "applyJacobian_uo",
       "applyJacobian_un",
@@ -111,7 +122,6 @@ int main( int argc, char* argv[] ) {
       "applyAdjointHessian_z_un" 
   } );
 
-  auto timeStamps = TimeStamp<RealT>::make_uniform(0,T,{0.0,1.0},Nt);  
 
   auto U  = PV::create( *uo, Nt );
   auto Z  = PV::create( *z,  Nt );
@@ -127,24 +137,19 @@ int main( int argc, char* argv[] ) {
   VU->randomize();
   VZ->randomize();
 
-  auto serial_con = make_SerialConstraint( dyn_con, *uo, timeStamps );
+  auto serial_con = make_SerialConstraint( dyn_con, *initialCondition, timeStamps );
 
   *outStream << std::string(80,'-') << std::endl;
   *outStream << "\nChecking SerialConstraint:\n";
 
-  *outStream << "\n\ncheckApplyAdjointJacobian_1\n\n";
+  *outStream << "\n\ncheckApplyJacobian_1\n\n";
   serial_con->checkApplyJacobian_1( *U, *Z, *VU, *C, true, *outStream );
 
-  *outStream << "\n\ncheckApplyAdjointJacobian_2\n\n";
+  *outStream << "\n\ncheckApplyJacobian_2\n\n";
   serial_con->checkApplyJacobian_2( *U, *Z, *VZ, *C, true, *outStream );
 
   *outStream << "\n\ncheckApplyAdjointHessian_11\n\n";
   serial_con->checkApplyAdjointHessian_11( *U, *Z, *W, *VU, *C, true, *outStream );
-
-  // Constraint is linear in optimization variable
-  // *outStream << "\n\ncheckApplyAdjointHessian_22\n\n";
-  // serial_con->checkApplyAdjointHessian_22( *U, *Z, *W, *VZ, *C, true, *outStream );
-
 
   serial_con->checkAdjointConsistencyJacobian_1( *W, *VU, *U, *Z, true, *outStream );
   serial_con->checkAdjointConsistencyJacobian_2( *W, *VZ, *U, *Z, true, *outStream );
@@ -166,14 +171,16 @@ int main( int argc, char* argv[] ) {
   *outStream << std::string(80,'-') << std::endl;
   *outStream << "\n\nChecking DynamicObjective:\n\n";
 
-  DynamicObjectiveCheck<RealT>::check( *dyn_obj, validator, *uo, *un, *z, 
+  DynamicObjectiveCheck<RealT>::check( *dyn_obj, validator, *uo, *un, *z, timeStamps->at(1),
     {
-      "gradient_uo", 
       "gradient_un",
-      "gradient_z"
+      "gradient_z",
+      "hessVec_un_un",
+      "hessVec_uo_uo",
+      "hessVec_z_z",
     } );
 
-  auto serial_obj = make_SerialObjective( dyn_obj, *uo, timeStamps );
+  auto serial_obj = make_SerialObjective( dyn_obj, *initialCondition, timeStamps );
 
   *outStream << std::string(80,'-') << std::endl;
   *outStream << "\nChecking SerialObjective:\n";
@@ -184,6 +191,11 @@ int main( int argc, char* argv[] ) {
   *outStream << "\n\ncheckGradient_2\n\n";
   serial_obj->checkGradient_2( *U, *Z, *VZ, true, *outStream ); 
 
+  *outStream << "\n\ncheckHessVec_11\n\n";
+  serial_obj->checkHessVec_11( *U, *Z, *VU, true, *outStream ); 
+
+  *outStream << "\n\ncheckHessVec_22\n\n";
+  serial_obj->checkHessVec_22( *U, *Z, *VZ, true, *outStream ); 
 
   if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
   else                std::cout << "End Result: TEST PASSED\n";

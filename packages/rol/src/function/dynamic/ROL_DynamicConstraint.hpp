@@ -115,11 +115,12 @@ public:
   using V  = Vector<Real>;
   using PV = PartitionedVector<Real>;
   using TS = TimeStamp<Real>;
- 
+
   virtual ~DynamicConstraint() {}
 
-  DynamicConstraint(void)
-    : unew_               (                             nullPtr ),
+  DynamicConstraint( std::initializer_list<std::string> zero_deriv_terms={} ):
+      DynamicFunction<Real>(zero_deriv_terms),
+      unew_               (                             nullPtr ),
       jv_                 (                             nullPtr ),
       DEFAULT_atol_       ( 1e-4*std::sqrt(ROL_EPSILON<Real>()) ),
       DEFAULT_rtol_       (                                 1e0 ),
@@ -141,6 +142,8 @@ public:
       solverType_         (                 DEFAULT_solverType_ ),
       firstSolve_         (                                true ) {}
 
+
+  
   virtual void update( const V& uo, const V& un, const V& z, const TS& ts ) {
     update_uo( uo, ts );
     update_un( un, ts );
