@@ -146,6 +146,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     # "Experimental" builds with the same 'site' and 'buildname' as builds in
     # the "Specialized" and "ATDM" groups.
     SET(CTEST_SITE "$ENV{ATDM_CONFIG_REAL_HOSTNAME}")
+    SET(CTEST_BUILD_NAME "$ENV{JOB_NAME}-exp")
   ELSE()
     # For regular builds ("Specialized" and "ATDM"), set the CDash site name
     # so that it does not change depending on what node on a given machine

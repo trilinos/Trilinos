@@ -124,10 +124,10 @@ public:
                                     const std::vector<std::pair<int,LocalOrdinal> > & pid_and_lid) const
   {
     // always choose index of pair with smallest pid
-    auto numLids = pid_and_lid.size();
-    decltype(numLids) idx = 0;
-    auto minpid = pid_and_lid[0].first;
-    decltype(minpid) minidx = 0;
+    const std::size_t numLids = pid_and_lid.size();
+    std::size_t idx = 0;
+    int minpid = pid_and_lid[0].first;
+    std::size_t minidx = 0;
     for (idx = 0; idx < numLids; ++idx) {
       if (pid_and_lid[idx].first < minpid) {
         minpid = pid_and_lid[idx].first;
@@ -569,17 +569,22 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     HashTable isOwned, remainingOwned;
 
     // owned_ is made up of owned_ids.: This doesn't work for high order
-    Teuchos::ArrayRCP<const GO> nvals = non_overlap_mv->get1dView();
-    Teuchos::ArrayRCP<const GO> tagged_vals = tagged_non_overlap_mv->get1dView();
+    non_overlap_mv->sync_host();
+    tagged_non_overlap_mv->sync_host();
+    PHX::Device::fence();
+    auto nvals = non_overlap_mv->template getLocalView<PHX::Device>();
+    auto tagged_vals = tagged_non_overlap_mv->template getLocalView<PHX::Device>();
     TEUCHOS_ASSERT(nvals.size()==tagged_vals.size());
-    for (int j = 0; j < nvals.size(); ++j) {
-      if (nvals[j] != -1) {
-        for(GO offset=0;offset<tagged_vals[j];offset++)
-          isOwned.insert(nvals[j]+offset);
-      }
-      else {
-        // sanity check
-        TEUCHOS_ASSERT(tagged_vals[j]==0)
+    for (size_t i = 0; i < nvals.extent(1); ++i) {
+      for (size_t j = 0; j < nvals.extent(0); ++j) {
+	if (nvals(j,i) != -1) {
+	  for(GO offset=0;offset<tagged_vals(j,i);++offset)
+	    isOwned.insert(nvals(j,i)+offset);
+	}
+	else {
+	  // sanity check
+	  TEUCHOS_ASSERT(tagged_vals(j,i)==0);
+	}
       }
     }
     remainingOwned = isOwned;
@@ -776,7 +781,6 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
     non_overlap_mv = rcp(new MultiVector(*tagged_non_overlap_mv,Teuchos::Copy));
   }
 
-
  /* 10. Compute the local sum using Kokkos.
    */
 
@@ -785,15 +789,12 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
   GO localsum=0;
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_07-09 local_count");
-
-    typedef typename Tpetra::MultiVector<GO,Node> MV;
-    typedef typename MV::dual_view_type::t_dev KV;
-    typedef typename MV::dual_view_type::t_dev::memory_space DMS;
-    KV values = non_overlap_mv->template getLocalView<DMS>();
+    auto values = non_overlap_mv->getLocalViewDevice();
     auto mv_size = values.extent(0);
-    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,KV>(values),localsum);
+    Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<GO,decltype(values)>(values),localsum);
+    PHX::Device::fence();
   }
-
+  
  /* 11. Create a map using local sums to generate final GIDs.
    */
 
@@ -805,7 +806,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
 
     // do a prefix sum
     GO scanResult = 0;
-    Teuchos::scan<int, GO> (*getComm(), Teuchos::REDUCE_SUM, static_cast<size_t> (localsum), Teuchos::outArg (scanResult));
+    Teuchos::scan<int, GO> (*getComm(), Teuchos::REDUCE_SUM, static_cast<GO> (localsum), Teuchos::outArg (scanResult));
     myOffset = scanResult - localsum;
   }
 
@@ -820,24 +821,25 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
 
   {
     PANZER_DOFMGR_FUNC_TIME_MONITOR("panzer::DOFManager::buildGlobalUnknowns_GUN::line_13-21 gid_assignment");
-
-    // ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
     int which_id=0;
-    ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
+    auto editnonoverlap = non_overlap_mv->getLocalViewHost();
     for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
       for(int j=0; j<numFields_; ++j){
-        if(editnonoverlap[j][i]!=0){
+        if(editnonoverlap(i,j)!=0){
           // editnonoverlap[j][i]=myOffset+which_id;
-          int ndof = Teuchos::as<int>(editnonoverlap[j][i]);
-          editnonoverlap[j][i]=myOffset+which_id;
+          int ndof = Teuchos::as<int>(editnonoverlap(i,j));
+          editnonoverlap(i,j)=myOffset+which_id;
           which_id+=ndof;
         }
         else{
-          editnonoverlap[j][i]=-1;
+          editnonoverlap(i,j)=-1;
         }
 
       }
     }
+    non_overlap_mv->modify_host();
+    non_overlap_mv->sync_device();
+    PHX::Device::fence();
   }
 
   // LINE 22: In the GUN paper. Were performed above, and the overlaped_mv is
@@ -909,6 +911,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
   }
 
   RCP<const Map> overlapmap       = buildOverlapMapFromElements(ownedAccess);
+  PHX::Device::fence();
 
   // LINE 22: In the GUN paper...the overlap_mv is reused for the tagged multivector.
   //          This is a bit of a practical abuse of the algorithm presented in the paper.
@@ -919,6 +922,7 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
 
     overlap_mv = Tpetra::createMultiVector<GO>(overlapmap,(size_t)numFields_);
     overlap_mv->putScalar(0); // if tpetra is not initialized with zeros
+    PHX::Device::fence();
   }
 
   /* 5.  Iterate through all local elements again, checking with the FP
@@ -930,9 +934,11 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
 
     // temporary working vector to fill each row in tagged array
     std::vector<int> working(overlap_mv->getNumVectors());
-    ArrayRCP<ArrayRCP<GO> > edittwoview = overlap_mv->get2dViewNonConst();
+    overlap_mv->sync_host();
+    PHX::Device::fence();
+    auto edittwoview_host = overlap_mv->getLocalViewHost();
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
-      // there has to be a field pattern assocaited with the block
+      // there has to be a field pattern associated with the block
       if(fa_fps_[b]==Teuchos::null)
         continue;
 
@@ -956,13 +962,16 @@ DOFManager<LO,GO>::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess
             offset++;
           }
           for(std::size_t i=0;i<working.size();i++) {
-            auto current = edittwoview[i][lid];
-            edittwoview[i][lid] = (current > working[i]) ? current : working[i];
+            auto current = edittwoview_host(lid,i);
+            edittwoview_host(lid,i) = (current > working[i]) ? current : working[i];
           }
 
         }
       }
     }
+    overlap_mv->modify_host();
+    overlap_mv->sync_device();
+    PHX::Device::fence();
 
     // // verbose output for inspecting overlap_mv
     // for(int i=0;i<overlap_mv->getLocalLength(); i++) {
@@ -1284,6 +1293,10 @@ buildOverlapMapFromElements(const ElementBlockAccess & access) const
     }
   }
 
+
+
+
+
   Array<GO> overlapVector;
   for (typename std::set<GO>::const_iterator itr = overlapset.begin(); itr!=overlapset.end(); ++itr) {
     overlapVector.push_back(*itr);
@@ -1299,12 +1312,15 @@ void DOFManager<LO,GO>::
 fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
                          std::vector<std::vector< GO > > & elementGIDs,
                          const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
-                         const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const
+                         const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & const_overlap_mv) const
 {
   using Teuchos::ArrayRCP;
 
   //To generate elementGIDs we need to go through all of the local elements.
-  ArrayRCP<ArrayRCP<const GO> > twoview = overlap_mv.get2dView();
+  auto overlap_mv = const_cast<Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType>&>(const_overlap_mv);
+  overlap_mv.sync_host();
+  PHX::Device::fence();
+  const auto twoview_host = overlap_mv.getLocalViewHost();
 
   //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
   //we move from globalID to localID in the map and use our local value for something.
@@ -1338,7 +1354,7 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
           offset++;
           //Row will be lid. column will be whichField.
           //Shove onto local ordering
-          localOrdering.push_back(twoview[whichField][lid]+dofsPerField[whichField]);
+          localOrdering.push_back(twoview_host(lid,whichField)+dofsPerField[whichField]);
 
           dofsPerField[whichField]++;
         }
