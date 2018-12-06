@@ -109,6 +109,7 @@ TEUCHOS_STATIC_SETUP()
                   " this option is ignored and a serial comm is always used.");
     clp.setOption("error-tol-slack", &errorTolSlack, "Slack off of machine epsilon used to check test results");
 }
+// todo: update options so that this test won't run in serial (it's not set up for that currently)
 
 //
 // UNIT TESTS
@@ -143,19 +144,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         success = true;
 
         // Set up Row Map
-        const GO gblNumInds = 5;
-        const LO lclNumInds = (myRank == 0) ? 3 : 2;      // 3 on p0, 2 on p1 (works b/c we have exactly 2 processes)
+        GO gblNumInds = 5;    // There are 5 rows.
+        LO lclNumInds = 0;    // This will be set later.
 
         std::vector<GO> myGIDs;
         if(0 == myRank)
         {
+            lclNumInds = 3;
             myGIDs = {0, 1, 3};
         }
         else if(1 == myRank)
         {
+            lclNumInds = 2;
             myGIDs = {7, 10};
         }
-
         RCP<const map_t> rowMap(new map_t(gblNumInds, myGIDs.data(), lclNumInds, 0, comm));
 
         Teuchos::ArrayRCP<size_t> numEntPerRow(lclNumInds);
@@ -190,19 +192,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
             myGblInds[1] = 7;
             G1->insertGlobalIndices(7, 2, myGblInds.data());      // (7,5), (7,7)
             myGblInds[0] = 6;
-            G1->insertGlobalIndices(10, 1, myGblInds.data());      // (10,6)
+            G1->insertGlobalIndices(10, 1, myGblInds.data());     // (10,6)
         }
 
-        RCP<const map_t> domainMap = rowMap;
+        RCP<const map_t> rangeMap = rowMap;
 
         const GO         indexBase = 0;
-        RCP<const map_t> rangeMap(new map_t(12, indexBase, comm));
+        RCP<const map_t> domainMap(new map_t(12, indexBase, comm));
 
         G1->fillComplete(domainMap, rangeMap);
     }
     else
     {
-        throw std::runtime_error("FAILED on comm split!");
+        // throw std::runtime_error("FAILED on comm split!");
     }
 }
 
