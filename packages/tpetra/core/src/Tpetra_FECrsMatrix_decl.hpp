@@ -242,7 +242,7 @@ class FECrsMatrix :
 
 
     //! Migrate data from the local to the overlap map
-    // Precondition: Source Crsmatrix must be active
+    // Precondition: Source CrsMatrix must be active
     void doLocalToOverlap(const CombineMode CM=Tpetra::ADD);
 
     //! Switches which CrsMatrix is active (without migrating data)
