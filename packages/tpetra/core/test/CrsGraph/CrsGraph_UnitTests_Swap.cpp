@@ -198,15 +198,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
             G1->insertGlobalIndices(10, 1, myGblInds.data());      // (10,6)
         }
 
-
         RCP<const map_t> domainMap = rowMap;
 
         const GO         indexBase = 0;
-        RCP<const map_t> rangeMap(new map_t(8, indexBase, comm));
+        RCP<const map_t> rangeMap(new map_t(12, indexBase, comm));
 
         G1->fillComplete(domainMap, rangeMap);
-
-        // RCP<graph_t> graph = rcp(new graph_t(rmap, cmap, 2, StaticProfile));
     }
     else
     {
