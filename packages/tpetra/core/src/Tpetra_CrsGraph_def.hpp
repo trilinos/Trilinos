@@ -58,6 +58,7 @@
 #include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
+#include "Tpetra_Details_resizeRowPtrs.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Tpetra_Vector.hpp"
@@ -5552,7 +5553,6 @@ namespace Tpetra {
     return true;
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -5572,6 +5572,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
       ": permuteToLIDs and permuteFromLIDs must have the same size.");
+
     // Make sure that the source object has the right type.  We only
     // actually need it to be a RowGraph, with matching first three
     // template parameters.  If it's a CrsGraph, we can use view mode
@@ -5590,6 +5591,10 @@ namespace Tpetra {
       srcRowGraph == nullptr, std::invalid_argument,
       ": The source object must be a RowGraph with matching first three "
       "template parameters.");
+
+    if (this->getProfileType () == StaticProfile) {
+      resizeForIncomingData(*srcRowGraph, numSameIDs, permuteToLIDs, permuteFromLIDs);
+    }
 
     // If the source object is actually a CrsGraph, we can use view
     // mode instead of copy mode to access the entries in each row,
@@ -5652,6 +5657,122 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  resizeForIncomingDataImpl(const Kokkos::UnorderedMap<LocalOrdinal, size_t>& padding)
+  {
+    const char tfecfFuncName[] = "resizeForIncomingDataImpl";
+    using device_type = typename Node::device_type;
+    using execution_space = typename device_type::execution_space;
+    using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
+    using indices_type = t_GlobalOrdinal_1D;
+    using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
+    using Tpetra::Details::resizeRowPtrsAndIndices;
+
+    if (! this->indicesAreAllocated()) {
+      allocateIndices(GlobalIndices);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      ! this->isGloballyIndexed(), std::runtime_error,
+      ": must be globally indexed to resize!\n");
+
+    // Making copies here because k_rowPtrs_ has a const type. Otherwise, we
+    // would use it directly.
+    indices_type indices("indices", this->k_gblInds1D_.extent(0));
+    Kokkos::deep_copy(indices, this->k_gblInds1D_);
+
+    row_ptrs_type row_ptrs_beg("row_ptrs_beg", this->k_rowPtrs_.extent(0));
+    Kokkos::deep_copy(row_ptrs_beg, this->k_rowPtrs_);
+
+    const auto N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1);
+    row_ptrs_type row_ptrs_end("row_ptrs_end", N);
+
+    bool refill_num_row_entries = false;
+    if (this->k_numRowEntries_.extent(0) > 0) {
+      // Case 1: Unpacked storage
+      refill_num_row_entries = true;
+      auto num_row_entries = this->k_numRowEntries_;
+      Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
+        KOKKOS_LAMBDA(const size_t i){
+          row_ptrs_end(i) = row_ptrs_beg(i) + num_row_entries(i);
+        }
+      );
+
+    } else {
+      // mfh If packed storage, don't need row_ptrs_end to be separate allocation;
+      // could just have it alias row_ptrs_beg+1.
+      // Case 2: Packed storage
+      Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
+        KOKKOS_LAMBDA(const size_t i){
+          row_ptrs_end(i) = row_ptrs_beg(i+1);
+        }
+      );
+    }
+
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t>;
+    resizeRowPtrsAndIndices<row_ptrs_type,indices_type,padding_type>(
+        row_ptrs_beg, row_ptrs_end, indices, padding);
+
+    if (refill_num_row_entries) {
+      Kokkos::parallel_for("Fill num entries", range_policy(0, N),
+        KOKKOS_LAMBDA(const size_t i){
+          this->k_numRowEntries_(i) = row_ptrs_end(i) - row_ptrs_beg(i);
+        }
+      );
+    }
+    this->k_rowPtrs_ = row_ptrs_beg;
+    this->k_gblInds1D_ = indices;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  resizeForIncomingData(const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
+                        size_t numSameIDs,
+                        const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                        const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
+  {
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+
+    // Resize row pointers and indices to accommodate incoming data
+    const map_type& src_row_map = *(source.getRowMap());
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t>;
+    padding_type padding(numSameIDs+permuteFromLIDs.size());
+    for (LO tgtid=0; tgtid<static_cast<LO>(numSameIDs); ++tgtid) {
+      const GO srcgid = src_row_map.getGlobalElement(tgtid);
+      auto how_much_padding = source.getNumEntriesInGlobalRow(srcgid);
+      padding.insert(tgtid, how_much_padding);
+    }
+    for (LO i=0; i<permuteToLIDs.size(); ++i) {
+      const LO tgtid = permuteToLIDs[i];
+      const GO srcgid = src_row_map.getGlobalElement(permuteFromLIDs[i]);
+      auto how_much_padding = source.getNumEntriesInGlobalRow(srcgid);
+      padding.insert(tgtid, how_much_padding);
+    }
+    // Now do the actual resizing
+    resizeForIncomingDataImpl(padding);
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  resizeForIncomingData (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                         const Teuchos::ArrayView<size_t> &numPacketsPerLID)
+  {
+    // Creating padding for each new incoming index
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t>;
+    padding_type padding(importLIDs.size());
+    auto numEnt = static_cast<size_t>(importLIDs.size());
+    for (size_t i=0; i<numEnt; i++) {
+      padding.insert(importLIDs[i], numPacketsPerLID[i]);
+    }
+    // Now do the actual resizing
+    resizeForIncomingDataImpl(padding);
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -5692,7 +5813,28 @@ namespace Tpetra {
         Teuchos::Array<GlobalOrdinal>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
         size_t& constantNumPackets,
-        Distributor& /* distor */) const
+        Distributor& distor) const
+  {
+    auto col_map = this->getColMap();
+    if (!col_map.is_null()) {
+      using Tpetra::Details::packCrsGraph;
+      packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
+                                                    exportLIDs, constantNumPackets, distor);
+    }
+    else {
+      this->packFillActive(exportLIDs, exports, numPacketsPerLID,
+                           constantNumPackets, distor);
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  packFillActive(const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                     Teuchos::Array<GlobalOrdinal>& exports,
+                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                     size_t& constantNumPackets,
+                     Distributor& /* distor */) const
   {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
@@ -5700,7 +5842,7 @@ namespace Tpetra {
       device_type>::HostMirror::execution_space host_execution_space;
     typedef typename device_type::execution_space device_execution_space;
     const char tfecfFuncName[] = "pack: ";
-    constexpr bool debug = false;
+    const bool debug = ::Tpetra::Details::Behavior::debug("CrsGraph::pack");
     const int myRank = debug ? this->getMap ()->getComm ()->getRank () : 0;
 
     const auto numExportLIDs = exportLIDs.size ();
@@ -5888,7 +6030,6 @@ namespace Tpetra {
        << ", totalNumPackets = " << totalNumPackets << ".");
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -5896,12 +6037,16 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const GlobalOrdinal> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                     size_t constantNumPackets,
-                    Distributor& /* distor */,
-                    CombineMode /* CM */)
+                    Distributor& distor,
+                    CombineMode CM)
   {
+    const char tfecfFuncName[] = "unpackAndCombine: ";
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
 
+    if (this->getProfileType () == StaticProfile) {
+      resizeForIncomingData(importLIDs, numPacketsPerLID);
+    }
     // FIXME (mfh 02 Apr 2012) REPLACE combine mode has a perfectly
     // reasonable meaning, whether or not the matrix is fill complete.
     // It's just more work to implement.
@@ -5919,7 +6064,6 @@ namespace Tpetra {
     // the imported row, i.e., the existing indices are cleared. CGB,
     // 6/17/2010
 
-    const char tfecfFuncName[] = "unpackAndCombine: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
       "importLIDs and numPacketsPerLID must have the same size.");

@@ -61,6 +61,7 @@
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Describable.hpp"
@@ -91,7 +92,7 @@ namespace Tpetra {
         size_t constantNumPackets,
         Distributor & distor,
         CombineMode combineMode);
-      } // namespace Details
+  } // namespace Details
 
   namespace { // (anonymous)
 
@@ -1205,6 +1206,19 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
 
+    void
+    resizeForIncomingDataImpl (const Kokkos::UnorderedMap<LocalOrdinal, size_t>& padding);
+
+    void
+    resizeForIncomingData (const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& source,
+                           size_t numSameIDs,
+                           const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                           const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+
+    void
+    resizeForIncomingData (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                           const Teuchos::ArrayView<size_t> &numPacketsPerLID);
+
     virtual void
     packAndPrepare (const SrcDistObject& source,
                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
@@ -1220,6 +1234,13 @@ namespace Tpetra {
           size_t& constantNumPackets,
           Distributor& distor) const override;
 
+    void
+    packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<GlobalOrdinal>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor) const;
+
     virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
                       const Teuchos::ArrayView<const GlobalOrdinal>& imports,
@@ -1227,6 +1248,7 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor& distor,
                       CombineMode CM) override;
+
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{

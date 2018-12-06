@@ -330,6 +330,10 @@ unpackAndCombine(
     return;
   }
 
+  // Resize row pointers and indices to accommodate incoming data
+  resizeRowPtrsAndIndices<RowView,IndicesView,NumPacketsView,ImportLidsView>(
+      row_ptrs_beg, row_ptrs_end, indices, num_packets_per_lid, import_lids, unpack_pids);
+
   // Get the offsets
   Kokkos::View<size_t*, device_type> offsets("offsets", num_import_lids+1);
   computeOffsetsFromCounts(offsets, num_packets_per_lid);
@@ -346,9 +350,6 @@ unpackAndCombine(
                                      : num_packets_this_lid;
       if (num_ent > running_max_num_ent) running_max_num_ent = num_ent;
     }, Kokkos::Max<size_t>(max_num_ent));
-
-  resizeRowPtrsAndIndices<RowView,IndicesView,NumPacketsView,ImportLidsView>(
-      row_ptrs_beg, row_ptrs_end, indices, num_packets_per_lid, import_lids, unpack_pids);
 
   // Now do the actual unpack!
   unpack_functor_type f(row_ptrs_beg, row_ptrs_end, indices,
@@ -892,10 +893,10 @@ unpackCrsGraphAndCombine(
   const auto N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1); // TODO fix auto
   row_ptrs_type row_ptrs_end("row_ptrs_end", N);
 
-  bool has_num_entries = false;
+  bool refill_num_row_entries = false;
   if (graph.k_numRowEntries_.extent(0) > 0) {
     // Case 1: Packed storage
-    has_num_entries = true;
+    refill_num_row_entries = true;
     auto num_row_entries = graph.k_numRowEntries_;
     Kokkos::parallel_for("Fill end row pointers", range_policy(0, N),
         KOKKOS_LAMBDA(const size_t i){
@@ -920,7 +921,7 @@ unpackCrsGraphAndCombine(
 
   // mfh Later, permit graph to be locally indexed, and check whether
   // incoming column indices are in the column Map.  If not, error.
-  if (has_num_entries) {
+  if (refill_num_row_entries) {
     Kokkos::parallel_for("Fill num entries",
         range_policy(0, N), KOKKOS_LAMBDA(const size_t i){
         graph.k_numRowEntries_(i) = row_ptrs_end(i) - row_ptrs_beg(i);

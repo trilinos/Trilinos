@@ -106,6 +106,12 @@ public:
   ///        "CrsGraph::insertLocalIndices".
   static bool verbose (const char name[]);
 
+  /// \brief Disable verbose mode, programatically
+  static void disable_verbose_behavior ();
+
+  /// \brief Enable verbose mode, programatically
+  static void enable_verbose_behavior ();
+
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
   /// An MPI implementation is "CUDA aware" if it can accept CUDA

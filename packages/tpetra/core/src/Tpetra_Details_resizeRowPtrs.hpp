@@ -65,25 +65,11 @@ ViewType empty_view(const std::string& name, const size_t& size) {
 
 // Determine if row_ptr and indices arrays need to be resized to accommodate
 // new entries
-template<class RowPtr, class Indices, class NumPackets, class ImportLids>
+template<class RowPtr, class Indices, class Padding>
 void
-pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
-               const NumPackets& num_packets_per_lid,
-               const ImportLids& import_lids,
-               const bool unpack_pids)
+pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const Padding& padding)
 {
   using range = Kokkos::pair<typename RowPtr::value_type, typename RowPtr::value_type>;
-
-  // Create a mapping of {LID: extra space needed} to rapidly look up which LIDs
-  // need additional padding.
-  using key_type = typename ImportLids::non_const_value_type;
-  using val_type = typename NumPackets::non_const_value_type;
-  Kokkos::UnorderedMap<key_type, val_type> padding(import_lids.size());
-  Kokkos::parallel_for("Fill padding", import_lids.size(),
-      KOKKOS_LAMBDA(typename ImportLids::size_type i) {
-        padding.insert(import_lids(i), num_packets_per_lid(i));
-      }
-    );
 
   // Determine if the indices array is large enough
   auto num_row = row_ptr_beg.size() - 1;
@@ -98,12 +84,10 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
       auto free_this_row = allocated_this_row - used_this_row;
       entries_this_row(i) = allocated_this_row;
 
-      auto k = padding.find(static_cast<key_type>(i));
+      auto k = padding.find(static_cast<typename Padding::key_type>(i));
       if (padding.valid_at(k)) {
         // Additional padding was requested for this LID
-        auto num_extra_this_lid = padding.value_at(k);
-        auto num_ent = (unpack_pids) ? num_extra_this_lid/2
-                                     : num_extra_this_lid;
+        auto num_ent = padding.value_at(k);
         auto n = (num_ent > free_this_row) ? num_ent - free_this_row : 0;
         entries_this_row(i) += n;
         ladditional_size_needed += n;
@@ -173,9 +157,33 @@ resizeRowPtrsAndIndices(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indic
                         const bool unpack_pids)
 {
   using pad_csr_details::pad_csr_arrays;
-  pad_csr_arrays<RowPtr, Indices, NumPackets, ImportLids>(
-      row_ptr_beg, row_ptr_end, indices, num_packets_per_lid, import_lids,
-      unpack_pids);
+
+  // Create a mapping of {LID: extra space needed} to rapidly look up which LIDs
+  // need additional padding.
+  using key_type = typename ImportLids::non_const_value_type;
+  using val_type = typename NumPackets::non_const_value_type;
+  using padding_type = Kokkos::UnorderedMap<key_type, val_type>;
+  padding_type padding(import_lids.size());
+  Kokkos::parallel_for("Fill padding", import_lids.size(),
+      KOKKOS_LAMBDA(typename ImportLids::size_type i) {
+        auto how_much_padding = (unpack_pids) ? num_packets_per_lid(i)/2
+                                              : num_packets_per_lid(i);
+        padding.insert(import_lids(i), how_much_padding);
+      }
+    );
+
+  pad_csr_arrays<RowPtr, Indices, padding_type>(row_ptr_beg, row_ptr_end, indices, padding);
+}
+
+// Determine if row_ptr and indices arrays need to be resized to accommodate
+// new entries
+template<class RowPtr, class Indices, class Padding>
+void
+resizeRowPtrsAndIndices(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
+                        const Padding& padding)
+{
+  using pad_csr_details::pad_csr_arrays;
+  pad_csr_arrays<RowPtr, Indices, Padding>(row_ptr_beg, row_ptr_end, indices, padding);
 }
 
 } // namespace Details
