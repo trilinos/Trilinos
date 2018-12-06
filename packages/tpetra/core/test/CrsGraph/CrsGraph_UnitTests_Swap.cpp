@@ -122,8 +122,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
     typedef Tpetra::Map<LO, GO, Node>      map_t;
 
-//    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
-
     auto initialComm = getDefaultComm();
     TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
 
@@ -132,6 +130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     const int key   = 0;
     auto      comm  = initialComm->split(color, key);
 
+    // If I am involved in this test (i.e., my pid == 0 or 1)
     if(0 == color)
     {
         const int numProcs = comm->getSize();
@@ -141,11 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         out << ">>> CrsGraph::swap() Unit Test" << std::endl;
         out << ">>> numProcs: " << numProcs << std::endl;
 
-        success               = true;
-//        const size_t numLocal = 1;
-
-        //        RCP<const map_t> rmap = rcp(new map_t(INVALID, numLocal, 0, comm));
-        //        RCP<const map_t> cmap = rcp(new map_t(INVALID, numLocal, 0, comm));
+        success = true;
 
         // Set up Row Map
         const GO gblNumInds = 5;
