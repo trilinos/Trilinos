@@ -115,8 +115,7 @@ namespace FROSch {
         MultiVectorPtr xCoarse = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(CoarseMap_,x.getNumVectors());
         
         Phi_->apply(x,*xCoarse,Teuchos::TRANS);
-        
-        MultiVectorPtr xCoarseSolveTmp;
+            MultiVectorPtr xCoarseSolveTmp;
         for (UN j=0; j<GatheringMaps_.size(); j++) {
             xCoarseSolveTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],x.getNumVectors());
             xCoarseSolveTmp->doExport(*xCoarse,*CoarseSolveExporters_[j],Xpetra::ADD);
@@ -168,13 +167,33 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::setUpCoarseOperator()
     {
 
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+        
         // Build CoarseMatrix_
         CrsMatrixPtr k0 = buildCoarseMatrix();
         //Diese Row Map ist die Knoten Elementlist
+        ConstMapPtr kRowMap = k0->getMap();
+        //Repeated Map on first level needs to be correct
+        Teuchos::ArrayView<const GO> elements_ = kRowMap->getNodeElementList();
+        const size_t numMyElements = this->SubdomainConnectGraph_->getMap()->getNodeNumElements();
+        Teuchos::ArrayView<const GO> myGlobalElements = this->SubdomainConnectGraph_->getMap()->getNodeElementList();
+        std::vector<GO> col_vec(elements_.size());
+        for(int i = 0;i<elements_.size();i++)
+        {
+            col_vec.at(i) =i;
+        }
+        Teuchos::ArrayView<GO> cols(col_vec);
 
+      
+        
+        ElementNodeList_ = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (this->SubdomainConnectGraph_->getMap(), 10));
+        for (size_t i = 0; i < numMyElements; ++i){
+           ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols, elements_);
+        }
+        ElementNodeList_->fillComplete();
+        ElementNodeList_->describe(*fancy,Teuchos::VERB_EXTREME);
         // Build CoarseMap_
         buildCoarseSolveMap(k0);
-
         //------------------------------------------------------------------------------------------------------------------------
         // Communicate coarse matrix
         

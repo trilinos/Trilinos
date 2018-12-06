@@ -63,7 +63,8 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::Map Map;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
-        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
+
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CrsMatrixPtr CrsMatrixPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MultiVector MultiVector;
@@ -152,8 +153,10 @@ namespace FROSch {
         ParameterListPtr DistributionList_;
         
         ExporterPtrVecPtr CoarseSolveExporters_;
-        
+        //Graph to compute Reapeated Map
         CrsGraphPtr SubdomainConnectGraph_;
+        //Element-Node-List to compute RepeatedMap
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElementNodeList_;
         
     };
     

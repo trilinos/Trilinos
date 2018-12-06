@@ -539,39 +539,39 @@ namespace FROSch {
                 straightSubs[i] = StraightEntityVec[i]->getSubdomainsVector();
                 //std::cout<<straightSubs[i];
             }
+            
+            Teuchos::Array<GO> entries;
+            std::map<GO,int> rep;
+
             if(dimension == 2){
                 InterfaceEntityPtrVec EdgeEntityVec = edges->getEntityVector();
                 GO SizeEdge = EdgeEntityVec.size();
                 edgesSubs.resize(SizeEdge);
-                std::map<GO,int> rep;
                 for(GO i = 0;i<SizeEdge;i++){
                     edgesSubs[i] = EdgeEntityVec[i]->getSubdomainsVector();
                     for(int j = 0;j<edgesSubs[i].size();j++) rep.insert(std::pair<GO,int>(edgesSubs.at(i).at(j),edges->getEntityMap()->getComm()->getRank()));
                 }
-                Teuchos::Array<GO> entries;
                 for (auto& x: rep) {
                     entries.push_back(x.first);
                 }
             }else if (dimension == 3){
                 //std::cout<<edges->getEntityMap()->getComm()->getRank()<<" "<<entries;
                 // std::cout<<std::endl;
-            
-            
                 InterfaceEntityPtrVec FaceEntityVec = faces->getEntityVector();
                 GO SizeFace = FaceEntityVec.size();
                 facesSubs.resize(SizeFace);
-                std::map<GO,int> rep;
-
                 for(GO i = 0;i<SizeFace;i++){
                     facesSubs[i] = FaceEntityVec[i]->getSubdomainsVector();
                     for(int j = 0;j<facesSubs[i].size();j++) rep.insert(std::pair<GO,int>(facesSubs.at(i).at(j),faces->getEntityMap()->getComm()->getRank()));
                 }
-                
-                Teuchos::Array<GO> entries;
                 for (auto& x: rep) {
                     entries.push_back(x.first);
                 }
+            } else{
+                FROSCH_ASSERT(0!=0,"Only Implemented for 2D and 3D");
             }
+            
+            
             Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
             MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
 
