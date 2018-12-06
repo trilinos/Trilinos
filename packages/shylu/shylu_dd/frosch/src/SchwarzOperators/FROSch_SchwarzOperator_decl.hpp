@@ -47,6 +47,8 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Export.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
@@ -141,6 +143,8 @@ namespace FROSch {
         
         typedef Teuchos::Array<bool> BoolVec;
         typedef Teuchos::ArrayRCP<bool> BoolVecPtr;
+        
+        typedef Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > CrsGraphPtr;
         
         
         SchwarzOperator(CommPtr comm);

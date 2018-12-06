@@ -61,7 +61,8 @@ namespace FROSch {
     BlockCoarseDimension_(),
     CoarseSolver_ (),
     DistributionList_ (sublist(parameterList,"Distribution")),
-    CoarseSolveExporters_ (0)
+    CoarseSolveExporters_ (0),
+    SubdomainConnectGraph_()
     {
         
     }
@@ -169,6 +170,7 @@ namespace FROSch {
 
         // Build CoarseMatrix_
         CrsMatrixPtr k0 = buildCoarseMatrix();
+        //Diese Row Map ist die Knoten Elementlist
 
         // Build CoarseMap_
         buildCoarseSolveMap(k0);
@@ -292,7 +294,7 @@ namespace FROSch {
         double fac = DistributionList_->get("Factor",1.0);
         Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
         
-        k0->describe(*fancy,Teuchos::VERB_EXTREME);
+        //k0->describe(*fancy,Teuchos::VERB_EXTREME);
 
         // Redistribute Matrix
         if (NumProcsCoarseSolve_==0) {

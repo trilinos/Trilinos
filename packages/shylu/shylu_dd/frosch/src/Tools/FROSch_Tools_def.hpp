@@ -268,7 +268,7 @@ namespace FROSch {
                 std::vector<int> common (3);
                 it = std::set_intersection(el1.begin(),el1.end(),el2.begin(),el2.end(), common.begin());
                 common.resize(it-common.begin());
-                for(int l = 0;l<common.size();l++) rep.insert(std::pair<int,int>(common.at(l),MyPID));
+                for(int l = 0;l<common.size();l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
             }
         }
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();

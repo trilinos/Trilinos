@@ -23,7 +23,6 @@
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>
 
-#ifdef HAVE_FROSCH_THYRA
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
@@ -48,7 +47,6 @@
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Stratimikos_FROSchXpetra.hpp>
-#endif
 
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
@@ -234,7 +232,6 @@ int main(int argc, char *argv[])
             
             RCP<Xpetra::Map<LO,GO,NO> > RepMapX = FROSch::BuildRepeatedMap<SC,LO,GO,NO>(K);
       
-#ifdef HAVE_FROSCH_THYRA
             
             RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(exAWrap->getCrsMatrix());
             RCP<Thyra::MultiVectorBase<SC> >thyraX =
@@ -307,11 +304,8 @@ int main(int argc, char *argv[])
             RCP<const Epetra_MultiVector> X;
             
             X = Thyra::get_Epetra_MultiVector(epetraDomain, thyraX );
-            std::cout<<*X;
-#else
-             if (Comm->MyPID()==0) cout << "Thyra not enabled\n";
-#endif
-            
+            //std::cout<<*X;
+       
         }
         MPI_Comm_free(&COMM);
     

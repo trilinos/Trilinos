@@ -325,7 +325,7 @@ namespace FROSch {
 
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
-
+    
         DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap));
         DDInterface_->resetGlobalDofs(dofsMaps);
         DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs());
@@ -337,6 +337,8 @@ namespace FROSch {
         DDInterface_->sortEntities(nodeList);
         
         EntitySetPtr vertices,shortEdges,straightEdges,edges,faces,interface,interior;
+        
+        GOVec2D shortSubs,straightSubs,edgesSubs,facesSubs,entriesGraph;
         
         interface = DDInterface_->getInterface();
         interior = DDInterface_->getInterior();
@@ -362,6 +364,7 @@ namespace FROSch {
             if (coarseSpaceFunctions[0]) {
                 vertices = DDInterface_->getVertices();
                 vertices->buildEntityMap(nodesMap);
+               
             }
             if (coarseSpaceFunctions[1] || coarseSpaceFunctions[2]) {
                 shortEdges = DDInterface_->getShortEdges();
@@ -370,6 +373,7 @@ namespace FROSch {
             if (coarseSpaceFunctions[3] || coarseSpaceFunctions[4]) {
                 straightEdges = DDInterface_->getStraightEdges();
                 straightEdges->buildEntityMap(nodesMap);
+                
             }
             if (coarseSpaceFunctions[5] || coarseSpaceFunctions[6]) {
                 edges = DDInterface_->getEdges();
@@ -379,6 +383,7 @@ namespace FROSch {
                 faces = DDInterface_->getFaces();
                 faces->buildEntityMap(nodesMap);
             }
+            
             
             // Vertices
             int ii=0;
@@ -514,7 +519,67 @@ namespace FROSch {
                 faces: rotations            --- " << coarseSpaceFunctions[8] << "\n\
                 --------------------------------------------\n";
             }
+            
+            //Each row for one subdomain->containing the connected subdomains (Edge 2D;face 3D);
+            entriesGraph.resize(this->K_->getMap()->getComm()->getSize());
 
+
+            InterfaceEntityPtrVec ShortEntityVec = shortEdges->getEntityVector();
+            GO SizeShortEdge = ShortEntityVec.size();
+            shortSubs.resize(SizeShortEdge);
+            for(GO i = 0;i<SizeShortEdge;i++){
+                shortSubs[i] = ShortEntityVec[i]->getSubdomainsVector();
+                //std::cout<<shortSubs[i];
+            }
+            
+            InterfaceEntityPtrVec StraightEntityVec = straightEdges->getEntityVector();
+            GO SizeStraightEdge = StraightEntityVec.size();
+            straightSubs.resize(SizeStraightEdge);
+            for(GO i = 0;i<SizeStraightEdge;i++){
+                straightSubs[i] = StraightEntityVec[i]->getSubdomainsVector();
+                //std::cout<<straightSubs[i];
+            }
+            if(dimension == 2){
+                InterfaceEntityPtrVec EdgeEntityVec = edges->getEntityVector();
+                GO SizeEdge = EdgeEntityVec.size();
+                edgesSubs.resize(SizeEdge);
+                std::map<GO,int> rep;
+                for(GO i = 0;i<SizeEdge;i++){
+                    edgesSubs[i] = EdgeEntityVec[i]->getSubdomainsVector();
+                    for(int j = 0;j<edgesSubs[i].size();j++) rep.insert(std::pair<GO,int>(edgesSubs.at(i).at(j),edges->getEntityMap()->getComm()->getRank()));
+                }
+                Teuchos::Array<GO> entries;
+                for (auto& x: rep) {
+                    entries.push_back(x.first);
+                }
+            }else if (dimension == 3){
+                //std::cout<<edges->getEntityMap()->getComm()->getRank()<<" "<<entries;
+                // std::cout<<std::endl;
+            
+            
+                InterfaceEntityPtrVec FaceEntityVec = faces->getEntityVector();
+                GO SizeFace = FaceEntityVec.size();
+                facesSubs.resize(SizeFace);
+                std::map<GO,int> rep;
+
+                for(GO i = 0;i<SizeFace;i++){
+                    facesSubs[i] = FaceEntityVec[i]->getSubdomainsVector();
+                    for(int j = 0;j<facesSubs[i].size();j++) rep.insert(std::pair<GO,int>(facesSubs.at(i).at(j),faces->getEntityMap()->getComm()->getRank()));
+                }
+                
+                Teuchos::Array<GO> entries;
+                for (auto& x: rep) {
+                    entries.push_back(x.first);
+                }
+            }
+            Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
+            MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
+
+            this->SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap,7);
+            this->SubdomainConnectGraph_->insertGlobalIndices(edges->getEntityMap()->getComm()->getRank(),entries());
+            this->SubdomainConnectGraph_->fillComplete();
+            this->SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
+            
             this->BlockCoarseDimension_[blockId] = 0;
             for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                 this->BlockCoarseDimension_[blockId] += numEntitiesGlobal[i];
