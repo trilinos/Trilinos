@@ -111,6 +111,15 @@ TEUCHOS_STATIC_SETUP()
 }
 // todo: update options so that this test won't run in serial (it's not set up for that currently)
 
+
+template<class LO, class GO, class Node>
+void gen_crsgraph_a(int rank, Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> > G)
+{
+    std::cout << "Got here!" << std::endl;
+}
+
+
+
 //
 // UNIT TESTS
 //
@@ -172,27 +181,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
             numEntPerRow[0] = 2;      // (7,5), (7,7)
             numEntPerRow[1] = 1;      // (10,6)
         }
-        RCP<graph_t> G1(new graph_t(rowMap, numEntPerRow, Tpetra::StaticProfile));
+        RCP<graph_t> GraphA(new graph_t(rowMap, numEntPerRow, Tpetra::StaticProfile));
+
+        gen_crsgraph_a(myRank, GraphA);
 
         std::vector<GO> myGblInds(2);
         if(0 == myRank)
         {
             myGblInds[0] = 0;
             myGblInds[1] = 11;
-            G1->insertGlobalIndices(0, 2, myGblInds.data());      // (0,0), (0,11)
+            GraphA->insertGlobalIndices(0, 2, myGblInds.data());      // (0,0), (0,11)
             myGblInds[0] = 3;
             myGblInds[1] = 4;
-            G1->insertGlobalIndices(1, 2, myGblInds.data());      // (1,3), (1,4)
+            GraphA->insertGlobalIndices(1, 2, myGblInds.data());      // (1,3), (1,4)
             myGblInds[0] = 2;
-            G1->insertGlobalIndices(3, 1, myGblInds.data());      // (3,2)
+            GraphA->insertGlobalIndices(3, 1, myGblInds.data());      // (3,2)
         }
         else if(1 == myRank)
         {
             myGblInds[0] = 5;
             myGblInds[1] = 7;
-            G1->insertGlobalIndices(7, 2, myGblInds.data());      // (7,5), (7,7)
+            GraphA->insertGlobalIndices(7, 2, myGblInds.data());      // (7,5), (7,7)
             myGblInds[0] = 6;
-            G1->insertGlobalIndices(10, 1, myGblInds.data());     // (10,6)
+            GraphA->insertGlobalIndices(10, 1, myGblInds.data());     // (10,6)
         }
 
         RCP<const map_t> rangeMap = rowMap;
@@ -200,7 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         const GO         indexBase = 0;
         RCP<const map_t> domainMap(new map_t(12, indexBase, comm));
 
-        G1->fillComplete(domainMap, rangeMap);
+        GraphA->fillComplete(domainMap, rangeMap);
     }
     else
     {
