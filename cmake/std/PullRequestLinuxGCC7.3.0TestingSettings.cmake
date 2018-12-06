@@ -1,5 +1,5 @@
 # This file contains the options needed to both run the pull request testing
-# for Trilinos for the Linux GCC 7.2.0 pull request testing builds, and to reproduce
+# for Trilinos for the Linux GCC 7.3.0 pull request testing builds, and to reproduce
 # the errors reported by those builds. Prior to using this this file, the
 # appropriate set of SEMS modules must be loaded and accessible through the
 # SEMS NFS mount. (See the sems/PullRequestGCC*TestingEnv.sh files.)

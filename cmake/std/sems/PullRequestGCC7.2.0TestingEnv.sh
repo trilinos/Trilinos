@@ -2,7 +2,7 @@
 # GCC 7.2.0 Pull Request testing build on a Linux machine that has access to
 # the SEMS NFS mount.
 
-# usage: $ source PullRequestGCC7.3.0TestingEnv.sh
+# usage: $ source PullRequestGCC7.2.0TestingEnv.sh
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 

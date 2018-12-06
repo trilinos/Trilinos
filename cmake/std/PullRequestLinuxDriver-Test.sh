@@ -154,6 +154,13 @@ elif [ "Trilinos_pullrequest_gcc_7.2.0" == "${JOB_BASE_NAME:?}" ] ; then
         echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
         exit $ierror
     fi
+elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ] ; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC7.3.0TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
+        exit $ierror
+    fi
 elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
     source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestIntel17.0.1TestingEnv.sh
     ierror=$?
