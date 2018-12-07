@@ -549,7 +549,7 @@ namespace MueLu {
   template <class Node>
   void
   Utilities_kokkos<double,int,int,Node>::
-  ZeroDirichletRows(RCP<Xpetra::MultiVector<double, int, int, Node> >& X,
+  ZeroDirichletRows(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, int, int, Node> >& X,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     double replaceWith) {
     return MueLu::ZeroDirichletRows<double,int,int,Node>(X, dirichletRows, replaceWith);
@@ -603,11 +603,12 @@ namespace MueLu {
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RealValuedToScalarMultiVector(RCP<RealValuedMultiVector > X) {
     RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xscalar;
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+#if defined(HAVE_XPETRA_TPETRA) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     // Need to cast the real-valued multivector to Scalar=complex
-    if (typeid(Scalar).name() == typeid(std::complex<double>).name()) {
+    if ((typeid(Scalar).name() == typeid(std::complex<double>).name()) ||
+        (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
       size_t numVecs = X->getNumVectors();
       Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),numVecs);
       auto XVec = X->template getLocalView<typename Node::device_type>();
