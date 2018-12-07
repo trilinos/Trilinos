@@ -163,7 +163,8 @@ elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
     fi
 else
     ierror=42
-    echo -e "There was an issue loading the proper environment. The error code was: $ierror"
+    echo -e "ERROR: Unable to find matching environment for job: ${JOB_BASE_NAME:?}"
+    echo -e "       Error code was: ${ierror}"
     exit $ierror
 fi
 
