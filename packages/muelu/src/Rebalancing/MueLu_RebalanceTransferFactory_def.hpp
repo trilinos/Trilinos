@@ -263,6 +263,9 @@ namespace MueLu {
         if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
           permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
+        if (permutedCoords->getMap() == Teuchos::null)
+          permutedCoords = Teuchos::null;
+
         Set(coarseLevel, "Coordinates", permutedCoords);
 
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
@@ -281,6 +284,9 @@ namespace MueLu {
 
         if (pL.get<bool>("repartition: use subcommunicators") == true)
           permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
+
+        if (permutedNullspace->getMap() == Teuchos::null)
+          permutedNullspace = Teuchos::null;
 
         Set(coarseLevel, "Nullspace", permutedNullspace);
       }

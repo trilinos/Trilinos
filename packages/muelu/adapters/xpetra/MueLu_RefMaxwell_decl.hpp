@@ -66,6 +66,7 @@
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
 
+#include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_Zoltan2Interface_fwd.hpp"
 #include "MueLu_RepartitionHeuristicFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
