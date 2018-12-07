@@ -112,11 +112,81 @@ TEUCHOS_STATIC_SETUP()
 // todo: update options so that this test won't run in serial (it's not set up for that currently)
 
 
-template<class LO, class GO, class Node>
-void gen_crsgraph_a(int rank, Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> > G)
+
+template<class LO, class GO, class Node, class comm_t>
+Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
+gen_crsgraph_a(Teuchos::RCP<comm_t> comm)
 {
-    std::cout << "Got here!" << std::endl;
+    using Teuchos::Comm;
+
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
+    typedef Tpetra::Map<LO, GO, Node>      map_t;
+
+    const int comm_rank = comm->getRank();
+
+    GO gbl_num_rows = 5;      // there are 5 global rows
+    LO lcl_num_rows = 0;      // this will be set later
+
+    std::vector<GO> global_ids;
+    if(0 == comm_rank)
+    {
+        lcl_num_rows = 3;
+        global_ids   = {0, 1, 3};
+    }
+    else if(1 == comm_rank)
+    {
+        lcl_num_rows = 2;
+        global_ids   = {7, 10};
+    }
+
+    RCP<const map_t> row_map(new map_t(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
+
+    Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
+    if(0 == comm_rank)
+    {
+        num_ent_per_row[0] = 2;      // (0,0), (0,11)
+        num_ent_per_row[1] = 2;      // (1,3), (1,4)
+        num_ent_per_row[2] = 1;      // (3,2)
+    }
+    else if(1 == comm_rank)
+    {
+        num_ent_per_row[0] = 2;      // (7,5), (7,7)
+        num_ent_per_row[1] = 1;      // (10,6)
+    }
+    RCP<graph_t> output_graph(new graph_t(row_map, num_ent_per_row, Tpetra::StaticProfile));
+
+    std::vector<GO> gbl_inds(2);
+    if(0 == comm_rank)
+    {
+        gbl_inds[0] = 0;
+        gbl_inds[1] = 11;
+        output_graph->insertGlobalIndices(0, 2, gbl_inds.data());      // (0,0), (0,11)
+        gbl_inds[0] = 3;
+        gbl_inds[1] = 4;
+        output_graph->insertGlobalIndices(1, 2, gbl_inds.data());      // (1,3), (1,4)
+        gbl_inds[0] = 2;
+        output_graph->insertGlobalIndices(3, 1, gbl_inds.data());      // (3,2)
+    }
+    else if(1 == comm_rank)
+    {
+        gbl_inds[0] = 5;
+        gbl_inds[1] = 7;
+        output_graph->insertGlobalIndices(7, 2, gbl_inds.data());      // (7,5), (7,7)
+        gbl_inds[0] = 6;
+        output_graph->insertGlobalIndices(10, 1, gbl_inds.data());      // (10,6)
+    }
+
+    RCP<const map_t> range_map = row_map;
+
+    const GO         index_base = 0;
+    RCP<const map_t> domain_map(new map_t(12, index_base, comm));
+
+    output_graph->fillComplete(domain_map, range_map);
+
+    return output_graph;
 }
+
+
 
 
 
@@ -129,8 +199,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     using Teuchos::outArg;
     using Teuchos::RCP;
 
+    typedef Teuchos::Comm<int>             comm_t;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
-    typedef Tpetra::Map<LO, GO, Node>      map_t;
 
     auto initialComm = getDefaultComm();
     TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
@@ -143,79 +213,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     // If I am involved in this test (i.e., my pid == 0 or 1)
     if(0 == color)
     {
-        const int numProcs = comm->getSize();
-        const int myRank   = comm->getRank();
-        assert(numProcs == 2);
+        const int num_procs = comm->getSize();
+        assert(num_procs == 2);
 
         out << ">>> CrsGraph::swap() Unit Test" << std::endl;
-        out << ">>> numProcs: " << numProcs << std::endl;
+        out << ">>> num_procs: " << num_procs << std::endl;
 
         success = true;
 
-        // Set up Row Map
-        GO gblNumInds = 5;    // There are 5 rows.
-        LO lclNumInds = 0;    // This will be set later.
-
-        std::vector<GO> myGIDs;
-        if(0 == myRank)
-        {
-            lclNumInds = 3;
-            myGIDs = {0, 1, 3};
-        }
-        else if(1 == myRank)
-        {
-            lclNumInds = 2;
-            myGIDs = {7, 10};
-        }
-        RCP<const map_t> rowMap(new map_t(gblNumInds, myGIDs.data(), lclNumInds, 0, comm));
-
-        Teuchos::ArrayRCP<size_t> numEntPerRow(lclNumInds);
-        if(0 == myRank)
-        {
-            numEntPerRow[0] = 2;      // (0,0), (0,11)
-            numEntPerRow[1] = 2;      // (1,3), (1,4)
-            numEntPerRow[2] = 1;      // (3,2)
-        }
-        else if(1 == myRank)
-        {
-            numEntPerRow[0] = 2;      // (7,5), (7,7)
-            numEntPerRow[1] = 1;      // (10,6)
-        }
-        RCP<graph_t> GraphA(new graph_t(rowMap, numEntPerRow, Tpetra::StaticProfile));
-
-        gen_crsgraph_a(myRank, GraphA);
-
-        std::vector<GO> myGblInds(2);
-        if(0 == myRank)
-        {
-            myGblInds[0] = 0;
-            myGblInds[1] = 11;
-            GraphA->insertGlobalIndices(0, 2, myGblInds.data());      // (0,0), (0,11)
-            myGblInds[0] = 3;
-            myGblInds[1] = 4;
-            GraphA->insertGlobalIndices(1, 2, myGblInds.data());      // (1,3), (1,4)
-            myGblInds[0] = 2;
-            GraphA->insertGlobalIndices(3, 1, myGblInds.data());      // (3,2)
-        }
-        else if(1 == myRank)
-        {
-            myGblInds[0] = 5;
-            myGblInds[1] = 7;
-            GraphA->insertGlobalIndices(7, 2, myGblInds.data());      // (7,5), (7,7)
-            myGblInds[0] = 6;
-            GraphA->insertGlobalIndices(10, 1, myGblInds.data());     // (10,6)
-        }
-
-        RCP<const map_t> rangeMap = rowMap;
-
-        const GO         indexBase = 0;
-        RCP<const map_t> domainMap(new map_t(12, indexBase, comm));
-
-        GraphA->fillComplete(domainMap, rangeMap);
-    }
-    else
-    {
-        // throw std::runtime_error("FAILED on comm split!");
+        RCP<graph_t> graph_a = gen_crsgraph_a< LO,GO,Node,comm_t>(comm);
+        graph_a->describe(out, Teuchos::VERB_DEFAULT);
     }
 }
 
