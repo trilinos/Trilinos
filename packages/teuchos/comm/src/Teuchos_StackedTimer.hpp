@@ -384,6 +384,13 @@ protected:
       */
      void report(std::ostream &os);
 
+    /**
+     * Return pointer to the BaseTimer corresponding to a given string
+     * @param name input string to search for
+     * @return pointer to BaseTimer (NULL if none found)
+     */
+    BaseTimer* findBaseTimer(const std::string &name);
+    
      /**
       * Return the time info for a given string
       * @param name input string to search for
@@ -512,6 +519,18 @@ public:
      else
        return timer_.accumulatedTimePerTimerCall(name);
    }
+  
+  /**
+   * Return pointer to the BaseTimer corresponding to a given string (full string name)
+   * @param name input string to search for
+   * @return BaseTimer
+   */
+  BaseTimer* findBaseTimer(const std::string &name) {
+    BaseTimer* baseTimer = timer_.findBaseTimer(name);
+    TEUCHOS_TEST_FOR_EXCEPTION(baseTimer == NULL, std::runtime_error,
+                               "StackedTimer::findBaseTimer() failed to find a timer named \"" << name << "\"!\n");
+    return baseTimer;
+  }
 
   /**
    * Return the time info for a given string (full string name)
