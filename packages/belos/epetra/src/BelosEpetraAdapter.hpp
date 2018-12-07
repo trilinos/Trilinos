@@ -164,10 +164,11 @@ namespace Belos {
     //! The number of rows in the multivector.
     ptrdiff_t GetGlobalLength () const
     {
-       if ( Map().GlobalIndicesLongLong() )
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
           return static_cast<ptrdiff_t>( GlobalLength64() );
-       else
+#else
           return static_cast<ptrdiff_t>( GlobalLength() );
+#endif
     }
 
     //! The number of columns in the multivector.
@@ -739,10 +740,11 @@ namespace Belos {
 
     static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
     {
-      if (mv.Map().GlobalIndicesLongLong())
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
         return static_cast<ptrdiff_t>( mv.GlobalLength64() );
-      else
+#else
         return static_cast<ptrdiff_t>( mv.GlobalLength() );
+#endif
     }
 
     static int GetNumberVecs( const Epetra_MultiVector& mv )

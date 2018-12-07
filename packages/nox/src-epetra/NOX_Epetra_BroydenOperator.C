@@ -693,7 +693,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
       // Create a map for quick queries
       std::map<int, bool> removeIndTable;
       for( int k = 0; k < numRemoveIndices; ++k )
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
         removeIndTable[ graph.ColMap().GID(removeIndPtr[k]) ] = true;
+#else
+        removeIndTable[ graph.ColMap().GID64(removeIndPtr[k]) ] = true;
+#endif
 
       // Get our matrix column indices for the current row
       int numOrigIndices = 0;
@@ -715,7 +719,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 
         for( int k = 0; k < numOrigIndices; ++k )
         {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
           if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID(indPtr[k]) ) )
+#else
+          if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID64(indPtr[k]) ) )
+#endif
             inds.push_back(k);
         }
 
@@ -744,7 +752,8 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 
 //-----------------------------------------------------------------------------
 
-void
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  void
 BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 {
   double * values    ;
@@ -759,17 +768,45 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
     if( ierr )
     {
       std::cout << "ERROR (" << ierr << ") : "
-           << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
-           << " - Extract or Replace values error for row --> "
-           << row << std::endl;
+        << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
+        << " - Extract or Replace values error for row --> "
+        << row << std::endl;
       throw "NOX Broyden Operator Error";
     }
   }
 }
+#else
+  void
+BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
+{
+  double *    values     ;
+  long long * indices    ;
+  int         numEntries ;
+  long long   globalRow  ;
+  int         ierr       ;
+
+  for( int row = 0; row < mat.NumMyRows(); ++row)
+  {
+//int Epetra_CrsMatrix::ExtractGlobalRowView(long long Row, int & NumEntries, double *& values, long long *& Indices) const
+    globalRow = mat.Map().GID64(row);
+    ierr = mat.ExtractGlobalRowView(globalRow, numEntries, values, indices);
+    ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
+    if( ierr )
+    {
+      std::cout << "ERROR (" << ierr << ") : "
+        << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
+        << " - Extract or Replace values error for row --> "
+        << row << std::endl;
+      throw "NOX Broyden Operator Error";
+    }
+  }
+}
+#endif
 
 //-----------------------------------------------------------------------------
 
 #ifdef HAVE_NOX_DEBUG
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void
 BroydenOperator::outputActiveEntries()
@@ -813,4 +850,5 @@ BroydenOperator::outputActiveEntries()
 
 //-----------------------------------------------------------------------------
 
+#endif
 #endif
