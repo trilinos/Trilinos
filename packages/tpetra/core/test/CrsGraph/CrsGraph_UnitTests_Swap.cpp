@@ -173,7 +173,7 @@ gen_crsgraph_a(Teuchos::RCP<comm_t> comm)
         gbl_inds[1] = 7;
         output_graph->insertGlobalIndices(7, 2, gbl_inds.data());      // (7,5), (7,7)
         gbl_inds[0] = 6;
-        output_graph->insertGlobalIndices(10, 1, gbl_inds.data());      // (10,6)
+        output_graph->insertGlobalIndices(10, 1, gbl_inds.data());     // (10,6)
     }
 
     RCP<const map_t> range_map = row_map;
