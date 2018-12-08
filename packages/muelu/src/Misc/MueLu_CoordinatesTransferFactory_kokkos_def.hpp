@@ -92,7 +92,7 @@ namespace MueLu {
   void CoordinatesTransferFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> doubleMultiVector;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
@@ -138,7 +138,7 @@ namespace MueLu {
     auto uniqueMap      = fineCoords->getMap();
     auto coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                             elementListView, indexBase, coarseMap->getComm());
-    RCP<doubleMultiVector> coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+    RCP<doubleMultiVector> coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
     // Create overlapped fine coordinates to reduce global communication
     RCP<doubleMultiVector> ghostedCoords = fineCoords;
@@ -146,7 +146,7 @@ namespace MueLu {
       auto nonUniqueMap = aggregates->GetMap();
       auto importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-      ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
+      ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
       ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
     }
 
@@ -188,11 +188,11 @@ namespace MueLu {
     int writeStart = pL.get<int>("write start"), writeEnd = pL.get<int>("write end");
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
       std::string fileName = "coordinates_before_rebalance_level_" + toString(fineLevel.GetLevelID()) + ".m";
-      Xpetra::IO<double,LO,GO,NO>::Write(fileName, *fineCoords);
+      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *fineCoords);
     }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::string fileName = "coordinates_before_rebalance_level_" + toString(coarseLevel.GetLevelID()) + ".m";
-      Xpetra::IO<double,LO,GO,NO>::Write(fileName,*coarseCoords);
+      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName,*coarseCoords);
     }
   }
 

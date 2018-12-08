@@ -499,9 +499,9 @@ namespace MueLu {
       myparamList.print();
       if(myparamList.isParameter("partitioner: type") &&
          myparamList.get<std::string>("partitioner: type") == "line") {
-        Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > xCoordinates =
-          Factory::Get<Teuchos::RCP<Xpetra::MultiVector<double,LO,GO,NO> > >(currentLevel, "Coordinates");
-        Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<double,LO,GO,NO>(*xCoordinates));
+        Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > xCoordinates =
+          Factory::Get<Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > >(currentLevel, "Coordinates");
+        Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>(*xCoordinates));
         myparamList.set("partitioner: coordinates", coordinates);
       }
 

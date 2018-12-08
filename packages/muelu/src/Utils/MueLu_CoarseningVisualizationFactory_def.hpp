@@ -185,7 +185,7 @@ namespace MueLu {
     }*/
 
     // get fine level coordinate information
-    Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords = Get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(fineLevel, "Coordinates");
+    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > coords = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > >(fineLevel, "Coordinates");
 
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<LO>(P->getRowMap()->getNodeNumElements()) / dofsPerNode != Teuchos::as<LocalOrdinal>(coords->getLocalLength()), Exceptions::RuntimeError,
                                            "Number of fine level nodes in coordinates is inconsistent with dof based information");
@@ -195,18 +195,18 @@ namespace MueLu {
       fineGraph = Get<RCP<GraphBase> >(fineLevel, "Graph");
 
       RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords->getMap(), fineGraph->GetImportMap());
-      RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(fineGraph->GetImportMap(), coords->getNumVectors());
+      RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(fineGraph->GetImportMap(), coords->getNumVectors());
       ghostedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
       coords = ghostedCoords;
     }
 
     Teuchos::RCP<const Map> nodeMap = coords->getMap();
 
-    Teuchos::ArrayRCP<const double> xCoords = Teuchos::arcp_reinterpret_cast<const double>(coords->getData(0));
-    Teuchos::ArrayRCP<const double> yCoords = Teuchos::arcp_reinterpret_cast<const double>(coords->getData(1));
-    Teuchos::ArrayRCP<const double> zCoords = Teuchos::null;
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> xCoords = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(coords->getData(0));
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> yCoords = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(coords->getData(1));
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> zCoords = Teuchos::null;
     if(coords->getNumVectors() == 3) {
-      zCoords = Teuchos::arcp_reinterpret_cast<const double>(coords->getData(2));
+      zCoords = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(coords->getData(2));
     }
 
     // determine number of nodes on fine level
@@ -227,9 +227,9 @@ namespace MueLu {
     std::vector<bool> isRoot(numFineNodes, false);
     for (LocalOrdinal i = 0; i < numLocalAggs; ++i) {
 
-      double xCenter = 0.0;
-      double yCenter = 0.0;
-      double zCenter = 0.0;
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType xCenter = 0.0;
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType yCenter = 0.0;
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType zCenter = 0.0;
 
       // loop over all nodes in aggregate i and determine center coordinates of aggregate
       for( typename std::set<LocalOrdinal>::iterator it = localAggs[i].begin(); it != localAggs[i].end(); ++it) {
@@ -243,13 +243,13 @@ namespace MueLu {
 
       // loop over all nodes in aggregate i and find node which is closest to aggregate center
       LocalOrdinal rootCandidate = -1;
-      double minDistance = Teuchos::ScalarTraits<double>::one() / Teuchos::ScalarTraits<double>::sfmin();
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType minDistance = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::one() / Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::sfmin();
       for( typename std::set<LocalOrdinal>::iterator it = localAggs[i].begin(); it != localAggs[i].end(); ++it) {
-        double tempx = xCenter - xCoords[*it];
-        double tempy = yCenter - yCoords[*it];
-        double tempz = 0.0;
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType tempx = xCenter - xCoords[*it];
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType tempy = yCenter - yCoords[*it];
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType tempz = 0.0;
         if(coords->getNumVectors() == 3) tempz = zCenter - zCoords[*it];
-        double mydistance = 0.0;
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType mydistance = 0.0;
         mydistance += tempx*tempx;
         mydistance += tempy*tempy;
         mydistance += tempz*tempz;
@@ -325,18 +325,18 @@ namespace MueLu {
     if (pL.get<bool>("visualization: coarse graph edges")) {
       RCP<GraphBase> coarseGraph = Get<RCP<GraphBase> >(coarseLevel, "Graph");
 
-      Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coarsecoords = Get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(coarseLevel, "Coordinates");
+      Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > coarsecoords = Get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > >(coarseLevel, "Coordinates");
 
       RCP<Import> coarsecoordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coarsecoords->getMap(), coarseGraph->GetImportMap());
-      RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coarseghostedCoords = Xpetra::MultiVectorFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(coarseGraph->GetImportMap(), coarsecoords->getNumVectors());
+      RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > coarseghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(coarseGraph->GetImportMap(), coarsecoords->getNumVectors());
       coarseghostedCoords->doImport(*coarsecoords, *coarsecoordImporter, Xpetra::INSERT);
       coarsecoords = coarseghostedCoords;
 
-      Teuchos::ArrayRCP<const double> cx = Teuchos::arcp_reinterpret_cast<const double>(coarsecoords->getData(0));
-      Teuchos::ArrayRCP<const double> cy = Teuchos::arcp_reinterpret_cast<const double>(coarsecoords->getData(1));
-      Teuchos::ArrayRCP<const double> cz = Teuchos::null;
+      Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cx = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(coarsecoords->getData(0));
+      Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cy = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(coarsecoords->getData(1));
+      Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cz = Teuchos::null;
       if(coarsecoords->getNumVectors() == 3) {
-        cz = Teuchos::arcp_reinterpret_cast<const double>(coarsecoords->getData(2));
+        cz = Teuchos::arcp_reinterpret_cast<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(coarsecoords->getData(2));
       }
 
       Teuchos::RCP<const Map> coarsenodeMap = coarsecoords->getMap();

@@ -138,7 +138,7 @@ namespace MueLuExamples {
 
   // This routine generate's the user's original A matrix and nullspace
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib, Teuchos::ParameterList &galeriList,  Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace, Teuchos::RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >& coordinates){
+  void generate_user_matrix_and_nullspace(std::string &matrixType,  Xpetra::UnderlyingLib & lib, Teuchos::ParameterList &galeriList,  Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & A, Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace, Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >& coordinates){
 #include <MueLu_UseShortNames.hpp>
     using Teuchos::RCP;
 

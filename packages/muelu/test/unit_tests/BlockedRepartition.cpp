@@ -744,11 +744,11 @@ namespace MueLuTests {
   TEST_EQUALITY(bOp->getGlobalNumEntries(), 2392);
 
   // coordinates
-  RCP<Xpetra::MultiVector<double,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
+  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coord = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(bOp->getFullRangeMap(),1);
   int PID = comm->getRank();
-  Teuchos::ArrayRCP<double> coordData = coord->getDataNonConst(0);
+  Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coordData = coord->getDataNonConst(0);
   for(size_t i = 0; i < (size_t) coordData.size(); ++i)
-    coordData[i] = PID + (double)i / coordData.size();
+    coordData[i] = PID + (typename Teuchos::ScalarTraits<Scalar>::magnitudeType)i / coordData.size();
 
   // nullspace
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(bOp->getFullRangeMap(),1);

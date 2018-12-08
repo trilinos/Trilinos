@@ -128,8 +128,8 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
-  typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
-  typedef Xpetra::BlockedMultiVector<double,LO,GO,NO> xdBV;
+  typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> xdMV;
+  typedef Xpetra::BlockedMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> xdBV;
 
   bool UseSingleSource = FactManager_.size() == 0;
   //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -240,7 +240,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 	// FIXME: This should be extended to work with blocking
 	RCP<const Import> coordImporter = rebalanceImporter;
 
-	RCP<xdMV> permutedLocalCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), localCoords->getNumVectors());
+	RCP<xdMV> permutedLocalCoords  = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coordImporter->getTargetMap(), localCoords->getNumVectors());
         permutedLocalCoords->doImport(*localCoords, *coordImporter, Xpetra::INSERT);
 
 	newCoordinates[curBlockId] = permutedLocalCoords;
@@ -285,7 +285,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
           coordImporter = ImportFactory::Build(origMap, targetMap);
         }
       
-        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
         const ParameterList& pL = GetParameterList();

@@ -96,17 +96,19 @@ static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, 
 };
 
 
-// Partial template specialization on SC=std::complex<double>
+// Partial template specialization on SC=double
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-struct MainWrappers<std::complex<double>,LocalOrdinal,GlobalOrdinal,Node> {
+struct MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node> {
   static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
 };
 
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
-#include <MueLu_UseShortNames.hpp>
-
+// Partial template specialization on SC=double
+// Stratimikos only supports Scalar=double
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+  typedef double Scalar;
+  #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -199,10 +201,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 }
 
 
-// Partial template specialization on SC=std::complex<double>
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-int MainWrappers<std::complex<double>,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
-  typedef std::complex<double> Scalar;
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP;

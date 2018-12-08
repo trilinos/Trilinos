@@ -557,7 +557,7 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
   representative_node_candidates.resize(numFieldsLo);
   for(size_t i=0; i<numFieldsLo; i++) {
     // 1st pass: find the max value
-    double vmax = Teuchos::ScalarTraits<SC>::zero();
+    typename Teuchos::ScalarTraits<SC>::magnitudeType vmax = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero();
     for(size_t j=0; j<numFieldsHi; j++)
       vmax = std::max(vmax,Teuchos::ScalarTraits<SC>::magnitude(LoValues(i,j)));
 
