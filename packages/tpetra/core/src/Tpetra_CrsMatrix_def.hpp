@@ -5004,7 +5004,6 @@ namespace Tpetra {
                      Scalar beta) const
   {
     using Tpetra::Details::ProfilingRegion;
-    using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
     using Teuchos::rcp_const_cast;
@@ -8946,21 +8945,21 @@ namespace Tpetra {
         std::vector<std::pair<int,GO> > usrtg;
         usrtg.reserve(TEPID2.size());
 
-	{
-	  const auto& colMap = * (this->getColMap ()); // *this is sourcematrix
-	  for (Array_size_type i = 0; i < TEPID2.size (); ++i) {
-	    const LO  row = TELID2[i];
-	    const int pid = TEPID2[i];
-	    for (auto j = rowptr[row]; j < rowptr[row+1]; ++j) {
-	      const int col = colind[j];
-	      if (IsOwned[col] && SentTo[col] != pid) {
-		SentTo[col]    = pid;
-		GO gid = colMap.getGlobalElement (col);
-		usrtg.push_back (std::pair<int,GO> (pid, gid));
-	      }
-	    }
-	  }
-	}
+        {
+          const auto& colMap = * (this->getColMap ()); // *this is sourcematrix
+          for (Array_size_type i = 0; i < TEPID2.size (); ++i) {
+            const LO  row = TELID2[i];
+            const int pid = TEPID2[i];
+            for (auto j = rowptr[row]; j < rowptr[row+1]; ++j) {
+              const int col = colind[j];
+              if (IsOwned[col] && SentTo[col] != pid) {
+                SentTo[col]    = pid;
+                GO gid = colMap.getGlobalElement (col);
+                usrtg.push_back (std::pair<int,GO> (pid, gid));
+              }
+            }
+          }
+        }
 // This sort can _not_ be omitted.[
         std::sort(usrtg.begin(),usrtg.end()); // default comparator does the right thing, now sorted in gid order
         auto eopg = std ::unique(usrtg.begin(),usrtg.end());
