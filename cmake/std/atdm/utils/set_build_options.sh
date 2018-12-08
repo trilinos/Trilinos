@@ -37,12 +37,18 @@ if [[ "${ATDM_CONFIG_COMPILER}" != "DEFAULT" ]] ; then
   export ATDM_CONFIG_CUSTOM_COMPILER_SET=1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]]; then
   export ATDM_CONFIG_COMPILER=DEFAULT
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
+  export ATDM_CONFIG_COMPILER=GNU-4.8.4
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-8.0"* ]]; then
@@ -53,6 +59,10 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=CLANG-3.9.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=CLANG-5.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG
 else
