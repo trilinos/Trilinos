@@ -47,12 +47,10 @@
 /// Declaration and definition of Tpetra::CrsMatrixMultiplyOp and its
 /// nonmember constructor Tpetra::createCrsMatrixMultiplyOp.
 
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Util.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-#  include "Teuchos_VerboseObject.hpp"
-#endif
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 
 namespace Tpetra {
 
@@ -146,10 +144,6 @@ namespace Tpetra {
     {
       // we don't require that A is fill complete; we will query for the
       // importer/exporter at apply()-time
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-      importTimer_ = Teuchos::TimeMonitor::getNewCounter ("CrsMatrixMultiplyOp::import");
-      exportTimer_ = Teuchos::TimeMonitor::getNewCounter ("CrsMatrixMultiplyOp::export");
-#endif
     }
 
     //! Destructor (virtual for memory safety of derived classes).
@@ -291,8 +285,8 @@ namespace Tpetra {
       RCP<const map_type> rowMap = matrix_->getGraph ()->getRowMap ();
       RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
 
-#ifdef HAVE_TEUCHOS_DEBUG
-      {
+      const bool debug = ::Tpetra::Details::Behavior::debug ();
+      if (debug) {
         // The relation 'isSameAs' is transitive.  It's also a
         // collective, so we don't have to do a "shared" test for
         // exception (i.e., a global reduction on the test value).
@@ -317,11 +311,6 @@ namespace Tpetra {
            "Tpetra::CrsMatrix::gaussSeidel requires that the domain Map and "
            "the range Map of the matrix be the same.");
       }
-#else
-      // Forestall any compiler warnings for unused variables.
-      (void) rangeMap;
-      (void) rowMap;
-#endif // HAVE_TEUCHOS_DEBUG
 
       // If B is not constant stride, copy it into a constant stride
       // multivector.  We'l handle the right-hand side B first and deal
@@ -387,9 +376,9 @@ namespace Tpetra {
       else { // We will be doing Import operations in the sweeps.
         if (X.isConstantStride ()) {
           X_domainMap = rcpFromRef (X);
-          // This kernel assumes that X is a domain Map view of a column
-          // Map multivector.  We will only check if this is valid if
-          // the CMake configure Teuchos_ENABLE_DEBUG is ON.
+          // This kernel assumes that X is a domain Map view of a
+          // column Map multivector.  We will only check if this is
+          // valid in debug mode.
           X_colMap = X_domainMap->offsetViewNonConst (colMap, 0);
 
           // Do the first Import for the first sweep.  This simplifies
@@ -533,8 +522,8 @@ namespace Tpetra {
       RCP<const map_type> rowMap = matrix_->getGraph ()->getRowMap ();
       RCP<const map_type> colMap = matrix_->getGraph ()->getColMap ();
 
-#ifdef HAVE_TEUCHOS_DEBUG
-      {
+      const bool debug = ::Tpetra::Details::Behavior::debug ();
+      if (debug) {
         // The relation 'isSameAs' is transitive.  It's also a
         // collective, so we don't have to do a "shared" test for
         // exception (i.e., a global reduction on the test value).
@@ -559,11 +548,6 @@ namespace Tpetra {
            "Tpetra::CrsMatrix::gaussSeidelCopy requires that the domain Map and "
            "the range Map of the matrix be the same.");
       }
-#else
-      // Forestall any compiler warnings for unused variables.
-      (void) rangeMap;
-      (void) rowMap;
-#endif // HAVE_TEUCHOS_DEBUG
 
       // Fetch a (possibly cached) temporary column Map multivector
       // X_colMap, and a domain Map view X_domainMap of it.  Both have
@@ -727,10 +711,6 @@ namespace Tpetra {
     /// later use.
     mutable Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > exportMV_;
 
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-    Teuchos::RCP<Teuchos::Time> importTimer_, exportTimer_;
-#endif
-
     /// \brief Apply the transpose or conjugate transpose of the
     ///   matrix to X_in, producing Y_in.
     void
@@ -743,19 +723,7 @@ namespace Tpetra {
       typedef Teuchos::ScalarTraits<Scalar> ST;
       using Teuchos::null;
 
-      int myImageID = Teuchos::rank(*matrix_->getComm());
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-      if (myImageID == 0) {
-        *out << "Entering CrsMatrixMultiplyOp::applyTranspose()" << std::endl
-             << "Column Map: " << std::endl;
-      }
-      *out << matrix_->getColMap() << std::endl;
-      if (myImageID == 0) {
-        *out << "Initial input: " << std::endl;
-      }
-      X_in.describe(*out,Teuchos::VERB_EXTREME);
-#endif
+      const int myImageID = Teuchos::rank(*matrix_->getComm());
 
       const size_t numVectors = X_in.getNumVectors();
       // because of Views, it is difficult to determine if X and Y point to the same data.
@@ -777,10 +745,6 @@ namespace Tpetra {
       if (X_in.isConstantStride() == false && importer==null) {
         // generate a strided copy of X_in
         X = Teuchos::rcp(new MV(X_in));
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "X is not constant stride, duplicating X results in a strided copy" << std::endl;
-        X->describe(*out,Teuchos::VERB_EXTREME);
-#endif
       }
       else {
         // just temporary, so this non-owning RCP is okay
@@ -804,19 +768,10 @@ namespace Tpetra {
       // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
       if (exporter != null) {
         {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-          Teuchos::TimeMonitor lcltimer(*importTimer_);
-#endif
           exportMV_->doImport(X_in,*exporter,INSERT);
         }
         // multiply out of exportMV_
         X = exportMV_;
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) {
-          *out << "Performed import of X using exporter..." << std::endl;
-        }
-        X->describe(*out,Teuchos::VERB_EXTREME);
-#endif
       }
 
 
@@ -825,17 +780,10 @@ namespace Tpetra {
       if (importer != null) {
         // Do actual computation
         matrix_->template localMultiply<Scalar, Scalar>(*X, *importMV_, mode, alpha, ST::zero());
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Import vector after localMultiply()..." << std::endl;
-        importMV_->describe(*out,Teuchos::VERB_EXTREME);
-#endif
         if (Y_is_overwritten) Y_in.putScalar(ST::zero());
         else                  Y_in.scale(beta);
         //
         {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-          Teuchos::TimeMonitor lcltimer(*importTimer_);
-#endif
           Y_in.doExport(*importMV_,*importer,ADD);
         }
       }
@@ -852,17 +800,9 @@ namespace Tpetra {
           matrix_->template localMultiply<Scalar, Scalar>(*X, Y_in, mode, alpha, beta);
         }
       }
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "Y_in vector after local multiply/export..." << std::endl;
-      Y_in.describe(*out,Teuchos::VERB_EXTREME);
-#endif
       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
       if (Y_is_replicated) {
         Y_in.reduce();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
-        Y_in.describe(*out,Teuchos::VERB_EXTREME);
-#endif
       }
     }
 
@@ -873,7 +813,7 @@ namespace Tpetra {
                        Scalar alpha,
                        Scalar beta) const
     {
-      using Teuchos::null;
+      using Tpetra::Details::ProfilingRegion;
       using Teuchos::RCP;
       using Teuchos::rcp;
       using Teuchos::rcp_const_cast;
@@ -882,24 +822,24 @@ namespace Tpetra {
       typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
       typedef Teuchos::ScalarTraits<Scalar> STS;
 
-      const int myImageID = matrix_->getComm ()->getRank ();
-
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-      if (myImageID == 0) {
-        *out << "Entering CrsMatrixMultiplyOp::applyNonTranspose()" << std::endl
-             << "Column Map: " << std::endl;
+      if (alpha == STS::zero ()) {
+        if (beta == STS::zero ()) {
+          Y_in.putScalar (STS::zero ());
+        } else if (beta != STS::one ()) {
+          Y_in.scale (beta);
+        }
+        return;
       }
-      *out << matrix_->getColMap() << std::endl;
-      if (myImageID == 0) {
-        *out << "Initial input: " << std::endl;
-      }
-      X_in.describe (*out, Teuchos::VERB_EXTREME);
-#endif // TPETRA_CRSMATRIX_MULTIPLY_DUMP
 
-      // because of Views, it is difficult to determine if X and Y point to the same data.
-      // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
-      // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
+      // It's possible that X is a view of Y or vice versa.  We don't
+      // allow this (apply() requires that X and Y not alias one
+      // another), but it's helpful to detect and work around this
+      // case.  We don't try to to detect the more subtle cases (e.g.,
+      // one is a subview of the other, but their initial pointers
+      // differ).  We only need to do this if this matrix's Import is
+      // trivial; otherwise, we don't actually apply the operator from
+      // X into Y.
+
       RCP<const import_type> importer = matrix_->getGraph()->getImporter();
       RCP<const export_type> exporter = matrix_->getGraph()->getExporter();
 
@@ -910,15 +850,17 @@ namespace Tpetra {
       const bool Y_is_overwritten = (beta == STS::zero());
 
       // We treat the case of a replicated MV output specially.
-      const bool Y_is_replicated = ! Y_in.isDistributed ();
+      const bool Y_is_replicated =
+        (! Y_in.isDistributed () && matrix_->getComm ()->getSize () != 1);
 
-      // This is part of the "hack" for replicated MV output.  We'll let
-      // each process do its thing, but do an all-reduce at the end to
-      // sum up the results.  Setting beta=0 on all processes but Proc 0
-      // makes the math work out for the all-reduce.  (This assumes that
-      // the replicated data is correctly replicated, so that the data
-      // are the same on all processes.)
-      if (Y_is_replicated && myImageID > 0) {
+      // This is part of the special case for replicated MV output.
+      // We'll let each process do its thing, but do an all-reduce at
+      // the end to sum up the results.  Setting beta=0 on all
+      // processes but Proc 0 makes the math work out for the
+      // all-reduce.  (This assumes that the replicated data is
+      // correctly replicated, so that the data are the same on all
+      // processes.)
+      if (Y_is_replicated && matrix_->getComm ()->getRank () > 0) {
         beta = STS::zero();
       }
 
@@ -934,9 +876,8 @@ namespace Tpetra {
           // copy of X_in, we force creation of the column (== domain)
           // Map MV (if it hasn't already been created, else fetch the
           // cached copy).  This avoids creating a new MV each time.
-
           RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in, true);
-          *X_colMapNonConst = X_in; // MV assignment just copies the data.
+          Tpetra::deep_copy (*X_colMapNonConst, X_in);
           X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
         }
         else {
@@ -945,7 +886,9 @@ namespace Tpetra {
           X_colMap = rcpFromRef (X_in);
         }
       }
-      else {
+      else { // need to Import source (multi)vector
+        ProfilingRegion regionImport ("Tpetra::CrsMatrixMultiplyOp::apply: Import");
+
         // We're doing an Import anyway, which will copy the relevant
         // elements of the domain Map MV X_in into a separate column Map
         // MV.  Thus, we don't have to worry whether X_in is constant
@@ -953,17 +896,14 @@ namespace Tpetra {
         RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in);
 
         // Import from the domain Map MV to the column Map MV.
-        {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-          Teuchos::TimeMonitor lcltimer (*importTimer_);
-#endif
-          X_colMapNonConst->doImport (X_in, *importer, INSERT);
-        }
+        X_colMapNonConst->doImport (X_in, *importer, INSERT);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
       }
 
-      // Temporary MV for Export operation, or for copying a nonconstant
-      // stride output MV into a constant stride MV.
+      // Temporary MV for doExport (if needed), or for copying a
+      // nonconstant stride output MV into a constant stride MV.  This
+      // is null if we don't need the temporary MV, that is, if the
+      // Export is trivial (null).
       RCP<MV> Y_rowMap = getRowMapMultiVector (Y_in);
 
       // If we have a nontrivial Export object, we must perform an
@@ -975,23 +915,22 @@ namespace Tpetra {
         matrix_->template localMultiply<Scalar, Scalar> (*X_colMap, *Y_rowMap,
                                                          Teuchos::NO_TRANS,
                                                          alpha, STS::zero());
-        // If we're overwriting the output MV Y_in completely (beta ==
-        // 0), then make sure that it is filled with zeros before we do
-        // the Export.  Otherwise, the ADD combine mode will use data in
-        // Y_in, which is supposed to be zero.
-        if (Y_is_overwritten) {
-          Y_in.putScalar (STS::zero());
-        }
-        else {
-          // Scale the output MV by beta, so that the Export sums in the
-          // mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
-          Y_in.scale (beta);
-        }
-        // Do the Export operation.
         {
-#ifdef HAVE_KOKKOSCLASSIC_CUDA_NODE_MEMORY_PROFILING
-          Teuchos::TimeMonitor lcltimer (*exportTimer_);
-#endif
+          ProfilingRegion regionExport ("Tpetra::CrsMatrixMultiplyOp::apply: Export");
+
+          // If we're overwriting the output MV Y_in completely (beta
+          // == 0), then make sure that it is filled with zeros before
+          // we do the Export.  Otherwise, the ADD combine mode will
+          // use data in Y_in, which is supposed to be zero.
+          if (Y_is_overwritten) {
+            Y_in.putScalar (STS::zero());
+          }
+          else {
+            // Scale the output MV by beta, so that the Export sums in
+            // the mat-vec contribution: Y_in = beta*Y_in + alpha*A*X_in.
+            Y_in.scale (beta);
+          }
+          // Do the Export operation.
           Y_in.doExport (*Y_rowMap, *exporter, ADD);
         }
       }
@@ -1001,6 +940,12 @@ namespace Tpetra {
         // MV aliases Y_in, then we can't let the kernel write directly
         // to Y_in.  Instead, we have to use the cached row (== range)
         // Map MV as temporary storage.
+        //
+        // FIXME (mfh 05 Jun 2014, mfh 07 Dec 2018) This test for
+        // aliasing only tests if the user passed in the same
+        // MultiVector for both X and Y.  It won't detect whether one
+        // MultiVector views the other.  We should also check the
+        // MultiVectors' raw data pointers.
         if (! Y_in.isConstantStride () || X_colMap.getRawPtr () == &Y_in) {
           // Force creating the MV if it hasn't been created already.
           // This will reuse a previously created cached MV.
@@ -1009,13 +954,13 @@ namespace Tpetra {
           // If beta == 0, we don't need to copy Y_in into Y_rowMap,
           // since we're overwriting it anyway.
           if (beta != STS::zero ()) {
-            deep_copy (*Y_rowMap, Y_in);
+            Tpetra::deep_copy (*Y_rowMap, Y_in);
           }
           matrix_->template localMultiply<Scalar, Scalar> (*X_colMap,
                                                            *Y_rowMap,
                                                            Teuchos::NO_TRANS,
                                                            alpha, beta);
-          deep_copy (Y_in, *Y_rowMap);
+          Tpetra::deep_copy (Y_in, *Y_rowMap);
         }
         else {
           matrix_->template localMultiply<Scalar, Scalar> (*X_colMap, Y_in,
@@ -1023,27 +968,15 @@ namespace Tpetra {
                                                            alpha, beta);
         }
       }
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) {
-        *out << "Result Y_in after localMultiply and Export:" << std::endl;
-      }
-      Y_in.describe (*out, Teuchos::VERB_EXTREME);
-#endif // TPETRA_CRSMATRIX_MULTIPLY_DUMP
 
       // If the range Map is a locally replicated Map, sum up
       // contributions from each process.  We set beta = 0 on all
       // processes but Proc 0 initially, so this will handle the scaling
       // factor beta correctly.
       if (Y_is_replicated) {
+        ProfilingRegion regionReduce ("Tpetra::CrsMatrixMultiplyOp::apply: Reduce Y");
         Y_in.reduce ();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) {
-          *out << "Result Y_in after reduce:" << std::endl;
-        }
-        Y_in.describe (*out, Teuchos::VERB_EXTREME);
-#endif // TPETRA_CRSMATRIX_MULTIPLY_DUMP
       }
-
     }
 
   private:
@@ -1158,9 +1091,7 @@ namespace Tpetra {
       if (! exporter.is_null () || force) {
         if (exportMV_.is_null () || exportMV_->getNumVectors () != numVecs) {
           Y_rowMap = rcp (new MV (rowMap, numVecs));
-
-          // Cache the newly created multivector for later reuse.
-          exportMV_ = Y_rowMap;
+          exportMV_ = Y_rowMap; // Cache the newly created MV for later reuse
         }
         else { // Yay, we can reuse the cached multivector!
           Y_rowMap = exportMV_;
