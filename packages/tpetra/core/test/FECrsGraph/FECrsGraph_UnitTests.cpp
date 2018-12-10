@@ -44,7 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_FECrsGraph.hpp"
 #include "Tpetra_CrsGraph.hpp"
-#include "Tpetra_AssemblyHelpers.hpp"
+#include "Tpetra_Assembly_Helpers.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
 
 namespace { // (anonymous)
@@ -64,23 +64,18 @@ using std::endl;
 typedef Tpetra::global_size_t GST;
 
 
-
-#define STD_TESTS(graph) \
+#define GLOBAL_SUCCESS_CHECK(out,comm,success)  \
   { \
-    auto STCOMM = graph.getComm(); \
-    auto STMYGIDS = graph.getRowMap()->getNodeElementList(); \
-    size_t STMAX = 0; \
-    for (size_t STR = 0; STR < graph.getNodeNumRows(); ++STR) { \
-      TEST_EQUALITY( graph.getNumEntriesInLocalRow (STR), graph.getNumEntriesInGlobalRow (STMYGIDS[STR]) ); \
-      STMAX = std::max (STMAX, graph.getNumEntriesInLocalRow(STR)); \
+    int lclSuccess = success ? 1 : 0; \
+    int gblSuccess = 1; \
+    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MIN, lclSuccess, Teuchos::outArg (gblSuccess)); \
+    if (gblSuccess == 1) { \
+      out << "Succeeded on all processes!" << endl; \
+    } else { \
+      out << "FAILED on at least one process!" << endl; \
     } \
-    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
-    GST STGMAX; \
-    reduceAll<int, GST> (*STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg (STGMAX)); \
-    TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
+    TEST_EQUALITY_CONST(gblSuccess, 1);  \
   }
-
-
 
 //
 // UNIT TESTS
@@ -110,14 +105,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     Tpetra::beginFill(g2);
     for(size_t i=0; i<numLocal; i++) {
       GO gid = map->getGlobalElement(i);
-      g1.InsertGlobalEntries(gid,gid);
-      g2.InsertGlobalEntries(gid,gid);
+      g1.insertGlobalIndices(gid,1,&gid);
+      g2.insertGlobalIndices(gid,1,&gid);
     }
     Tpetra::endFill(g2);
-      
+    g1.fillComplete();
+    g2.fillComplete();
 
 
-
+    GLOBAL_SUCCESS_CHECK(out,comm,true)
 }
 
 //

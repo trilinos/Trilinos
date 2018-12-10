@@ -52,8 +52,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
             const Teuchos::RCP<const crs_graph_type>& offRankGraph,
-            const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)
+            const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)                                                                  
 {
+  activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OVERLAP));
   // FIXME: This constructor is merely a placeholder for the "real deal" with a FECrsGraph
     #ifdef HAVE_TPETRA_DEBUG
     // TODO -->

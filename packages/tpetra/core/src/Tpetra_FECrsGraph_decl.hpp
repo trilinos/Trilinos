@@ -213,6 +213,7 @@ namespace Tpetra {
     void globalAssemble (){endFill();}
 
    //! Migrates data to the non-overlapped mode
+   // FIXME: This guy should be able to do a fillComplete!
     void endFill() {
       if(*activeCrsGraph_ == FE_ACTIVE_OVERLAP) {
         doOverlapToLocal(Tpetra::ADD);

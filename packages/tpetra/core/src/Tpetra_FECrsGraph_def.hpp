@@ -56,6 +56,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> &  rowMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params): 
    crs_graph_type( rowMap, maxNumEntriesPerRow, StaticProfile, params)
 {
+  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OVERLAP));
   // FIXME: Finish
 }
 
@@ -68,6 +69,7 @@ FECrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
   crs_graph_type( rowMap, numEntPerRow, StaticProfile, params)// FIXME: This max entries is the wrong size
 {
+  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OVERLAP));
   // FIXME: Finish
 }
 
