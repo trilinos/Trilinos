@@ -319,7 +319,7 @@ int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* indices) {
 
 // protected ===================================================================
 template<typename int_type>
-int Epetra_CrsGraph::InsertIndices_(int Row,
+int Epetra_CrsGraph::TInsertIndices(int Row,
            int NumIndices,
            int_type* UserIndices)
 {
@@ -420,7 +420,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
            int* UserIndices)
 {
   if(RowMap().GlobalIndicesTypeValid())
-    return InsertIndices_<int>(Row, NumIndices, UserIndices);
+    return TInsertIndices<int>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndices global index type unknown.", -1);
 }
@@ -431,7 +431,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
            long long* UserIndices)
 {
   if(RowMap().GlobalIndicesLongLong())
-    return InsertIndices_<long long>(Row, NumIndices, UserIndices);
+    return TInsertIndices<long long>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndices long long version called for a graph that is not long long.", -1);
 }
