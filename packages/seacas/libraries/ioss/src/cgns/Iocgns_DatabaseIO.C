@@ -1251,24 +1251,27 @@ namespace Iocgns {
     m_zoneOffset.resize(num_zones + 1);        // Let's use 1-based zones...
 
     // ========================================================================
-    size_t        num_node         = 0;
-    CG_ZoneType_t common_zone_type = Utils::check_zone_type(get_file_pointer());
+    size_t num_node  = 0;
+    auto   mesh_type = Utils::check_mesh_type(get_file_pointer());
 
-    if (isParallel && common_zone_type == CG_Structured) {
+    if (isParallel && mesh_type == Ioss::MeshType::STRUCTURED) {
       // Handle the file-per-processor parallel case separately for
       // now. Hopefully can consolidate at some later time.
       create_structured_block_fpp(base, num_zones, num_node);
     }
     else {
       for (int zone = 1; zone <= num_zones; zone++) {
-        if (common_zone_type == CG_Structured) {
+        if (mesh_type == Ioss::MeshType::STRUCTURED) {
           create_structured_block(base, zone, num_node);
         }
-        else if (common_zone_type == CG_Unstructured) {
+        else if (mesh_type == Ioss::MeshType::UNSTRUCTURED) {
           create_unstructured_block(base, zone, num_node);
         }
+#if IOSS_ENABLE_HYBRID
+        else if (mesh_type == Ioss::MeshType::HYBRID) {
+        }
+#endif
         else {
-          // This should be handled already in check_zone_type...
           std::ostringstream errmsg;
           errmsg << "ERROR: CGNS: Zone " << zone
                  << " is not of type Unstructured or Structured "
@@ -1278,7 +1281,7 @@ namespace Iocgns {
       }
     }
 
-    if (common_zone_type == CG_Structured) {
+    if (mesh_type == Ioss::MeshType::STRUCTURED || mesh_type == Ioss::MeshType::HYBRID) {
       num_node = finalize_structured_blocks();
     }
 

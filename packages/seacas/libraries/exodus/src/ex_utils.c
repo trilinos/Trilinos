@@ -105,14 +105,14 @@ void ex_print_config(void)
 #if NC_HAS_HDF5
   fprintf(stderr, "\tUsing NetCDF with HDF5 enabled\n");
 #endif
-#if NC_HAS_PNETCDF
-  fprintf(stderr, "\tUsing NetCDF with PnetCDF enabled\n");
-#endif
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5 and/or PnetCDF\n");
 #endif
+#if NC_HAS_PNETCDF
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via PnetCDF\n");
+#endif
 #if NC_HAS_PARALLEL4
-  fprintf(stderr, "\tUsing NetCDF with parallel IO enable via HDF5\n");
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5\n");
 #endif
 #if NC_HAS_CDF5
   fprintf(stderr, "\tUsing NetCDF with CDF5 support\n");

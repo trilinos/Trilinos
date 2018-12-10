@@ -747,7 +747,7 @@ namespace Iovs {
       // std::cerr << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";
     }
 
-    // Nodesets ...
+    // NodeSets ...
     {
       const Ioss::NodeSetContainer &         nodesets = region->get_nodesets();
       Ioss::NodeSetContainer::const_iterator I;

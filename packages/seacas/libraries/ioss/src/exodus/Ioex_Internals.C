@@ -807,7 +807,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Nodesets ...
+  // NodeSets ...
   {
     const Ioss::NodeSetContainer &node_sets = region->get_nodesets();
     for (auto &set : node_sets) {
@@ -816,7 +816,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Edgesets ...
+  // EdgeSets ...
   {
     const Ioss::EdgeSetContainer &edge_sets = region->get_edgesets();
     for (auto &set : edge_sets) {
@@ -825,7 +825,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Facesets ...
+  // FaceSets ...
   {
     const Ioss::FaceSetContainer &face_sets = region->get_facesets();
     for (auto &set : face_sets) {
@@ -834,7 +834,7 @@ void Mesh::populate(Ioss::Region *region)
     }
   }
 
-  // Elementsets ...
+  // ElementSets ...
   {
     const Ioss::ElementSetContainer &element_sets = region->get_elementsets();
     for (auto &set : element_sets) {

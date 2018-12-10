@@ -49,7 +49,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "super";
+    static constexpr const char *name = "super";
 
     static void factory();
     ~Super() override;

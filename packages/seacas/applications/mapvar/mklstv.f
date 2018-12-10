@@ -122,7 +122,6 @@ C FIRST TEST
             ENDIF
  201      CONTINUE
         ELSE
-CDIR$ SHORT LOOP
           DO 202 I1 = ILOW, IUPR
             IF( IRNK2(I1,IXYZ,1) .GE. ILO(J,IY) .AND. 
      *        IRNK2(I1,IXYZ,1) .LE. IUP(J,IY) )THEN
@@ -174,7 +173,6 @@ C FIRST TEST
             ENDIF
  301      CONTINUE
         ELSE
-CDIR$ SHORT LOOP
           DO 302 I1 = ILOW, IUPR
             IF( IRNK2(I1,IXYZ,1) .GE. ILO(J,IY) .AND. 
      *        IRNK2(I1,IXYZ,1) .LE. IUP(J,IY) )THEN
@@ -185,7 +183,6 @@ CDIR$ SHORT LOOP
         ENDIF
 C SECOND TEST
         IF( ILP .GT. 64 ) THEN
-CDIR$ IVDEP
           DO 311 I1 = 1, ILP
             IF( IRNK2(INDX(I1),IXYZ,2) .GE. ILO(J,IZ) .AND.
      *        IRNK2(INDX(I1),IXYZ,2) .LE. IUP(J,IZ) )THEN
@@ -194,8 +191,6 @@ CDIR$ IVDEP
             ENDIF
  311      CONTINUE
         ELSE
-CDIR$ SHORT LOOP
-CDIR$ IVDEP
           DO 313 I1 = 1, ILP
             IF( IRNK2(INDX(I1),IXYZ,2) .GE. ILO(J,IZ) .AND.
      *        IRNK2(INDX(I1),IXYZ,2) .LE. IUP(J,IZ) )THEN
