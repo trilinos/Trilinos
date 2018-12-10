@@ -113,9 +113,9 @@ MatrixFree::~MatrixFree()
 
 }
 
-int MatrixFree::SetUseTranspose(bool UseTranspose)
+int MatrixFree::SetUseTranspose(bool use_transpose)
 {
-  if (UseTranspose == true) {
+  if (use_transpose == true) {
     utils.out() << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
      << "unavailable in Matrix-Free mode!" << std::endl;
     throw "NOX Error";

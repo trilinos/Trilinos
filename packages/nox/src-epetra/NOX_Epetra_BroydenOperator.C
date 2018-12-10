@@ -144,9 +144,9 @@ const char* BroydenOperator::Label () const
   return label.c_str();
 }
 
-int BroydenOperator::SetUseTranspose(bool UseTranspose)
+int BroydenOperator::SetUseTranspose(bool use_transpose)
 {
-  return crsMatrix->SetUseTranspose(UseTranspose);
+  return crsMatrix->SetUseTranspose(use_transpose);
 }
 
 int BroydenOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const

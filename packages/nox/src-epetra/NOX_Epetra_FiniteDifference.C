@@ -175,9 +175,9 @@ const char* FiniteDifference::Label () const
   return label.c_str();
 }
 
-int FiniteDifference::SetUseTranspose(bool UseTranspose)
+int FiniteDifference::SetUseTranspose(bool use_transpose)
 {
-  return jacobian->SetUseTranspose(UseTranspose);
+  return jacobian->SetUseTranspose(use_transpose);
 }
 
 int FiniteDifference::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
