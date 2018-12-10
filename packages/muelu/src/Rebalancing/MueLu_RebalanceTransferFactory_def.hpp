@@ -122,7 +122,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    typedef Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> xdMV;
 
     const ParameterList& pL = GetParameterList();
 
@@ -134,7 +134,7 @@ namespace MueLu {
       std::string fileName = "coordinates_level_0.m";
       RCP<xdMV> fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates");
       if (fineCoords != Teuchos::null)
-        Xpetra::IO<double,LO,GO,NO>::Write(fileName, *fineCoords);
+        Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *fineCoords);
     }
 
     RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
@@ -257,17 +257,20 @@ namespace MueLu {
           coordImporter = ImportFactory::Build(origMap, targetMap);
         }
 
-        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+        RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
         if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
           permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
+        if (permutedCoords->getMap() == Teuchos::null)
+          permutedCoords = Teuchos::null;
+
         Set(coarseLevel, "Coordinates", permutedCoords);
 
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
-          Xpetra::IO<double,LO,GO,NO>::Write(fileName, *permutedCoords);
+          Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *permutedCoords);
       }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {
@@ -281,6 +284,9 @@ namespace MueLu {
 
         if (pL.get<bool>("repartition: use subcommunicators") == true)
           permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
+
+        if (permutedNullspace->getMap() == Teuchos::null)
+          permutedNullspace = Teuchos::null;
 
         Set(coarseLevel, "Nullspace", permutedNullspace);
       }

@@ -5,7 +5,7 @@
 
 
 typedef Tpetra::CrsMatrix<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType>     tpetra_matrix_type;
-typedef Tpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType>   tpetra_multivector_type;
+typedef Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,KokkosClassic::DefaultNode::DefaultNodeType>   tpetra_multivector_type;
 typedef typename Teuchos::ArrayView<const int>::const_iterator                            iterator_type;
 typedef KokkosClassic::DefaultNode::DefaultNodeType node_type2;
 

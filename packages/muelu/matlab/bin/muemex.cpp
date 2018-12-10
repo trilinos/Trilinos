@@ -725,7 +725,7 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
   H->GetLevel(0)->Set("A", xA);
   if(haveCoords)
   {
-    RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coords = loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(matlabCoords);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coords = loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(matlabCoords);
     H->GetLevel(0)->Set("Coordinates", coords);
   }
   //Decide whether user passed level 0 Nullspace in parameter list. If not, make it here.

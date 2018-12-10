@@ -1583,7 +1583,7 @@ int main(int argc, char *argv[]) {
     typedef MueLu::FactoryManagerBase FactoryManagerBase;
     typedef MueLu::Utilities<double,int,int,Xpetra::EpetraNode> Utilities;
     typedef Xpetra::Map<int,int,Xpetra::EpetraNode> Map;
-    typedef Xpetra::MultiVector<double,int,int,Xpetra::EpetraNode> MultiVector;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Xpetra::EpetraNode> MultiVector;
     typedef Xpetra::MultiVectorFactory<double,int,int,Xpetra::EpetraNode> MultiVectorFactory;
     typedef Xpetra::Matrix<double,int,int,Xpetra::EpetraNode> Matrix;
 
