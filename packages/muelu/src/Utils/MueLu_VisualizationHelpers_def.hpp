@@ -132,7 +132,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords) {
     for(int agg = 0; agg < numLocalAggs; agg++) {
       std::list<int> aggNodes;
       for(int i = 0; i < numFineNodes; i++) {
@@ -219,7 +219,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_CGAL
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords) {
 
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
     typedef K::Point_2 Point_2;
@@ -323,7 +323,7 @@ namespace MueLu {
 #endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& zCoords) {
     //Use 3D quickhull algo.
     //Vector of node indices representing triangle vertices
     //Note: Calculate the hulls first since will only include point data for points in the hulls
@@ -649,7 +649,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_CGAL
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& zCoords) {
 
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
     typedef K::Point_3 Point_3;
@@ -762,7 +762,7 @@ namespace MueLu {
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fz) {
     ArrayView<const Scalar> values;
     ArrayView<const LocalOrdinal> neighbors;
 
@@ -912,7 +912,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::vector<myTriangle> VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::processTriangle(std::list<myTriangle>& tris, myTriangle tri, std::list<int>& pointsInFront, myVec3& barycenter, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  std::vector<myTriangle> VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::processTriangle(std::list<myTriangle>& tris, myTriangle tri, std::list<int>& pointsInFront, myVec3& barycenter, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& zCoords) {
     //*tri is in the tris list, and is the triangle to process here. tris is a complete list of all triangles in the hull so far. pointsInFront is only a list of the nodes in front of tri. Need coords also.
     //precondition: each triangle is already oriented so that getNorm_(v1, v2, v3) points outward (away from interior of hull)
     //First find the point furthest from triangle.
@@ -1069,7 +1069,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::vector<int> VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::giftWrap(std::vector<myVec2>& points, std::vector<int>& nodes, const Teuchos::ArrayRCP<const double> & xCoords, const Teuchos::ArrayRCP<const double> & yCoords) {
+  std::vector<int> VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::giftWrap(std::vector<myVec2>& points, std::vector<int>& nodes, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & yCoords) {
     TEUCHOS_TEST_FOR_EXCEPTION(points.size() < 3, Exceptions::RuntimeError,
              "CoarseningVisualization::giftWrap: Gift wrap algorithm input has to have at least 3 points!");
 
@@ -1305,7 +1305,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCoordinates(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz, int dim) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCoordinates(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fz, int dim) const {
     std::string indent = "      ";
     fout << "      <Points>" << std::endl;
     fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;

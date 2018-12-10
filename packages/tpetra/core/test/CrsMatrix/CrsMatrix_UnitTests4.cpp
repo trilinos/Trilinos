@@ -44,6 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Details_getNumDiags.hpp"
 #include <type_traits> // std::is_same
 
@@ -223,7 +224,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
-    
+
     // create the identity matrix
     RCP<RowMatrix<Scalar,LO,GO,Node> > eye;
     {
@@ -279,24 +280,34 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     /* Create the identity matrix, three rows per proc */
     RCP<OP> AOp;
-    {
-      RCP<MAT> A = rcp(new MAT(map,1));
-      A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<Scalar>(ST::one()) );
-      A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<Scalar>(ST::one()) );
-      A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<Scalar>(ST::one()) );
-      A->fillComplete();
-      AOp = A;
-    }
+
+    RCP<MAT> A = rcp(new MAT(map,1));
+    A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<Scalar>(ST::one()) );
+    A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<Scalar>(ST::one()) );
+    A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<Scalar>(ST::one()) );
+    A->fillComplete();
+    AOp = A;
+
     MV X(map,1), Y(map,1), Z(map,1);
     const Scalar alpha = ST::random(),
                   beta = ST::random();
     X.randomize();
     Y.randomize();
+    // Keep copies for later testing of CrsMatrixMultiplyOp
+    MV X_copy (X, Teuchos::Copy);
+    MV Y_copy (Y, Teuchos::Copy);
+
     // Z = alpha*X + beta*Y
     Z.update(alpha,X,beta,Y,ST::zero());
     // test the action: Y = alpha*I*X + beta*Y = alpha*X + beta*Y = Z
     AOp->apply(X,Y,NO_TRANS,alpha,beta);
-    //
+
+    // mfh 07 Dec 2018: Little test for CrsMatrixMultiplyOp; it
+    // doesn't get tested much elsewhere.  (It used to be part of
+    // CrsMatrix's implementation, so it got more exercise before.)
+    Tpetra::CrsMatrixMultiplyOp<Scalar, Scalar, LO, GO, Node> multOp (A);
+    multOp.apply (X_copy, Y_copy, NO_TRANS, alpha, beta);
+
     Array<Mag> normY(1), normZ(1);
     Z.norm1(normZ());
     Y.norm1(normY());
@@ -304,6 +315,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_COMPARE_ARRAYS(normY,normZ);
     } else {
       TEST_COMPARE_FLOATING_ARRAYS(normY,normZ,2.0*testingTol<Mag>());
+    }
+
+    Array<Mag> normYcopy(1);
+    Y_copy.norm1 (normYcopy ());
+    if (ST::isOrdinal) {
+      TEST_COMPARE_ARRAYS(normYcopy,normZ);
+    } else {
+      TEST_COMPARE_FLOATING_ARRAYS(normYcopy,normZ,2.0*testingTol<Mag>());
     }
   }
 
@@ -318,13 +337,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename MAT::global_ordinal_type global_ordinal_type;
     typedef typename MAT::node_type           node_type;
     static_assert (std::is_same<scalar_type, Scalar>::value,
-		   "CrsMatrix<Scalar, ...>::scalar_type != Scalar");
+                   "CrsMatrix<Scalar, ...>::scalar_type != Scalar");
     static_assert (std::is_same<local_ordinal_type, LO>::value,
-		   "CrsMatrix<Scalar, LO, ...>::local_ordinal_type != LO");
+                   "CrsMatrix<Scalar, LO, ...>::local_ordinal_type != LO");
     static_assert (std::is_same<global_ordinal_type, GO>::value,
-		   "CrsMatrix<Scalar, LO, GO, ...>::global_ordinal_type != GO");
+                   "CrsMatrix<Scalar, LO, GO, ...>::global_ordinal_type != GO");
     static_assert (std::is_same<node_type, Node>::value,
-		   "CrsMatrix<Scalar, LO, GO, Node>::node_type != Node");
+                   "CrsMatrix<Scalar, LO, GO, Node>::node_type != Node");
 
     typedef RowMatrix<Scalar,LO,GO,Node> RMAT;
     typedef typename RMAT::scalar_type         rmat_scalar_type;
@@ -332,13 +351,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef typename RMAT::global_ordinal_type rmat_global_ordinal_type;
     typedef typename RMAT::node_type           rmat_node_type;
     static_assert (std::is_same<rmat_scalar_type, Scalar>::value,
-		   "RowMatrix<Scalar, ...>::scalar_type != Scalar");
+                   "RowMatrix<Scalar, ...>::scalar_type != Scalar");
     static_assert (std::is_same<rmat_local_ordinal_type, LO>::value,
-		   "RowMatrix<Scalar, LO, ...>::local_ordinal_type != LO");
+                   "RowMatrix<Scalar, LO, ...>::local_ordinal_type != LO");
     static_assert (std::is_same<rmat_global_ordinal_type, GO>::value,
-		   "RowMatrix<Scalar, LO, GO, ...>::global_ordinal_type != GO");
+                   "RowMatrix<Scalar, LO, GO, ...>::global_ordinal_type != GO");
     static_assert (std::is_same<rmat_node_type, Node>::value,
-		   "RowMatrix<Scalar, LO, GO, Node>::node_type != Node");
+                   "RowMatrix<Scalar, LO, GO, Node>::node_type != Node");
   }
 
   ////
@@ -427,7 +446,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
-    
+
     // create the identity matrix, via three arrays constructor
     ArrayRCP<size_t> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
@@ -494,7 +513,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
-    
+
     // create the identity matrix, via three arrays constructor
     ArrayRCP<size_t> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
@@ -622,5 +641,3 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
 
 }
-
-

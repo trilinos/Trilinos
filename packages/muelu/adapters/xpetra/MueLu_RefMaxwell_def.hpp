@@ -82,6 +82,7 @@
 #include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
+#include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"

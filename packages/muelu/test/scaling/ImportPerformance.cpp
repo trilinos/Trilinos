@@ -495,10 +495,10 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
 
     ParameterList& mmlist = paramList.sublist("matrixmatrix: kernel params",false);  
-    int xmlcc = mmlist.get("MM_TAFC_OptimizationCoreCount",MM_TAFC_OptCoreCnt);
-    int comandcc = paramList.get("MM_TAFC_OptimizationCoreCount",MM_TAFC_OptCoreCnt);
+    int commandcc = mmlist.get("MM_TAFC_OptimizationCoreCount",MM_TAFC_OptCoreCnt);
+    commandcc = paramList.get("MM_TAFC_OptimizationCoreCount",commandcc);
     paramList.remove("MM_TAFC_OptimizationCoreCount",false);
-    mmlist.set("MM_TAFC_OptimizationCoreCount",comandcc);
+    mmlist.set("MM_TAFC_OptimizationCoreCount",commandcc);
 
     bool isDriver = paramList.isSublist("Run1");
     if (isDriver) {
