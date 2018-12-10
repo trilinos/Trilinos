@@ -414,10 +414,10 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   int myMin = map.MinMyGID(); // Minimum Local ID value
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 #else
-  int min = map.MinAllGID64();  // Minimum Global ID value
-  int max = map.MaxAllGID64();  // Maximum Global ID value
-  int myMin = map.MinMyGID64(); // Minimum Local ID value
-  int myMax = map.MaxMyGID64(); // Maximum Local ID value
+  long long min = map.MinAllGID64();  // Minimum Global ID value
+  long long max = map.MaxAllGID64();  // Maximum Global ID value
+  long long myMin = map.MinMyGID64(); // Minimum Local ID value
+  long long myMax = map.MaxMyGID64(); // Maximum Local ID value
 #endif
 
   // Compute the RHS at the initial solution
@@ -517,10 +517,10 @@ createGraphAndJacobian(Interface::Required& /* i */, const Epetra_Vector& x)
   int myMin = map.MinMyGID(); // Minimum Local ID value
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 #else
-  int min = map.MinAllGID64();  // Minimum Global ID value
-  int max = map.MaxAllGID64();  // Maximum Global ID value
-  int myMin = map.MinMyGID64(); // Minimum Local ID value
-  int myMax = map.MaxMyGID64(); // Maximum Local ID value
+  long long min = map.MinAllGID64();  // Minimum Global ID value
+  long long max = map.MaxAllGID64();  // Maximum Global ID value
+  long long myMin = map.MinMyGID64(); // Minimum Local ID value
+  long long myMax = map.MaxMyGID64(); // Maximum Local ID value
 #endif
 
   // Create the graph
