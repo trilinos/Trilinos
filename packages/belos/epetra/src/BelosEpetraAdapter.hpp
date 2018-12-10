@@ -165,7 +165,10 @@ namespace Belos {
     ptrdiff_t GetGlobalLength () const
     {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+       if ( Map().GlobalIndicesLongLong() )
           return static_cast<ptrdiff_t>( GlobalLength64() );
+       else
+          return static_cast<ptrdiff_t>( GlobalLength() );
 #else
           return static_cast<ptrdiff_t>( GlobalLength() );
 #endif
@@ -741,7 +744,10 @@ namespace Belos {
     static ptrdiff_t GetGlobalLength( const Epetra_MultiVector& mv )
     {
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+      if (mv.Map().GlobalIndicesLongLong())
         return static_cast<ptrdiff_t>( mv.GlobalLength64() );
+      else
+        return static_cast<ptrdiff_t>( mv.GlobalLength() );
 #else
         return static_cast<ptrdiff_t>( mv.GlobalLength() );
 #endif
