@@ -61,13 +61,15 @@ namespace { // (anonymous)
   using LO = Tpetra::Map<>::local_ordinal_type;
 
   // Try to get a 64-bit GlobalOrdinal type; that should be more
-  // likely to manifest atomic update issues.
+  // likely to manifest atomic update issues.  If we can't, though,
+  // then a 32-bit type is fine.  long long is guaranteed to be at
+  // least 64 bits, so prefer that over long or unsigned long.
 #if defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-  using GO = long long;
-#elif defined(HAVE_TPETRA_INST_INT_LONG) && sizeof(long) >= 8
-  using GO = long;
-#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG) && sizeof(unsigned long) >= 8
-  using GO = unsigned long;
+  using GO = long long; // always at least 64 bits
+#elif defined(HAVE_TPETRA_INST_INT_LONG)
+  using GO = long; // may be 64 or 32 bits
+#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)
+  using GO = unsigned long; // may be 64 or 32 bits
 #else
   using GO = Tpetra::Map<>::global_ordinal_type;
 #endif
