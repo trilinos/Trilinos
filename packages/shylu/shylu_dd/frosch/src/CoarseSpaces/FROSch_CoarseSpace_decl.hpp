@@ -103,6 +103,8 @@ namespace FROSch {
         
         CrsMatrixPtr getGlobalBasisMatrix() const;
         
+        bool hasAssembledBasis() const;
+        
     protected:
         
         ConstMapPtr SerialRowMap_;

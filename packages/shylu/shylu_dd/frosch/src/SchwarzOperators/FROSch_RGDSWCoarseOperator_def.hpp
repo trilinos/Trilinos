@@ -112,6 +112,8 @@ namespace FROSch {
             }
         }
         
+        this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+        
         if (useForCoarseSpace) {
             this->DDInterface_->findAncestors();
             
@@ -194,9 +196,9 @@ namespace FROSch {
             if (this->MpiComm_->getRank() == 0) {
                 std::cout << "\n\
                 --------------------------------------------\n\
-                # vertices:       --- " << numEntitiesGlobal[0] << "\n\
-                # edges:          --- " << numEntitiesGlobal[1] << "\n\
-                # faces:          --- " << numEntitiesGlobal[2] << "\n\
+                # coarse vertices:       --- " << numEntitiesGlobal[0] << "\n\
+                # coarse edges:          --- " << numEntitiesGlobal[1] << "\n\
+                # coarse faces:          --- " << numEntitiesGlobal[2] << "\n\
                 --------------------------------------------\n\
                 Coarse space:\n\
                 --------------------------------------------\n\
@@ -206,36 +208,39 @@ namespace FROSch {
             }
             this->BlockCoarseDimension_[blockId] = numEntitiesGlobal[0];
             LOVecPtr2D partMappings;
-            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
+            MapPtr blockMap = AssembleMaps(mapVector(),partMappings);
             ////////////////////
             // Build PhiGamma //
             ////////////////////
-            phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces);
+            MultiVectorPtr basisfunctions = phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces,blockMap);
+            
+            this->InterfaceCoarseSpaces_[blockId]->addSubspace(blockMap,basisfunctions);            
+            this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
         }
         
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int RGDSWCoarseOperator<SC,LO,GO,NO>::phiGammaReducedGDSW(UN blockId,
-                                                              int option,
-                                                              bool buildRotations,
-                                                              UN dimension,
-                                                              UN dofsPerNode,
-                                                              MultiVectorPtr nodeList,
-                                                              LOVecPtr2D partMappings,
-                                                              EntitySetPtr vertices,
-                                                              EntitySetPtr edges,
-                                                              EntitySetPtr faces)
+    typename RGDSWCoarseOperator<SC,LO,GO,NO>::MultiVectorPtr RGDSWCoarseOperator<SC,LO,GO,NO>::phiGammaReducedGDSW(UN blockId,
+                                                                                                                    int option,
+                                                                                                                    bool buildRotations,
+                                                                                                                    UN dimension,
+                                                                                                                    UN dofsPerNode,
+                                                                                                                    MultiVectorPtr nodeList,
+                                                                                                                    LOVecPtr2D partMappings,
+                                                                                                                    EntitySetPtr vertices,
+                                                                                                                    EntitySetPtr edges,
+                                                                                                                    EntitySetPtr faces,
+                                                                                                                    MapPtr blockMap)
     {
         if (buildRotations || (option == 3) ) {
             FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
         }
         
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
-        this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        MultiVectorPtr basisfunctions = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,blockMap->getNodeNumElements());
         
-
         LO itmp=0;
         SC x,y,z,rx,ry,rz;
         SC edgeValue;
@@ -255,9 +260,9 @@ namespace FROSch {
                             edgeValue = 1.0/SC(AncestorVertices->getNumEntities());
                             for (UN ii=0; ii<AncestorVertices->getNumEntities(); ii++) {
                                 InterfaceEntityPtr AncestorVertex = AncestorVertices->getEntity(ii);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
+                                basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
                                 }
                             }
                         }
@@ -276,9 +281,9 @@ namespace FROSch {
                                 for (UN iii=0; iii<AncestorVertices->getNumEntities(); iii++) {
                                     InterfaceEntityPtr AncestorVertex = AncestorVertices->getEntity(iii);
                                     vertexAncestorsFace.push_back(AncestorVertex->getAncestorID());
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
                                     for (UN j=0; j<AncestorEdge->getNumNodes(); j++) {
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
                                     }
                                 }
                             }
@@ -286,7 +291,7 @@ namespace FROSch {
                             faceValue = 1.0/SC(vertexAncestorsFace.size());
                             for (UN ii=0; ii<vertexAncestorsFace.size(); ii++) {
                                 for (UN j=0; j<face->getNumNodes(); j++) {
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][vertexAncestorsFace[ii]],faceValue);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][vertexAncestorsFace[ii]],faceValue);
                                 }
                             }
                         }
@@ -308,16 +313,16 @@ namespace FROSch {
                                 y = nodeList->getData(1)[AncestorVertex->getLocalNodeID(0)];
                                 rx = -y;
                                 ry = x;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
                                 
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
                                     x = nodeList->getData(0)[edge->getLocalNodeID(j)];
                                     y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
                                     
                                 }
                             }
@@ -344,25 +349,25 @@ namespace FROSch {
                                     rx = y;
                                     ry = -x;
                                     rz = 0;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp][AncestorVertex->getAncestorID()],rz);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp][AncestorVertex->getAncestorID()],rz);
                                     
                                     // Rotation 2
                                     rx = -z;
                                     ry = 0;
                                     rz = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],rz);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],rz);
                                     
                                     // Rotation 3
                                     rx = 0;
                                     ry = z;
                                     rz = -y;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],rz);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],rz);
                                     
                                     for (UN j=0; j<AncestorEdge->getNumNodes(); j++) {
                                         x = nodeList->getData(0)[AncestorEdge->getLocalNodeID(j)];
@@ -373,25 +378,25 @@ namespace FROSch {
                                         rx = y;
                                         ry = -x;
                                         rz = 0;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rz);
                                         
                                         // Rotation 2
                                         rx = -z;
                                         ry = 0;
                                         rz = x;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rz);
                                         
                                         // Rotation 3
                                         rx = 0;
                                         ry = z;
                                         rz = -y;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rz);
                                     }
                                     
                                 }
@@ -408,25 +413,25 @@ namespace FROSch {
                                     rx = y;
                                     ry = -x;
                                     rz = 0;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][vertexAncestorsFace[ii]],faceValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][vertexAncestorsFace[ii]],faceValue*ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][vertexAncestorsFace[ii]],faceValue*rz);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][vertexAncestorsFace[ii]],faceValue*rx);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][vertexAncestorsFace[ii]],faceValue*ry);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][vertexAncestorsFace[ii]],faceValue*rz);
                                     
                                     // Rotation 2
                                     rx = -z;
                                     ry = 0;
                                     rz = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][vertexAncestorsFace[ii]],faceValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][vertexAncestorsFace[ii]],faceValue*ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][vertexAncestorsFace[ii]],faceValue*rz);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][vertexAncestorsFace[ii]],faceValue*rx);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][vertexAncestorsFace[ii]],faceValue*ry);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][vertexAncestorsFace[ii]],faceValue*rz);
                                     
                                     // Rotation 3
                                     rx = 0;
                                     ry = z;
                                     rz = -y;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][vertexAncestorsFace[ii]],faceValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][vertexAncestorsFace[ii]],faceValue*ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][vertexAncestorsFace[ii]],faceValue*rz);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][vertexAncestorsFace[ii]],faceValue*rx);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][vertexAncestorsFace[ii]],faceValue*ry);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][vertexAncestorsFace[ii]],faceValue*rz);
                                 }
                             }
                         }
@@ -442,7 +447,7 @@ namespace FROSch {
                             EntitySetPtr AncestorVertices = edge->getAncestors();
                             if (AncestorVertices->getNumEntities()==0) {
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][edge->getAncestorID()],1.0);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][edge->getAncestorID()],1.0);
                                 }
                             }
                         }
@@ -459,10 +464,10 @@ namespace FROSch {
                                 EntitySetPtr AncestorVertices = AncestorEdge->getAncestors();
                                 if (AncestorVertices->getNumEntities()==0) {
                                     for (UN j=0; j<AncestorEdge->getNumNodes(); j++) {
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorEdge->getAncestorID()],1.0);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorEdge->getAncestorID()],1.0);
                                     }
                                     for (UN j=0; j<face->getNumNodes(); j++) {
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue);
                                     }
                                 }
                             }
@@ -483,8 +488,8 @@ namespace FROSch {
                                     y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][edge->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][edge->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][edge->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][edge->getAncestorID()],ry);
                                 }
                             }
                         }
@@ -507,25 +512,25 @@ namespace FROSch {
                                         rx = y;
                                         ry = -x;
                                         rz = 0;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorEdge->getAncestorID()],rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorEdge->getAncestorID()],ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorEdge->getAncestorID()],rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorEdge->getAncestorID()],rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorEdge->getAncestorID()],ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorEdge->getAncestorID()],rz);
                                         
                                         // Rotation 2
                                         rx = -z;
                                         ry = 0;
                                         rz = x;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],rz);
                                         
                                         // Rotation 3
                                         rx = 0;
                                         ry = z;
                                         rz = -y;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],rz);
                                     }
                                     for (UN j=0; j<face->getNumNodes(); j++) {
                                         x = nodeList->getData(0)[face->getLocalNodeID(j)];
@@ -536,25 +541,25 @@ namespace FROSch {
                                         rx = y;
                                         ry = -x;
                                         rz = 0;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rz);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rx);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*ry);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rz);
                                         
                                         // Rotation 2
                                         rx = -z;
                                         ry = 0;
                                         rz = x;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rz);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rx);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*ry);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rz);
                                         
                                         // Rotation 3
                                         rx = 0;
                                         ry = z;
                                         rz = -y;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rz);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rx);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*ry);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rz);
                                     }
                                 }
                             }
@@ -570,7 +575,7 @@ namespace FROSch {
                         EntitySetPtr AncestorEdges = face->getAncestors();
                         if (AncestorEdges->getNumEntities()==0) {
                             for (UN j=0; j<face->getNumNodes(); j++) {
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][face->getAncestorID()],1.0);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][face->getAncestorID()],1.0);
                             }
                         }
                     }
@@ -591,25 +596,25 @@ namespace FROSch {
                                 rx = y;
                                 ry = -x;
                                 rz = 0;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][face->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][face->getAncestorID()],ry);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][face->getAncestorID()],rz);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][face->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][face->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][face->getAncestorID()],rz);
                                 
                                 // Rotation 2
                                 rx = -z;
                                 ry = 0;
                                 rz = x;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][face->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][face->getAncestorID()],ry);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][face->getAncestorID()],rz);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][face->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][face->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][face->getAncestorID()],rz);
                                 
                                 // Rotation 3
                                 rx = 0;
                                 ry = z;
                                 rz = -y;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][face->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][face->getAncestorID()],ry);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][face->getAncestorID()],rz);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][face->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][face->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][face->getAncestorID()],rz);
                             }
                         }
                     }
@@ -637,7 +642,7 @@ namespace FROSch {
                             EntitySetPtr AncestorVertices = edge->getAncestors();
                             for (UN ii=0; ii<AncestorVertices->getNumEntities(); ii++) {
                                 InterfaceEntityPtr AncestorVertex = AncestorVertices->getEntity(ii);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
+                                basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
                                     // compute distance
                                     x = nodeList->getData(0)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(0)[edge->getLocalNodeID(j)];
@@ -651,7 +656,7 @@ namespace FROSch {
                                     x = nodeList->getData(0)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(0)[edge->getLocalNodeID(j)];
                                     y = nodeList->getData(1)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     edgeValue = (1.0/sqrt(x*x+y*y))/(edgeValues[j]);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
                                 }
                             }
                         }
@@ -671,7 +676,7 @@ namespace FROSch {
                                 for (UN iii=0; iii<AncestorVertices->getNumEntities(); iii++) {
                                     InterfaceEntityPtr AncestorVertex = AncestorVertices->getEntity(iii);
                                     vertexAncestorsFace->addEntity(AncestorVertex);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,k),partMappings[itmp][AncestorVertex->getAncestorID()],1.0);
                                     for (UN j=0; j<AncestorEdge->getNumNodes(); j++) {
                                         // compute distance
                                         x = nodeList->getData(0)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(0)[AncestorEdge->getLocalNodeID(j)];
@@ -687,7 +692,7 @@ namespace FROSch {
                                         y = nodeList->getData(1)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(1)[AncestorEdge->getLocalNodeID(j)];
                                         z = nodeList->getData(2)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(2)[AncestorEdge->getLocalNodeID(j)];
                                         edgeValue = (1.0/sqrt(x*x+y*y+z*z))/(edgeValues[j]);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue);
                                     }
                                 }
                             }
@@ -709,7 +714,7 @@ namespace FROSch {
                                     y = nodeList->getData(1)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(1)[face->getLocalNodeID(j)];
                                     z = nodeList->getData(2)[AncestorVertex->getLocalNodeID(0)] - nodeList->getData(2)[face->getLocalNodeID(j)];
                                     faceValue = (1.0/sqrt(x*x+y*y+z*z))/(faceValues[j]);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],faceValue);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][AncestorVertex->getAncestorID()],faceValue);
                                 }
                             }
                         }
@@ -731,8 +736,8 @@ namespace FROSch {
                                 y = nodeList->getData(1)[AncestorVertex->getLocalNodeID(0)];
                                 rx = -y;
                                 ry = x;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
                                 
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
                                     // compute distance
@@ -752,8 +757,8 @@ namespace FROSch {
                                     y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
                                 }
                             }
                         }
@@ -780,25 +785,25 @@ namespace FROSch {
                                     rx = y;
                                     ry = -x;
                                     rz = 0;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp][AncestorVertex->getAncestorID()],rz);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp][AncestorVertex->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp][AncestorVertex->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp][AncestorVertex->getAncestorID()],rz);
                                     
                                     // Rotation 2
                                     rx = -z;
                                     ry = 0;
                                     rz = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],rz);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],rz);
                                     
                                     // Rotation 3
                                     rx = 0;
                                     ry = z;
                                     rz = -y;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],rz);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(AncestorVertex->getGammaDofID(0,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],rz);
                                     
                                     for (UN j=0; j<AncestorEdge->getNumNodes(); j++) {
                                         // compute distance
@@ -824,25 +829,25 @@ namespace FROSch {
                                         rx = y;
                                         ry = -x;
                                         rz = 0;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorVertex->getAncestorID()],edgeValue*rz);
                                         
                                         // Rotation 2
                                         rx = -z;
                                         ry = 0;
                                         rz = x;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorVertex->getAncestorID()],edgeValue*rz);
                                         
                                         // Rotation 3
                                         rx = 0;
                                         ry = z;
                                         rz = -y;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorVertex->getAncestorID()],edgeValue*rz);
                                     }
                                 }
                             }
@@ -873,25 +878,25 @@ namespace FROSch {
                                     rx = y;
                                     ry = -x;
                                     rz = 0;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rz);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rx);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*ry);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rz);
                                     
                                     // Rotation 2
                                     rx = -z;
                                     ry = 0;
                                     rz = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rz);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rx);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*ry);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rz);
                                     
                                     // Rotation 3
                                     rx = 0;
                                     ry = z;
                                     rz = -y;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*ry);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rz);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rx);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*ry);
+                                    basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][vertexAncestorsFace->getEntity(ii)->getAncestorID()],faceValue*rz);
                                 }
                             }
                         }
@@ -907,7 +912,7 @@ namespace FROSch {
                             EntitySetPtr AncestorVertices = edge->getAncestors();
                             if (AncestorVertices->getNumEntities()==0) {
                                 for (UN j=0; j<edge->getNumNodes(); j++) {
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][edge->getAncestorID()],1.0);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,k),partMappings[itmp][edge->getAncestorID()],1.0);
                                 }
                             }
                         }
@@ -924,7 +929,7 @@ namespace FROSch {
                                 EntitySetPtr AncestorVertices = AncestorEdge->getAncestors();
                                 if (AncestorVertices->getNumEntities()==0) {
                                     for (UN j=0; j<AncestorEdge->getNumNodes(); j++) {
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorEdge->getAncestorID()],1.0);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,k),partMappings[itmp][AncestorEdge->getAncestorID()],1.0);
                                         for (UN jj=0; jj<face->getNumNodes(); jj++) {
                                             x = nodeList->getData(0)[AncestorEdge->getLocalNodeID(j)] - nodeList->getData(0)[face->getLocalNodeID(jj)];
                                             y = nodeList->getData(1)[AncestorEdge->getLocalNodeID(j)] - nodeList->getData(1)[face->getLocalNodeID(jj)];
@@ -946,7 +951,7 @@ namespace FROSch {
                                             z = nodeList->getData(2)[AncestorEdge->getLocalNodeID(j)] - nodeList->getData(2)[face->getLocalNodeID(jj)];
                                             faceValue += (1.0/sqrt(x*x+y*y+z*z))/(faceValues[j]);
                                         }
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,k),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,k),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue);
                                     }
                                 }
                             }
@@ -967,8 +972,8 @@ namespace FROSch {
                                     y = nodeList->getData(1)[edge->getLocalNodeID(j)];
                                     rx = -y;
                                     ry = x;
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][edge->getAncestorID()],rx);
-                                    this->MVPhiGamma_[blockId]->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][edge->getAncestorID()],ry);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,0),partMappings[itmp][edge->getAncestorID()],rx);
+                                    basisfunctions->replaceLocalValue(edge->getGammaDofID(j,1),partMappings[itmp][edge->getAncestorID()],ry);
                                 }
                             }
                         }
@@ -991,25 +996,25 @@ namespace FROSch {
                                         rx = y;
                                         ry = -x;
                                         rz = 0;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorEdge->getAncestorID()],rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorEdge->getAncestorID()],ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorEdge->getAncestorID()],rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp][AncestorEdge->getAncestorID()],rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp][AncestorEdge->getAncestorID()],ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp][AncestorEdge->getAncestorID()],rz);
                                         
                                         // Rotation 2
                                         rx = -z;
                                         ry = 0;
                                         rz = x;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],rz);
                                         
                                         // Rotation 3
                                         rx = 0;
                                         ry = z;
                                         rz = -y;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],rz);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],rx);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],ry);
+                                        basisfunctions->replaceLocalValue(AncestorEdge->getGammaDofID(j,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],rz);
                                         
                                         for (UN jj=0; jj<face->getNumNodes(); jj++) {
                                             x = nodeList->getData(0)[AncestorEdge->getLocalNodeID(j)] - nodeList->getData(0)[face->getLocalNodeID(jj)];
@@ -1040,25 +1045,25 @@ namespace FROSch {
                                         rx = y;
                                         ry = -x;
                                         rz = 0;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,0),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,1),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,2),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rz);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,0),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rx);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,1),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*ry);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,2),partMappings[itmp][AncestorEdge->getAncestorID()],faceValue*rz);
                                         
                                         // Rotation 2
                                         rx = -z;
                                         ry = 0;
                                         rz = x;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rz);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,0),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rx);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,1),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*ry);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,2),partMappings[itmp+1][AncestorEdge->getAncestorID()],faceValue*rz);
                                         
                                         // Rotation 3
                                         rx = 0;
                                         ry = z;
                                         rz = -y;
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rx);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*ry);
-                                        this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(jj,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rz);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,0),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rx);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,1),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*ry);
+                                        basisfunctions->replaceLocalValue(face->getGammaDofID(jj,2),partMappings[itmp+2][AncestorEdge->getAncestorID()],faceValue*rz);
                                     }
                                 }
                             }
@@ -1074,7 +1079,7 @@ namespace FROSch {
                         EntitySetPtr AncestorEdges = face->getAncestors();
                         if (AncestorEdges->getNumEntities()==0) {
                             for (UN j=0; j<face->getNumNodes(); j++) {
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][face->getAncestorID()],1.0);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,k),partMappings[itmp][face->getAncestorID()],1.0);
                             }
                         }
                     }
@@ -1096,25 +1101,25 @@ namespace FROSch {
                                 rx = y;
                                 ry = -x;
                                 rz = 0;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][face->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][face->getAncestorID()],ry);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][face->getAncestorID()],rz);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp][face->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp][face->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp][face->getAncestorID()],rz);
                                 
                                 // Rotation 2
                                 rx = -z;
                                 ry = 0;
                                 rz = x;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][face->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][face->getAncestorID()],ry);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][face->getAncestorID()],rz);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+1][face->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+1][face->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+1][face->getAncestorID()],rz);
                                 
                                 // Rotation 3
                                 rx = 0;
                                 ry = z;
                                 rz = -y;
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][face->getAncestorID()],rx);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][face->getAncestorID()],ry);
-                                this->MVPhiGamma_[blockId]->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][face->getAncestorID()],rz);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,0),partMappings[itmp+2][face->getAncestorID()],rx);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,1),partMappings[itmp+2][face->getAncestorID()],ry);
+                                basisfunctions->replaceLocalValue(face->getGammaDofID(j,2),partMappings[itmp+2][face->getAncestorID()],rz);
                             }
                         }
                     }
@@ -1129,8 +1134,7 @@ namespace FROSch {
             }
         }
         
-        
-        return 0;
+        return basisfunctions;
     }
     
 }

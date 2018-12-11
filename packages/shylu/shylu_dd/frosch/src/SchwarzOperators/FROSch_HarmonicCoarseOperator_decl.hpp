@@ -68,6 +68,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr CoarseSpacePtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr CoarseSpacePtrVecPtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
 
@@ -109,9 +110,7 @@ namespace FROSch {
         
         SubdomainSolverPtr ExtensionSolver_;
 
-        MultiVectorPtrVecPtr MVPhiGamma_;
-
-        MapPtrVecPtr BlockCoarseMaps_;
+        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_;
         
         UNVecPtr Dimensions_;
         UNVecPtr DofsPerNode_;
