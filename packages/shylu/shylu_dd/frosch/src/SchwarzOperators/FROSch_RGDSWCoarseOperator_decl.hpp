@@ -97,16 +97,17 @@ namespace FROSch {
         
         protected:
         
-        int phiGammaReducedGDSW(UN blockId,
-                                int option,
-                                bool buildRotations,
-                                UN dimension,
-                                UN dofsPerNode,
-                                MultiVectorPtr nodeList,
-                                LOVecPtr2D partMappings,
-                                EntitySetPtr vertices,
-                                EntitySetPtr edges,
-                                EntitySetPtr faces); // Sollte man hier nicht auch die typen noch auswählen können
+        MultiVectorPtr phiGammaReducedGDSW(UN blockId,
+                                           int option,
+                                           bool buildRotations,
+                                           UN dimension,
+                                           UN dofsPerNode,
+                                           MultiVectorPtr nodeList,
+                                           LOVecPtr2D partMappings,
+                                           EntitySetPtr vertices,
+                                           EntitySetPtr edges,
+                                           EntitySetPtr faces,
+                                           MapPtr blockMap); // Sollte man hier nicht auch die typen noch auswählen können
         
     };
     

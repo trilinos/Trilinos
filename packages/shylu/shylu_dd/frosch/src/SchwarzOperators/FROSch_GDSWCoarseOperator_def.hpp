@@ -231,8 +231,7 @@ namespace FROSch {
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
         this->GammaDofs_.resize(this->GammaDofs_.size()+1);
         this->IDofs_.resize(this->IDofs_.size()+1);
-        this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
-        this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+        this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
         this->DofsMaps_.resize(this->DofsMaps_.size()+1);
         this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
         this->BlockCoarseDimension_.resize(this->BlockCoarseDimension_.size()+1);
@@ -258,8 +257,7 @@ namespace FROSch {
         for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
             this->GammaDofs_.resize(this->GammaDofs_.size()+1);
             this->IDofs_.resize(this->IDofs_.size()+1);
-            this->BlockCoarseMaps_.resize(this->BlockCoarseMaps_.size()+1);
-            this->MVPhiGamma_.resize(this->MVPhiGamma_.size()+1);
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
             this->DofsMaps_.resize(this->DofsMaps_.size()+1);
             this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
             this->BlockCoarseDimension_.resize(this->BlockCoarseDimension_.size()+1);
@@ -291,22 +289,19 @@ namespace FROSch {
         
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
         
-        Teuchos::ArrayRCP<bool> coarseSpaceFunctions(9);
+        bool useVertexTranslations = coarseSpaceList->sublist("Custom").get("Vertices: translations",true);
         
-        coarseSpaceFunctions[0] = coarseSpaceList->sublist("Custom").get("Vertices: translations",true);
+        bool useShortEdgeTranslations = coarseSpaceList->sublist("Custom").get("ShortEdges: translations",true);
+        bool useShortEdgeRotations = coarseSpaceList->sublist("Custom").get("ShortEdges: rotations",true);
         
-        coarseSpaceFunctions[1] = coarseSpaceList->sublist("Custom").get("ShortEdges: translations",true);
-        coarseSpaceFunctions[2] = coarseSpaceList->sublist("Custom").get("ShortEdges: rotations",true);
+        bool useStraightEdgeTranslations = coarseSpaceList->sublist("Custom").get("StraightEdges: translations",true);
+        bool useStraightEdgeRotations = coarseSpaceList->sublist("Custom").get("StraightEdges: rotations",true);
         
-        coarseSpaceFunctions[3] = coarseSpaceList->sublist("Custom").get("StraightEdges: translations",true);
-        coarseSpaceFunctions[4] = coarseSpaceList->sublist("Custom").get("StraightEdges: rotations",true);
+        bool useEdgeTranslations = coarseSpaceList->sublist("Custom").get("Edges: translations",true);
+        bool useEdgeRotations = coarseSpaceList->sublist("Custom").get("Edges: rotations",true);
         
-        coarseSpaceFunctions[5] = coarseSpaceList->sublist("Custom").get("Edges: translations",true);
-        coarseSpaceFunctions[6] = coarseSpaceList->sublist("Custom").get("Edges: rotations",true);
-        
-        coarseSpaceFunctions[7] = coarseSpaceList->sublist("Custom").get("Faces: translations",true);
-        coarseSpaceFunctions[8] = coarseSpaceList->sublist("Custom").get("Faces: rotations",true);
-        
+        bool useFaceTranslations = coarseSpaceList->sublist("Custom").get("Faces: translations",true);
+        bool useFaceRotations = coarseSpaceList->sublist("Custom").get("Faces: rotations",true);
         
         bool useRotations = coarseSpaceList->get("Rotations",true);
         if (useRotations && nodeList.is_null()) {
@@ -314,10 +309,10 @@ namespace FROSch {
             if (this->Verbose_) std::cout << "\nWarning: Rotations cannot be used!\n";
         }
         if (!useRotations) {
-            coarseSpaceFunctions[2] = false;
-            coarseSpaceFunctions[4] = false;
-            coarseSpaceFunctions[6] = false;
-            coarseSpaceFunctions[8] = false;
+            useShortEdgeRotations = false;
+            useStraightEdgeRotations = false;
+            useEdgeRotations = false;
+            useFaceRotations = false;
         }
         
         this->DofsMaps_[blockId] = dofsMaps;
@@ -332,7 +327,6 @@ namespace FROSch {
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             DDInterface_->divideUnconnectedEntities(this->K_);
         }
-
 
         DDInterface_->sortEntities(nodeList);
         
@@ -352,99 +346,101 @@ namespace FROSch {
             }
         }
         
-        if (useForCoarseSpace && (coarseSpaceFunctions[0]||coarseSpaceFunctions[1]||coarseSpaceFunctions[2]||coarseSpaceFunctions[3]||coarseSpaceFunctions[4]||coarseSpaceFunctions[5]||coarseSpaceFunctions[6]||coarseSpaceFunctions[7]||coarseSpaceFunctions[8])) {
+        this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+        
+        if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
             
             ////////////////////////////////
             // Build Processor Map Coarse //
             ////////////////////////////////
-            MapPtrVecPtr mapVector( dofsPerNode*(coarseSpaceFunctions[0]+coarseSpaceFunctions[1]+coarseSpaceFunctions[3]+coarseSpaceFunctions[5]+coarseSpaceFunctions[7])+(dofsPerNode-1)*(coarseSpaceFunctions[2]+coarseSpaceFunctions[4]+coarseSpaceFunctions[6]+coarseSpaceFunctions[8])+((dimension==3) && (dofsPerNode==3))*coarseSpaceFunctions[6]+((dimension==3)&&(dofsPerNode==3))*coarseSpaceFunctions[8] ); // Beachte: In 2D gibt es sowieso keine faces
-            
-            if (coarseSpaceFunctions[0]) {
+            // Vertices
+            if (useVertexTranslations) {
                 vertices = DDInterface_->getVertices();
                 vertices->buildEntityMap(nodesMap);
-            }
-            if (coarseSpaceFunctions[1] || coarseSpaceFunctions[2]) {
-                shortEdges = DDInterface_->getShortEdges();
-                shortEdges->buildEntityMap(nodesMap);
-            }
-            if (coarseSpaceFunctions[3] || coarseSpaceFunctions[4]) {
-                straightEdges = DDInterface_->getStraightEdges();
-                straightEdges->buildEntityMap(nodesMap);
-            }
-            if (coarseSpaceFunctions[5] || coarseSpaceFunctions[6]) {
-                edges = DDInterface_->getEdges();
-                edges->buildEntityMap(nodesMap);
-            }
-            if (coarseSpaceFunctions[7] || coarseSpaceFunctions[8]) {
-                faces = DDInterface_->getFaces();
-                faces->buildEntityMap(nodesMap);
-            }
-            
-            // Vertices
-            int ii=0;
-            if (coarseSpaceFunctions[0]) {
-                for (UN i=0; i<dofsPerNode; i++) {
-                    mapVector[ii] = vertices->getEntityMap();
-                    ii++;
+                
+                MultiVectorPtrVecPtr translations = computeTranslations(blockId,this->DofsPerNode_[blockId],vertices);
+                for (UN i=0; i<translations.size(); i++) {
+                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(vertices->getEntityMap(),translations[i]);
                 }
             }
             // ShortEdges
-            if (coarseSpaceFunctions[1]) {
-                for (UN i=0; i<dofsPerNode; i++) {
-                    mapVector[ii] = shortEdges->getEntityMap();
-                    ii++;
+            if (useShortEdgeTranslations || useShortEdgeRotations) {
+                shortEdges = DDInterface_->getShortEdges();
+                shortEdges->buildEntityMap(nodesMap);
+                
+                if (useShortEdgeTranslations) {
+                    MultiVectorPtrVecPtr translations = computeTranslations(blockId,this->DofsPerNode_[blockId],shortEdges);
+                    for (UN i=0; i<translations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdges->getEntityMap(),translations[i]);
+                    }
                 }
-            }
-            if (coarseSpaceFunctions[2]) {
-                for (UN i=0; i<dofsPerNode-1; i++) {
-                    mapVector[ii] = shortEdges->getEntityMap();
-                    ii++;
+                if (useShortEdgeRotations) {
+                    MultiVectorPtrVecPtr rotations = computeRotations(blockId,dimension,this->DofsPerNode_[blockId],nodeList,shortEdges);
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdges->getEntityMap(),rotations[i]);
+                    }
                 }
             }
             // StraightEdges
-            if (coarseSpaceFunctions[3]) {
-                for (UN i=0; i<dofsPerNode; i++) {
-                    
-                    mapVector[ii] = straightEdges->getEntityMap();
-                    ii++;
+            if (useStraightEdgeTranslations || useStraightEdgeRotations) {
+                straightEdges = DDInterface_->getStraightEdges();
+                straightEdges->buildEntityMap(nodesMap);
+                
+                if (useShortEdgeTranslations) {
+                    MultiVectorPtrVecPtr translations = computeTranslations(blockId,this->DofsPerNode_[blockId],straightEdges);
+                    for (UN i=0; i<translations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(straightEdges->getEntityMap(),translations[i]);
+                    }
                 }
-            }
-            if (coarseSpaceFunctions[4]) {
-                for (UN i=0; i<dofsPerNode-1; i++) {
-                    mapVector[ii] = straightEdges->getEntityMap();
-                    ii++;
-                    
+                if (useShortEdgeRotations) {
+                    MultiVectorPtrVecPtr rotations = computeRotations(blockId,dimension,this->DofsPerNode_[blockId],nodeList,straightEdges);
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(straightEdges->getEntityMap(),rotations[i]);
+                    }
                 }
             }
             // Edges
-            if (coarseSpaceFunctions[5]) {
-                for (UN i=0; i<dofsPerNode; i++) {
-                    mapVector[ii] = edges->getEntityMap();
-                    ii++;
+            if (useEdgeTranslations || useEdgeRotations) {
+                edges = DDInterface_->getEdges();
+                edges->buildEntityMap(nodesMap);
+                
+                if (useShortEdgeTranslations) {
+                    MultiVectorPtrVecPtr translations = computeTranslations(blockId,this->DofsPerNode_[blockId],edges);
+                    for (UN i=0; i<translations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(edges->getEntityMap(),translations[i]);
+                    }
                 }
-            }
-            if (coarseSpaceFunctions[6]) {
-                for (UN i=0; i<dofsPerNode-1+((dimension==3)&&(dofsPerNode==3)); i++) {
-                    mapVector[ii] = edges->getEntityMap();
-                    ii++;
+                if (useShortEdgeRotations) {
+                    MultiVectorPtrVecPtr rotations = computeRotations(blockId,dimension,this->DofsPerNode_[blockId],nodeList,edges);
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(edges->getEntityMap(),rotations[i]);
+                    }
                 }
             }
             // Faces
-            if (coarseSpaceFunctions[7]) {
-                for (UN i=0; i<dofsPerNode; i++) {
-                    mapVector[ii] = faces->getEntityMap();
-                    ii++;
+            if (useFaceTranslations || useFaceRotations) {
+                faces = DDInterface_->getFaces();
+                faces->buildEntityMap(nodesMap);
+                
+                if (useShortEdgeTranslations) {
+                    MultiVectorPtrVecPtr translations = computeTranslations(blockId,this->DofsPerNode_[blockId],faces);
+                    for (UN i=0; i<translations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(faces->getEntityMap(),translations[i]);
+                    }
                 }
-            }
-            if (coarseSpaceFunctions[8]) {
-                for (UN i=0; i<dofsPerNode-1+((dimension==3)&&(dofsPerNode==3)); i++) { // Beachte: In 2D gibt es sowieso keine faces
-                    mapVector[ii] = faces->getEntityMap();
-                    ii++;
+                if (useShortEdgeRotations) {
+                    MultiVectorPtrVecPtr rotations = computeRotations(blockId,dimension,this->DofsPerNode_[blockId],nodeList,faces);
+                    for (UN i=0; i<rotations.size(); i++) {
+                        this->InterfaceCoarseSpaces_[blockId]->addSubspace(faces->getEntityMap(),rotations[i]);
+                    }
                 }
             }
             
+            this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
+            
+            // Count entities
             LOVec numEntitiesGlobal(5);
-            if (coarseSpaceFunctions[0]) {
+            if (useVertexTranslations) {
                 numEntitiesGlobal[0] = vertices->getEntityMap()->getMaxAllGlobalIndex();
                 if (vertices->getEntityMap()->lib()==Xpetra::UseEpetra || vertices->getEntityMap()->getGlobalNumElements()>0) {
                     numEntitiesGlobal[0] += 1;
@@ -452,7 +448,7 @@ namespace FROSch {
             } else {
                 numEntitiesGlobal[0] = -1;
             }
-            if (coarseSpaceFunctions[1] || coarseSpaceFunctions[2]) {
+            if (useShortEdgeTranslations || useShortEdgeRotations) {
                 numEntitiesGlobal[1] = shortEdges->getEntityMap()->getMaxAllGlobalIndex();
                 if (shortEdges->getEntityMap()->lib()==Xpetra::UseEpetra || shortEdges->getEntityMap()->getGlobalNumElements()>0) {
                     numEntitiesGlobal[1] += 1;
@@ -460,7 +456,7 @@ namespace FROSch {
             } else {
                 numEntitiesGlobal[1] = -1;
             }
-            if (coarseSpaceFunctions[3] || coarseSpaceFunctions[4]) {
+            if (useStraightEdgeTranslations || useStraightEdgeRotations) {
                 numEntitiesGlobal[2] = straightEdges->getEntityMap()->getMaxAllGlobalIndex();
                 if (straightEdges->getEntityMap()->lib()==Xpetra::UseEpetra || straightEdges->getEntityMap()->getGlobalNumElements()>0) {
                     numEntitiesGlobal[2] += 1;
@@ -468,7 +464,7 @@ namespace FROSch {
             } else {
                 numEntitiesGlobal[2] = -1;
             }
-            if (coarseSpaceFunctions[5] || coarseSpaceFunctions[6]) {
+            if (useEdgeTranslations || useEdgeRotations) {
                 numEntitiesGlobal[3] = edges->getEntityMap()->getMaxAllGlobalIndex();
                 if (edges->getEntityMap()->lib()==Xpetra::UseEpetra || edges->getEntityMap()->getGlobalNumElements()>0) {
                     numEntitiesGlobal[3] += 1;
@@ -476,7 +472,7 @@ namespace FROSch {
             } else {
                 numEntitiesGlobal[3] = -1;
             }
-            if (coarseSpaceFunctions[7] || coarseSpaceFunctions[8]) {
+            if (useFaceTranslations || useFaceRotations) {
                 numEntitiesGlobal[4] = faces->getEntityMap()->getMaxAllGlobalIndex();
                 if (faces->getEntityMap()->lib()==Xpetra::UseEpetra || faces->getEntityMap()->getGlobalNumElements()>0) {
                     numEntitiesGlobal[4] += 1;
@@ -503,15 +499,15 @@ namespace FROSch {
                 --------------------------------------------\n\
                 Coarse space:\n\
                 --------------------------------------------\n\
-                vertices: translations      --- " << coarseSpaceFunctions[0] << "\n\
-                shortEdges: translations    --- " << coarseSpaceFunctions[1] << "\n\
-                shortEdges: rotations       --- " << coarseSpaceFunctions[2] << "\n\
-                straightEdges: translations --- " << coarseSpaceFunctions[3] << "\n\
-                straightEdges: rotations    --- " << coarseSpaceFunctions[4] << "\n\
-                edges: translations         --- " << coarseSpaceFunctions[5] << "\n\
-                edges: rotations            --- " << coarseSpaceFunctions[6] << "\n\
-                faces: translations         --- " << coarseSpaceFunctions[7] << "\n\
-                faces: rotations            --- " << coarseSpaceFunctions[8] << "\n\
+                vertices: translations      --- " << useVertexTranslations << "\n\
+                shortEdges: translations    --- " << useShortEdgeTranslations << "\n\
+                shortEdges: rotations       --- " << useShortEdgeRotations << "\n\
+                straightEdges: translations --- " << useStraightEdgeTranslations << "\n\
+                straightEdges: rotations    --- " << useStraightEdgeRotations << "\n\
+                edges: translations         --- " << useEdgeTranslations << "\n\
+                edges: rotations            --- " << useEdgeRotations << "\n\
+                faces: translations         --- " << useFaceTranslations << "\n\
+                faces: rotations            --- " << useFaceRotations << "\n\
                 --------------------------------------------\n";
             }
 
@@ -519,340 +515,115 @@ namespace FROSch {
             for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                 this->BlockCoarseDimension_[blockId] += numEntitiesGlobal[i];
             }
-            
-            LOVecPtr2D partMappings;
-            this->BlockCoarseMaps_[blockId] = AssembleMaps(mapVector(),partMappings);
-
-            ////////////////////
-            // Build PhiGamma //
-            ////////////////////
-            phiGammaGDSW(blockId,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,shortEdges,straightEdges,edges,faces,coarseSpaceFunctions);
         }
         
         return 0;
     }
     
+    template <class SC,class LO,class GO,class NO>
+    typename GDSWCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr GDSWCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
+                                                                                                                        UN dofsPerNode,
+                                                                                                                        EntitySetPtr entitySet)
+    {
+        MultiVectorPtrVecPtr translations(dofsPerNode);
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        for (UN i=0; i<dofsPerNode; i++) {
+            if (entitySet->getNumEntities()>0) {
+                translations[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,entitySet->getNumEntities());
+            } else {
+                translations[i] = Teuchos::null;
+            }
+        }
+        
+        for (UN k=0; k<dofsPerNode; k++) {
+            UN ii=0;
+            for (UN i=0; i<entitySet->getNumEntities(); i++) {
+                for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
+                    translations[k]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,k),ii,1.0);
+                }
+                ii++;
+            }
+        }
+        return translations;
+    }
     
     template <class SC,class LO,class GO,class NO>
-    int GDSWCoarseOperator<SC,LO,GO,NO>::phiGammaGDSW(UN blockId,
-                                                      bool buildRotations,
-                                                      UN dimension,
-                                                      UN dofsPerNode,
-                                                      MultiVectorPtr nodeList,
-                                                      LOVecPtr2D partMappings, // TODO Kann man hier den 2D Vektor auch ersetzen
-                                                      EntitySetPtr vertices,
-                                                      EntitySetPtr shortEdges,
-                                                      EntitySetPtr straightEdges,
-                                                      EntitySetPtr edges,
-                                                      EntitySetPtr faces,
-                                                      BoolVecPtr coarseSpaceFunctions)
+    typename GDSWCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr GDSWCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
+                                                                                                                     UN dimension,
+                                                                                                                     UN dofsPerNode,
+                                                                                                                     MultiVectorPtr nodeList,
+                                                                                                                     EntitySetPtr entitySet)
     {
-        if (buildRotations) {
-            FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
+        FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
+        FROSCH_ASSERT(dimension==dofsPerNode,"dimension!=dofsPerNode");
+        
+        UN rotationsPerEntity = 0;
+        switch (dimension) {
+            case 1:
+                return Teuchos::null;
+                break;
+            case 2:
+                rotationsPerEntity = 1;
+                break;
+            case 3:
+                rotationsPerEntity = 3;
+                break;
+            default:
+                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
+                break;
         }
-
-        //Epetra_SerialComm serialComm;
-        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->BlockCoarseMaps_[blockId]->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
-        this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,this->BlockCoarseMaps_[blockId]->getNodeNumElements());
-
-        LO ii=0;
+        
+        MultiVectorPtrVecPtr rotations(rotationsPerEntity);
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        for (UN i=0; i<rotationsPerEntity; i++) {
+            if (entitySet->getNumEntities()>0) {
+                rotations[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,entitySet->getNumEntities());
+            } else {
+                rotations[i] = Teuchos::null;
+            }
+        }
+        
+        UN ii=0;
         SC x,y,z,rx,ry,rz;
         SCVecPtr dir;
-        LO tmp=0;
-        // vertices
-        if (coarseSpaceFunctions[0]) {
-            for (UN k=0; k<dofsPerNode; k++) {
-                for (UN i=0; i<vertices->getNumEntities(); i++) {
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(vertices->getEntity(i)->getGammaDofID(0,k),partMappings[ii][i],1.0);
-                }
-                ii++;
-            }
-        }
-        
-        // Short edges
-        if (coarseSpaceFunctions[1]) { // Translations
-            for (UN k=0; k<dofsPerNode; k++) {
-                for (UN i=0; i<shortEdges->getNumEntities(); i++) {
-                    for (UN j=0; j<shortEdges->getEntity(i)->getNumNodes(); j++) {
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
-                    }
-                }
-                ii++;
-            }
-        }
-
-        if (coarseSpaceFunctions[2]) { // Rotations
-            
-            FROSCH_ASSERT(dofsPerNode>1,"Dofs<2 => Rotations cannot be built.");
-            
-            if (dimension == 2) {
-                for (UN i=0; i<shortEdges->getNumEntities(); i++) {
-                    // Rotation 1
-                    for (UN j=0; j<shortEdges->getEntity(i)->getNumNodes(); j++) {
-                        x = nodeList->getData(0)[shortEdges->getEntity(i)->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[shortEdges->getEntity(i)->getLocalNodeID(j)];
-                        rx = -y;
-                        ry = x;
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                    }
-                }
-                ii++;
-            } else if (dimension == 3) {
-                for (UN i=0; i<shortEdges->getNumEntities(); i++) {
-                    for (UN j=0; j<shortEdges->getEntity(i)->getNumNodes(); j++) {
-                        // Get the direction of the short edge
-                        dir = shortEdges->getDirection(dimension,nodeList,i);
-                        tmp = 0;
-                        
-                        FROSCH_ASSERT(sqrt(dir[0]*dir[0]+dir[1]*dir[1]+dir[2]*dir[2])>1.0e-12,"The direction vector is 0. ERROR!");
-                        
-                        x = nodeList->getData(0)[shortEdges->getEntity(i)->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[shortEdges->getEntity(i)->getLocalNodeID(j)];
-                        z = nodeList->getData(2)[shortEdges->getEntity(i)->getLocalNodeID(j)];
-                        
-                        // Rotation 1
-                        if ((fabs(dir[0])>1.0e-12) || (fabs(dir[1])>1.0e-12)) {
-                            rx = y;
-                            ry = -x;
-                            rz = 0;
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
-                            tmp++;
-                        }
-                        
-                        // Rotation 2
-                        if ((fabs(dir[0])>1.0e-12) || (fabs(dir[2])>1.0e-12)) {
-                            rx = -z;
-                            ry = 0;
-                            rz = x;
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
-                            tmp++;
-                        }
-                        
-                        // Rotation 3
-                        if (((fabs(dir[1])>1.0e-12) || (fabs(dir[2])>1.0e-12)) && (tmp<2)) {
-                            rx = 0;
-                            ry = z;
-                            rz = -y;
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(shortEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
-                        }
-                    }
-                }
-                ii+=2;
-            } else {
-                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
-            }
-        }
-        
-        
-        // Straight edges
-        if (coarseSpaceFunctions[3]) { // Translations
-            for (UN k=0; k<dofsPerNode; k++) {
-                for (UN i=0; i<straightEdges->getNumEntities(); i++) {
-                    for (UN j=0; j<straightEdges->getEntity(i)->getNumNodes(); j++) {
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
-                    }
-                }
-                ii++;
-            }
-        }
-        
-        if (coarseSpaceFunctions[4]) { // Rotations
-            
-            FROSCH_ASSERT(dofsPerNode>1,"Dofs<2 => Rotations cannot be built.");
-            
-            if (dimension == 2) {
-                for (UN i=0; i<straightEdges->getNumEntities(); i++) {
-                    // Rotation 1
-                    for (UN j=0; j<straightEdges->getEntity(i)->getNumNodes(); j++) {
-                        x = nodeList->getData(0)[straightEdges->getEntity(i)->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[straightEdges->getEntity(i)->getLocalNodeID(j)];
-                        rx = -y;
-                        ry = x;
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                    }
-                }
-                ii++;
-            } else if (dimension == 3) {
-                for (UN i=0; i<straightEdges->getNumEntities(); i++) {
-                    for (UN j=0; j<straightEdges->getEntity(i)->getNumNodes(); j++) {
-                        // Get the direction of the straight edge
-                        dir = straightEdges->getDirection(dimension,nodeList,i);
-                        tmp=0;
-                        
-                        FROSCH_ASSERT(sqrt(dir[0]*dir[0]+dir[1]*dir[1]+dir[2]*dir[2])>1.0e-12,"The direction vector is 0. ERROR!");
-                        
-                        x = nodeList->getData(0)[straightEdges->getEntity(i)->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[straightEdges->getEntity(i)->getLocalNodeID(j)];
-                        z = nodeList->getData(2)[straightEdges->getEntity(i)->getLocalNodeID(j)];
-                        
-                        // Rotation 1
-                        if ((fabs(dir[0])>1.0e-12) || (fabs(dir[1])>1.0e-12)) {
-                            rx = y;
-                            ry = -x;
-                            rz = 0;
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
-                            tmp++;
-                        }
-                        
-                        // Rotation 2
-                        if ((fabs(dir[0])>1.0e-12) || (fabs(dir[2])>1.0e-12)) {
-                            rx = -z;
-                            ry = 0;
-                            rz = x;
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
-                            tmp++;
-                        }
-                        
-                        // Rotation 3
-                        if (((fabs(dir[1])>1.0e-12) || (fabs(dir[2])>1.0e-12)) && (tmp<2)) {
-                            rx = 0;
-                            ry = z;
-                            rz = -y;
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+tmp][i],rx);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+tmp][i],ry);
-                            this->MVPhiGamma_[blockId]->replaceLocalValue(straightEdges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+tmp][i],rz);
-                        }
-                    }
-                }
-                ii+=2;
-            } else {
-                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
-            }
-        }
-        
-        
-        // edges
-        if (coarseSpaceFunctions[5]) { // Translations
-            for (UN k=0; k<dofsPerNode; k++) {
-                for (UN i=0; i<edges->getNumEntities(); i++) {
-                    for (UN j=0; j<edges->getEntity(i)->getNumNodes(); j++) {
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
-                    }
-                }
-                ii++;
-            }
-        }
-        
-        if (coarseSpaceFunctions[6]) { // Rotations
-            
-            FROSCH_ASSERT(dofsPerNode>1,"Dofs<2 => Rotations cannot be built.");
-            
-            if (dimension == 2) {
-                for (UN i=0; i<edges->getNumEntities(); i++) {
-                    // Rotation 1
-                    for (UN j=0; j<edges->getEntity(i)->getNumNodes(); j++) {
-                        x = nodeList->getData(0)[edges->getEntity(i)->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[edges->getEntity(i)->getLocalNodeID(j)];
-                        rx = -y;
-                        ry = x;
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                    }
-                }
-                ii++;
-            } else if (dimension == 3) {
-                for (UN i=0; i<edges->getNumEntities(); i++) {
-                    for (UN j=0; j<edges->getEntity(i)->getNumNodes(); j++) {
-                        x = nodeList->getData(0)[edges->getEntity(i)->getLocalNodeID(j)];
-                        y = nodeList->getData(1)[edges->getEntity(i)->getLocalNodeID(j)];
-                        z = nodeList->getData(2)[edges->getEntity(i)->getLocalNodeID(j)];
-                        
-                        // Rotation 1
-                        rx = y;
-                        ry = -x;
-                        rz = 0;
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii][i],rz);
-                        
-                        // Rotation 2
-                        rx = -z;
-                        ry = 0;
-                        rz = x;
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+1][i],rx);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+1][i],ry);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+1][i],rz);
-                        
-                        // Rotation 3
-                        rx = 0;
-                        ry = z;
-                        rz = -y;
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,0),partMappings[ii+2][i],rx);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,1),partMappings[ii+2][i],ry);
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(edges->getEntity(i)->getGammaDofID(j,2),partMappings[ii+2][i],rz);
-                    }
-                }
-                ii+=3;
-            } else {
-                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
-            }
-        }
-        
-        
-        // faces
-        if (coarseSpaceFunctions[7]) { // Translations
-            for (UN k=0; k<dofsPerNode; k++) {
-                for (UN i=0; i<faces->getNumEntities(); i++) {
-                    for (UN j=0; j<faces->getEntity(i)->getNumNodes(); j++) {
-                        this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,k),partMappings[ii][i],1.0);
-                    }
-                }
-                ii++;
-            }
-        }
-        
-        if (coarseSpaceFunctions[8]) { // Rotations
-            
-            FROSCH_ASSERT(dofsPerNode>1,"Dofs<2 => Rotations cannot be built.");
-            
-            for (UN i=0; i<faces->getNumEntities(); i++) {
-                for (UN j=0; j<faces->getEntity(i)->getNumNodes(); j++) {
-                    x = nodeList->getData(0)[faces->getEntity(i)->getLocalNodeID(j)];
-                    y = nodeList->getData(1)[faces->getEntity(i)->getLocalNodeID(j)];
-                    z = nodeList->getData(2)[faces->getEntity(i)->getLocalNodeID(j)];
+        for (UN i=0; i<entitySet->getNumEntities(); i++) {
+            for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
+                x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(j)];
+                y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(j)];
+                
+                // Rotation 1
+                rx = y;
+                ry = -x;
+                rz = 0;
+                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
+                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                if (dimension == 3) {
+                    z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(j)];
                     
-                    // Rotation 1
-                    rx = y;
-                    ry = -x;
-                    rz = 0;
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii][i],rx);
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii][i],ry);
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii][i],rz);
-                    
+                    rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                
                     // Rotation 2
                     rx = -z;
                     ry = 0;
                     rz = x;
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii+1][i],rx);
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii+1][i],ry);
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii+1][i],rz);
-                    
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                
                     // Rotation 3
                     rx = 0;
                     ry = z;
                     rz = -y;
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,0),partMappings[ii+2][i],rx);
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,1),partMappings[ii+2][i],ry);
-                    this->MVPhiGamma_[blockId]->replaceLocalValue(faces->getEntity(i)->getGammaDofID(j,2),partMappings[ii+2][i],rz);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
                 }
             }
             ii++;
         }
-
-        return 0;
+        return rotations;
     }
-   }
+    
+}
 
 #endif

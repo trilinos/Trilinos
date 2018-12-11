@@ -107,6 +107,7 @@ namespace FROSch {
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
         typedef Teuchos::RCP<CoarseSpace<SC,LO,GO,NO> > CoarseSpacePtr;
+        typedef Teuchos::ArrayRCP<CoarseSpacePtr>  CoarseSpacePtrVecPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         

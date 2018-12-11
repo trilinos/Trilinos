@@ -192,19 +192,15 @@ namespace FROSch {
                                           GOVecPtr dirichletBoundaryDofs,
                                           MultiVectorPtr nodeList);
         
-        int phiGammaGDSW(UN blockId,
-                         bool buildRotations,
-                         UN dimension,
-                         UN dofsPerNode,
-                         MultiVectorPtr nodeList,
-                         LOVecPtr2D partMappings,
-                         EntitySetPtr vertices,
-                         EntitySetPtr shortEdges,
-                         EntitySetPtr straightEdges,
-                         EntitySetPtr edges,
-                         EntitySetPtr faces,
-                         BoolVecPtr coarseSpaceFunctions);
+        MultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                 UN dofsPerNode,
+                                                 EntitySetPtr entitySet);
         
+        MultiVectorPtrVecPtr computeRotations(UN blockId,
+                                              UN dimension,
+                                              UN dofsPerNode,
+                                              MultiVectorPtr nodeList,
+                                              EntitySetPtr entitySet);
         
         DDInterfacePtr DDInterface_;
 

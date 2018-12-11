@@ -164,9 +164,7 @@ namespace FROSch {
         /*
          Todo: Das müssen Vektoren werden!
          vvvvvvvvvv
-         */
-        CoarseSpacePtr InterfaceCoarseSpace_;
-        
+         */        
         InterfacePartitionOfUnityPtr InterfacePartitionOfUnity_;
         
         LocalPartitionOfUnityBasisPtr LocalPartitionOfUnityBasis_;

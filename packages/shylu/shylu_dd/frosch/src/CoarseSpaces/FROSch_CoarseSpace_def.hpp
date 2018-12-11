@@ -184,6 +184,12 @@ namespace FROSch {
         FROSCH_ASSERT(!GlobalBasisMatrix_.is_null(),"GlobalBasisMatrix_.is_null().");
         return GlobalBasisMatrix_;
     }
+    
+    template <class SC,class LO,class GO,class NO>
+    bool CoarseSpace<SC,LO,GO,NO>::hasAssembledBasis() const
+    {
+        return !AssembledBasis_.is_null();
+    }
 }
 
 #endif

@@ -51,8 +51,7 @@ namespace FROSch {
                                                                 ParameterListPtr parameterList) :
     CoarseOperator<SC,LO,GO,NO> (k,parameterList),
     ExtensionSolver_ (),
-    MVPhiGamma_ (0),
-    BlockCoarseMaps_ (0),
+    InterfaceCoarseSpaces_ (0),
     Dimensions_ (0),
     DofsPerNode_ (0),
     GammaDofs_ (0),
@@ -110,13 +109,11 @@ namespace FROSch {
         GOVec mapVector(0);
         GO tmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            if (!BlockCoarseMaps_[i].is_null()) {
-                for (UN j=0; j<BlockCoarseMaps_[i]->getNodeNumElements(); j++) {
-                    mapVector.push_back(BlockCoarseMaps_[i]->getGlobalElement(j)+tmp);
+            for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getNodeNumElements(); j++) {
+                    mapVector.push_back(InterfaceCoarseSpaces_[i]->getBasisMap()->getGlobalElement(j)+tmp);
                 }
-                tmp += BlockCoarseMaps_[i]->getMaxAllGlobalIndex()+1;
+                tmp += InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()+1;
             }
-        }
         return Xpetra::MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
     }
     
@@ -143,58 +140,64 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-        int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr dofsMap)
-    	{
-        	// Das könnte man noch ändern
-        	this->GammaDofs_->resize(this->GammaDofs_.size()+1);
-        	this->IDofs_->resize(this->IDofs_.size()+1);
-        	this->BlockCoarseMaps_->resize(this->BlockCoarseMaps_.size()+1);
-        	this->MVPhiGamma_->resize(this->MVPhiGamma_.size()+1);
-        	this->DofsMaps_->resize(this->DofsMaps_.size()+1);
-        	this->DofsPerNode_->resize(this->DofsPerNode_.size()+1);
+    int  HarmonicCoarseOperator<SC,LO,GO,NO>::addZeroCoarseSpaceBlock(MapPtr dofsMap)
+    {
+        // Das könnte man noch ändern
+        GammaDofs_->resize(GammaDofs_.size()+1);
+        IDofs_->resize(IDofs_.size()+1);
+        InterfaceCoarseSpaces_->resize(InterfaceCoarseSpaces_.size()+1);
+        DofsMaps_->resize(DofsMaps_.size()+1);
+        DofsPerNode_->resize(DofsPerNode_.size()+1);
 
-        	this->NumberOfBlocks_++;
+        NumberOfBlocks_++;
 
-        	/////
-    		int blockId = this->NumberOfBlocks_-1;
+        /////
+        int blockId = NumberOfBlocks_-1;
 
-    		// Process the parameter list
-    		std::stringstream blockIdStringstream;
-    		blockIdStringstream << blockId+1;
-    		std::string blockIdString = blockIdStringstream.str();
-    		Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+        // Process the parameter list
+        std::stringstream blockIdStringstream;
+        blockIdStringstream << blockId+1;
+        std::string blockIdString = blockIdStringstream.str();
+        Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
-    		bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
+        bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
 
-    		this->GammaDofs_[blockId] = LOVecPtr(0);
+        GammaDofs_[blockId] = LOVecPtr(0);
 
-    		if (useForCoarseSpace) {
-    			//Epetra_SerialComm serialComm;
-    			MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
-    			this->MVPhiGamma_[blockId] = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
-    		}
+        MultiVectorPtr mVPhiGamma;
+        MapPtr blockCoarseMap;
+        if (useForCoarseSpace) {
+            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            
+            //Epetra_SerialComm serialComm;
+            MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
+            mVPhiGamma = Xpetra::MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
+        }
 
-    		for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
-    			this->GammaDofs_[blockId]->push_back(i);
+        for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
+            GammaDofs_[blockId]->push_back(i);
 
-    			if (useForCoarseSpace) {
-    				this->MVPhiGamma_[blockId]->replaceLocalValue(i,i,1.0);
-    			}
-    		}
+            if (useForCoarseSpace) {
+                mVPhiGamma->replaceLocalValue(i,i,1.0);
+            }
+        }
 
-    		this->IDofs_[blockId] = LOVecPtr(0);
+        IDofs_[blockId] = LOVecPtr(0);
 
-    		if (useForCoarseSpace) {
-    			this->BlockCoarseMaps_[blockId] = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,this->GammaDofs_[blockId](),0,this->MpiComm_);
-    		}
+        if (useForCoarseSpace) {
+            blockCoarseMap = Xpetra::MapFactory<LO,GO,NO>::Build(dofsMap->lib(),-1,GammaDofs_[blockId](),0,this->MpiComm_);
+            
+            InterfaceCoarseSpaces_[blockId]->addSubspace(blockCoarseMap,mVPhiGamma);
+            InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
+        }
 
-    		this->DofsMaps_[blockId] = MapPtrVecPtr(0);
-    		this->DofsMaps_[blockId].push_back(dofsMap);
+        DofsMaps_[blockId] = MapPtrVecPtr(0);
+        DofsMaps_[blockId].push_back(dofsMap);
 
-    		this->DofsPerNode_[blockId] = 1;
+        DofsPerNode_[blockId] = 1;
 
-    		return 0;
-    	}
+        return 0;
+    }
 
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::MultiVectorPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeExtensions(ConstMapPtr localMap,
@@ -217,18 +220,15 @@ namespace FROSch {
         for (UN i=0; i<NumberOfBlocks_; i++) {
             UN j = 0;
             UN k = 0;
-            //if (this->Verbose_) std::cout << MVPhiGamma_[i]->MyLength() << std::endl;
-            if (!MVPhiGamma_[i].is_null()) {
-                numLocalBlockRows[i] = MVPhiGamma_[i]->getNumVectors();
-                for (j=0; j<MVPhiGamma_[i]->getNumVectors(); j++) {
-                    for (k=0; k<MVPhiGamma_[i]->getLocalLength(); k++) {
-                        //if (this->Verbose_) std::cout << j << " " << k << " " <<  (*(*MVPhiGamma_[i])(j))[k] << std::endl;
-                        mVPhiGamma->replaceLocalValue(k+kk,j+jj,MVPhiGamma_[i]->getData(j)[k]);
-                        mVPhi->replaceLocalValue(indicesGammaDofsAll[k+kk],j+jj,MVPhiGamma_[i]->getData(j)[k]);
+            if (InterfaceCoarseSpaces_[i]->hasAssembledBasis()) {
+                numLocalBlockRows[i] = InterfaceCoarseSpaces_[i]->getLocalBasis()->getNumVectors();
+                for (j=0; j<numLocalBlockRows[i]; j++) {
+                    for (k=0; k<InterfaceCoarseSpaces_[i]->getLocalBasis()->getLocalLength(); k++) {
+                        mVPhiGamma->replaceLocalValue(k+kk,j+jj,InterfaceCoarseSpaces_[i]->getLocalBasis()->getData(j)[k]);
+                        mVPhi->replaceLocalValue(indicesGammaDofsAll[k+kk],j+jj,InterfaceCoarseSpaces_[i]->getLocalBasis()->getData(j)[k]);
                     }
                 }
             } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
-                //mVPhiGamma->replaceLocalValue(k+kk,j+jj,1.0);
                 k=GammaDofs_[i].size();
             }
             jj += j;
@@ -279,9 +279,6 @@ namespace FROSch {
             for (UN j=0; j<numLocalBlockRows[i]; j++) {
                 for (UN ii=0; ii<extensionBlocks.size(); ii++) {
                     for (LO k=bound[extensionBlocks[ii]]; k<bound[extensionBlocks[ii]+1]; k++) {
-                        if (k>=indicesIDofsAll.size()) {
-                            std::cout << k << " " << indicesIDofsAll.size() << std::endl;
-                        }
                         indicesIDofsAll[k];
                         mVPhiI->getData(itmp)[k];
                         mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiI->getData(itmp)[k]);
