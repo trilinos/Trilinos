@@ -226,7 +226,8 @@ evaluateFields(
   basisValues->evaluateValues(pointValues.coords_ref,
                               pointValues.jac,
                               pointValues.jac_det,
-                              pointValues.jac_inv);
+                              pointValues.jac_inv,
+                              (int) workset.num_cells);
 
   // this can be over-ridden in basisValues e.g., DG element setting
   if(basis->requiresOrientations()) {
@@ -236,7 +237,7 @@ evaluateFields(
     for (index_t c=0;c<workset.num_cells;++c)
       ortPerWorkset.push_back((*orientations)[details.cell_local_ids[c]]);
     
-    basisValues->applyOrientations(ortPerWorkset);
+    basisValues->applyOrientations(ortPerWorkset, (int) workset.num_cells);
   }
 }
 

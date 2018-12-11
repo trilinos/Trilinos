@@ -143,7 +143,7 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
     // Create and store integration values
     Teuchos::RCP<panzer::IntegrationValues2<double> > iv = Teuchos::rcp(new panzer::IntegrationValues2<double>("",true));
     iv->setupArrays(ir);
-    iv->evaluateValues(cell_vertex_coordinates);
+    iv->evaluateValues(cell_vertex_coordinates,num_cells);
     _integrator_map[integration_description.getKey()] = iv;
 
     // We need to generate a integration rule - basis pair for each basis
@@ -164,7 +164,9 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
                            iv->jac_det,
                            iv->jac_inv,
                            iv->weighted_measure,
-                           cell_vertex_coordinates);
+                           cell_vertex_coordinates,
+                           true,
+                           num_cells);
       } else if((ir->getType() == panzer::IntegrationDescriptor::CV_VOLUME)
           or (ir->getType() == panzer::IntegrationDescriptor::CV_SIDE)
           or (ir->getType() == panzer::IntegrationDescriptor::CV_BOUNDARY)){
@@ -178,7 +180,9 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
                            iv->jac_det,
                            iv->jac_inv,
                            iv->weighted_measure,
-                           cell_vertex_coordinates);
+                           cell_vertex_coordinates,
+                           true,
+                           num_cells);
       }
       _basis_map[basis_description.getKey()][integration_description.getKey()] = bv;
     }
