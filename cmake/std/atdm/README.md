@@ -75,7 +75,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<shared_static>-<release_debug>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -83,9 +83,9 @@ keywords have reasonable defaults for a given system.  See some examples of
 build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
-[`<compiler>`](#compiler), [`<release_or_debug>`](#release_or_debug),
-[`<kokkos_threading>`](#kokkos_threading), and [`<kokkos_arch>`](#kokkos_arch)
-is described below.
+[`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
+[`<kokkos_thread>`](#kokkos_thread), [`<shared_static>`](#shared_static)
+and [`<release_debug>`](#release_debug), is described below.
 
 <a name="system_name"/>
 
@@ -100,6 +100,27 @@ On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
 `<build-name>`, then the `cee-rhel6` env will be selected.  But if
 `sems-rhel6` is included in the build name or no system name is given, then
 the `sems-rhel6` env will be selected by default on such machines.
+
+<a name="kokkos_arch"/>
+
+**`<kokkos_arch>`:** The `<build-name>` string can also contain keywords to
+determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
+architecture name that is recognized by the CMake
+[KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
+configure option for Trilinos and Kokkos.  Some common supported Kokkos
+architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
+`KNL`.  When a GPU is present, some common Kokkos architecture options include
+`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
+supported by the current system or selected compiler, then the `load-env.sh`
+script will return an error message listing the value choices for
+`KOKKOS_ARCH` for each supported compiler.
+
+Note that currently only a single `KOKKOS_ARCH` value is recognized in the
+`<build-name>` string and it must be proceeded a dash '-' such as with
+`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
+specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
+that would be needed or useful) but such functionality could be supported in
+the future if needed.
 
 <a name="compiler"/>
 
@@ -135,9 +156,29 @@ which compilers and which versions are supported for a given system.)  If
 Carefully examine STDOUT after running `source cmake/std/atdm/load-env
 <build-name>` to see what compiler gets selected.
 
-<a name="release_or_debug"/>
+<a name="kokkos_thread"/>
 
-**`<release_or_debug>`:** The following `<build-name>` keywords specify debug or
+**`<kokkos_thread>`:** The following `<build-name>` keywords determine the
+Kokkos threading / backend model variable `<NODE_TYPE>` (default is
+`<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
+
+* `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
+* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
+* `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
+
+If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
+automatically set to `CUDA`.
+
+<a name="shared_static"/>
+
+**`<shared_static>`:** The following `<build-name>` keywords specify debug if a shared or static library build of Trilinos is to be created (which also impacts if shared or stack TPL libs are linked to on some system):
+
+* `static`: `BUILD_SHARED_LIBS=OFF`, DEFAULT
+* `shared`: `BUILD_SHARED_LIBS=ON`
+
+<a name="release_debug"/>
+
+**`<release_debug>`:** The following `<build-name>` keywords specify debug or
 optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
 checking (e.g. array bounds checking, pointer checking etc.)):
@@ -156,40 +197,6 @@ checking (e.g. array bounds checking, pointer checking etc.)):
   * Turn **ON** runtime debug checking
   * NOTE: This build supports running in a debugger. 
 
-<a name="kokkos_threading"/>
-
-**`<kokkos_threading>`:** The following `<build-name>` keywords determine the
-Kokkos threading model variable `<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL`
-unless `<COMPILER>=CUDA`):
-
-* `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
-* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
-* `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
-
-If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
-automatically set to `CUDA`.
-
-<a name="kokkos_arch"/>
-
-**`<kokkos_arch>`:** The `<build-name>` string can also contain keywords to
-determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
-architecture name that is recognized by the CMake
-[KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
-configure option for Trilinos and Kokkos.  Some common supported Kokkos
-architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
-`KNL`.  When a GPU is present, some common Kokkos architecture options include
-`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
-supported by the current system or selected compiler, then the `load-env.sh`
-script will return an error message listing the value choices for
-`KOKKOS_ARCH` for each supported compiler.
-
-Note that currently only a single `KOKKOS_ARCH` value is recognized in the
-`<build-name>` string and it must be proceeded a dash '-' such as with
-`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
-specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
-that would be needed or useful) but such functionality could be supported in
-the future if needed.
-
 All other strings in `<build-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<build-name>` string is defined in
 this form is that this can be used as the Jenkins job name and the Trilinos
@@ -204,14 +211,14 @@ supported builds (see below).
 
 **[build-name-examples]** Some examples of `<build-name>` keyword sets used on
 various platforms include:
-* `gnu-debug-openmp`
-* `gnu-opt-openmp`
-* `intel-debug-openmp`
-* `intel-opt-openmp`
-* `sems-rhel6-gnu-debug-openmp`
-* `cee-rhel6-gnu-debug-openmp`
-* `sems-rhel6-intel-opt-openmp`
-* `cee-rhel6-intel-opt-openmp`
+* `gnu-openmp-debug`
+* `gnu-openmp-opt`
+* `intel-openmp-debug`
+* `intel-openmp-opt`
+* `sems-rhel6-gnu-openmp-debug`
+* `cee-rhel6-gnu-openmp-debug`
+* `sems-rhel6-intel-openmp-opt`
+* `cee-rhel6-intel-openmp-opt`
 * `cee-rhel6-gnu-7.2.0-openmpi-1.10.2-debug-openmp`
 * `intel-debug-openmp-KNL`
 * `intel-opt-openmp-HSW`

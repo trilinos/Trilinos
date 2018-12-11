@@ -17,6 +17,7 @@ echo "Setting compiler and build options for buld name '${ATDM_CONFIG_BUILD_NAME
 export ATDM_CONFIG_COMPILER=DEFAULT
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
 export ATDM_CONFIG_BUILD_TYPE=DEBUG
+export ATDM_CONFIG_SHARED_LIBS=OFF
 export ATDM_CONFIG_USE_OPENMP=OFF
 export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
@@ -165,3 +166,11 @@ fi
 # 'cuda' or 'pthread', then that will be selected for the Kokkos backend.
 # Otherwise, if one fo these are not selected and 'openmpi' is present in the
 # build name, then the default Kokkos backend will become 'openmp'!
+
+# Set 'static' or 'shared'
+ATDM_CONFIG_SHARED_LIBS=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
+  export ATDM_CONFIG_SHARED_LIBS=ON
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
+  export ATDM_CONFIG_SHARED_LIBS=OFF
+fi
