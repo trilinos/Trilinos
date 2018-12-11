@@ -121,6 +121,7 @@ namespace FROSch {
         typedef Teuchos::RCP<SubdomainSolver<SC,LO,GO,NO> > SubdomainSolverPtr;
         
         typedef unsigned UN;
+        typedef Teuchos::Array<UN> UNVec;
         typedef Teuchos::ArrayRCP<UN> UNVecPtr;
         
         typedef Teuchos::Array<LO> LOVec;
