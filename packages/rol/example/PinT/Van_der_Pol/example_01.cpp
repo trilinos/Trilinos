@@ -41,20 +41,20 @@
 // ************************************************************************
 // @HEADER
 
+#include <iomanip>
+
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
 #include "ROL_DynamicObjectiveCheck.hpp"
 #include "ROL_DynamicTrackingObjective.hpp"
-
 #include "ROL_SerialObjective.hpp"
 #include "ROL_SerialConstraint.hpp"
-
 #include "ROL_ParameterList.hpp"
+#include "ROL_OptimizationSolver.hpp"
 
 #include "VdP_DynamicConstraint.hpp"
-
 
 using RealT = double;
 
@@ -196,6 +196,35 @@ int main( int argc, char* argv[] ) {
 
   *outStream << "\n\ncheckHessVec_22\n\n";
   serial_obj->checkHessVec_22( *U, *Z, *VZ, true, *outStream ); 
+
+  // Initial guess of unit state and unit amplitude control
+  U->setScalar(1.0);
+  Z->setScalar(1.0);
+  
+  auto x       = make_Vector_SimOpt( U, Z );
+  auto problem = make_OptimizationProblem( serial_obj, x, serial_con, W ); 
+  auto solver  = make_OptimizationSolver( problem, VdP_params );
+
+  solver->solve(*outStream);
+  
+  *outStream << "Optimal Solution\n\n";
+  *outStream << std::setw(13) << "Time Step (k)"
+             << std::setw(12)  << "t_k"
+             << std::setw(16) << "Position"
+             << std::setw(16) << "Velocity" 
+             << std::setw(20) << "Damping Coefficient" << std::endl;
+  *outStream << std::string(100,'-') << std::endl;
+  for( size_type k=0; k<U->numVectors(); ++k ) {
+    auto& u_k = *(static_cast<SV&>((*U)[k]).getVector());
+    auto& z_k = *(static_cast<SV&>((*Z)[k]).getVector());
+    *outStream << std::setw(13) << k 
+               << std::setw(12) << std::setprecision(3) << timeStamps->at(k).t[0] 
+               << std::setw(16) << std::setprecision(8) << u_k[0] 
+               << std::setw(16) << std::setprecision(8) << u_k[1] 
+               << std::setw(20) << std::setprecision(8) << z_k[0] << std::endl;
+  }
+
+
 
   if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
   else                std::cout << "End Result: TEST PASSED\n";

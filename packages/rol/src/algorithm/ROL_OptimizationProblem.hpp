@@ -44,6 +44,8 @@
 #ifndef ROL_OPTIMIZATIONPROBLEM_HPP
 #define ROL_OPTIMIZATIONPROBLEM_HPP
 
+#include <utility>
+
 #include "ROL_ConstraintManager.hpp"
 #include "ROL_SlacklessObjective.hpp"
 
@@ -1052,9 +1054,8 @@ public:
       outStream << "Checking objective function." << std::endl;
       obj_->checkGradient(x,v,true,outStream,numSteps,order); outStream << std::endl;
       obj_->checkHessVec(x,u,true,outStream,numSteps,order);  outStream << std::endl;
-      obj_->checkHessSym(x,u,v,true,outStream);               outStream << std::endl;
-    }
-  }
+      obj_->checkHessSym(x,u,v,true,outStream);               outStream << std::endl;}
+}
 
   void checkMultiplierVector( Vector<Real> &w, // Dual constraint space
                               Vector<Real> &q, // Dual constraint space
@@ -1132,6 +1133,16 @@ public:
   }
 
 }; // class OptimizationProblem
+
+
+template<template<typename> class V, 
+         template<typename> class Obj, 
+         typename Real,typename P=Ptr<OptimizationProblem<Real>>,typename...Args>
+inline typename std::enable_if<std::is_base_of<Objective<Real>,Obj<Real>>::value &&
+                               std::is_base_of<Vector<Real>, V<Real>>::value,P>::type
+make_OptimizationProblem( const Ptr<Obj<Real>> &obj, const Ptr<V<Real>> &x, Args&&...args) {
+  return makePtr<OptimizationProblem<Real>>(obj,x,std::forward<Args>(args)...);
+}
 
 }  // namespace ROL
 

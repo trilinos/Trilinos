@@ -327,6 +327,35 @@ public:
 
 }; // class OptimizationSolver
 
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( OptimizationProblem<Real>& opt, 
+                         ParameterList& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(opt,parlist);
+}
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( const Ptr<OptimizationProblem<Real>>& opt, 
+                         ParameterList& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(*opt,parlist);
+}
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( OptimizationProblem<Real>& opt, 
+                         const Ptr<ParameterList>& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(opt,*parlist);
+}
+
+template<typename Real>
+inline Ptr<OptimizationSolver<Real>>
+make_OptimizationSolver( const Ptr<OptimizationProblem<Real>>& opt, 
+                         const Ptr<ParameterList>& parlist ) {
+  return makePtr<OptimizationSolver<Real>>(*opt,*parlist);
+}
+
 } // namespace ROL
 
 #endif // ROL_OPTIMIZATIONSOLVER_HPP
