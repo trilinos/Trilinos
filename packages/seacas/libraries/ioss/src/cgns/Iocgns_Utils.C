@@ -933,12 +933,12 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     for (const auto &zgc : sb->m_zoneConnectivity) {
       if (zgc.is_valid() && zgc.is_active()) {
         int                zgc_idx = 0;
-        std::array<INT, 6> owner_range{{zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeBeg[1],
-                                        zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0],
-                                        zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeEnd[2]}};
-        std::array<INT, 6> donor_range{{zgc.m_donorRangeBeg[0], zgc.m_donorRangeBeg[1],
-                                        zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0],
-                                        zgc.m_donorRangeEnd[1], zgc.m_donorRangeEnd[2]}};
+        std::array<cgsize_t, 6> owner_range{{zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeBeg[1],
+					     zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0],
+					     zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeEnd[2]}};
+        std::array<cgsize_t, 6> donor_range{{zgc.m_donorRangeBeg[0], zgc.m_donorRangeBeg[1],
+					     zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0],
+					     zgc.m_donorRangeEnd[1], zgc.m_donorRangeEnd[2]}};
 
         std::string donor_name   = zgc.m_donorName;
         std::string connect_name = zgc.m_connectionName;
