@@ -183,7 +183,7 @@ optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
 checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `release-debug`: (`<BUILD_TYPE>=RELEASE_RELEASE`)
+* `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE_RELEASE`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build runs runtime checks to catch developer and user mistakes
@@ -192,7 +192,7 @@ checking (e.g. array bounds checking, pointer checking etc.)):
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
   * Turn **OFF** runtime debug checking
   * NOTE: This build runs fast with minimal checks (i.e. production).
-* `debug`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
+* `debug` or `dbg`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build supports running in a debugger. 

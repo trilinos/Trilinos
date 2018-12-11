@@ -139,12 +139,20 @@ fi
 # Defaults to debug
 if [[ $ATDM_CONFIG_BUILD_NAME == *"release-debug"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"release_debug"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt-dbg"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt_dbg"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"release"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"debug"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"dbg"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=DEBUG;
 fi
 
 # Set the node types default to serial
