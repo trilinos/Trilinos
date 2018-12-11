@@ -65,8 +65,8 @@ namespace MueLu {
   }
 
   template<class Node>
-  void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node>& X,
-                                                Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node>&       Y,
+  void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
+                                                Tpetra::MultiVector<double,int,int,Node>&       Y,
                                                 Teuchos::ETransp mode, double alpha, double beta) const {
     RCP<const Teuchos::Comm<int> > comm = Y.getMap()->getComm();
 
