@@ -61,39 +61,15 @@ namespace FROSch {
     NumberOfBlocks_ (0)
     {
         
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    int HarmonicCoarseOperator<SC,LO,GO,NO>::compute()
-    {
-
-        // This is not optimal yet... Some work could be moved to Initialize
-        if (this->Verbose_) {
-            std::cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
-        }
-        if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
-            this->setUpCoarseOperator();
-            this->IsComputed_ = true;
-        }
-        else if(!this->ParameterList_->get("Recycling","none").compare("all") && this->IsComputed_) {
-            // Maybe use some advanced settings in the future
-        }
-        else {
-            this->computeHarmonicExtensions();
-            this->setUpCoarseOperator();
-            this->IsComputed_ = true;
-        }
-        return 0;
-    }
+    }        
 
     template <class SC,class LO,class GO,class NO>
-    int HarmonicCoarseOperator<SC,LO,GO,NO>::computeHarmonicExtensions()
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
-        // Build repeatedMap for the local saddle point problem
-        MapPtr repeatedMap = assembleRepeatedMap(); // Todo:: Eigentlich gehört das in Initialize !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        MapPtr repeatedMap = assembleSubdomainMap();
+        
         // Build local saddle point problem
-        CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap);
+        CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap); // AH 12/11/2018: Should this be in initalize?
 
         // Extract submatrices
         GOVec indicesGammaDofsAll(0);
@@ -107,7 +83,7 @@ namespace FROSch {
             for (UN j=0; j<IDofs_[i].size(); j++) {
                 indicesIDofsAll.push_back(tmp+IDofs_[i][j]);
             }
-            tmp += GammaDofs_[i].size()+IDofs_[i].size(); // Ist das mit tmp korrekt?
+            tmp += GammaDofs_[i].size()+IDofs_[i].size();
         }
 
         CrsMatrixPtr kII;
@@ -118,16 +94,34 @@ namespace FROSch {
         FROSch::BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
         // Assemble coarse map
-        MapPtr coarseMap = assembleCoarseMap(); // Todo:: Eigentlich gehört das in Initialize !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        MapPtr coarseMap = assembleCoarseMap(); // AH 12/11/2018: Should this be in initalize?
 
         // Build the saddle point harmonic extensions
-        computeAndFillPhi(repeatedMatrix,repeatedMap,coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
+        MultiVectorPtr localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),coarseMap,indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
 
-        return 0;
+        coarseSpace->addSubspace(coarseMap,localCoarseSpaceBasis);
+        
+        return repeatedMap;
+    }        
+    
+    template <class SC,class LO,class GO,class NO>
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
+    {
+        GOVec mapVector(0);
+        GO tmp = 0;
+        for (UN i=0; i<NumberOfBlocks_; i++) {
+            if (!BlockCoarseMaps_[i].is_null()) {
+                for (UN j=0; j<BlockCoarseMaps_[i]->getNodeNumElements(); j++) {
+                    mapVector.push_back(BlockCoarseMaps_[i]->getGlobalElement(j)+tmp);
+                }
+                tmp += BlockCoarseMaps_[i]->getMaxAllGlobalIndex()+1;
+            }
+        }
+        return Xpetra::MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleRepeatedMap()
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleSubdomainMap()
     {
         FROSCH_ASSERT(DofsMaps_.size()==NumberOfBlocks_,"DofsMaps_.size()!=NumberOfBlocks_");
         FROSCH_ASSERT(DofsPerNode_.size()==NumberOfBlocks_,"DofsPerNode_.size()!=NumberOfBlocks_");
@@ -143,22 +137,6 @@ namespace FROSch {
                 for (UN k=0; k<DofsPerNode_[i]; k++) {
                     mapVector.push_back(DofsMaps_[i][k]->getGlobalElement(j));
                 }
-            }
-        }
-        return Xpetra::MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::assembleCoarseMap()
-    {
-        GOVec mapVector(0);
-        GO tmp = 0;
-        for (UN i=0; i<NumberOfBlocks_; i++) {
-            if (!BlockCoarseMaps_[i].is_null()) {
-                for (UN j=0; j<BlockCoarseMaps_[i]->getNodeNumElements(); j++) {
-                    mapVector.push_back(BlockCoarseMaps_[i]->getGlobalElement(j)+tmp);
-                }
-                tmp += BlockCoarseMaps_[i]->getMaxAllGlobalIndex()+1;
             }
         }
         return Xpetra::MapFactory<LO,GO,NO>::Build(DofsMaps_[0][0]->lib(),-1,mapVector(),0,this->MpiComm_);
@@ -215,38 +193,38 @@ namespace FROSch {
 
     		this->DofsPerNode_[blockId] = 1;
 
-
     		return 0;
     	}
 
     template <class SC,class LO,class GO,class NO>
-    int HarmonicCoarseOperator<SC,LO,GO,NO>::computeAndFillPhi(CrsMatrixPtr repeatedMatrix,
-                                                               MapPtr repeatedMap,
-                                                               MapPtr coarseMap,
-                                                               GOVecView indicesGammaDofsAll,
-                                                               GOVecView indicesIDofsAll,
-                                                               CrsMatrixPtr kII,
-                                                               CrsMatrixPtr kIGamma)
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MultiVectorPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeExtensions(ConstMapPtr localMap,
+                                                                                                                        ConstMapPtr coarseMap,
+                                                                                                                        GOVecView indicesGammaDofsAll,
+                                                                                                                        GOVecView indicesIDofsAll,
+                                                                                                                        CrsMatrixPtr kII,
+                                                                                                                        CrsMatrixPtr kIGamma)
     {
-        this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        //this->Phi_ = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),coarseMap,coarseMap->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        MultiVectorPtr mVPhi = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,coarseMap->getNodeNumElements());
         MultiVectorPtr mVtmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
         MultiVectorPtr mVPhiI = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),coarseMap->getNodeNumElements());
-        SC thresholdPhi = this->ParameterList_->get("Threshold Phi",1.e-8);
+
         //Build mVPhiGamma
         MultiVectorPtr mVPhiGamma = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),coarseMap->getNodeNumElements());
         LO jj=0;
         LO kk=0;
-        LOVec numberBlockInterfaceEntity(NumberOfBlocks_);
+        UNVec numLocalBlockRows(NumberOfBlocks_);
         for (UN i=0; i<NumberOfBlocks_; i++) {
             UN j = 0;
             UN k = 0;
             //if (this->Verbose_) std::cout << MVPhiGamma_[i]->MyLength() << std::endl;
             if (!MVPhiGamma_[i].is_null()) {
-                numberBlockInterfaceEntity[i] = MVPhiGamma_[i]->getNumVectors();
+                numLocalBlockRows[i] = MVPhiGamma_[i]->getNumVectors();
                 for (j=0; j<MVPhiGamma_[i]->getNumVectors(); j++) {
                     for (k=0; k<MVPhiGamma_[i]->getLocalLength(); k++) {
                         //if (this->Verbose_) std::cout << j << " " << k << " " <<  (*(*MVPhiGamma_[i])(j))[k] << std::endl;
                         mVPhiGamma->replaceLocalValue(k+kk,j+jj,MVPhiGamma_[i]->getData(j)[k]);
+                        mVPhi->replaceLocalValue(indicesGammaDofsAll[k+kk],j+jj,MVPhiGamma_[i]->getData(j)[k]);
                     }
                 }
             } else { // Das ist für den Fall, dass keine Basisfunktionen für einen Block gebaut werden sollen
@@ -256,34 +234,7 @@ namespace FROSch {
             jj += j;
             kk += k;
         }
-        
-        LO iD;
-        SC valueTmp;
-        LOVec indices;
-        SCVec values;
-        // IST DAS LANGSAM??????? TESTEN!!!!!
-        for (UN i=0; i<mVPhiGamma->getLocalLength(); i++) {
-            indices.resize(0);
-            values.resize(0);
-            for (UN j=0; j<mVPhiGamma->getNumVectors(); j++) {
-                valueTmp=mVPhiGamma->getData(j)[i];
-                if (fabs(valueTmp) > thresholdPhi) {
-                    indices.push_back(j);
-                    values.push_back(valueTmp);
-                }
-            }
-            
-            // CHECK, IF OK?!?!?
-            iD = this->K_->getRowMap()->getLocalElement(repeatedMap->getGlobalElement(indicesGammaDofsAll[i]));
-            //cout << ProcessorMapRepeatedDofs->GID(IndicesGamma[0][i]) << " " << ID << std::endl;
-            
-            //ID = IndicesGamma[0][i];
-            if (iD!=-1) {
-                this->Phi_->insertLocalValues(iD,indices(),values());
-            }
-            
-        }
-//        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
+        // Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
         // Hier Multiplikation kIGamma*PhiGamma
         kIGamma->apply(*mVPhiGamma,*mVtmp);
         
@@ -291,7 +242,6 @@ namespace FROSch {
         
         // Jetzt der solver für kII
         ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,sublist(this->ParameterList_,"ExtensionSolver")));
-        // DAS MÜSSEN WIR NOCH ÄNDERN -> initialize, compute, apply...
         ExtensionSolver_->initialize();
         ExtensionSolver_->compute();
         ExtensionSolver_->apply(*mVtmp,*mVPhiI);
@@ -301,82 +251,46 @@ namespace FROSch {
         
         GOVec2D excludeCols(NumberOfBlocks_);
         
+        LOVec bound(NumberOfBlocks_+1,(LO)0);
+        for (UN i=0; i<NumberOfBlocks_; i++) {
+            bound[i+1] = bound[i] + this->IDofs_[i].size();
+        }
+        
+        LO itmp = 0;
         for (UN i=0; i<NumberOfBlocks_; i++) {
             std::stringstream blockIdStringstream;
             blockIdStringstream << i+1;
             std::string blockIdString = blockIdStringstream.str();
             Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
-            std::string excludeBlocks = coarseSpaceList->get("Exclude","0");
-            LOVec indices = FROSch::GetIndicesFromString(excludeBlocks,(LO)0);
-            for (int j=0; j<indices.size(); j++) {
-                indices[j] -= 1;
+            std::string excludeBlocksString = coarseSpaceList->get("Exclude","0");
+            UNVec excludeBlocks = FROSch::GetIndicesFromString(excludeBlocksString,(UN)0);
+            sortunique(excludeBlocks);
+            for (UN j=0; j<excludeBlocks.size(); j++) {
+                excludeBlocks[j] -= 1;
             }
-            if (indices[0]>-1) {
-                for (UN j=0; j<(UN)indices.size(); j++) {
-                    LO priorCoarseSize = 0;
-                    for (UN r=0; r<(UN)indices[j]; r++) {
-                        priorCoarseSize += numberBlockInterfaceEntity[indices[r]-1];// GammaDofs_[indices[r]-1].size();
-                    }
-                    excludeCols[i].push_back(priorCoarseSize);
-                    excludeCols[i].push_back(priorCoarseSize + numberBlockInterfaceEntity[indices[j]] - 1);
-
-                }
-            }
-            GO maxGID = 0;
-            for (UN dofs=0; dofs<DofsPerNode_[i]; dofs++) {
-                if (maxGID < DofsMaps_[i][dofs]->getMaxAllGlobalIndex()) {
-                    maxGID = DofsMaps_[i][dofs]->getMaxAllGlobalIndex();
-                }
-            }
-            if (i<NumberOfBlocks_-1) {
-                priorIndex[i+1] = maxGID;
-            }
-            postIndex[i] = maxGID+1;
-        }
-        priorIndex[0] = -1;
- 
-
-        // Now we have to insert the values to the global matrix Phi
-        // IST DAS LANGSAM??????? TESTEN!!!!!
-        for (UN i=0; i<mVPhiI->getLocalLength(); i++) {
-            indices.resize(0);
-            values.resize(0);
-            GO gid = repeatedMap->getGlobalElement(indicesIDofsAll[i]);
-            LO block = -1;
-            bool use;
-            
-            for (UN j=0; j<priorIndex.size(); j++) {
-                if (gid>priorIndex[j] && gid<postIndex[j]) {
-                    block = j;
-                }
-            }
-            for (UN j=0; j<mVPhiI->getNumVectors(); j++) {
-                use = true;
-                for (UN r=0; r<(UN)excludeCols[block].size(); r=r+2) {
-                    if (j>=(UN)excludeCols[block][r] && j<=(UN)excludeCols[block][r+1]){
-                        use = false;
-                    }
-                }
-                if (use) {
-                    valueTmp=mVPhiI->getData(j)[i];
-                    if (fabs(valueTmp) > thresholdPhi) {
-                        indices.push_back(j);
-                        values.push_back(valueTmp);
-                    }
+            UNVec extensionBlocks(0);
+            for (UN j=0; j<NumberOfBlocks_; j++) {
+                typename UNVec::iterator it = std::find(excludeBlocks.begin(),excludeBlocks.end(),j);
+                if (it == excludeBlocks.end()) {
+                    extensionBlocks.push_back(j);
                 }
             }
             
-            // CHECK, IF OK?!?!?
-            iD = this->K_->getRowMap()->getLocalElement(gid);
-            //ID = IndicesI[0][i];
-            if (iD!=-1) {
-                this->Phi_->insertLocalValues(iD,indices(),values());
+            for (UN j=0; j<numLocalBlockRows[i]; j++) {
+                for (UN ii=0; ii<extensionBlocks.size(); ii++) {
+                    for (LO k=bound[extensionBlocks[ii]]; k<bound[extensionBlocks[ii]+1]; k++) {
+                        if (k>=indicesIDofsAll.size()) {
+                            std::cout << k << " " << indicesIDofsAll.size() << std::endl;
+                        }
+                        indicesIDofsAll[k];
+                        mVPhiI->getData(itmp)[k];
+                        mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiI->getData(itmp)[k]);
+                    }
+                }
+                itmp++;
             }
         }
-
-        this->Phi_->fillComplete(coarseMap,this->Phi_->getRowMap());
-//        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); this->Phi_->describe(*fancy,Teuchos::VERB_EXTREME);
-        return 0;
+        return mVPhi;
     }
     
 }
