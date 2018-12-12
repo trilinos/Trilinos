@@ -1226,7 +1226,7 @@ private:
   int TInsertIndices(int Row, int NumIndices, int_type* Indices);
 
   template<typename int_type>
-  int InsertIndicesIntoSorted_(int Row, int NumIndices, int_type* Indices);
+  int TInsertIndicesIntoSorted(int Row, int NumIndices, int_type* Indices);
 
   template<typename int_type>
   int RemoveGlobalIndices(int_type GlobalRow, int NumIndices, int_type* Indices);
