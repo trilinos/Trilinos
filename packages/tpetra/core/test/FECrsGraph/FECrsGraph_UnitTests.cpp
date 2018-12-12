@@ -77,9 +77,70 @@ typedef Tpetra::global_size_t GST;
     TEST_EQUALITY_CONST(gblSuccess, 1);  \
   }
 
+template<class LO, class GO, class Node>
+class GraphPack {
+public:
+  RCP<const Tpetra::Map<LO,GO,Node> > uniqueMap;
+  RCP<const Tpetra::Map<LO,GO,Node> > overlapMap;
+  std::vector<std::vector<GO> > element2node;
+
+  void print(int rank, std::ostream & out) {
+    using std::endl;
+    out << "["<<rank<<"] Unique Map  : ";
+    for(size_t i=0; i<uniqueMap->getNodeNumElements(); i++)
+      out << uniqueMap->getGlobalElement(i) << " ";
+    out<<endl;      
+
+    out << "["<<rank<<"] Overlap Map : ";
+    for(size_t i=0; i<overlapMap->getNodeNumElements(); i++)
+      out << overlapMap->getGlobalElement(i) << " ";
+    out<<endl;
+
+    out << "["<<rank<<"] element2node: ";
+    for(size_t i=0; i<(size_t)element2node.size(); i++) {
+      out <<"(";
+      for(size_t j=0; j<(size_t)element2node[i].size(); j++)
+        out<<element2node[i][j] << " ";
+      out<<") ";
+    }
+    out<<endl;
+  }
+};
+
+
+template<class LO, class GO, class Node>
+void generate_fem1d_graph(size_t numLocalNodes, RCP<const Comm<int> > comm , GraphPack<LO,GO,Node> & pack) {
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+  int rank    = comm->getRank();
+  int numProc = comm->getSize();
+  size_t numOverlapNodes  = (rank == numProc-1) ? numLocalNodes : numLocalNodes + 1;
+  size_t numLocalElements = (rank == numProc-1) ? numLocalNodes -1 : numLocalNodes;
+  //  printf("CMS numOverlapNodes = %d numLocalElements = %d\n",numOverlapNodes,numLocalElements);
+
+  pack.uniqueMap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocalNodes,comm);
+
+  Teuchos::Array<GO> overlapIndices(numOverlapNodes);
+  for(size_t i=0; i<numLocalNodes; i++) {
+    overlapIndices[i] = pack.uniqueMap->getGlobalElement(i);
+  }
+  if(rank != numProc -1)  overlapIndices[numOverlapNodes-1] = overlapIndices[numLocalNodes-1] +1;
+
+  pack.overlapMap = rcp(new Tpetra::Map<LO,GO,Node>(INVALID,overlapIndices,0,comm));
+
+  pack.element2node.resize(numLocalElements);
+  for(size_t i=0; i<numLocalElements; i++) {
+    pack.element2node[i].resize(2);
+    pack.element2node[i][0] = pack.uniqueMap->getGlobalElement(i);
+    pack.element2node[i][1] = pack.uniqueMap->getGlobalElement(i) + 1;
+  }
+}
+
 //
 // UNIT TESTS
 //
+
+
+
 
 
 
@@ -118,12 +179,55 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     GLOBAL_SUCCESS_CHECK(out,comm,true)
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
+{
+  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
+  typedef Tpetra::CrsGraph<LO,GO,Node> CG;
+  
+  // get a comm
+  RCP<const Comm<int> > comm = getDefaultComm();
+  
+  // create a Map
+  const size_t numLocal = 10;
+
+  // Generate a mesh
+  GraphPack<LO,GO,Node> pack;
+  generate_fem1d_graph(numLocal,comm,pack);
+  //  pack.print(comm->getRank(),std::cout);
+
+  // Comparative assembly
+  // FIXME: We should be able to get away with 4 for StaticProfile here, but we need 4 since duplicates are
+  // not being handled correctly.
+  CG g1(pack.uniqueMap,4,StaticProfile);
+  FEG g2(pack.uniqueMap,pack.overlapMap,4);
+
+  g2.beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        //        printf("Inserting (%d,%d)\n",gid_j,gid_k);
+        g1.insertGlobalIndices(gid_j,1,&gid_k);
+        g2.insertGlobalIndices(gid_j,1,&gid_k);
+      }
+    }
+  }
+  g1.fillComplete();
+  g2.endFill();
+
+  // FIXME: Use graph comparison here
+  GLOBAL_SUCCESS_CHECK(out,comm,true)
+}
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Diagonal, LO, GO, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Diagonal, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FECrsGraph, Assemble1D, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
