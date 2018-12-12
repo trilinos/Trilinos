@@ -189,7 +189,7 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  status = ex_int_populate_header(exoid, path, my_mode, comp_ws, io_ws);
+  status = ex_int_populate_header(exoid, path, my_mode, is_parallel, comp_ws, io_ws);
   if (status != EX_NOERR) {
     EX_FUNC_LEAVE(status);
   }

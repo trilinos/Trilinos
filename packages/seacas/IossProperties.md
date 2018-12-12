@@ -43,7 +43,7 @@ external   | Files are decomposed externally into a file-per-processor in a para
 -----------------|--------|-----------------------------------------------------------
 COMPOSE\_RESTART  | on/[off] |
 COMPOSE\_RESULTS  | on/[off] |
-PARALLEL\_IO\_MODE | mpiio, pnetcdf |
+PARALLEL\_IO\_MODE | netcdf4, hdf5, pnetcdf | mpiio and mpiposix are deprecated hdf5=netcdf4
 
 ## Properties Related to byte size of reals and integers 
  
