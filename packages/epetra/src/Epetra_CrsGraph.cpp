@@ -518,7 +518,7 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               int* UserIndices)
 {
   if(RowMap().GlobalIndicesTypeValid())
-    return InsertIndicesIntoSorted_<int>(Row, NumIndices, UserIndices);
+    return TInsertIndicesIntoSorted<int>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted global index type unknown.", -1);
 }
