@@ -58,7 +58,11 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   # This machine has the SEMS modules!
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
-  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
+  if [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
+    # This is a RHEL7 platform that has the SEMS modules.
+    ATDM_HOSTNAME=sems-rhel7
+    ATDM_SYSTEM_NAME=sems-rhel7
+  elif [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
     # This is a RHEL6 platform that has the SEMS modules.  But is this also a
     # CEE LAN mahcine?
     if [[ -f /projects/sparc/modules/cee-rhel6/sparc/master ]] ; then
@@ -91,6 +95,13 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
       ATDM_HOSTNAME=sems-rhel6
       ATDM_SYSTEM_NAME=sems-rhel6
     fi
+  else
+    echo
+    echo "***"
+    echo "*** Error, hostname='$ATDM_CONFIG_REAL_HOSTNAME' has the SEMS env"
+    echo "*** mounted but the SEMS system '${ATDM_SYSTEM_NAME}' is not yet supported!"
+    echo "***"
+    return
   fi
 fi
 

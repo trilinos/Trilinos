@@ -17,6 +17,7 @@ echo "Setting compiler and build options for buld name '${ATDM_CONFIG_BUILD_NAME
 export ATDM_CONFIG_COMPILER=DEFAULT
 export ATDM_CONFIG_KOKKOS_ARCH=DEFAULT
 export ATDM_CONFIG_BUILD_TYPE=DEBUG
+export ATDM_CONFIG_SHARED_LIBS=OFF
 export ATDM_CONFIG_USE_OPENMP=OFF
 export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
@@ -37,12 +38,18 @@ if [[ "${ATDM_CONFIG_COMPILER}" != "DEFAULT" ]] ; then
   export ATDM_CONFIG_CUSTOM_COMPILER_SET=1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"default" ]]; then
   export ATDM_CONFIG_COMPILER=DEFAULT
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.8.4"* ]]; then
+  export ATDM_CONFIG_COMPILER=GNU-4.8.4
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-4.9.3"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-4.9.3
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu-7.2.0"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"gnu"* ]]; then
   export ATDM_CONFIG_COMPILER=GNU
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-17.0.1"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel-18.0.2"* ]]; then
+ export ATDM_CONFIG_COMPILER=INTEL-18.0.2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"intel"* ]]; then
  export ATDM_CONFIG_COMPILER=INTEL
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-8.0"* ]]; then
@@ -53,6 +60,10 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-3.9.0"* ]]; then
+  export ATDM_CONFIG_COMPILER=CLANG-3.9.0
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang-5.0.1"* ]]; then
+  export ATDM_CONFIG_COMPILER=CLANG-5.0.1
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"clang"* ]]; then
   export ATDM_CONFIG_COMPILER=CLANG
 else
@@ -128,12 +139,20 @@ fi
 # Defaults to debug
 if [[ $ATDM_CONFIG_BUILD_NAME == *"release-debug"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"release_debug"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt-dbg"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt_dbg"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"release"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"debug"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE;
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"dbg"* ]]; then
+  export ATDM_CONFIG_BUILD_TYPE=DEBUG;
 fi
 
 # Set the node types default to serial
@@ -155,3 +174,11 @@ fi
 # 'cuda' or 'pthread', then that will be selected for the Kokkos backend.
 # Otherwise, if one fo these are not selected and 'openmpi' is present in the
 # build name, then the default Kokkos backend will become 'openmp'!
+
+# Set 'static' or 'shared'
+ATDM_CONFIG_SHARED_LIBS=OFF
+if [[ $ATDM_CONFIG_BUILD_NAME == *"shared"* ]]; then
+  export ATDM_CONFIG_SHARED_LIBS=ON
+elif [[ $ATDM_CONFIG_BUILD_NAME == *"static"* ]]; then
+  export ATDM_CONFIG_SHARED_LIBS=OFF
+fi
