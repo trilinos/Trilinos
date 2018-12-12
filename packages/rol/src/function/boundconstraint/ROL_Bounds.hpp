@@ -58,11 +58,12 @@ namespace ROL {
 template <class Real>
 class Bounds : public BoundConstraint<Real> {
 private:
-  const ROL::Ptr<Vector<Real> > x_lo_;
-  const ROL::Ptr<Vector<Real> > x_up_;
+  const ROL::Ptr<Vector<Real>> x_lo_;
+  const ROL::Ptr<Vector<Real>> x_up_;
   const Real scale_;
+  const Real feasTol_;
 
-  ROL::Ptr<Vector<Real> > mask_;
+  ROL::Ptr<Vector<Real>> mask_;
 
   Real min_diff_;
 
@@ -109,9 +110,10 @@ public:
 
   Bounds(const Vector<Real> &x,
          bool isLower = true,
-         Real scale = 1)
+         Real scale = 1,
+         Real feasTol = 1e-2)
     : x_lo_(x.clone()),  x_up_(x.clone()),
-      scale_(scale), mask_(x.clone()),
+      scale_(scale), feasTol_(feasTol), mask_(x.clone()),
       min_diff_(ROL_INF<Real>()) {
     if (isLower) {
       x_lo_->set(x);
@@ -125,10 +127,13 @@ public:
     }
   }
 
-  Bounds(const ROL::Ptr<Vector<Real> > &x_lo,
-         const ROL::Ptr<Vector<Real> > &x_up,
-         const Real scale = 1)
-    : x_lo_(x_lo), x_up_(x_up), scale_(scale), mask_(x_lo->clone()) {
+  Bounds(const ROL::Ptr<Vector<Real>> &x_lo,
+         const ROL::Ptr<Vector<Real>> &x_up,
+         const Real scale = 1,
+         const Real feasTol = 1e-2)
+    : x_lo_(x_lo), x_up_(x_up),
+      scale_(scale), feasTol_(feasTol),
+      mask_(x_lo->clone()) {
     const Real half(0.5), one(1);
     // Compute difference between upper and lower bounds
     mask_->set(*x_up_);
@@ -157,7 +162,6 @@ public:
 
   virtual void projectInterior( Vector<Real> &x ) {
     // Make vector strictly feasible
-    const Real eps(1e-1);
     // Lower feasibility
     if (BoundConstraint<Real>::isLowerActivated()) {
       class LowerFeasible : public Elementwise::BinaryFunction<Real> {
@@ -177,7 +181,7 @@ public:
           return (x < y+tol) ? val : x;
         }
       };
-      x.applyBinary(LowerFeasible(eps,min_diff_), *x_lo_);
+      x.applyBinary(LowerFeasible(feasTol_,min_diff_), *x_lo_);
     }
     // Upper feasibility
     if (BoundConstraint<Real>::isUpperActivated()) {
@@ -198,7 +202,7 @@ public:
           return (x > y-tol) ? val : x;
         }
       };
-      x.applyBinary(UpperFeasible(eps,min_diff_), *x_up_);
+      x.applyBinary(UpperFeasible(feasTol_,min_diff_), *x_up_);
     }
   }
 
@@ -254,11 +258,11 @@ public:
     }
   }
 
-  const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
+  const ROL::Ptr<const Vector<Real>> getLowerBound( void ) const {
     return x_lo_;
   }
 
-  const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
+  const ROL::Ptr<const Vector<Real>> getUpperBound( void ) const {
     return x_up_;
   }
 
