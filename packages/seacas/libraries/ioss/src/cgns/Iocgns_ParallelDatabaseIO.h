@@ -38,8 +38,9 @@
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
 #include <Ioss_IOFactory.h>  // for IOFactory
 #include <Ioss_Map.h>        // for Map
-#include <Ioss_State.h>      // for State
-#include <iostream>          // for ostream
+#include <Ioss_MeshType.h>
+#include <Ioss_State.h> // for State
+#include <iostream>     // for ostream
 #include <memory>
 #include <stddef.h> // for size_t
 #include <stdint.h> // for int64_t
@@ -199,9 +200,9 @@ namespace Iocgns {
 
     std::vector<int64_t> get_processor_zone_node_offset() const;
 
-    mutable int   m_cgnsFilePtr{-1};
-    mutable int   m_cgnsSerFilePtr{-1};
-    CG_ZoneType_t m_zoneType{CG_ZoneTypeNull};
+    mutable int    m_cgnsFilePtr{-1};
+    mutable int    m_cgnsSerFilePtr{-1};
+    Ioss::MeshType m_meshType{Ioss::MeshType::UNKNOWN};
 
     mutable std::unique_ptr<DecompositionDataBase> decomp;
 

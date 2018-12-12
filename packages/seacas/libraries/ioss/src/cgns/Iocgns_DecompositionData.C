@@ -464,17 +464,25 @@ namespace Iocgns {
 
   template <typename INT>
   void DecompositionData<INT>::decompose_model(int serFilePtr, int filePtr,
-                                               CG_ZoneType_t common_zone_type)
+                                               Ioss::MeshType mesh_type)
   {
-    if (common_zone_type == CG_Unstructured) {
+    if (mesh_type == Ioss::MeshType::UNSTRUCTURED) {
       decompose_unstructured(filePtr);
     }
-    else if (common_zone_type == CG_Structured) {
+    else if (mesh_type == Ioss::MeshType::STRUCTURED) {
       decompose_structured(serFilePtr, filePtr);
     }
+#if IOSS_ENABLE_HYBRID
+    else if (mesh_type == Ioss::MeshType::HYBRID) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: CGNS: The mesh type is HYBRID which is not supported for parallel "
+                "decomposition yet.";
+      IOSS_ERROR(errmsg);
+    }
+#endif
     else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: CGNS: The common zone type is not of type Unstructured or Structured "
+      errmsg << "ERROR: CGNS: The mesh type is not Unstructured or Structured "
                 "which are the only types currently supported";
       IOSS_ERROR(errmsg);
     }

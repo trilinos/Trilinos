@@ -846,7 +846,7 @@ int  ex_leavedef(int         exoid,    /* NemesisI file ID         */
  );
 
 int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version);
-int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_ws, int *io_ws);
+int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws, int *io_ws);
 
 int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
                            struct elem_blk_parm *elem_blk_parm);

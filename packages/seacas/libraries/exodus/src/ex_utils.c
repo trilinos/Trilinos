@@ -105,14 +105,14 @@ void ex_print_config(void)
 #if NC_HAS_HDF5
   fprintf(stderr, "\tUsing NetCDF with HDF5 enabled\n");
 #endif
-#if NC_HAS_PNETCDF
-  fprintf(stderr, "\tUsing NetCDF with PnetCDF enabled\n");
-#endif
 #if NC_HAS_PARALLEL
   fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5 and/or PnetCDF\n");
 #endif
+#if NC_HAS_PNETCDF
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via PnetCDF\n");
+#endif
 #if NC_HAS_PARALLEL4
-  fprintf(stderr, "\tUsing NetCDF with parallel IO enable via HDF5\n");
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5\n");
 #endif
 #if NC_HAS_CDF5
   fprintf(stderr, "\tUsing NetCDF with CDF5 support\n");
@@ -1807,7 +1807,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   return nc_mode | pariomode;
 }
 
-int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_ws, int *io_ws)
+int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws, int *io_ws)
 {
   int status;
   int old_fill;
@@ -1815,7 +1815,6 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_w
   int filesiz     = 1;
   int is_hdf5     = 0;
   int is_pnetcdf  = 0;
-  int is_parallel = 0;
 
   float vers;
   char  errmsg[MAX_ERR_LENGTH];
@@ -1855,11 +1854,19 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_w
     is_pnetcdf = 1;
   }
 
-  if (my_mode & EX_MPIPOSIX) {
+  if (my_mode & EX_NETCDF4) {
     is_hdf5 = 1;
   }
 
-  is_parallel = (my_mode & EX_PNETCDF) || (my_mode & EX_MPIPOSIX);
+  /*
+   * NetCDF has deprecated use of MPIIO and MPIPOSIX and instead rely
+   * on explicitly specifying either NetCDF-4 of PNetCDF output. For
+   * backward-compatibility, we map the MPIIO and MPIPOSIX over to
+   * NetCDF4 which is hdf5-based...
+   */
+  if (is_parallel && ((my_mode & EX_MPIIO) || (my_mode & EX_MPIPOSIX))) {
+    is_hdf5 = 1;
+  }
 
   if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, is_parallel, is_hdf5, is_pnetcdf) !=
       EX_NOERR) {

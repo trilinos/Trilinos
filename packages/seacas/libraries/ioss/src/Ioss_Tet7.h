@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "tetra7";
+    static constexpr const char *name = "tetra7";
 
     static void factory();
     ~Tet7() override;

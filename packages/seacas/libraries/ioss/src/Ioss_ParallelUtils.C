@@ -415,50 +415,6 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
 template void Ioss::ParallelUtils::global_array_minmax(unsigned long *, unsigned long,
                                                        MinMax) const;
 
-template <typename T>
-void Ioss::ParallelUtils::global_array_minmax(T *local_minmax, size_t count,
-                                              Ioss::ParallelUtils::MinMax which) const
-{
-#ifdef SEACAS_HAVE_MPI
-  if (parallel_size() > 1 && count > 0) {
-    if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
-      std::ostringstream errmsg;
-      errmsg << "Attempting mpi while in barrier owned by " << Ioss::SerializeIO::getOwner();
-      IOSS_ERROR(errmsg);
-    }
-
-    std::vector<T> maxout(count);
-    MPI_Op         oper = which_reduction(which);
-
-    const int success = MPI_Allreduce((void *)local_minmax, maxout.data(), static_cast<int>(count),
-                                      mpi_type(T()), oper, communicator_);
-    if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      errmsg << "Ioss::ParallelUtils::global_array_minmax - MPI_Allreduce failed";
-      IOSS_ERROR(errmsg);
-    }
-    // Now copy back into passed in array...
-    for (size_t i = 0; i < count; i++) {
-      local_minmax[i] = maxout[i];
-    }
-  }
-#endif
-}
-
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<char> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<int> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<int64_t> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<double> &, MinMax) const;
-template void Ioss::ParallelUtils::global_array_minmax(std::vector<unsigned long> &, MinMax) const;
-
-template <typename T>
-void Ioss::ParallelUtils::global_array_minmax(std::vector<T> &local_minmax, MinMax which) const
-{
-  if (!local_minmax.empty()) {
-    global_array_minmax(local_minmax.data(), local_minmax.size(), which);
-  }
-}
-
 template void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
 template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
 template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
