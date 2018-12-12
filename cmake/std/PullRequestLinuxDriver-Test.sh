@@ -30,17 +30,16 @@ function test_pr_constraints_master()
     dst_repo=${3:?}
     dst_branch=${4:?}
 
+    echo -e "------------------------------------------------------------------------------------------"
+
     re_trilinos_url="(git@github.com:|https:\/\/github.com\/){1}trilinos\/Trilinos(\.git)?$"
 
     if [[ "${dst_repo:?}" =~ ${re_trilinos_url:?} ]] && [[ "${dst_branch:?}" == "master"  ]]
     then
-
-        echo -e "------------------------------------------------------------------------------------------"
         echo -e "NOTICE: Destination branch is trilinos/Trilnos::master"
 
         if [[ ! "${src_repo:?}" =~ ${re_trilinos_url:?} ]] || [[ ! "${src_branch:?}" == "develop" ]]
         then
-
             echo -e "ERROR : Source branch is NOT trilinos/Trilinos::develop"
             echo -e "      : This violates Trilinos policy, pull requests into the master branch"
             echo -e "      : are only allowed from the develop branch."
@@ -48,18 +47,17 @@ function test_pr_constraints_master()
             echo -e "------------------------------------------------------------------------------------------"
             echo -e ""
             exit 99
-
         else
-
             echo -e "NOTICE: Source branch IS trilinos/Trilinos::develop"
             echo -e "      : This is allowed, proceeding with testing."
-
         fi
-
-        echo -e "------------------------------------------------------------------------------------------"
-        echo -e ""
-
+    else
+        echo -e "NOTICE: Destination branch is NOT trilinos/Trilinos::master"
+        echo -e "      : PR testing will proceed.
     fi
+
+    echo -e "------------------------------------------------------------------------------------------"
+    echo -e ""
 }
 
 
