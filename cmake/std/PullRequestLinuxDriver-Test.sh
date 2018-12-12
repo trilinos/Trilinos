@@ -53,7 +53,7 @@ function test_pr_constraints_master()
         fi
     else
         echo -e "NOTICE: Destination branch is NOT trilinos/Trilinos::master"
-        echo -e "      : PR testing will proceed.
+        echo -e "      : PR testing will proceed."
     fi
 
     echo -e "------------------------------------------------------------------------------------------"
