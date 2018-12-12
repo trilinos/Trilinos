@@ -438,7 +438,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
 
 // =========================================================================
 template<typename int_type>
-int Epetra_CrsGraph::InsertIndicesIntoSorted_(int Row,
+int Epetra_CrsGraph::TInsertIndicesIntoSorted(int Row,
               int NumIndices,
               int_type* UserIndices)
 {
