@@ -198,6 +198,170 @@ namespace FROSch {
 
         return 0;
     }
+    
+    template <class SC,class LO,class GO,class NO>
+    int HarmonicCoarseOperator<SC,LO,GO,NO>::computeVolumeFunctions(UN blockId,
+                                                                    UN dimension,
+                                                                    MapPtr nodesMap,
+                                                                    MultiVectorPtr nodeList,
+                                                                    EntitySetPtr interior)
+    {
+        // Process the parameter list
+        std::stringstream blockIdStringstream;
+        blockIdStringstream << blockId+1;
+        std::string blockIdString = blockIdStringstream.str();
+        Teuchos::RCP<Teuchos::ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
+        
+        bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
+        bool useRotations = coarseSpaceList->get("Rotations",true);
+        
+        this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getEntity(0)->getNumNodes());
+        this->IDofs_[blockId] = LOVecPtr(0);
+        for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
+            for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
+                this->GammaDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
+            }
+        }
+        
+        if (useForCoarseSpace) {            
+            InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
+            
+            interior->buildEntityMap(nodesMap);
+            
+            MultiVectorPtrVecPtr translations = computeTranslations(blockId,interior);
+            for (UN i=0; i<translations.size(); i++) {
+                this->InterfaceCoarseSpaces_[blockId]->addSubspace(interior->getEntityMap(),translations[i]);
+            }
+            if (useRotations) {
+                MultiVectorPtrVecPtr rotations = computeRotations(blockId,dimension,nodeList,interior);
+                for (UN i=0; i<rotations.size(); i++) {
+                    this->InterfaceCoarseSpaces_[blockId]->addSubspace(interior->getEntityMap(),rotations[i]);
+                }
+            }
+            
+            InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
+            
+            // Count entities
+            GO numEntitiesGlobal = interior->getEntityMap()->getMaxAllGlobalIndex();
+            if (interior->getEntityMap()->lib()==Xpetra::UseEpetra || interior->getEntityMap()->getGlobalNumElements()>0) {
+                numEntitiesGlobal += 1;
+            }
+            
+            if (this->MpiComm_->getRank() == 0) {
+                std::cout << "\n\
+                --------------------------------------------\n\
+                # volumes:               --- " << numEntitiesGlobal << "\n\
+                --------------------------------------------\n\
+                Coarse space:\n\
+                --------------------------------------------\n\
+                volume: translations      --- " << 1 << "\n\
+                volume: rotations         --- " << useRotations << "\n\
+                --------------------------------------------\n";
+            }
+        }
+        return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeTranslations(UN blockId,
+                                                                                                                                EntitySetPtr entitySet)
+    {
+        MultiVectorPtrVecPtr translations(this->DofsPerNode_[blockId]);
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
+            if (entitySet->getNumEntities()>0) {
+                translations[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,entitySet->getNumEntities());
+            } else {
+                translations[i] = Teuchos::null;
+            }
+        }
+        
+        for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
+            UN ii=0;
+            for (UN i=0; i<entitySet->getNumEntities(); i++) {
+                for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
+                    translations[k]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,k),ii,1.0);
+                }
+                ii++;
+            }
+        }
+        return translations;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::MultiVectorPtrVecPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeRotations(UN blockId,
+                                                                                                                             UN dimension,
+                                                                                                                             MultiVectorPtr nodeList,
+                                                                                                                             EntitySetPtr entitySet)
+    {
+        FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"dimension of the nodeList is wrong.");
+        FROSCH_ASSERT(dimension==this->DofsPerNode_[blockId],"dimension!=this->DofsPerNode_[blockId]");
+        
+        UN rotationsPerEntity = 0;
+        switch (dimension) {
+            case 1:
+                return Teuchos::null;
+                break;
+            case 2:
+                rotationsPerEntity = 1;
+                break;
+            case 3:
+                rotationsPerEntity = 3;
+                break;
+            default:
+                FROSCH_ASSERT(false,"The dimension is neither 2 nor 3!");
+                break;
+        }
+        
+        MultiVectorPtrVecPtr rotations(rotationsPerEntity);
+        MapPtr serialGammaMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getRangeMap()->lib(),this->GammaDofs_[blockId].size(),0,this->SerialComm_);
+        for (UN i=0; i<rotationsPerEntity; i++) {
+            if (entitySet->getNumEntities()>0) {
+                rotations[i] = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(serialGammaMap,entitySet->getNumEntities());
+            } else {
+                rotations[i] = Teuchos::null;
+            }
+        }
+        
+        UN ii=0;
+        SC x,y,z,rx,ry,rz;
+        for (UN i=0; i<entitySet->getNumEntities(); i++) {
+            for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
+                x = nodeList->getData(0)[entitySet->getEntity(i)->getLocalNodeID(j)];
+                y = nodeList->getData(1)[entitySet->getEntity(i)->getLocalNodeID(j)];
+                
+                // Rotation 1
+                rx = y;
+                ry = -x;
+                rz = 0;
+                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
+                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                if (dimension == 3) {
+                    z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(j)];
+                    
+                    rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                    
+                    // Rotation 2
+                    rx = -z;
+                    ry = 0;
+                    rz = x;
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                    
+                    // Rotation 3
+                    rx = 0;
+                    ry = z;
+                    rz = -y;
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                }
+            }
+            ii++;
+        }
+        return rotations;
+    }
 
     template <class SC,class LO,class GO,class NO>
     typename HarmonicCoarseOperator<SC,LO,GO,NO>::MultiVectorPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeExtensions(ConstMapPtr localMap,

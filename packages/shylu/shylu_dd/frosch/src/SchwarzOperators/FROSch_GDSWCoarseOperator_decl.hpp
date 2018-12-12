@@ -190,17 +190,7 @@ namespace FROSch {
                                           MapPtr nodesMap,
                                           MapPtrVecPtr dofsMaps,
                                           GOVecPtr dirichletBoundaryDofs,
-                                          MultiVectorPtr nodeList);
-        
-        MultiVectorPtrVecPtr computeTranslations(UN blockId,
-                                                 UN dofsPerNode,
-                                                 EntitySetPtr entitySet);
-        
-        MultiVectorPtrVecPtr computeRotations(UN blockId,
-                                              UN dimension,
-                                              UN dofsPerNode,
-                                              MultiVectorPtr nodeList,
-                                              EntitySetPtr entitySet);
+                                          MultiVectorPtr nodeList);                
         
         DDInterfacePtr DDInterface_;
 

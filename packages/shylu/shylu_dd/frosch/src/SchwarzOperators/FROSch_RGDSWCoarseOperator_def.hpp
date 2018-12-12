@@ -88,7 +88,7 @@ namespace FROSch {
         Teuchos::Array<GO> tmpDirichletBoundaryDofs(dirichletBoundaryDofs()); // Here, we do a copy. Maybe, this is not necessary
         sortunique(tmpDirichletBoundaryDofs);
         
-        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap));
+        this->DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,this->DofsPerNode_[blockId],nodesMap));
         this->DDInterface_->resetGlobalDofs(dofsMaps);
         this->DDInterface_->removeDirichletNodes(tmpDirichletBoundaryDofs);
         if (this->ParameterList_->get("Test Unconnected Interface",true)) {
@@ -101,123 +101,127 @@ namespace FROSch {
         interface = this->DDInterface_->getInterface();
         interior = this->DDInterface_->getInterior();
         
-        this->GammaDofs_[blockId] = LOVecPtr(dofsPerNode*interface->getEntity(0)->getNumNodes());
-        this->IDofs_[blockId] = LOVecPtr(dofsPerNode*interior->getEntity(0)->getNumNodes());
-        for (UN k=0; k<dofsPerNode; k++) {
-            for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
-                this->GammaDofs_[blockId][dofsPerNode*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
+        // Check for interface
+        if (interface->getNumEntities()==0) {
+            this->computeVolumeFunctions(blockId,dimension,nodesMap,nodeList,interior);
+        } else {
+            this->GammaDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interface->getEntity(0)->getNumNodes());
+            this->IDofs_[blockId] = LOVecPtr(this->DofsPerNode_[blockId]*interior->getEntity(0)->getNumNodes());
+            for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
+                for (UN i=0; i<interface->getEntity(0)->getNumNodes(); i++) {
+                    this->GammaDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interface->getEntity(0)->getLocalDofID(i,k);
+                }
+                for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
+                    this->IDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
+                }
             }
-            for (UN i=0; i<interior->getEntity(0)->getNumNodes(); i++) {
-                this->IDofs_[blockId][dofsPerNode*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
-            }
-        }
-        
-        this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
-        
-        if (useForCoarseSpace) {
-            this->DDInterface_->findAncestors();
             
-            ////////////////////////////////
-            // Build Processor Map Coarse //
-            ////////////////////////////////
-            MapPtrVecPtr mapVector(dofsPerNode*3+useRotations*3*(dofsPerNode-1+((dimension==3)&&(dofsPerNode==3))));
+            this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
             
-            vertices = this->DDInterface_->getVertices();
-            vertices->buildEntityMap(nodesMap);
-            
-            edges = this->DDInterface_->getEdges();
-            edges->buildEntityMap(nodesMap);
-            
-            faces = this->DDInterface_->getFaces();
-            faces->buildEntityMap(nodesMap);
-            
-            // HIER MUSS NOCH WAS GEÄNDERT WERDEN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            AncestorVertices = this->DDInterface_->getAncestorVertices();
-            AncestorVertices->buildEntityMap(nodesMap);
-            
-            AncestorEdges = this->DDInterface_->getAncestorEdges();
-            AncestorEdges->buildEntityMap(nodesMap);
-            
-            AncestorFaces = this->DDInterface_->getAncestorFaces();
-            AncestorFaces->buildEntityMap(nodesMap);
-            
-            UN ii=0;
-            for (UN i=0; i<dofsPerNode; i++) {
-                mapVector[ii] = AncestorVertices->getEntityMap();
-                ii++;
-            }
-            if (useRotations) {
-                for (UN i=0; i<dofsPerNode-1+((dimension==3)&&(dofsPerNode==3)); i++) {
+            if (useForCoarseSpace) {
+                this->DDInterface_->findAncestors();
+                
+                ////////////////////////////////
+                // Build Processor Map Coarse //
+                ////////////////////////////////
+                MapPtrVecPtr mapVector(this->DofsPerNode_[blockId]*3+useRotations*3*(this->DofsPerNode_[blockId]-1+((dimension==3)&&(this->DofsPerNode_[blockId]==3))));
+                
+                vertices = this->DDInterface_->getVertices();
+                vertices->buildEntityMap(nodesMap);
+                
+                edges = this->DDInterface_->getEdges();
+                edges->buildEntityMap(nodesMap);
+                
+                faces = this->DDInterface_->getFaces();
+                faces->buildEntityMap(nodesMap);
+                
+                // HIER MUSS NOCH WAS GEÄNDERT WERDEN !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                AncestorVertices = this->DDInterface_->getAncestorVertices();
+                AncestorVertices->buildEntityMap(nodesMap);
+                
+                AncestorEdges = this->DDInterface_->getAncestorEdges();
+                AncestorEdges->buildEntityMap(nodesMap);
+                
+                AncestorFaces = this->DDInterface_->getAncestorFaces();
+                AncestorFaces->buildEntityMap(nodesMap);
+                
+                UN ii=0;
+                for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
                     mapVector[ii] = AncestorVertices->getEntityMap();
                     ii++;
                 }
-            }
-            for (UN i=0; i<dofsPerNode; i++) {
-                mapVector[ii] = AncestorEdges->getEntityMap();
-                ii++;
-            }
-            if (useRotations) {
-                for (UN i=0; i<dofsPerNode-1+((dimension==3)&&(dofsPerNode==3)); i++) {
+                if (useRotations) {
+                    for (UN i=0; i<this->DofsPerNode_[blockId]-1+((dimension==3)&&(this->DofsPerNode_[blockId]==3)); i++) {
+                        mapVector[ii] = AncestorVertices->getEntityMap();
+                        ii++;
+                    }
+                }
+                for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
                     mapVector[ii] = AncestorEdges->getEntityMap();
                     ii++;
                 }
-            }
-            for (UN i=0; i<dofsPerNode; i++) {
-                mapVector[ii] = AncestorFaces->getEntityMap();
-                ii++;
-            }
-            if (useRotations) {
-                for (UN i=0; i<dofsPerNode-1+((dimension==3)&&(dofsPerNode==3)); i++) {
+                if (useRotations) {
+                    for (UN i=0; i<this->DofsPerNode_[blockId]-1+((dimension==3)&&(this->DofsPerNode_[blockId]==3)); i++) {
+                        mapVector[ii] = AncestorEdges->getEntityMap();
+                        ii++;
+                    }
+                }
+                for (UN i=0; i<this->DofsPerNode_[blockId]; i++) {
                     mapVector[ii] = AncestorFaces->getEntityMap();
                     ii++;
                 }
-            }
-            
-            LOVec numEntitiesGlobal(3);
-            numEntitiesGlobal[0] = AncestorVertices->getEntityMap()->getMaxAllGlobalIndex();
-            if (AncestorVertices->getEntityMap()->lib()==Xpetra::UseEpetra || AncestorVertices->getEntityMap()->getGlobalNumElements()>0) {
-                numEntitiesGlobal[0] += 1;
-            }
-            numEntitiesGlobal[1] = AncestorEdges->getEntityMap()->getMaxAllGlobalIndex();
-            if (AncestorEdges->getEntityMap()->lib()==Xpetra::UseEpetra || AncestorEdges->getEntityMap()->getGlobalNumElements()>0) {
-                numEntitiesGlobal[1] += 1;
-            }
-            numEntitiesGlobal[2] = AncestorFaces->getEntityMap()->getMaxAllGlobalIndex();
-            if (AncestorFaces->getEntityMap()->lib()==Xpetra::UseEpetra || AncestorFaces->getEntityMap()->getGlobalNumElements()>0) {
-                numEntitiesGlobal[2] += 1;
-            }
-            
-            for (UN i=0; i<numEntitiesGlobal.size(); i++) {
-                if (numEntitiesGlobal[i]<0) {
-                    numEntitiesGlobal[i] = 0;
+                if (useRotations) {
+                    for (UN i=0; i<this->DofsPerNode_[blockId]-1+((dimension==3)&&(this->DofsPerNode_[blockId]==3)); i++) {
+                        mapVector[ii] = AncestorFaces->getEntityMap();
+                        ii++;
+                    }
                 }
+                
+                GOVec numEntitiesGlobal(3);
+                numEntitiesGlobal[0] = AncestorVertices->getEntityMap()->getMaxAllGlobalIndex();
+                if (AncestorVertices->getEntityMap()->lib()==Xpetra::UseEpetra || AncestorVertices->getEntityMap()->getGlobalNumElements()>0) {
+                    numEntitiesGlobal[0] += 1;
+                }
+                numEntitiesGlobal[1] = AncestorEdges->getEntityMap()->getMaxAllGlobalIndex();
+                if (AncestorEdges->getEntityMap()->lib()==Xpetra::UseEpetra || AncestorEdges->getEntityMap()->getGlobalNumElements()>0) {
+                    numEntitiesGlobal[1] += 1;
+                }
+                numEntitiesGlobal[2] = AncestorFaces->getEntityMap()->getMaxAllGlobalIndex();
+                if (AncestorFaces->getEntityMap()->lib()==Xpetra::UseEpetra || AncestorFaces->getEntityMap()->getGlobalNumElements()>0) {
+                    numEntitiesGlobal[2] += 1;
+                }
+                
+                for (UN i=0; i<numEntitiesGlobal.size(); i++) {
+                    if (numEntitiesGlobal[i]<0) {
+                        numEntitiesGlobal[i] = 0;
+                    }
+                }
+                
+                if (this->MpiComm_->getRank() == 0) {
+                    std::cout << "\n\
+                    --------------------------------------------\n\
+                    # coarse vertices:       --- " << numEntitiesGlobal[0] << "\n\
+                    # coarse edges:          --- " << numEntitiesGlobal[1] << "\n\
+                    # coarse faces:          --- " << numEntitiesGlobal[2] << "\n\
+                    --------------------------------------------\n\
+                    Coarse space:\n\
+                    --------------------------------------------\n\
+                    vertices: translations      --- " << 1 << "\n\
+                    vertices: rotations         --- " << useRotations << "\n\
+                    --------------------------------------------\n";
+                }
+                this->BlockCoarseDimension_[blockId] = numEntitiesGlobal[0];
+                LOVecPtr2D partMappings;
+                MapPtr blockMap = AssembleMaps(mapVector(),partMappings);
+                ////////////////////
+                // Build PhiGamma //
+                ////////////////////
+                MultiVectorPtr basisfunctions = phiGammaReducedGDSW(blockId,option,useRotations,dimension,nodeList,partMappings,vertices,edges,faces,blockMap);
+                
+                this->InterfaceCoarseSpaces_[blockId]->addSubspace(blockMap,basisfunctions);
+                this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
             }
-
-            if (this->MpiComm_->getRank() == 0) {
-                std::cout << "\n\
-                --------------------------------------------\n\
-                # coarse vertices:       --- " << numEntitiesGlobal[0] << "\n\
-                # coarse edges:          --- " << numEntitiesGlobal[1] << "\n\
-                # coarse faces:          --- " << numEntitiesGlobal[2] << "\n\
-                --------------------------------------------\n\
-                Coarse space:\n\
-                --------------------------------------------\n\
-                vertices: translations      --- " << 1 << "\n\
-                vertices: rotations         --- " << useRotations << "\n\
-                --------------------------------------------\n";
-            }
-            this->BlockCoarseDimension_[blockId] = numEntitiesGlobal[0];
-            LOVecPtr2D partMappings;
-            MapPtr blockMap = AssembleMaps(mapVector(),partMappings);
-            ////////////////////
-            // Build PhiGamma //
-            ////////////////////
-            MultiVectorPtr basisfunctions = phiGammaReducedGDSW(blockId,option,useRotations,dimension,dofsPerNode,nodeList,partMappings,vertices,edges,faces,blockMap);
-            
-            this->InterfaceCoarseSpaces_[blockId]->addSubspace(blockMap,basisfunctions);            
-            this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
         }
-        
         return 0;
     }
     
@@ -226,7 +230,6 @@ namespace FROSch {
                                                                                                                     int option,
                                                                                                                     bool buildRotations,
                                                                                                                     UN dimension,
-                                                                                                                    UN dofsPerNode,
                                                                                                                     MultiVectorPtr nodeList,
                                                                                                                     LOVecPtr2D partMappings,
                                                                                                                     EntitySetPtr vertices,
@@ -253,7 +256,7 @@ namespace FROSch {
                 
                 // Vertices translations
                 if (dimension==2) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<edges->getNumEntities(); i++) {
                             InterfaceEntityPtr edge = edges->getEntity(i);
                             EntitySetPtr AncestorVertices = edge->getAncestors();
@@ -269,7 +272,7 @@ namespace FROSch {
                         itmp++;
                     }
                 } else if (dimension==3) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<faces->getNumEntities(); i++) {
                             vertexAncestorsFace.resize(0);
                             InterfaceEntityPtr face = faces->getEntity(i);
@@ -441,7 +444,7 @@ namespace FROSch {
                 
                 // Edges translations
                 if (dimension==2) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<edges->getNumEntities(); i++) {
                             InterfaceEntityPtr edge = edges->getEntity(i);
                             EntitySetPtr AncestorVertices = edge->getAncestors();
@@ -454,7 +457,7 @@ namespace FROSch {
                         itmp++;
                     }
                 } else if (dimension==3) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<faces->getNumEntities(); i++) {
                             InterfaceEntityPtr face = faces->getEntity(i);
                             EntitySetPtr AncestorEdges = face->getAncestors();
@@ -569,7 +572,7 @@ namespace FROSch {
                 }
                 
                 // Faces translations
-                for (UN k=0; k<dofsPerNode; k++) {
+                for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                     for (UN i=0; i<faces->getNumEntities(); i++) {
                         InterfaceEntityPtr face = faces->getEntity(i);
                         EntitySetPtr AncestorEdges = face->getAncestors();
@@ -635,7 +638,7 @@ namespace FROSch {
                 
                 // Vertices translations
                 if (dimension==2) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<edges->getNumEntities(); i++) {
                             InterfaceEntityPtr edge = edges->getEntity(i);
                             edgeValues = SCVecPtr(edge->getNumNodes(),0.0);
@@ -663,7 +666,7 @@ namespace FROSch {
                         itmp++;
                     }
                 } else if (dimension==3) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<faces->getNumEntities(); i++) {
                             vertexAncestorsFace.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
                             InterfaceEntityPtr face = faces->getEntity(i);
@@ -906,7 +909,7 @@ namespace FROSch {
                 
                 // Edges translations
                 if (dimension==2) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<edges->getNumEntities(); i++) {
                             InterfaceEntityPtr edge = edges->getEntity(i);
                             EntitySetPtr AncestorVertices = edge->getAncestors();
@@ -919,7 +922,7 @@ namespace FROSch {
                         itmp++;
                     }
                 } else if (dimension==3) {
-                    for (UN k=0; k<dofsPerNode; k++) {
+                    for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                         for (UN i=0; i<faces->getNumEntities(); i++) {
                             InterfaceEntityPtr face = faces->getEntity(i);
                             faceValues = SCVecPtr(face->getNumNodes(),0.0);
@@ -1073,7 +1076,7 @@ namespace FROSch {
                 }
                 
                 // Faces translations
-                for (UN k=0; k<dofsPerNode; k++) {
+                for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
                     for (UN i=0; i<faces->getNumEntities(); i++) {
                         InterfaceEntityPtr face = faces->getEntity(i);
                         EntitySetPtr AncestorEdges = face->getAncestors();

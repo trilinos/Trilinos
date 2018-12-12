@@ -75,12 +75,14 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseOperator<SC,LO,GO,NO>::compute()
     {
+        FROSCH_ASSERT(this->IsInitialized_,"ERROR: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
         if (this->Verbose_) {
             std::cerr << "WARNING: Some of the operations could be moved from initialize() to Compute().\n";
         }
         if (!this->ParameterList_->get("Recycling","none").compare("basis") && this->IsComputed_) {
             this->setUpCoarseOperator();
+            
             this->IsComputed_ = true;
         } else if(!this->ParameterList_->get("Recycling","none").compare("all") && this->IsComputed_) {
             // Maybe use some advanced settings in the future
@@ -91,6 +93,7 @@ namespace FROSch {
             CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Threshold Phi",1.e-8));
             Phi_ = CoarseSpace_->getGlobalBasisMatrix();
             this->setUpCoarseOperator();
+            
             this->IsComputed_ = true;
         }
         return 0;

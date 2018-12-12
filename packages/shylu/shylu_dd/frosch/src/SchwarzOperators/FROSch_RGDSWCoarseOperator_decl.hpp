@@ -77,6 +77,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
         
@@ -101,7 +102,6 @@ namespace FROSch {
                                            int option,
                                            bool buildRotations,
                                            UN dimension,
-                                           UN dofsPerNode,
                                            MultiVectorPtr nodeList,
                                            LOVecPtr2D partMappings,
                                            EntitySetPtr vertices,
