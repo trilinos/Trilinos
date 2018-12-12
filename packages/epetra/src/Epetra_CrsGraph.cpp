@@ -529,7 +529,7 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
               long long* UserIndices)
 {
   if(RowMap().GlobalIndicesLongLong())
-    return InsertIndicesIntoSorted_<long long>(Row, NumIndices, UserIndices);
+    return TInsertIndicesIntoSorted<long long>(Row, NumIndices, UserIndices);
   else
     throw ReportError("Epetra_CrsGraph::InsertIndicesIntoSorted long long version called for a graph that is not long long.", -1);
 }
