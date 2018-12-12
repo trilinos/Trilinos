@@ -65,7 +65,7 @@ module unload sems-cmake/3.10.3
 # ===========================================================================
 export CTEST_CONFIGURATION="clang"
 module load sems-cmake/3.10.3
-module load sems-clang/3.8.1
+module load sems-clang/3.9.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
 
@@ -85,7 +85,7 @@ $SCRIPT_DIR/../cron_driver.py
 
 module unload sems-superlu/4.3/base
 module unload sems-openmpi/1.10.1
-module unload sems-clang/3.8.1
+module unload sems-clang/3.9.0
 module unload sems-cmake/3.10.3
 # ===========================================================================
 

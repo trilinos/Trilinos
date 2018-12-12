@@ -76,7 +76,7 @@ struct TeamNrm2<TeamType, XV, false> {
   typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
 
   static KOKKOS_INLINE_FUNCTION mag_type team_nrm2 (const TeamType& team, const XV& X) {
-    mag_type result;
+    mag_type result = 0.0; //Kokkos::Details::ArithTraits<mag_type>zero();
     int N = X.extent(0);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team,N), [&] (const int& i, mag_type& val) {
       const typename IPT::mag_type tmp = IPT::norm (X(i));

@@ -97,18 +97,6 @@ void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
   }
 }
 
-bool FieldBase::defined_on_any(const stk::mesh::ConstPartVector& parts) const
-{
-  bool defined_on_any_part = false;
-  size_t i = 0;
-  while(!defined_on_any_part && i < parts.size()) {
-    defined_on_any_part = defined_on_any_part || defined_on(*parts[i]);
-    ++i;
-  }
-
-  return defined_on_any_part;
-}
-
 bool FieldBase::defined_on(const stk::mesh::Part& part) const
 {
   return (length(part) > 0);

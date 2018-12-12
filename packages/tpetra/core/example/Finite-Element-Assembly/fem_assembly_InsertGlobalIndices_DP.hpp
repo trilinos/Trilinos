@@ -53,6 +53,7 @@
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_FancyOStream.hpp>
+#include <Tpetra_Assembly_Helpers.hpp>
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -225,14 +226,18 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
     rcp (new fe_multivector_t(domain_map, crs_graph->getImporter(), 1));
 
   scalar_2d_array_t element_matrix;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   Kokkos::resize(element_matrix, 4, 4);
+#else
+  Kokkos::resize(element_matrix, 4);
+#endif
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_t> column_global_ids(4);     // global column ids list
   Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over elements
-  rhs->beginFill();
+  Tpetra::beginFill(*rhs);
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Get the contributions for the current element
@@ -273,7 +278,7 @@ int executeInsertGlobalIndicesDP_(const comm_ptr_t& comm, const struct CmdLineOp
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    rhs->endFill();
+    Tpetra::endFill(*rhs);
   }
 
 

@@ -42,6 +42,7 @@ namespace stk
 {
 namespace io
 {
+class StkMeshIoBroker;
 
 void write_mesh(const std::string &filename,
                 stk::mesh::BulkData &bulkData,
@@ -60,6 +61,13 @@ void write_mesh_with_fields(const std::string& filename,
                             stk::mesh::BulkData &bulkData,
                             int step=0, double time=0.0,
                             stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
+
+void write_mesh_with_fields(const std::string& filename,
+                            StkMeshIoBroker &broker,
+                            int step=0, double time=0.0,
+                            stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
+
+void set_64bit_properties(stk::io::StkMeshIoBroker &broker);
 
 void write_mesh_with_large_ids_and_fields(const std::string& filename,
                                           stk::mesh::BulkData &bulkData,

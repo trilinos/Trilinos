@@ -61,7 +61,7 @@ using namespace Teuchos;
 namespace MueLu {
 
 /* Explicit instantiation of MuemexData variants */
-  template class MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
@@ -75,7 +75,7 @@ namespace MueLu {
   template class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Epetra_MultiVector> >;
-  template class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>;
 
@@ -167,7 +167,7 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Xpetra_ordinal_vector>>, MuemexArg>(args[i])->convertToMatlab();
           break;
         case TPETRA_MULTIVECTOR_DOUBLE:
-          matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>, MuemexArg>(args[i])->convertToMatlab();
+          matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>, MuemexArg>(args[i])->convertToMatlab();
           break;
         case TPETRA_MULTIVECTOR_COMPLEX:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>, MuemexArg>(args[i])->convertToMatlab();
@@ -245,7 +245,7 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
 /* More utility functions     */
 /******************************/
 
-template<> mxArray* createMatlabMultiVector<double>(int numRows, int numCols)
+template<> mxArray* createMatlabMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(int numRows, int numCols)
 {
   return mxCreateDoubleMatrix(numRows, numCols, mxREAL);
 }
@@ -402,7 +402,7 @@ Teuchos::RCP<MuemexArg> convertMatlabVar(const mxArray* mxa)
         if(mxIsComplex(mxa))
           return rcp_implicit_cast<MuemexArg>(rcp(new MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(mxa)));
         else
-          return rcp_implicit_cast<MuemexArg>(rcp(new MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(mxa)));
+          return rcp_implicit_cast<MuemexArg>(rcp(new MuemexData<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(mxa)));
       }
       break;
     case mxSTRUCT_CLASS:

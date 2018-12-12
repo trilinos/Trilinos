@@ -296,7 +296,7 @@ namespace MueLu {
       return Utilities::Transpose(Op, optimizeTranspose, label);
     }
 
-    static RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
+    static RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
       return Utilities::ExtractCoordinatesFromParameterList(paramList);
     }
 
@@ -633,8 +633,8 @@ namespace MueLu {
 
     /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector
     */
-    static RCP<Xpetra::MultiVector<double,LO,GO,NO> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
-      RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates = Teuchos::null;
+    static RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > ExtractCoordinatesFromParameterList(ParameterList& paramList) {
+      RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::null;
 
       // check whether coordinates are contained in parameter list
       if(paramList.isParameter ("Coordinates") == false)
@@ -685,7 +685,7 @@ namespace MueLu {
         doubleEpCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
         paramList.remove("Coordinates");
         RCP<Xpetra::EpetraMultiVectorT<GO,NO> > epCoordinates = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,NO>(doubleEpCoords));
-        coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LO,GO,NO> >(epCoordinates);
+        coordinates = rcp_dynamic_cast<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >(epCoordinates);
         TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
       }
 #endif

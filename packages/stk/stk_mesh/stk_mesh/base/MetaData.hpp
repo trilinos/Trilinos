@@ -584,6 +584,8 @@ private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
+  const char** reserved_state_suffix() const;
+
   virtual Part & declare_internal_part( const std::string & p_name, EntityRank rank);
 
   void internal_declare_known_cell_topology_parts();
@@ -786,6 +788,15 @@ STK_DEPRECATED field_type & put_field( field_type & field ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 #endif
 
+template< class field_type >
+field_type & put_field_on_mesh(field_type & field ,
+                               const Part & part ,
+                               unsigned     n1 ,
+                               unsigned     n2 ,
+                               unsigned     n3 ,
+                               unsigned     n4 ,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
+
 #ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 STK_DEPRECATED field_type & put_field( field_type & field ,
@@ -797,6 +808,16 @@ STK_DEPRECATED field_type & put_field( field_type & field ,
                         unsigned     n5 ,
                         const typename stk::mesh::FieldTraits<field_type>::data_type* init_value = NULL);
 #endif
+
+template< class field_type >
+field_type & put_field_on_mesh(field_type & field ,
+                               const Part & part ,
+                               unsigned     n1 ,
+                               unsigned     n2 ,
+                               unsigned     n3 ,
+                               unsigned     n4 ,
+                               unsigned     n5 ,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value);
 
 #ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
@@ -893,27 +914,20 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
   Traits::assign_tags( dim_tags );
 
-  static const char* reserved_state_suffix[6] = {
-    "_STKFS_OLD",
-    "_STKFS_N",
-    "_STKFS_NM1",
-    "_STKFS_NM2",
-    "_STKFS_NM3",
-    "_STKFS_NM4"
-  };
+  const char** reservedStateSuffix = reserved_state_suffix();
 
   // Check that the name does not have a reserved suffix
 
   for ( unsigned i = 0 ; i < 6 ; ++i ) {
     const int len_name   = name.size();
-    const int len_suffix = std::strlen( reserved_state_suffix[i] );
+    const int len_suffix = std::strlen( reservedStateSuffix[i] );
     const int offset     = len_name - len_suffix ;
     if ( 0 <= offset ) {
       const char * const name_suffix = name.c_str() + offset ;
-      ThrowErrorMsgIf( equal_case( name_suffix , reserved_state_suffix[i] ),
+      ThrowErrorMsgIf( equal_case( name_suffix , reservedStateSuffix[i] ),
           "For name = \"" << name_suffix <<
           "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
-          reserved_state_suffix[i] << "\"" );
+          reservedStateSuffix[i] << "\"" );
     }
   }
 
@@ -953,12 +967,12 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
     if ( 2 == number_of_states ) {
       field_names[1] = name ;
-      field_names[1].append( reserved_state_suffix[0] );
+      field_names[1].append( reservedStateSuffix[0] );
     }
     else {
       for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
         field_names[i] = name ;
-        field_names[i].append( reserved_state_suffix[i] );
+        field_names[i].append( reservedStateSuffix[i] );
       }
     }
 
@@ -1297,6 +1311,23 @@ STK_DEPRECATED field_type & put_field( field_type &field ,
 }
 #endif
 
+template< class field_type >
+inline
+field_type & put_field_on_mesh(field_type &field ,
+                               const Part &part ,
+                               unsigned    n1 ,
+                               unsigned    n2 ,
+                               unsigned    n3 ,
+                               unsigned    n4 ,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value )
+{
+  unsigned numScalarsPerEntity = n1*n2*n3*n4;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
+
 #ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >
 inline
@@ -1316,6 +1347,24 @@ STK_DEPRECATED field_type & put_field( field_type &field ,
   return field ;
 }
 #endif
+
+template< class field_type >
+inline
+field_type & put_field_on_mesh(field_type &field ,
+                               const Part &part ,
+                               unsigned    n1 ,
+                               unsigned    n2 ,
+                               unsigned    n3 ,
+                               unsigned    n4 ,
+                               unsigned    n5 ,
+                               const typename stk::mesh::FieldTraits<field_type>::data_type* init_value)
+{
+  unsigned numScalarsPerEntity = n1*n2*n3*n4*n5;
+  unsigned firstDimension = n1;
+  MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
+
+  return field ;
+}
 
 #ifndef STK_HIDE_DEPRECATED_CODE // delete put_field after 10/18/2018
 template< class field_type >

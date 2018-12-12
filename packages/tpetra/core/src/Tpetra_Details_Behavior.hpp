@@ -115,6 +115,14 @@ public:
   ///
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
   static bool assumeMpiIsCudaAware ();
+
+  /// \brief The core count above which Tpetra::CrsMatrix::transferAndFillComplere
+  /// will attempt to do advanced neighbor discovery. This is platform 
+  /// dependent, and the user/developer should test each new platform 
+  /// for the correct value. The 3000 value was found on Serrano summer 2018 
+
+  static int TAFC_OptimizationCoreCount ();
+
 };
 
 } // namespace Details

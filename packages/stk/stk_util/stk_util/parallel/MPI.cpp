@@ -91,7 +91,7 @@ short_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<short>, m_loc)};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct LocStandardLayout<short>, m_loc)};
     static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_SHORT, MPI_LONG_LONG};
 
@@ -110,7 +110,7 @@ int_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<int>, m_loc)};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct LocStandardLayout<int>, m_loc)};
     static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_INT, MPI_LONG_LONG};
 
@@ -129,7 +129,7 @@ long_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<long>, m_loc)};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct LocStandardLayout<long>, m_loc)};
     static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_LONG, MPI_LONG_LONG};
 
@@ -148,7 +148,7 @@ unsigned_long_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0,(MPI_Aint)offsetof(struct Loc<unsigned long>, m_loc)};
+    MPI_Aint displacements[] = {0,(MPI_Aint)offsetof(struct LocStandardLayout<unsigned long>, m_loc)};
     static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_UNSIGNED_LONG, MPI_LONG_LONG};
 
@@ -167,7 +167,7 @@ float_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<float>, m_loc)};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct LocStandardLayout<float>, m_loc)};
     static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_FLOAT, MPI_LONG_LONG};
 
@@ -186,7 +186,7 @@ double_int64_type()
   if (!initialized) {
     initialized = true;
     int blocks[] = {1, 1};
-    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct Loc<double>, m_loc)};
+    MPI_Aint displacements[] = {0, (MPI_Aint)offsetof(struct LocStandardLayout<double>, m_loc)};
     static_assert(sizeof(long long) == sizeof(int64_t),"sizeof(long long) should be equal to sizeof(int64_t)");
     MPI_Datatype types[] = {MPI_DOUBLE, MPI_LONG_LONG};
 

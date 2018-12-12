@@ -90,8 +90,8 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<const PointRule> pointRule;
-  Kokkos::DynRankView<ScalarT,PHX::Device> faceNormal; // face normals
-  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceNormal; // reference face normals
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> faceNormal; // face normals
+  Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refFaceNormal; // reference face normals
 
   PointValues2<double> pointValues;
   PHX::MDField<const double, Cell, IP, Dim, Dim, void, void, void, void>

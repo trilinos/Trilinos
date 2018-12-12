@@ -265,7 +265,7 @@ namespace MueLuTests {
       TEST_EQUALITY(diagVec->norm1(), diagVec->getGlobalLength());
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12, true);
     if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->meanValue(), 1.0);
+      TEST_EQUALITY(diagVec->meanValue(), (Scalar) 1.0);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
   } //MakeTentative
@@ -742,8 +742,8 @@ namespace MueLuTests {
         Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
         PtentTPtent->getLocalDiagCopy(*diagVec);
         TEST_EQUALITY(diagVec->norm1()-diagVec->getGlobalLength() < 1e-12, true);
-        TEST_EQUALITY(diagVec->normInf()-1.0 < 1.0e-12, true);
-        TEST_EQUALITY(TST::magnitude(diagVec->meanValue()-1.0) < 1.0e-12, true);
+        TEST_EQUALITY(diagVec->normInf()-Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0) < 1.0e-12, true);
+        TEST_EQUALITY(TST::magnitude(diagVec->meanValue()-Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1.0)) < 1.0e-12, true);
         TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
 
         // Define RHS

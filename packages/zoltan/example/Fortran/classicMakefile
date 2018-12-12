@@ -1,0 +1,31 @@
+##
+## a basic makefile to build examples 
+##
+
+BLD=../../Obj_autotools/
+
+ZOLTAN_INCLUDE=-I. -I$(BLD)/src
+
+FC=mpif90
+
+FCFLAGS =$(ID_TYPE_FLAG)
+
+EXAMPLE_NAMES= simpleRCB 
+
+all:   $(EXAMPLE_NAMES)
+
+mpi_h.mod:
+	$(FC) $(FCFLAGS) -c  mpi_h.f
+
+zoltanRCBex.mod:  mpi_h.mod
+	$(FC) $(FCFLAGS) \
+        $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) \
+	-c zoltanRCBmod.f90
+
+simpleRCB:  mpi_h.mod zoltanRCBex.mod
+	$(FC) $(FCFLAGS) $(TPL_LIB_DIR) \
+        $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) \
+        -o $@ simpleRCB.f90 zoltanRCBmod.o mpi_h.o $(BLD)/src/libzoltan.a $(TPL_LIBS) -lm
+
+clean:
+	@rm -rf  $(EXAMPLE_NAMES) *.mod

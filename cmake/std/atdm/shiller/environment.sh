@@ -2,7 +2,7 @@
 #
 # Set up env on shiller/hansen for ATMD builds of Trilinos
 #
-# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
 ################################################################################
 
@@ -61,13 +61,15 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* && "$ATDM_CONFIG_KOKKOS_ARCH" == "Kep
   elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.0" ]] ; then
     module load devpack/openmpi/2.1.1/gcc/4.9.3/cuda/9.0.176
   else
-      echo
-      echo "***"
-      echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version of CUDA on this system!"
-      echo "***"
-      return
+    echo
+    echo "***"
+    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version"
+    echo "*** of CUDA on this system!  Supported versions include 'cuda-8.0'"
+    echo "*** and 'cuda-9.0'"
+    echo "***"
+    return
   fi
-  export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper 
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER} 
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
       return
@@ -110,6 +112,6 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=16;--oversubscribe"
+export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=16;--oversubscribe"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

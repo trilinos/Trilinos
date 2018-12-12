@@ -381,7 +381,7 @@ void ElemElemGraph::create_parallel_graph_edge(const impl::ParallelElementData &
                                                std::vector<impl::SharedEdgeInfo> &newlySharedEdges)
 {
     impl::LocalId local_elem_id = localElementData.get_element_local_id();
-    impl::LocalId negativeRemoteElemId = -1*remoteElementData.get_element_identifier();
+    impl::LocalId negativeRemoteElemId = -1 * static_cast<impl::LocalId>(remoteElementData.get_element_identifier());
     stk::mesh::GraphEdge graphEdge(local_elem_id, localElementData.get_element_side_index(), negativeRemoteElemId, remoteElementData.get_element_side_index());
     m_graph.add_edge(graphEdge);
 
@@ -540,7 +540,7 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
     ThrowRequireWithSierraHelpMsg(permutationIfConnected.first);
 
     impl::LocalId local_elem_id = get_local_element_id(localElem);
-    impl::LocalId negSgnRemoteElemId = -1*receivedSharedEdge.get_remote_element_global_id();
+    impl::LocalId negSgnRemoteElemId = -1 * static_cast<impl::LocalId>(receivedSharedEdge.get_remote_element_global_id());
 
     GraphEdge graphEdge(local_elem_id, side_index, negSgnRemoteElemId, receivedSharedEdge.get_remote_element_side_index());
     m_graph.add_edge(graphEdge);
@@ -1481,7 +1481,7 @@ void ElemElemGraph::unpack_remote_edge_across_shell(stk::CommSparse &comm)
             while(index <numConnected)
             {
                 const GraphEdge & graphEdge = m_graph.get_edge_for_element(localId, index);
-                if(graphEdge.elem2() == static_cast<impl::LocalId>(-1*remoteElemId))
+                if(graphEdge.elem2() == (-1 * static_cast<impl::LocalId>(remoteElemId)))
                 {
                     m_graph.delete_edge_from_graph(localId, index);
                     break;

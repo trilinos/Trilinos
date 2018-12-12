@@ -63,6 +63,16 @@ namespace stk {
 #if OMPI_MAJOR_VERSION == 3 && OMPI_MINOR_VERSION == 1
 #undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
+//OpenMPI 2.x.y doesn't seem to support MPI_Neighbor* functions either...
+#if OMPI_MAJOR_VERSION == 2
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
+#endif
+
+#endif
+
+//the MPI_Neighbor functions seem to be unacceptably slow with intel mpi
+#ifdef I_MPI_VERSION
+#undef STK_MPI_SUPPORTS_NEIGHBOR_COMM
 #endif
 
 void CommNeighbors::rank_error( const char * method , int p ) const

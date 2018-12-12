@@ -47,7 +47,6 @@ STD_NAME: stokhos, DIR_NAME: stokhos
 STD_NAME: stratimikos, DIR_NAME: stratimikos 
 STD_NAME: sundance, DIR_NAME: Sundance
 STD_NAME: teuchos, DIR_NAME: teuchos
-STD_NAME: threadpool, DIR_NAME: ThreadPool
 STD_NAME: thyra, DIR_NAME: thyra
 STD_NAME: tpetra, DIR_NAME: tpetra
 STD_NAME: trikota, DIR_NAME: TriKota

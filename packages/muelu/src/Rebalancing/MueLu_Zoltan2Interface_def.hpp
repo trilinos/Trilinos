@@ -179,7 +179,7 @@ namespace MueLu {
       typedef Zoltan2::XpetraMultiVectorAdapter<RealValuedMultiVector>  InputAdapterType;
       typedef Zoltan2::PartitioningProblem<InputAdapterType>   ProblemType;
 
-      Array<double> weightsPerRow(numElements);
+      Array<real_type> weightsPerRow(numElements);
       for (LO i = 0; i < numElements; i++) {
         weightsPerRow[i] = 0.0;
 
@@ -189,7 +189,7 @@ namespace MueLu {
       }
 
       std::vector<int>           strides;
-      std::vector<const double*> weights(1, weightsPerRow.getRawPtr());
+      std::vector<const real_type*> weights(1, weightsPerRow.getRawPtr());
 
       RCP<const Teuchos::MpiComm<int> >            dupMpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
       RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();

@@ -1311,15 +1311,15 @@ struct KokkosSPGEMM
 template <typename HandleType,
 typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
-template <typename a_row_view_t, typename a_nnz_view_t,
+template <typename a_r_view_t, typename a_n_view_t,
           typename b_oldrow_view_t, typename b_row_view_t>
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
   PredicMaxRowNNZ{
   nnz_lno_t m; //num rows
-  a_row_view_t row_mapA;  //row pointers of a
-  a_nnz_view_t entriesA;  //col
+  a_r_view_t row_mapA;  //row pointers of a
+  a_n_view_t entriesA;  //col
   b_oldrow_view_t row_begins_B;
   b_row_view_t row_end_indices_B;
   const size_type min_val;
@@ -1337,8 +1337,8 @@ struct KokkosSPGEMM
    */
   PredicMaxRowNNZ(
       nnz_lno_t m_,
-      a_row_view_t row_mapA_,
-      a_nnz_view_t entriesA_,
+      a_r_view_t row_mapA_,
+      a_n_view_t entriesA_,
 
       b_oldrow_view_t row_begins_B_,
       b_row_view_t row_end_indices_B_,

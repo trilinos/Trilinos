@@ -299,15 +299,15 @@ TEST_F(UpdateElemElemGraphTest, NewEntityNotification)
 {
     if(bulk.parallel_size() == 2)
     {
-        ElemElemGraphUpdaterMock observer;
-        bulk.register_observer(&observer);
+        std::shared_ptr<ElemElemGraphUpdaterMock> observer = std::make_shared<ElemElemGraphUpdaterMock>();
+        bulk.register_observer(observer);
 
         MeshRefinementMock meshRefinement(bulk, activePart);
         meshRefinement.create_element_on_proc1();
 
         if(bulk.parallel_rank() == 1)
         {
-            EXPECT_EQ(5, observer.get_num_entities_added());
+            EXPECT_EQ(5, observer->get_num_entities_added());
         }
     }
 }
@@ -316,29 +316,29 @@ TEST_F(UpdateElemElemGraphTest, MultipleObservers)
 {
     if(bulk.parallel_size() == 2)
     {
-        ElemElemGraphUpdaterMock observer1;
-        bulk.register_observer(&observer1);
-        ElemElemGraphUpdaterMock observer2;
-        bulk.register_observer(&observer2);
+        std::shared_ptr<ElemElemGraphUpdaterMock> observer1 = std::make_shared<ElemElemGraphUpdaterMock>();
+        bulk.register_observer(observer1);
+        std::shared_ptr<ElemElemGraphUpdaterMock> observer2 = std::make_shared<ElemElemGraphUpdaterMock>();
+        bulk.register_observer(observer2);
 
         MeshRefinementMock meshRefinement(bulk, activePart);
         meshRefinement.create_element_on_proc1();
 
         if(bulk.parallel_rank() == 1)
         {
-            EXPECT_EQ(5, observer1.get_num_entities_added());
-            EXPECT_EQ(5, observer2.get_num_entities_added());
+            EXPECT_EQ(5, observer1->get_num_entities_added());
+            EXPECT_EQ(5, observer2->get_num_entities_added());
         }
     }
 }
 
 TEST(Observer, NewEntityNotification)
 {
-    ElemElemGraphUpdaterMock observer;
+    std::shared_ptr<ElemElemGraphUpdaterMock> observer = std::make_shared<ElemElemGraphUpdaterMock>();
     stk::mesh::Entity goldNewEntity(2);
-    observer.entity_added(goldNewEntity);
+    observer->entity_added(goldNewEntity);
 
-    EXPECT_EQ(1, observer.get_num_entities_added());
+    EXPECT_EQ(1, observer->get_num_entities_added());
 }
 
 } // namespace

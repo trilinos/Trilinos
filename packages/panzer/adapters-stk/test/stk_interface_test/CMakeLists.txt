@@ -108,18 +108,29 @@ TRIBITS_ADD_EXECUTABLE(
 #  COMM serial mpi
 #  )
 
+
 # Panzer has no direct dependency on ThreadPool, however the search
 # portion of the stk library will be disabled if ThreadPool is
 # disabled.  This test will fail to compile without the missing stk
 # files.  So for now we will check to see if ThreadPool is
 # enabled. STK will eventually remove this dependency.
-IF(STK_ENABLE_ThreadPool)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    tPointLocationSearch
-    SOURCES tPointLocationSearch.cpp ${UNIT_TEST_DRIVER}
-    NUM_MPI_PROCS 2
-    )
-ENDIF()
+#
+# 10/18 KDD STK's dependence on ThreadPool has been removed #3463, and 
+# ThreadPool is being removed now #3445.  Yet, without the ThreadPool
+# guard, this test does not build.
+#
+#IF(STK_ENABLE_ThreadPool)
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    tPointLocationSearch
+#    SOURCES tPointLocationSearch.cpp ${UNIT_TEST_DRIVER}
+#    NUM_MPI_PROCS 2
+#    )
+#ENDIF()
+#
+# 10/18 KDD a more appropriate guard for the above test is 
+#IF (${PROJECT_NAME}_ENABLE_STKSearch AND ${PROJECT_NAME}_ENABLE_STKSearchUtil)
+# This guard induces compilation, but the compilation fails for me.
+# This test appears to have fallen into disrepair.  #3719
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
   SOURCE_FILES basic.gen basic.gen.2.0 basic.gen.2.1

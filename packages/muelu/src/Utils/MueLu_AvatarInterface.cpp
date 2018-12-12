@@ -393,7 +393,7 @@ void AvatarInterface::SetMueLuParameters(const Teuchos::ParameterList & problemF
 
 }
 
-int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString_) const {
+int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std::string> boundsString) const {
   std::stringstream ss(trialString);
   std::vector<float> vect;
 
@@ -409,7 +409,7 @@ int AvatarInterface::checkBounds(std::string trialString, Teuchos::ArrayRCP<std:
       ss.ignore();
   }
 
-  std::string bounds = const_cast<char*>(boundsString_[0].c_str());
+  std::string bounds = const_cast<char*>(boundsString[0].c_str());
 
   std::stringstream ssBounds(bounds);
   std::vector<float> boundsVect;
@@ -453,7 +453,7 @@ int AvatarInterface::hybrid(float * probabilities, std::vector<int> acceptableCo
   float diff;
   int this_combo;
   int chosen_option_id = acceptableCombos[0];
-  for(int x=0; x<acceptableCombos.size(); x++){
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
     this_combo = acceptableCombos[x] * 3;
     diff = probabilities[this_combo] - low_crash;
      // If this parameter combination has a crash
@@ -480,7 +480,7 @@ int AvatarInterface::highProb(float * probabilities, std::vector<int> acceptable
   float high_prob = probabilities[2];
   int this_combo;
   int chosen_option_id = acceptableCombos[0];
-  for(int x=0; x<acceptableCombos.size(); x++){
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
     this_combo = acceptableCombos[x] * 3;
     // If this parameter combination has a higher "GOOD" 
     // probability, use this combination
@@ -496,7 +496,7 @@ int AvatarInterface::lowCrash(float * probabilities, std::vector<int> acceptable
   float low_crash = probabilities[0];
   int this_combo;
   int chosen_option_id = acceptableCombos[0];
-  for(int x=0; x<acceptableCombos.size(); x++){
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
     this_combo = acceptableCombos[x] * 3;
     // If this parameter combination has a lower "CRASH"
     // probability, use this combination
@@ -514,7 +514,7 @@ int AvatarInterface::weighted(float * probabilities, std::vector<int> acceptable
   float diff;
   int this_combo;
   int chosen_option_id = acceptableCombos[0];
-  for(int x=0; x<acceptableCombos.size(); x++){
+  for(int x=0; x<(int)acceptableCombos.size(); x++){
     this_combo = acceptableCombos[x] * 3;
     diff = probabilities[this_combo] - low_crash;
      // If this parameter combination has a crash

@@ -3,7 +3,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests
   SOURCES
     MatrixMatrix_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ../Xpetra_UnitTests
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )

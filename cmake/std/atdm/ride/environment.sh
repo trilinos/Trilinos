@@ -103,7 +103,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
     echo "***"
     return
   fi
-  export OMPI_CXX=$ATDM_CONFIG_TRILNOS_DIR/packages/kokkos/bin/nvcc_wrapper
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
       return
@@ -135,6 +135,6 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=4"
+export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=4"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

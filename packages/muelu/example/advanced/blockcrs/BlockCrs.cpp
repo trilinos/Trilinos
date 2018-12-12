@@ -202,7 +202,7 @@ namespace MueLuExamples {
 
     typedef typename Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
     typedef typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
-    typedef typename Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> realvaluedmultivector_type;
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> realvaluedmultivector_type;
     typedef typename Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> matrixwrap_type;
     RCP<const map_type >   map;
     RCP<multivector_type > coordinates;

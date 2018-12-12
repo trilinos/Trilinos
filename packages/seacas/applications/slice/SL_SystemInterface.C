@@ -72,13 +72,7 @@ namespace {
 #endif
 } // namespace
 
-SystemInterface::SystemInterface()
-    : decompMethod_("linear"), partialReadCount_(1000000000), processorCount_(1), debugLevel_(0),
-      screenWidth_(0), stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), omitNodesets_(false),
-      omitSidesets_(false), disableFieldRecognition_(false), contig_(false)
-{
-  enroll_options();
-}
+SystemInterface::SystemInterface() { enroll_options(); }
 
 SystemInterface::~SystemInterface() = default;
 

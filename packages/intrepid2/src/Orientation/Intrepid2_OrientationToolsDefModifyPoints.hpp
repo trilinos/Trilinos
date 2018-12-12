@@ -114,15 +114,16 @@ namespace Intrepid2 {
                              pt1 };
       
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_ABORT( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), 
+      VT eps = 10.0*std::numeric_limits<VT>::epsilon();
+      INTREPID2_TEST_FOR_ABORT( !( -eps <= lambda[0] && lambda[0] <= 1.0+eps ),
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): " \
                                 "Computed bicentric coordinate (lamba[0]) is out of range [0, 1].");
       
-      INTREPID2_TEST_FOR_ABORT( !( 0.0 <= lambda[1] && lambda[1] <= 1.0 ), 
+      INTREPID2_TEST_FOR_ABORT( !( -eps <= lambda[1] && lambda[1] <= 1.0+eps ),
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): " \
                                 "Computed bicentric coordinate (lamba[1]) is out of range [0, 1].");
       
-      INTREPID2_TEST_FOR_ABORT( !( 0.0 <= lambda[2] && lambda[2] <= 1.0 ), 
+      INTREPID2_TEST_FOR_ABORT( !( -eps <= lambda[2] && lambda[2] <= 1.0+eps ),
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): "
                                 "Computed bicentric coordinate (lamba[2]) is out of range [0, 1].");
 #endif
@@ -267,10 +268,22 @@ namespace Intrepid2 {
       }
 #endif
       
+      return mapToModifiedReference(outPoints, refPoints, cellTopo.getKey(), cellOrt);
+    }
+
+
+    template<typename outPointViewType,
+             typename refPointViewType>
+    inline
+    void
+    OrientationTools::
+    mapToModifiedReference(outPointViewType outPoints,
+                           const refPointViewType refPoints,
+                           const unsigned cellTopoKey,
+                           const ordinal_type cellOrt) {
       // Apply the parametrization map to every point in parameter domain
       const ordinal_type numPts = outPoints.extent(0);
-      const auto key = cellTopo.getBaseCellTopologyData()->key;
-      switch (key) {
+      switch (cellTopoKey) {
       case shards::Line<>::key : {
         for (ordinal_type pt=0;pt<numPts;++pt)
           getModifiedLinePoint(outPoints(pt, 0),
@@ -293,9 +306,9 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_WARNING( true, 
+        INTREPID2_TEST_FOR_ABORT( true,
                                     ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): " \
-                                    "Invalid cell topology." );
+                                    "Invalid cell topology key." );
         break;
       }
       }
@@ -326,8 +339,17 @@ namespace Intrepid2 {
       }
 #endif
 
-      const auto key = cellTopo.getBaseCellTopologyData()->key;
-      switch (key) {
+      return getJacobianOfOrientationMap(jacobian, cellTopo.getKey(), cellOrt);
+    }
+
+    template<typename outPointViewType>
+    inline
+    void
+    OrientationTools::
+    getJacobianOfOrientationMap(outPointViewType jacobian,
+                           const unsigned cellTopoKey,
+                           const ordinal_type cellOrt) {
+      switch (cellTopoKey) {
       case shards::Line<>::key :
         getLineJacobian(jacobian, cellOrt);
         break;
@@ -338,9 +360,9 @@ namespace Intrepid2 {
           getQuadrilateralJacobian(jacobian, cellOrt);
         break;
       default: {
-        INTREPID2_TEST_FOR_WARNING( true,
+        INTREPID2_TEST_FOR_ABORT( true,
                                     ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): " \
-                                    "Invalid cell topology." );
+                                    "Invalid cell topology key." );
         break;
       }
       }
