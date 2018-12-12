@@ -70,6 +70,8 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr CoarseSpacePtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr CoarseSpacePtrVecPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
@@ -99,6 +101,20 @@ namespace FROSch {
         MapPtr assembleSubdomainMap();
         
         int addZeroCoarseSpaceBlock(MapPtr dofsMap);
+        
+        int computeVolumeFunctions(UN blockId,
+                                   UN dimension,
+                                   MapPtr nodesMap,
+                                   MultiVectorPtr nodeList,
+                                   EntitySetPtr interior);
+        
+        MultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                 EntitySetPtr entitySet);
+        
+        MultiVectorPtrVecPtr computeRotations(UN blockId,
+                                              UN dimension,
+                                              MultiVectorPtr nodeList,
+                                              EntitySetPtr entitySet);
 
         MultiVectorPtr computeExtensions(ConstMapPtr localMap,
                                          ConstMapPtr coarseMap,
