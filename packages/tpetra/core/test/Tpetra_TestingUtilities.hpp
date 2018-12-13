@@ -68,8 +68,8 @@
       out << "FAILED on at least one process!" << endl; \
     } \
     TEST_EQUALITY_CONST(gblSuccess, 1);  \
-  }
-
+    success = (bool) gblSuccess; \
+    }
 
 
 namespace Tpetra {
