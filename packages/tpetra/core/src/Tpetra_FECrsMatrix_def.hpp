@@ -73,6 +73,7 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
     // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
     // guy for the Owned matrix.
     auto myvals = this->getLocalMatrix().values;
+    // Uncomment this once #4049 makes it into develop
     //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph->inactiveCrsGraph_,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,myvals.extent(0)),Kokkos::ALL)));
   }
 }
@@ -102,7 +103,6 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusS
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsMatrix() {
-  const char tfecfFuncName[] = "FECrsMatrix::switchActiveCrsMatrix(): ";
   if(*activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED)
     *activeCrsMatrix_ = FE_ACTIVE_OWNED;
   else
