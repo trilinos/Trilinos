@@ -102,6 +102,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusS
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsMatrix() {
+  const char tfecfFuncName[] = "FECrsMatrix::switchActiveCrsMatrix(): ";
   if(*activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED)
     *activeCrsMatrix_ = FE_ACTIVE_OWNED;
   else
