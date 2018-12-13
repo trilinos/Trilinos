@@ -214,7 +214,7 @@ public:
         throw std::runtime_error("FECrsMatrix: Local CrsMatrix already active.  Cannot endFill()");
     }
 
-    //! Activates the owned+sahred mode for assembly
+    //! Activates the owned+shared mode for assembly
     void beginFill()  {
       // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
@@ -224,14 +224,13 @@ public:
     }
 
   protected:
-    //! Migrate data from the overlap to the local graph
-    // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Overlap CrsGraph must be active
+    /// \brief Migrate data from the owned+shared to the owned matrix
+    /// Since this is non-unique -> unique, we need a combine mode.
+    /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode
     void doOwnedPlusSharedToOwned(const CombineMode CM=Tpetra::ADD);
 
-
-    //! Migrate data from the local to the overlap map
-    // Precondition: Source CrsGraph must be active
+    /// \brief Migrate data from the owned to the owned+shared matrix
+    /// Precondition: Must be FE_ACTIVE_OWNED mode
     void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
     //! Switches which CrsGraph is active (without migrating data)

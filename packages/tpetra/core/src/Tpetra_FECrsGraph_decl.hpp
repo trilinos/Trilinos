@@ -352,14 +352,13 @@ namespace Tpetra {
 
 
   protected:
-    //! Migrate data from the overlap to the local graph
-    // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Overlap CrsGraph must be active
+    /// \brief Migrate data from the owned+shared to the owned graph
+    /// Since this is non-unique -> unique, we need a combine mode.
+    /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode
     void doOwnedPlusSharedToOwned(const CombineMode CM=Tpetra::ADD);
 
-
-    //! Migrate data from the local to the overlap map
-    // Precondition: Source CrsGraph must be active
+    /// \brief Migrate data from the owned to the owned+shared graph
+    /// Precondition: Must be FE_ACTIVE_OWNED mode
     void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
     //! Switches which CrsGraph is active (without migrating data)
