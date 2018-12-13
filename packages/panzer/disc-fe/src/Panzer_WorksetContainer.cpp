@@ -309,7 +309,7 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
             TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
             if(layout->getBasis()->requiresOrientations()) {
               // apply orientations for this basis
-              details.bases[basis_index]->applyOrientations(ortsPerBlock);
+              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
             }
           }
         }
@@ -343,7 +343,7 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
   
           for(const auto & id : needs.getIntegrators()) {
             // apply orientations for this basis
-            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock);
+            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
           }
         }
       }
@@ -416,7 +416,7 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
             TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
             if(layout->getBasis()->requiresOrientations()) {
               // apply orientations for this basis
-              details.bases[basis_index]->applyOrientations(ortsPerBlock);
+              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
             }
           }
         }
@@ -451,7 +451,7 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
   
           for(const auto & id : needs.getIntegrators()) {
             // apply orientations for this basis
-            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock);
+            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
           }
         }
       }
