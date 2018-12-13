@@ -400,8 +400,8 @@ namespace Iogn {
                 << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
                 << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
                 << "\tBlock Count           = " << std::setw(9) << block_count() << "\n"
-                << "\tNodeset Count         = " << std::setw(9) << nodeset_count() << "\n"
-                << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n"
+                << "\tNodeSet Count         = " << std::setw(9) << nodeset_count() << "\n"
+                << "\tSideSet Count         = " << std::setw(9) << sideset_count() << "\n\n"
                 << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
       if (doRotation) {
         std::cerr << "\tRotation Matrix: \n\t" << std::scientific;

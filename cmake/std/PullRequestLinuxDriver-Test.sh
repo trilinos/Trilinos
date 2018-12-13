@@ -234,6 +234,13 @@ elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ] ; then
         echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
         exit $ierror
     fi
+elif [ "Trilinos_pullrequest_gcc_7.2.0" == "${JOB_BASE_NAME:?}" ] ; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC7.2.0TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
+        exit $ierror
+    fi
 elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ] ; then
     source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC7.3.0TestingEnv.sh
     ierror=$?
@@ -325,6 +332,8 @@ else
     elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ]; then
         # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
         CONFIG_SCRIPT=PullRequestLinuxGCC4.9.3TestingSettingsSERIAL.cmake
+    elif [ "Trilinos_pullrequest_gcc_7.2.0" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxGCC7.2.0TestingSettings.cmake
     elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ]; then
         CONFIG_SCRIPT=PullRequestLinuxGCC7.3.0TestingSettings.cmake
     fi

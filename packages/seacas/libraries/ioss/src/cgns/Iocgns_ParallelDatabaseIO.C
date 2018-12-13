@@ -369,7 +369,7 @@ namespace Iocgns {
 
     get_step_times__();
 
-    m_zoneType = Utils::check_zone_type(get_file_pointer());
+    m_meshType = Utils::check_mesh_type(get_file_pointer());
 
     // In CGNS, there are duplicated nodes at block boundaries.
     // We typically only want to retain one copy of these and ignore the other.
@@ -384,13 +384,23 @@ namespace Iocgns {
           new DecompositionData<int>(properties, util().communicator()));
     }
     assert(decomp != nullptr);
-    decomp->decompose_model(get_serial_file_pointer(), get_file_pointer(), m_zoneType);
+    decomp->decompose_model(get_serial_file_pointer(), get_file_pointer(), m_meshType);
 
-    if (m_zoneType == CG_Structured) {
+    if (m_meshType == Ioss::MeshType::STRUCTURED) {
       handle_structured_blocks();
     }
-    else if (m_zoneType == CG_Unstructured) {
+    else if (m_meshType == Ioss::MeshType::UNSTRUCTURED) {
       handle_unstructured_blocks();
+    }
+#if IOSS_ENABLE_HYBRID
+    else if (mesh_type == Ioss::MeshType::HYBRID) {
+    }
+#endif
+    else {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: CGNS: Mesh is not Unstructured or Structured "
+                "which are the only types currently supported";
+      IOSS_ERROR(errmsg);
     }
 
     Utils::add_transient_variables(get_file_pointer(), m_timesteps, get_region(),
@@ -979,7 +989,7 @@ namespace Iocgns {
 
   const Ioss::Map &ParallelDatabaseIO::get_map(entity_type type) const
   {
-    if (m_zoneType == CG_Unstructured) {
+    if (m_meshType == Ioss::MeshType::UNSTRUCTURED) {
       switch (type) {
       case entity_type::NODE: {
         size_t offset = decomp->decomp_node_offset();
