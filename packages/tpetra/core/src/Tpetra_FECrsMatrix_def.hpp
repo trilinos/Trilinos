@@ -73,7 +73,7 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
     // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
     // guy for the Owned matrix.
     auto myvals = this->getLocalMatrix().values;
-    size_t numLocalVals = graph_->inactiveCrsGraph_->getLocalMatrix().entries.extent(0);
+    size_t numLocalVals = graph->inactiveCrsGraph_->getLocalGraph().entries.extent(0);
     // Uncomment this once #4049 makes it into develop
     //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph->inactiveCrsGraph_,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numLocalVals),Kokkos::ALL)));
   }

@@ -62,7 +62,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap),
   rangeMap_(rangeMap)
 {
-  setup(ownedRowMap,ownedPlusSharedRowMap);
+  setup(ownedRowMap,ownedPlusSharedRowMap,params);
 }
 
 
@@ -80,12 +80,12 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap),
   rangeMap_(rangeMap)
 {
-  setup(ownedRowMap,ownedPlusSharedRowMap);
+  setup(ownedRowMap,ownedPlusSharedRowMap,params);
 }
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap) {
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params) {
  const char tfecfFuncName[] = "FECrsGraph::setup(): ";
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap.is_null (), std::runtime_error, "ownedPlusSharedRowMap is null.");
@@ -101,14 +101,15 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap->isSameAs(*importer_->getSourceMap()), std::runtime_error, "ownedRowMap does not match importer source map.");
      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap->isSameAs(*importer_->getTargetMap()), std::runtime_error, "ownedPlusSharedRowMap does not match importer target map.");
    }
-
-
+ 
    // Build the inactive graph
+   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
+   // FIXME: I kind of want to do something like this, BUT we're still globally indexed.  So?  @mhoemmen?
 
-  // FIXME: Finish
-  // NOTE: Getting the memory aliasing correct here will be rather tricky
-
-
+   //   auto rowptr = this->getLocalMatrix().row_map;
+   //   auto colind = this->getLocalMatrix().entries;
+   //   inactiveCrsGraph->setAllIndices(Kokkos::subview(rowptr,Kokkos::pair<size_t,size_t>(0,numMyRows),Kokkos::ALL),
+   //                                   Kokkos::subview(colind,Kokkos::pair<size_t,size_t>(0,numMyNnz),Kokkos::ALL));
  }
 
 }
