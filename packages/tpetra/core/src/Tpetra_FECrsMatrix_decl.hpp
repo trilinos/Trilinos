@@ -45,14 +45,13 @@
 /// \file Tpetra_FECrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::FECrsMatrix class
 ///
-/// If you want to use Tpetra::CrsMatrix, include
+/// If you want to use Tpetra::FECrsMatrix, include
 /// "Tpetra_FECrsMatrix.hpp" (a file which CMake generates and installs
-/// for you).  If you only want the declaration of Tpetra::CrsMatrix,
-/// include this file (Tpetra_CrsMatrix_decl.hpp).
+/// for you).  If you only want the declaration of Tpetra::FECrsMatrix,
+/// include this file (Tpetra_FECrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_decl.hpp"
-
-
+#include "Tpetra_FECrsGraph.hpp"
 
 namespace Tpetra {
 
@@ -66,19 +65,10 @@ template<class Scalar        = ::Tpetra::Details::DefaultTypes::scalar_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node          = ::Tpetra::Details::DefaultTypes::node_type>
 class FECrsMatrix :
-   public CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+    public CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
-
-
-    private:
-
-
-        friend class CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-
-    public:
-
-
+  friend class CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+public:
     //! @name Typedefs
     //@{
 
@@ -141,6 +131,8 @@ class FECrsMatrix :
     /// \brief Parent CrsMatrix type using the same scalars
     typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
 
+    //! The CrsGraph specialization suitable for this CrsMatrix specialization.
+    typedef FECrsGraph<LocalOrdinal, GlobalOrdinal, Node> fe_crs_graph_type;
 
     //@}
     //! @name Constructors and destructor
@@ -151,7 +143,7 @@ class FECrsMatrix :
     ///
     /// Calling this constructor fixes the graph structure of the
     /// sparse matrix.  We say in this case that the matrix has a
-    /// "static graph."  If you create a CrsMatrix with this
+    /// "static graph."  If you create a FECrsMatrix with this
     /// constructor, you are not allowed to insert new entries into
     /// the matrix, but you are allowed to change values in the
     /// matrix.
@@ -163,20 +155,17 @@ class FECrsMatrix :
     /// before invoking this CrsMatrix constructor.
     ///
     /// This constructor is marked \c explicit so that you can't
-    /// create a CrsMatrix by accident when passing a CrsGraph into a
-    /// function that takes a CrsMatrix.
+    /// create a FECrsMatrix by accident when passing a FECrsGraph into a
+    /// function that takes a FECrsMatrix.
     ///
-    /// \param graph [in] The graph structure of the on-rank sparse matrix.
-    ///   The graph <i>must</i> be fill complete.
-    /// \param offRankGraph [in] The graph structure of the off-rank sparse matrix.
-    ///   The graph <i>must</i> be fill complete.
+    /// \param graph [in] The FECrsGraph structure of the sparse matrix.
+    ///   The graph <i>must</i> have endFill() called
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
 
   // FIXME: This constructor will be replaced  by FECrsGraph
-    explicit FECrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-                          const Teuchos::RCP<const crs_graph_type>& overlapGraph,
+    explicit FECrsMatrix (const Teuchos::RCP<const fe_crs_graph_type>& graph,
                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
@@ -215,40 +204,40 @@ class FECrsMatrix :
     /// Tpetra was built with debug checking enabled.
     void globalAssemble () {endFill();}
 
-    //! Migrates data to the non-overlapped mode
+    //! Migrates data to the owned mode
     void endFill() {
-      if(*activeCrsMatrix_ == FE_ACTIVE_OVERLAP) {
-        doOverlapToLocal(Tpetra::ADD);
+      if(*activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+        doOwnedPlusSharedToOwned(Tpetra::ADD);
         switchActiveCrsMatrix();
       }
       else
         throw std::runtime_error("FECrsMatrix: Local CrsMatrix already active.  Cannot endFill()");
     }
 
-    //! Activates the overlap mode for assembly
+    //! Activates the owned+sahred mode for assembly
     void beginFill()  {
       // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeCrsMatrix_ == FE_ACTIVE_LOCAL) {
+      if(*activeCrsMatrix_ == FE_ACTIVE_OWNED) {
         switchActiveCrsMatrix();
       }
     }
 
- 
-    //! Migrate data from the overlap to the local matrix
+  protected:
+    //! Migrate data from the overlap to the local graph
     // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Overlap CrsMatrix must be active
-    void doOverlapToLocal(const CombineMode CM=Tpetra::ADD);
+    // Precondition: Overlap CrsGraph must be active
+    void doOwnedPlusSharedToOwned(const CombineMode CM=Tpetra::ADD);
 
 
     //! Migrate data from the local to the overlap map
-    // Precondition: Source CrsMatrix must be active
-    void doLocalToOverlap(const CombineMode CM=Tpetra::ADD);
+    // Precondition: Source CrsGraph must be active
+    void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
-    //! Switches which CrsMatrix is active (without migrating data)
+    //! Switches which CrsGraph is active (without migrating data)
     void switchActiveCrsMatrix();
-
-
+    //@}
+  
   private:
 #if 0
     // We forbid copy construction by declaring this method private
@@ -265,8 +254,8 @@ class FECrsMatrix :
     // Enum for activity
     enum FEWhichActive
     {
-      FE_ACTIVE_LOCAL,
-      FE_ACTIVE_OVERLAP
+      FE_ACTIVE_OWNED,
+      FE_ACTIVE_OWNED_PLUS_SHARED
     };
 
 

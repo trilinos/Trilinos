@@ -230,7 +230,7 @@ namespace Tpetra {
     /// collective) over all processes in the graph's communicator.
     void globalAssemble (){endFill();}
 
-   //! Migrates data to the non-overlapped mode
+   //! Migrates data to the owned mode
    // FIXME: This guy should be able to do a fillComplete!
     void endFill() {
       if(*activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
@@ -241,7 +241,7 @@ namespace Tpetra {
         throw std::runtime_error("FECrsGraph: Owned CrsGraph already active.  Cannot endFill()");
     }
 
-    //! Activates the overlap mode for assembly
+    //! Activates the owned+shared mode for assembly
     void beginFill()  {
       // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
@@ -273,8 +273,6 @@ namespace Tpetra {
     resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params =
                   Teuchos::null);
 #endif
-
-
 
     /// \brief Tell the graph that you are done changing its structure.
     ///
@@ -366,13 +364,7 @@ namespace Tpetra {
 
     //! Switches which CrsGraph is active (without migrating data)
     void switchActiveCrsGraph();
-
-
-
-
     //@}
-
-
 
   private:
 

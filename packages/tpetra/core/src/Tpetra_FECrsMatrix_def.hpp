@@ -45,41 +45,17 @@
 #include "Tpetra_CrsMatrix.hpp"
 
 
-
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-FECrsMatrix(const Teuchos::RCP<const crs_graph_type>& graph,
-            const Teuchos::RCP<const crs_graph_type>& offRankGraph,
-            const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)                                                                  
+FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)
 {
-  activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OVERLAP));
-  // FIXME: This constructor is merely a placeholder for the "real deal" with a FECrsGraph
-    #ifdef HAVE_TPETRA_DEBUG
-    // TODO -->
-    // In Tpetra Debug mode, we should check that the graph and offRank graph have no
-    // common rows on any given rank (i.e., no intersections).
-    #endif
-
-    // Create an offRankMatrix_ object if the offRankGraph isn't null (i.e., if we're not SERIAL)
-  /*    if(!offRankGraph.is_null())
-    {
-        offRankMatrix_ = Teuchos::rcp(new crs_matrix_type(offRankGraph, params));
-    }
-  */
+  activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
+  // FIXME: Finish
+  // NOTE: Getting the memory aliasing correct here will be rather tricky
 }
-
-
-#if 0  // disabled for now
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-FECrsMatrix(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
-{
-
-}
-#endif
-
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -91,8 +67,8 @@ operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOverlapToLocal(const CombineMode CM) {
-  if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OVERLAP) {
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
+  if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
     // FIXME: Insert Tim's Magic Here
     //    inactiveCrsMatrix_->doExport(*this,*importer_,CM);
   }
@@ -100,16 +76,16 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOverlapToLocal(co
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doLocalToOverlap(const CombineMode CM) {
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(const CombineMode CM) {
   // This should be a no-op for all of our purposes
 }//end doLocalToOverlap
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsMatrix() {
-  if(*activeCrsMatrix_ == FE_ACTIVE_OVERLAP)
-    *activeCrsMatrix_ = FE_ACTIVE_LOCAL;
+  if(*activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED)
+    *activeCrsMatrix_ = FE_ACTIVE_OWNED;
   else
-    *activeCrsMatrix_ = FE_ACTIVE_OVERLAP;
+    *activeCrsMatrix_ = FE_ACTIVE_OWNED_PLUS_SHARED;
 
   if(inactiveCrsMatrix_.is_null()) return;
 
