@@ -158,7 +158,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     }
     Tpetra::endFill(g2);
     g1.fillComplete();
-    g2.fillComplete();
 
     // FIXME: Use graph comparison here
 
