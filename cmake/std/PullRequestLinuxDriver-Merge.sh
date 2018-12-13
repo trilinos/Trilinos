@@ -81,8 +81,13 @@ source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 declare -i ierror=0
 #Have to keep loading git
-module load sems-git/2.10.1
-
+regex=".*(_cuda_).*"
+if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
+  module load sems-git/2.10.1
+else
+  echo -e "Job is CUDA and assumed on Ride"
+  module load git/2.10.1
+fi
 
 #--------------------------------------------
 # Get Trilinos scripts and PR merge repo dirs
@@ -220,5 +225,3 @@ fi
 # Return to previous directory
 popd &> /dev/null
 echo -e "Set CWD = `pwd`"
-
-
