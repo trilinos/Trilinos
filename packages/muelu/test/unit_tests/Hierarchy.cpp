@@ -921,30 +921,16 @@ namespace MueLuTests {
 
     // Write matrices out, read fine A back in, and check that the read was ok
     // by using a matvec with a random vector.
-    // JJH: 22-Feb-2016 Append scalar type to file name. The theory is that for dashboard
-    //      tests with multiple Scalar instantiations of this test, a test with Scalar type
-    //      A could try to read in the results of the test with Scalar type B, simply because
-    //      the test with type B overwrote A's output matrix file.  A better solution would be
-    //      to write to a file stream, but this would involve writing new interfaces to Epetra's
-    //      file I/O capabilities.
-    std::string tname = typeid(Scalar).name();
-    tname = tname + typeid(LocalOrdinal).name();
-    tname = tname + typeid(GlobalOrdinal).name();
-#ifdef HAVE_MUELU_KOKKOSCORE
-    std::string nn = Kokkos::Compat::KokkosDeviceWrapperNode<typename Node::execution_space>::name();
-    nn.erase(std::remove(nn.begin(), nn.end(), '/'), nn.end());
-    tname = tname + nn;
-#endif
-    tname = "_" + tname;
+    char t[] = "XXXXXX";
+    mkstemp(t); //mkstemp() creates a temporary file. We use the name of that file as
+                //the suffix for the various data files produced by Hierarchy::Write().
+                //A better solution would be to write to a file stream, but this would 
+                //involve writing new interfaces to Epetra's file I/O capabilities.
+    std::string tname(t);
     LocalOrdinal zero = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
     //Only write out the fine level matrix, since that is the only data file we test against.
     H.Write(zero,zero,tname);
 
-    Teuchos::Array<typename TST::magnitudeType> norms(1);
-
-    out << "random status: " << rand() << std::endl;
-    std::srand(595343843);
-    std::rand();
     std::string infile = "A_0" + tname + ".m";
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<Matrix> Ain = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(infile, lib, comm);
@@ -953,6 +939,8 @@ namespace MueLuTests {
     infile = "domainmap_A_0" + tname + ".m"; remove(infile.c_str());
     infile = "rangemap_A_0" + tname + ".m";  remove(infile.c_str());
     infile = "rowmap_A_0" + tname + ".m";    remove(infile.c_str());
+    remove(tname.c_str()); //remove file created by mkstemp
+
     RCP<Vector> randomVec = VectorFactory::Build(A->getDomainMap(),false);
     randomVec->randomize();
     out << "randomVec norm: " << randomVec->norm2() << std::endl;
@@ -968,6 +956,7 @@ namespace MueLuTests {
     //diff = A_v + (-1.0)*(Ain_v) + 0*diff
     diff->update(1.0,*A_v,-1.0,*Ain_v,0.0);
 
+    Teuchos::Array<typename TST::magnitudeType> norms(1);
     diff->norm2(norms);
     out << "||diff|| = " << norms[0] << std::endl;
     TEST_EQUALITY(norms[0]<1e-15, true);
