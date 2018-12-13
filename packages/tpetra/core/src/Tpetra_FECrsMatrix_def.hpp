@@ -52,9 +52,29 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
             const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)
 {
+  const char tfecfFuncName[] = "FECrsMatrix(RCP<const FECrsGraph>[, RCP<ParameterList>]): ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (graph.is_null (), std::runtime_error, "Input graph is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (!graph->isFillComplete (), std::runtime_error, "Input graph is not "
+     "fill complete. You must call fillComplete on the graph before using "
+     "it to construct a FECrsMatrix.  Note that calling resumeFill on the "
+     "graph makes it not fill complete, even if you had previously called "
+     "fillComplete.  In that case, you must call fillComplete on the graph "
+     "again.");
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+     ( *graph->activeCrsGraph_!= fe_crs_graph_type::FE_ACTIVE_OWNED_PLUS_SHARED,std::runtime_error,
+      "Input graph must be in FE_ACTIVE_OWNED_PLUS_SHARED mode when this constructor is called.");
+
   activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
-  // FIXME: Finish
-  // NOTE: Getting the memory aliasing correct here will be rather tricky
+
+  // Make an "inactive" matrix, if we need to
+  if(graph->inactiveCrsGraph_.is_null() ) {
+    // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
+    // guy for the Owned matrix.
+    auto myvals = this->getLocalMatrix().values;
+    //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph->inactiveCrsGraph_,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,myvals.extent(0)),Kokkos::ALL)));
+  }
 }
 
 
