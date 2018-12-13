@@ -60,7 +60,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
   base_type(importer.is_null()? map:importer->getTargetMap(),numVecs,zeroOut),
   importer_(importer) {
 
-  activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_TARGET));
+  activeMultiVector_ = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
   // Sanity check the importer
   if(!importer_.is_null() && !importer_->getSourceMap()->isSameAs(*map)) {
@@ -89,26 +89,26 @@ void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const
 }// end replaceMap
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doTargetToSource(const CombineMode CM) {
-  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_TARGET) {
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
+  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
     inactiveMultiVector_->doExport(*this,*importer_,CM);
   }
 }//end doTargetToSource
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doSourceToTarget(const CombineMode CM) {
-  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_SOURCE) {
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(const CombineMode CM) {
+  if(!importer_.is_null() && *activeMultiVector_ == FE_ACTIVE_OWNED) {
     inactiveMultiVector_->doImport(*this,*importer_,CM);
   }
 }//end doTargetToSource
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveMultiVector() {
-  if(*activeMultiVector_ == FE_ACTIVE_TARGET)
-    *activeMultiVector_ = FE_ACTIVE_SOURCE;
+  if(*activeMultiVector_ == FE_ACTIVE_OWNED_PLUS_SHARED)
+    *activeMultiVector_ = FE_ACTIVE_OWNED;
   else
-    *activeMultiVector_ = FE_ACTIVE_TARGET;
+    *activeMultiVector_ = FE_ACTIVE_OWNED_PLUS_SHARED;
 
   if(importer_.is_null()) return;
 
