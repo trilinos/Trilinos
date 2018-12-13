@@ -62,9 +62,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap),
   rangeMap_(rangeMap)
 {
-  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
-  // FIXME: Finish
-  // NOTE: Getting the memory aliasing correct here will be rather tricky
+  setup(ownedRowMap,ownedPlusSharedRowMap);
 }
 
 
@@ -82,11 +80,38 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap),
   rangeMap_(rangeMap)
 {
-  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
-  // FIXME: Finish
-  // NOTE: Getting the memory aliasing correct here will be rather tricky
+  setup(ownedRowMap,ownedPlusSharedRowMap);
 }
 
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap) {
+ const char tfecfFuncName[] = "FECrsGraph::setup(): ";
+ TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
+ TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap.is_null (), std::runtime_error, "ownedPlusSharedRowMap is null.");
+ activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
+
+ // Use a very strong map equivalence check
+ bool maps_are_the_same = ownedRowMap->isSameAs(*ownedPlusSharedRowMap);
+ if(!maps_are_the_same) {
+   // Make an importer if we need to, check map compatability if we don't
+   if(importer_.is_null()) {
+       importer_ = Teuchos::rcp(new import_type(ownedRowMap,ownedPlusSharedRowMap));
+   } else {
+     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap->isSameAs(*importer_->getSourceMap()), std::runtime_error, "ownedRowMap does not match importer source map.");
+     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap->isSameAs(*importer_->getTargetMap()), std::runtime_error, "ownedPlusSharedRowMap does not match importer target map.");
+   }
+
+
+   // Build the inactive graph
+
+  // FIXME: Finish
+  // NOTE: Getting the memory aliasing correct here will be rather tricky
+
+
+ }
+
+}
 
 
 
