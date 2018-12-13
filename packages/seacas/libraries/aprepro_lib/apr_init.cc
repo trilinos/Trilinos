@@ -92,8 +92,8 @@ namespace SEAMS {
       {nullptr, nullptr, nullptr, nullptr}};
 
   init_dd arith_dd_fncts[] = {
-      {"atan2", do_atan2, "atan2(x,y)", "Inverse tangent of y/x, returns radians."},
-      {"atan2d", do_atan2d, "atan2d(x,y)", "Inverse tangent of y/x, returns degrees."},
+      {"atan2", do_atan2, "atan2(y,x)", "Inverse tangent of y/x, returns radians."},
+      {"atan2d", do_atan2d, "atan2d(y,x)", "Inverse tangent of y/x, returns degrees."},
       {"dim", do_dim, "dim(x,y)", "x - min(x,y)"},
       {"fmod", do_fmod, "fmod(x,y)", "Floating-point remainder of x/y."},
       {"hypot", do_hypot, "hypot(x,y)", "sqrt(x^2+y^2)."},

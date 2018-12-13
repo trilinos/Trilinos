@@ -41,28 +41,38 @@
 
 #ifndef TPETRA_ASSEMBLY_HELPERS_HPP
 #define TPETRA_ASSEMBLY_HELPERS_HPP
-#include <utility>
 
 namespace Tpetra {
 
-template<typename T>
-void beginFill(T& t) { t.beginFill();}
-
-template<typename T>
-void endFill(T& t) { t.endFill();}
-
-//! Helper function to begin fill on multiple FE{MultiVector|CrsMatrix} objects at once
-template<typename T, typename... Args>
-void beginFill(T& t, Args&&... args) {
-  t.beginFill();
-  beginFill(std::forward<Args>(args)...);
+namespace Impl {
+// Helper function to to apply an operation to each member of  a
+// c++11 parameter pack since parameter expansion only happens
+// within functions, constructors, and initializer_lists
+template <typename... Args>
+inline void foreach_pack(Args &&... args) {}
+} // namespace Impl
+ 
+template <typename... Args>
+void beginFill(Args &&... args)
+{
+  // use the comma operator to transform a potentially void function call
+  // into a argument to allow proper parameter expansion for c++11
+  Impl::foreach_pack( (args.beginFill(),1)... );
+ 
+  // using c++17 the code would be
+  // (args.beginFill()...);
 }
-
-//! Helper function to begin end on multiple FE{MultiVector|CrsMatrix} objects at once
-template<typename T, typename... Args>
-void endFill(T& t, Args&&... args) {
-  t.endFill();
-  endFill(std::forward<Args>(args)...);
+ 
+template <typename... Args>
+void endFill(Args &&... args)
+{
+  // use the comma operator to transform a potentially void function call
+  // into a argument to allow proper parameter expansion for c++11
+  Impl::foreach_pack( (args.endFill(),1)... );
+ 
+  // using c++17 the code would be
+  // (args.endFill()...);
+ 
 }
 
 }// namespace Tpetra

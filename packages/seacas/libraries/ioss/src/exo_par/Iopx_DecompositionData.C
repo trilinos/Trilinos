@@ -1344,7 +1344,7 @@ namespace Iopx {
                                                const Ioss::Field &field, T *ioss_data) const
   {
     m_decomposition.show_progress(__func__);
-    // Sideset Distribution Factor data can be very complicated.
+    // SideSet Distribution Factor data can be very complicated.
     // For some sanity, handle all requests for those in a separate routine...
     if (type == EX_SIDE_SET && field.get_name() == "distribution_factors") {
       return handle_sset_df(filePtr, id, field, ioss_data);
@@ -1358,7 +1358,7 @@ namespace Iopx {
     // These fields call back into this routine and are handled on all
     // processors; not just the root processor.
     if (field.get_name() == "element_side") {
-      // Sideset only...
+      // SideSet only...
       if (type == EX_SIDE_SET) {
         // Interleave the "ids" and "sides" fields...
         std::vector<T> tmp(set.ioss_count());
@@ -1381,7 +1381,7 @@ namespace Iopx {
       return ierr;
     }
     else if (field.get_name() == "element_side_raw") {
-      // Sideset only...
+      // SideSet only...
       if (type == EX_SIDE_SET) {
         // Interleave the "ids" and "sides" fields...
         std::vector<T> tmp(set.ioss_count());
@@ -1421,7 +1421,7 @@ namespace Iopx {
         ierr = ex_get_set(filePtr, type, id, TOPTR(file_data), nullptr);
       }
       else if (field.get_name() == "sides") {
-        // Sideset only...
+        // SideSet only...
         if (type == EX_SIDE_SET) {
           file_data.resize(set.file_count());
           ierr = ex_get_set(filePtr, type, id, nullptr, TOPTR(file_data));
@@ -1490,7 +1490,7 @@ namespace Iopx {
     m_decomposition.show_progress(__func__);
     int ierr = 0;
 
-    // Sideset Distribution Factor data can be very complicated.
+    // SideSet Distribution Factor data can be very complicated.
     // For some sanity, handle all requests for those here.  Only handles sidesets
     // distribution_factors field.
     assert(field.get_name() == "distribution_factors");
