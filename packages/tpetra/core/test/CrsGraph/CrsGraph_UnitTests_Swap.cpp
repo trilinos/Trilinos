@@ -40,6 +40,10 @@
 // ************************************************************************
 // @HEADER
 */
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <utility>
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsGraph.hpp>
@@ -110,6 +114,203 @@ TEUCHOS_STATIC_SETUP()
     clp.setOption("error-tol-slack", &errorTolSlack, "Slack off of machine epsilon used to check test results");
 }
 // todo: update options so that this test won't run in serial (it's not set up for that currently)
+
+
+
+
+// comm       : a communicator with exactly 2 processes in it.
+// edges      : [ (u,v), ... ]
+// row_owners : [ (u, pid), ... ]
+template<class LO, class GO, class Node, class comm_t>
+Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
+generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
+                  const std::vector<std::pair<GO, GO>>&     gbl_edges,
+                  const std::vector<std::pair<GO, size_t>>& gbl_row_owners)
+{
+    using Teuchos::Comm;
+
+    typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
+    typedef Tpetra::Map<LO, GO, Node>      map_t;
+
+    typedef typename std::pair<GO, GO>     pair_edge_t;
+    typedef typename std::pair<GO, size_t> pair_owner_t;
+
+    typedef typename std::vector<pair_edge_t> vec_edges_t;
+    typedef typename vec_edges_t::const_iterator vec_edges_const_iter_t;
+
+    typedef typename std::vector<pair_owner_t> vec_owners_t;
+    typedef typename vec_owners_t::const_iterator vec_owners_const_iter_t;
+
+    typedef typename std::unordered_map<GO, size_t> hash_row2pid_t;
+    //typedef typename std::set<GO> set_rows_t;
+    typedef typename std::map<GO, size_t> map_rows_t;   // row_id, num_entries
+
+
+    typedef typename std::vector<GO> vec_go_t;
+    typedef typename std::map<GO, vec_go_t> map_row_to_cols_t;
+
+    const size_t comm_rank = comm->getRank();
+
+    size_t num_gbl_elements = gbl_edges.size();
+
+    map_row_to_cols_t gbl_rows;
+    for(auto& e: gbl_edges)
+    {
+        if(gbl_rows.find(e.first) == gbl_rows.end())
+        {
+            gbl_rows[e.first] = vec_go_t();
+        }
+        gbl_rows[e.first].push_back(e.second);
+    }
+
+
+    // Uniqueify the list of rows & get their counts
+    /*
+    map_rows_t gbl_rows;
+    for(auto & p: gbl_edges)
+    {
+        if(gbl_rows.find(p.first) != gbl_rows.end())
+        {
+            gbl_rows[p.first] = gbl_rows[p.first] + 1;
+        }
+        else
+        {
+            gbl_rows[p.first] = 1;
+        }
+    }
+    */
+
+    map_rows_t gbl_row2pid;
+    for(auto & p: gbl_row_owners)
+    {
+        gbl_row2pid.insert(p);
+    }
+
+    if(0==comm_rank)
+    {
+        std::cout << "p=0 | gbl_num_rows: " << gbl_rows.size() << std::endl;
+        for(auto& p: gbl_rows)
+        {
+            std::cout << "p=0 | gbl_row     : " << p.first << " (" << p.second.size() << ") ";
+            for(auto& j: p.second)
+            {
+                std::cout << j << " ";
+            }
+            std::cout << std::endl;
+        }
+        for(auto& p: gbl_row2pid)
+            std::cout << "p=0 | gbl_row2pid : " << p.first << " => " << p.second << std::endl;
+    }
+
+    GO gbl_num_rows = gbl_rows.size();  // the number of global rows
+    LO lcl_num_rows = 0;                // this will be updated later
+
+    // How many local rows do I have?
+    for(auto& r: gbl_row2pid)
+    {
+        if(comm_rank == r.second)
+        {
+            lcl_num_rows++;
+        }
+    }
+
+    std::cout << "p=" << comm_rank << " | " << "lcl_num_rows = " << lcl_num_rows << std::endl;
+
+    // Set up global ids
+    std::vector<GO> global_ids;
+    for(auto & r: gbl_row2pid)
+    {
+        if(comm_rank == r.second)
+        {
+            global_ids.push_back(r.first);
+        }
+    }
+    for(size_t i = 0; i < global_ids.size(); i++)
+    {
+        std::cout << "p=" << comm_rank << " | " << "global_ids[" << i << "] = " << global_ids[i] << std::endl;
+    }
+
+    // Create the Row Map
+    std::cout << "p=" << comm_rank << " | " << "row_map = map_t(" << gbl_num_rows << ", " << "global_ids.data(), "
+              << lcl_num_rows << ", 0, comm)" << std::endl;
+    RCP<const map_t> row_map(new map_t(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
+
+    Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
+    size_t idx=0;
+    for(auto& r: gbl_rows)
+    {
+        const GO     irow  = r.first;
+        const size_t row_pid  = gbl_row2pid.find(irow)->second;
+        if(row_pid==comm_rank)
+        {
+            num_ent_per_row[idx++] = r.second.size();
+        }
+    }
+
+    std::cout << "p=" << comm_rank << " | lcl_num_rows = " << lcl_num_rows << std::endl;
+    for(int i=0; i<lcl_num_rows; i++)
+    {
+        std::cout << "p=" << comm_rank << " | " << "num_ent_per_row[" << i << "] = " << num_ent_per_row[i] << std::endl;
+    }
+
+    //std::cout << "p=" << comm_rank << " | " << ""
+    RCP<graph_t> output_graph(new graph_t(row_map, num_ent_per_row, Tpetra::StaticProfile));
+
+    // todo: fill in the rest of it -- be careful to iterate over parts in the same order.
+
+    for(auto& r: gbl_rows)
+    {
+        const GO irow = r.first;
+        const size_t pid = gbl_row2pid.find(irow)->second;
+        if(pid==comm_rank)
+        {
+            std::vector<GO> gbl_inds;
+            for(auto& v: r.second)
+            {
+                std::cout << "p=" << comm_rank << " | " << "gbl_inds.push_back(" << v << ")" << std::endl;
+                gbl_inds.push_back(v);
+            }
+
+            std::cout << "p=" << comm_rank << " | " << "gbl_inds size = " << r.second.size() << std::endl;
+            for(size_t i=0; i<gbl_inds.size(); i++)
+            {
+                std::cout << "p=" << comm_rank << " | " << "gbl_inds[" << i << "] = " << gbl_inds[i] << std::endl;
+            }
+
+            std::cout << "p=" << comm_rank << " | " << "insertGlobalIndices(" << irow << ", " << r.second.size() << ", gbl_inds.data())" << std::endl;
+            output_graph->insertGlobalIndices(irow, r.second.size(), gbl_inds.data());
+        }
+    }
+
+#if 0
+    if(0==comm_rank)
+    {
+        std::cout << "gbl_num_rows: " << gbl_rows.size() << std::endl;
+        for(auto& p: gbl_rows)
+        {
+            std::cout << "gbl_row     : " << p.first << " (" << p.second.size() << ") ";
+            for(auto& j: p.second)
+            {
+                std::cout << j << " ";
+            }
+            std::cout << std::endl;
+        }
+        for(auto& p: gbl_row2pid)
+            std::cout << "gbl_row2pid : " << p.first << " => " << p.second << std::endl;
+    }
+#endif
+
+    RCP<const map_t> range_map = row_map;
+
+    const GO         index_base = 0;
+    RCP<const map_t> domain_map(new map_t(12, index_base, comm));
+
+    output_graph->fillComplete(domain_map, range_map);
+
+    return output_graph;
+}
+
+
 
 
 
@@ -198,9 +399,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     using Teuchos::Comm;
     using Teuchos::outArg;
     using Teuchos::RCP;
+    using std::endl;
 
     typedef Teuchos::Comm<int>             comm_t;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_t;
+
+    typedef typename std::pair<GO, GO>     pair_edge_t;
+    typedef typename std::pair<GO, size_t> pair_owner_t;
+
+    typedef typename std::vector<pair_edge_t> vec_edges_t;
+    typedef typename vec_edges_t::const_iterator vec_edges_const_iter_t;
+
+    typedef typename std::vector<pair_owner_t> vec_owners_t;
+    typedef typename vec_owners_t::const_iterator vec_owners_const_iter_t;
+
 
     auto initialComm = getDefaultComm();
     TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
@@ -221,8 +433,41 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
 
         success = true;
 
-        RCP<graph_t> graph_a = gen_crsgraph_a< LO,GO,Node,comm_t>(comm);
-        graph_a->describe(out, Teuchos::VERB_DEFAULT);
+
+        #if 0
+        Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
+        generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
+                          const std::vector<std::pair<GO, GO>>&     edges,
+                          const std::vector<std::pair<GO, size_t>>& row_owners);
+        #endif
+
+        vec_edges_t vec_edges = { pair_edge_t( 0, 0), pair_edge_t( 0,11), pair_edge_t( 1, 3)
+                                , pair_edge_t( 1, 4), pair_edge_t( 3, 2), pair_edge_t( 7, 5)
+                                , pair_edge_t( 7, 7), pair_edge_t(10, 6)
+                                };
+        vec_owners_t vec_owners = { pair_owner_t(0,0), pair_owner_t(1,0), pair_owner_t(3,0)
+                                  , pair_owner_t(7,1), pair_owner_t(10,1)
+                                  };
+
+        #if 0
+        for(auto& p: vec_edges)
+            out << "e: " << p.first << ", " << p.second << std::endl;
+        for(auto& p: vec_owners)
+            out << "o: " << p.first << ", " << p.second << std::endl;
+        #endif
+
+        RCP<graph_t> graph_a = generate_crsgraph<LO,GO,Node,comm_t>(comm, vec_edges, vec_owners);
+        graph_a->describe(out, Teuchos::VERB_EXTREME);
+
+        //RCP<graph_t> graph_a = generate_crsgraph<LO,GO,Node,comm_t>(comm, vec_edges, vec_owners);
+        //graph_a->describe(out, Teuchos::VERB_DEFAULT);
+
+        // RCP<graph_t> graph_a = gen_crsgraph<LO,GO,Node,comm_t>(comm, ... );
+
+        #if 0
+        RCP<graph_t> graph_b = gen_crsgraph_a< LO,GO,Node,comm_t>(comm);
+        graph_b->describe(out, Teuchos::VERB_EXTREME);
+        #endif
     }
 }
 
