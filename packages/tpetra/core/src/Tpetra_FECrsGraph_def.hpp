@@ -50,27 +50,41 @@ namespace Tpetra {
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-FECrsGraph(const Teuchos::RCP<const map_type> &  rowMap,
-            const Teuchos::RCP<const map_type> & overlappingMap,
-            const size_t maxNumEntriesPerRow,
-            const Teuchos::RCP<Teuchos::ParameterList>& params): 
-   crs_graph_type( rowMap, maxNumEntriesPerRow, StaticProfile, params)
+FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
+           const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap, 
+           const size_t maxNumEntriesPerRow,
+           const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
+           const Teuchos::RCP<const map_type> & domainMap,
+           const Teuchos::RCP<const map_type> & rangeMap,
+           const Teuchos::RCP<Teuchos::ParameterList>& params): 
+  crs_graph_type(ownedPlusSharedRowMap, maxNumEntriesPerRow, StaticProfile, params),
+  importer_(ownedPlusSharedToOwnedimporter),
+  domainMap_(domainMap),
+  rangeMap_(rangeMap)
 {
-  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OVERLAP));
+  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
   // FIXME: Finish
+  // NOTE: Getting the memory aliasing correct here will be rather tricky
 }
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-FECrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-            const Teuchos::RCP<const map_type> & overlappingMap,
+FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
+            const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap, 
             const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+            const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter,
+            const Teuchos::RCP<const map_type> & domainMap,
+            const Teuchos::RCP<const map_type> & rangeMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
-  crs_graph_type( rowMap, numEntPerRow, StaticProfile, params)// FIXME: This max entries is the wrong size
+  crs_graph_type( ownedPlusSharedRowMap, numEntPerRow, StaticProfile, params),
+  importer_(ownedPlusSharedToOwnedimporter),
+  domainMap_(domainMap),
+  rangeMap_(rangeMap)
 {
-  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OVERLAP));
+  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
   // FIXME: Finish
+  // NOTE: Getting the memory aliasing correct here will be rather tricky
 }
 
 
@@ -85,8 +99,8 @@ operator=(const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>& rhs)
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOverlapToLocal(const CombineMode CM) {
-  if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OVERLAP) {
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
+  if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
     // FIXME: Insert Tim's Magic Here
     //    inactiveCrsGraph_->doExport(*this,*importer_,CM);
   }
@@ -94,16 +108,16 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOverlapToLocal(const Combi
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doLocalToOverlap(const CombineMode CM) {
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedToOwnedPlusShared(const CombineMode CM) {
   // This should be a no-op for all of our purposes
 }//end doLocalToOverlap
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsGraph() {
-  if(*activeCrsGraph_ == FE_ACTIVE_OVERLAP)
-    *activeCrsGraph_ = FE_ACTIVE_LOCAL;
+  if(*activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED)
+    *activeCrsGraph_ = FE_ACTIVE_OWNED;
   else
-    *activeCrsGraph_ = FE_ACTIVE_OVERLAP;
+    *activeCrsGraph_ = FE_ACTIVE_OWNED_PLUS_SHARED;
 
   if(inactiveCrsGraph_.is_null()) return;
 

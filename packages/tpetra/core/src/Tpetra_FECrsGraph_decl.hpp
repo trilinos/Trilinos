@@ -121,6 +121,8 @@ namespace Tpetra {
     //! The specialization of DistObject that is this class' parent class.
     typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
 
+    template <class S, class LO, class GO, class N>
+    friend class FECrsMatrix;
   public:
     //! Parent class
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> crs_graph_type;
@@ -153,48 +155,64 @@ namespace Tpetra {
     /// \brief Constructor specifying a single upper bound for the
     ///   number of entries in all rows on the calling process.
     ///
-    /// \param rowMap [in] Distribution of rows of the graph.
+    /// \param ownedRowMap [in] Distribution of rows of the owned graph.
     ///
-    /// \param overlappingMap [in] rowMap plus the list of rows to which off-processor insertion is allowed
+    /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
     ///
     /// \param maxNumEntriesPerRow [in] Maximum number of graph
-    ///   entries per row.  If pftype==DynamicProfile, this is only a
-    ///   hint, and you can set this to zero without affecting
-    ///   correctness.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed this number of
+    ///   entries per row.  You cannot exceed this number of
     ///   entries in any row.
+    ///
+    /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
+    ///   This will be calculated by FECrsGraph if it is not provided
+    ///
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    ///   will be used for the domainMap in the call to endFill()
+    ///
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    FECrsGraph(const Teuchos::RCP<const map_type> & rowMap,
-               const Teuchos::RCP<const map_type> & overlappingMap,
+    FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
+               const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,
                const size_t maxNumEntriesPerRow,
+               const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter = Teuchos::null,
+               const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
+               const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
     ///   bound for the number of entries in each row.
     ///
-    /// \param rowMap [in] Distribution of rows of the graph.
+    /// \param ownedRowMap [in] Distribution of rows of the owned graph.
     ///
-    /// \param overlappingMap [in] rowMap plus the list of rows to which off-processor insertion is allowed
+    /// \param ownedPlusSharedRowMap [in] ownedMap plus the list of shared rows to which off-processor insertion is allowed
     ///
     /// \param numEntPerRow [in] Maximum number of graph entries to
-    ///   allocate for each row.  If pftype==DynamicProfile, this is
-    ///   only a hint.  If pftype==StaticProfile, this sets the amount
-    ///   of storage allocated, and you cannot exceed the allocated
+    ///   allocate for each row.  You cannot exceed the allocated
     ///   number of entries for any row.
     ///
-    /// \param pftype [in] Whether to allocate storage dynamically
-    ///   (DynamicProfile) or statically (StaticProfile).
+    /// \param ownedPlusSharedToOwnedimporter [in] Optional importer between the ownedMap and ownedPlusSharedMap
+    ///   This will be calculated by FECrsGraph if it is not provided
+    ///
+    /// \param domainMap [in] Optional domainMap for the owned graph.  If this is not provided, then ownedMap 
+    ///   will be used for the domainMap in the call to endFill()
+    ///
+    /// \param rangeMap [in] Optional domainMap for the owned graph.  If this is not provided, then rangeMap 
+    ///   will be used for the domainMap in the call to endFill()
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    FECrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Teuchos::RCP<const map_type> & overlappingMap,
-              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
+                const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,
+                const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+                const Teuchos::RCP<const import_type> & ownedPlusSharedToOwnedimporter = Teuchos::null,
+                const Teuchos::RCP<const map_type> & domainMap = Teuchos::null,
+                const Teuchos::RCP<const map_type> & rangeMap = Teuchos::null,  
+                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Destructor.
     virtual ~FECrsGraph () = default;
@@ -215,37 +233,23 @@ namespace Tpetra {
    //! Migrates data to the non-overlapped mode
    // FIXME: This guy should be able to do a fillComplete!
     void endFill() {
-      if(*activeCrsGraph_ == FE_ACTIVE_OVERLAP) {
-        doOverlapToLocal(Tpetra::ADD);
+      if(*activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+        doOwnedPlusSharedToOwned(Tpetra::ADD);
         switchActiveCrsGraph();
       }
       else
-        throw std::runtime_error("FECrsMatrix: Local CrsGraph already active.  Cannot endFill()");
+        throw std::runtime_error("FECrsGraph: Owned CrsGraph already active.  Cannot endFill()");
     }
 
     //! Activates the overlap mode for assembly
     void beginFill()  {
       // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
       // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeCrsGraph_ == FE_ACTIVE_LOCAL) {
+      if(*activeCrsGraph_ == FE_ACTIVE_OWNED) {
         switchActiveCrsGraph();
       }
     }
  
-    //! Migrate data from the overlap to the local graph
-    // Since this is non-unique -> unique, we need a combine mode.
-    // Precondition: Overlap CrsGraph must be active
-    void doOverlapToLocal(const CombineMode CM=Tpetra::ADD);
-
-
-    //! Migrate data from the local to the overlap map
-    // Precondition: Source CrsGraph must be active
-    void doLocalToOverlap(const CombineMode CM=Tpetra::ADD);
-
-    //! Switches which CrsGraph is active (without migrating data)
-    void switchActiveCrsGraph();
-
-
 #if 0 // CMS: Do I need these?
     /// \brief Resume fill operations.
     ///
@@ -268,7 +272,7 @@ namespace Tpetra {
     void
     resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params =
                   Teuchos::null);
-
+#endif
 
 
 
@@ -312,7 +316,11 @@ namespace Tpetra {
     void
     fillComplete (const Teuchos::RCP<const map_type>& domainMap,
                   const Teuchos::RCP<const map_type>& rangeMap,
-                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+      domainMap_ = domainMap;
+      rangeMap_ = rangeMap;
+      endFill();
+    }
 
     /// \brief Tell the graph that you are done changing its
     ///   structure; set default domain and range Maps.
@@ -342,10 +350,27 @@ namespace Tpetra {
     ///   method's behavior.  See documentation of the three-argument
     ///   version of fillComplete (above) for valid parameters.
     void
-    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {endFill();}
+
+
+  protected:
+    //! Migrate data from the overlap to the local graph
+    // Since this is non-unique -> unique, we need a combine mode.
+    // Precondition: Overlap CrsGraph must be active
+    void doOwnedPlusSharedToOwned(const CombineMode CM=Tpetra::ADD);
+
+
+    //! Migrate data from the local to the overlap map
+    // Precondition: Source CrsGraph must be active
+    void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
+
+    //! Switches which CrsGraph is active (without migrating data)
+    void switchActiveCrsGraph();
+
+
+
 
     //@}
-#endif
 
 
 
@@ -360,8 +385,8 @@ namespace Tpetra {
     // Enum for activity
     enum FEWhichActive
     {
-      FE_ACTIVE_LOCAL,
-      FE_ACTIVE_OVERLAP
+      FE_ACTIVE_OWNED,
+      FE_ACTIVE_OWNED_PLUS_SHARED
     };
 
 
@@ -369,6 +394,15 @@ namespace Tpetra {
     Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsGraph_;
     // This is in RCP to make shallow copies of the FECrsGraph work correctly
     Teuchos::RCP<FEWhichActive> activeCrsGraph_;
+
+    // The importer between the rowmaps of the two graphs
+    Teuchos::RCP<const import_type> importer_;
+
+    // The domainMap to use in endFill(), if provided
+    Teuchos::RCP<const map_type> domainMap_;
+
+    // The rangeMap to use in endFill(), if provided
+    Teuchos::RCP<const map_type> rangeMap_;
 
 
   }; // class FECrsGraph

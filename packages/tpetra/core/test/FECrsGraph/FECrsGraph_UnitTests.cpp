@@ -64,19 +64,6 @@ using std::endl;
 typedef Tpetra::global_size_t GST;
 
 
-#define GLOBAL_SUCCESS_CHECK(out,comm,success)  \
-  { \
-    int lclSuccess = success ? 1 : 0; \
-    int gblSuccess = 1; \
-    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MIN, lclSuccess, Teuchos::outArg (gblSuccess)); \
-    if (gblSuccess == 1) { \
-      out << "Succeeded on all processes!" << endl; \
-    } else { \
-      out << "FAILED on at least one process!" << endl; \
-    } \
-    TEST_EQUALITY_CONST(gblSuccess, 1);  \
-  }
-
 template<class LO, class GO, class Node>
 class GraphPack {
 public:
@@ -176,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     // FIXME: Use graph comparison here
 
 
-    GLOBAL_SUCCESS_CHECK(out,comm,true)
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,true)
 }
 
 
@@ -218,7 +205,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   g2.endFill();
 
   // FIXME: Use graph comparison here
-  GLOBAL_SUCCESS_CHECK(out,comm,true)
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,true)
 }
 
 //
