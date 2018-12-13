@@ -75,7 +75,7 @@ the form `XXX-<keyword0>-<keyword1>-...-YYY` (or
 `XXX_<keyword0>_<keyword1>_..._YYY`, either seprator is supported) .  The
 typical order and format of this string is:
 
-    <system_name>-<compiler>-<release_or_debug>-<kokkos_threading>-<kokkos_arch>
+    <system_name>-<kokkos_arch>-<compiler>-<kokkos_thread>-<shared_static>-<release_debug>
 
 (but almost any order is supported).  All of these keywords, except for
 `<compiler>` (which can be `default`), are optional.  All of the other
@@ -83,9 +83,9 @@ keywords have reasonable defaults for a given system.  See some examples of
 build name strings [below](#build-name-examples).
 
 Each of these keywords [`<system_name>`](#system_name),
-[`<compiler>`](#compiler), [`<release_or_debug>`](#release_or_debug),
-[`<kokkos_threading>`](#kokkos_threading), and [`<kokkos_arch>`](#kokkos_arch)
-is described below.
+[`<kokkos_arch>`](#kokkos_arch), [`<compiler>`](#compiler),
+[`<kokkos_thread>`](#kokkos_thread), [`<shared_static>`](#shared_static)
+and [`<release_debug>`](#release_debug), is described below.
 
 <a name="system_name"/>
 
@@ -100,6 +100,27 @@ On these CEE LAN RHEL6 machines, when `cee-rhel6` is included in
 `<build-name>`, then the `cee-rhel6` env will be selected.  But if
 `sems-rhel6` is included in the build name or no system name is given, then
 the `sems-rhel6` env will be selected by default on such machines.
+
+<a name="kokkos_arch"/>
+
+**`<kokkos_arch>`:** The `<build-name>` string can also contain keywords to
+determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
+architecture name that is recognized by the CMake
+[KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
+configure option for Trilinos and Kokkos.  Some common supported Kokkos
+architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
+`KNL`.  When a GPU is present, some common Kokkos architecture options include
+`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
+supported by the current system or selected compiler, then the `load-env.sh`
+script will return an error message listing the value choices for
+`KOKKOS_ARCH` for each supported compiler.
+
+Note that currently only a single `KOKKOS_ARCH` value is recognized in the
+`<build-name>` string and it must be proceeded a dash '-' such as with
+`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
+specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
+that would be needed or useful) but such functionality could be supported in
+the future if needed.
 
 <a name="compiler"/>
 
@@ -135,14 +156,34 @@ which compilers and which versions are supported for a given system.)  If
 Carefully examine STDOUT after running `source cmake/std/atdm/load-env
 <build-name>` to see what compiler gets selected.
 
-<a name="release_or_debug"/>
+<a name="kokkos_thread"/>
 
-**`<release_or_debug>`:** The following `<build-name>` keywords specify debug or
+**`<kokkos_thread>`:** The following `<build-name>` keywords determine the
+Kokkos threading / backend model variable `<NODE_TYPE>` (default is
+`<NODE_TYPE>=SERIAL` unless `<COMPILER>=CUDA`):
+
+* `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
+* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
+* `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
+
+If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
+automatically set to `CUDA`.
+
+<a name="shared_static"/>
+
+**`<shared_static>`:** The following `<build-name>` keywords specify debug if a shared or static library build of Trilinos is to be created (which also impacts if shared or stack TPL libs are linked to on some system):
+
+* `static`: `BUILD_SHARED_LIBS=OFF`, DEFAULT
+* `shared`: `BUILD_SHARED_LIBS=ON`
+
+<a name="release_debug"/>
+
+**`<release_debug>`:** The following `<build-name>` keywords specify debug or
 optimized build and the `<BUILD_TYPE> variable `(used to set the CMake cache
 var `CMAKE_BUILD_TYPE=[DEBUG|RELEASE]` and turn on or off runtime debug
 checking (e.g. array bounds checking, pointer checking etc.)):
 
-* `release-debug`: (`<BUILD_TYPE>=RELEASE_RELEASE`)
+* `release-debug` or `opt-dbg` (or using `_`): (`<BUILD_TYPE>=RELEASE_RELEASE`)
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build runs runtime checks to catch developer and user mistakes
@@ -151,44 +192,10 @@ checking (e.g. array bounds checking, pointer checking etc.)):
   * Set `CMAKE_BULD_TYPE=RELEASE` (i.e. `-O3` compiler options)
   * Turn **OFF** runtime debug checking
   * NOTE: This build runs fast with minimal checks (i.e. production).
-* `debug`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
+* `debug` or `dbg`: (`<BUILD_TYPE>=DEBUG`, DEFAULT)
   * Set `CMAKE_BULD_TYPE=DEBUG` (i.e. `-O0 -g` compiler options)
   * Turn **ON** runtime debug checking
   * NOTE: This build supports running in a debugger. 
-
-<a name="kokkos_threading"/>
-
-**`<kokkos_threading>`:** The following `<build-name>` keywords determine the
-Kokkos threading model variable `<NODE_TYPE>` (default is `<NODE_TYPE>=SERIAL`
-unless `<COMPILER>=CUDA`):
-
-* `openmp`: Use OpenMP for host threading (`NODE_TYPE=OPENMP`)
-* `pthread`: Use Pthreads for host threading (`NODE_TYPE=THREAD`)
-* `serial`: Use no host threading (`NODE_TYPE=SERIAL`, DEFAULT)
-
-If `cuda` (or `cuda-8.0`, `cuda-9.2`, etc.) is given, then `<NODE_TYPE>` is
-automatically set to `CUDA`.
-
-<a name="kokkos_arch"/>
-
-**`<kokkos_arch>`:** The `<build-name>` string can also contain keywords to
-determine the `KOKKOS_ARCH` option of the build.  This is the case-sensitive
-architecture name that is recognized by the CMake
-[KOKKOS_ARCH](https://trilinos.org/docs/files/TrilinosBuildReference.html#configuring-with-kokkos-and-advanced-back-ends)
-configure option for Trilinos and Kokkos.  Some common supported Kokkos
-architectures for the host node include `BDW`, `HSW`, `Power8`, `Power9`, and
-`KNL`.  When a GPU is present, some common Kokkos architecture options include
-`Kepler37` and `Pascal60`.  If one selects a `KOKKOS_ARCH` value that is not
-supported by the current system or selected compiler, then the `load-env.sh`
-script will return an error message listing the value choices for
-`KOKKOS_ARCH` for each supported compiler.
-
-Note that currently only a single `KOKKOS_ARCH` value is recognized in the
-`<build-name>` string and it must be proceeded a dash '-' such as with
-`intel-KNL` or `cuda-Kepler37`.  This setup does not currently support
-specifying multiple `KOKKOS_ARCH` values (since there is no example yet where
-that would be needed or useful) but such functionality could be supported in
-the future if needed.
 
 All other strings in `<build-name>` are ignored but are allowed for
 informational purposes.  The reason that a `<build-name>` string is defined in
@@ -204,14 +211,14 @@ supported builds (see below).
 
 **[build-name-examples]** Some examples of `<build-name>` keyword sets used on
 various platforms include:
-* `gnu-debug-openmp`
-* `gnu-opt-openmp`
-* `intel-debug-openmp`
-* `intel-opt-openmp`
-* `sems-rhel6-gnu-debug-openmp`
-* `cee-rhel6-gnu-debug-openmp`
-* `sems-rhel6-intel-opt-openmp`
-* `cee-rhel6-intel-opt-openmp`
+* `gnu-openmp-debug`
+* `gnu-openmp-opt`
+* `intel-openmp-debug`
+* `intel-openmp-opt`
+* `sems-rhel6-gnu-openmp-debug`
+* `cee-rhel6-gnu-openmp-debug`
+* `sems-rhel6-intel-openmp-opt`
+* `cee-rhel6-intel-openmp-opt`
 * `cee-rhel6-gnu-7.2.0-openmpi-1.10.2-debug-openmp`
 * `intel-debug-openmp-KNL`
 * `intel-opt-openmp-HSW`
@@ -459,19 +466,21 @@ example, skip configure, skip the build, skip running tests, etc.
 * <a href="#shillerhansen">shiller/hansen</a>
 * <a href="#chamaserrano">chama/serrano</a>
 * <a href="#mutrino">mutrino</a>
-* <a href="#sems-rhel6-environment">SEMS rhel6 environment</a>
-* <a href="#cee-rhel6-environment">CEE rhel6 environment</a>
+* <a href="#sems-rhel6-environment">SEMS RHEL6 Environment</a>
+* <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
+* <a href="#cee-rhel6-environment">CEE RHEL6 Environment</a>
 * <a href="#waterman">waterman</a>
 
 
 ### ride/white
 
-Once logged on to `white` (on the SON) or `ride` (on the SRN), one can
+Once logged on to 'white' (on the SON) or 'ride' (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
-the node).  But to run the tests, one must run on the compute nodes using the
-`bsub` command to run if using a CUDA build.  For example, to configure, build
-and run the tests for the `cuda-debug` build for say `MueLu` on `white`,
-(after cloning Trilinos on the `develop` branch) one would do:
+the node) using the `ride` env.  But to run the tests, one must run on the
+compute nodes using the `bsub` command to run if using a CUDA build.  For
+example, to configure, build and run the tests for the `cuda-debug` build for
+say `MueLu` on 'white', (after cloning Trilinos on the `develop` branch) one
+would do:
 
 ```
 $ cd <some_build_dir>/
@@ -513,12 +522,12 @@ $ bsub -x -I -q rhel7F -n 16 \
 
 ### shiller/hansen
 
-Once logged on to `hansen` (on the SON) or `shiller` (on the SRN), one can
+Once logged on to 'hansen' (on the SON) or 'shiller' (on the SRN), one can
 directly configure and build on the login node (being careful not to overload
-the node).  But to run the tests, one must run on the compute nodes using the
-`srun` command.  For example, to configure, build and run the tests for say
-`MueLu` on `hansen`, (after cloning Trilinos on the `develop` branch) one
-would do:
+the node) using the `shiller` env.  But to run the tests, one must run on the
+compute nodes using the `srun` command.  For example, to configure, build and
+run the tests for say `MueLu` on 'hansen', (after cloning Trilinos on the
+`develop` branch) one would do:
 
 
 ```
@@ -556,11 +565,12 @@ $ srun ./checkin-test-atdm.sh intel-opt-openmp \
 
 ### chama/serrano
 
-Once logged on to `chama` or `serrano`, one can directly configure and build
-on the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `srun` command.  For
-example, to configure, build and run the tests for say `MueLu` on `serrano`
-or `chama`, (after cloning Trilinos on the `develop` branch) one would do:
+Once logged on to 'chama' or 'serrano', one can directly configure and build
+on the login node (being careful not to overload the node) using the `chama`
+and `serrano` envs, respectively.  But to run the tests, one must run on the
+compute nodes using the `srun` command.  For example, to configure, build and
+run the tests for say `MueLu` on 'serrano' or 'chama', (after cloning Trilinos
+on the `develop` branch) one would do:
 
 
 ```
@@ -603,11 +613,11 @@ $ salloc -N1 --time=0:20:00 --account=<YOUR_WCID> \
 
 ### mutrino
 
-Once logged on to `mutrino`, one can directly configure and build
-on the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `salloc` command.  For
-example, to configure, build and run the tests for say `MueLu` on `mutrino`, 
-(after cloning Trilinos on the `develop` branch) one would:
+Once logged on to 'mutrino', one can directly configure and build on the login
+node (being careful not to overload the node) using the `mutrino` env.  But to
+run the tests, one must run on the compute nodes using the `salloc` command.
+For example, to configure, build and run the tests for say `MueLu` on
+'mutrino', (after cloning Trilinos on the `develop` branch) one would:
 
 
 ```
@@ -635,12 +645,12 @@ node on this system.  This is what the CTest -S driver on 'mutrino' does in
 order to drive jobs and submit to CDash.
 
 
-### SEMS rhel6 environment
+### SEMS RHEL6 Environment
 
-Once logged on to a rhel6 machine with the sems NFS env, one can directly
-configure, build, and run tests.  For example, to configure, build and run the
-tests for `MueLu` one would clone Trilinos on the `develop` branch and then do
-the following:
+Once logged on to a SNL COE RHEL6 machine with the sems NFS env, one can
+directly configure, build, and run tests using the `sems-rhel6` env.  For
+example, to configure, build and run the tests for `MueLu` one would clone
+Trilinos on the `develop` branch and then do the following:
 
 
 ```
@@ -670,7 +680,7 @@ href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
 ```
 $ cd <some_build_dir>/
 $ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ ./checkin-test-atdm.sh sems-rhel6-clang-opt-openmp \
+$ ./checkin-test-atdm.sh sems-rhel6-intel-opt-openmp \
   --enable-packages=MueLu \
   --local-do-all
 ```
@@ -678,17 +688,59 @@ $ ./checkin-test-atdm.sh sems-rhel6-clang-opt-openmp \
 NOTE: The number of parallel build and test processes in this case are
 determine automatically from the number of cores on the current machine.  But
 this can be overridden by setting the env var
-`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
-`atdm/load-env.sh <build-name>` script.
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` before running `source
+cmake/std/atdm/load-env.sh <build_name>`.
 
 
-### CEE RHEL6 environment
+### SEMS RHEL7 Environment
+
+Once logged on to a SNL COE RHEL7 machine with the SEMS NFS env, one can
+directly configure, build, and run tests using the `sems-rhel7` env.  For
+example, to configure, build and run the tests for `MueLu` one would clone
+Trilinos on the `develop` branch and then do the following:
+
+
+```
+$ cd <some_build_dir>/
+
+$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-9.2-Pascal60-release-debug
+
+$ cmake \
+  -GNinja \
+  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
+  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
+  $TRILINOS_DIR
+
+$ make NP=16
+
+$ ctest -j8
+```
+
+One can also run the same build a tests using the <a
+href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
+
+```
+$ cd <some_build_dir>/
+$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
+$ ./checkin-test-atdm.sh cuda-9.2-Pascal60-release-debug \
+  --enable-packages=MueLu \
+  --local-do-all
+```
+
+NOTE: The number of parallel build and test processes in this case are
+determine automatically from the number of cores on the current machine.  But
+this can be overridden by setting the env var
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` running `source
+cmake/std/atdm/load-env.sh <build_name>`.
+
+
+### CEE RHEL6 Environment
 
 Once logged into any CEE LAN RHEL6 SRN machine, one can configure, build, and
-run tests for any ATDM Trilinos package.  For example, to configure, build and
-run the tests for the `cee-rhel6-clang-opt-openmp` build for say `MueLu` on a
-CEE LAN machine, (after cloning Trilinos on the `develop` branch) one would
-do:
+run tests for any ATDM Trilinos package using the `cee-rhel6` env.  For
+example, to configure, build and run the tests for the
+`cee-rhel6-clang-opt-openmp` build for say `MueLu` on a CEE LAN machine,
+(after cloning Trilinos on the `develop` branch) one would do:
 
 ```
 $ cd <some_build_dir>/
@@ -730,18 +782,18 @@ builds for the `cee-rhel6` env.
 NOTE: The number of parallel build and test processes in this case are
 determine automatically from the number of cores on the current machine.  But
 this can be overridden by setting the env var
-`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` **before** sourcing the
-`atdm/load-env.sh <build-name>` script.
+`ATDM_CONFIG_NUM_CORES_ON_MACHINE_OVERRIDE` before running `source
+cmake/std/atdm/load-env.sh <build_name>`.
 
 
 ### waterman
 
-Once logged on to `waterman` (SRN), one can directly configure and build on
-the login node (being careful not to overload the node).  But to run the
-tests, one must run on the compute nodes using the `bsub` command to run if
-using a CUDA build.  For example, to configure, build and run the tests for
-the default `cuda-debug` build for say `MueLu` (after cloning Trilinos on the
-`develop` branch) one would do:
+Once logged on to 'waterman' (SRN), one can directly configure and build on
+the login node (being careful not to overload the node) using the `waterman`
+env.  But to run the tests, one must run on the compute nodes using the `bsub`
+command to run if using a CUDA build.  For example, to configure, build and
+run the tests for the default `cuda-debug` build for say `MueLu` (after
+cloning Trilinos on the `develop` branch) one would do:
 
 ```
 $ cd <some_build_dir>/
@@ -1108,7 +1160,9 @@ they support are:
 * `ride/`: Supports GNU and CUDA builds on both the SRN machine `ride` and the
   mirror SON machine `white`.
 
-* `sems-rhel6/`: RHEL6 systems with the SEMS NFS environment
+* `sems-rhel6/`: SNL COE RHEL6 systems with the SEMS NFS environment
+
+* `sems-rhel7/`: SNL COE RHEL7 systems with the SEMS NFS environment
 
 * `serrano/`: Supports SNL HPC machine `serrano`.
 

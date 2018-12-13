@@ -194,6 +194,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   static Epetra_BlockMap Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 						  bool high_rank_proc_owns_shared=false);
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    //! Epetra_Util Create_OneToOne_Map function for long long ordinals
+    /*! Function to create a new Epetra_Map object with 1-to-1 ownership of
+      entries from an existing map which may have entries that appear on
+      multiple processors.
+    */
+  static Epetra_BlockMap Create_OneToOne_BlockMap64(const Epetra_BlockMap& usermap,
+                                                    bool high_rank_proc_owns_shared=false);
+#endif
 
 
   //! Epetra_Util SortCrsEntries function

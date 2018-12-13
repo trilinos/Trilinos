@@ -212,6 +212,14 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
   //Adjoint sensitivities:
 
+  // Solution at convergence is the response at index num_g
+  {
+    const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g);
+    if (Teuchos::nonnull(gx_out)) {
+      Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
+    }
+  }
+
   //
   // Do Sensitivity Calc, if requested. See 3 main steps
   //
