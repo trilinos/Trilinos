@@ -68,26 +68,77 @@ using Teuchos::CONJ_TRANS;
 using std::endl;
 typedef Tpetra::global_size_t GST;
 
-#define STD_TESTS(matrix) \
-{ \
-    using Teuchos::outArg; \
-    RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
-    ArrayView<const LO> loview; \
-    ArrayView<const Scalar> sview; \
-    size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
-        const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
-        TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
-        matrix.getLocalRowView(STR,loview,sview); \
-        TEST_EQUALITY( static_cast<size_t>(loview.size()), numEntries ); \
-        TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
-        STMAX = std::max( STMAX, numEntries ); \
-    } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
-    GST STGMAX; \
-    Teuchos::reduceAll<int,GST>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
-    TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
+
+template<class LO, class GO, class Node>
+class GraphPack {
+public:
+  RCP<const Tpetra::Map<LO,GO,Node> > uniqueMap;
+  RCP<const Tpetra::Map<LO,GO,Node> > overlapMap;
+  std::vector<std::vector<GO> > element2node;
+
+  void print(int rank, std::ostream & out) {
+    using std::endl;
+    out << "["<<rank<<"] Unique Map  : ";
+    for(size_t i=0; i<uniqueMap->getNodeNumElements(); i++)
+      out << uniqueMap->getGlobalElement(i) << " ";
+    out<<endl;      
+
+    out << "["<<rank<<"] Overlap Map : ";
+    for(size_t i=0; i<overlapMap->getNodeNumElements(); i++)
+      out << overlapMap->getGlobalElement(i) << " ";
+    out<<endl;
+
+    out << "["<<rank<<"] element2node: ";
+    for(size_t i=0; i<(size_t)element2node.size(); i++) {
+      out <<"(";
+      for(size_t j=0; j<(size_t)element2node[i].size(); j++)
+        out<<element2node[i][j] << " ";
+      out<<") ";
+    }
+    out<<endl;
+  }
+};
+
+
+template<class LO, class GO, class Node>
+void generate_fem1d_graph(size_t numLocalNodes, RCP<const Comm<int> > comm , GraphPack<LO,GO,Node> & pack) {
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+  int rank    = comm->getRank();
+  int numProc = comm->getSize();
+  size_t numOverlapNodes  = (rank == numProc-1) ? numLocalNodes : numLocalNodes + 1;
+  size_t numLocalElements = (rank == numProc-1) ? numLocalNodes -1 : numLocalNodes;
+  //  printf("CMS numOverlapNodes = %d numLocalElements = %d\n",numOverlapNodes,numLocalElements);
+
+  pack.uniqueMap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocalNodes,comm);
+
+  Teuchos::Array<GO> overlapIndices(numOverlapNodes);
+  for(size_t i=0; i<numLocalNodes; i++) {
+    overlapIndices[i] = pack.uniqueMap->getGlobalElement(i);
+  }
+  if(rank != numProc -1)  overlapIndices[numOverlapNodes-1] = overlapIndices[numLocalNodes-1] +1;
+
+  pack.overlapMap = rcp(new Tpetra::Map<LO,GO,Node>(INVALID,overlapIndices,0,comm));
+
+  pack.element2node.resize(numLocalElements);
+  for(size_t i=0; i<numLocalElements; i++) {
+    pack.element2node[i].resize(2);
+    pack.element2node[i][0] = pack.uniqueMap->getGlobalElement(i);
+    pack.element2node[i][1] = pack.uniqueMap->getGlobalElement(i) + 1;
+  }
+}
+
+template<class Scalar>
+std::vector<std::vector<Scalar> > generate_fem1d_element_values() {
+  std::vector<std::vector<Scalar> > mat;
+  mat.resize(2);
+  mat[0].resize(2);
+  mat[1].resize(2);
+  mat[0][0] =  1;
+  mat[0][1] = -1;
+  mat[1][0] = -1;
+  mat[1][1] =  1;
+
+  return mat;
 }
 
 
@@ -97,50 +148,62 @@ typedef Tpetra::global_size_t GST;
 //
 
 
-
 ////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, ZeroMatrix, LO, GO, Scalar, Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node )
 {
-    typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef Teuchos::ScalarTraits<Scalar>          ST;
-    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType             Mag;
-    typedef Teuchos::ScalarTraits<Mag>             MT;
+  typedef Tpetra::FECrsMatrix<Scalar,LO,GO,Node> FEMAT;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CMAT;
+  typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
 
-    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+  // get a comm
+  RCP<const Comm<int> > comm = getDefaultComm();
+  
+  // Generate a mesh
+  size_t numLocal = 10;
+  GraphPack<LO,GO,Node> pack;
+  generate_fem1d_graph(numLocal,comm,pack);
+  
+  // Make the graph    
+  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
+  // not being handled correctly. 
+  RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,4));
 
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-
-    // create a Map
-    const size_t numLocal = 10;
-    const size_t numVecs  = 5;
-    RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
-
-    // SCAFFOLDING - just some prints to keep the -Wunused-variable happy (for now)
-    std::cout << "numVecs: " << numVecs << std::endl;
-
-    // create the zero matrix
-    /*
-    MAT zero(map,0);
-    zero.fillComplete();
-
-    //
-    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
-    mvrand.randomize();
-    mvres.putScalar(1);
-    zero.apply(mvrand,mvres);
-    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    mvres.norm1(norms());
-    if (ST::isOrdinal)
-    {
-        TEST_COMPARE_ARRAYS(norms,zeros);
+  graph->beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        //        printf("Inserting (%d,%d)\n",gid_j,gid_k);
+        graph->insertGlobalIndices(gid_j,1,&gid_k);
+      }
     }
-    else
-    {
-        TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+  }
+  graph->endFill();
+
+  // Gerate the "local stiffness matrix"
+  std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
+
+  // Make the matrix two ways
+  FEMAT mat1(graph); // Here we use graph as a FECrsGraph
+  CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
+  mat1.beginFill();
+  for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
+    for(size_t j=0; j<pack.element2node[i].size(); j++) {
+      GO gid_j = pack.element2node[i][j];
+      for(size_t k=0; k<pack.element2node[i].size(); k++) {
+        GO gid_k = pack.element2node[i][k];
+        mat1.sumIntoGlobalValues(gid_j,1,&localValues[j][k],&gid_k);
+        mat2.sumIntoGlobalValues(gid_j,1,&localValues[j][k],&gid_k);
+      }
     }
-    */
+  }
+  mat1.endFill();
+  mat2.fillComplete();
+
+  // FIXME: Use matrix comparison here
+  success=true;
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
 //
@@ -148,7 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, ZeroMatrix, LO, GO, Scalar, Node
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, ZeroMatrix, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( FECrsMatrix, Assemble1D, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
