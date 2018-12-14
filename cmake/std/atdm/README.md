@@ -839,7 +839,7 @@ usage by the ATDM applications:
 
 ### Building and installing Trilinos for EMPIRE
 
-Configuring, building and installing Trilinos for EMPIRE and then building and testing EMPIRE against that Trilinos installation is an easy process.  Just take any ATDM Trilinos configuration on any supported system and do:
+Configuring, building and installing Trilinos for EMPIRE and then building and testing EMPIRE against that Trilinos installation is an easy process.  To build the ATDM Trilinos configuration on any supported system just do:
 
 ```
 $ cd <some_build_dir>/
@@ -877,7 +877,7 @@ $ ninja -j20
 $ ctest -j8
 ```
 
-The EMPIRE configuration gets everything it needs from the sourced and loaded env and from the Trilinos installation directory.  Easy as pie!
+The EMPIRE configuration gets everything it needs from the sourced and loaded environment and from the Trilinos installation directory.  Easy as pie!
 
 Details on where to get the EMPIRE source repos and the exact CMake options to use when configuring EMPIRE are given at:
 
