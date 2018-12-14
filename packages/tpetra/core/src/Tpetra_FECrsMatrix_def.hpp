@@ -50,9 +50,14 @@ namespace Tpetra {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
-            const Teuchos::RCP<Teuchos::ParameterList>& params) : crs_matrix_type(graph, params)
+            const Teuchos::RCP<Teuchos::ParameterList>& params) : 
+  // We want the OWNED_PLUS_SHARED graph here
+  // NOTE: The casts below are terrible, but necesssary
+  crs_matrix_type( graph->inactiveCrsGraph_.is_null() ? Teuchos::rcp_const_cast<crs_graph_type>(Teuchos::rcp_dynamic_cast<const crs_graph_type>(graph)) : graph->inactiveCrsGraph_,params)
 {
   const char tfecfFuncName[] = "FECrsMatrix(RCP<const FECrsGraph>[, RCP<ParameterList>]): ";
+  typedef typename local_matrix_type::values_type values_type;
+
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (graph.is_null (), std::runtime_error, "Input graph is null.");
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -63,8 +68,8 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
      "fillComplete.  In that case, you must call fillComplete on the graph "
      "again.");
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-     ( *graph->activeCrsGraph_!= fe_crs_graph_type::FE_ACTIVE_OWNED_PLUS_SHARED,std::runtime_error,
-      "Input graph must be in FE_ACTIVE_OWNED_PLUS_SHARED mode when this constructor is called.");
+     ( *graph->activeCrsGraph_!= fe_crs_graph_type::FE_ACTIVE_OWNED,std::runtime_error,
+      "Input graph must be in FE_ACTIVE_OWNED mode when this constructor is called.");
 
   activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
@@ -72,10 +77,11 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
   if(graph->inactiveCrsGraph_.is_null() ) {
     // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
     // guy for the Owned matrix.
-    auto myvals = this->getLocalMatrix().values;
-    size_t numLocalVals = graph->inactiveCrsGraph_->getLocalGraph().entries.extent(0);
-    // Uncomment this once #4049 makes it into develop
-    //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph->inactiveCrsGraph_,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numLocalVals),Kokkos::ALL)));
+    values_type myvals = this->getLocalMatrix().values;
+
+    // Remember: The Graph is in OWNED mode
+    size_t numOwnedVals = graph->getLocalGraph().entries.extent(0);
+    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
   }
 }
 
