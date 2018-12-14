@@ -160,9 +160,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     g1.fillComplete();
 
     // FIXME: Use graph comparison here
-
-
-    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,true)
+    success=true;
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
 
@@ -183,7 +182,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   //  pack.print(comm->getRank(),std::cout);
 
   // Comparative assembly
-  // FIXME: We should be able to get away with 4 for StaticProfile here, but we need 4 since duplicates are
+  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
   // not being handled correctly.
   CG g1(pack.uniqueMap,4,StaticProfile);
   FEG g2(pack.uniqueMap,pack.overlapMap,4);
@@ -204,7 +203,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   g2.endFill();
 
   // FIXME: Use graph comparison here
-  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,true)
+  success=true;
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
 //
