@@ -68,6 +68,44 @@ using Teuchos::CONJ_TRANS;
 using std::endl;
 typedef Tpetra::global_size_t GST;
 
+template<class Scalar, class LO, class GO, class Node>
+bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g1, Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g2) {
+  using std::endl;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+  double errorTolSlack = 1.0e+2;
+  const Mag tol = errorTolSlack * Teuchos::ScalarTraits<Scalar>::eps();
+ 
+  if (!g1.isFillComplete() || !g2.isFillComplete()) {out<<"Compare: FillComplete failed"<<endl;return false;}
+  if (!g1.getRangeMap()->isSameAs(*g2.getRangeMap())) {out<<"Compare: RangeMap failed"<<endl;return false;}
+  if (!g1.getRowMap()->isSameAs(*g2.getRowMap())) {out<<"Compare: RowMap failed"<<endl;return false;}
+  if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;return false;}
+  if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
+
+  auto rowptr1 = g1.getLocalMatrix().row_map;
+  auto rowptr2 = g2.getLocalMatrix().row_map;
+
+  auto colind1 = g1.getLocalMatrix().entries;
+  auto colind2 = g2.getLocalMatrix().entries;
+
+  auto values1 = g1.getLocalMatrix().val;
+  auto values2 = g2.getLocalMatrix().val;
+
+  if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
+  if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed"<<endl;return false;}      
+  if (values1.extent(0) != values2.extent(0)) {out<<"Compare: values extent failed"<<endl;return false;}      
+
+  bool success=true;
+  TEST_COMPARE_ARRAYS(rowptr1,rowptr2);
+  if (!success) {out<<"Compare: rowptr match failed"<<endl;return false;}
+
+  TEST_COMPARE_ARRAYS(colind1,colind2);
+  if (!success) {out<<"Compare: colind match failed"<<endl;return false;}
+
+  TEST_COMPARE_FLOATING_ARRAYS(values1,values2,tol);
+  if (!success) {out<<"Compare: values match failed"<<endl;return false;}
+
+  return true;
+}
 
 template<class LO, class GO, class Node>
 class GraphPack {
@@ -204,8 +242,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
   mat2.fillComplete();
 #endif
 
-  // FIXME: Use matrix comparison here
-  success=true;
+#ifdef CRSGRAPH_ACTUALLY_WORKS
+  success = compare_final_matrix_structure(out,mat1,mat2);
+#else
+  success = true;
+#endif
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
