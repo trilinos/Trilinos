@@ -62,7 +62,6 @@
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
-//#include <Thyra_BelosLinearOpWithSolveFactory.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
 #include <Thyra_TpetraLinearOp.hpp>
@@ -95,63 +94,6 @@
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-//#include <mpi.h>
-//#include <Epetra_MpiComm.h>
-//
-//#include <Epetra_Map.h>
-//#include <Epetra_CrsMatrix.h>
-//
-//#include "EpetraExt_BlockMapIn.h"
-//#include "EpetraExt_CrsMatrixIn.h"
-//#include "EpetraExt_MultiVectorIn.h"
-//#include "EpetraExt_HDF5.h"
-//
-//#include <Teuchos_CommandLineProcessor.hpp>
-//#include <Teuchos_XMLParameterListCoreHelpers.hpp>
-//
-//#include <Xpetra_CrsMatrixWrap.hpp>
-//#include <Xpetra_EpetraCrsMatrix.hpp>
-//
-//#include <BelosOperatorT.hpp>
-//#include <BelosXpetraAdapter.hpp>
-//#include <BelosSolverFactory.hpp>
-//#include <BelosPseudoBlockGmresSolMgr.hpp>
-//
-//#include <FROSch_GDSWPreconditioner_def.hpp>
-//#include <FROSch_RGDSWPreconditioner_def.hpp>
-//
-//// Thyra includes
-//#include <Thyra_LinearOpWithSolveBase.hpp>
-//#include <Thyra_VectorBase.hpp>
-//#include <Thyra_SolveSupportTypes.hpp>
-//#include <Thyra_BelosLinearOpWithSolveFactory.hpp>
-//#include <Thyra_LinearOpWithSolveBase.hpp>
-//#include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
-//#include <Thyra_TpetraLinearOp.hpp>
-//#include <Thyra_TpetraMultiVector.hpp>
-//#include <Thyra_TpetraVector.hpp>
-//#include <Thyra_TpetraThyraWrappers.hpp>
-//#include <Thyra_VectorBase.hpp>
-//#include <Thyra_VectorStdOps.hpp>
-//#include <Thyra_EpetraLinearOp.hpp>
-//#include <Thyra_VectorSpaceBase_def.hpp>
-//#include <Thyra_VectorSpaceBase_decl.hpp>
-//#include <Thyra_BelosLinearOpWithSolve_def.hpp>
-//#include <Thyra_BelosLinearOpWithSolveFactory_def.hpp>
-//
-//// Stratimikos includes
-//#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-//#include "Stratimikos_FROSchXpetra.hpp"
-//
-//// Xpetra include
-//#include <Xpetra_Parameters.hpp>
-//
-//// FROSCH thyra includes
-//#include "Thyra_FROSchLinearOp_def.hpp"
-//
-//#include "Thyra_FROSchXpetraTwoLevelBlockPrec_def.hpp"
-//#include "EpetraExt_HDF5.h"
-
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;
@@ -160,7 +102,6 @@ typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
 typedef DefaultNode NO;
 
 using namespace std;
-using namespace Belos;
 using namespace EpetraExt;
 using namespace FROSch;
 using namespace Teuchos;
