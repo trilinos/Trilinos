@@ -179,17 +179,18 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
 
   if(inactiveCrsGraph_.is_null()) {
     // The easy case: One graph
+    switchActiveCrsGraph();
     if(domainMap_.is_null()) crs_graph_type::fillComplete();
     else crs_graph_type::fillComplete(domainMap_,rangeMap_);
-    switchActiveCrsGraph();
   }
   else {
     // The hard case: Two graphs   
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
-    // TODO: Make the revised column map on the owned+shared guy, change its domain and range maps to make sure we don't have an importer
 
+    // TODO: Make the revised column map on the owned+shared guy, change its domain and range maps to make sure we don't have an importer
     switchActiveCrsGraph();
+
   }
 }
 
