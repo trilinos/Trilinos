@@ -154,6 +154,56 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsGraph() {
 }//end switchActiveCrsGraph
 
 
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
+  const char tfecfFuncName[] = "FECrsGraph::endFill(): ";
+
+  /* What has to go on here is complicated.  
+     First off, if we don't really have two graphs (e.g. the rowMaps are the same, because we're in serial or 
+     doing finite differences, things are easy --- just call fillComplete().
+
+     If, we are in the parallel FE case, then:
+     Precondition: FE_ACTIVE_OWNED_PLUS_SHARED mode
+
+     Postconditions: 
+     1) FE_ACTIVE_OWNED mode
+     2) The OWNED graph has been fillCompleted with an Aztec-compatible column map
+     3) rowptr & colinds are aliased between the two graphs.
+     4) The OWNED_PLUS_SHARED graph has been fillCompleted with a column map whose first chunk
+        is the column map for the OWNED graph.  This means that the OWNED_PLUS_SHARED 
+     5) The OWNED_PLUS_SHARED graph has neither an importer nor exporter.  Making these is expensive and we don't need them.       
+   */
+  // Precondition
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ != FE_ACTIVE_OWNED_PLUS_SHARED,std::runtime_error, "must be in owned+shared mode.");
+
+  if(inactiveCrsGraph_.is_null()) {
+    // The easy case: One graph
+    crs_graph_type::fillComplete(domainMap_,rangeMap_);
+    switchActiveCrsGraph();
+  }
+  else {
+    // The hard case: Two graphs   
+    doOwnedPlusSharedToOwned(Tpetra::ADD);
+
+    // TODO: Make the revised column map on the owned+shared guy, change its domain and range maps to make sure we don't have an importer
+
+    switchActiveCrsGraph();
+  }
+}
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
+  const char tfecfFuncName[] = "FECrsGraph::beginFill(): ";
+  
+  // Unlike FECrsMatrix and FEMultiVector, we do not allow you to call beginFill() after calling endFill()
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ != FE_ACTIVE_OWNED,std::runtime_error, "can only be called once.");
+
+}
+
+
+
 }  // end namespace Tpetra
 
 

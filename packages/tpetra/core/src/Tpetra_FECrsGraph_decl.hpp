@@ -231,24 +231,11 @@ namespace Tpetra {
     void globalAssemble (){endFill();}
 
    //! Migrates data to the owned mode
-   // FIXME: This guy should be able to do a fillComplete!
-    void endFill() {
-      if(*activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-        doOwnedPlusSharedToOwned(Tpetra::ADD);
-        switchActiveCrsGraph();
-      }
-      else
-        throw std::runtime_error("FECrsGraph: Owned CrsGraph already active.  Cannot endFill()");
-    }
+    void endFill();
 
-    //! Activates the owned+shared mode for assembly
-    void beginFill()  {
-      // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
-      // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeCrsGraph_ == FE_ACTIVE_OWNED) {
-        switchActiveCrsGraph();
-      }
-    }
+    //! Activates the owned+shared mode for assembly.  This can only be called once.
+    void beginFill();
+
  
 #if 0 // CMS: Do I need these?
     /// \brief Resume fill operations.
