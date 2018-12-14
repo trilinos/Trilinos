@@ -73,6 +73,10 @@ module load devpack/20180124/cray/7.6.2/intel/17.0.4
 module load gcc/4.9.3
 module load cmake/3.9.0
 
+# No RPATH for static builds
+export ATDM_CONFIG_CMAKE_SKIP_INSTALL_RPATH=ON
+# ToDo: Make above contingent on 'static' or 'shared' 
+
 # Use manually installed cmake and ninja to allow usage of ninja and
 # all-at-once mode
 export PATH=/projects/netpub/atdm/cmake-3.11.4/bin:/projects/netpub/atdm/ninja-1.8.2/bin:$PATH
