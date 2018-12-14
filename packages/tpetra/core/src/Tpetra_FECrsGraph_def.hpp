@@ -171,7 +171,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
      2) The OWNED graph has been fillCompleted with an Aztec-compatible column map
      3) rowptr & colinds are aliased between the two graphs.
      4) The OWNED_PLUS_SHARED graph has been fillCompleted with a column map whose first chunk
-        is the column map for the OWNED graph.  This means that the OWNED_PLUS_SHARED 
+        is the column map for the OWNED graph.  
+        If we assume that (a) if you own an element, you also own at least one of the connecte nodes and (b) elements are cliques, then
+        the columnMap is the same for both graphs!!! Yay!!!
+
      5) The OWNED_PLUS_SHARED graph has neither an importer nor exporter.  Making these is expensive and we don't need them.       
    */
   // Precondition
