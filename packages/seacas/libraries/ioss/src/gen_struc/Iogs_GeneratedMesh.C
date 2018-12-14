@@ -335,7 +335,7 @@ namespace Iogs {
                 << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
                 << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
                 << "\tBlock Count           = " << std::setw(9) << structured_block_count() << "\n"
-                << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n"
+                << "\tSideSet Count         = " << std::setw(9) << sideset_count() << "\n\n"
                 << "\tTimestep Count        = " << std::setw(9) << timestep_count() << "\n\n";
       if (doRotation) {
         std::cerr << "\tRotation Matrix: \n\t" << std::scientific;

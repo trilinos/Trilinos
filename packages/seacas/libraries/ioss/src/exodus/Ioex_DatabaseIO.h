@@ -312,7 +312,7 @@ namespace Ioex {
     // active nodes for each nodeset.  If the nodeset is not reduced in size,
     // the map's vector will be empty for that nodeset. If the vector is not
     // empty, then some nodes on that nodeset are only connected to omitted elements.
-    mutable std::map<std::string, Ioss::Int64Vector> activeNodesetNodesIndex;
+    mutable std::map<std::string, Ioss::Int64Vector> activeNodeSetNodesIndex;
 
     time_t timeLastFlush{0};
     int    flushInterval{1};

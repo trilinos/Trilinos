@@ -1,7 +1,6 @@
 HDF5 MotherNode  -- Root Node of HDF5 File ()
   +-CGNSLibraryVersion  -- CGNSLibraryVersion_t (1)
   +-Base  -- CGNSBase_t (2)
-    +-Information  -- Descriptor_t (28)
     +-DataClass  -- DataClass_t (11)
     +-DimensionalUnits  -- DimensionalUnits_t (32,5)
     +-block_1  -- Zone_t (1,3)

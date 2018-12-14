@@ -928,13 +928,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   int MyLength() const {return(MyLength_);};
 
   //! Returns the global vector length of vectors in the multi-vector.
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-  int GlobalLength() const {
-    if(Map().GlobalIndicesInt())
-      return (int) GlobalLength_;
-    throw "Epetra_MultiVector::GlobalLength: GlobalIndices not int.";
-  }
-#endif
+  int GlobalLength() const { int ret_val = GlobalLength_; return ret_val; }
+
+  //! Returns the 64-bit global vector length of vectors in the multi-vector.
   long long GlobalLength64() const {return(GlobalLength_);};
 
   //! Returns the stride between  vectors in the multi-vector (only meaningful if ConstantStride() is true).

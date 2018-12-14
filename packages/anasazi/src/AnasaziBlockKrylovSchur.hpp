@@ -1465,17 +1465,6 @@ namespace Anasazi {
           std::vector<int> bwork( curDim_ );
           int info = 0, sdim = 0; 
           char jobvs = 'V';
-
-          int opt_lwork = -1;
-          lapack.GEES( jobvs,curDim_, schurH_->values(), schurH_->stride(), &sdim, &tmp_rRitzValues[0],
-                       &tmp_iRitzValues[0], subQ.values(), subQ.stride(), &work[0], opt_lwork, 
-                       &rwork[0], &bwork[0], &info );
-          opt_lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
-          if (opt_lwork > lwork)
-          {
-            lwork = opt_lwork;
-            work.resize( lwork );
-          } 
           lapack.GEES( jobvs,curDim_, schurH_->values(), schurH_->stride(), &sdim, &tmp_rRitzValues[0],
                        &tmp_iRitzValues[0], subQ.values(), subQ.stride(), &work[0], lwork, 
                        &rwork[0], &bwork[0], &info );

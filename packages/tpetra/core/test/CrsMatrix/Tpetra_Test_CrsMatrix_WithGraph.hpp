@@ -373,14 +373,35 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
+    }                                           
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
+    if (!success) {
+      out << "Test FAILED; no sense in continuing" << endl;
+      return;
     }
 
-    // Make sure that all processes finished and were successful.
-    lclSuccess = success ? 1 : 0;
-    gblSuccess = 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
+
+    {
+      out << "Create a diagonal CrsGraph" << endl;
+      GRPH diaggraph (map, 1, Tpetra::StaticProfile);
+      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+        diaggraph.insertGlobalIndices(r,tuple(r));
+      }
+
+      out << "Call fillComplete on the CrsGraph" << endl;
+      diaggraph.fillComplete(params);
+
+
+      out << "Create a CrsMatrix with the diagonal CrsGraph and Kokkos view" << endl;
+      size_t numEnt = diaggraph.getLocalGraph().entries.extent(0);
+      typename MAT::local_matrix_type::values_type val ("Tpetra::CrsMatrix::val", numEnt);
+      MAT matrix(rcpFromRef(diaggraph),val);
+
+      out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;
+      TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
+    }                                           
+    TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success);
+    if (!success) {
       out << "Test FAILED; no sense in continuing" << endl;
       return;
     }
