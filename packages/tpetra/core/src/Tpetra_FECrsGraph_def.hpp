@@ -98,8 +98,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    if(importer_.is_null()) {
        importer_ = Teuchos::rcp(new import_type(ownedRowMap,ownedPlusSharedRowMap));
    } else {
-     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap->isSameAs(*importer_->getSourceMap()), std::runtime_error, "ownedRowMap does not match importer source map.");
-     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap->isSameAs(*importer_->getTargetMap()), std::runtime_error, "ownedPlusSharedRowMap does not match importer target map.");
+     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!ownedRowMap->isSameAs(*importer_->getSourceMap()), std::runtime_error, "ownedRowMap does not match importer source map.");
+     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!ownedPlusSharedRowMap->isSameAs(*importer_->getTargetMap()), std::runtime_error, "ownedPlusSharedRowMap does not match importer target map.");
    }
  
    // Build the inactive graph
@@ -179,7 +179,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
 
   if(inactiveCrsGraph_.is_null()) {
     // The easy case: One graph
-    crs_graph_type::fillComplete(domainMap_,rangeMap_);
+    if(domainMap_.is_null()) crs_graph_type::fillComplete();
+    else crs_graph_type::fillComplete(domainMap_,rangeMap_);
     switchActiveCrsGraph();
   }
   else {
@@ -198,7 +199,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
   const char tfecfFuncName[] = "FECrsGraph::beginFill(): ";
   
   // Unlike FECrsMatrix and FEMultiVector, we do not allow you to call beginFill() after calling endFill()
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ != FE_ACTIVE_OWNED,std::runtime_error, "can only be called once.");
+  // So we throw an exception if you're in owned mode
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ == FE_ACTIVE_OWNED,std::runtime_error, "can only be called once.");
 
 }
 
