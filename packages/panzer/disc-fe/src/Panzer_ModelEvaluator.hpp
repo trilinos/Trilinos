@@ -103,16 +103,16 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const override;
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const override;
 
   /** \brief . */
-  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int i) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int i) const override;
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const override;
 
   /** \brief . */
   Teuchos::ArrayView<const std::string> get_g_names(int i) const override;
@@ -121,21 +121,21 @@ public:
   const std::string & get_g_name(int i) const;
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const override;
 
   /** \brief . */
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const override;
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const override;
 
   /** \brief . */
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DfDp_op(int i) const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DfDp_op(int i) const override;
 
   /** \brief . */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const override;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const override;
 
   //@}
 
@@ -503,11 +503,11 @@ protected:
   //@{
 
   /** \brief . */
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const override;
 
   /** \brief . */
   virtual void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-                     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+			     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const override;
 
   //@}
 
