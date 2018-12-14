@@ -118,14 +118,19 @@ TEUCHOS_STATIC_SETUP()
 
 
 
-// comm       : a communicator with exactly 2 processes in it.
-// edges      : [ (u,v), ... ]
-// row_owners : [ (u, pid), ... ]
+// comm           : a communicator with exactly 2 processes in it.
+// edges          : [ (u,v), ... ]
+// row_owners     : [ (u, pid), ... ]
+// gbl_num_columns: Max # of columns in the matrix-representation of the graph.
+//                  This should be >= the highest value of v from all edges (u,v) in edges.
+//                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
 template<class LO, class GO, class Node, class comm_t>
 Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
 generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
                   const std::vector<std::pair<GO, GO>>&     gbl_edges,
-                  const std::vector<std::pair<GO, size_t>>& gbl_row_owners)
+                  const std::vector<std::pair<GO, size_t>>& gbl_row_owners,
+                  const size_t                              gbl_num_columns,
+                  const bool                                do_fillComplete=true)
 {
     using Teuchos::Comm;
 
@@ -260,9 +265,12 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
     RCP<const map_t> range_map = row_map;
 
     const GO         index_base = 0;
-    RCP<const map_t> domain_map(new map_t(12, index_base, comm));
+    RCP<const map_t> domain_map(new map_t(gbl_num_columns, index_base, comm));
 
-    output_graph->fillComplete(domain_map, range_map);
+    if(do_fillComplete)
+    {
+        output_graph->fillComplete(domain_map, range_map);
+    }
 
     return output_graph;
 }
@@ -319,24 +327,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         #endif
 
         out << "Create graph_a" << std::endl;
-        RCP<graph_t> graph_a = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners);
+        RCP<graph_t> graph_a = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
         graph_a->describe(out, Teuchos::VERB_DEFAULT);
 
         out << "Create graph_b" << std::endl;
-        RCP<graph_t> graph_b = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners);
+        RCP<graph_t> graph_b = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
         graph_b->describe(out, Teuchos::VERB_DEFAULT);
 
         vec_edges.clear();
         vec_owners.clear();
 
-        vec_edges  = {pair_edge_t(0, 0), pair_edge_t(0, 11), pair_edge_t(1, 3), pair_edge_t(1, 4),
-                      pair_edge_t(3, 2), pair_edge_t(7, 5), pair_edge_t(7, 7), pair_edge_t(10, 6)};
-        vec_owners = {pair_owner_t(0, 0), pair_owner_t(1, 0), pair_owner_t(3, 0), pair_owner_t(7, 1),
+        vec_edges  = {pair_edge_t(0, 0), pair_edge_t(0, 11), pair_edge_t(1, 7), pair_edge_t(1, 8),
+                      pair_edge_t(3, 1), pair_edge_t(7, 5), pair_edge_t(10, 4) };
+        vec_owners = {pair_owner_t(0, 0), pair_owner_t(1, 0), pair_owner_t(3, 1), pair_owner_t(7, 1),
                       pair_owner_t(10, 1)};
 
         out << "Create graph_c" << std::endl;
-        RCP<graph_t> graph_c = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners);
+        RCP<graph_t> graph_c = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
         graph_c->describe(out, Teuchos::VERB_DEFAULT);
+
+        // todo: implement CrsGraph::isSameAs()
+        // todo: compare graph_a == graph_b to verify sameness.
+        // todo: compare graph_a != graph_c to verify different.
+        // todo: swap graph_c into graph_b
+        // todo: compare graph_a != graph_b to verify different.
+        // todo: compare graph_a == graph_c to verify sameness.
+
     }
 }
 

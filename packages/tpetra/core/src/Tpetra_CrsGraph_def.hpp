@@ -7004,8 +7004,10 @@ namespace Tpetra {
     transferAndFillComplete(destGraph, rowExporter, Teuchos::rcpFromRef(domainExporter), domainMap, rangeMap, params);
   }
 
+
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& graph)
   {
     std::swap(graph.rowMap_, this->rowMap_);
@@ -7060,6 +7062,19 @@ Notes for testing:
 * A test exists to compare two graphs for sameness.
 #endif
   }
+
+
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph)
+  {
+    bool output = true;
+    // WCMCLEN : SCAFFOLDING - Fill in this stub.
+    return output;
+  }
+
+
 
 } // namespace Tpetra
 

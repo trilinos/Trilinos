@@ -589,17 +589,21 @@ namespace Tpetra {
     }
 
 
+    //! Destructor.
+    virtual ~CrsGraph ();
+
+
     /// \brief Swaps the data from *this with the data and maps from graph
     /// \param graph [in/out] a crsGraph
     ///
     /// Note: This is done with minimal copying of data.
-    /// WCMCLEN(SCAFFOLDING) - This is a stub, it needs to be implemented fully.
     /// todo: make this protected (?) ... if so, should MultiVector::swap() be protected as well???
     void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
 
 
-    //! Destructor.
-    virtual ~CrsGraph ();
+    /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
+    bool isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
+
 
     //@}
     //! @name Implementation of Teuchos::ParameterListAcceptor
