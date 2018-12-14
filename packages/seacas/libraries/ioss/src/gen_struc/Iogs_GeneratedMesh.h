@@ -89,7 +89,7 @@ namespace Iogs {
        Node Count (total)    = 1287
        Element Count (total) = 1152
        Block Count           = 3
-       Sideset Count         = 3
+       SideSet Count         = 3
        \endcode
 
        - sideset -- argument = xXyYzZ which specifies whether there is

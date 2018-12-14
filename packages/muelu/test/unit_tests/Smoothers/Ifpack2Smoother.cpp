@@ -98,10 +98,11 @@ namespace MueLuTests {
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.773502691896257e-01;
       switch (comm->getSize()) {
         case 1:
         case 4:
-          TEST_FLOATING_EQUALITY(residualNorms,5.773502691896257e-01,1e-12);
+          TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
           break;
         default:
           out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
@@ -134,12 +135,14 @@ namespace MueLuTests {
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm1 = 8.326553652741774e-02;
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm4 = 8.326553653078517e-02;
       switch (comm->getSize()) {
         case 1:
-          TEST_FLOATING_EQUALITY(residualNorms, 8.326553652741774e-02, 1e-12);
+          TEST_FLOATING_EQUALITY(residualNorms, expectedNorm1, 1e-12);
           break;
         case 4:
-          TEST_FLOATING_EQUALITY(residualNorms, 8.326553653078517e-02, 1e-12);
+          TEST_FLOATING_EQUALITY(residualNorms, expectedNorm4, 1e-12);
           break;
         default:
           out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
@@ -171,8 +174,8 @@ namespace MueLuTests {
       Ifpack2Smoother smoother("CHEBYSHEV",paramList);
 
       typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
-
-      TEST_FLOATING_EQUALITY(residualNorms, 5.269156e-01, 1e-7);  // Compare to residual reported by ML
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.269156e-01;
+      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, 1e-7);  // Compare to residual reported by ML
 
     }
   } // Chebyshev

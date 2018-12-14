@@ -162,7 +162,7 @@ namespace Thyra {
 
   private:
 
-    //Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op, const Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) const;
+    //Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op, const Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) const;
 
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
@@ -232,7 +232,7 @@ namespace Thyra {
       typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
       typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
-      typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
+      typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
       typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
 #ifdef HAVE_MUELU_TPETRA
       // TAW 1/26/2016: We deal with Tpetra objects
@@ -364,7 +364,7 @@ namespace Thyra {
             epetra_nullspace = paramList.get<RCP<Epetra_MultiVector> >("Nullspace");
             paramList.remove("Nullspace");
             RCP<Xpetra::EpetraMultiVectorT<int,Node> > xpEpNullspace = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epetra_nullspace));
-            RCP<Xpetra::MultiVector<double,int,int,Node> > xpEpNullspaceMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(xpEpNullspace);
+            RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node> > xpEpNullspaceMult = rcp_dynamic_cast<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node> >(xpEpNullspace);
             nullspace = rcp_dynamic_cast<XpMultVec>(xpEpNullspaceMult);
             TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(nullspace));
           }

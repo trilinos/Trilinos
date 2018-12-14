@@ -429,6 +429,9 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
     MVT::MvTransMv( one, *S_, *Z_, sHz );
     rHz = sHz(0,0);
     delta = sHz(1,0);
+    if ((Teuchos::ScalarTraits<ScalarType>::magnitude(delta) < Teuchos::ScalarTraits<ScalarType>::eps()) &&
+        (stest_->checkStatus(this) == Passed))
+      return;
     alpha = rHz / delta;   
 
     // Check that alpha is a positive number!

@@ -48,7 +48,7 @@ namespace io {
 stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_selector,
                                             const stk::mesh::Selector *output_selector,
                                             const stk::mesh::Selector *shared_selector,
-                                            stk::mesh::Part &part,
+                                            const stk::mesh::Part &part,
                                             bool include_shared)
 {
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
@@ -68,7 +68,7 @@ stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_se
 }
 
 size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
-                    stk::mesh::Part &part,
+                    const stk::mesh::Part &part,
                     stk::mesh::EntityRank type,
                     stk::mesh::EntityVector &entities,
                     bool include_shared)
@@ -84,7 +84,7 @@ size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
 }
 
 size_t get_entities(stk::io::OutputParams &params,
-                        stk::mesh::Part &part,
+                        const stk::mesh::Part &part,
                         stk::mesh::EntityRank type,
                         stk::mesh::EntityVector &entities,
                         bool include_shared)
@@ -823,6 +823,42 @@ std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData
     }
 
     return returnValue;
+}
+
+void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& supersetParts)
+{
+  bool is_io_part = stk::io::is_part_io_part(part);
+  if(is_io_part) {
+    for(auto& i : part.supersets()) {
+      if(i == nullptr || stk::mesh::is_auto_declared_part(*i)) {
+        continue;
+      }
+
+      supersetParts.push_back(i);
+
+      stk::mesh::PartVector supersets2 = i->supersets();
+      for(size_t j = 0; j < supersets2.size(); ++j) {
+        if(supersets2[j] != nullptr && !stk::mesh::is_auto_declared_part(*supersets2[j])) {
+          supersetParts.push_back(supersets2[j]);
+        }
+      }
+    }
+  }
+}
+
+stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params)
+{
+    const mesh::BulkData &bulk_data = params.bulk_data();
+    const stk::mesh::Selector *subset_selector = params.get_subset_selector();
+    const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+
+    stk::mesh::Selector selector = ( bulk_data.mesh_meta_data().locally_owned_part() | bulk_data.mesh_meta_data().globally_shared_part() );
+    if(subset_selector)
+        selector &= *subset_selector;
+    if(output_selector)
+        selector &= *output_selector;
+
+    return selector;
 }
 
 }}

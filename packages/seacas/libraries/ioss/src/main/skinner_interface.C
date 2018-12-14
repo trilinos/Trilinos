@@ -160,7 +160,7 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("help") != nullptr) {
-    options_.usage();
+    options_.usage(std::cerr);
     std::cerr << "\n\tCan also set options via IO_SKINNER_OPTIONS environment variable.\n\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);

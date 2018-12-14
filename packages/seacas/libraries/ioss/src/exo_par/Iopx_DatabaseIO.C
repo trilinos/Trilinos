@@ -1,7 +1,7 @@
 // ISSUES:
 // 1. Does not handle unconnected nodes (not connected to any element)
 //
-// 2. Sideset distribution factors are klugy and may not fully work in
+// 2. SideSet distribution factors are klugy and may not fully work in
 //    strange cases
 //
 //
@@ -4319,7 +4319,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
   }
 
-  // Nodesets ...
+  // NodeSets ...
   {
     const Ioss::NodeSetContainer &nodesets = region->get_nodesets();
     for (auto &set : nodesets) {
@@ -4332,7 +4332,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_NODE_SET] = nodesets.size();
   }
 
-  // Edgesets ...
+  // EdgeSets ...
   {
     const Ioss::EdgeSetContainer &edgesets = region->get_edgesets();
     for (auto &set : edgesets) {
@@ -4345,7 +4345,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_EDGE_SET] = edgesets.size();
   }
 
-  // Facesets ...
+  // FaceSets ...
   {
     const Ioss::FaceSetContainer &facesets = region->get_facesets();
     for (auto &set : facesets) {
@@ -4358,7 +4358,7 @@ void DatabaseIO::write_meta_data()
     m_groupCount[EX_FACE_SET] = facesets.size();
   }
 
-  // Elementsets ...
+  // ElementSets ...
   {
     const Ioss::ElementSetContainer &elementsets = region->get_elementsets();
     for (auto &set : elementsets) {

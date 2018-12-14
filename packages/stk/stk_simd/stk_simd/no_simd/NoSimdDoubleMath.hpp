@@ -32,7 +32,7 @@
 
 // IWYU pragma: private, include <stk_simd/Simd.hpp>
 
-#include "../../stk_math/StkMath.hpp"
+#include <stk_math/StkMath.hpp>
 #include "NoSimdSizes.hpp"
 
 namespace stk {

@@ -274,17 +274,6 @@ public:
   }
 
   /**
-   * @brief Member function <b>setPrintMask</b> sets the print output mask.
-   *
-   * @param mask_string    an <b>PrintMask</b> value of the new print
-   *        mask.
-   *
-   * @return      a <b>Writer</b> reference to this diagnostic
-   *        writer.
-   */
-  //Writer &setPrintMask(const char *mask_string);
-
-  /**
    * @brief Member function <b>setLineMask</b> sets the line mask of this line.
    *
    * @param line_mask    an <b>PrintMask</b> of the mask for this
@@ -295,7 +284,6 @@ public:
    */
   Writer &setLineMask(PrintMask line_mask) {
     m_lineMaskStack.push(line_mask);
-
     return *this;
   }
 
@@ -508,11 +496,11 @@ public:
   }
 
 private:
-  Flags        m_flags;    ///< Describes the output and line prefix information to be printed.
-  PrintMask      m_printMask;    ///< Print mask that the line mask must the match to print
-  LineMaskStack      m_lineMaskStack;  ///< Stack of pushed line masks
-  int        m_traceDepth;    ///< Trace depth
-  std::ostream                  m_writerStream;
+  Flags          m_flags;          ///< Describes the output and line prefix information to be printed.
+  PrintMask      m_printMask;      ///< Print mask that the line mask must the match to print
+  LineMaskStack  m_lineMaskStack;  ///< Stack of pushed line masks
+  int            m_traceDepth;     ///< Trace depth
+  std::ostream   m_writerStream;
 };
 
 /**

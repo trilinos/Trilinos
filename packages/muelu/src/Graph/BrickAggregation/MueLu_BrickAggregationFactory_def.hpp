@@ -139,7 +139,7 @@ namespace MueLu {
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> MultiVector_d;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> MultiVector_d;
 
     const ParameterList& pL = GetParameterList();
 
@@ -166,7 +166,7 @@ namespace MueLu {
     RCP<MultiVector_d> overlappedCoords = coords;
     RCP<const Import> importer = ImportFactory::Build(coords->getMap(), colMap);
     if (!importer.is_null()) {
-      overlappedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(colMap, coords->getNumVectors());
+      overlappedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(colMap, coords->getNumVectors());
       overlappedCoords->doImport(*coords, *importer, Xpetra::INSERT);
     }
 
@@ -266,7 +266,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coords, const RCP<const Map>& map) const {
+  Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coords, const RCP<const Map>& map) const {
     nDim_ = coords->getNumVectors();
 
     x_    = coords->getData(0);
@@ -302,7 +302,7 @@ namespace MueLu {
   RCP<typename BrickAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::container>
   BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Construct1DMap (const RCP<const Teuchos::Comm<int> >& comm,
-                  const ArrayRCP<const double>& x) const
+                  const ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& x) const
   {
     int n = x.size();
 

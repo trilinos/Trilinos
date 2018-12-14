@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "shell4";
+    static constexpr const char *name = "shell4";
 
     static void factory();
     ~Shell4() override;

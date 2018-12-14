@@ -649,7 +649,7 @@ static void dgeev_interface(double **H, int n,
 
   int i,j;
   char jobvl, jobvr;
-  int lda,  ldvl, ldvr, lwork, info;
+  int lda,  ldvl, ldvr, lwork, lwork_query, info;
   double *a, *a2, *vl, *vr, *work;
   int *ipiv;
   double *b;
@@ -703,8 +703,9 @@ static void dgeev_interface(double **H, int n,
   vl = (double *) malloc( sizeof(double) * n*n );
   ldvr = n;
   vr = (double * ) malloc( sizeof(double) * n*n );
+
+  lwork = 4*n > 0 ? 4*n : 1; /* need at least 1 for lwork query */
   work = (double *) malloc( sizeof(double) * 4*n );
-  lwork = 4*n;
 
   Er = (double *) malloc( sizeof(double) * n );
   Ei = (double *) malloc( sizeof(double) * n );
@@ -720,9 +721,21 @@ static void dgeev_interface(double **H, int n,
   /* ================================================ */
   /* largest and smallest eigenvalue (in module) of A */
   /* ------------------------------------------------ */
-  
+
+  lwork_query = -1;
+  DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, a, &n, Er, Ei, vl,
+	    &ldvl, vr, &ldvr, work, &lwork_query, &info);
+  /* The rest of this routine just assumes that info == 0 on exit, so
+     we'll just do the same and hope for the best. */
+  lwork_query = (int) work[0];
+  if (lwork_query > lwork) {
+    lwork = lwork_query;
+    free (work);
+    work = (double *) malloc( sizeof(double) * lwork );
+  }
   DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, a, &n, Er, Ei, vl,
 	    &ldvl, vr, &ldvr, work, &lwork, &info);
+  
   
   for( i=0 ; i<n ; i++ ) {
     module = sqrt(pow(Er[i],2) + pow(Ei[i],2));
@@ -751,7 +764,18 @@ static void dgeev_interface(double **H, int n,
 	     a2, &n, &zero, b, &n);
   
   /* computes eigenvalues and find the largest in modulus */
-  
+
+  lwork_query = -1;
+  DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, b, &n, Er, Ei, vl,
+	    &ldvl, vr, &ldvr, work, &lwork_query, &info);
+  /* The rest of this routine just assumes that info == 0 on exit, so
+     we'll just do the same and hope for the best. */
+  lwork_query = (int) work[0];
+  if (lwork_query > lwork) {
+    lwork = lwork_query;
+    free (work);
+    work = (double *) malloc( sizeof(double) * lwork );
+  }
   DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, b, &n, Er, Ei, vl,
 	    &ldvl, vr, &ldvr, work, &lwork, &info);
   
@@ -771,6 +795,17 @@ static void dgeev_interface(double **H, int n,
   DGETRF_F77( &n, &n, a, &n, ipiv, &info );
 
   /* computes the inverse of A using factors given by dgetr */
+
+  lwork_query = -1;
+  DGETRI_F77( CHAR_MACRO(n), a, &n, ipiv, work, &lwork_query, &info );
+  /* The rest of this routine just assumes that info == 0 on exit, so
+     we'll just do the same and hope for the best. */
+  lwork_query = (int) work[0];
+  if (lwork_query > lwork) {
+    lwork = lwork_query;
+    free (work);
+    work = (double *) malloc( sizeof(double) * lwork );
+  }
   DGETRI_F77( CHAR_MACRO(n), a, &n, ipiv, work, &lwork, &info );
 
   for( i=0 ; i<n ; i++) for( j=0 ; j<n ; j++ ) a2[i+j*n] =  a[i+j*n];
@@ -782,6 +817,17 @@ static void dgeev_interface(double **H, int n,
 
   /* now computes eigenvalues and find the largest */
 
+  lwork_query = -1;
+  DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, b, &lda, Er, Ei, vl,
+	    &ldvl, vr, &ldvr, work, &lwork_query, &info);
+  /* The rest of this routine just assumes that info == 0 on exit, so
+     we'll just do the same and hope for the best. */
+  lwork_query = (int) work[0];
+  if (lwork_query > lwork) {
+    lwork = lwork_query;
+    free (work);
+    work = (double *) malloc( sizeof(double) * lwork );
+  }
   DGEEV_F77(CHAR_MACRO(jobvl), CHAR_MACRO(jobvr), &n, b, &lda, Er, Ei, vl,
 	    &ldvl, vr, &ldvr, work, &lwork, &info);
   

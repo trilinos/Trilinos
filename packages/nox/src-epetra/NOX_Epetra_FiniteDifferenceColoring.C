@@ -50,7 +50,11 @@
 #include "Epetra_MapColoring.h"
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 #include "Epetra_IntVector.h"
+#else
+#include "Epetra_LongLongVector.h"
+#endif
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 
@@ -71,7 +75,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
      const Teuchos::RCP<Interface::Required>& i,
      const NOX::Epetra::Vector& x,
      const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
      const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
+#else
+     const Teuchos::RCP<std::vector<Epetra_LongLongVector> >& columns_,
+#endif
      bool parallelColoring,
      bool distance1_,
      double beta_, double alpha_) :
@@ -106,7 +114,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
      const NOX::Epetra::Vector& x,
      const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
      const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
      const Teuchos::RCP<std::vector<Epetra_IntVector> >& columns_,
+#else
+     const Teuchos::RCP<std::vector<Epetra_LongLongVector> >& columns_,
+#endif
      bool parallelColoring,
      bool distance1_,
      double beta_, double alpha_) :
@@ -185,8 +197,13 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   int myMin = map.MinMyGID(); // Minimum locally owned GID
   int myMax = map.MaxMyGID(); // Maximum locally owned GID
+#else
+  long long myMin = map.MinMyGID64(); // Minimum locally owned GID
+  long long myMax = map.MaxMyGID64(); // Maximum locally owned GID
+#endif
 
   // We need to loop over the largest number of colors on a processor
 
@@ -199,7 +216,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   else {
 //    x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
     for (int i=0; i<x_perturb.MyLength(); i++)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID(i))];
+#else
+      x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID64(i))];
+#endif
     computeF(x_perturb, fo, NOX::Epetra::Interface::Required::FD_Res);
   }
 
@@ -235,7 +256,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     // Import/Export operations involve off-processor transfers, which we
     // wish to avoid.
     for (int i=0; i<colorVect->MyLength(); i++)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       (*colorVect)[i] = (*xCol_perturb)[columnMap->LID(cMap->GID(i))];
+#else
+      (*colorVect)[i] = (*xCol_perturb)[columnMap->LID(cMap->GID64(i))];
+#endif
     colorVect->Abs(*colorVect);
     colorVect->Update(1.0, *betaColorVect, alpha);
 
@@ -245,7 +270,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     // Here again we do the mapping ourselves to avoid off-processor data
     // transfers that would accompany use of Epetra_Import/Export objects.
     for (int i=0; i<colorVect->MyLength(); i++)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       (*mappedColorVect)[columnMap->LID(cMap->GID(i))] = (*colorVect)[i];
+#else
+      (*mappedColorVect)[columnMap->LID(cMap->GID64(i))] = (*colorVect)[i];
+#endif
     xCol_perturb->Update(scaleFactor, *mappedColorVect, 1.0);
 
     // Compute the perturbed RHS
@@ -254,7 +283,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     else {
       //x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
       for (int i=0; i<x_perturb.MyLength(); i++)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
         x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID(i))];
+#else
+        x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID64(i))];
+#endif
       computeF(x_perturb, fp, NOX::Epetra::Interface::Required::FD_Res);
     }
 
@@ -266,7 +299,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
       else {
         //x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
         for (int i=0; i<x_perturb.MyLength(); i++)
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
           x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID(i))];
+#else
+          x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID64(i))];
+#endif
         computeF(x_perturb, *fmPtr, NOX::Epetra::Interface::Required::FD_Res);
       }
     }
@@ -286,7 +323,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
         // Allow for the possibility that rows j from myMin to myMax are not necessarily contigous
         if (!map.MyGID(j))
           continue;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
         int globalColumnID = (*columns)[k][map.LID(j)];
+#else
+        long long globalColumnID = (*columns)[k][map.LID(j)];
+#endif
 
         // If using distance1 coloring, only allow diagonal fills
         if( distance1 && (j != globalColumnID) )

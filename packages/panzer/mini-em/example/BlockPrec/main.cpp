@@ -82,6 +82,16 @@ void writeToExodus(double time_stamp,
     panzer::ResponseLibrary<panzer::Traits> & stkIOResponseLibrary,
     panzer_stk::STK_Interface & mesh);
 
+
+void updateParams(const std::string & xml,
+                  Teuchos::RCP<Teuchos::ParameterList> pl,
+                  const Teuchos::RCP<const Teuchos::MpiComm<int> > comm,
+                  const Teuchos::RCP<Teuchos::FancyOStream> out) {
+  *out << "Loading solver config from " << xml << std::endl;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xml,pl.ptr(),*comm);
+}
+
+
 /********************************************************************************
  * Sets up an electromagetics problem driven by a simple Gaussian current pulse
  * on the domain [0,1]^3. First order Maxwell equations with edge-face
@@ -97,7 +107,6 @@ void writeToExodus(double time_stamp,
  *   basis-order: order of finite element bases
  *   cfl: CFL with respect to speed of light. CFL = c*dt/min{dx,dy,dz}
  *   workset-size: size of worksets
- *   use-ilu: use ILU as smoother for E-field Schur complement
  *
  * ******************************************************************************
  */
@@ -105,7 +114,8 @@ void writeToExodus(double time_stamp,
 enum solverType {
   AUGMENTATION,
   MUELU_REFMAXWELL,
-  ML_REFMAXWELL
+  ML_REFMAXWELL,
+  CG
 };
 
 enum linearAlgebraType {
@@ -139,9 +149,10 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool exodus_output = false;
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
-    solverType solverValues[3] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL};
-    const char * solverNames[3] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell"};
-    solverType solver = AUGMENTATION;
+    std::string xml = "";
+    solverType solverValues[4] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG};
+    const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
+    solverType solver = MUELU_REFMAXWELL;
     int numTimeSteps = 1;
     bool doSolveTimings = false;
     int numReps = 0;
@@ -159,7 +170,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("exodus-output","no-exodus-output",&exodus_output);
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
-    clp.setOption<solverType>("solver",&solver,3,solverValues,solverNames,"Solver that is used");
+    clp.setOption("solverFile",&xml,"XML file with the solver params");
+    clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
@@ -297,56 +309,59 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     if (dt <= 0.0)
       return EXIT_FAILURE;
 
-    // Load a solver configuration
-    // This input deck choice depends on
-    // * chosen solver
-    // * linear algebra library
-    // * spatial dimension
-    // * node type
-    std::string xml;
-    if (solver == AUGMENTATION)
-      if (linAlgebra == linAlgTpetra)
-        xml = "solverAugmentation.xml";
-      else
-        xml = "solverAugmentationEpetra.xml";
-    else if (solver == MUELU_REFMAXWELL) {
-      if (linAlgebra == linAlgTpetra) {
-        if (dim == 3)
-          xml = "solverMueLuRefMaxwell.xml";
-        else
-          xml = "solverMueLuRefMaxwell2D.xml";
-#ifdef KOKKOS_ENABLE_OPENMP
-      if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
+    RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
+    if (xml == "") {
+      // Load a solver configuration
+      // This input deck choice depends on
+      // * chosen solver
+      // * linear algebra library
+      // * spatial dimension
+      // * node type
+      if (solver == AUGMENTATION)
         if (linAlgebra == linAlgTpetra)
-          xml = "solverMueLuRefMaxwellOpenMP.xml";
-        else {
-          std::cout << std::endl
-                    << "WARNING" << std::endl
-                    << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
-                    << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
+          updateParams("solverAugmentation.xml", lin_solver_pl, comm, out);
+        else
+          updateParams("solverAugmentationEpetra.xml", lin_solver_pl, comm, out);
+      else if (solver == CG)
+        if (linAlgebra == linAlgTpetra)
+          updateParams("solverCG.xml", lin_solver_pl, comm, out);
+        else
           return EXIT_FAILURE;
-          xml = "solverMueLuRefMaxwellEpetra.xml";
-        }
-      }
+      else if (solver == ML_REFMAXWELL)
+        updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
+      else if (solver == MUELU_REFMAXWELL) {
+        if (linAlgebra == linAlgTpetra) {
+          updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
+
+          if (dim == 2)
+            updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
+
+#ifdef KOKKOS_ENABLE_OPENMP
+          if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosOpenMPWrapperNode).name()) {
+            if (linAlgebra == linAlgTpetra)
+              updateParams("solverMueLuRefMaxwellOpenMP.xml", lin_solver_pl, comm, out);
+            else {
+              std::cout << std::endl
+                        << "WARNING" << std::endl
+                        << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
+                        << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
+              return EXIT_FAILURE;
+            }
+          }
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
-      if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
-        xml = "solverMueLuRefMaxwellCuda.xml";
+          if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+            updateParams("solverMueLuRefMaxwellCuda.xml", lin_solver_pl, comm, out);
 #endif
-      } else
-        if (dim == 3) {
-          xml = "solverMueLuRefMaxwellEpetra.xml";
         } else {
-          std::cout << std::endl
-                    << "No configuration available for 2D + Epetra." << std::endl;
-          return EXIT_FAILURE;
+          updateParams("solverMueLuRefMaxwellEpetra.xml", lin_solver_pl, comm, out);
+
+          if (dim == 2)
+            updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
         }
-    } else if (solver == ML_REFMAXWELL) {
-      xml = "solverMLRefMaxwell.xml";
-    }
-    *out << "Loading solver config from " << xml << std::endl;
-    RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xml,lin_solver_pl.ptr(),*comm);
+      }
+    } else
+      updateParams(xml, lin_solver_pl, comm, out);
     lin_solver_pl->print(*out);
 
     // The curl-curl term needs to be scaled by dt, the RefMaxwell augmentation needs 1/dt
@@ -698,10 +713,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[3] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL};
-  const char * solverNames[3] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell"};
-  solverType solver = AUGMENTATION;
-  clp.setOption<solverType>("solver",&solver,3,solverValues,solverNames,"Solver that is used");
+  solverType solverValues[4] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG};
+  const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
+  solverType solver = MUELU_REFMAXWELL;
+  clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);

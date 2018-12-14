@@ -28,6 +28,9 @@ namespace mini_em {
                  const panzer::IntegrationRule & ir,
                  const panzer::FieldLayoutLibrary & fl,
                  const double & sigma_,
+                 const double & betax_,
+                 const double & betay_,
+                 const double & betaz_,
                  const std::string& DoF_);
 
     void evaluateFields(typename Traits::EvalData d);
@@ -39,7 +42,7 @@ namespace mini_em {
     PHX::MDField<ScalarT,Cell,Point,Dim,Dim> conductivity;
     PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
     int ir_degree, ir_dim;
-    double sigma;
+    double sigma, betax, betay, betaz;
   };
 
 }

@@ -840,8 +840,8 @@ namespace MueLuTests {
     }
 */
 
-    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
-    typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Create a matrix and coordinates.
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -893,15 +893,11 @@ namespace MueLuTests {
     Teuchos::Array<GlobalOrdinal> eltList(eltsToShuffle);
     RCP<const Map> badMap = MapFactory::Build(TestHelpers::Parameters::getLib(), coordMap->getGlobalNumElements(), eltList(), coordMap->getIndexBase(), comm);
 
-    //Teuchos::Array<Teuchos::ArrayView<const Scalar> > coordVals;
-    //Teuchos::ArrayRCP<const Scalar> xcoords = coordinates->getData(0);
-    //Teuchos::ArrayRCP<const Scalar> ycoords = coordinates->getData(1);
-    Teuchos::Array<Teuchos::ArrayView<const double> > coordVals;
-    Teuchos::ArrayRCP<const double> xcoords = coordinates->getData(0);
-    Teuchos::ArrayRCP<const double> ycoords = coordinates->getData(1);
+    Teuchos::Array<Teuchos::ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coordVals;
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> xcoords = coordinates->getData(0);
+    Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> ycoords = coordinates->getData(1);
     coordVals.push_back(xcoords());
     coordVals.push_back(ycoords());
-    //RCP<MultiVector> badCoordinates = MultiVectorFactory::Build(badMap, coordVals(), coordinates->getNumVectors());
     RCP<mv_type_double> badCoordinates = MVFactory_double::Build(badMap, coordVals(), coordinates->getNumVectors());
     xcoords = Teuchos::null;
     ycoords = Teuchos::null;

@@ -128,7 +128,7 @@ namespace {
 
   int print_groups(int exoid, std::string prefix)
   {
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
     int   idum;
     float rdum;
     char  group_name[33];
@@ -149,7 +149,7 @@ namespace {
 
   void group_info(Info::Interface &interface)
   {
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
     // Assume exodusII...
     std::string inpfile       = interface.filename();
     float       vers          = 0.0;
