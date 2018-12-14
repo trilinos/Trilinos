@@ -58,7 +58,6 @@
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
-//#include <Thyra_BelosLinearOpWithSolveFactory.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
 #include <Thyra_TpetraLinearOp.hpp>
@@ -74,7 +73,6 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 
 // Stratimikos includes
-//#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Stratimikos_FROSchXpetra.hpp>
 
 #include <Tpetra_Core.hpp>
@@ -99,12 +97,10 @@ typedef int GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
 typedef DefaultNode NO;
 
-
 using namespace std;
 using namespace Teuchos;
 using namespace Xpetra;
 using namespace FROSch;
-using namespace Belos;
 using namespace Thyra;
 
 int main(int argc, char *argv[])
@@ -197,7 +193,6 @@ int main(int argc, char *argv[])
                 CoordinatesTmp = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map<LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("2D",UniqueMapTmp,GaleriList);
                 RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace2D",UniqueMapTmp,GaleriList);
                 KTmp = Problem->BuildMatrix();
-                assert(false);
             } else if (Dimension==3) {
                 UniqueMapTmp = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
                 CoordinatesTmp = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map<LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("3D",UniqueMapTmp,GaleriList);

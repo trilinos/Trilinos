@@ -74,8 +74,7 @@ typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
-typedef EpetraNode NO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 using namespace std;
 using namespace Teuchos;

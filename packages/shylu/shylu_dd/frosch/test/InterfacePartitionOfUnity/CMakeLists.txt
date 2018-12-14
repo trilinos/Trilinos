@@ -10,18 +10,36 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(IPOUCopyFiles
     EXEDEPS interfacepartitionofunity
 )
 
+IF(ShyLU_DDFROSch_ENABLE_Epetra)
 TRIBITS_ADD_TEST(
-	interfacepartitionofunity
-	NAME test_interfacepartitionofunity
-	ARGS "--DIM=2 --M=4"
-	COMM mpi
-	NUM_MPI_PROCS 4
+interfacepartitionofunity
+NAME test_interfacepartitionofunity_DIM2_EPETRA
+ARGS "--DIM=2 --M=4 --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
 )
 
 TRIBITS_ADD_TEST(
-    interfacepartitionofunity
-    NAME test_interfacepartitionofunity
-    ARGS "--DIM=3 --M=4"
-    COMM mpi
-    NUM_MPI_PROCS 8
+interfacepartitionofunity
+NAME test_interfacepartitionofunity_DIM3_EPETRA
+ARGS "--DIM=3 --M=4 --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
+)
+ENDIF()
+
+TRIBITS_ADD_TEST(
+interfacepartitionofunity
+NAME test_interfacepartitionofunity_DIM2_TPETRA
+ARGS "--DIM=2 --M=4 --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+
+TRIBITS_ADD_TEST(
+interfacepartitionofunity
+NAME test_interfacepartitionofunity_DIM3_TPETRA
+ARGS "--DIM=3 --M=4 --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
 )
