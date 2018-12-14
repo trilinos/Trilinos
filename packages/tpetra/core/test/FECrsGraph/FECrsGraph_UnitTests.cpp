@@ -63,6 +63,42 @@ using Teuchos::tuple;
 using std::endl;
 typedef Tpetra::global_size_t GST;
 
+template<class LO, class GO, class Node>
+bool compare_final_graph_structure(Tpetra::CrsGraph<LO,GO,Node> & g1, Tpetra::CrsGraph<LO,GO,Node> & g2) {
+  using std::cerr;
+  using std::endl;
+  if (!g1.isFillComplete() || !g2.isFillComplete()) {cerr<<"Compare: FillComplete failed"<<endl;return false;}
+  if (!g1.getRangeMap()->isSameAs(*g2.getRangeMap())) {cerr<<"Compare: RangeMap failed"<<endl;return false;}
+  if (!g1.getRowMap()->isSameAs(*g2.getRowMap())) {cerr<<"Compare: RowMap failed"<<endl;return false;}
+  if (!g1.getColMap()->isSameAs(*g2.getColMap())) {cerr<<"Compare: ColMap failed"<<endl;return false;}
+  if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {cerr<<"Compare: DomainMap failed"<<endl;return false;}
+
+  auto rowptr1 = g1.getLocalGraph().row_map;
+  auto rowptr2 = g2.getLocalGraph().row_map;
+
+  auto colind1 = g1.getLocalGraph().entries;
+  auto colind2 = g2.getLocalGraph().entries;
+
+  if (rowptr1.extent(0) != rowptr2.extent(0)) {cerr<<"Compare: rowptr extent failed"<<endl;return false;}      
+  if (colind1.extent(0) != colind2.extent(0)) {cerr<<"Compare: colind extent failed"<<endl;return false;}      
+
+  int sum=0;
+  Kokkos::parallel_reduce(rowptr1.extent(0),KOKKOS_LAMBDA(const int i, int & partial_sum){
+        if(rowptr1(i) != rowptr2(i)) partial_sum=1;
+        else partial_sum = 0;
+    },sum);
+  if (sum) {cerr<<"Compare: rowptr match failed"<<endl;return false;}      
+
+  sum=0;
+  Kokkos::parallel_reduce(colind1.extent(0),KOKKOS_LAMBDA(const int i, int & partial_sum){
+        if(colind2(i) != colind2(i)) partial_sum=1;
+        else partial_sum = 0;
+    },sum);
+  if (sum) {cerr<<"Compare: colind match failed"<<endl;return false;}      
+  return true;
+}
+
+
 
 template<class LO, class GO, class Node>
 class GraphPack {
@@ -202,8 +238,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   g1.fillComplete();
   g2.endFill();
 
-  // FIXME: Use graph comparison here
-  success=true;
+#ifdef CRSGRAPH_ACTUALLY_WORKS
+  success = compare_final_graph_structure(g1,g2);
+#else
+  success = true;
+#endif
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
