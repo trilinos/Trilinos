@@ -65,7 +65,7 @@ namespace panzer {
   struct WorksetNeeds;
 
   template<typename LO, typename GO>
-  class LocalMeshPartition;
+  struct LocalMeshPartition;
 
   class SubcellConnectivity;
 
