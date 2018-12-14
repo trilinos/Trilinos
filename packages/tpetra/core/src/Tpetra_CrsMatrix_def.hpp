@@ -90,8 +90,8 @@ namespace { // (anonymous)
                     const ::Teuchos::EReductionType op,
                     const Teuchos::Comm<int>& comm)
   {
-    Kokkos::View<const int*, Kokkos::HostSpace> localView (&localValue);
-    Kokkos::View<int*, Kokkos::HostSpace> globalView (&globalValue);
+    Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > localView (&localValue,1);
+    Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > globalView (&globalValue, 1);
     return ::Tpetra::Details::iallreduce (localView, globalView, op, comm);
   }
 
