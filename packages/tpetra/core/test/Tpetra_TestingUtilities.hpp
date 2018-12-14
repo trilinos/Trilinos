@@ -69,7 +69,7 @@
     } \
     TEST_EQUALITY_CONST(gblSuccess, 1);  \
     success = (bool) gblSuccess; \
-    }
+  }
 
 
 namespace Tpetra {
