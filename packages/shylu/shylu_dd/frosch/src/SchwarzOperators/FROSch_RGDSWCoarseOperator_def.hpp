@@ -119,7 +119,7 @@ namespace FROSch {
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
             
             if (useForCoarseSpace) {
-                this->DDInterface_->findAncestors();
+                this->DDInterface_->buildAncestorGraph();
                 
                 ////////////////////////////////
                 // Build Processor Map Coarse //

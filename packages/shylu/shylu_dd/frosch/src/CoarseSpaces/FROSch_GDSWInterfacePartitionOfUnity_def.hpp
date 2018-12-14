@@ -158,8 +158,7 @@ namespace FROSch {
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
-        
-        
+                
         // Maps
         LO numVerticesGlobal;
         if (UseVertices_) {

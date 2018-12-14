@@ -393,7 +393,7 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::findAncestors()
+    int DDInterface<SC,LO,GO,NO>::buildAncestorGraph()
     {
         if (Faces_->getNumEntities()>0) {
             if (ShortEdges_->getNumEntities()>0) {

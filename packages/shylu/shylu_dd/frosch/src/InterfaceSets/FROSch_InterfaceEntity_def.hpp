@@ -68,6 +68,7 @@ namespace FROSch {
     NodeVector_ (0),
     SubdomainsVector_ (multiplicity),
     Ancestors_ (),
+    Offspring_ (),
     DofsPerNode_ (dofsPerNode),
     Multiplicity_ (multiplicity),
     UniqueID_ (-1),
@@ -78,11 +79,13 @@ namespace FROSch {
             SubdomainsVector_[i] = subdomains[i];
         }
         sortunique(SubdomainsVector_);
-        if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
-        } else if (Type_==FaceType) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
-        }
+//        if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
+//            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
+//        } else if (Type_==FaceType) {
+//            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+//        }
+        Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(AncestorType));
+        Offspring_.reset(new EntitySet<SC,LO,GO,NO>(OffspringType));
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -205,11 +208,11 @@ namespace FROSch {
     int InterfaceEntity<SC,LO,GO,NO>::resetEntityType(EntityType type)
     {
         Type_ = type;
-        if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
-        } else if (Type_==FaceType) {
-            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
-        }
+//        if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
+//            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
+//        } else if (Type_==FaceType) {
+//            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+//        }
         return 0;
     }
     
@@ -245,6 +248,13 @@ namespace FROSch {
             Ancestors_->addEntity(Ancestors->getEntity(i));
         }
         return 0;
+    }
+    
+    template <class SC,class LO,class GO,class NO>
+    int InterfaceEntity<SC,LO,GO,NO>::addOffspring(InterfaceEntityPtr interfaceEntity)
+    {
+        Offspring_->addEntity(interfaceEntity);
+        Offspring_->sortUnique();
     }
     
     template <class SC,class LO,class GO,class NO>

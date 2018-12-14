@@ -58,7 +58,7 @@ namespace FROSch {
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class EntitySet;
     
-    enum EntityType {VertexType,ShortEdgeType,StraightEdgeType,EdgeType,FaceType,SurfaceType,VolumeType};
+    enum EntityType {VertexType,ShortEdgeType,StraightEdgeType,EdgeType,FaceType,SurfaceType,VolumeType,AncestorType,OffspringType};
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -147,6 +147,8 @@ namespace FROSch {
         
         int findAncestors(EntitySetPtr entitySet);
         
+        int addOffspring(InterfaceEntityPtr interfaceEntity);
+        
         InterfaceEntityPtr divideEntity(CrsMatrixPtr matrix, int pID);
         
         /////////////////
@@ -194,6 +196,7 @@ namespace FROSch {
         GOVec SubdomainsVector_;
         
         EntitySetPtr Ancestors_;
+        EntitySetPtr Offspring_;
         
         UN DofsPerNode_;
         UN Multiplicity_;

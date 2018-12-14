@@ -117,7 +117,7 @@ namespace FROSch {
         
         int sortEntities(MultiVectorPtr nodeList);
         
-        int findAncestors();
+        int buildAncestorGraph();
         
         UN getDimension() const;
         
