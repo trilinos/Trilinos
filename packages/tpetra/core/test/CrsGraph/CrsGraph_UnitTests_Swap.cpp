@@ -346,13 +346,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         RCP<graph_t> graph_c = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
         graph_c->describe(out, Teuchos::VERB_DEFAULT);
 
-        // todo: implement CrsGraph::isSameAs()
-        // todo: compare graph_a == graph_b to verify sameness.
-        // todo: compare graph_a != graph_c to verify different.
-        // todo: swap graph_c into graph_b
-        // todo: compare graph_a != graph_b to verify different.
-        // todo: compare graph_a == graph_c to verify sameness.
+        // graph_a and graph_b are same, graph_a and graph_c are different.
+        TEST_EQUALITY(graph_a->isSameAs(*graph_b), true);
+        TEST_EQUALITY( graph_c->isSameAs(*graph_b), false);
 
+        // Swap graph b and c
+        out << "Swamp graph_b into graph_c" << std::endl;
+        graph_c->swap(*graph_b);
+
+        // graph_a and graph_b are different, graph_a and graph_c are same.
+        TEST_EQUALITY(graph_a->isSameAs(*graph_b), false);
+        TEST_EQUALITY(graph_a->isSameAs(*graph_c), true);
     }
 }
 

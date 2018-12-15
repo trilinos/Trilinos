@@ -7054,23 +7054,64 @@ namespace Tpetra {
     std::swap(graph.k_numAllocPerRow_, this->k_numAllocPerRow_);  // View
     std::swap(graph.k_numRowEntries_, this->k_numRowEntries_);    // View
     std::swap(graph.nonlocals_, this->nonlocals_);                // std::map
-
-#if 0
-Notes for testing:
-1. A==B, B!=C, swam B,C, test B==C, A!=B
-2.
-* A test exists to compare two graphs for sameness.
-#endif
   }
 
-
+  // WCMCLEN : WORK_IN_PROGRESS
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph)
+  isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph) const
   {
     bool output = true;
-    // WCMCLEN : SCAFFOLDING - Fill in this stub.
+
+    output = this->rowMap_->isSameAs( *(graph.rowMap_) ) ? output : false;
+    output = this->colMap_->isSameAs( *(graph.colMap_) ) ? output : false;
+    output = this->rangeMap_->isSameAs( *(graph.rangeMap_) ) ? output : false;
+    output = this->domainMap_->isSameAs( *(graph.domainMap_) ) ? output : false;
+
+    output = this->nodeNumDiags_ == graph.nodeNumDiags_ ? output : false;
+    output = this->nodeMaxNumRowEntries_ == graph.nodeMaxNumRowEntries_ ? output : false;
+
+    output = this->globalNumEntries_ == graph.globalNumEntries_ ? output : false;
+    output = this->globalNumDiags_ == graph.globalNumDiags_ ? output : false;
+    output = this->globalMaxNumRowEntries_ == graph.globalMaxNumRowEntries_ ? output : false;
+
+    output = this->pftype_ == graph.pftype_ ? output : false;    // ProfileType is a enum scalar
+
+    output = this->numAllocForAllRows_ == graph.numAllocForAllRows_ ? output : false;
+
+    output = this->lclInds2D_ == graph.lclInds2D_ ? output : false;   // Teuchos::Array has == overloaded
+    output = this->gblInds2D_ == graph.gblInds2D_ ? output : false;   // Teuchos::Array has == overloaded
+
+    output = this->storageStatus_ == graph.storageStatus_ ? output : false;  // EStorageStatus is an enum
+
+    output = this->indicesAreAllocated_ == graph.indicesAreAllocated_ ? output : false;
+    output = this->indicesAreLocal_ == graph.indicesAreLocal_ ? output : false;
+    output = this->indicesAreGlobal_ == graph.indicesAreGlobal_ ? output : false;
+    output = this->fillComplete_ == graph.fillComplete_ ? output : false;
+    output = this->lowerTriangular_ == graph.lowerTriangular_ ? output : false;
+    output = this->upperTriangular_ == graph.upperTriangular_ ? output : false;
+    output = this->indicesAreSorted_ == graph.indicesAreSorted_ ? output : false;
+    output = this->noRedundancies_ == graph.noRedundancies_ ? output : false;
+    output = this->haveLocalConstants_ == graph.haveLocalConstants_ ? output : false;
+    output = this->haveGlobalConstants_ == graph.haveGlobalConstants_ ? output : false;
+    output = this->sortGhostsAssociatedWithEachProcessor_ == this->sortGhostsAssociatedWithEachProcessor_ ? output : false;
+
+    // Compare nonlocals_ -- std::map<GlobalOrdinal, std::vector<GlobalOrdinal> >
+    output = this->nonlocals_ == graph.nonlocals_ ? output : false;
+
+    // todo: check lclGraph_      // isa Kokkos::StaticGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
+
+    // Do we have a robust way to compare two Kokkos::Views?
+    // todo: compare this->k_rowPtrs_      // isa Kokkos::View (?)
+    // todo: compare k_numAllocPerRow_     // isa Kokkos::View?
+    // todo: compare k_numRowEntries_      // isa Kokkos::View?
+
+    // For the Importer and Exporter, we shouldn't need to explicitly check them since
+    // they will be consistent with the maps.
+    // Note: importer_  isa Teuchos::RCP<const import_type>
+    //       exporter_  isa Teuchos::RCP<const export_type>
+
     return output;
   }
 

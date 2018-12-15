@@ -597,12 +597,13 @@ namespace Tpetra {
     /// \param graph [in/out] a crsGraph
     ///
     /// Note: This is done with minimal copying of data.
-    /// todo: make this protected (?) ... if so, should MultiVector::swap() be protected as well???
+    /// WCMCLEN WORK_IN_PROGRESS
     void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
 
 
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
-    bool isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
+    /// WCMCLEN WORK_IN_PROGRESS
+    bool isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
 
 
     //@}
