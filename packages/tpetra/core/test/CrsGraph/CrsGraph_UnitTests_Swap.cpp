@@ -326,13 +326,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         for(auto& p: vec_owners) out << "o: " << p.first << ", " << p.second << std::endl;
         #endif
 
-        out << "Create graph_a" << std::endl;
+        out << ">>> create graph_a" << std::endl;
         RCP<graph_t> graph_a = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
-        graph_a->describe(out, Teuchos::VERB_DEFAULT);
+        //graph_a->describe(out, Teuchos::VERB_DEFAULT);
 
-        out << "Create graph_b" << std::endl;
+        out << ">>> create graph_b" << std::endl;
         RCP<graph_t> graph_b = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
-        graph_b->describe(out, Teuchos::VERB_DEFAULT);
+        //graph_b->describe(out, Teuchos::VERB_DEFAULT);
 
         vec_edges.clear();
         vec_owners.clear();
@@ -342,21 +342,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         vec_owners = {pair_owner_t(0, 0), pair_owner_t(1, 0), pair_owner_t(3, 1), pair_owner_t(7, 1),
                       pair_owner_t(10, 1)};
 
-        out << "Create graph_c" << std::endl;
+        out << ">>> create graph_c" << std::endl;
         RCP<graph_t> graph_c = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
-        graph_c->describe(out, Teuchos::VERB_DEFAULT);
+        //graph_c->describe(out, Teuchos::VERB_DEFAULT);
 
-        // graph_a and graph_b are same, graph_a and graph_c are different.
-        TEST_EQUALITY(graph_a->isSameAs(*graph_b), true);
-        TEST_EQUALITY( graph_c->isSameAs(*graph_b), false);
+        out << ">>> create graph_d" << std::endl;
+        RCP<graph_t> graph_d = generate_crsgraph<LO, GO, Node, comm_t>(comm, vec_edges, vec_owners, 12);
+        //graph_d->describe(out, Teuchos::VERB_DEFAULT);
+
+        TEST_EQUALITY(graph_a->isSameAs(*graph_b), true);       // graph_a and graph_b should be the same
+        TEST_EQUALITY(graph_c->isSameAs(*graph_d), true);       // graph_c and graph_d should be the same
+        TEST_EQUALITY(graph_a->isSameAs(*graph_c), false);     // graph_a and graph_c should be different
+        TEST_EQUALITY(graph_b->isSameAs(*graph_d), false);     // graph_b and graph_d should be different
+
 
         // Swap graph b and c
-        out << "Swamp graph_b into graph_c" << std::endl;
+        out << ">>> swap graph_b and graph_c" << std::endl;
         graph_c->swap(*graph_b);
 
-        // graph_a and graph_b are different, graph_a and graph_c are same.
-        TEST_EQUALITY(graph_a->isSameAs(*graph_b), false);
-        TEST_EQUALITY(graph_a->isSameAs(*graph_c), true);
+        TEST_EQUALITY(graph_a->isSameAs(*graph_b), false);    // graph_a and graph_b should be different
+        TEST_EQUALITY(graph_c->isSameAs(*graph_d), false);    // graph_c and graph_d should be different
+        TEST_EQUALITY(graph_a->isSameAs(*graph_c), true);    // graph_a and graph_c should be the same
+        TEST_EQUALITY(graph_b->isSameAs(*graph_d), true);    // graph_b and graph_d should be the same
     }
 }
 
