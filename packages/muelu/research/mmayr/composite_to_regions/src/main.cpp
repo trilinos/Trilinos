@@ -2637,19 +2637,26 @@ int main(int argc, char *argv[]) {
     const int maxCoarseIter = 100;
     const double omega = 0.67;
 
+    // Prepare output of residual norm to file
+    RCP<std::ofstream> log;
+    if (myRank == 0)
+    {
+      std::string s = "residual_norm.txt";
+      log = rcp(new std::ofstream(s.c_str()));
+      (*log) << "# num procs = " << AComp->Comm().NumProc() << "\n"
+             << "# iteration | res-norm\n"
+             << "#\n";
+    }
+
     // Richardson iterations
     for (int cycle = 0; cycle < maxVCycle; ++cycle) {
 
-      vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB, regMatrices,
-          regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
-          regInterfaceScalings, coarseCompOp);
-
-      ////////////////////////////////////////////////////////////////////////
-      // SWITCH BACK TO NON-LEVEL VARIABLES
-      ////////////////////////////////////////////////////////////////////////
-
       // check for convergence
       {
+        ////////////////////////////////////////////////////////////////////////
+        // SWITCH BACK TO NON-LEVEL VARIABLES
+        ////////////////////////////////////////////////////////////////////////
+
         computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
             rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
@@ -2659,15 +2666,33 @@ int main(int argc, char *argv[]) {
         double normRes = 0.0;
         compRes->Norm2(&normRes);
 
+        // Output current residual norm to screen (on proc 0 only)
+        if (myRank == 0)
+        {
+          std::cout << cycle << "\t" << normRes << std::endl;
+          (*log) << cycle << "\t" << normRes << "\n";
+        }
+
         if (normRes < 1.0e-12)
           break;
       }
+
+      /////////////////////////////////////////////////////////////////////////
+      // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
+      /////////////////////////////////////////////////////////////////////////
+      vCycle(0, numLevels, maxFineIter, maxCoarseIter, omega, maxRegPerProc, regX, regB, regMatrices,
+          regProlong, compRowMaps, quasiRegRowMaps, regRowMaps, regRowImporters,
+          regInterfaceScalings, coarseCompOp);
     }
+
+    ////////////////////////////////////////////////////////////////////////
+    // SWITCH BACK TO NON-LEVEL VARIABLES
+    ////////////////////////////////////////////////////////////////////////
 
     // -----------------------------------------------------------------------
     // Print fine-level solution
     // -----------------------------------------------------------------------
-
+/*
     compX->Comm().Barrier();
     sleep(1);
 
@@ -2681,6 +2706,7 @@ int main(int argc, char *argv[]) {
     // Write solution to file for printing
     std::string outFileName = "compX.mm";
     Xpetra::IO<double,int,int,Xpetra::EpetraNode>::Write(outFileName, *Xpetra::toXpetra<int,Xpetra::EpetraNode>(compX));
+*/
   }
 
   Comm.Barrier();
