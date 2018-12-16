@@ -1885,8 +1885,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
       // Just use the cached column Map multivector for that.
       // force=true means fill with zeros, so no need to fill
       // remote entries (not in domain Map) with zeros.
-      //X_colMap = crsMat->getColumnMapMultiVector (X, true);
-      X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+      updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+      X_colMap = cachedMV_;
       // X_domainMap is always a domain Map view of the column Map
       // multivector.  In this case, the domain and column Maps are
       // the same, so X_domainMap _is_ X_colMap.
@@ -1916,8 +1916,8 @@ MTGaussSeidel (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
     }
   }
   else { // Column Map and domain Map are _not_ the same.
-    //X_colMap = crsMat->getColumnMapMultiVector (X);
-    X_colMap = rcp (new MV (colMap, X.getNumVectors ()));
+    updateCachedMultiVector(colMap,as<size_t>(X.getNumVectors()));
+    X_colMap = cachedMV_;
 
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
