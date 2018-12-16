@@ -1474,13 +1474,12 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const {
 
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
     { // compute residuals
 
       Teuchos::TimeMonitor tmRes(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: residual calculation"));
-      SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-      residual_->update(one, RHS, negone);
+      Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
       R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
       D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     }
@@ -1563,9 +1562,8 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const MultiVector& RHS, MultiVector& X) const {
 
     // precondition (1,1)-block
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
     solveH();
     P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
@@ -1576,8 +1574,7 @@ namespace MueLu {
     }
 
     // precondition (2,2)-block
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     solve22();
     D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
@@ -1588,8 +1585,7 @@ namespace MueLu {
     }
 
     // precondition (1,1)-block
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
     solveH();
     P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
@@ -1606,9 +1602,8 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const MultiVector& RHS, MultiVector& X) const {
 
     // precondition (2,2)-block
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     solve22();
     D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
@@ -1619,8 +1614,7 @@ namespace MueLu {
     }
 
     // precondition (1,1)-block
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
     solveH();
     P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
@@ -1631,8 +1625,7 @@ namespace MueLu {
     }
 
     // precondition (2,2)-block
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Utilities::Residual(*SM_Matrix_, X, RHS, *residual_);
     D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
     solve22();
     D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
@@ -1648,9 +1641,8 @@ namespace MueLu {
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse11only(const MultiVector& RHS, MultiVector& X) const {
 
     // compute residuals
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one, zero = Teuchos::ScalarTraits<Scalar>::zero();
-    SM_Matrix_->apply(X, *residual_, Teuchos::NO_TRANS, one, zero);
-    residual_->update(one, RHS, negone);
+    Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    Utilities::Residual(*SM_Matrix_, X, RHS,*residual_);
     R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
 
     solveH();
