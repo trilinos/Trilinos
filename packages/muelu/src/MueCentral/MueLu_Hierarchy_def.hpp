@@ -1002,7 +1002,7 @@ namespace MueLu {
         if (Coarse->IsAvailable("Importer"))
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
-        coarseX = coarseX_[startLevel]; coarseX->putScalar(SC_ZERO);
+        coarseX = coarseX_[startLevel];
         if (!doPRrebalance_ && !importer.is_null()) {
           RCP<TimeMonitor> ITime;
           if (!useStackedTimer)
