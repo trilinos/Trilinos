@@ -333,8 +333,10 @@ namespace MueLu {
 #endif
     }
 
+#ifdef HAVE_MPI
     bool doRebalancing = parameterList_.get<bool>("refmaxwell: subsolves on subcommunicators", false);
     int numProcsAH, numProcsA22;
+#endif
     {
       // build coarse grid operator for (1,1)-block
       formCoarseMatrix();
@@ -513,7 +515,6 @@ namespace MueLu {
         fineLevel.Set("A",SM_Matrix_);
         coarseLevel.Set("P",D0_Matrix_);
         coarseLevel.Set("Coordinates",Coords_);
-        coarseLevel.Set("number of partitions", numProcsA22);
 
         coarseLevel.setlib(SM_Matrix_->getDomainMap()->lib());
         fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
@@ -533,6 +534,8 @@ namespace MueLu {
 
 #ifdef HAVE_MPI
         if (doRebalancing) {
+
+          coarseLevel.Set("number of partitions", numProcsA22);
 
           // auto repartheurFactory = rcp(new RepartitionHeuristicFactory());
           // ParameterList repartheurParams;
