@@ -351,8 +351,11 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         rawBreq[mpireq_idx++]=rawRequest;
     }
     Teuchos::Array<MPI_Status> rawBstatus(rawBreq.size());
-    const int err1 = MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
-                                  rawBstatus.getRawPtr());
+#ifdef HAVE_TPETRA_DEBUG
+    const int err1 =
+#endif
+      MPI_Waitall (rawBreq.size(), rawBreq.getRawPtr(),
+                   rawBstatus.getRawPtr());
 
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -406,9 +409,12 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
         rawBreq[mpireq_idx++]=rawSequest;
     }
-    const int err = MPI_Waitall (rawBreq.size(),
-                                 rawBreq.getRawPtr(),
-                                 rawBstatus.getRawPtr());
+#ifdef HAVE_TPETRA_DEBUG
+    const int err =
+#endif
+      MPI_Waitall (rawBreq.size(),
+                   rawBreq.getRawPtr(),
+                   rawBstatus.getRawPtr());
 #ifdef HAVE_TPETRA_DEBUG
     if(err) {
         errstr <<MyPID<< "E3.r reverseNeighborDiscovery Mpi_Waitall error on receive ";
