@@ -254,7 +254,7 @@ namespace FROSch {
     int InterfaceEntity<SC,LO,GO,NO>::addOffspring(InterfaceEntityPtr interfaceEntity)
     {
         Offspring_->addEntity(interfaceEntity);
-        Offspring_->sortUnique();
+        return Offspring_->sortUnique();
     }
     
     template <class SC,class LO,class GO,class NO>

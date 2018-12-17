@@ -75,7 +75,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::addEntity(InterfaceEntityPtr entity)
     {
-        if ((Type_==AncestorType)||(Type_==OffspringType)((entity->getEntityType()==ShortEdgeType)&&(Type_==EdgeType))||((entity->getEntityType()==StraightEdgeType)&&(Type_==EdgeType))) {
+        if ((Type_==AncestorType)||(Type_==OffspringType)||((entity->getEntityType()==ShortEdgeType)&&(Type_==EdgeType))||((entity->getEntityType()==StraightEdgeType)&&(Type_==EdgeType))) {
             
         } else {
             FROSCH_ASSERT(entity->getEntityType()==Type_,"Entity to add is of wrong type.");
