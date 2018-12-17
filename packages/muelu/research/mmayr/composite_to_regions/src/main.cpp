@@ -99,15 +99,20 @@ extern void fillCircleSquareData(int ArowPtr[], int Acols[], int ownedX, int own
 
 extern int LIDregionCircleSquare(void *ptr, int compLID,int whichGrp);
 
-#define ISSTRUCTURED 0
-#define OWNEDX   1
-#define OWNEDY   2
-#define REGIONX  3
-#define REGIONY  4
-#define CORNERX  5
-#define CORNERY  6
-#define NGHOSTS  7
-#define FirstLIDsOfGhosts 8
+// Input data is read into a generic vector.
+// Use these enums to access entries in this vector.
+enum InputDataIndices
+{
+  inpData_isStructured,
+  inpData_ownedX,
+  inpData_ownedY,
+  inpData_regionX,
+  inpData_regionY,
+  inpData_cornerX,
+  inpData_cornerY,
+  inpData_nGhosts,
+  inpData_firstLIDsOfGhosts
+};
 
 // this little widget handles application specific data
 // used to implement LIDregion()
@@ -126,7 +131,7 @@ struct widget {
    int       *lDimx;
    int       *lDimy;
    int        nx;
-int myRank;
+   int myRank;
 };
 
 //! Print an Epetra_Vector in regional layout to screen
@@ -1234,9 +1239,9 @@ int main(int argc, char *argv[]) {
 
       // Fill this with dummy entries. Will not be used in fully structured problems.
       genericVector.resize(3);
-      genericVector[ISSTRUCTURED] = 0;
-      genericVector[OWNEDX] = -1;
-      genericVector[OWNEDY] = -1;
+      genericVector[inpData_isStructured] = 0;
+      genericVector[inpData_ownedX] = -1;
+      genericVector[inpData_ownedY] = -1;
 
       if (doing1D) {
         int minGID, maxGID;
@@ -1279,9 +1284,9 @@ int main(int argc, char *argv[]) {
       retval = fscanf(fp,"%d",&isStructured);
       if (isStructured == 0) {
          genericVector.resize(3);
-         genericVector[ISSTRUCTURED] = 0;
-         retval = fscanf(fp,"%d",&(genericVector[OWNEDX]));
-         genericVector[OWNEDY] = 1;
+         genericVector[inpData_isStructured] = 0;
+         retval = fscanf(fp,"%d",&(genericVector[inpData_ownedX]));
+         genericVector[inpData_ownedY] = 1;
       }
       else {
          int Cx, Cy, Rx, Ry;
@@ -1755,10 +1760,10 @@ int main(int argc, char *argv[]) {
        * We don't use the number of owned nodes provided on input.
        * Use the region dimensions instead. This is the right thing to do
        * since duplication of interface nodes has added duplicated nodes to those regions
-       * where OWNEDX/OWNEDY and REGIONX/REGIONY have been different on input.
+       * where inpData_ownedX/inpData_ownedY and inpData_regionX/inpData_regionY have been different on input.
        */
       Array<int> lNodesPerDim = setLocalNodesPerDim(problemType, doing1D,
-          *revisedRowMapPerGrp[j], genericVector[REGIONX], genericVector[REGIONY]);
+          *revisedRowMapPerGrp[j], genericVector[inpData_regionX], genericVector[inpData_regionY]);
 
       // Set aggregation type for each region
       std::string aggregationRegionType = setAggregationTypePerRegion(problemType, myRank);
@@ -2650,7 +2655,6 @@ int main(int argc, char *argv[]) {
 
     // Richardson iterations
     for (int cycle = 0; cycle < maxVCycle; ++cycle) {
-
       // check for convergence
       {
         ////////////////////////////////////////////////////////////////////////
@@ -2818,23 +2822,23 @@ std::vector<int> &appData)
  * properly map CompositeLIDs to RegionLIDs. Specifically, appData's
  * contents will be given by
  *
- *   appData[OWNEDX ]     x/y dimensions of rectangle owned by proc, which is
- *   appData[OWNEDY ]     given as input parameters 'ownedX' and 'ownedY'
+ *   appData[inpData_ownedX]  x/y dimensions of rectangle owned by proc, which is
+ *   appData[inpData_ownedY]  given as input parameters 'ownedX' and 'ownedY'
  *
- *   appData[REGIONX]     x/y dimensions of proc's region, which is given
- *   appData[REGIONY]     as input parameters 'Rx' and 'Ry'
+ *   appData[inpData_regionX] x/y dimensions of proc's region, which is given
+ *   appData[inpData_regionY] as input parameters 'Rx' and 'Ry'
  *
- *   appData[CORNERX]     Offset of the lower left corner defined by the
- *   appData[CORNERY]     rectangular region piece that is actually owned by
- *                        this processor (in the composite layout). Should be
- *                        either 0 or 1.  So, Cx = Cy=0 means that the processor
- *                        actually owns the lower left corner of the region.
- *                        This is given as input parameters 'Cx' and 'Cy'
+ *   appData[inpData_cornerX] Offset of the lower left corner defined by the
+ *   appData[inpData_cornerY] rectangular region piece that is actually owned by
+ *                            this processor (in the composite layout). Should be
+ *                            either 0 or 1.  So, Cx = Cy=0 means that the processor
+ *                            actually owns the lower left corner of the region.
+ *                            This is given as input parameters 'Cx' and 'Cy'
  *
  *   appData[k]           Gives the region LID associated with the
- *                        (k-FirstLIDsOfGhosts+ownedX*ownedY)^th
- *                        composite LID  .. for k >= FirstLIDsOfGhosts,
- *                        which is the (k-FirstLIDsOfGhosts)^th ghost
+ *                        (k-inpData_firstLIDsOfGhosts+ownedX*ownedY)^th
+ *                        composite LID  .. for k >= inpData_firstLIDsOfGhosts,
+ *                        which is the (k-inpData_firstLIDsOfGhosts)^th ghost
  *                        composite LID.
  *
  *
@@ -2906,20 +2910,20 @@ std::vector<int> &appData)
 
   // fill appData
 
-  appData.resize(FirstLIDsOfGhosts+biggest-ownedX*ownedY);
+  appData.resize(inpData_firstLIDsOfGhosts+biggest-ownedX*ownedY);
 
-  appData[ISSTRUCTURED] = 1;
-  appData[OWNEDX ] = ownedX;
-  appData[OWNEDY ] = ownedY;
-  appData[REGIONX] = Rx;
-  appData[REGIONY] = Ry;
-  appData[CORNERX] = Cx;
-  appData[CORNERY] = Cy;
-  appData[NGHOSTS] = biggest-ownedX*ownedY;
+  appData[inpData_isStructured] = 1;
+  appData[inpData_ownedX] = ownedX;
+  appData[inpData_ownedY] = ownedY;
+  appData[inpData_regionX] = Rx;
+  appData[inpData_regionY] = Ry;
+  appData[inpData_cornerX] = Cx;
+  appData[inpData_cornerY] = Cy;
+  appData[inpData_nGhosts] = biggest-ownedX*ownedY;
 
-  int offset = FirstLIDsOfGhosts-ownedX*ownedY;
+  int offset = inpData_firstLIDsOfGhosts-ownedX*ownedY;
 
-  for (int k = 0; k < biggest-ownedX*ownedY; k++) appData[FirstLIDsOfGhosts+k] = -1;
+  for (int k = 0; k < biggest-ownedX*ownedY; k++) appData[inpData_firstLIDsOfGhosts+k] = -1;
   for (int k=startBot; k < startTop; k++)
      appData[ghostCompLIDs[k]+offset]=k;
   for (int k=startTop; k < startLft; k++)
@@ -3138,16 +3142,15 @@ int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
 
    int* appData      = (int *) ptr;
 
-   if (appData[ISSTRUCTURED] == 0) return(compLID);
+   if (appData[inpData_isStructured] == 0) return(compLID);
 
-   int* LIDsOfGhosts = (int *) &(appData[FirstLIDsOfGhosts]);
-   int  ownedX = appData[ OWNEDX];
-   int  ownedY = appData[ OWNEDY];
-   int  Rx     = appData[REGIONX];
-   int  Ry     = appData[REGIONY];
-   int  Cx     = appData[CORNERX];
-   int  Cy     = appData[CORNERY];
-
+   int* LIDsOfGhosts = (int *) &(appData[inpData_firstLIDsOfGhosts]);
+   int  ownedX = appData[inpData_ownedX];
+   int  ownedY = appData[inpData_ownedY];
+   int  Rx     = appData[inpData_regionX];
+   int  Ry     = appData[inpData_regionY];
+   int  Cx     = appData[inpData_cornerX];
+   int  Cy     = appData[inpData_cornerY];
 
    int i,j,ii;
    // local composite ids are assumed to be lexicographical
@@ -3164,7 +3167,7 @@ int LIDregionCircleSquare(void *ptr, int compLID, int whichGrp)
    }
    else {
       ii = compLID - ownedX*ownedY;
-      if (ii > appData[NGHOSTS] ) return(-1);
+      if (ii > appData[inpData_nGhosts] ) return(-1);
       if (LIDsOfGhosts[ii] == -1) return(-1);
       return(LIDsOfGhosts[ii]);
    }
