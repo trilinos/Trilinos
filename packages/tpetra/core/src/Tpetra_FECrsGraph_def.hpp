@@ -110,6 +110,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    //   auto colind = this->getLocalMatrix().entries;
    //   inactiveCrsGraph->setAllIndices(Kokkos::subview(rowptr,Kokkos::pair<size_t,size_t>(0,numMyRows),Kokkos::ALL),
    //                                   Kokkos::subview(colind,Kokkos::pair<size_t,size_t>(0,numMyNnz),Kokkos::ALL));
+
+   // k_glblInds1D & k_numRowEntries both go away at fillComplete time, so I don't really want to alias them.
+   // 
+   
  }
 
 }
@@ -127,8 +131,10 @@ operator=(const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>& rhs)
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-    // FIXME: Insert Tim's Magic Here
-    //    inactiveCrsGraph_->doExport(*this,*importer_,CM);
+    // As per Fuller, this will import into the static graph.
+    // NOTE: If the globalIndices were aliased, this would cause a problem (if the owned matrix was too small),
+    // so we're not going to worry about that for now.  We might want to fix this later.
+    inactiveCrsGraph_->doExport(*this,*importer_,CM);
   }
 }//end doOverlapToLocal
 
@@ -169,7 +175,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
      Postconditions: 
      1) FE_ACTIVE_OWNED mode
      2) The OWNED graph has been fillCompleted with an Aztec-compatible column map
-     3) rowptr & colinds are aliased between the two graphs.
+     3) rowptr & (local) colinds are aliased between the two graphs
      4) The OWNED_PLUS_SHARED graph has been fillCompleted with a column map whose first chunk
         is the column map for the OWNED graph.  
         If we assume that (a) if you own an element, you also own at least one of the connecte nodes and (b) elements are cliques, then
@@ -188,10 +194,18 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
   }
   else {
     // The hard case: Two graphs   
+
+    // Migrate data to the owned graph
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
+    // fillComplete the owned graph
+    if(domainMap_.is_null()) inactiveCrsGraph_->fillComplete();
+    else inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
 
-    // TODO: Make the revised column map on the owned+shared guy, change its domain and range maps to make sure we don't have an importer
+    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
+    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
+
+    // Load up the owned graph
     switchActiveCrsGraph();
 
   }
