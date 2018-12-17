@@ -48,7 +48,6 @@
 
 #include "ROL_DynamicConstraint_CheckInterface.hpp"
 #include "ROL_ValidateFunction.hpp"
-#include "ROL_RandomVector.hpp"
 #include <string>
 
 
@@ -70,10 +69,10 @@ struct DynamicConstraintCheck {
     auto vz = z.clone();
     auto l  = uo.dual().clone();
      
-    RandomizeVector( *c  );
-    RandomizeVector( *vu );
-    RandomizeVector( *vz );
-    RandomizeVector( *l  );
+    c->randomize();
+    vu->randomize();
+    vz->randomize();
+    l->randomize();
 
     //std::ostream& os = validator.getStream();
 

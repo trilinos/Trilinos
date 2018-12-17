@@ -71,7 +71,7 @@ SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+SET(Trilinos_PACKAGES MueLu Xpetra Amesos2 Tpetra)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   ### ETI ###
@@ -98,12 +98,18 @@ SET(EXTRA_CONFIGURE_OPTIONS
     "-DAmgX_LIBRARY_DIRS=/usr/local/amgx/lib" 
     "-DAmgX_INCLUDE_DIRS=/usr/local/amgx/include"
 
-
   ### PACKAGES CONFIGURATION ###
       "-DMueLu_ENABLE_Experimental:BOOL=ON"
       "-DMueLu_ENABLE_Kokkos_Refactor:BOOL=ON"
       "-DXpetra_ENABLE_Experimental:BOOL=ON"
       "-DXpetra_ENABLE_Kokkos_Refactor:BOOL=ON"
+
+  # Disable Pamgen and Shards due to weird nvcc errors
+  "-DTPL_ENALE_Pamgen:BOOL=OFF"
+  "-DTPL_ENALE_Shards:BOOL=OFF"
+
+
+
 )
 
 #

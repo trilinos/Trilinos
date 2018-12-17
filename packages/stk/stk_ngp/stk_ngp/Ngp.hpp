@@ -30,8 +30,8 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef PACKAGES_STK_STK_LEARNING_KOKKOS_NGP_H_
-#define PACKAGES_STK_STK_LEARNING_KOKKOS_NGP_H_
+#ifndef STK_NGP_NGP_H_
+#define STK_NGP_NGP_H_
 
 #include <Kokkos_Core.hpp>
 
@@ -56,4 +56,4 @@ template <typename T> using ConstField = ngp::ConstStkFieldAdapter<T>;
 
 }
 
-#endif /* PACKAGES_STK_STK_LEARNING_KOKKOS_NGP_H_ */
+#endif /* STK_NGP_NGP_H_ */

@@ -293,7 +293,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
         fin.getline(lineBuf, MAXSIZE);
         TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
         // if valFlag == 'D', then we need to convert [dD] in fp vals into [eE] that scanf can parse
-        if (valFlag == 'D') std::replace_if(lineBuf, lineBuf+MAXSIZE, std::bind2nd(std::equal_to<char>(), 'D'), 'E'); 
+        if (valFlag == 'D') std::replace_if(lineBuf, lineBuf+MAXSIZE, [] (const char c) { return c == 'D'; }, 'E');
         char *linePtr = lineBuf;
         for (int valcntr=0; valcntr < valsPerLine; ++valcntr) {
           if (valsRead == totalNumVals) break;

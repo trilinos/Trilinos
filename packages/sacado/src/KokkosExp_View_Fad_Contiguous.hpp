@@ -328,7 +328,7 @@ struct SacadoViewFill<
   typedef typename OutputView::const_value_type  const_value_type ;
   typedef typename OutputView::execution_space execution_space ;
   typedef Kokkos::TeamPolicy< execution_space> team_policy;
-  typedef typename team_policy::member_type team_handle;
+  typedef typename team_policy::member_type team_impl_handle;
   typedef typename Kokkos::ThreadLocalScalarType<OutputView>::type local_scalar_type;
   static const unsigned stride = Kokkos::ViewScalarStride<OutputView>::stride;
 
@@ -360,7 +360,7 @@ struct SacadoViewFill<
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( const team_handle& team ) const
+  void operator()( const team_impl_handle& team ) const
   {
     const size_t i0 = team.league_rank()*team.team_size() + team.team_rank();
     if (i0 < output.extent(0))
@@ -576,8 +576,8 @@ private:
       void >
     array_offset_type ;
 
-  handle_type  m_handle ;
-  offset_type  m_offset ;
+  handle_type  m_impl_handle ;
+  offset_type  m_impl_offset ;
   array_offset_type  m_array_offset ;
   sacado_size_type m_fad_size ;
 
@@ -599,28 +599,28 @@ public:
   // Using the internal offset mapping so limit to public rank:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
-    { return m_offset.m_dim.extent(r); }
+    { return m_impl_offset.m_dim.extent(r); }
 
   KOKKOS_INLINE_FUNCTION constexpr
   typename Traits::array_layout layout() const
-    { return m_offset.layout(); }
+    { return m_impl_offset.layout(); }
 
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
-    { return m_offset.dimension_0(); }
+    { return m_impl_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
-    { return m_offset.dimension_1(); }
+    { return m_impl_offset.dimension_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const
-    { return m_offset.dimension_2(); }
+    { return m_impl_offset.dimension_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_3() const
-    { return m_offset.dimension_3(); }
+    { return m_impl_offset.dimension_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_4() const
-    { return m_offset.dimension_4(); }
+    { return m_impl_offset.dimension_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const
-    { return m_offset.dimension_5(); }
+    { return m_impl_offset.dimension_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const
-    { return m_offset.dimension_6(); }
+    { return m_impl_offset.dimension_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const
-    { return m_offset.dimension_7(); }
+    { return m_impl_offset.dimension_7(); }
 
   // Is a regular layout with uniform striding for each index.
   // Since we allow for striding within the data type, we can't guarantee
@@ -629,25 +629,25 @@ public:
 
   // FIXME:  Adjust these for m_stride
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_0() const
-    { return m_offset.stride_0(); }
+    { return m_impl_offset.stride_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_1() const
-    { return m_offset.stride_1(); }
+    { return m_impl_offset.stride_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_2() const
-    { return m_offset.stride_2(); }
+    { return m_impl_offset.stride_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_3() const
-    { return m_offset.stride_3(); }
+    { return m_impl_offset.stride_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_4() const
-    { return m_offset.stride_4(); }
+    { return m_impl_offset.stride_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_5() const
-    { return m_offset.stride_5(); }
+    { return m_impl_offset.stride_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const
-    { return m_offset.stride_6(); }
+    { return m_impl_offset.stride_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const
-    { return m_offset.stride_7(); }
+    { return m_impl_offset.stride_7(); }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
-    { m_offset.stride(s); }
+    { m_impl_offset.stride(s); }
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
@@ -691,9 +691,9 @@ public:
   /** \brief Raw data access */
   KOKKOS_INLINE_FUNCTION constexpr pointer_type data() const
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
-    { return m_handle + threadIdx.x; }
+    { return m_impl_handle + threadIdx.x; }
 #else
-    { return m_handle + m_fad_index; }
+    { return m_impl_handle + m_fad_index; }
 #endif
 
   //----------------------------------------
@@ -711,8 +711,8 @@ public:
       const unsigned strd = m_fad_stride;
       const unsigned size = m_fad_size.value;
 #endif
-      return reference_type( m_handle + index
-                           , m_handle + m_original_fad_size
+      return reference_type( m_impl_handle + index
+                           , m_impl_handle + m_original_fad_size
                            , size
                            , strd ); }
 
@@ -721,7 +721,7 @@ public:
   typename std::enable_if<  Kokkos::Impl::are_integral<I0>::value &&
                             is_layout_left, reference_type>::type
   reference( const I0 & i0 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -741,7 +741,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0>::value &&
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -761,7 +761,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0,I1>::value &&
                            is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0,i1);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0,i1);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -781,7 +781,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0,I1>::value &&
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,i1,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,i1,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -802,7 +802,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0,I1,I2>::value &&
                            is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0,i1,i2);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -822,7 +822,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0,I1,I2>::value &&
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,i1,i2,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -842,7 +842,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0,I1,I2,I3>::value &&
                            is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0,i1,i2,i3);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -862,7 +862,7 @@ public:
   typename std::enable_if< Kokkos::Impl::are_integral<I0,I1,I2,I3>::value &&
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,i1,i2,i3,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -884,7 +884,7 @@ public:
                            is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
            , const I4 & i4 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3,i4);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0,i1,i2,i3,i4);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -906,7 +906,7 @@ public:
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
            , const I4 & i4 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,i4,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -928,7 +928,7 @@ public:
                            is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
            , const I4 & i4 , const I5 & i5 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3,i4,i5);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0,i1,i2,i3,i4,i5);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -950,7 +950,7 @@ public:
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
            , const I4 & i4 , const I5 & i5 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,i4,i5,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,i5,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -972,7 +972,7 @@ public:
                            is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
            , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
-    { pointer_type beg = m_handle + m_array_offset(0,i0,i1,i2,i3,i4,i5,i6);
+    { pointer_type beg = m_impl_handle + m_array_offset(0,i0,i1,i2,i3,i4,i5,i6);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -994,7 +994,7 @@ public:
                            !is_layout_left, reference_type>::type
   reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
            , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
-    { pointer_type beg = m_handle + m_array_offset(i0,i1,i2,i3,i4,i5,i6,0);
+    { pointer_type beg = m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,i5,i6,0);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) && defined(__CUDA_ARCH__)
       const unsigned index = threadIdx.x;
       const unsigned strd = blockDim.x;
@@ -1025,7 +1025,7 @@ public:
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_array_offset() , m_fad_size(0) , m_original_fad_size(0) , m_fad_stride(1) , m_fad_index(0)  {}
+  KOKKOS_INLINE_FUNCTION ViewMapping() : m_impl_handle(0) , m_impl_offset() , m_array_offset() , m_fad_size(0) , m_original_fad_size(0) , m_fad_stride(1) , m_fad_index(0)  {}
 
   KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
@@ -1039,8 +1039,8 @@ public:
     ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & local_layout
     )
-    : m_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
-    , m_offset( std::integral_constant< unsigned , 0 >()
+    : m_impl_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
+    , m_impl_offset( std::integral_constant< unsigned , 0 >()
               , local_layout )
     , m_array_offset(
         std::integral_constant< unsigned , 0 >()
@@ -1077,18 +1077,14 @@ public:
     typedef std::integral_constant< unsigned , 0 > padding ;
 
     // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
-    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFadContiguous 
-                                                           , typename Traits::value_type>;
-
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
 
-    typename Traits::array_layout internal_layout = 
-                            (test_traits_check == true
-                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type) 
-                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout) 
-                            : local_layout;
+    typename Traits::array_layout internal_layout =
+      (test_traits_check == true)
+      ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, P... >::returnNewLayoutPlusFad(prop, local_layout)
+      : local_layout;
 
-    m_offset = offset_type( padding(), internal_layout );
+    m_impl_offset = offset_type( padding(), internal_layout );
 
     m_array_offset =
       array_offset_type( padding() ,
@@ -1114,13 +1110,13 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
-      m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
+      m_impl_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
       if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
         record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
-                                        , (fad_value_type *) m_handle
+                                        , (fad_value_type *) m_impl_handle
                                         , m_array_offset.span()
                                         );
 
@@ -1225,8 +1221,8 @@ public:
       typedef typename DstType::offset_type  dst_offset_type ;
       typedef typename DstType::array_offset_type  dst_array_offset_type ;
 
-      dst.m_handle  = src.m_handle ;
-      dst.m_offset  = dst_offset_type( src.m_offset );
+      dst.m_impl_handle  = src.m_impl_handle ;
+      dst.m_impl_offset  = dst_offset_type( src.m_impl_offset );
       dst.m_array_offset = dst_array_offset_type( src.m_array_offset );
       dst.m_fad_size = src.m_fad_size.value ;
       dst.m_original_fad_size = src.m_original_fad_size ;
@@ -1294,10 +1290,10 @@ public:
 
       typedef typename DstType::array_offset_type  dst_offset_type ;
 
-      dst.m_handle  = src.m_handle ;
+      dst.m_impl_handle  = src.m_impl_handle ;
       dst.m_fad_size = src.m_fad_size.value ;
       dst.m_fad_stride = src.m_fad_stride ;
-      dst.m_offset = src.m_offset;
+      dst.m_impl_offset = src.m_impl_offset;
 
       size_t N[8], S[8];
       N[0] = src.m_array_offset.dimension_0();
@@ -1413,11 +1409,11 @@ public:
           if ( is_layout_left ) {
             auto prepend_layout = Kokkos::Impl::prependFadToLayout< DstLayoutType >::returnNewLayoutPlusFad(src_layout, InnerStaticDim+1);
             TmpOffsetType offset_tmp( padding(), prepend_layout );
-            dst.m_offset = offset_tmp;
+            dst.m_impl_offset = offset_tmp;
           }
           else {
             TmpOffsetType offset_tmp( padding(), src_layout );
-            dst.m_offset = offset_tmp;
+            dst.m_impl_offset = offset_tmp;
           }
         } else {
           Kokkos::abort("Sacado error: Applying AssignOffset for case with nested Fads, but without nested Fads - something went wrong");
@@ -1432,7 +1428,7 @@ public:
       static void assign( DstType & dst, const SrcFadType & src )
       {
         typedef typename DstType::offset_type  dst_offset_type ;
-        dst.m_offset  = dst_offset_type( src.m_array_offset );
+        dst.m_impl_offset  = dst_offset_type( src.m_array_offset );
       }
     };
 
@@ -1475,7 +1471,7 @@ public:
       }
 
       AssignOffset< DstType, SrcFadType >::assign( dst, src );
-      dst.m_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_handle) ;
+      dst.m_impl_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_impl_handle) ;
     }
 };
 
@@ -1638,10 +1634,10 @@ public:
       }
 
       const SubviewExtents< SrcTraits::rank , rank >
-        extents( src.m_offset.m_dim , arg0 , args... );
+        extents( src.m_impl_offset.m_dim , arg0 , args... );
 
-      dst.m_offset = dst_offset_type( src.m_offset , extents );
-      dst.m_handle = dst_handle_type( src.m_handle + offset );
+      dst.m_impl_offset = dst_offset_type( src.m_impl_offset , extents );
+      dst.m_impl_handle = dst_handle_type( src.m_impl_handle + offset );
       dst.m_fad_size = src.m_fad_size;
       dst.m_original_fad_size = src.m_original_fad_size;
       dst.m_fad_stride = src.m_fad_stride;
@@ -1694,8 +1690,8 @@ public:
         Kokkos::abort("\n\n ******  Kokkos::View< Sacado::Fad ... > Can't partition already partitioned view ******\n\n");
       }
 
-      dst.m_handle = src.m_handle ;
-      dst.m_offset  = src.m_offset ;
+      dst.m_impl_handle = src.m_impl_handle ;
+      dst.m_impl_offset  = src.m_impl_offset ;
       dst.m_array_offset  = src.m_array_offset ;
 
       // Assuming the alignment was choosen correctly for the partitioning,

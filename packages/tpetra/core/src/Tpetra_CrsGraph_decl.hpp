@@ -187,14 +187,6 @@ namespace Tpetra {
     };
   } // namespace Details
 
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
   /// \class CrsGraph
   /// \brief A distributed graph accessed by rows (adjacency lists)
   ///   and stored sparsely.
@@ -253,9 +245,9 @@ namespace Classes {
   /// stored in the local graph and communicated to the appropriate
   /// node on the next call to globalAssemble() or fillComplete() (the
   /// latter calls the former).
-  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsGraph :
     public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<GlobalOrdinal,
@@ -329,8 +321,8 @@ namespace Classes {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              size_t maxNumEntriesPerRow,
-              ProfileType pftype = DynamicProfile,
+              const size_t maxNumEntriesPerRow,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -426,7 +418,7 @@ namespace Classes {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-              ProfileType pftype = DynamicProfile,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
@@ -451,11 +443,11 @@ namespace Classes {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-              ProfileType pftype = DynamicProfile,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
-    ///
+    /// \brief Constructor specifying column Map and arrays containing
+    ///   the graph with sorted local indices.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -469,6 +461,7 @@ namespace Classes {
     /// \param columnIndices [in] The local indices of the columns,
     ///   as in a CSR "colind" array.  The length of this vector
     ///   should be equal to the number of unknowns in the graph.
+    ///   Entries in each row must be sorted (by local index).
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -479,8 +472,8 @@ namespace Classes {
               const typename local_graph_type::entries_type::non_const_type& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
-    ///
+    /// \brief Constructor specifying column Map and arrays containing
+    ///   the graph with sorted local indices.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -494,14 +487,15 @@ namespace Classes {
     /// \param columnIndices [in] The local indices of the columns,
     ///   as in a CSR "colind" array.  The length of this vector
     ///   should be equal to the number of unknowns in the graph.
+    ///   Entries in each row must be sorted (by local index).
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const Teuchos::ArrayRCP<size_t> & rowPointers,
-              const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
+              const Teuchos::ArrayRCP<size_t>& rowPointers,
+              const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local (sorted)
@@ -597,7 +591,7 @@ namespace Classes {
     }
 
     //! Destructor.
-    virtual ~CrsGraph ();
+    virtual ~CrsGraph () = default;
 
     //@}
     //! @name Implementation of Teuchos::ParameterListAcceptor
@@ -668,7 +662,7 @@ namespace Classes {
     */
     void
     insertLocalIndices (const LocalOrdinal localRow,
-                        const Teuchos::ArrayView<const LocalOrdinal> &indices);
+                        const Teuchos::ArrayView<const LocalOrdinal>& indices);
 
     /// \brief Epetra compatibility version of insertLocalIndices
     ///   (see above) that takes input as a raw pointer, rather than
@@ -724,7 +718,9 @@ namespace Classes {
     ///
     /// This method must be called collectively (that is, like any MPI
     /// collective) over all processes in the graph's communicator.
-    void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    void
+    resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params =
+                  Teuchos::null);
 
     /// \brief Tell the graph that you are done changing its structure.
     ///
@@ -764,8 +760,8 @@ namespace Classes {
     /// </li>
     /// </ul>
     void
-    fillComplete (const Teuchos::RCP<const map_type> &domainMap,
-                  const Teuchos::RCP<const map_type> &rangeMap,
+    fillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                  const Teuchos::RCP<const map_type>& rangeMap,
                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Tell the graph that you are done changing its
@@ -827,11 +823,14 @@ namespace Classes {
     /// \param params [in/out] List of parameters controlling this
     ///   method's behavior.
     void
-    expertStaticFillComplete (const Teuchos::RCP<const map_type> & domainMap,
-                              const Teuchos::RCP<const map_type> & rangeMap,
-                              const Teuchos::RCP<const import_type> &importer=Teuchos::null,
-                              const Teuchos::RCP<const export_type> &exporter=Teuchos::null,
-                              const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+    expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                              const Teuchos::RCP<const map_type>& rangeMap,
+                              const Teuchos::RCP<const import_type>& importer =
+                                Teuchos::null,
+                              const Teuchos::RCP<const export_type>& exporter =
+                                Teuchos::null,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params =
+                                Teuchos::null);
     //@}
     //! @name Methods implementing RowGraph.
     //@{
@@ -1193,16 +1192,16 @@ namespace Classes {
     virtual void
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs) override;
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-                    Teuchos::Array<GlobalOrdinal> &exports,
-                    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<GlobalOrdinal>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor &distor) override;
+                    Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
@@ -1212,11 +1211,11 @@ namespace Classes {
           Distributor& distor) const override;
 
     virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
-                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& imports,
+                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                       size_t constantNumPackets,
-                      Distributor &distor,
+                      Distributor& distor,
                       CombineMode CM) override;
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
@@ -1967,13 +1966,13 @@ namespace Classes {
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const LocalOrdinal>
-    getLocalView (const RowInfo rowinfo) const;
+    getLocalView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst, nonowned, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<LocalOrdinal>
-    getLocalViewNonConst (const RowInfo rowinfo);
+    getLocalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the local column indices of a locally
     ///   owned row, using the result of getRowInfo.
@@ -2330,7 +2329,6 @@ namespace Classes {
     bool sortGhostsAssociatedWithEachProcessor_;
 
   }; // class CrsGraph
-} // namespace Classes
 
   /// \brief Nonmember function to create an empty CrsGraph given a
   ///   row Map and the max number of entries allowed locally per row.
@@ -2652,11 +2650,11 @@ namespace Classes {
         const Teuchos::Comm<int>& comm = * (graphIn.getRowMap ()->getComm ());
         const int myRank = comm.getRank ();
 
-        TEUCHOS_TEST_FOR_EXCEPTION(
-                                   ! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
-                                   prefix << "You asked clone() to use local indices (by setting the "
-                                   "\"Locally indexed clone\" parameter to true), but the source graph "
-                                   "does not yet have a column Map, so this is impossible.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+	  (! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
+	   prefix << "You asked clone() to use local indices (by setting the "
+	   "\"Locally indexed clone\" parameter to true), but the source graph "
+	   "does not yet have a column Map, so this is impossible.");
 
         if (debug) {
           std::ostringstream os;
@@ -2983,9 +2981,9 @@ namespace Classes {
         int lclSuccess = failed ? 0 : 1;
         int gblSuccess = 1;
         reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-                                   gblSuccess != 1, std::logic_error, prefix <<
-                                   "Clone failed on at least one process.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+	  (gblSuccess != 1, std::logic_error,
+	   prefix << "Clone failed on at least one process.");
 
         if (debug) {
           std::ostringstream os;

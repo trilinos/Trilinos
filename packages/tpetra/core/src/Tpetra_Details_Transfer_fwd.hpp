@@ -47,36 +47,15 @@
 /// \file Tpetra_Details_Transfer_fwd.hpp
 /// \brief Forward declaration of Tpetra::Details::Transfer
 
-namespace Tpetra {
-namespace Details {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Transfer.
-template <class LO, class GO, class NT> class Transfer;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-} // namespace Details
-} // namespace Tpetra
-
 namespace Tpetra {
 namespace Details {
-
-//! Alias for Tpetra::Classes::Details::Transfer.
 template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
          class Node = ::Tpetra::Details::DefaultTypes::node_type>
-using Transfer = Classes::Transfer<LocalOrdinal, GlobalOrdinal, Node>;
-
+class Transfer;
 } // namespace Details
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_DETAILS_TRANSFER_FWD_HPP

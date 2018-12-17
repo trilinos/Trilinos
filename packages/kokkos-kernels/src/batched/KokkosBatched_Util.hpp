@@ -29,9 +29,11 @@ namespace KokkosBatched {
 #if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
 #define __KOKKOSBATCHED_INTEL_MKL__ 1
 #include "mkl_version.h"
-#if __INTEL_MKL__ >= 18
+#if __INTEL_MKL__ >= 2018
 #define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
 #define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
+#include "mkl.h"
+//#include "mkl_types.h"
 #endif
 #endif
 
@@ -197,6 +199,8 @@ namespace KokkosBatched {
                      std::is_same<T,size_t>::value                   ||
                      std::is_same<T,double>::value                   ||
 		     std::is_same<T,float>::value                    ||
+		     std::is_same<T,Kokkos::complex<float> >::value  ||
+		     std::is_same<T,std::complex<float> >::value     ||
 		     std::is_same<T,Kokkos::complex<double> >::value ||
 		     std::is_same<T,std::complex<double> >::value,
 		     "KokkosKernels:: Invalid SIMD<> type." );
@@ -269,6 +273,7 @@ namespace KokkosBatched {
       using Gemm = Level3;
       using Trsm = Level3;
       using LU   = Level3;
+      using InverseLU   = Level3;
 
       struct Level2 {
 	struct Unblocked {};

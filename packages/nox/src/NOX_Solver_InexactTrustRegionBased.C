@@ -298,11 +298,34 @@ reset(const NOX::Abstract::Vector& initialGuess)
     utils->out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 }
+//*************************************************************************
+//**** reset
+//*************************************************************************
+void NOX::Solver::InexactTrustRegionBased::
+reset()
+{
+  // Initialize
+  nIter = 0;
+  dx = 0.0;
+  status = StatusTest::Unconverged;
+  if (useCounters)
+    counters->reset();
+
+  // Test the initial guess
+  status = testPtr->checkStatus(*this, checkType);
+
+  if (utils->isPrintType(NOX::Utils::Parameters)) {
+    utils->out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(utils->out(), 5);
+    utils->out() <<"\n" << NOX::Utils::fill(72) << "\n";
+  }
+}
 
 //*************************************************************************
 //**** getStatus
 //*************************************************************************
-NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::getStatus()
+NOX::StatusTest::StatusType
+NOX::Solver::InexactTrustRegionBased::getStatus() const
 {
   return status;
 }
@@ -1009,6 +1032,8 @@ checkStep(const NOX::Abstract::Vector& /* step */,
 NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == StatusTest::Unconverged) {

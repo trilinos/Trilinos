@@ -117,10 +117,10 @@ namespace Iohb {
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
 
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
 
-    void initialize(const Ioss::Region *region) const;
+    void initialize() const;
 
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -182,25 +182,25 @@ namespace Iohb {
       return -1;
     }
 
-    time_t timeLastFlush_;
-    time_t flushInterval_;
+    time_t timeLastFlush_{0};
+    time_t flushInterval_{10};
 
-    std::ostream *logStream;
-    Layout *      layout_;
-    Layout *      legend_;
+    std::ostream *logStream{nullptr};
+    Layout *      layout_{nullptr};
+    Layout *      legend_{nullptr};
 
-    std::string tsFormat;
-    std::string separator_;
-    int         precision_;
-    int         fieldWidth_;
-    bool        showLabels;
-    bool        showLegend;
-    bool        appendOutput;
-    bool        addTimeField;
+    std::string tsFormat{"[%H:%M:%S]"};
+    std::string separator_{", "};
+    int         precision_{5};
+    int         fieldWidth_{0};
+    bool        showLabels{false};
+    bool        showLegend{true};
+    bool        appendOutput{false};
+    bool        addTimeField{false};
 
-    bool        initialized_;
-    bool        streamNeedsDelete;
-    enum Format fileFormat;
+    bool        initialized_{false};
+    bool        streamNeedsDelete{false};
+    enum Format fileFormat { DEFAULT };
   };
 } // namespace Iohb
 #endif // IOSS_Iohb_DatabaseIO_h

@@ -1,0 +1,338 @@
+<ParameterList name="Example_Parabolic">
+
+  <!-- Parabolic Control Problem Definition                                             -->
+  <ParameterList name="Parabolic">
+    <Parameter name="Derivative Check"        type="bool"     value="true"  />
+    <!--================================================================================-->
+    <!-- Physical Parameters                                                            -->
+    <Parameter name="Diffusion Scale"         type="double"   value="0.5"   />
+    <Parameter name="Reaction Scale"          type="double"   value="1.0"   />
+    <Parameter name="Reaction Type"           type="int"      value="1"     />
+    <!--================================================================================-->
+    <!-- Space Discretization                                                           -->
+    <Parameter name="Spatial Discretization"  type="int"      value="64"   />
+    <!--================================================================================-->
+    <!--================================================================================-->
+    <!-- Time Discretization                                                            -->
+    <Parameter name="End Time"                type="double"   value="1.0"   />
+    <Parameter name="Temporal Discretization" type="int"      value="101"   />
+    <Parameter name="Integration Factor"      type="double"   value="1.0"   />
+    <!--================================================================================-->
+    <!-- Objective Function                                                             -->
+    <Parameter name="Target Type"             type="int"      value="2"     />
+    <Parameter name="Control Penalty"         type="double"   value="1e-3"  />
+    <!--================================================================================-->
+  </ParameterList>
+  <!--==================================================================================-->
+
+  <!-- Tempus Parameters                                                                -->
+  <ParameterList name="Tempus">
+    <ParameterList name="Sensitivities">
+      <Parameter name="Sensitivity Method" type="string" value="Combined"/>
+      <Parameter name="Reuse State Linear Solver" type="bool" value="true"/>
+      <Parameter name="Use DfDp as Tangent" type="bool" value="true"/>
+    </ParameterList>
+    <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
+
+    <ParameterList name="Default Integrator">
+      <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
+      <Parameter name="Screen Output Index List"     type="string" value="1"/>
+      <Parameter name="Screen Output Index Interval" type="int"    value="100"/>
+      <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
+      <ParameterList name="Solution History">
+        <Parameter name="Storage Type"  type="string" value="Unlimited"/>
+        <Parameter name="Storage Limit" type="int"    value="20"/>
+      </ParameterList>
+      <ParameterList name="Time Step Control">
+        <Parameter name="Initial Time"           type="double" value="0.0"/>
+        <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Initial Time Index"     type="int"    value="0"/>
+        <Parameter name="Final Time Index"       type="int"    value="10000"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.01"/>
+        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
+        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
+        <Parameter name="Minimum Order"          type="int"    value="1"/>
+        <Parameter name="Initial Order"          type="int"    value="1"/>
+        <Parameter name="Maximum Order"          type="int"    value="1"/>
+        <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
+        <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
+        <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
+        <Parameter name="Output Time List"       type="string" value=""/>
+        <Parameter name="Output Index List"      type="string" value=""/>
+        <Parameter name="Output Time Interval"   type="double" value="10.0"/>
+        <Parameter name="Output Index Interval"  type="int"    value="1000"/>
+        <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
+        <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Default Stepper">
+
+      <Parameter name="Stepper Type"   type="string" value="Backward Euler"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+      <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <Parameter name="Predictor Name" type="string" value="Default Predictor"/>
+
+      <ParameterList name="Default Solver">
+        <ParameterList name="NOX">
+          <ParameterList name="Direction">
+            <Parameter name="Method" type="string" value="Newton"/>
+            <ParameterList name="Newton">
+              <Parameter name="Forcing Term Method" type="string" value="Constant"/>
+              <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Line Search">
+            <Parameter name="Method" type="string" value="Full Step"/>
+            <ParameterList name="Full Step">
+              <Parameter name="Full Step" type="double" value="1"/>
+            </ParameterList>
+          </ParameterList>
+          <Parameter name="Nonlinear Solver" type="string" value="Line Search Based"/>
+          <ParameterList name="Printing">
+            <Parameter name="Output Precision" type="int" value="3"/>
+            <Parameter name="Output Processor" type="int" value="0"/>
+            <ParameterList name="Output Information">
+              <Parameter name="Error" type="bool" value="1"/>
+              <Parameter name="Warning" type="bool" value="1"/>
+              <Parameter name="Outer Iteration" type="bool" value="0"/>
+              <Parameter name="Parameters" type="bool" value="0"/>
+              <Parameter name="Details" type="bool" value="0"/>
+              <Parameter name="Linear Solver Details" type="bool" value="1"/>
+              <Parameter name="Stepper Iteration" type="bool" value="1"/>
+              <Parameter name="Stepper Details" type="bool" value="1"/>
+              <Parameter name="Stepper Parameters" type="bool" value="1"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Solver Options">
+            <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
+          </ParameterList>
+          <ParameterList name="Status Tests">
+            <Parameter name="Test Type" type="string" value="Combo"/>
+            <Parameter name="Combo Type" type="string" value="OR"/>
+            <Parameter name="Number of Tests" type="int" value="2"/>
+            <ParameterList name="Test 0">
+              <Parameter name="Test Type" type="string" value="NormF"/>
+              <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+            </ParameterList>
+            <ParameterList name="Test 1">
+              <Parameter name="Test Type" type="string" value="MaxIters"/>
+              <Parameter name="Maximum Iterations" type="int" value="10"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="Default Predictor">
+        <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
+      </ParameterList>
+
+    </ParameterList>
+
+  </ParameterList>
+  <!--==================================================================================-->
+
+  <!-- Sketching Parameters                                                             -->
+  <ParameterList name="Reduced Dynamic Objective">
+    <Parameter name="Use Sketching"                 type="bool"     value="false" />
+    <Parameter name="State Rank"                    type="int"      value="10"    />
+    <Parameter name="Adjoint Rank"                  type="int"      value="10"    />
+    <Parameter name="State Sensitivity Rank"        type="int"      value="10"    />
+    <Parameter name="Use Hessian"                   type="bool"     value="true"  />
+    <Parameter name="Use Only Sketched Sensitivity" type="bool"     value="true"  />
+  </ParameterList>
+  <!--==================================================================================-->
+
+  <!-- ROL Parameters                                                                   -->
+  <ParameterList name="ROL">
+    <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
+    <ParameterList name="General">
+      <Parameter name="Variable Objective Function"            type="bool"   value="false" />
+      <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+      <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
+      <Parameter name="Inexact Objective Function"             type="bool" value="false" />
+      <Parameter name="Inexact Gradient"                       type="bool" value="false" />
+      <Parameter name="Inexact Hessian-Times-A-Vector"         type="bool" value="false" />
+      <!-- ===========  BOUND CONSTRAINED CRITICALITY MEASURE  =========== -->
+      <Parameter name="Projected Gradient Criticality Measure" type="bool" value="false" />
+
+      <!-- ===========  SECANT INPUTS  =========== -->
+      <ParameterList name="Secant">
+        <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
+        <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
+        <Parameter name="Use as Hessian"         type="bool"   value="false"               />
+        <Parameter name="Maximum Storage"        type="int"    value="10"                  />
+        <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
+      </ParameterList>
+
+      <!-- ===========  KRYLOV INPUTS  =========== -->
+      <ParameterList name="Krylov">
+        <Parameter name="Type"               type="string" value="Conjugate Gradients" />
+        <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
+        <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
+        <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  STEP SUBLIST  =========== -->
+    <ParameterList name="Step">
+      <!-- ===========  LINE SEARCH  =========== -->
+      <ParameterList name="Line Search">
+        <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />
+        <Parameter name="Sufficient Decrease Tolerance"  type="double" value="1.e-4" />
+        <Parameter name="Initial Step Size"              type="double" value="1.0"   />
+        <Parameter name="User Defined Initial Step Size" type="bool"   value="false" />
+        <Parameter name="Accept Linesearch Minimizer"    type="bool"   value="false" />
+        <Parameter name="Accept Last Alpha"              type="bool"   value="false" />
+
+        <!-- ===========  DESCENT ALGORITHM SPECIFICATION  =========== -->
+        <ParameterList name="Descent Method">
+    <Parameter name="Type"              type="string" value="Newton-Krylov"    />
+    <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel" />
+        </ParameterList>
+
+        <!-- ===========  CURVATURE CONDITION SPECIFICATION  =========== -->
+        <ParameterList name="Curvature Condition">
+    <Parameter name="Type"                        type="string" value="Strong Wolfe Conditions" />
+    <Parameter name="General Parameter"           type="double" value="0.9"                     />
+    <Parameter name="Generalized Wolfe Parameter" type="double" value="0.6"                     />
+        </ParameterList>
+
+        <!-- ===========  LINE-SEARCH ALGORITHM SPECIFICATION  =========== -->
+        <ParameterList name="Line-Search Method">
+    <Parameter name="Type"                         type="string" value="Cubic Interpolation" />
+    <Parameter name="Backtracking Rate"            type="double" value="0.5"                 />
+    <Parameter name="Bracketing Tolerance"         type="double" value="1.e-8"               />
+
+    <!-- ===========  PATH-BASED TARGET LEVEL  =========== -->
+    <ParameterList name="Path-Based Target Level">
+      <Parameter name="Target Relaxation Parameter" type="double" value="1.0" />
+      <Parameter name="Upper Bound on Path Length"  type="double" value="1.0" />
+    </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  TRUST REGION  =========== -->
+      <ParameterList name="Trust Region">
+        <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
+        <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+        <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
+        <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
+        <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
+        <Parameter name="Radius Growing Threshold"             type="double" value="0.9"          />
+        <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
+        <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
+        <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
+        <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
+
+        <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
+        <ParameterList name="Inexact">
+
+    <!-- ===========  INEXACT OBJECTIVE VALUE UPDATE  =========== -->
+    <ParameterList name="Value">
+      <Parameter name="Tolerance Scaling"                 type="double" value="1.e-1" />
+      <Parameter name="Exponent"                          type="double" value="0.9"   />
+      <Parameter name="Forcing Sequence Initial Value"    type="double" value="1.0"   />
+      <Parameter name="Forcing Sequence Update Frequency" type="int"    value="10"    />
+      <Parameter name="Forcing Sequence Reduction Factor" type="double" value="0.1"   />
+    </ParameterList>
+
+    <!-- ===========  INEXACT GRADIENT UPDATE  =========== -->
+    <ParameterList name="Gradient">
+      <Parameter name="Tolerance Scaling"  type="double" value="1.e-1" />
+      <Parameter name="Relative Tolerance" type="double" value="2.0"   />
+    </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  PRIMAL DUAL ACTIVE SET  =========== -->
+      <ParameterList name="Primal Dual Active Set">
+        <Parameter name="Dual Scaling"                type="double" value="1.0"   />
+        <Parameter name="Iteration Limit"             type="int"    value="10"    />
+        <Parameter name="Relative Step Tolerance"     type="double" value="1.e-8" />
+        <Parameter name="Relative Gradient Tolerance" type="double" value="1.e-6" />
+      </ParameterList>
+
+      <!-- ===========  COMPOSITE STEP  =========== -->
+      <ParameterList name="Composite Step">
+        <Parameter name="Output Level" type="int" value="0" />
+        <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
+        <ParameterList name="Optimality System Solver">
+    <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
+    <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
+        </ParameterList>
+        <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
+        <ParameterList name="Tangential Subproblem Solver">
+    <Parameter name="Iteration Limit"    type="int"    value="20"   />
+    <Parameter name="Relative Tolerance" type="double" value="1e-2" />
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  AUGMENTED LAGRANGIAN  =========== -->
+      <ParameterList name="Augmented Lagrangian">
+        <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+        <Parameter name="Initial Penalty Parameter"               type="double" value="1.e1"         />
+        <Parameter name="Penalty Parameter Growth Factor"         type="double" value="1.e1"         />
+        <Parameter name="Minimum Penalty Parameter Reciprocal"    type="double" value="0.1"          />
+        <!-- ===========  OPTIMALITY TOLERANCE UPDATE  =========== -->
+        <Parameter name="Initial Optimality Tolerance"            type="double" value="1.0"          />
+        <Parameter name="Optimality Tolerance Update Exponent"    type="double" value="1.0"          />
+        <Parameter name="Optimality Tolerance Decrease Exponent"  type="double" value="1.0"          />
+        <!-- ===========  FEASIBILITY TOLERANCE UPDATE  =========== -->
+        <Parameter name="Initial Feasibility Tolerance"           type="double" value="1.0"          />
+        <Parameter name="Feasibility Tolerance Update Exponent"   type="double" value="0.1"          />
+        <Parameter name="Feasibility Tolerance Decrease Exponent" type="double" value="0.9"          />
+        <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+        <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
+        <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
+        <Parameter name="Subproblem Iteration Limit"              type="int"    value="1000"         />
+      </ParameterList>
+
+      <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
+      <ParameterList name="Moreau-Yosida Penalty">
+        <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
+        <Parameter name="Initial Penalty Parameter"       type="double" value="1e-9"    />
+        <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.5"     />
+
+        <!-- ===========  SUBPROBLEM SOLVER  =========== -->
+        <ParameterList name="Subproblem">
+    <Parameter name="Optimality Tolerance"          type="double" value="1e-12" />
+    <Parameter name="Feasibility Tolerance"         type="double" value="1e-12" />
+    <Parameter name="Print History"                 type="bool"   value="true"  />
+    <Parameter name="Iteration Limit"               type="int"    value="200"   />
+        </ParameterList>
+      </ParameterList>
+
+      <!-- ===========  BUNDLE METHOD  =========== -->
+      <ParameterList name="Bundle">
+        <!-- ===========  TRUST-REGION RADIUS UPDATE  =========== -->
+        <Parameter name="Initial Trust-Region Parameter"       type="double" value="1.e1"  />
+        <Parameter name="Maximum Trust-Region Parameter"       type="double" value="1.e8"  />
+        <Parameter name="Tolerance for Trust-Region Parameter" type="double" value="1.e-4" />
+        <!-- ===========  EPSILON SOLUTION STOPPING CONDITION  =========== -->
+        <Parameter name="Epsilon Solution Tolerance"           type="double" value="1.e-8" />
+        <!-- ===========  SERIOUS STEP PARAMETERS  =========== -->
+        <Parameter name="Upper Threshold for Serious Step"     type="double" value="1.e-1" />
+        <Parameter name="Lower Threshold for Serious Step"     type="double" value="2.e-1" />
+        <Parameter name="Upper Threshold for Null Step"        type="double" value="9.e-1" />
+        <!-- ===========  BUNDLE INFORMATION  =========== -->
+        <Parameter name="Distance Measure Coefficient"         type="double" value="1.e-6" />
+        <Parameter name="Maximum Bundle Size"                  type="int"    value="50"    />
+        <Parameter name="Removal Size for Bundle Update"       type="int"    value="2"     />
+        <!-- ===========  CUTTING PLANE SUBPROBLEM SOLVER  =========== -->
+        <Parameter name="Cutting Plane Tolerance"              type="double" value="1.e-8" />
+        <Parameter name="Cutting Plane Iteration Limit"        type="int"    value="1000"  />
+      </ParameterList>
+    </ParameterList>
+
+    <!-- ===========  STATUS TEST SUBLIST  =========== -->
+    <ParameterList name="Status Test">
+      <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"   />
+      <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
+      <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
+      <Parameter name="Iteration Limit"      type="int"    value="10"      />
+    </ParameterList>
+  </ParameterList>
+  <!--=====================================================================================-->
+
+</ParameterList>

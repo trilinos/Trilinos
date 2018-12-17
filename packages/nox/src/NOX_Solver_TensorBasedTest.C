@@ -138,14 +138,26 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnptr->setX(initialGuess);;
   testptr = t;
-  init();
+  stepSize = 0;
+  niter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 void NOX::Solver::TensorBasedTest::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnptr->setX(initialGuess);
-  init();
+  stepSize = 0;
+  niter = 0;
+  status = NOX::StatusTest::Unconverged;
+}
+
+void NOX::Solver::TensorBasedTest::
+reset()
+{
+  stepSize = 0;
+  niter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 NOX::Solver::TensorBasedTest::~TensorBasedTest()
@@ -154,7 +166,8 @@ NOX::Solver::TensorBasedTest::~TensorBasedTest()
 }
 
 
-NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::getStatus()
+NOX::StatusTest::StatusType
+NOX::Solver::TensorBasedTest::getStatus() const
 {
   return status;
 }
@@ -258,6 +271,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::step()
 NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::solve()
 {
   observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged) {

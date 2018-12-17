@@ -27,7 +27,7 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
+    Kokkos::fill_random(b_a,rand_pool,ScalarA(1));
 
     Kokkos::fence();
 
@@ -36,9 +36,9 @@ namespace Test {
     typename ViewTypeA::const_type c_a = a;
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    typename AT::mag_type expected_result = 0;
+    typename AT::mag_type expected_result(0);
     for(int i=0;i<N;i++)
-      expected_result += AT::abs(h_a(i))*AT::abs(h_a(i));
+    { expected_result += AT::abs(h_a(i))*AT::abs(h_a(i)); }
 
     typename AT::mag_type nonconst_result = KokkosBlas::nrm2_squared(a);
     EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
@@ -68,7 +68,7 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
+    Kokkos::fill_random(b_a,rand_pool,ScalarA(1));
 
     Kokkos::fence();
 
@@ -80,23 +80,29 @@ namespace Test {
     for(int j=0;j<K;j++) {
       expected_result[j] = typename AT::mag_type();
       for(int i=0;i<N;i++)
-        expected_result[j] += AT::abs(h_a(i,j))*AT::abs(h_a(i,j));
+      { expected_result[j] += AT::abs(h_a(i,j))*AT::abs(h_a(i,j)); }
     }
 
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    typename AT::mag_type eps = AT::epsilon()*1000;
+    typename AT::mag_type zero = AT::abs( AT::zero() );
+    typename AT::mag_type one = AT::abs( AT::one() );
 
     Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
 
     KokkosBlas::nrm2_squared(r,a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type nonconst_result = r(k);
-      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+      typename AT::mag_type diff = AT::abs(nonconst_result - expected_result[k])/divisor;
+      EXPECT_NEAR_KK( diff, zero, eps );
     }
 
     KokkosBlas::nrm2_squared(r,c_a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
-      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
+      typename AT::mag_type divisor = AT::abs(expected_result[k]) == zero ? one : AT::abs(expected_result[k]);
+      typename AT::mag_type diff = AT::abs(const_result - expected_result[k])/divisor;
+      EXPECT_NEAR_KK( diff, zero, eps );
     }
 
     delete [] expected_result;

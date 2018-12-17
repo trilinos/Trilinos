@@ -99,7 +99,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
              exoid);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -112,7 +112,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
   if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
     if ((status = nc_redef(exoid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -129,12 +129,12 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
       if (status == NC_ENAMEINUSE) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s numbering map already exists in file id %d",
                  tname, exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
       }
       else {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to create %s id map in file id %d", tname,
                  exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
       }
       goto error_ret; /* exit define mode and return */
     }
@@ -143,7 +143,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
     /* leave define mode  */
     if ((status = nc_enddef(exoid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition in file id %d", exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -159,7 +159,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s numbering map in file id %d", tname,
              exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -170,7 +170,7 @@ error_ret:
   if ((status = nc_enddef(exoid)) != NC_NOERR) /* exit define mode */
   {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
   }
   EX_FUNC_LEAVE(EX_FATAL);
 }

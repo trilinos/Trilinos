@@ -12,7 +12,7 @@
 
 #else
 
-#define STK_INLINE_FUNCTION
+#define STK_INLINE_FUNCTION inline
 #define STK_FUNCTION
 
 #endif

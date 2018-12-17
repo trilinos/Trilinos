@@ -376,11 +376,12 @@ void StepperExplicitRK<Scalar>::takeStep(
        //compute: || ee / sc ||
        assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
        Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
-       Scalar err = Thyra::norm_inf(*sc);
+       Scalar err = std::abs(Thyra::norm_inf(*sc));
        metaData->setErrorRel(err);
 
        // test if step should be rejected
-       if (err > 1.0) workingState->setSolutionStatus(Status::FAILED);
+       if (std::isinf(err) || std::isnan(err)) workingState->setSolutionStatus(Status::FAILED);
+       else if (err > Teuchos::as<Scalar>(1.0)) workingState->setSolutionStatus(Status::FAILED);
     }
 
     workingState->setOrder(this->getOrder());

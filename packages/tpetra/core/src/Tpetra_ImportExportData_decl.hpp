@@ -57,7 +57,6 @@ class ParameterList; // forward declaration
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
-namespace Classes {
 
   /// \class ImportExportData
   /// \brief Implementation detail of Import and Export.
@@ -235,7 +234,6 @@ namespace Classes {
     operator= (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
-} // namespace Classes
 } // namespace Tpetra
 
 #endif // TPETRA_IMPORTEXPORTDATA_DECL_HPP

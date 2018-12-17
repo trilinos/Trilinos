@@ -81,9 +81,9 @@ class BasisValues_Evaluator
   Teuchos::RCP<const panzer::PureBasis> basis;
   
   // is anything other than ScalarT really needed here?
-  Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
-  PointValues2<ScalarT> pointValues;
-  PointValues2<const ScalarT> constPointValues;
+  Teuchos::RCP<BasisValues2<double> > basisValues;
+  PointValues2<double> pointValues;
+  PointValues2<const double> constPointValues;
 
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 

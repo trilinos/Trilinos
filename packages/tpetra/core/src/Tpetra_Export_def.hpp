@@ -58,7 +58,7 @@ namespace {
 } // namespace (anonymous)
 
 namespace Tpetra {
-namespace Classes {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Export<LocalOrdinal,GlobalOrdinal,Node>::
@@ -545,7 +545,9 @@ namespace Classes {
         const size_type numInvalidExports =
           std::count_if (ExportData_->exportPIDs_().begin(),
                          ExportData_->exportPIDs_().end(),
-                         std::bind1st (std::equal_to<int>(), -1));
+                         [] (const int processor_id) {
+                           return processor_id == -1;
+                         });
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (numInvalidExports == 0, std::logic_error, "Calling getRemoteIndexList "
            "on the target Map returned IDNotPresent, but none of the returned "
@@ -662,7 +664,6 @@ namespace Classes {
     }
   }
 
-} // namespace Classes
 } // namespace Tpetra
 
 // Explicit instantiation macro.
@@ -673,7 +674,6 @@ namespace Classes {
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_EXPORT_INSTANT(LO, GO, NODE) \
-  \
-  namespace Classes { template class Export< LO , GO , NODE >; }
+  template class Export< LO , GO , NODE >;
 
 #endif // TPETRA_EXPORT_DEF_HPP

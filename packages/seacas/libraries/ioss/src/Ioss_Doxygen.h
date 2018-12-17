@@ -27,14 +27,14 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
  MINIMIZE_OPEN_FILES | on/[off] | If on, then close file after each timestep and then reopen on next output
 
 ## Auto-Decomposition-Related Properties
- 
+
  Property        | Value  | Description
 -----------------|:------:|-----------------------------------------------------------
 MODEL_DECOMPOSITION_METHOD | {method} | Decompose a DB with type `MODEL` using `method`
 RESTART_DECOMPOSITION_METHOD | {method} | Decompose a DB with type `RESTART_IN` using `method`
 DECOMPOSITION_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL_CONSISTENCY | [on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
-RETAIN_FREE_NODES | [on]/off | In auto-decomp, will nodes not connected to any elements be retained. 
+RETAIN_FREE_NODES | [on]/off | In auto-decomp, will nodes not connected to any elements be retained.
 LOAD_BALANCE_THRESHOLD | {real} [1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
 
 ### Valid values for Decomposition Method
@@ -43,25 +43,25 @@ Method     | Description
 :---------:|-------------------
 rcb        | recursive coordinate bisection
 rib        | recursive inertial bisection
-hsfc       | hilbert space-filling curve 
-metis_sfc  | metis space-filling-curve 
-kway       | metis kway graph-based 
+hsfc       | hilbert space-filling curve
+metis_sfc  | metis space-filling-curve
+kway       | metis kway graph-based
 kway_geom  | metis kway graph-based method with geometry speedup
 linear     | elements in order first n/p to proc 0, next to proc 1.
 cyclic     | elements handed out to id % proc_count
 random     | elements assigned randomly to processors in a way that preserves balance (do not use for a real run)
 external   | Files are decomposed externally into a file-per-processor in a parallel run.
 
-## Output File Composition -- Single File output from parallel run instead of file-per-processor 
+## Output File Composition -- Single File output from parallel run instead of file-per-processor
 
- Property        | Value  
+ Property        | Value
 -----------------|:------:
 COMPOSE_RESTART  | on/[off]
 COMPOSE_RESULTS  | on/[off]
-PARALLEL_IO_MODE | mpiio, pnetcdf
+PARALLEL_IO_MODE | netcdf4, hdf5, pnetcdf, (mpiio and mpiposix are deprecated)
 
-## Properties Related to byte size of reals and integers 
- 
+## Properties Related to byte size of reals and integers
+
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------
  INTEGER_SIZE_DB       | [4] / 8 | byte size of integers stored on the database.
@@ -69,8 +69,8 @@ PARALLEL_IO_MODE | mpiio, pnetcdf
  REAL_SIZE_DB          | 4 / [8] | byte size of floating point stored on the database.
  REAL_SIZE_API         | 4 / [8] | byte size of floating point used in api functions.
 
-## Properties related to underlying file type (exodus only) 
- 
+## Properties related to underlying file type (exodus only)
+
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------
  FILE_TYPE            | [netcdf], netcdf4, netcdf-4, hdf5 | Underlying file type (bits on disk format)
@@ -81,7 +81,7 @@ PARALLEL_IO_MODE | mpiio, pnetcdf
  APPEND_OUTPUT_AFTER_STEP | {step}| Max step to read from an input db or a db being appended to (typically used with APPEND_OUTPUT)
  APPEND_OUTPUT_AFTER_TIME | {time}| Max time to read from an input db or a db being appended to (typically used with APPEND_OUTPUT)
 
-## Properties for the heartbeat output 
+## Properties for the heartbeat output
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------
   FLUSH_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
@@ -94,7 +94,7 @@ PARALLEL_IO_MODE | mpiio, pnetcdf
   SHOW_TIME_FIELD      | on/[off]  | Should the current analysis time be output as the first field.
 
 
-## Experimental 
+## Experimental
 
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------

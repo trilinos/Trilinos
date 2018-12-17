@@ -48,7 +48,7 @@
 #include "Tpetra_ImportExportData_fwd.hpp"
 
 namespace Tpetra {
-namespace Classes {
+
   /// \brief Communication plan for data redistribution from a
   ///   uniquely-owned to a (possibly) multiply-owned distribution.
   ///
@@ -109,9 +109,9 @@ namespace Classes {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-           class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template<class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   class Import:
     public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -198,7 +198,8 @@ namespace Classes {
     /// constructor.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            Teuchos::Array<int> & remotePIDs);
+            Teuchos::Array<int> & remotePIDs,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::rcp(new Teuchos::ParameterList) );
 
     /// \brief Copy constructor.
     ///
@@ -253,18 +254,11 @@ namespace Classes {
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
     /// \brief Expert constructor.
-    ///
-    /// \warning THIS IS FOR EXPERT USERS ONLY.  More specifically,
-    ///   this constructor exists for MueLu (algebraic multigrid)
-    ///   setup ONLY.  If you aren't a MueLu or Tpetra developer,
-    ///   DON'T USE THIS.
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-            Teuchos::Array<int> & userRemotePIDs,
-            Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+            const Teuchos::ArrayView<int> & remotePIDs,
             const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
             const Teuchos::ArrayView<const int> & userExportPIDs,
-            const bool useRemotePIDs,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
@@ -576,7 +570,9 @@ namespace Classes {
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
     /// <tt>ImportData_</tt>.
     void
-    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
+    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, 
+                 bool useRemotePIDs, Teuchos::Array<int> & remotePIDs,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist= Teuchos::null);
     //@}
 
     /// \brief "Expert" constructor that includes all the Import's data.
@@ -600,8 +596,6 @@ namespace Classes {
 
 
   }; // class Import
-
-} // namespace Classes
 
   /// \brief Nonmember constructor for Import.
   ///

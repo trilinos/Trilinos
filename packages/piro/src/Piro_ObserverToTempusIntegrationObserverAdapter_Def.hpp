@@ -50,13 +50,13 @@ template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegrationObserverAdapter(
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver, 
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
     const bool supports_x_dotdot)
     : solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
-      supports_x_dotdot_(supports_x_dotdot) 
+      supports_x_dotdot_(supports_x_dotdot)
 {
   //Currently, sensitivities are not supported in Tempus.
   hasSensitivities_ = false;
@@ -126,10 +126,19 @@ observeAfterTakeStep(const Tempus::Integrator<Scalar>& )
 }
 
 
-template <typename Scalar>
+template<class Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeAcceptedTimeStep(const Tempus::Integrator<Scalar>& integrator)
+observeAfterCheckTimeStep(const Tempus::Integrator<Scalar>& integrator)
+{
+  //Nothing to do
+}
+
+
+template<class Scalar>
+void
+Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
+observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator)
 {
 
   using Teuchos::RCP;
@@ -191,6 +200,12 @@ template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
 {
+  //Don't observe solution if step failed to converge
+  if ((solutionHistory_->getWorkingState() != Teuchos::null) &&
+     (solutionHistory_->getWorkingState()->getSolutionStatus() == Tempus::Status::FAILED)) {
+    return;
+  }
+
   //Get solution
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution = solutionHistory_->getCurrentState()->getX();
   solution.assert_not_null();

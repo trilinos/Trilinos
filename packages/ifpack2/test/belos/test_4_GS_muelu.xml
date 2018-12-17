@@ -1,0 +1,20 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="mueluMatrix.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Num Blocks" type="int" value="40"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="RELAXATION"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="relaxation: type"           type="string" value="Gauss-Seidel"/>
+    <Parameter name="relaxation: damping factor" type="double" value="1.1"/>
+    <Parameter name="relaxation: use l1"         type="bool"   value="true"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="42"/>
+</ParameterList>

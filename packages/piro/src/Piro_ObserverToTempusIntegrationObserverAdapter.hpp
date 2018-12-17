@@ -62,7 +62,7 @@ public:
   ObserverToTempusIntegrationObserverAdapter(
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
-    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver, 
+    const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
     const bool supports_x_dotdot = false);
 
   // Overridden from Tempus::IntegratorObserver
@@ -87,8 +87,11 @@ public:
   /// Observe after Stepper takes step.
   virtual void observeAfterTakeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
-  /// Observe after accepting time step.
-  virtual void observeAcceptedTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
+  /// Observe after checking time step.  Observer can still fail the time step here.
+  virtual void observeAfterCheckTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
+
+  /// Observe the end of the time step loop.
+  virtual void observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe the end of the time integrator.
   virtual void observeEndIntegrator(const Tempus::Integrator<Scalar>& integrator) override;
@@ -102,7 +105,7 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   bool hasSensitivities_;
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;
-  bool supports_x_dotdot_; 
+  bool supports_x_dotdot_;
 };
 
 } // namespace Piro

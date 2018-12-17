@@ -55,6 +55,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include <type_traits>
 
 namespace Ifpack2 {
 
@@ -118,7 +119,7 @@ ILUT<MatrixType>::ILUT (const Teuchos::RCP<const row_matrix_type>& A) :
   Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
   Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
   RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-  LevelOfFill_ (1),
+  LevelOfFill_ (1.0),
   DropTolerance_ (ilutDefaultDropTolerance<scalar_type> ()),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
@@ -143,135 +144,93 @@ void ILUT<MatrixType>::allocateSolvers ()
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
 }
 
+namespace { // (anonymous)
+
+  template<class MagnitudeType>
+  std::pair<MagnitudeType, bool>
+  getMagnitudeOrDoubleParameterAsMagnitude (const Teuchos::ParameterList& params,
+					    const char parameterName[],
+					    const MagnitudeType& currentValue)
+  {
+    const std::string pname (parameterName);
+
+    if (params.isType<MagnitudeType> (pname)) {
+      const MagnitudeType value = params.get<MagnitudeType> (pname);
+      return {value, true};
+    }
+    else if (! std::is_same<MagnitudeType, double>::value &&
+	     params.isType<double> (pname)) {
+      const MagnitudeType value = double (params.get<MagnitudeType> (pname));
+      return {value, true};
+    }
+    else {
+      return {currentValue, false};
+    }
+  }
+
+} // namespace (anonymous)
+
 
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
 {
-  using Teuchos::as;
-  using Teuchos::Exceptions::InvalidParameterName;
-  using Teuchos::Exceptions::InvalidParameterType;
+  // Don't actually change the instance variables until we've checked
+  // all parameters.  This ensures that setParameters satisfies the
+  // strong exception guarantee (i.e., is transactional).
 
-  // Default values of the various parameters.
-  int fillLevel = 1;
-  magnitude_type absThresh = STM::zero ();
-  magnitude_type relThresh = STM::one ();
-  magnitude_type relaxValue = STM::zero ();
-  magnitude_type dropTol = ilutDefaultDropTolerance<scalar_type> ();
-
+  // Fill level in ILUT is a double, not a magnitude_type, because it
+  // depends on LO and GO, not on Scalar.
+  double fillLevel = LevelOfFill_;
   bool gotFillLevel = false;
-  try {
-    // Try getting the fill level as an int.
-    fillLevel = params.get<int> ("fact: ilut level-of-fill");
-    gotFillLevel = true;
-  }
-  catch (InvalidParameterName&) {
-    // We didn't really get it, but this tells us to stop looking.
-    gotFillLevel = true;
-  }
-  catch (InvalidParameterType&) {
-    // The name is right, but the type is wrong; try different types.
-    // We don't have to check InvalidParameterName again, since we
-    // checked it above, and it has nothing to do with the type.
-  }
-
-  if (! gotFillLevel) {
-    // Try magnitude_type, for backwards compatibility.
-    try {
-      fillLevel = as<int> (params.get<magnitude_type> ("fact: ilut level-of-fill"));
+  {
+    const std::string fillLevelParamName ("fact: ilut level-of-fill");
+    if (params.isType<double> (fillLevelParamName)) {
+      fillLevel = params.get<double> (fillLevelParamName);
+      gotFillLevel = true;
     }
-    catch (InvalidParameterType&) {}
-  }
-  if (! gotFillLevel) {
-    // Try double, for backwards compatibility.
-    try {
-      fillLevel = as<int> (params.get<double> ("fact: ilut level-of-fill"));
+    else if (! std::is_same<magnitude_type, double>::value &&
+	     params.isType<double> (fillLevelParamName)) {
+      fillLevel = static_cast<double> (params.get<magnitude_type> (fillLevelParamName));
+      gotFillLevel = true;
     }
-    catch (InvalidParameterType&) {}
-  }
-  // If none of the above attempts succeed, accept the default value.
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    fillLevel <= 0, std::runtime_error,
-    "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be "
-    "strictly greater than zero, but you specified a value of " << fillLevel
-    << ".  Remember that for ILUT, the fill level p means something different "
-    "than it does for ILU(k).  ILU(0) produces factors with the same sparsity "
-    "structure as the input matrix A; ILUT with p = 0 always produces a "
-    "diagonal matrix, and is thus probably not what you want.");
-
-  try {
-    absThresh = params.get<magnitude_type> ("fact: absolute threshold");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    absThresh = as<magnitude_type> (params.get<double> ("fact: absolute threshold"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (gotFillLevel && fillLevel < 1.0, std::runtime_error,
+       "Ifpack2::ILUT: The \"fact: ilut level-of-fill\" parameter must be >= "
+       "1.0, but you set it to " << fillLevel << ".  For ILUT, the fill level "
+       "means something different than it does for ILU(k).  ILU(0) produces "
+       "factors with the same sparsity structure as the input matrix A. For "
+       "ILUT, level-of-fill = 1.0 will produce factors with nonzeros matching "
+       "the sparsity structure of A. level-of-fill > 1.0 allows for additional "
+       "fill-in.");
   }
 
-  try {
-    relThresh = params.get<magnitude_type> ("fact: relative threshold");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    relThresh = as<magnitude_type> (params.get<double> ("fact: relative threshold"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
-
-  try {
-    relaxValue = params.get<magnitude_type> ("fact: relax value");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    relaxValue = as<magnitude_type> (params.get<double> ("fact: relax value"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
-
-  try {
-    dropTol = params.get<magnitude_type> ("fact: drop tolerance");
-  }
-  catch (InvalidParameterType&) {
-    // Try double, for backwards compatibility.
-    // The cast from double to magnitude_type must succeed.
-    dropTol = as<magnitude_type> (params.get<double> ("fact: drop tolerance"));
-  }
-  catch (InvalidParameterName&) {
-    // Accept the default value.
-  }
+  const auto absThreshResult =
+    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: absolute threshold", Athresh_);
+  const auto relThreshResult =
+    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: relative threshold", Rthresh_);
+  const auto relaxResult =
+    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: relax value", RelaxValue_);
+  const auto dropResult =
+    getMagnitudeOrDoubleParameterAsMagnitude (params, "fact: drop tolerance", DropTolerance_);
 
   // Forward to trisolvers.
   L_solver_->setParameters(params);
   U_solver_->setParameters(params);
 
-  // "Commit" the values only after validating all of them.  This
-  // ensures that there are no side effects if this routine throws an
-  // exception.
-
-  // mfh 28 Nov 2012: The previous code would not assign Athresh_,
-  // Rthresh_, RelaxValue_, or DropTolerance_ if the read-in value was
-  // -1.  I don't know if keeping this behavior is correct, but I'll
-  // keep it just so as not to change previous behavior.
-
-  LevelOfFill_ = fillLevel;
-  if (absThresh != -STM::one ()) {
-    Athresh_ = absThresh;
+  if (gotFillLevel) {
+    LevelOfFill_ = fillLevel;
   }
-  if (relThresh != -STM::one ()) {
-    Rthresh_ = relThresh;
+  if (absThreshResult.second) {
+    Athresh_ = absThreshResult.first;
   }
-  if (relaxValue != -STM::one ()) {
-    RelaxValue_ = relaxValue;
+  if (relThreshResult.second) {
+    Rthresh_ = relThreshResult.first;
   }
-  if (dropTol != -STM::one ()) {
-    DropTolerance_ = dropTol;
+  if (relaxResult.second) {
+    RelaxValue_ = relaxResult.first;
+  }
+  if (dropResult.second) {
+    DropTolerance_ = dropResult.first;
   }
 }
 
@@ -523,20 +482,10 @@ void ILUT<MatrixType>::compute ()
     std::ofstream ofsU("U.tif.mtx", std::ios::out);
 #endif
 
-    // The code here uses double for fill calculations, even though
-    // the fill level is actually an integer.  The point is to avoid
-    // rounding and overflow for integer calculations.  If int is <=
-    // 32 bits, it can never overflow double, so this cast is always
-    // OK as long as int has <= 32 bits.
-
     // Calculate how much fill will be allowed in addition to the
     // space that corresponds to the input matrix entries.
     double local_nnz = static_cast<double> (A_local_->getNodeNumEntries ());
-    double fill;
-    {
-      const double fillLevel = as<double> (getLevelOfFill ());
-      fill = ((fillLevel - 1) * local_nnz) / (2 * myNumRows);
-    }
+    double fill = ((getLevelOfFill () - 1.0) * local_nnz) / (2 * myNumRows);
 
     // std::ceil gives the smallest integer larger than the argument.
     // this may give a slightly different result than Aztec's fill value in

@@ -27,7 +27,7 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
+    Kokkos::fill_random(b_a,rand_pool,ScalarA(1));
 
     Kokkos::fence();
 
@@ -38,7 +38,7 @@ namespace Test {
 
     typename AT::mag_type expected_result = 0;
     for(int i=0;i<N;i++)
-      expected_result += AT::abs(h_a(i))*AT::abs(h_a(i));
+    { expected_result += AT::abs(h_a(i))*AT::abs(h_a(i)); }
     expected_result = Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(expected_result);
 
     typename AT::mag_type nonconst_result = KokkosBlas::nrm2(a);
@@ -69,7 +69,7 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
+    Kokkos::fill_random(b_a,rand_pool,ScalarA(1));
 
     Kokkos::fence();
 
@@ -81,7 +81,7 @@ namespace Test {
     for(int j=0;j<K;j++) {
       expected_result[j] = typename AT::mag_type();
       for(int i=0;i<N;i++)
-        expected_result[j] += AT::abs(h_a(i,j))*AT::abs(h_a(i,j));
+      { expected_result[j] += AT::abs(h_a(i,j))*AT::abs(h_a(i,j)); }
       expected_result[j] = Kokkos::Details::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
     }
 

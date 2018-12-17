@@ -104,7 +104,6 @@ namespace stk {
     int mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return newIds;
     }
     //
     //  Communicate the entire ordering function to every single other processor.
@@ -126,7 +125,6 @@ namespace stk {
         std::ostringstream msg;
         msg << "In generate_parallel_consistent_ids, an ordering array with non unique keys provided.\nThis is not allowed.\n";
         throw std::runtime_error(msg.str());
-        return newIds;
       }
     }
 

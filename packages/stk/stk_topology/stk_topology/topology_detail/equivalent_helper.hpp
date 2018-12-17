@@ -40,9 +40,6 @@
 
 namespace stk { namespace topology_detail {
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
 inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), std::pair<bool,unsigned> >::type
@@ -59,9 +56,6 @@ equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
   return std::make_pair(false, 0);
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
 inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), std::pair<bool,unsigned> >::type
@@ -72,9 +66,6 @@ equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
   return std::make_pair(false, 0);
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
 inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
@@ -119,9 +110,6 @@ lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bo
 
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
 inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
@@ -174,18 +162,12 @@ lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const No
 
 }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
 inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type
 lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &, const NodeArray &, Node)
 { return 0; }
 
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
 template <typename Topology, typename NodeArray, typename Node>
 inline
 typename boost::enable_if_c< (Topology::num_permutations == 0u), unsigned >::type

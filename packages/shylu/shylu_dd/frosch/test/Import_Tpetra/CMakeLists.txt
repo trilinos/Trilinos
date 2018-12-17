@@ -3,8 +3,18 @@ TRIBITS_ADD_EXECUTABLE(
 	SOURCES main.cpp
 )
 
+IF(ShyLU_DDFROSch_ENABLE_Epetra)
 TRIBITS_ADD_TEST(
-    test_import
-    NAME test_import
-    NUM_MPI_PROCS 8
+test_import
+NAME test_import_EPETRA
+NUM_MPI_PROCS 8
+ARGS "--USEEPETRA"
+)
+ENDIF()
+
+TRIBITS_ADD_TEST(
+test_import
+NAME test_import_TPETRA
+NUM_MPI_PROCS 8
+ARGS "--USETPETRA"
 )

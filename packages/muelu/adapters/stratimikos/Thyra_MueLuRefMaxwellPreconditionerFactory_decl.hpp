@@ -234,7 +234,7 @@ namespace Thyra {
       typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
       typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
-      typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
+      typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
       typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
       typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
 #ifdef HAVE_MUELU_TPETRA
@@ -447,7 +447,7 @@ namespace Thyra {
             epetra_nullspace = paramList.get<RCP<Epetra_MultiVector> >("Nullspace");
             paramList.remove("Nullspace");
             RCP<Xpetra::EpetraMultiVectorT<int,Node> > xpEpNullspace = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<int,Node>(epetra_nullspace));
-            RCP<Xpetra::MultiVector<double,int,int,Node> > xpEpNullspaceMult = rcp_dynamic_cast<Xpetra::MultiVector<double,int,int,Node> >(xpEpNullspace, true);
+            RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node> > xpEpNullspaceMult = rcp_dynamic_cast<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node> >(xpEpNullspace, true);
             RCP<XpMultVec> nullspace = rcp_dynamic_cast<XpMultVec>(xpEpNullspaceMult, true);
             paramList.set<RCP<XpMultVec> >("Nullspace", nullspace);
           }
@@ -529,7 +529,7 @@ namespace Thyra {
               RCP<const Epetra_Vector> eDiag = Thyra::get_Epetra_Vector(*map, diag);
               RCP<Epetra_Vector> nceDiag = Teuchos::rcp_const_cast<Epetra_Vector>(eDiag);
               RCP<Xpetra::EpetraVectorT<int,Node> > xpEpDiag = Teuchos::rcp(new Xpetra::EpetraVectorT<int,Node>(nceDiag));
-              RCP<const Xpetra::Vector<double,int,int,Node> > xpDiag = rcp_dynamic_cast<const Xpetra::Vector<double,int,int,Node> >(xpEpDiag, true);
+              RCP<const Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node> > xpDiag = rcp_dynamic_cast<const Xpetra::Vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,int,int,Node> >(xpEpDiag, true);
               RCP<XpMat> M0inv = Xpetra::MatrixFactory<double,int,int,Node>::Build(xpDiag);
               paramList.set<RCP<XpMat> >("M0inv", M0inv);
             } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("M0inv")) {

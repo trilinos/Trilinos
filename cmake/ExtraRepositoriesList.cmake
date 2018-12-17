@@ -76,7 +76,6 @@ MARK_AS_ADVANCED(Trilinos_REPOS_URL_BASE)
 
 TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   MOOCHO_repo  packages/moocho  GIT  ${Trilinos_REPOS_URL_BASE}moocho  NOPACKAGES  Nightly
-  Sundance_repo  packages/Sundance  GIT  ${Trilinos_REPOS_URL_BASE}Sundance  NOPACKAGES  Nightly
   CTrilinos_repo  packages/CTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}CTrilinos  NOPACKAGES  Nightly
   ForTrilinos_repo  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  EX
   Optika_repo  packages/optika  GIT  ${Trilinos_REPOS_URL_BASE}optika  NOPACKAGES  Nightly

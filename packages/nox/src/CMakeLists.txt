@@ -183,17 +183,20 @@ APPEND_SET(HEADERS
   NOX_Utils.H
   NOX_SharedObjectTemplate.H
   NOX_Random.H
-  NOX_Version.H
   NOX_GlobalData.H
   NOX_PrePostOperator_Vector.H
+  NOX_Observer_Vector.hpp
+  NOX_Observer_Log.hpp
+  NOX_Observer_Print.hpp
   NOX_Assert.H
   )
 APPEND_SET(SOURCES
   NOX_Utils.C
   NOX_Random.C
-  NOX_Version.C
   NOX_GlobalData.C
-  NOX_PrePostOperator_Vector.C
+  NOX_Observer_Vector.cpp
+  NOX_Observer_Log.cpp
+  NOX_Observer_Print.cpp
   )
 
 # Multivector

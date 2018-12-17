@@ -20,7 +20,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     DynamicThermalFluidsDataCopy
     SOURCE_FILES
-      input.xml plotresults.m plotFlow.m plotControl.m channel.txt
+      input.xml
+      plotresults.m
+      plotFlow.m
+      plotControl.m
+      channel.txt
+      channel.jou
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

@@ -278,7 +278,8 @@ if (${Trilinos_ENABLE_Isorropia}):
             "Test the Teuchos.RCP functions on Isorropia objects"
 
             def setUp(self):
-                self.p     = Teuchos.ParameterList({"PARTITIONING METHOD" : "CYCLIC"})
+                self.p     = Teuchos.ParameterList({"partitioning method": "cyclic",
+                                                    "Zoltan": {"debug_level": "0"}})
                 self.comm  = Epetra.PyComm()
                 self.nRows = 10 * self.comm.NumProc()
                 self.map   = Epetra.Map(self.nRows, 0, self.comm)

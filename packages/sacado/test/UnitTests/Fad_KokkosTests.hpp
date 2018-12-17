@@ -1603,7 +1603,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
   const size_type shmem_size_expected =
-    ( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + mask ) & ~mask;
+    (( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
 
@@ -2049,6 +2049,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, CommonViewAllocMixedSpec, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType**,Kokkos::LayoutContiguous<Layout>,Device> ContViewType;
+  typedef Kokkos::View<FadType**,Layout,Device> ViewType;
+  typedef typename ContViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create contiguous view
+  ContViewType v1;
+#if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  v1 = ContViewType ("view", num_rows, num_cols);
+#else
+  v1 = ContViewType ("view", num_rows, num_cols, fad_size+1);
+#endif
+
+  // Create non-contiguous view using commen_view_alloc_prop
+  auto cprop = Kokkos::common_view_alloc_prop(v1);
+  ViewType v2(Kokkos::view_alloc("v2",cprop), num_rows, num_cols);
+
+  // Check dimensions are correct for v2
+  success = true;
+  TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.extent(1), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+}
+
 #else
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -2068,7 +2098,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   static const size_type align = 8;
   static const size_type mask  = align - 1;
   const size_type shmem_size_expected =
-    ( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask;
+    (( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
 
@@ -2092,6 +2122,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device ) {}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, CommonViewAllocMixedSpec, FadType, Layout, Device ) {}
 
 #endif
 
@@ -2137,7 +2170,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   VIEW_FAD_TESTS_FLD( F, LayoutLeft, D )                                \
   VIEW_FAD_TESTS_FLD( F, LayoutRight, D )                               \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutLeft, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutRight, D )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, F, LayoutRight, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, CommonViewAllocMixedSpec, F, LayoutLeft, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, CommonViewAllocMixedSpec, F, LayoutRight, D )
+
 #define VIEW_FAD_TESTS_SFDI( F, D )                                     \
   using Kokkos::LayoutLeft;                                             \
   using Kokkos::LayoutRight;                                            \

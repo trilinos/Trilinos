@@ -47,28 +47,12 @@
 /// \file Tpetra_Packable_fwd.hpp
 /// \brief Forward declaration of Tpetra::Packable
 
-namespace Tpetra {
-
-/// \brief Implementation detail of Tpetra, to aid in deprecating
-///   template parameters.
-///
-/// \warning This namespace is an implementation detail of Tpetra.  Do
-///   <i>NOT</i> use it.  For any class CLASS in Tpetra, use the alias
-///   Tpetra::CLASS, <i>NOT</i> Tpetra::Classes::CLASS.
-namespace Classes {
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Packable.
-template <class PK, class LO> class Packable;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-} // namespace Classes
-
-//! Alias for Tpetra::Classes::Packable.
+namespace Tpetra {
 template<class Packet,
          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type>
-using Packable = Classes::Packable<Packet, LocalOrdinal>;
-
+class Packable;
 } // namespace Tpetra
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // TPETRA_PACKABLE_FWD_HPP

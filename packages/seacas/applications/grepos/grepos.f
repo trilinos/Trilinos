@@ -165,6 +165,16 @@ C     --Open the input database and read the initial variables
 
       FILIN  = ' '
       CALL get_argument(narg-1,FILIN, LNAM)
+
+      FILOUT = ' '
+      CALL get_argument(narg,FILOUT, LFIL)
+
+      if (filin .eq. filout) then
+         CALL PRTERR ('FATAL',
+     $        'Input and Output filename are the same. Not allowed')
+         goto 60
+      endif
+
       NDBIN = exopen(filin(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//FILIN(:LNAM)//'" does not exist.'
@@ -1006,8 +1016,6 @@ C     can only map sideset variables if the sidesets are the same...
 
 C     --Open the output database
       
-      FILOUT = ' '
-      CALL get_argument(narg,FILOUT, LFIL)
       CMPSIZ = 0
       IOWS   = iowdsz()
       MODE = EXCLOB

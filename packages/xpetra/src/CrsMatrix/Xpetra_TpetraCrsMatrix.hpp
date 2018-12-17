@@ -951,14 +951,12 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
-                       const typename local_matrix_type::values_type& val) {
-      getTpetra_CrsMatrixNonConst()->setAllValues(ptr,ind,val);
-    }
+                       const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
 
@@ -1338,14 +1336,12 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+      TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());
     }
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
-                       const typename local_matrix_type::values_type& val) {
-      getTpetra_CrsMatrixNonConst()->setAllValues(ptr,ind,val);
-    }
+                       const typename local_matrix_type::values_type& val) {    }
 #endif
 #endif
 

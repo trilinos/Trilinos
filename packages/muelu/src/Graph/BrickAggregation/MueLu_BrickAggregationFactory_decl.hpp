@@ -133,8 +133,8 @@ namespace MueLu {
     //@}
 
   private:
-    void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coords, const RCP<const Map>& map) const;
-    RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const double>& x) const;
+    void Setup(const RCP<const Teuchos::Comm<int> >& comm, const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coords, const RCP<const Map>& map) const;
+    RCP<container> Construct1DMap(const RCP<const Teuchos::Comm<int> >& comm, const ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& x) const;
 
     bool           isRoot  (LocalOrdinal LID) const;
     GlobalOrdinal getRoot  (LocalOrdinal LID) const;
@@ -145,7 +145,7 @@ namespace MueLu {
     mutable
      RCP<container> xMap_, yMap_, zMap_;
     mutable
-     ArrayRCP<const double> x_, y_, z_;
+     ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> x_, y_, z_;
     mutable
      int nx_, ny_, nz_;
     mutable

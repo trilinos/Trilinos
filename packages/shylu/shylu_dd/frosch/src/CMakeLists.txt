@@ -54,6 +54,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/muelu/adapters/belos)
 
 APPEND_SET(HEADERS
+  Adapters/Stratimikos_FROSchXpetra.hpp
+  Adapters/Thyra_FROSchFactory_decl.hpp
+  Adapters/Thyra_FROSchFactory_def.hpp
+  Adapters/Thyra_FROSchLinearOp_decl.hpp
+  Adapters/Thyra_FROSchLinearOp_def.hpp
   CoarseSpaces/FROSch_CoarseSpace_decl.hpp
   CoarseSpaces/FROSch_CoarseSpace_def.hpp
   CoarseSpaces/FROSch_GDSWInterfacePartitionOfUnity_decl.hpp
@@ -109,15 +114,6 @@ APPEND_SET(HEADERS
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
 
-  Tools/FROSch_ConfigDefs.hpp
-  Tools/FROSch_config.hpp
-  Adapters/Stratimikos_FROSchXpetra.hpp
-  Adapters/Thyra_FROSchLinearOp_decl.hpp
-  Adapters/Thyra_FROSchLinearOp_def.hpp
-  Adapters/Thyra_FROSchXpetraFactory_decl.hpp
-  Adapters/Thyra_FROSchXpetraFactory_def.hpp
-  Adapters/Thyra_FROSchXpetraTwoLevelBlockPrec_decl.hpp
-  Adapters/Thyra_FROSchXpetraTwoLevelBlockPrec_def.hpp
 )
 
 # Set sources

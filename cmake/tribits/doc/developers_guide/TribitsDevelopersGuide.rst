@@ -779,7 +779,7 @@ the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` (the current minimum version
 of CMake required by TriBITS is given at in `Getting set up to use CMake`_) .
 For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
-  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.11)
+  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 3.10.0)
   CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED}
     FATAL_ERROR)
 
@@ -4553,7 +4553,7 @@ Test Test Category         ``BASIC``           (`Test Test Category BASIC`_)
 
 Typically a TriBITS project will define a "standard development environment"
 which is comprised of a standard compiler (e.g. GCC 4.6.1), TPL versions
-(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 2.8.11, git
+(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 3.10.0, git
 1.8.2, etc.).  This standard development environment is expected to be used to
 test changes to the project's code before any push.  By using a standard
 development environment, if the code builds and all the tests pass for the
@@ -9047,7 +9047,7 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. Common references to raw CMake commands:
 
-.. _CONFIGURE_FILE(): http://www.cmake.org/cmake/help/v2.8.11/cmake.html#command:configure_file
+.. _CONFIGURE_FILE(): https://cmake.org/cmake/help/v3.10/command/configure_file.html
 
 .. Other references
 

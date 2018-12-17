@@ -81,8 +81,11 @@ using Teuchos::ArrayRCP;
 
 // Tpetra include files
 #include "PyTrilinos_Tpetra_Headers.hpp"
+using Tpetra::Map;
+using Tpetra::Export;
+using Tpetra::Import;
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
 // Domi include files
 #include "PyTrilinos_Domi_Headers.hpp"
 #endif
@@ -136,7 +139,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
                                      PYTRILINOS_LOCAL_ORD,
                                      PYTRILINOS_GLOBAL_ORD,
                                      DefaultNodeType > > * result;
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
   *newmem = 0;
@@ -153,7 +156,7 @@ convertPythonToTpetraMultiVector(PyObject * pyobj,
     return result;
   }
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector< Scalar >
   *newmem = 0;
@@ -328,7 +331,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
                                 PYTRILINOS_LOCAL_ORD,
                                 PYTRILINOS_GLOBAL_ORD,
                                 DefaultNodeType > > * result;
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
 #endif
   *newmem = 0;
@@ -345,7 +348,7 @@ convertPythonToTpetraVector(PyObject * pyobj,
     return result;
   }
 
-#ifdef HAVE_DOMI
+#ifdef HAVE_PYTRILINOS_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector< Scalar >
   *newmem = 0;
@@ -952,7 +955,6 @@ protected:
 
 // %ignore Tpetra::removeEmptyProcessesInPlace;
 // %include "Tpetra_DistObject_decl.hpp"
-// %include "Tpetra_KokkosRefactor_DistObject_decl.hpp"
 
 ////////////////////////////////
 // Tpetra MultiVector support //
@@ -1236,7 +1238,6 @@ public:
 };  // class MultiVector
 }   // namespace Tpetra
 // %include "Tpetra_MultiVector_decl.hpp"
-// %include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 %pythoncode
 %{
   def MultiVector_getattr(self, name):
@@ -1386,7 +1387,6 @@ public:
 // %ignore Tpetra::Vector::getLocalMVNonConst;
 // %warnfilter(302) Tpetra::createVectorFromView;
 // %include "Tpetra_Vector_decl.hpp"
-// %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 %pythoncode
 %{
   def Vector_getattr(self, name):

@@ -78,9 +78,9 @@ int main( int argc, char* argv[] ) {
   auto un = makePtr<SV>( makePtr<vector>(2) );
   auto z  = makePtr<SV>( makePtr<vector>(1) );
 
-  ROL::RandomizeVector<RealT>(*uo);
-  ROL::RandomizeVector<RealT>(*un);
-  ROL::RandomizeVector<RealT>(*z);
+  uo->randomize();
+  un->randomize();
+  z->randomize();
   
   // Tracking term is zero
   auto tracking = PV::create( *uo, Nt );
@@ -127,12 +127,12 @@ int main( int argc, char* argv[] ) {
   auto VZ = Z->clone();
   
 
-  ROL::RandomizeVector(*U);
-  ROL::RandomizeVector(*Z);
-  ROL::RandomizeVector(*C);
-  ROL::RandomizeVector(*W);
-  ROL::RandomizeVector(*VU);
-  ROL::RandomizeVector(*VZ);
+  U->randomize();
+  Z->randomize();
+  C->randomize();
+  W->randomize();
+  VU->randomize();
+  VZ->randomize();
  
   auto timeStamps = ROL::TimeStamp<RealT>::make_uniform(0,T,{0.0,1.0},Nt);  
 

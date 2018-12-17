@@ -89,12 +89,12 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 
 // NOX-Epetra include files
-#ifdef HAVE_NOX_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 //#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
@@ -102,7 +102,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 
 // NOX-PETSc include files
 #include "NOX_Abstract_Vector.H"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 #include "NOX_Petsc_Vector.H"
 #endif
 
@@ -117,7 +117,7 @@ version of LOCA.Hopf.MooreSpence supports the following classes:
 
 // PETSc4Py support
 %include "PyTrilinos_config.h"
-#ifdef HAVE_NOX_PETSC
+#ifdef HAVE_PYTRILINOS_NOX_PETSC
 %include "petsc4py/petsc4py.i"
 #endif
 

@@ -1,15 +1,19 @@
 ADD_SUBDIRECTORIES(
-#    Laplacian_Epetra
-#    Laplacian_Tpetra
     TwoLevelPreconditioner    
-#    InterfaceSets
-#   Import_Tpetra
-#   LocalPartitionOfUnityBasis
-#    InterfacePartitionOfUnity
-#    TwoLevelPreconditionerInputFiles
-#    Thyra_Xpetra
-#    Thyra_Tpetra
-#    RepMap_test
-#  Thyra_Xpetra_PrecBlock
-#  TwoLevelPreconditionerBlockInputFiles
+    Import_Tpetra
+    InterfacePartitionOfUnity
+    InterfaceSets
+    LocalPartitionOfUnityBasis
 )
+
+IF(ShyLU_DDFROSch_ENABLE_Belos AND ShyLU_DDFROSch_ENABLE_Galeri AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
+ADD_SUBDIRECTORIES(
+    Thyra_Xpetra_Laplace
+)
+ENDIF()
+
+IF(ShyLU_DDFROSch_ENABLE_Belos AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra AND ShyLU_DDFROSch_ENABLE_EpetraExt AND ShyLU_DDFROSch_ENABLE_HDF5)
+ADD_SUBDIRECTORIES(
+    Thyra_Xpetra_Stokes_HDF5
+)
+ENDIF()

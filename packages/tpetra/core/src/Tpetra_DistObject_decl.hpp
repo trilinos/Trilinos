@@ -208,8 +208,6 @@ namespace Tpetra {
   void
   removeEmptyProcessesInPlace (Teuchos::RCP<DistObjectType>& input);
 
-namespace Classes {
-
   /// \class DistObject
   /// \brief Base class for distributed Tpetra objects that support
   ///   data redistribution.
@@ -343,9 +341,9 @@ namespace Classes {
   /// an object can be the target of an Import or Export, it can also
   /// be the source of an Import or Export.
   template <class Packet,
-            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class DistObject :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable
@@ -1014,8 +1012,6 @@ namespace Classes {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
   }; // class DistObject
-
-} // namespace Classes
 
 } // namespace Tpetra
 

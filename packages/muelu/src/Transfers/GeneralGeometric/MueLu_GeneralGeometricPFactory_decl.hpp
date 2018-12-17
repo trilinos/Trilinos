@@ -209,17 +209,17 @@ namespace MueLu {
                          Array<Array<GO> >& lCoarseNodesGIDs) const;
 
     void MakeGeneralGeometricP(RCP<GeometricData> myGeo,
-                               const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
+                               const RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& fCoords,
                                const LO nnzP, const LO dofsPerNode,
                                RCP<const Map>& stridedDomainMapP,
                                RCP<Matrix> & Amat, RCP<Matrix>& P,
-                               RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords,
+                               RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& cCoords,
                                RCP<NodesIDs> ghostedCoarseNodes, Array<Array<GO> > coarseNodesGIDs,
                                int interpolationOrder) const;
 
     void ComputeStencil(const LO numDimension, const Array<GO> currentNodeIndices,
                         const Array<GO> coarseNodeIndices, const LO rate[3],
-                        const Array<Array<double> > coord, const int interpolationOrder,
+                        const Array<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coord, const int interpolationOrder,
                         std::vector<double>& stencil) const;
 
     void ComputeConstantInterpolationStencil(const LO numDimension,
@@ -227,7 +227,7 @@ namespace MueLu {
                                              const Array<GO> coarseNodeIndices,
                                              const LO rate[3], std::vector<double>& stencil) const;
 
-    void ComputeLinearInterpolationStencil(const LO numDimension, const Array<Array<double> > coord,
+    void ComputeLinearInterpolationStencil(const LO numDimension, const Array<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coord,
                                            std::vector<double>& stencil) const;
     void GetInterpolationFunctions(const LO numDimension,
                                    const Teuchos::SerialDenseVector<LO,double> parameters,

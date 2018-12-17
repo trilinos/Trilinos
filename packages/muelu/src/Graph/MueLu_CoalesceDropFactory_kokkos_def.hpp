@@ -65,7 +65,7 @@
 namespace MueLu {
 
 
-  namespace { // anonymous
+  namespace CoalesceDrop_Kokkos_Details { // anonymous
 
     template<class LO, class RowType>
     class ScanFunctor {
@@ -599,8 +599,8 @@ namespace MueLu {
 
             auto ghostedDiagView = ghostedDiag->template getLocalView<DeviceType>();
 
-            ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
-            ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
+            CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
+            CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
                 scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
@@ -608,7 +608,7 @@ namespace MueLu {
           }
 
         } else if (algo == "distance laplacian") {
-          typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
+          typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> doubleMultiVector;
           auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
 
           auto uniqueMap    = A->getRowMap();
@@ -623,12 +623,12 @@ namespace MueLu {
           RCP<doubleMultiVector> ghostedCoords;
           {
             SubFactoryMonitor m2(*this, "Ghosted coords construction", currentLevel);
-            ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, coords->getNumVectors());
+            ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nonUniqueMap, coords->getNumVectors());
             ghostedCoords->doImport(*coords, *importer, Xpetra::INSERT);
           }
 
           auto ghostedCoordsView = ghostedCoords->template getLocalView<DeviceType>();
-          DistanceFunctor<LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
+          CoalesceDrop_Kokkos_Details::DistanceFunctor<LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
 
           // Construct Laplacian diagonal
           RCP<Vector> localLaplDiag;
@@ -669,9 +669,9 @@ namespace MueLu {
 
             auto ghostedLaplDiagView = ghostedLaplDiag->template getLocalView<DeviceType>();
 
-            DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
+            CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
                 dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
-            ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
+            CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
                 scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
@@ -831,32 +831,32 @@ namespace MueLu {
       // Stage 1c: get number of dof-nonzeros per blkSize node rows
       typename row_map_type::non_const_type dofNnz("nnz_map", numNodes + 1);
       LO numDofCols = 0;
-      Stage1aVectorFunctor<decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize)> stage1aFunctor(kokkosMatrix, dofNnz, blkPartSize);
+      CoalesceDrop_Kokkos_Details::Stage1aVectorFunctor<decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize)> stage1aFunctor(kokkosMatrix, dofNnz, blkPartSize);
       Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1a", range_type(0,numNodes), stage1aFunctor, numDofCols);
       // parallel_scan (exclusive)
-      ScanFunctor<LO,decltype(dofNnz)> scanFunctor(dofNnz);
+      CoalesceDrop_Kokkos_Details::ScanFunctor<LO,decltype(dofNnz)> scanFunctor(dofNnz);
       Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanFunctor);
 
       typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
-      Stage1bVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols)> stage1bFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols);
+      CoalesceDrop_Kokkos_Details::Stage1bVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols)> stage1bFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols);
       Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1b", range_type(0,numNodes), stage1bFunctor);
 
       // we have dofcols and dofids from Stage1dVectorFunctor
       LO numNodeCols = 0;
       typename row_map_type::non_const_type rows("nnz_nodemap", numNodes + 1);
       typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numNodes);
-      Stage1cVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(colTranslation), decltype(bndNodes)> stage1cFunctor(dofNnz, dofcols, colTranslation,rows,bndNodes);
+      CoalesceDrop_Kokkos_Details::Stage1cVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(colTranslation), decltype(bndNodes)> stage1cFunctor(dofNnz, dofcols, colTranslation,rows,bndNodes);
       Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1cFunctor,numNodeCols);
 
       // parallel_scan (exclusive)
-      ScanFunctor<LO,decltype(rows)> scanNodeFunctor(rows);
+      CoalesceDrop_Kokkos_Details::ScanFunctor<LO,decltype(rows)> scanNodeFunctor(rows);
       Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanNodeFunctor);
 
       // create column node view
       typename entries_type::non_const_type cols("nodecols", numNodeCols);
 
 
-      Stage1dVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(rows), decltype(cols)> stage1dFunctor(dofcols, dofNnz, cols, rows);
+      CoalesceDrop_Kokkos_Details::Stage1dVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(rows), decltype(cols)> stage1dFunctor(dofcols, dofNnz, cols, rows);
       Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1dFunctor);
       kokkos_graph_type kokkosGraph(cols, rows);
 

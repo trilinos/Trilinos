@@ -51,7 +51,6 @@
 
 namespace Tpetra {
 namespace Details {
-namespace Classes {
 
 template <class LO, class GO, class NT>
 void
@@ -287,7 +286,6 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
   }
 }
 
-} // namespace Classes
 } // namespace Details
 } // namespace Tpetra
 

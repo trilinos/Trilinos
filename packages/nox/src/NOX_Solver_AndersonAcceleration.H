@@ -142,14 +142,15 @@ public:
   //! Destructor
   virtual ~AndersonAcceleration();
 
-  virtual void reset(const NOX::Abstract::Vector& initialGuess,
-             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual void reset();
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
-  virtual NOX::StatusTest::StatusType getStatus();
+  virtual void reset(const NOX::Abstract::Vector& initialGuess,
+                     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
   virtual double getStepSize() const;

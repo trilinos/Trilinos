@@ -262,6 +262,9 @@ int main(int argc, char *argv[])
     fm.postRegistrationSetup(nullptr,build_device_dag);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 
+    // In debug mode, print the evaluator start stop messages
+    fm.printEvaluatorStartStopMessage<Residual>(Teuchos::rcpFromRef(std::cout));
+
     // Create targets to fill (residual and Jacobian)
     Kokkos::View<double*,PHX::Device> f = lof.createSolutionVector("global_residual"); // residual
     KokkosSparse::CrsMatrix<double,int,PHX::Device> J = lof.createJacobianMatrix("global_jacobian"); // Jacobian

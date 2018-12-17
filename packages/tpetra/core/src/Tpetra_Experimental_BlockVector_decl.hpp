@@ -48,7 +48,6 @@
 
 namespace Tpetra {
 namespace Experimental {
-namespace Classes {
 
 /// \class BlockVector
 /// \brief Vector for multiple degrees of freedom per mesh point
@@ -75,10 +74,10 @@ namespace Classes {
 /// "multivectors" that are not "multi."  That is, a BlockVector has a
 /// single vector (column).  Please refer to the documentation of
 /// BlockMultiVector for details.
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LO,
+         class GO,
+         class Node>
 class BlockVector : public BlockMultiVector<Scalar, LO, GO, Node> {
 private:
   typedef BlockMultiVector<Scalar, LO, GO, Node> base_type;
@@ -325,7 +324,6 @@ public:
   //@}
 };
 
-} // namespace Classes
 } // namespace Experimental
 } // namespace Tpetra
 

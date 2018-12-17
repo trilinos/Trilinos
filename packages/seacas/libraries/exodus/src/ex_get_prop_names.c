@@ -141,14 +141,14 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
     default:
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported; file id %d", obj_type,
                exoid);
-      ex_err(__func__, errmsg, EX_BADPARAM);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_inq_varid(exoid, var_name, &propid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate property array %s in file id %d",
                var_name, exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -157,7 +157,7 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
     if ((status = nc_inq_att(exoid, propid, ATT_PROP_NAME, &att_type, &att_len)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get property attributes (type, len) in file id %d", exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -165,7 +165,7 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
       /* Client has large enough char string to hold text... */
       if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -175,7 +175,7 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
                "ERROR: property name length exceeds space available to "
                "store it in file id %d",
                exoid);
-      ex_err(__func__, errmsg, NC_ESTS);
+      ex_err_fn(exoid, __func__, errmsg, NC_ESTS);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }

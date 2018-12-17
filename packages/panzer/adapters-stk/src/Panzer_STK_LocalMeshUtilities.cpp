@@ -160,6 +160,8 @@ buildCellToNodes(panzer::ConnManager<LO,GO> & conn, Kokkos::View<GO**> & globals
   for (std::size_t which_blk=0;which_blk<block_ids.size();which_blk++) {
     // get the elem to face mapping
     const std::vector<LO> & localIDs = conn.getElementBlock(block_ids[which_blk]);
+    if ( localIDs.size() == 0 )
+      continue;
     LO thisSize = conn.getConnectivitySize(localIDs[0]);
 
     totalCells += localIDs.size();
@@ -491,6 +493,8 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
 
   }
 
+  if ( owned_block_cells.size() == 0 )
+    return;
   block_info.num_owned_cells = owned_block_cells.size();
   block_info.element_block_name = element_block_name;
   block_info.cell_topology = mesh.getCellTopology(element_block_name);

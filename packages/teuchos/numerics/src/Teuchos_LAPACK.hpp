@@ -338,7 +338,10 @@ namespace Teuchos
     void HEGV(const OrdinalType& itype, const char& JOBZ, const char& UPLO, const OrdinalType& n, ScalarType* A, const OrdinalType& lda, ScalarType* B, const OrdinalType& ldb, MagnitudeType* W, ScalarType* WORK, const OrdinalType& lwork, MagnitudeType *RWORK, OrdinalType* info) const;
 
     //! Computes the eigenvalues and, optionally, eigenvectors of a symmetric tridiagonal \c n by \c n matrix \c A using implicit QL/QR.  The eigenvectors can only be computed if \c A was reduced to tridiagonal form by SYTRD.
-    void STEQR(const char& COMPZ, const OrdinalType& n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType& ldz, ScalarType* WORK, OrdinalType* info) const;
+    void STEQR(const char& COMPZ, const OrdinalType& n, MagnitudeType* D, MagnitudeType* E, ScalarType* Z, const OrdinalType& ldz, MagnitudeType* WORK, OrdinalType* info) const;
+
+    //! Computes the eigenvalues and, optionally, eigenvectors of a symmetric positive-definite tridiagonal \c n by \c n matrix \c A using BDSQR, after factoring the matrix with PTTRF.  
+    void PTEQR(const char& COMPZ, const OrdinalType& n, MagnitudeType* D, MagnitudeType* E, ScalarType* Z, const OrdinalType& ldz, MagnitudeType* WORK, OrdinalType* info) const;
     //@}
 
     //! @name Non-Hermitian Eigenproblem Routines
@@ -1188,7 +1191,13 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType,ScalarType>::STEQR(const char& COMPZ, const OrdinalType& n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType& ldz, ScalarType* WORK, OrdinalType* info) const
+  void LAPACK<OrdinalType,ScalarType>::STEQR(const char& COMPZ, const OrdinalType& n, MagnitudeType* D, MagnitudeType* E, ScalarType* Z, const OrdinalType& ldz, MagnitudeType* WORK, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType,ScalarType>::PTEQR(const char& COMPZ, const OrdinalType& n, MagnitudeType* D, MagnitudeType* E, ScalarType* Z, const OrdinalType& ldz, MagnitudeType* WORK, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -1485,12 +1494,13 @@ namespace Teuchos
     void TRTRI(const char& UPLO, const char& DIAG, const int& n, const float* A, const int& lda, int* info) const;
 
     // Symmetric eigenvalue routines.
+    void STEQR(const char& COMPZ, const int& n, float* D, float* E, float* Z, const int& ldz, float* WORK, int* info) const;
+    void PTEQR(const char& COMPZ, const int& n, float* D, float* E, float* Z, const int& ldz, float* WORK, int* info) const;
     void SPEV(const char& JOBZ, const char& UPLO, const int& n, float* AP, float* W, float* Z, const int& ldz, float* WORK, int* info) const;
     void SYEV(const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* W, float* WORK, const int& lwork, int* info) const;
     void SYGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* B, const int& ldb, float* W, float* WORK, const int& lwork, int* info) const;
     void HEEV(const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* W, float* WORK, const int& lwork, float* RWORK, int* info) const;
     void HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, float* A, const int& lda, float* B, const int& ldb, float* W, float* WORK, const int& lwork, float* RWORK, int* info) const;
-    void STEQR(const char& COMPZ, const int& n, float* D, float* E, float* Z, const int& ldz, float* WORK, int* info) const;
 
     // Non-Hermitian eigenvalue routines.
     void HSEQR(const char& JOB, const char& COMPZ, const int& n, const int& ilo, const int& ihi, float* H, const int& ldh, float* WR, float* WI, float* Z, const int& ldz, float* WORK, const int& lwork, int* info) const;
@@ -1639,12 +1649,13 @@ namespace Teuchos
     void TRTRI(const char& UPLO, const char& DIAG, const int& n, const double* A, const int& lda, int* info) const;
 
     // Symmetric eigenproblem routines.
+    void STEQR(const char& COMPZ, const int& n, double* D, double* E, double* Z, const int& ldz, double* WORK, int* info) const;
+    void PTEQR(const char& COMPZ, const int& n, double* D, double* E, double* Z, const int& ldz, double* WORK, int* info) const;
     void SPEV(const char& JOBZ, const char& UPLO, const int& n, double* AP, double* W, double* Z, const int& ldz, double* WORK, int* info) const;
     void SYEV(const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* W, double* WORK, const int& lwork, int* info) const;
     void SYGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* B, const int& ldb, double* W, double* WORK, const int& lwork, int* info) const;
     void HEEV(const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* W, double* WORK, const int& lwork, double* RWORK, int* info) const;
     void HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, double* A, const int& lda, double* B, const int& ldb, double* W, double* WORK, const int& lwork, double* RWORK, int* info) const;
-    void STEQR(const char& COMPZ, const int& n, double* D, double* E, double* Z, const int& ldz, double* WORK, int* info) const;
 
     // Non-Hermitian eigenproblem routines.
     void HSEQR(const char& JOB, const char& COMPZ, const int& n, const int& ilo, const int& ihi, double* H, const int& ldh, double* WR, double* WI, double* Z, const int& ldz, double* WORK, const int& lwork, int* info) const;
@@ -1797,6 +1808,7 @@ namespace Teuchos
 
     // Symmetric eigenvalue routines.
     void STEQR(const char& COMPZ, const int& n, float* D, float* E, std::complex<float>* Z, const int& ldz, float* WORK, int* info) const;
+    void PTEQR(const char& COMPZ, const int& n, float* D, float* E, std::complex<float>* Z, const int& ldz, float* WORK, int* info) const;
     void HEEV(const char& JOBZ, const char& UPLO, const int& n, std::complex<float>* A, const int& lda, float* W, std::complex<float>* WORK, const int& lwork, float* RWORK, int* info) const;
     void HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, std::complex<float>* A, const int& lda, std::complex<float>* B, const int& ldb, float* W, std::complex<float>* WORK, const int& lwork, float* RWORK, int* info) const;
 
@@ -1931,6 +1943,7 @@ namespace Teuchos
 
     // Symmetric eigenvalue routines.
     void STEQR(const char& COMPZ, const int& n, double* D, double* E, std::complex<double>* Z, const int& ldz, double* WORK, int* info) const;
+    void PTEQR(const char& COMPZ, const int& n, double* D, double* E, std::complex<double>* Z, const int& ldz, double* WORK, int* info) const;
     void HEEV(const char& JOBZ, const char& UPLO, const int& n, std::complex<double>* A, const int& lda, double* W, std::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
     void HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, std::complex<double>* A, const int& lda, std::complex<double>* B, const int& ldb, double* W, std::complex<double>* WORK, const int& lwork, double* RWORK, int* info) const;
 

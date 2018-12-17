@@ -87,12 +87,21 @@ public:
     return ROL::makePtr<Intrepid::FieldContainer<int>>(); // default due to lack of edges in 1D
   }
 
-  /** \brief Returns cell to edge adjacencies.
-             Format: number_of_cells x number_of_edges_per_cell (int)
-                     (cell_index)  edge_index1  edge_index2  ...
+  /** \brief Returns cell to face adjacencies.
+             Format: number_of_cells x number_of_faces_per_cell (int)
+                     (cell_index)  face_index1  face_index2  ...
   */
   virtual ROL::Ptr<Intrepid::FieldContainer<int> > getCellToFaceMap() const {
     return ROL::makePtr<Intrepid::FieldContainer<int>>(); // default due to lack of faces in 1D and 2D
+  }
+
+  /** \brief Returns cell IDs per processor.
+             Format: number_of_procs vectors, each with number_of_cells cell IDs (ints)
+  */
+  virtual ROL::Ptr<std::vector<std::vector<int>>> getProcCellIds() const {
+    return ROL::makePtr<std::vector<std::vector<int>>>();
+    // default due to support for in-line partitioning,
+    // where this functionality is bypassed
   }
 
   /** \brief Returns sideset information.

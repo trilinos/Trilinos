@@ -200,18 +200,19 @@ void run_bucket_test()
     const unsigned numElements = 9;
     const unsigned numNodesPerElement = 4;
     const unsigned bucketId = 0;
+    stk::topology topo = stk::topology::QUAD_4;
 
     ngp::StaticBucket bucket;
-    bucket.initialize(bucketId, stk::topology::ELEM_RANK, numElements, numNodesPerElement);
+    bucket.initialize(bucketId, stk::topology::ELEM_RANK, topo, numElements, numNodesPerElement);
 
     unsigned counter = 0;
     for(unsigned elemIndex=0; elemIndex<numElements; ++elemIndex) {
         for(unsigned nodeIndex=0; nodeIndex<numNodesPerElement; ++nodeIndex) {
-           bucket.hostConnectivity(elemIndex,nodeIndex) = stk::mesh::Entity(counter);
+           bucket.hostNodeConnectivity(elemIndex,nodeIndex) = stk::mesh::Entity(counter);
            ++counter;
         }
     }
-    Kokkos::deep_copy(bucket.connectivity, bucket.hostConnectivity);
+    Kokkos::deep_copy(bucket.nodeConnectivity, bucket.hostNodeConnectivity);
 
     double errorCheck = 0;
     Kokkos::parallel_reduce(numElements, KOKKOS_LAMBDA(int elementIndex, double& update) {
@@ -234,6 +235,10 @@ TEST_F(NGP_Kokkos, bucket0)
 
 TEST_F(NGP_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    return;
+  }
+
     MyApp app;
 
     GpuGatherBucketScratchData scratch(*app.bulk);

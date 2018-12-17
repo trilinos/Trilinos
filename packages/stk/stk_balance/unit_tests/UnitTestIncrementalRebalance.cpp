@@ -354,7 +354,7 @@ protected:
         check_migration();
 
         size_t num_elements_migrated_to_me = calculate_migrated_elements();
-        EXPECT_TRUE(0 <= num_elements_migrated_to_me);
+        EXPECT_TRUE(0 < num_elements_migrated_to_me);
     }
 
     size_t count_global_non_particle_elements()

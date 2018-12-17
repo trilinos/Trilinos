@@ -70,8 +70,8 @@ public:
 
   DynamicConstraint_CheckInterface( Con& con ) : con_(con) { 
     ts_.t.resize(2);
-    ts_.t.at(0) = 0.0;
-    ts_.t.at(1) = 1.0;
+    ts_.t.at(0) = 0.01;
+    ts_.t.at(1) = 0.02345;
     ts_.k = 0;
   }
 

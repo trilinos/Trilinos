@@ -99,7 +99,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   }
   else {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid set type (%d)", set_type);
-    ex_err(__func__, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -109,12 +109,12 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
-      ex_err(__func__, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN);
     }
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %ss defined in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -125,7 +125,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss defined for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
-    ex_err(__func__, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -133,7 +133,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
-    ex_err(__func__, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

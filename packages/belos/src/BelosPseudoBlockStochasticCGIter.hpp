@@ -60,6 +60,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -227,7 +228,7 @@ namespace Belos {
   private:
 
     //! Wrapper for Normal(0,1) random variables
-    inline ScalarType normal() {
+    inline Teuchos::SerialDenseVector<int,ScalarType>& normal() {
       // Do all of the calculations with doubles, because that is what the Odeh and Evans 1974 constants are for.
       // Then cast to ScalarType.
       
@@ -242,21 +243,29 @@ namespace Belos {
       const double q3 =  0.103537752850;
       const double q4 =  0.38560700634e-2;
       double r,p,q,y,z;
+
+      // Return a vector with random entries that are synchronized across processors.
+      Teuchos::randomSyncedMatrix( randvec_ );
+
+      for (int i=0; i<numRHS_; i++)
+      {      
+        // Get a random number (-1,1) and rescale to (0,1). 
+        r=0.5*randvec_[i] + 1.0;
       
-      // Get a random number (-1,1) and rescale to (0,1). 
-      r=0.5*(Teuchos::ScalarTraits<double>::random() + 1.0);
+        // Odeh and Evans algorithm (as modified by Park & Geyer)
+        if(r < 0.5) y=std::sqrt(-2.0 * log(r));
+        else y=std::sqrt(-2.0 * log(1.0 - r));
       
-      // Odeh and Evans algorithm (as modified by Park & Geyer)
-      if(r < 0.5) y=std::sqrt(-2.0 * log(r));
-      else y=std::sqrt(-2.0 * log(1.0 - r));
+        p = p0 + y * (p1 + y* (p2 + y * (p3 + y * p4)));
+        q = q0 + y * (q1 + y* (q2 + y * (q3 + y * q4)));
       
-      p = p0 + y * (p1 + y* (p2 + y * (p3 + y * p4)));
-      q = q0 + y * (q1 + y* (q2 + y * (q3 + y * q4)));
+        if(r < 0.5) z = (p / q) - y;
+        else z = y - (p / q);
       
-      if(r < 0.5) z = (p / q) - y;
-      else z = y - (p / q);
-      
-      return Teuchos::as<ScalarType,double>(z);
+        randvec_[i] = Teuchos::as<ScalarType,double>(z);
+      }
+
+      return randvec_;
     }
        
     //
@@ -303,7 +312,9 @@ namespace Belos {
     //
     // Stochastic recurrence vector
     Teuchos::RCP<MV> Y_;
-
+    //
+    // Stochastic variable storage (for normal() method)
+    Teuchos::SerialDenseVector<int,ScalarType> randvec_;
 
   };
   
@@ -352,6 +363,9 @@ namespace Belos {
       AP_ = MVT::Clone( *tmp, numRHS_ );
       Y_  = MVT::Clone( *tmp, numRHS_ );
     }
+
+    // Initialize the random vector container with zeros.
+    randvec_.size( numRHS_ );
 	
     // NOTE:  In StochasticCGIter R_, the initial residual, is required!!!  
     //
@@ -452,6 +466,8 @@ namespace Belos {
       // Compute alpha := <R_,Z_> / <P_,AP_>
       MVT::MvDot( *P_, *AP_, pAp );
 
+      Teuchos::SerialDenseVector<int,ScalarType>& z = normal();
+
       for (i=0; i<numRHS_; ++i) {
         if ( assertPositiveDefiniteness_ )
             // Check that pAp[i] is a positive number!
@@ -461,10 +477,8 @@ namespace Belos {
 
         alpha(i,i) = rHz[i] / pAp[i];
 
-
 	// Compute the scaling parameter for the stochastic vector
-	ScalarType z = normal();
-	zeta(i,i) = z / Teuchos::ScalarTraits<ScalarType>::squareroot(pAp[i]);
+	zeta(i,i) = z[i] / Teuchos::ScalarTraits<ScalarType>::squareroot(pAp[i]);
       }
 
       //

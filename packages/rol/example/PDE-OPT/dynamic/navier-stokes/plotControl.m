@@ -2,13 +2,15 @@
 function plotControl(type)
 
 if (type == 1)
-  nt = numel(dir('control.*.txt'));             %% determine number of time steps
-  Z  = zeros(nt,1);
-  for i = 0:nt-1
-    state  = load(['control.',int2str(i),'.txt']);
-    Z(i+1) = state(1);
-  end
-  T = linspace(0,1,nt);
+  %nt = numel(dir('control.*.txt'));             %% determine number of time steps
+  %Z  = zeros(nt,1);
+  %for i = 0:nt-1
+  %  state  = load(['control.',int2str(i),'.txt']);
+  %  Z(i+1) = state(1);
+  %end
+  Z  = load('control.txt');
+  nt = numel(Z);
+  T  = linspace(0,1,nt);
 
   axsize = 400;
   figure('Position', [100 100 4*axsize 4*axsize]);
@@ -17,6 +19,8 @@ if (type == 1)
   xlabel('t');
   ylabel('z');
   set(gca, 'FontSize', 16); set(gcf, 'Color', 'White');% tightfig;
+
+  print('-depsc2','control.eps');
 else
   adj   = load('cell_to_node_quad.txt') + 1;       %% load node adjacency, increment by 1 for 1-based indexing
   nodes = load('nodes.txt');                       %% load node coordinates

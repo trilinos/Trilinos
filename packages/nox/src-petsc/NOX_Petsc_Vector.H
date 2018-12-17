@@ -113,6 +113,8 @@ class Vector : public Abstract::Vector {
   //! See above.
   virtual Abstract::Vector& abs(const Abstract::Vector& source);
 
+  virtual Abstract::Vector& random(bool useSeed = false, int seed = 1);
+
   virtual Abstract::Vector& reciprocal(const Vector& source);
   //! See above.
   virtual Abstract::Vector& reciprocal(const Abstract::Vector& source);

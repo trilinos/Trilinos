@@ -1076,6 +1076,14 @@ namespace MueLu {
         curNorm  = rn[0];
         rate_ = as<MagnitudeType>(curNorm / prevNorm);
 
+        if (IsPrint(Statistics1))
+          GetOStream(Statistics1) << "iter:    "
+                                     << std::setiosflags(std::ios::left)
+                                     << std::setprecision(3) << i
+                                     << "           residual = "
+                                     << std::setprecision(10) << rn
+                                     << std::endl;
+
         if (tol > 0) {
           bool passed = true;
           for (LO k = 0; k < rn.size(); k++)
@@ -1085,14 +1093,6 @@ namespace MueLu {
           if (passed)
             return Converged;
         }
-
-        if (IsPrint(Statistics1))
-          GetOStream(Statistics1) << "iter:    "
-                                     << std::setiosflags(std::ios::left)
-                                     << std::setprecision(3) << i
-                                     << "           residual = "
-                                     << std::setprecision(10) << rn
-                                     << std::endl;
       }
     }
     return (tol > 0 ? Unconverged : Undefined);
@@ -1392,7 +1392,7 @@ namespace MueLu {
       return;
     }
 
-    typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> xdMV;
 
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
@@ -1441,14 +1441,14 @@ namespace MueLu {
       }
     }
 
-    Array<ArrayView<const double> >      coordDataView;
-    std::vector<ArrayRCP<const double> > coordData;
+    Array<ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> >      coordDataView;
+    std::vector<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coordData;
     for (size_t i = 0; i < coords->getNumVectors(); i++) {
       coordData.push_back(coords->getData(i));
       coordDataView.push_back(coordData[i]());
     }
 
-    RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
+    RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
     level.Set("Coordinates", newCoords);
   }
 

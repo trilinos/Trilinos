@@ -107,9 +107,9 @@ int main(int argc, char *argv[])
   bool debug = false;
   bool useMass = true;
   int dim = 100;
-  int sizeS  = 5;
-  int sizeX1 = 11; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
-  int sizeX2 = 13; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
+  int sizeS  = 3;
+  int sizeX1 = 6; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
+  int sizeX2 = 7; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
 
   bool success = true;
   try {

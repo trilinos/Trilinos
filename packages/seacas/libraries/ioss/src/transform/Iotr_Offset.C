@@ -53,7 +53,7 @@ namespace Iotr {
     return new Offset();
   }
 
-  Offset::Offset() : intOffset(0), realOffset(0.0) {}
+  Offset::Offset() {}
 
   void Offset::set_property(const std::string & /*name*/, int value) { intOffset = value; }
 

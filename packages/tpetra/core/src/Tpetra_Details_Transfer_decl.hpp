@@ -57,15 +57,14 @@ class Distributor;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Details {
-namespace Classes {
 
 /// \class Transfer
 /// \brief Common base class of Import and Export
 /// \warning This is an implementation detail of Tpetra.  We make no
 ///   promises of backwards compatibility with this class.
-template<class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class NT = ::Tpetra::Details::DefaultTypes::node_type>
+template<class LO,
+         class GO,
+         class NT>
 class Transfer : public Teuchos::Describable {
 public:
   //! Destructor (declared virtual for memory safety of derived classes).
@@ -206,7 +205,6 @@ private:
   localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
 };
 
-} // namespace Classes
 } // namespace Details
 } // namespace Tpetra
 
@@ -218,7 +216,6 @@ private:
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_DETAILS_TRANSFER_INSTANT(LO, GO, NODE) \
-  \
-  namespace Classes { template class Transfer< LO , GO , NODE >; }
+  template class Transfer< LO , GO , NODE >;
 
 #endif // TPETRA_DETAILS_TRANSFER_DECL_HPP

@@ -1,6 +1,3 @@
-// $Id$
-// $Source$
-
 //@HEADER
 // ************************************************************************
 //
@@ -46,8 +43,10 @@
 
 #include "NOX_Observer.hpp"
 
-// Backwards compatibility for renaming the PrePostOperator to
-// Observer.
+// This file is deprecated but exists for backwards compatibility in
+// transition from PrePostOperator to Observer. Please include
+// NOX_Observer.hpp instead.
+
 namespace NOX {
   namespace Abstract {
     using PrePostOperator = NOX::Observer;

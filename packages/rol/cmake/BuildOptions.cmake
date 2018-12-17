@@ -1,6 +1,12 @@
 INCLUDE(BuildOptionFunctions)
 INCLUDE(Deprecated)
 
+IF( ROL_ENABLE_TIMERS )
+  MESSAGE("Build ROL with Teuchos TimeMonitors enabled.")
+  OPTION( ROL_TIMERS ON )
+  CONFIGURE_FILE("${PACKAGE_SOURCE_DIR}/cmake/ROL_config.h.in" ROL_config.h  @ONLY)
+ENDIF( ROL_ENABLE_TIMERS )
+
 SET_PROPERTY( GLOBAL PROPERTY TEUCHOS_PARAMETERLIST "Teuchos::ParameterList" )
 SET_PROPERTY( GLOBAL PROPERTY TEUCHOS_STACKTRACE    "Teuchos::stacktrace"    )
 SET_PROPERTY( GLOBAL PROPERTY TEUCHOS_RCP           "Teuchos::RCP"           )

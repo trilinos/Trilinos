@@ -78,23 +78,27 @@ private:
   int numEdgesPerCell_;
   int numFacesPerCell_;
   int numNodesPerFace_;
+  int numProcs_;
 
   ROL::Ptr<shards::CellTopology> cellTopo_;
 
-  ROL::Ptr<Intrepid::FieldContainer<Real> > meshNodes_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToNodeMap_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToEdgeMap_;
-  ROL::Ptr<Intrepid::FieldContainer<int> >  meshCellToFaceMap_;
+  ROL::Ptr<Intrepid::FieldContainer<Real>> meshNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<int>>  meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int>>  meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int>>  meshCellToFaceMap_;
 
-  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int>>>>  meshSideSets_;
+
+  ROL::Ptr<std::vector<std::vector<int>>>  procCellIds_;
 
 public:
 
   /** \brief Constructor.  Parses the mesh file, and fills all data structures.
   */
-  MeshReader(Teuchos::ParameterList & parlist) : parlist_(parlist),
+  MeshReader(Teuchos::ParameterList & parlist, int numProcs = 0) : parlist_(parlist),
       spaceDim_(0), numNodes_(0), numCells_(0), numEdges_(0), numFaces_(0),
-      numSideSets_(0), numNodesPerCell_(0), numEdgesPerCell_(0), numFacesPerCell_(0), numNodesPerFace_(0) {
+      numSideSets_(0), numNodesPerCell_(0), numEdgesPerCell_(0), numFacesPerCell_(0),
+      numNodesPerFace_(0) {
     std::string   filename = parlist.sublist("Mesh").get("File Name", "mesh.txt");
     std::ifstream inputfile;
     std::string   line;
@@ -288,7 +292,7 @@ public:
 
 
     // Parse side sets.
-    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets_);
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int>>>>(numSideSets_);
     for (int ss=0; ss<numSideSets_; ++ss) {
       if (spaceDim_ == 2) {
         (*meshSideSets_)[ss].resize(numEdgesPerCell_);
@@ -408,6 +412,98 @@ public:
 
     computeCellToFaceMap();
 
+
+    // Parse parallel partitions.
+
+    if ((numProcs != 0) && (numProcs < 2)) {
+      throw std::runtime_error("\n>>> The number of processors is either zero (serial execution, by convention) or at least 2 (parallel execution)!\n");
+    }
+    numProcs_ = numProcs;
+    procCellIds_ = ROL::makePtr<std::vector<std::vector<int>>>(numProcs_);
+
+    for (int proc=0; proc<numProcs_; ++proc) {
+      std::string procfile = filename + "." + std::to_string(numProcs_) + "." + std::to_string(proc);
+      inputfile.open(procfile);
+      int procNumCells;
+      int cellCt = 0;
+
+      // Check if file readable.
+      if (!inputfile.good()) {
+        throw std::runtime_error("\nMeshReader: Could not open mesh file!\n");
+      }
+
+      // Parse file header.
+      bool processPartitionHeader = true;
+      while (processPartitionHeader) {
+
+        std::getline(inputfile, line);    // consider: while (getline(inputfile, line).good())
+        std::stringstream ssline(line);
+
+        while (ssline >> token) {
+
+          // Get number of cells.
+          if (token == "num_elem") {
+            ssline >> token;  // skip "="
+            ssline >> procNumCells;
+            processPartitionHeader = false;
+            break;
+          }
+
+        } // end tokenizing
+
+      } // end parse header
+
+      (*procCellIds_)[proc].resize(procNumCells, 0);
+
+      bool processCellsHeader = true;
+      while (processCellsHeader) {
+
+        std::getline(inputfile, line);
+        std::stringstream ssline(line);
+
+        while (ssline >> token) {
+
+          // Get cell ids.
+          if (token == "elem_num_map") {
+            ssline >> token;  // skip "="
+            while (std::getline(ssline, token, ',')) {
+              if (token != " ") {
+                (*procCellIds_)[proc][cellCt++] = atoi(token.c_str())-1;
+              }
+            }
+            processCellsHeader = false;
+          }
+        }
+
+      }
+
+      bool processCells = true;
+      if (token.find(semicolon) != std::string::npos) {
+        processCells = false;
+      }
+      while (processCells) {
+
+        std::getline(inputfile, line);
+        std::stringstream ssline(line);
+
+        while (std::getline(ssline, token, ',')) {
+          // Get cell ids.
+          if (token.find(semicolon) == std::string::npos) {
+            if (token != " ") {
+              (*procCellIds_)[proc][cellCt++] = atoi(token.c_str())-1;
+            }
+          }
+          else { // encountered "some-number ;"
+            std::string onlyNumber = token.substr(0, token.size()-1);
+            (*procCellIds_)[proc][cellCt++] = atoi(onlyNumber.c_str())-1;
+            processCells = false;
+          }
+        }
+      } // end process cells
+
+      inputfile.close();
+    }
+
   }
 
 
@@ -447,6 +543,11 @@ public:
       }
     }
     return meshSideSets_;
+  }
+
+
+  ROL::Ptr<std::vector<std::vector<int>>> getProcCellIds() const {
+    return procCellIds_;
   }
 
 

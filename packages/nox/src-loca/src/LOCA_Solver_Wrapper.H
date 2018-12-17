@@ -112,6 +112,9 @@ namespace LOCA {
       ~Wrapper();
 
       //! Implementation of reset method (forwarded to wrapped solver)
+      void reset();
+
+      //! Implementation of reset method (forwarded to wrapped solver)
       void reset(const NOX::Abstract::Vector& initialGuess);
 
       //! Implementation of reset method (forwarded to wrapped solver)
@@ -119,7 +122,7 @@ namespace LOCA {
          const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
 
       //! Implementation of getStatus method (forwarded to wrapped solver)
-      NOX::StatusTest::StatusType getStatus();
+      NOX::StatusTest::StatusType getStatus() const;
 
       //! Implementation of step method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType step();

@@ -480,7 +480,11 @@ Thyra::get_Epetra_Map(
 
   int count=0;
   int blockOffset = 0;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Array<int> myGIDs(myLocalElements);
+#else
+  Array<long long> myGIDs(myLocalElements);
+#endif
   for (int block_i = 0; block_i < numBlocks; ++block_i) {
     const RCP<const SpmdVectorSpaceBase<double> > spmd_vs_i = spmd_vs_blocks[block_i];
     const int lowGIDInBlock = spmd_vs_i->localOffset();
@@ -491,7 +495,11 @@ Thyra::get_Epetra_Map(
     blockOffset += spmd_vs_i->dim();
   }
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   const int globalDim = vs_in.dim();
+#else
+  const long long globalDim = vs_in.dim();
+#endif
 
   return Teuchos::rcp(
     new Epetra_Map(globalDim, myLocalElements, myGIDs.getRawPtr(), 0, *comm));
