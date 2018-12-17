@@ -87,10 +87,14 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params) {
  const char tfecfFuncName[] = "FECrsGraph::setup(): ";
+
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap.is_null (), std::runtime_error, "ownedPlusSharedRowMap is null.");
  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
+ // NOTE: We're forcing the CrsGraph to be in global index mode 
+ this->allocateIndices(GlobalIndices);
+ 
  // Use a very strong map equivalence check
  bool maps_are_the_same = ownedRowMap->isSameAs(*ownedPlusSharedRowMap);
  if(!maps_are_the_same) {
@@ -104,16 +108,15 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
  
    // Build the inactive graph
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
-   // FIXME: I kind of want to do something like this, BUT we're still globally indexed.  So?  @mhoemmen?
 
-   //   auto rowptr = this->getLocalMatrix().row_map;
-   //   auto colind = this->getLocalMatrix().entries;
-   //   inactiveCrsGraph->setAllIndices(Kokkos::subview(rowptr,Kokkos::pair<size_t,size_t>(0,numMyRows),Kokkos::ALL),
-   //                                   Kokkos::subview(colind,Kokkos::pair<size_t,size_t>(0,numMyNnz),Kokkos::ALL));
-
-   // k_glblInds1D & k_numRowEntries both go away at fillComplete time, so I don't really want to alias them.
-   // 
-   
+   // For starters, we're not going to alias anything.  This will likely cause a memory high water mark issue.
+   // Perhaps we will alias the  k_rowPtrs_/his->getLocalMatrix().row_map; but not k_glblInds1D due to concerns over
+   // how Fuller's graph resizing import will work w/ aliasing.  
+ 
+   // This dance here is because C++ doesn't like you calling protected members of functions (even if they have the same class)
+   switchActiveCrsGraph();
+   this->allocateIndices(GlobalIndices);
+   switchActiveCrsGraph();
  }
 
 }
@@ -134,6 +137,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // As per Fuller, this will import into the static graph.
     // NOTE: If the globalIndices were aliased, this would cause a problem (if the owned matrix was too small),
     // so we're not going to worry about that for now.  We might want to fix this later.
+    // FIXME: This will segfault until #4070
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
   }
 }//end doOverlapToLocal
