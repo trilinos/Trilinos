@@ -157,6 +157,9 @@ namespace FROSch {
         CrsGraphPtr SubdomainConnectGraph_;
         //Element-Node-List to compute RepeatedMap
         Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > ElementNodeList_;
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > GraphEntriesList_;
+        
+        ConstMapPtr kRowMap_;
         
     };
     

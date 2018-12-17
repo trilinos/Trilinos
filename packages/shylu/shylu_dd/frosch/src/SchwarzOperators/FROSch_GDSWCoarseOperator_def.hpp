@@ -574,12 +574,25 @@ namespace FROSch {
             
             Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
             MapPtr GraphMap = Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),this->K_->getMap()->getComm()->getSize(),1,0,this->K_->getMap()->getComm());
+            
+            std::vector<GO> col_vec(entries.size());
+            for(int i = 0;i<entries.size();i++)
+            {
+                col_vec.at(i) =i;
+            }
+            Teuchos::ArrayView<GO> cols(col_vec);
 
+            this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
+            this->GraphEntriesList_->insertGlobalValues(edges->getEntityMap()->getComm()->getRank(),cols,entries());
+            this->GraphEntriesList_->fillComplete();
+            this->GraphEntriesList_->describe(*fancy,Teuchos::VERB_EXTREME);
+            
+            /*
             this->SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap,7);
             this->SubdomainConnectGraph_->insertGlobalIndices(edges->getEntityMap()->getComm()->getRank(),entries());
             this->SubdomainConnectGraph_->fillComplete();
-            this->SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
-            
+            //this->SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
+            */
             this->BlockCoarseDimension_[blockId] = 0;
             for (UN i=0; i<numEntitiesGlobal.size(); i++) {
                 this->BlockCoarseDimension_[blockId] += numEntitiesGlobal[i];
