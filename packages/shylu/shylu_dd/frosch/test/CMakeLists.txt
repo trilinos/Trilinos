@@ -5,7 +5,7 @@ ADD_SUBDIRECTORIES(
     LocalPartitionOfUnityBasis
 )
 
-IF(ShyLU_DDFROSch_ENABLE_Belos AND ShyLU_DDFROSch_ENABLE_Galeri AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
+IF(ShyLU_DDFROSch_ENABLE_Belos AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)
 ADD_SUBDIRECTORIES(
     Thyra_Xpetra_Laplace
 )
