@@ -277,12 +277,10 @@ namespace FROSch {
         }
         
         for (UN k=0; k<this->DofsPerNode_[blockId]; k++) {
-            UN ii=0;
             for (UN i=0; i<entitySet->getNumEntities(); i++) {
                 for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
-                    translations[k]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,k),ii,1.0);
+                    translations[k]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,k),i,1.0);
                 }
-                ii++;
             }
         }
         return translations;
@@ -323,7 +321,6 @@ namespace FROSch {
             }
         }
         
-        UN ii=0;
         SC x,y,z,rx,ry,rz;
         for (UN i=0; i<entitySet->getNumEntities(); i++) {
             for (UN j=0; j<entitySet->getEntity(i)->getNumNodes(); j++) {
@@ -334,31 +331,30 @@ namespace FROSch {
                 rx = y;
                 ry = -x;
                 rz = 0;
-                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
-                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
+                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
+                rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
                 if (dimension == 3) {
                     z = nodeList->getData(2)[entitySet->getEntity(i)->getLocalNodeID(j)];
                     
-                    rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                    rotations[0]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
                     
                     // Rotation 2
                     rx = -z;
                     ry = 0;
                     rz = x;
-                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
-                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
-                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
+                    rotations[1]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
                     
                     // Rotation 3
                     rx = 0;
                     ry = z;
                     rz = -y;
-                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),ii,rx);
-                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),ii,ry);
-                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),ii,rz);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,0),i,rx);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,1),i,ry);
+                    rotations[2]->replaceLocalValue(entitySet->getEntity(i)->getGammaDofID(j,2),i,rz);
                 }
             }
-            ii++;
         }
         return rotations;
     }
