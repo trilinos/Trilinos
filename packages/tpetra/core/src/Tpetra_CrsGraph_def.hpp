@@ -7109,9 +7109,9 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph) const
+  isIdenticalTo(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph) const
   {
-    auto __compare_nonlocals = [&] (const nonlocals_type & m1, const nonlocals_type & m2) {
+    auto compare_nonlocals = [&] (const nonlocals_type & m1, const nonlocals_type & m2) {
       bool output = true;
       output = m1.size() == m2.size() ? output : false;
       for(auto & it_m: m1)
@@ -7172,7 +7172,7 @@ namespace Tpetra {
 
     // Compare nonlocals_ -- std::map<GlobalOrdinal, std::vector<GlobalOrdinal> >
     // nonlocals_ isa std::map<GO, std::vector<GO> >
-    output = __compare_nonlocals(this->nonlocals_, graph.nonlocals_) ? output : false;
+    output = compare_nonlocals(this->nonlocals_, graph.nonlocals_) ? output : false;
 
     // Compare k_numAllocPerRow_ isa Kokkos::View::HostMirror
     // - since this is a HostMirror type, it should be in host memory already

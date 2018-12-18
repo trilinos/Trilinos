@@ -601,7 +601,7 @@ namespace Tpetra {
     void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
 
 
-    /// \brief True if and only if \c CrsGraph is exactly identical to this CrsGraph
+    /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
     /// This performs _exact_ matches on objects with in the graphs. That is,
     /// internal data structures such as arrays must match exactly in both
@@ -610,7 +610,10 @@ namespace Tpetra {
     ///
     /// \param graph [in] a crsGraph to compare against this one.
     ///
-    bool isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
+    /// \return True if the other CrsGraph's data structure is identical to this
+    ///         CrsGraph.
+    ///
+    bool isIdenticalTo(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
 
 
     //@}
