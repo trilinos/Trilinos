@@ -346,6 +346,9 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # buid's tweaks file
 #
 
+# issue 3638
+ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
+
 IF(ATDM_USE_CUDA)
   ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample_DISABLE ON)
   ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-1_DISABLE ON)
