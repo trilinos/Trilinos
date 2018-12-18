@@ -349,14 +349,6 @@ ATDM_SET_CACHE(TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH)
 # issue 3638
 ATDM_SET_ENABLE(Teko_ModALPreconditioner_MPI_1_DISABLE ON)
 
-IF(ATDM_USE_CUDA)
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample_DISABLE ON)
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-1_DISABLE ON)
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-2_DISABLE ON)
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Quad-Order-3_DISABLE ON)
-  ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-2_DISABLE ON)
-ENDIF()
-
 #
 # H) ATDM env config install hooks
 #
