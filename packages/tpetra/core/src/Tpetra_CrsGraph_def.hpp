@@ -68,7 +68,6 @@
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
 #include <algorithm>
 #include <limits>
-#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
