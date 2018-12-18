@@ -594,14 +594,20 @@ namespace Tpetra {
 
 
     /// \brief Swaps the data from *this with the data and maps from graph
-    /// \param graph [in/out] a crsGraph
     ///
-    /// Note: This is done with minimal copying of data.
-    /// WCMCLEN WORK_IN_PROGRESS
+    /// \param graph [in/out] a crsGraph
     void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
 
 
-    /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
+    /// \brief True if and only if \c CrsGraph is exactly identical to this CrsGraph
+    ///
+    /// This performs _exact_ matches on objects with in the graphs. That is,
+    /// internal data structures such as arrays must match exactly in both
+    /// content and order. This is not performing any sort of isomorphic
+    /// search.
+    ///
+    /// \param graph [in] a crsGraph to compare against this one.
+    ///
     /// WCMCLEN WORK_IN_PROGRESS
     bool isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
 
@@ -2317,8 +2323,10 @@ namespace Tpetra {
     //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
+    typedef typename std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_type;
+
     //! Nonlocal data given to insertGlobalIndices.
-    std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
+    nonlocals_type nonlocals_;
 
     /// \brief Whether to require makeColMap() (and therefore
     ///   fillComplete()) to order column Map GIDs associated with
