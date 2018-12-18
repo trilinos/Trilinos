@@ -51,7 +51,6 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
 #include "Tpetra_Details_unpackCrsGraphAndCombine.hpp"
-#include "Tpetra_Details_resizeRowPtrs.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <random>
@@ -70,7 +69,6 @@ using Teuchos::outArg;
 using Tpetra::Details::gathervPrint;
 using Tpetra::Details::packCrsGraph;
 using Tpetra::Details::unpackCrsGraphAndCombine;
-using Tpetra::Details::resizeRowPtrsAndIndices;
 
 // Create and return a simple example CrsMatrix, with row distribution
 // over the given Map.

@@ -58,7 +58,7 @@
 #include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
-#include "Tpetra_Details_resizeRowPtrs.hpp"
+#include "Tpetra_Details_padCrsArrays.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Tpetra_Vector.hpp"
@@ -3384,8 +3384,7 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                 const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                 const bool overwrite)
+                 const typename local_graph_type::entries_type::non_const_type& columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3400,12 +3399,8 @@ namespace Tpetra {
     // FIXME (mfh 07 Aug 2014) We need to relax this restriction,
     // since the future model will be allocation at construction, not
     // lazy allocation on first insert.
-    // FIXME (tjf 11 Oct 2018) added overwrite flag to bypass check - useful for
-    // import/export operations that are allowed to insert new entries in to the
-    // static graph.
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (!overwrite && (this->k_lclInds1D_.extent (0) != 0 ||
-                      this->k_gblInds1D_.extent (0) != 0),
+      ((this->k_lclInds1D_.extent (0) != 0 || this->k_gblInds1D_.extent (0) != 0),
        std::runtime_error, "You may not call this method if 1-D data "
        "structures are already allocated.");
 
@@ -3441,8 +3436,7 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   setAllIndices (const Teuchos::ArrayRCP<size_t>& rowPointers,
-                 const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
-                 const bool overwrite)
+                 const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices)
   {
     using Kokkos::View;
     typedef typename local_graph_type::row_map_type row_map_type;
@@ -3495,7 +3489,7 @@ namespace Tpetra {
 
     Kokkos::View<LocalOrdinal*, layout_type , execution_space > k_ind =
       Kokkos::Compat::getKokkosViewDeepCopy<device_type> (columnIndices ());
-    setAllIndices (ptr_rot, k_ind, overwrite);
+    setAllIndices (ptr_rot, k_ind);
   }
 
 
@@ -5593,7 +5587,8 @@ namespace Tpetra {
       "template parameters.");
 
     if (this->getProfileType () == StaticProfile) {
-      resizeForIncomingData(*srcRowGraph, numSameIDs, permuteToLIDs, permuteFromLIDs);
+      auto padding = computeCrsPadding(*srcRowGraph, numSameIDs, permuteToLIDs, permuteFromLIDs);
+      this->applyCrsPadding(padding);
     }
 
     // If the source object is actually a CrsGraph, we can use view
@@ -5660,15 +5655,14 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  resizeForIncomingDataImpl(const Kokkos::UnorderedMap<LocalOrdinal, size_t>& padding)
+  applyCrsPadding(const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding)
   {
-    const char tfecfFuncName[] = "resizeForIncomingDataImpl";
-    using device_type = typename Node::device_type;
+    const char tfecfFuncName[] = "applyCrsPadding";
     using execution_space = typename device_type::execution_space;
     using row_ptrs_type = typename local_graph_type::row_map_type::non_const_type;
     using indices_type = t_GlobalOrdinal_1D;
     using range_policy = Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LocalOrdinal>>;
-    using Tpetra::Details::resizeRowPtrsAndIndices;
+    using Tpetra::Details::padCrsArrays;
 
     if (! this->indicesAreAllocated()) {
       allocateIndices(GlobalIndices);
@@ -5685,7 +5679,7 @@ namespace Tpetra {
     row_ptrs_type row_ptrs_beg("row_ptrs_beg", this->k_rowPtrs_.extent(0));
     Kokkos::deep_copy(row_ptrs_beg, this->k_rowPtrs_);
 
-    const auto N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1);
+    const size_t N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1);
     row_ptrs_type row_ptrs_end("row_ptrs_end", N);
 
     bool refill_num_row_entries = false;
@@ -5710,8 +5704,8 @@ namespace Tpetra {
       );
     }
 
-    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t>;
-    resizeRowPtrsAndIndices<row_ptrs_type,indices_type,padding_type>(
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
+    padCrsArrays<row_ptrs_type,indices_type,padding_type>(
         row_ptrs_beg, row_ptrs_end, indices, padding);
 
     if (refill_num_row_entries) {
@@ -5726,51 +5720,66 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
+  Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  resizeForIncomingData(const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
-                        size_t numSameIDs,
-                        const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                        const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
+  computeCrsPadding (const RowGraph<LocalOrdinal,GlobalOrdinal,Node>& source,
+                     size_t numSameIDs,
+                     const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                     const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
+    using execution_space = typename device_type::execution_space;
+    const char tfecfFuncName[] = "computeCrsPadding";
 
     // Resize row pointers and indices to accommodate incoming data
+    execution_space::fence ();  // Make sure device sees changes made by host
     const map_type& src_row_map = *(source.getRowMap());
-    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t>;
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
     padding_type padding(numSameIDs+permuteFromLIDs.size());
     for (LO tgtid=0; tgtid<static_cast<LO>(numSameIDs); ++tgtid) {
       const GO srcgid = src_row_map.getGlobalElement(tgtid);
       auto how_much_padding = source.getNumEntriesInGlobalRow(srcgid);
-      padding.insert(tgtid, how_much_padding);
+      auto result = padding.insert(tgtid, how_much_padding);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(result.failed(), std::runtime_error,
+                                            "unable to insert padding for LID " << tgtid);
     }
     for (LO i=0; i<permuteToLIDs.size(); ++i) {
       const LO tgtid = permuteToLIDs[i];
       const GO srcgid = src_row_map.getGlobalElement(permuteFromLIDs[i]);
       auto how_much_padding = source.getNumEntriesInGlobalRow(srcgid);
-      padding.insert(tgtid, how_much_padding);
+      auto result = padding.insert(tgtid, how_much_padding);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(result.failed(), std::runtime_error,
+                                            "unable to insert padding for LID " << tgtid);
     }
-    // Now do the actual resizing
-    resizeForIncomingDataImpl(padding);
+    execution_space::fence ();  // Make sure device sees changes made by host
+    TEUCHOS_TEST_FOR_EXCEPTION(padding.failed_insert(), std::runtime_error,
+      "failed to insert one or more indices in to padding map");
+    return padding;
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
+  Kokkos::UnorderedMap<LocalOrdinal, size_t, typename Node::device_type>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  resizeForIncomingData (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                         const Teuchos::ArrayView<size_t> &numPacketsPerLID)
+  computeCrsPadding (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                     const Teuchos::ArrayView<size_t> &numPacketsPerLID)
   {
+    using execution_space = typename device_type::execution_space;
+    const char tfecfFuncName[] = "computeCrsPadding";
     // Creating padding for each new incoming index
-    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t>;
+    execution_space::fence ();  // Make sure device sees changes made by host
+    using padding_type = Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>;
     padding_type padding(importLIDs.size());
     auto numEnt = static_cast<size_t>(importLIDs.size());
     for (size_t i=0; i<numEnt; i++) {
-      padding.insert(importLIDs[i], numPacketsPerLID[i]);
+      auto result = padding.insert(importLIDs[i], numPacketsPerLID[i]);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(result.failed(), std::runtime_error,
+                                            "unable to insert padding for LID " << importLIDs[i]);
     }
-    // Now do the actual resizing
-    resizeForIncomingDataImpl(padding);
+    execution_space::fence ();  // Make sure device sees changes made by host
+    TEUCHOS_TEST_FOR_EXCEPTION(padding.failed_insert(), std::runtime_error,
+      "failed to insert one or more indices in to padding map");
+    return padding;
   }
 
 
@@ -6045,7 +6054,8 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
 
     if (this->getProfileType () == StaticProfile) {
-      resizeForIncomingData(importLIDs, numPacketsPerLID);
+      auto padding = computeCrsPadding(importLIDs, numPacketsPerLID);
+      applyCrsPadding(padding);
     }
     // FIXME (mfh 02 Apr 2012) REPLACE combine mode has a perfectly
     // reasonable meaning, whether or not the matrix is fill complete.

@@ -52,7 +52,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
-#include "Tpetra_Details_resizeRowPtrs.hpp"
+#include "Tpetra_Details_padCrsArrays.hpp"
 #include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
@@ -148,8 +148,6 @@ class UnpackAndCombineFunctor {
   using indices_type = IndicesView;
   using buffer_device_type = BufferDevice;
 
-  // Kokkos::parallel_reduce fails to compile if named device_type and typedef
-  // is public
   using device_type = Device;
   using execution_space = typename device_type::execution_space;
 
@@ -292,7 +290,33 @@ class UnpackAndCombineFunctor {
 
     tokens.release(token);
   }
+
 };
+
+template<class NumPackets, class ImportLids, class Device>
+Kokkos::UnorderedMap<typename ImportLids::non_const_value_type,
+                     typename NumPackets::non_const_value_type,
+                     Device>
+computeCrsPadding(const NumPackets& num_packets_per_lid,
+                  const ImportLids& import_lids,
+                  const bool unpack_pids)
+{
+  // Create a mapping of {LID: extra space needed} to rapidly look up which LIDs
+  // need additional padding.
+  using key_type = typename ImportLids::non_const_value_type;
+  using val_type = typename NumPackets::non_const_value_type;
+  Kokkos::UnorderedMap<key_type, val_type, Device> padding(import_lids.size());
+  Kokkos::parallel_for("Fill padding", import_lids.size(),
+      KOKKOS_LAMBDA(typename ImportLids::size_type i) {
+        auto how_much_padding = (unpack_pids) ? num_packets_per_lid(i)/2
+                                              : num_packets_per_lid(i);
+        padding.insert(import_lids(i), how_much_padding);
+      }
+    );
+    TEUCHOS_TEST_FOR_EXCEPTION(padding.failed_insert(), std::runtime_error,
+      "computeCrsPadding: failed to insert one or more indices in to padding map");
+  return padding;
+}
 
 /// \brief Perform the unpack operation for the graph
 ///
@@ -331,8 +355,10 @@ unpackAndCombine(
   }
 
   // Resize row pointers and indices to accommodate incoming data
-  resizeRowPtrsAndIndices<RowView,IndicesView,NumPacketsView,ImportLidsView>(
-      row_ptrs_beg, row_ptrs_end, indices, num_packets_per_lid, import_lids, unpack_pids);
+  auto padding = computeCrsPadding<NumPacketsView,ImportLidsView,Device>(
+    num_packets_per_lid, import_lids, unpack_pids);
+  using padding_type = decltype(padding);
+  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
 
   // Get the offsets
   Kokkos::View<size_t*, device_type> offsets("offsets", num_import_lids+1);
@@ -878,19 +904,15 @@ unpackCrsGraphAndCombine(
         importLIDs.getRawPtr(), importLIDs.size(),
         true, "import_lids");
 
-  // mfh Could fix the use of protected data by adding a method
-  // to CrsGraph that returns the "local, globally indexed graph".
-  // However, this function needs to change those arrays anyway,
-  // so we might as well make this function a friend of CrsGraph.
-
-  //FIXME (tjf 11 Oct 2018) need to use non-protected data
+  // We are OK using the protected data directly (k_*) because this function is
+  // a friend of CrsGraph
   indices_type indices("indices", graph.k_gblInds1D_.extent(0));
   Kokkos::deep_copy(indices, graph.k_gblInds1D_);
 
   row_ptrs_type row_ptrs_beg("row_ptrs_beg", graph.k_rowPtrs_.extent(0));
   Kokkos::deep_copy(row_ptrs_beg, graph.k_rowPtrs_);
 
-  const auto N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1); // TODO fix auto
+  const size_t N = (row_ptrs_beg.extent(0) == 0 ? 0 : row_ptrs_beg.extent(0) - 1);
   row_ptrs_type row_ptrs_end("row_ptrs_end", N);
 
   bool refill_num_row_entries = false;

@@ -1207,17 +1207,17 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
 
     void
-    resizeForIncomingDataImpl (const Kokkos::UnorderedMap<LocalOrdinal, size_t>& padding);
+    applyCrsPadding (const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
 
-    void
-    resizeForIncomingData (const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& source,
-                           size_t numSameIDs,
-                           const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                           const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
+    computeCrsPadding (const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& source,
+                       size_t numSameIDs,
+                       const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                       const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
 
-    void
-    resizeForIncomingData (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                           const Teuchos::ArrayView<size_t> &numPacketsPerLID);
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
+    computeCrsPadding (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                       const Teuchos::ArrayView<size_t> &numPacketsPerLID);
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
@@ -1347,8 +1347,7 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                   const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                   const bool overwrite=false);
+                   const typename local_graph_type::entries_type::non_const_type& columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
@@ -1360,8 +1359,7 @@ namespace Tpetra {
     ///   only, and should never be called by user code.
     void
     setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
-                   const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-                   const bool overwrite=false);
+                   const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices);
 
     /// \brief Get a host view of the row offsets.
     ///

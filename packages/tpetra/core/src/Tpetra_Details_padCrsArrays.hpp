@@ -39,15 +39,16 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_RESIZEROWPTR_HPP
-#define TPETRA_DETAILS_RESIZEROWPTR_HPP
+#ifndef TPETRA_DETAILS_PADCRSARRAYS_HPP
+#define TPETRA_DETAILS_PADCRSARRAYS_HPP
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 
-/// \file Tpetra_Details_resizeRowPtr.hpp
-/// \brief Functions that resizes CSR row pointers and indices
+/// \file Tpetra_Details_padCrsArrays.hpp
+/// \brief Functions that pad CRS arrays by resizing indices and inserting empty
+///   space and adjusting the row pointers as needed.
 /// \warning This file, and its contents, are implementation details
 ///   of Tpetra.  The file itself or its contents may disappear or
 ///   change at any time.
@@ -55,21 +56,25 @@
 namespace Tpetra {
 namespace Details {
 
-namespace pad_csr_details {
+namespace pad_crs_impl {
 
 template<class ViewType>
-ViewType empty_view(const std::string& name, const size_t& size) {
-  ViewType v(Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size);
-  return v;
+ViewType uninitialized_view(const std::string& name, const size_t& size) {
+  return ViewType (Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size);
 }
 
 // Determine if row_ptr and indices arrays need to be resized to accommodate
 // new entries
 template<class RowPtr, class Indices, class Padding>
 void
-pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const Padding& padding)
+pad_crs_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const Padding& padding)
 {
   using range = Kokkos::pair<typename RowPtr::value_type, typename RowPtr::value_type>;
+
+  if (padding.size() == 0 || row_ptr_beg.size() == 0) {
+    // Nothing to do
+    return;
+  }
 
   // Determine if the indices array is large enough
   auto num_row = row_ptr_beg.size() - 1;
@@ -97,7 +102,7 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const
   if (additional_size_needed == 0) return;
 
   // The indices array must be resized and the row_ptr arrays shuffled
-  auto indices_new = empty_view<Indices>("ind new", indices.size()+additional_size_needed);
+  auto indices_new = uninitialized_view<Indices>("ind new", indices.size()+additional_size_needed);
 
   // mfh: Not so fussy about this not being a kernel initially,
   // since we're adding a new feature upon which existing code does not rely,
@@ -145,48 +150,20 @@ pad_csr_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const
   }
   indices = indices_new;
 }
-} // namespace pad_csr_details
-
-// Determine if row_ptr and indices arrays need to be resized to accommodate
-// new entries
-template<class RowPtr, class Indices, class NumPackets, class ImportLids>
-void
-resizeRowPtrsAndIndices(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
-                        const NumPackets& num_packets_per_lid,
-                        const ImportLids& import_lids,
-                        const bool unpack_pids)
-{
-  using pad_csr_details::pad_csr_arrays;
-
-  // Create a mapping of {LID: extra space needed} to rapidly look up which LIDs
-  // need additional padding.
-  using key_type = typename ImportLids::non_const_value_type;
-  using val_type = typename NumPackets::non_const_value_type;
-  using padding_type = Kokkos::UnorderedMap<key_type, val_type>;
-  padding_type padding(import_lids.size());
-  Kokkos::parallel_for("Fill padding", import_lids.size(),
-      KOKKOS_LAMBDA(typename ImportLids::size_type i) {
-        auto how_much_padding = (unpack_pids) ? num_packets_per_lid(i)/2
-                                              : num_packets_per_lid(i);
-        padding.insert(import_lids(i), how_much_padding);
-      }
-    );
-
-  pad_csr_arrays<RowPtr, Indices, padding_type>(row_ptr_beg, row_ptr_end, indices, padding);
-}
+} // namespace pad_crs_impl
 
 // Determine if row_ptr and indices arrays need to be resized to accommodate
 // new entries
 template<class RowPtr, class Indices, class Padding>
 void
-resizeRowPtrsAndIndices(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
-                        const Padding& padding)
+padCrsArrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices,
+             const Padding& padding)
 {
-  using pad_csr_details::pad_csr_arrays;
-  pad_csr_arrays<RowPtr, Indices, Padding>(row_ptr_beg, row_ptr_end, indices, padding);
+  using pad_crs_impl::pad_crs_arrays;
+  pad_crs_arrays<RowPtr, Indices, Padding>(row_ptr_beg, row_ptr_end, indices, padding);
 }
 
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_RESIZEROWPTR_HPP
+#endif // TPETRA_DETAILS_PADCRSARRAYS_HPP

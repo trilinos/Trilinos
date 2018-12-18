@@ -50,7 +50,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
 #include "Tpetra_Details_unpackCrsGraphAndCombine.hpp"
-#include "Tpetra_Details_resizeRowPtrs.hpp"
+#include "Tpetra_Details_padCrsArrays.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <random>
@@ -69,14 +69,16 @@ using Teuchos::outArg;
 using Tpetra::Details::gathervPrint;
 using Tpetra::Details::packCrsGraph;
 using Tpetra::Details::unpackCrsGraphAndCombine;
-using Tpetra::Details::resizeRowPtrsAndIndices;
+using Tpetra::Details::padCrsArrays;
 using std::endl;
 
 TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
 {
-  typedef typename Tpetra::Map<>::device_type device_type;
+  using device_type = typename Tpetra::Map<>::device_type;
+  using execution_space = typename device_type::execution_space;
   using ordinal_type = size_t;
   using view_type = Kokkos::View<ordinal_type*, device_type>;
+  using size_type = typename view_type::size_type;
 
   ordinal_type num_row = 4;
   ordinal_type num_indices_per_row = 5;
@@ -105,11 +107,16 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
   }
   ordinal_type num_extra = num_row*(num_packets_per_lid(0) + num_packets_per_lid(num_row-1))/2;
 
-  // could we just let this function deduce its template parameters?
-  resizeRowPtrsAndIndices(row_ptrs_beg, row_ptrs_end, indices,
-                          num_packets_per_lid, import_lids, false);
-  // watch out for signed/unsigned comparison
-  TEST_ASSERT(indices.size() == num_indices + num_extra);
+  Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
+  execution_space::fence();
+  for (size_type i=0; i<import_lids.size(); i++){
+    padding.insert(import_lids(i), num_packets_per_lid(i));
+  }
+  execution_space::fence();
+  TEST_ASSERT(!padding.failed_insert());
+
+  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
+  TEST_ASSERT(indices.size() == static_cast<size_type>(num_indices + num_extra));
 
   {
     // make sure row_ptrs_beg is where it should be
@@ -140,8 +147,10 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
 TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
 {
   typedef typename Tpetra::Map<>::device_type device_type;
+  using execution_space = typename device_type::execution_space;
   using ordinal_type = size_t;
   using view_type = Kokkos::View<ordinal_type*, device_type>;
+  using size_type = typename view_type::size_type;
 
   auto row_ptrs_beg = view_type("beg", 4);
   auto row_ptrs_end = view_type("end", 3);
@@ -172,9 +181,14 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
   import_lids(1) = 0;
   num_packets_per_lid(1) = 5;
 
-  // could we just let this function deduce its template parameters?
-  resizeRowPtrsAndIndices(row_ptrs_beg, row_ptrs_end, indices,
-                          num_packets_per_lid, import_lids, false);
+  Kokkos::UnorderedMap<ordinal_type,ordinal_type,device_type> padding(import_lids.size());
+  execution_space::fence();
+  for (size_type i=0; i<import_lids.size(); i++){
+    padding.insert(import_lids(i), num_packets_per_lid(i));
+  }
+  execution_space::fence();
+  TEST_ASSERT(!padding.failed_insert());
+  padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
 
   // Check row offsets
   TEST_ASSERT(row_ptrs_beg(0) == 0);
