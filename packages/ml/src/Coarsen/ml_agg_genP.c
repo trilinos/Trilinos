@@ -2852,8 +2852,8 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          ML_gsum_vec_int(&gt,&lt,2,ml->comm);
          if (ml->comm->ML_mypid == 0 ) {
            printf("ML_Gen_MultiLevelHierarchy (level %d) : Aux number of dropped entries: %d/%d (%5.2f%%)\n",
-                  level,global_nnz_tallies[1],global_nnz_tallies[1],
-                  (double)(100.0*global_nnz_tallies[1]) / global_nnz_tallies[1]);
+                  level,global_nnz_tallies[0],global_nnz_tallies[1],
+                  (double)(100.0*global_nnz_tallies[0]) / global_nnz_tallies[1]);
          }         
        }
        
