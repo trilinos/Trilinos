@@ -204,13 +204,13 @@ void handle_invalid_arg(const char* expr,
 
 #ifdef __PRETTY_FUNCTION__
 
-#define COUT_TRACE  " Function::Line="<<__PRETTY_FUNCTION__<<":"<<__LINE__
-#define STK_STR_TRACE   (std::string(__FILE__) +  ":" + XSTK_STR_TRACE_LINE(__LINE__) + " in " + std::string(__PRETTY_FUNCTION__))
+#define COUT_TRACE  " Function::Line=" __PRETTY_FUNCTION__ ":" __LINE__
+#define STK_STR_TRACE   (__FILE__ ":" XSTK_STR_TRACE_LINE(__LINE__) " in " __PRETTY_FUNCTION__)
 
 #else
 
-#define COUT_TRACE  " File::Line="<<__FILE__<<":"<<__LINE__
-#define STK_STR_TRACE   (std::string(__FILE__) +  ":" + XSTK_STR_TRACE_LINE(__LINE__))
+#define COUT_TRACE  " File::Line=" __FILE__ ":" __LINE__
+#define STK_STR_TRACE   (__FILE__ ":" XSTK_STR_TRACE_LINE(__LINE__))
 
 #endif
 
@@ -239,30 +239,24 @@ void handle_invalid_arg(const char* expr,
     }                                                                   \
   } while (false)
 
-inline void ThrowRequireMsgHost(bool expr, const char * exprString, const char * message, const std::string & location)
+inline void ThrowMsgHost(bool expr, const char * exprString, const char * message, const std::string & location)
 {
-  if ( !expr ) {
-    throw std::logic_error(
-      std::string("Requirement( ") + exprString + " ) FAILED\n" +
-      "Error occured at: " + stk::source_relative_path(location) + "\n" +
-      "Error: " + message + "\n");
-  }
+  throw std::logic_error(
+    std::string("Requirement( ") + exprString + " ) FAILED\n" +
+    "Error occured at: " + stk::source_relative_path(location) + "\n" +
+    "Error: " + message + "\n");
 }
 
-STK_INLINE_FUNCTION void ThrowRequireMsgDevice(bool expr, const char * message)
+STK_INLINE_FUNCTION void ThrowMsgDevice(const char * message)
 {
-  if ( !expr ) {
-    Kokkos::abort(message);
-  }
+  Kokkos::abort(message);
 }
 
-inline void ThrowRequireHost(bool expr, const char * exprString, const std::string & location)
+inline void ThrowHost(bool expr, const char * exprString, const std::string & location)
 {
-  if ( !expr ) {
-    throw std::logic_error(
-      std::string("Requirement( ") + exprString + " ) FAILED\n" +
-      "Error occured at: " + stk::source_relative_path(location) + "\n");
-  }
+  throw std::logic_error(
+    std::string("Requirement( ") + exprString + " ) FAILED\n" +
+    "Error occured at: " + stk::source_relative_path(location) + "\n");
 }
 
 inline void ThrowErrorMsgHost(const char * message, const std::string & location)
@@ -346,33 +340,6 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #define ThrowRequireMsg(expr,message) ThrowGenericCond(expr, message, handle_assert)
 #define ThrowRequire(expr)            ThrowRequireMsg(expr, "")
 
-//STK_INLINE_FUNCTION void ThrowRequireNGP(bool expr)
-//{
-//#ifndef __CUDA_ARCH__
-//  if ( !expr ) {
-//      stk::handler( expr,
-//                    STK_STR_TRACE,
-//                    stk_util_internal_throw_require_oss );
-//    throw std::runtime_error( expr_msg +
-//        "Error occured at: " + source_relative_path(location) + "\n" +
-//        error_msg);
-//
-//
-//
-//    std::ostringstream stk_util_internal_throw_require_oss;
-//    stk_util_internal_throw_require_oss << message;
-//    stk::handler( expr,
-//                  STK_STR_TRACE,
-//                  stk_util_internal_throw_require_oss );
-//  }
-//#else
-//  if ( !expr ) {
-//    Kokkos::abort("Aborting due to error");
-//  }
-//#endif
-//}
-
-
 #ifdef NDEBUG
 #  define ThrowAssert(expr)            (static_cast<void>(0))
 #  define ThrowAssertMsg(expr,message) (static_cast<void>(0))
@@ -390,15 +357,35 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 
 
 #if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
-#define NGP_ThrowRequireMsg(expr, message) ThrowRequireMsgDevice(expr, message ": " __FILE__ ":" LINE_STRING);
+#define NGP_ThrowRequireMsg(expr, message)                  \
+do {                                                        \
+  if ( !(expr) ) {                                          \
+    ThrowMsgDevice(message ": " __FILE__ ":" LINE_STRING);  \
+  }                                                         \
+} while(false);
 #else
-#define NGP_ThrowRequireMsg(expr, message) ThrowRequireMsgHost(expr, #expr, message, STK_STR_TRACE);
+#define NGP_ThrowRequireMsg(expr, message)              \
+do {                                                    \
+  if ( !(expr) ) {                                      \
+    ThrowMsgHost(expr, #expr, message, STK_STR_TRACE);  \
+  }                                                     \
+} while(false);
 #endif
 
 #if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
-#define NGP_ThrowRequire(expr) ThrowRequireMsgDevice(expr, "(" #expr "): " __FILE__ ":" LINE_STRING);
+#define NGP_ThrowRequire(expr)                                 \
+do {                                                           \
+  if ( !(expr) ) {                                             \
+    ThrowMsgDevice("(" #expr "): " __FILE__ ":" LINE_STRING);  \
+  }                                                            \
+} while(false);
 #else
-#define NGP_ThrowRequire(expr) ThrowRequireHost(expr, #expr, STK_STR_TRACE);
+#define NGP_ThrowRequire(expr)              \
+do {                                        \
+  if ( !(expr) ) {                          \
+    ThrowHost(expr, #expr, STK_STR_TRACE);  \
+  }                                         \
+} while(false);
 #endif
 
 #ifdef NDEBUG
@@ -410,15 +397,25 @@ STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 #endif
 
 #if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
-#define NGP_ThrowErrorMsgIf(expr, message) ThrowRequireMsgDevice(!(expr), message ": " __FILE__ ":" LINE_STRING);
+#define NGP_ThrowErrorMsgIf(expr, message) NGP_ThrowRequireMsg(!(expr), message);
 #else
-#define NGP_ThrowErrorMsgIf(expr, message) ThrowRequireMsgHost(!(expr), "!(" #expr ")", message, STK_STR_TRACE);
+#define NGP_ThrowErrorMsgIf(expr, message)                       \
+do {                                                             \
+  if ( expr ) {                                                  \
+    ThrowMsgHost(expr, "!(" #expr ")", message, STK_STR_TRACE);  \
+  }                                                              \
+} while(false);
 #endif
 
 #if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))
-#define NGP_ThrowErrorIf(expr) ThrowRequireMsgDevice(!(expr), "(" #expr "): " __FILE__ ":" LINE_STRING);
+#define NGP_ThrowErrorIf(expr) NGP_ThrowRequireMsg(!(expr), "!(" #expr ")");
 #else
-#define NGP_ThrowErrorIf(expr) ThrowRequireHost(!(expr), "!(" #expr ")", STK_STR_TRACE);
+#define NGP_ThrowErrorIf(expr)                       \
+do {                                                 \
+  if ( expr ) {                                      \
+    ThrowHost(expr, "!(" #expr ")", STK_STR_TRACE);  \
+  }                                                  \
+} while(false);
 #endif
 
 #if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0))

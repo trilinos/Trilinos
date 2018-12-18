@@ -623,6 +623,37 @@ namespace Tpetra {
     explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    /// \brief Constructor specifying a previously constructed graph and entries array
+    ///
+    /// Calling this constructor fixes the graph structure of the
+    /// sparse matrix.  We say in this case that the matrix has a
+    /// "static graph."  If you create a CrsMatrix with this
+    /// constructor, you are not allowed to insert new entries into
+    /// the matrix, but you are allowed to change values in the
+    /// matrix.
+    ///
+    /// The given graph must be fill complete.  Note that calling
+    /// resumeFill() on the graph makes it not fill complete, even if
+    /// you had previously called fillComplete() on the graph.  In
+    /// that case, you must call fillComplete() on the graph again
+    /// before invoking this CrsMatrix constructor.
+    ///
+    /// This constructor is marked \c explicit so that you can't
+    /// create a CrsMatrix by accident when passing a CrsGraph into a
+    /// function that takes a CrsMatrix.
+    ///
+    /// \param graph [in] The graph structure of the sparse matrix.
+    ///   The graph <i>must</i> be fill complete.
+    /// \param values [in] The local entries in the matrix,
+    ///   as in a CSR "vals" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the matrix.
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
+                        const typename local_matrix_type::values_type& values,
+                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     /// \brief Constructor specifying column Map and arrays containing
     ///   the matrix in sorted local indices.
     ///
@@ -4557,10 +4588,9 @@ namespace Tpetra {
     /// collectives over the matrix's communicator.  The current
     /// Tpetra implementation of this method does nothing.
     ///
+  public:
     /// This method is called in fillComplete().
     void computeGlobalConstants();
-
-  public:
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
   protected:

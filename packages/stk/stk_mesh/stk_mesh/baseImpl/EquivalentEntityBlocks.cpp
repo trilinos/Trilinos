@@ -23,7 +23,7 @@ bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, s
 
 std::vector<PartOrdinal> get_element_block_part_ordinals(stk::mesh::Entity element, const stk::mesh::BulkData& bulkData)
 {
-    std::vector<PartOrdinal> partOrdinals;
+  std::vector<PartOrdinal> partOrdinals;
     bulkData.bucket(element).supersets(partOrdinals);
     std::vector<PartOrdinal> partOrdinalsElementBlock;
     for(PartOrdinal part_ordinal : partOrdinals)

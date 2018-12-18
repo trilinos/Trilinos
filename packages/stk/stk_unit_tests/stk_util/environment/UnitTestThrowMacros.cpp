@@ -294,7 +294,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
-  // testNGPThrowRequireMsg();
+  // testNGPThrowRequire();
 #else
 #ifdef NEW_ENOUGH_GCC
   try {
@@ -325,7 +325,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
-  // testNGPThrowRequireMsg();
+  // testNGPThrowAssertMsg();
 #else
 #ifdef NEW_ENOUGH_GCC
   try {
@@ -357,7 +357,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
-  // testNGPThrowRequireMsg();
+  // testNGPThrowAssertMsg();
 #else
 #ifdef NEW_ENOUGH_GCC
   EXPECT_NO_THROW(testNGPThrowAssertMsg());
@@ -380,7 +380,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
-  // testNGPThrowRequireMsg();
+  // testNGPThrowErrorMsgIf();
 #else
 #ifdef NEW_ENOUGH_GCC
   try {
@@ -410,7 +410,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
-  // testNGPThrowRequireMsg();
+  // testNGPThrowErrorIf();
 #else
 #ifdef NEW_ENOUGH_GCC
   try {
@@ -438,7 +438,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
   // Unable to test a device-side abort, as this eventually results in a throw
   // inside Kokkos::finalize_all().
   //
-  // testNGPThrowRequireMsg();
+  // testNGPThrowErrorMsg();
 #else
 #ifdef NEW_ENOUGH_GCC
   try {

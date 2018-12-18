@@ -210,8 +210,8 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
-  stk::mesh::Part& nodePart = meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
-  stk::mesh::PartVector nodeParts = {&nodePart};
+//  stk::mesh::Part& nodePart = meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::NODE));
+//  stk::mesh::PartVector nodeParts = {&nodePart};
 
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
@@ -243,11 +243,11 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 
               bulk.set_local_id(element, offset + i);
 
-              for(unsigned j = 0; j < id_vec.size(); ++j)
-              {
-                  stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id_vec[j]);
-                  bulk.change_entity_parts(node, nodeParts, {});
-              }
+//              for(unsigned j = 0; j < id_vec.size(); ++j)
+//              {
+//                  stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id_vec[j]);
+//                  bulk.change_entity_parts(node, nodeParts, {});
+//              }
           }
       }
     }

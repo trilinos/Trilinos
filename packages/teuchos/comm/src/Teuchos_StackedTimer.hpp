@@ -507,7 +507,7 @@ public:
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
                       output_minmax(false), num_histogram(10), max_levels(INT_MAX),
-                      print_warnings(true) {}
+                      print_warnings(true), align_columns(false), print_names_before_values(true) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
@@ -515,6 +515,8 @@ public:
     int num_histogram;
     int max_levels;
     bool print_warnings;
+    bool align_columns;
+    bool print_names_before_values;
   };
 
   /**
@@ -541,6 +543,29 @@ protected:
   Array<unsigned long long> updates_;
   Array<int> active_;
 
+  /// Stores the column widths for output alignment
+  struct AlignmentWidths {
+    std::string::size_type timer_names_;
+    std::string::size_type average_time_;
+    std::string::size_type fraction_;
+    std::string::size_type count_;
+    std::string::size_type total_updates_;
+    std::string::size_type min_;
+    std::string::size_type max_;
+    std::string::size_type stddev_;
+    std::string::size_type histogram_;
+    AlignmentWidths() :
+      timer_names_(0),
+      average_time_(0),
+      fraction_(0),
+      count_(0),
+      total_updates_(0),
+      min_(0),
+      max_(0),
+      stddev_(0),
+      histogram_(0){}
+  } alignments_;
+
   /**
     * Flatten the timers into a single array
     */
@@ -556,6 +581,16 @@ protected:
     * Migrate all the timer data to rank=0 if parallel
     */
    void collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, const OutputOptions &options );
+
+  /**
+   * Compute the column widths to align the output from report() in
+   * columns.
+   *
+   * \returns total time for this level
+   */
+  double computeColumnWidthsForAligment(std::string prefix, int print_level,
+                                        std::vector<bool> &printed, double parent_time,
+                                        const OutputOptions &options);
 
    /**
     * Recursive call to print a level of timer data.

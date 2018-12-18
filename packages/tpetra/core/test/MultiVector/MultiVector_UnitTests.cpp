@@ -101,12 +101,12 @@ namespace {
   using std::ostream_iterator;
   using std::string;
 
-  using Teuchos::Array;  
-  using Teuchos::ArrayRCP;  
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
-  using Teuchos::arrayView;  
+  using Teuchos::arrayView;
   using Teuchos::as;
-  using Teuchos::Comm;  
+  using Teuchos::Comm;
   using Teuchos::null;
   using Teuchos::Range1D;
   using Teuchos::RCP;
@@ -115,7 +115,7 @@ namespace {
   using Teuchos::reduceAll;
   using Teuchos::OrdinalTraits;
   using Teuchos::outArg;
-  using Teuchos::ScalarTraits;    
+  using Teuchos::ScalarTraits;
   using Teuchos::SerialDenseMatrix;
   using Teuchos::Tuple;
   using Teuchos::tuple;
@@ -288,7 +288,7 @@ namespace {
       }
     }
 
-    myOut << "Test MultiVector's usual constructor" << endl;    
+    myOut << "Test MultiVector's usual constructor" << endl;
     RCP<MV> mvec;
     TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
     if (mvec.is_null ()) {
@@ -299,7 +299,7 @@ namespace {
     TEST_EQUALITY( mvec->getLocalLength(), numLocal );
     TEST_EQUALITY( mvec->getGlobalLength(), numImages*numLocal );
 
-    myOut << "Test that all norms are zero" << endl;        
+    myOut << "Test that all norms are zero" << endl;
     Array<Magnitude> norms(numVecs), zeros(numVecs);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
     TEST_NOTHROW( mvec->norm2(norms) );
@@ -329,7 +329,7 @@ namespace {
 
     out << "Test: MultiVector, BadConstLDA" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -368,7 +368,7 @@ namespace {
 
     out << "Test: MultiVector, NonContigView" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const Mag tol = errorTolSlack * errorTolSlack * testingTol<Scalar>();   // extra slack on this test; dots() seem to be a little sensitive for single precision types
     const Mag M0  = ScalarTraits<Mag>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -577,7 +577,7 @@ namespace {
 
     out << "Test: MultiVector, Describable" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -633,7 +633,7 @@ namespace {
 
     out << "Test: MultiVector, BadMultiply" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -715,7 +715,7 @@ namespace {
 
     out << "Test: MultiVector, Multiply" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1184,7 +1184,7 @@ namespace {
 
     out << "Test: MultiVector, BadConstAA" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -1221,7 +1221,7 @@ namespace {
 
     out << "Test: MultiVector, BadDot" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1272,7 +1272,7 @@ namespace {
 
     out << "Test: MultiVector, OrthoDot" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1354,7 +1354,7 @@ namespace {
 
     out << "Test: MultiVector, CopyView" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1582,7 +1582,7 @@ namespace {
 
     out << "Test: MultiVector, OffsetView" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
@@ -1752,7 +1752,7 @@ namespace {
 
     out << "Test: MultiVector, OffsetViewZeroLength" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
     // Get a communicator and Kokkos node instance.
@@ -2168,20 +2168,18 @@ namespace {
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
         case 0:
-#ifdef HAVE_TPETRA_DEBUG
           {
             std::ostringstream os;
             os << ">>> Proc " << comm->getSize ();
             auto A_dv = A.getDualView ();
-            os << ": A.modified_host: " << A_dv.need_sync_device ()?1:0;
-            os  << ", A.modified_device: " << A_dv.need_sync_host ()?1:0;
+            os << ": A.modified_host: " << (A_dv.need_sync_device ()?1:0);
+            os  << ", A.modified_device: " << (A_dv.need_sync_host ()?1:0);
             auto B_dv = B.getDualView ();
-            os << ": B.modified_host: " << B_dv.need_sync_device ()?1:0;
-            os << ", B.modified_device: " << B_dv.need_sync_host ()?1:0;
+            os << ": B.modified_host: " << (B_dv.need_sync_device ()?1:0);
+            os << ", B.modified_device: " << (B_dv.need_sync_host ()?1:0);
             os << std::endl;
             std::cerr << os.str ();
           }
-#endif // HAVE_TPETRA_DEBUG
           {
             out << "Method 0" << endl;
 
@@ -2335,7 +2333,7 @@ namespace {
 
     out << "Test: Vector, ZeroScaleUpdate" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
@@ -2611,7 +2609,7 @@ namespace {
 
     out << "Test: Vector, CopyConst" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -2660,7 +2658,7 @@ namespace {
 
     out << "Test: Vector, Indexing" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -2770,7 +2768,7 @@ namespace {
 
     out << "Test: MultiVector, CountDot" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
     // get a comm and node
@@ -2978,7 +2976,7 @@ namespace {
 
     out << "Test: MultiVector, CountNormInf" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
     // get a comm and node
@@ -3024,7 +3022,7 @@ namespace {
 
     out << "Test: MultiVector, Norm2" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
     // get a comm and node
@@ -3067,7 +3065,7 @@ namespace {
 
     out << "Test: MultiVector, BadCombinations" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -3127,7 +3125,7 @@ namespace {
 
     out << "Test: MultiVector, Typedefs" << endl;
     Teuchos::OSTab tab0 (out);
-    
+
     TEST_EQUALITY_CONST( (std::is_same< scalar_type         , Scalar  >::value) == true, true );
     TEST_EQUALITY_CONST( (std::is_same< local_ordinal_type  , LO >::value) == true, true );
     TEST_EQUALITY_CONST( (std::is_same< global_ordinal_type , GO >::value) == true, true );
@@ -3148,7 +3146,7 @@ namespace {
     typedef Teuchos::SerialComm<int> comm_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     constexpr bool debug = true;
-    
+
     RCP<Teuchos::FancyOStream> outPtr = debug ?
       Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
       Teuchos::rcpFromRef (out);
@@ -3172,24 +3170,24 @@ namespace {
     RCP<const map_type> map (new map_type (numGlobalElts, indexBase, serialComm,
                                            Tpetra::GloballyDistributed));
 
-    myOut << "Create MultiVectors x and y" << endl;    
+    myOut << "Create MultiVectors x and y" << endl;
     MV x (map, 1);
     MV y (map, 1);
 
     std::vector<scalar_type> results (1, STS::zero ()); // dot product result
 
     myOut << "Modify entries of x and y" << endl;
-    
+
     x.sync_host ();
     y.sync_host ();
     x.modify_host ();
-    y.modify_host ();    
-    
+    y.modify_host ();
+
     // dot([i], [i]) should be 1, not -1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
     y.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
 
-    myOut << "Compute dot product of x and y" << endl;    
+    myOut << "Compute dot product of x and y" << endl;
     x.dot (y, results);
     TEST_EQUALITY( results[0], STS::one() );
 
@@ -3198,13 +3196,13 @@ namespace {
     x.sync_host ();
     y.sync_host ();
     x.modify_host ();
-    y.modify_host ();    
-    
+    y.modify_host ();
+
     // dot([-i], [i]) should be -1, not +1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), -STM::one ()));
     y.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
 
-    myOut << "Compute dot product of x and y" << endl;    
+    myOut << "Compute dot product of x and y" << endl;
     x.dot (y, results);
     TEST_EQUALITY( results[0], -STS::one() );
 
@@ -3214,7 +3212,7 @@ namespace {
     reduceAll<int, int> (*getDefaultComm (), REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
   }
-#endif // defined(HAVE_TEUCHOS_COMPLEX) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))  
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT))
 
   // Test that MultiVector can be declared with no template
   // parameters, so that every template parameter has its default
@@ -3235,7 +3233,7 @@ namespace {
     // the std::is_same expression in the macro, since it has a comma
     // (commas separate arguments in a macro).
     const bool defaultScalarMatchesTpetra =
-      std::is_same<scalar_type, 
+      std::is_same<scalar_type,
                    Tpetra::Details::DefaultTypes::scalar_type>::value;
     TEST_ASSERT( defaultScalarMatchesTpetra );
 
@@ -4689,4 +4687,3 @@ namespace {
   TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 
 }
-

@@ -48,6 +48,8 @@
 #include <map>
 
 #include "Intrepid2_HVOL_C0_FEM.hpp"
+#include "Intrepid2_HVOL_TRI_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_QUAD_Cn_FEM.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_Basis.hpp"
@@ -136,6 +138,15 @@ namespace panzer {
 
     if ( (basis_type == "Const") && (basis_order == 0) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_C0_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
+
+    else if ( (basis_type == "HVol") && (basis_order == 0) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_C0_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
+
+    else if ( (basis_type == "HVol") && (cell_type == "Quadrilateral") && (basis_order > 0) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_QUAD_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
+
+    else if ( (basis_type == "HVol") && (cell_type == "Triangle") && (basis_order > 0) )
+      basis = Teuchos::rcp( new Intrepid2::Basis_HVOL_TRI_Cn_FEM<ExecutionSpace,OutputValueType,PointValueType>(basis_order, point_type) );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );

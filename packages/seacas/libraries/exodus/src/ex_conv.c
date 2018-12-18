@@ -106,7 +106,7 @@ void ex_check_valid_file_id(int exoid, const char *func)
              "valid open exodus file.\n\t\tAborting to avoid file "
              "corruption or data loss or other potential problems.",
              func, exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
   }
 }
 
@@ -290,7 +290,7 @@ void ex_conv_exit(int exoid)
 
   if (!file) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failure to clear file id %d - not in list.", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_VOID();
   }
 
@@ -322,7 +322,7 @@ nc_type nc_flt_code(int exoid)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for nc_flt_code().", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     return ((nc_type)-1);
   }
   EX_FUNC_LEAVE(file->netcdf_type_code);
@@ -353,7 +353,7 @@ int ex_int64_status(int exoid)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_int64_status().", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(0);
   }
   EX_FUNC_LEAVE(file->int64_status);
@@ -383,7 +383,7 @@ int ex_set_int64_status(int exoid, int mode)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_int64_status().", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(0);
   }
 
@@ -402,7 +402,7 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_set_option().", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -455,7 +455,7 @@ int ex_comp_ws(int exoid)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     return (EX_FATAL);
   }
   /* Stored as 0 for 4-byte; 1 for 8-byte */
@@ -476,7 +476,7 @@ int ex_is_parallel(int exoid)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d", exoid);
-    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   /* Stored as 1 for parallel, 0 for serial or file-per-processor */

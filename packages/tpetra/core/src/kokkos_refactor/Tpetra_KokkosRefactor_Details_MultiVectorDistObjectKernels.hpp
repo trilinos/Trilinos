@@ -51,6 +51,7 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "impl/Kokkos_Atomic_Generic.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -736,23 +737,22 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
   };
 #endif // KOKKOS_ENABLE_SERIAL
 
+  template<class Scalar1, class Scalar2>
+  struct AbsMaxOper {
+    KOKKOS_FORCEINLINE_FUNCTION
+    static Scalar1 apply(const Scalar1& val1, const Scalar2& val2) {
+      const auto val1_abs = Kokkos::Details::ArithTraits<Scalar1>::abs(val1);
+      const auto val2_abs = Kokkos::Details::ArithTraits<Scalar2>::abs(val2);
+      return val1_abs > val2_abs ? Scalar1(val1_abs) : Scalar1(val2_abs);
+    }
+  };
+
   template<class ExecutionSpace>
   struct AbsMaxOp {
-    // ETP:  Is this really what we want?  This seems very odd if
-    // Scalar != SCT::mag_type (e.g., Scalar == std::complex<T>)
-    //
-    // mfh: I didn't write this code, but note that we don't use T =
-    // Scalar here, we use T = ArithTraits<Scalar>::mag_type.  That
-    // makes this code reasonable.
-    template <typename T>
-    KOKKOS_INLINE_FUNCTION
-    T max(const T& a, const T& b) const { return a > b ? a : b; }
-
     template <typename Scalar>
     KOKKOS_INLINE_FUNCTION
     void operator() (Scalar& dest, const Scalar& src) const {
-      typedef Kokkos::Details::ArithTraits<Scalar> SCT;
-      Kokkos::atomic_assign(&dest, Scalar(max(SCT::abs(dest),SCT::abs(src))));
+      Kokkos::Impl::atomic_fetch_oper (AbsMaxOper<Scalar,Scalar>(), &dest, src);
     }
   };
 

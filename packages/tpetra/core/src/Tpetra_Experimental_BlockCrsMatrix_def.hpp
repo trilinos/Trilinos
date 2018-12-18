@@ -1012,12 +1012,7 @@ public:
        "method.");
 #endif // HAVE_TPETRA_DEBUG
 
-    // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
-    // version of the data always exists (no lazy allocation for host
-    // data).
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-    auto vals_host_out =
-      getValuesHost ();
+    auto vals_host_out = getValuesHost ();
     impl_scalar_type* vals_host_out_raw = vals_host_out.data ();
 
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
@@ -1445,10 +1440,6 @@ public:
        "sync<Kokkos::HostSpace>() on this matrix) before calling this method.");
 #endif // HAVE_TPETRA_DEBUG
 
-    // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
-    // version of the data always exists (no lazy allocation for host
-    // data).
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     auto vals_host_out =
       getValuesHost ();
     impl_scalar_type* vals_host_out_raw = vals_host_out.data ();
@@ -1516,12 +1507,7 @@ public:
          "method.");
 #endif // HAVE_TPETRA_DEBUG
 
-      // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
-      // version of the data always exists (no lazy allocation for host
-      // data).
-      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-      auto vals_host_out =
-        getValuesHost ();
+      auto vals_host_out = getValuesHost ();
       impl_scalar_type* vals_host_out_raw = vals_host_out.data ();
       impl_scalar_type* const vOut = vals_host_out_raw +
         absBlockOffsetStart * offsetPerBlock ();
@@ -1998,12 +1984,7 @@ public:
 #endif // HAVE_TPETRA_DEBUG
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
 
-      // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
-      // version of the data always exists (no lazy allocation for host
-      // data).
-      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-      auto vals_host =
-        getValuesHost();
+      auto vals_host = getValuesHost ();
       const impl_scalar_type* vals_host_raw = vals_host.data ();
 
       return getConstLocalBlockFromInput (vals_host_raw, absPointOffset);
@@ -2063,10 +2044,6 @@ public:
          "sync<Kokkos::HostSpace>() on this matrix) before calling this "
          "method.");
 #endif // HAVE_TPETRA_DEBUG
-      // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
-      // version of the data always exists (no lazy allocation for host
-      // data).
-      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
       auto vals_host = getValuesHost();
       impl_scalar_type* vals_host_raw = vals_host.data ();
       return getNonConstLocalBlockFromInput (vals_host_raw, absPointOffset);
@@ -3749,10 +3726,6 @@ public:
        "method.");
 #endif // HAVE_TPETRA_DEBUG
 
-    // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
-    // version of the data always exists (no lazy allocation for host
-    // data).
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     auto vals_host_out = getValuesHost ();
     Scalar* vals_host_out_raw =
       reinterpret_cast<Scalar*> (vals_host_out.data ());

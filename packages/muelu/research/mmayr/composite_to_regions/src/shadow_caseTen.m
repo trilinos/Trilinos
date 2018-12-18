@@ -42,17 +42,28 @@ Rhat = Phat';
 AH = Rhat*fineA*Phat;
 coarsed = diag(AH);
 
+onlyJacobi = false;
 
-for i=1:1
-   finex =  finex + omega*(fineb - fineA*finex)./findd;
-   finer = fineb - fineA*finex;
-   fprintf('r is %20.13e\n',norm(finer));
-   coarseb = Rhat*finer;
-   coarsex = zeros(size(coarseb,1),1);
-   for k=1:1
+if (onlyJacobi == true)
+  for i=1:1
+    finex =  finex + omega*(fineb - fineA*finex)./findd;
+    finer = fineb - fineA*finex;
+    fprintf('r is %20.13e\n',norm(finer));
+    coarseb = Rhat*finer;
+    coarsex = zeros(size(coarseb,1),1);
+    for k=1:1
       coarsex =  coarsex + omega*(coarseb - AH*coarsex)./coarsed;
-   end
-   finex   = finex + Phat*coarsex;
+    end
+    finex   = finex + Phat*coarsex;
+  end
+else
+  for i=1:1
+    finex =  finex + omega*(fineb - fineA*finex)./findd;
+    finer = fineb - fineA*finex;
+    fprintf('r is %20.13e\n',norm(finer));
+    coarseb = Rhat*finer;
+    coarsex = AH \ coarseb;
+  end
 end
 Phat*coarsex,
 

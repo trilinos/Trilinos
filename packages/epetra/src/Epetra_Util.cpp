@@ -373,8 +373,7 @@ Epetra_Map Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
 }
 
 //----------------------------------------------------------------------------
-#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
-// FIXME long long
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_BlockMap
 Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
               bool high_rank_proc_owns_shared)
@@ -426,6 +425,55 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 }
 #endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+Epetra_BlockMap
+Epetra_Util::Create_OneToOne_BlockMap64(const Epetra_BlockMap& usermap,
+              bool high_rank_proc_owns_shared)
+{
+  //if usermap is already 1-to-1 then we'll just return a copy of it.
+  if (usermap.IsOneToOne()) {
+    Epetra_BlockMap newmap(usermap);
+    return(newmap);
+  }
+
+  int myPID = usermap.Comm().MyPID();
+  Epetra_Directory* directory = usermap.Comm().CreateDirectory(usermap);
+
+  int numMyElems = usermap.NumMyElements();
+  const long long* myElems = usermap.MyGlobalElements64();
+
+  int* owner_procs = new int[numMyElems*2];
+  int* sizes = owner_procs+numMyElems;
+
+  directory->GetDirectoryEntries(usermap, numMyElems, myElems, owner_procs,
+         0, sizes, high_rank_proc_owns_shared);
+
+  //we'll fill a list of map-elements which belong on this processor
+
+  long long* myOwnedElems = new long long[numMyElems*2];
+  long long* ownedSizes = myOwnedElems+numMyElems;
+  int numMyOwnedElems = 0;
+
+  for(int i=0; i<numMyElems; ++i) {
+    long long GID = myElems[i];
+    int owner = owner_procs[i];
+
+    if (myPID == owner) {
+      ownedSizes[numMyOwnedElems] = sizes[i];
+      myOwnedElems[numMyOwnedElems++] = GID;
+    }
+  }
+
+  Epetra_BlockMap one_to_one_map((long long)-1, numMyOwnedElems, myOwnedElems,
+         sizes, usermap.IndexBase64(), usermap.Comm());
+
+  delete [] myOwnedElems;
+  delete [] owner_procs;
+  delete directory;
+
+  return(one_to_one_map);
+}
+#endif // EPETRA_NO_64BIT_GLOBAL_INDICES
 
 //----------------------------------------------------------------------------
 int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals){

@@ -172,6 +172,21 @@ ELSE ()
       ENDIF ()
     ENDIF ()
 
+    IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_USE_COMPILER_WRAPPERS) AND MPI_USE_COMPILER_WRAPPERS AND (DEFINED CMAKE_CXX_COMPILER))
+      # Paths are returned with (forward) slashes, and no trailing slash:
+      # 
+      # https://cmake.org/cmake/help/v2.8.12/cmake.html#command%3aget_filename_component
+      #
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_ABS_PATH "${CMAKE_CXX_COMPILER}" ABSOLUTE)
+      # In the command below, PATH is a "legacy alias" for DIRECTORY; it
+      # works with CMake <= 2.8.11.  DIRECTORY requires CMake >= 2.8.12.
+      GET_FILENAME_COMPONENT (Tpetra_MPI_CXX_COMPILER_PARENT_DIR "${Tpetra_MPI_CXX_COMPILER_ABS_PATH}" PATH)
+      FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${Tpetra_MPI_CXX_COMPILER_PARENT_DIR} NO_DEFAULT_PATH)
+      IF (Tpetra_OMPI_INFO_EXECUTABLE)
+        SET (Tpetra_FOUND_OMPI_INFO_EXECUTABLE ON)
+      ENDIF ()
+    ENDIF ()
+
     # Next, try MPI_BIN_DIR.
     IF ((NOT Tpetra_FOUND_OMPI_INFO_EXECUTABLE) AND (DEFINED MPI_BIN_DIR))
       FIND_PROGRAM (Tpetra_OMPI_INFO_EXECUTABLE "ompi_info" ${MPI_BIN_DIR} NO_DEFAULT_PATH)
@@ -1104,6 +1119,16 @@ GLOBAL_SET(${PACKAGE_NAME}_ETI_LORDS   ${${PACKAGE_NAME}_ETI_LORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_GORDS   ${${PACKAGE_NAME}_ETI_GORDS})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_DEVICES ${${PACKAGE_NAME}_ETI_DEVICES})
 GLOBAL_SET(${PACKAGE_NAME}_ETI_NODES   ${${PACKAGE_NAME}_ETI_NODES})
+
+
+
+# Experimental Code
+# Enable experimental code
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
+  "Enable experimental code."
+  NO)
 
 
 ############################################################

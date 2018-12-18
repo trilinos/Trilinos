@@ -388,7 +388,7 @@ We utilize two interpretations of matrix entries:
 \begin{itemize}
 \item off-diagonal entries~$a_{ij}$ for~$i \neq j$:
 A matrix contribution~$a_{ij}$ for~$i \neq j$ can be viewed as an edge between node~$i$ and node~$j$.
-Though, $a_{ij}$ really comes about as a sum of element contributions from neighboring elements,
+Although $a_{ij}$ really comes about as a sum of element contributions from neighboring elements,
 our hope is that we don't have to worry about element information and so this simple edge view is sufficient.
 \item diagonal entries~$a_{ii}$:
 A matrix contribution at~$a_{ii}$ should \emph{not} be viewed as an edge between node~$i$ and node~$i$.
@@ -398,7 +398,7 @@ such that the nullspace of each region submatrix is preserved in comparison to t
 \end{itemize}
 We process off-diagonal entries and diagonal entries differently.
 
-For and edge, it is known, to which regions its nodes~$i$ and~$j$ belong to, namely:
+For any edge, it is known, to which regions its nodes~$i$ and~$j$ belong to, namely:
 \begin{itemize}
 \item If nodes~$i$ and~$j$ belong to one and the same region, this is an interior edge.
 \item If nodes~$i$ and~$j$ belong to the same two regions, this is an interface edge.
@@ -422,7 +422,7 @@ The matrix can be decomposed into~$\tilde{A}^{(k)} + D^{(k)}$ with~$\tilde{A}^{(
 the result of processing the off-diagonal entries and~$D^{(k)}$ being an yet to be determined
 correction to the diagonal entries, yielding~$[\tilde{A}^{(k)} + D^{(k)}]v^{(k)} = z^{(k)}$.
 This can be rearranged to~$D^{(k)}v^{(k)} = z^{(k)} - \tilde{A}^{(k)}v^{(k)}$
-and be fix the diagonal values.
+and be used to fix the diagonal values.
 
 \end{enumerate}
 

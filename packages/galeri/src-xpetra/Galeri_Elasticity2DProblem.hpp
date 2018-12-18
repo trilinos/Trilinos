@@ -177,7 +177,7 @@ namespace Galeri {
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 9*numDofPerNode);
 
-      SC one = TST::one(), zero = TST::zero();
+      SC one = TST::one(), zero = TST::zero(), two = one+one;
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, Teuchos::as<LO>(nDim_));        // cache
       for (size_t i = 0; i < elements_.size(); i++) {
         // Select nodes subvector
@@ -293,7 +293,7 @@ namespace Galeri {
                   if ((j == k) || ((j+k) & 0x1)) {
                     // Nodes j and k are connected by an edge, or j == k
                     LO k0 = numDofPerNode*k, k1 = k0+1;
-                    SC f = pow(2.0*TST::one(), Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
+                    SC f = TST::pow(two, Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
 
                     KE(j0,k0) *= f; KE(j0,k1) *= f;
                     KE(j1,k0) *= f; KE(j1,k1) *= f;
@@ -502,18 +502,24 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDxi(const std::vector<Point>& refPoints, Point& gaussPoint, SC * dxi) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar two = one+one;
+      const Scalar quarter = one/(two+two);
       for (size_t j = 0; j < refPoints.size(); j++)
-        dxi[j] = refPoints[j].x * (1.0 + refPoints[j].y*gaussPoint.y)/4.;
-      dxi[4] = -2.*gaussPoint.x;
+        dxi[j] = refPoints[j].x * (one + refPoints[j].y*gaussPoint.y) * quarter;
+      dxi[4] = -two*gaussPoint.x;
       dxi[5] = 0.0;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC * deta) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar two = one+one;
+      const Scalar quarter = one/(two+two);
       for (size_t j = 0; j < refPoints.size(); j++)
-        deta[j] = (1.0 + gaussPoint.x*refPoints[j].x)*refPoints[j].y/4.;
+        deta[j] = (one + gaussPoint.x*refPoints[j].x)*refPoints[j].y * quarter;
       deta[4] = 0.0;
-      deta[5] = -2.*gaussPoint.y;
+      deta[5] = -two*gaussPoint.y;
     }
 
   } // namespace Xpetra

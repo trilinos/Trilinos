@@ -6,6 +6,10 @@ echo "*** $0 " "$@"
 echo "***"
 echo
 
+#
+# Get the location of the base Trilinos directory
+#
+
 if [ "$ATDM_TRILINOS_DIR" == "" ] ; then
   # Grab from the symlink (only works on Linux)
   _ABS_FILE_PATH=`readlink -f $0` || \
@@ -23,6 +27,10 @@ if [ "$ATDM_TRILINOS_DIR" == "" ] ; then
   exit 1
 fi
 
+#
+# Load a default env for the system
+#
+
 if [ "$ATDM_CHT_DEFAULT_ENV" == "" ] ; then
   ATDM_CHT_DEFAULT_ENV=default
 fi
@@ -37,13 +45,13 @@ source $STD_ATDM_DIR/load-env.sh ${ATDM_CHT_DEFAULT_ENV}
 
 ATDM_CHT_HELP_STR="
 usage: ./checkin-test-atdm.sh \\
-         <job-name-keys0> <job-name-keys1> ... <job-name-keysn> \\
+         <build-name-keys0> <build-name-keys1> ... <build-name-keysn> \\
          [other checkin-test options]
 
-This script drives local confiugre, build and testing for each of the
-<job-name-keyi> builds.
+This script drives local configure, build and testing for each of the
+<build-name-keyi> builds.
 
-If just 'all' is passsed in for the <job-name-keys> list, then the list of all
+If just 'all' is passsed in for the <build-name-keys> list, then the list of all
 of the supported jobs for that current system will be loaded from
 <system_name>/all_supported_builds.sh.
 
@@ -69,7 +77,7 @@ system and not the login node or it will completely fill up the login node.
 
 To reproduce any build just do:
 
-  cd <job-name-keys>/
+  cd <build-name-keys>/
   source load-env.sh
   ./do-configure
   make -j16
@@ -86,14 +94,14 @@ NOTE: To see checkin-test.py --help, run:
 # A) Parse the arguments
 #
 
-# A.1) Pull off the initial <job-name-keysi> arguments
+# A.1) Pull off the initial <build-name-keysi> arguments
 
-ATDM_JOB_NAME_KEYS_LIST=
+ATDM_BUILD_NAME_KEYS_LIST=
 while [[ ! "$1" == "--"* ]] && [[ ! "$1" == "" ]] ; do
-  if [[ "$ATDM_JOB_NAME_KEYS_LIST" == "" ]] ; then
-    ATDM_JOB_NAME_KEYS_LIST="$1"
+  if [[ "$ATDM_BUILD_NAME_KEYS_LIST" == "" ]] ; then
+    ATDM_BUILD_NAME_KEYS_LIST="$1"
   else
-    ATDM_JOB_NAME_KEYS_LIST="$ATDM_JOB_NAME_KEYS_LIST $1"
+    ATDM_BUILD_NAME_KEYS_LIST="$ATDM_BUILD_NAME_KEYS_LIST $1"
   fi
   shift
 done
@@ -131,27 +139,27 @@ if [[ "$ATDM_CHT_FOUND_HELP" == "1" ]] ; then
   exit 0
 fi
 
-# A.3) Inspect the <job-name-keys> args and deal with 'all'
+# A.3) Inspect the <build-name-keys> args and deal with 'all'
 
-if [[ "$ATDM_JOB_NAME_KEYS_LIST" == "" ]] ; then
+if [[ "$ATDM_BUILD_NAME_KEYS_LIST" == "" ]] ; then
   echo
-  echo "Error, at least one <job-name-keys> (e.g. gnu-opt-openmp) argument is required!"
+  echo "Error, at least one <build-name-keys> (e.g. gnu-opt-openmp) argument is required!"
   exit 1
 fi
 
-if [[ "$ATDM_JOB_NAME_KEYS_LIST" == "all" ]] ; then
+if [[ "$ATDM_BUILD_NAME_KEYS_LIST" == "all" ]] ; then
   export ATDM_CONFIG_ALL_SUPPORTED_BUILDS=
   source $STD_ATDM_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/all_supported_builds.sh
-  ATDM_JOB_NAME_KEYS_LIST="$ATDM_CONFIG_ALL_SUPPORTED_BUILDS"
+  ATDM_BUILD_NAME_KEYS_LIST="${ATDM_CONFIG_ALL_SUPPORTED_BUILDS[@]}"
 fi
 
-ATDM_JOB_NAME_KEYS_COMMA_LIST=
+ATDM_BUILD_NAME_KEYS_COMMA_LIST=
 ATDM_NUM_BULDS=0
-for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
-  if [[ "$ATDM_JOB_NAME_KEYS_COMMA_LIST" == "" ]] ; then
-    ATDM_JOB_NAME_KEYS_COMMA_LIST="$ATDM_JOB_NAME_KEYS"
+for ATDM_BUILD_NAME_KEYS in $ATDM_BUILD_NAME_KEYS_LIST ; do
+  if [[ "$ATDM_BUILD_NAME_KEYS_COMMA_LIST" == "" ]] ; then
+    ATDM_BUILD_NAME_KEYS_COMMA_LIST="$ATDM_BUILD_NAME_KEYS"
   else
-    ATDM_JOB_NAME_KEYS_COMMA_LIST="$ATDM_JOB_NAME_KEYS_COMMA_LIST,$ATDM_JOB_NAME_KEYS"
+    ATDM_BUILD_NAME_KEYS_COMMA_LIST="$ATDM_BUILD_NAME_KEYS_COMMA_LIST,$ATDM_BUILD_NAME_KEYS"
   fi
   ATDM_NUM_BULDS=$((ATDM_NUM_BULDS+1))
 done
@@ -164,9 +172,9 @@ if [ -f checkin-test.final.out ] ; then
   rm checkin-test.final.out
 fi
 
-for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
-  if [ -f checkin-test.$ATDM_JOB_NAME_KEYS.out ] ; then
-    rm checkin-test.$ATDM_JOB_NAME_KEYS.out
+for ATDM_BUILD_NAME_KEYS in $ATDM_BUILD_NAME_KEYS_LIST ; do
+  if [ -f checkin-test.$ATDM_BUILD_NAME_KEYS.out ] ; then
+    rm checkin-test.$ATDM_BUILD_NAME_KEYS.out
   fi
 done
 
@@ -198,24 +206,24 @@ fi
 #
 
 echo
-echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_JOB_NAME_KEYS_LIST"
+echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_BUILD_NAME_KEYS_LIST"
 echo
 
 ATDM_CHT_BUILD_CASE_IDX=0
-for ATDM_JOB_NAME_KEYS in $ATDM_JOB_NAME_KEYS_LIST ; do
+for ATDM_BUILD_NAME_KEYS in $ATDM_BUILD_NAME_KEYS_LIST ; do
   echo
   echo "***"
-  echo "*** $ATDM_CHT_BUILD_CASE_IDX) Process build case $ATDM_JOB_NAME_KEYS"
+  echo "*** $ATDM_CHT_BUILD_CASE_IDX) Process build case $ATDM_BUILD_NAME_KEYS"
   echo "***"
   echo
-  $STD_ATDM_DIR/utils/checkin-test-atdm-single.sh $ATDM_JOB_NAME_KEYS \
+  $STD_ATDM_DIR/utils/checkin-test-atdm-single.sh $ATDM_BUILD_NAME_KEYS \
     --default-builds= --allow-no-pull --send-email-to="" \
     --test-categories=NIGHTLY --ctest-timeout=600 \
     "$@"
   if [[ "$?" == "0" ]] ; then
-    echo "$ATDM_JOB_NAME_KEYS: PASSED!"
+    echo "$ATDM_BUILD_NAME_KEYS: PASSED!"
   else
-    echo "$ATDM_JOB_NAME_KEYS: FAILED!"
+    echo "$ATDM_BUILD_NAME_KEYS: FAILED!"
   fi
   ATDM_CHT_BUILD_CASE_IDX=$((ATDM_CHT_BUILD_CASE_IDX+1))
 done
@@ -231,7 +239,7 @@ echo "  ==> See output file checkin-test.final.out"
 echo
 
 $ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
-  --default-builds= --st-extra-builds=$ATDM_JOB_NAME_KEYS_COMMA_LIST \
+  --default-builds= --st-extra-builds=$ATDM_BUILD_NAME_KEYS_COMMA_LIST \
   --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
   $ATDM_CHT_SEND_EMAIL_TO_ARG \
   --log-file=checkin-test.final.out \

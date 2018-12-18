@@ -2,7 +2,7 @@
 #
 # Set up env on shiller/hansen for ATMD builds of Trilinos
 #
-# This source script gets the settings from the ATDM_CONFIG_JOB_NAME var.
+# This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
 ################################################################################
 
@@ -112,6 +112,6 @@ export MPICC=`which mpicc`
 export MPICXX=`which mpicxx`
 export MPIF90=`which mpif90`
 
-export ATDM_CONFIG_MPI_POST_FLAG="-map-by;socket:PE=16;--oversubscribe"
+export ATDM_CONFIG_MPI_POST_FLAGS="-map-by;socket:PE=16;--oversubscribe"
 
 export ATDM_CONFIG_COMPLETED_ENV_SETUP=TRUE

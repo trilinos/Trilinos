@@ -1,6 +1,3 @@
-# Disable test that is randomly failing in this build (#2474)
-ATDM_SET_ENABLE(Piro_MatrixFreeDecorator_UnitTests_MPI_4_DISABLE ON)
-
 # Disable SEACAS tests that get messed up due to extra STDERR output on
 # 'mutrino' that does not occur on other platforms (see #3183)
 ATDM_SET_ENABLE(SEACASAprepro_aprepro_array_test_DISABLE ON)

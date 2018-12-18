@@ -49,6 +49,9 @@
 #include "Epetra_config.h"
 #include "Belos_config.h"
 
+// RWH TODO FIXME: Trilinos_Util_distrib_msr_matrix available only if 32 bit GIDs available.
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #endif
@@ -114,5 +117,7 @@ namespace Belos {
   } // namespace Test
 
 } // namespace Belos
+
+#endif // EPETRA_NO_32BIT_GLOBAL_INDICES
 
 #endif // BELOS_EPETRA_UTILS_H

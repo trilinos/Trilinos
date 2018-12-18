@@ -87,13 +87,13 @@ reset(const NOX::Abstract::Vector& d)
   lambda = 0.0;
 }
 
-void NOX::Direction::Broyden::BroydenMemoryUnit::setStep(double step)
+void NOX::Direction::Broyden::BroydenMemoryUnit::setStep(double step_length)
 {
-  lambda = step;
-  if (step != 1.0)
+  lambda = step_length;
+  if (step_length != 1.0)
   {
-    sptr->scale(step);
-    snormsqr = step * step * snormsqr;
+    sptr->scale(step_length);
+    snormsqr = step_length * step_length * snormsqr;
   }
 }
 

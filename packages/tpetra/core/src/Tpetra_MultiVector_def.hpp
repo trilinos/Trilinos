@@ -829,9 +829,8 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
-    typedef typename device_type::memory_space DMS;
-    typedef Kokkos::HostSpace HMS;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    using DMS = typename device_type::memory_space;
+    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
@@ -1149,7 +1148,6 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef impl_scalar_type IST;
-    typedef Kokkos::HostSpace host_memory_space;
     typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
       dev_memory_space;
     typedef typename Kokkos::DualView<IST*, device_type>::t_host::execution_space
@@ -1282,9 +1280,8 @@ namespace Tpetra {
     ::Tpetra::Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // 'exports' may have different memory spaces than device_type
-    // would indicate.  See GitHub issue #1088.  Abbreviations:
-    // "exports host memory space" and "exports device memory spaces."
-    typedef typename std::decay<decltype (exports) >::type::t_host::memory_space EHMS;
+    // would indicate.  See GitHub issue #1088.  Abbreviation:
+    // "exports device memory spaces."
     typedef typename std::decay<decltype (exports) >::type::t_dev::memory_space EDMS;
 
     // Mark 'exports' here, since we might have resized it above.
@@ -1435,11 +1432,6 @@ namespace Tpetra {
     typedef impl_scalar_type IST;
     typedef typename Kokkos::DualView<IST*,
       device_type>::t_dev::memory_space DMS;
-    // For correct UVM use, make the "host memory space" (template
-    // parameter of sync and modify) different than the "device memory
-    // space."  Otherwise, sync() won't fence (indeed, it won't do
-    // anything).
-    typedef Kokkos::HostSpace HMS;
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
 
@@ -1564,7 +1556,7 @@ namespace Tpetra {
 
     Kokkos::DualView<size_t*, device_type> whichVecs;
     if (! isConstantStride ()) {
-      Kokkos::View<const size_t*, HMS,
+      Kokkos::View<const size_t*, Kokkos::HostSpace,
         Kokkos::MemoryUnmanaged> whichVecsIn (whichVectors_.getRawPtr (),
                                               numVecs);
       whichVecs = Kokkos::DualView<size_t*, device_type> ("whichVecs", numVecs);

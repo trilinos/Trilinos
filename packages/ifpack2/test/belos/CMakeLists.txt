@@ -18,6 +18,13 @@ IF(Ifpack2_ENABLE_QD)
   )
 ENDIF()
 
+IF (Tpetra_INST_DOUBLE)
+  TRIBITS_ADD_EXECUTABLE(
+    tif_tpetra_native
+    SOURCES tpetra_native.cpp
+  )
+ENDIF()
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   DEST_FILES
   test_ILUT_calore1_mm.xml 
@@ -518,6 +525,33 @@ TRIBITS_ADD_TEST(
   ARGS "--xml_file=test_bordered_DIAG_small.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_tpetra_native
+  NAME Tpetra_Native_GMRES_SINGLE_REDUCE
+  ARGS "--matrixFilename=calore1.mtx --convergenceTolerances=1e-8 --solverTypes=\"TPETRA GMRES SINGLE REDUCE\""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_tpetra_native
+  NAME Tpetra_Native_GMRES_PIPELINE
+  ARGS "--matrixFilename=calore1.mtx --convergenceTolerances=1e-8 --solverTypes=\"TPETRA GMRES PIPELINE\""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_tpetra_native
+  NAME Tpetra_Native_GMRES_S_STEP
+  ARGS "--matrixFilename=calore1.mtx --convergenceTolerances=1e-8 --solverTypes=\"TPETRA GMRES S-STEP\""
+  COMM serial mpi
+  NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
 

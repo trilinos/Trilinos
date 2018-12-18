@@ -143,8 +143,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 
     comm->barrier();
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
-    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
+    auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
+    auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
     // Read matrices in from files
     // maps for nodal and edge matrices
@@ -171,7 +171,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.mat", edge_map, Teuchos::null, node_map, edge_map);
     }
     // coordinates
-    RCP<Xpetra::MultiVector<double, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
@@ -199,7 +199,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     // set parameters
     std::string defaultXMLfile;
-    if (!TYPE_EQUAL(SC, std::complex<double>))
+    if (!TYPE_EQUAL(SC, std::complex<double>) && !TYPE_EQUAL(SC, std::complex<float>))
       defaultXMLfile = "Maxwell.xml";
     else
       defaultXMLfile = "Maxwell_complex.xml";
@@ -220,7 +220,7 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     tm = Teuchos::null;
 
     if (solverName == "Belos") {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc")));
+      auto tm2  = TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc");
 
       // construct preconditioner
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
@@ -259,9 +259,8 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       solver = factory->create("Block CG",belosParams);
 
       comm->barrier();
-      tm = Teuchos::null;
-
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+      tm2=Teuchos::null;
+      auto tm3  = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // set problem and solve
       solver -> setProblem( problem );
@@ -272,12 +271,11 @@ int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
         *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-
+      tm3 = Teuchos::null;
     }
     comm->barrier();
-    tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
-
+    
     if (printTimings) {
       RCP<Teuchos::ParameterList> reportParams = rcp(new Teuchos::ParameterList);
       if (timingsFormat == "yaml") {
@@ -354,8 +352,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     }
 
     comm->barrier();
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
-    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
+    auto globalTimeMonitor = TimeMonitor::getNewTimer("Maxwell: S - Global Time");
+    auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
     // Read matrices in from files
     // maps for nodal and edge matrices
@@ -383,7 +381,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.mat", edge_map, Teuchos::null, node_map, edge_map);
     }
     // coordinates
-    RCP<Xpetra::MultiVector<double, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.mat", node_map);
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
@@ -432,7 +430,7 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     tm = Teuchos::null;
 
     if (solverName == "Belos") {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc")));
+      auto tm2 = TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc");
 
       // construct preconditioner
       RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
@@ -471,9 +469,8 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       solver = factory->create("Pseudo Block CG",belosParams);
 
       comm->barrier();
-      tm = Teuchos::null;
 
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+      auto tm3 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // set problem and solve
       solver -> setProblem( problem );
@@ -484,11 +481,11 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
         *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-
+      tm3 = Teuchos::null;
     }
 #ifdef HAVE_MUELU_STRATIMIKOS
     if (solverName == "Stratimikos") {
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Stratimikos solver")));
+      auto tm4 = TimeMonitor::getNewTimer("Maxwell: 2 - Build Stratimikos solver");
 
       // Build the rest of the Stratimikos list
       Teuchos::ParameterList SList;
@@ -527,18 +524,19 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
       Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
 
       comm->barrier();
-      tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+
+      tm4 = Teuchos::null;
+      auto tm5 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
 
       // Solve Ax = b.
       Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
       std::cout << status << std::endl;
 
       success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+      tm5 = Teuchos::null;
     }
 #endif
     comm->barrier();
-    tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
 
     if (printTimings) {

@@ -608,7 +608,7 @@ namespace MueLu {
           }
 
         } else if (algo == "distance laplacian") {
-          typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
+          typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> doubleMultiVector;
           auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
 
           auto uniqueMap    = A->getRowMap();
@@ -623,7 +623,7 @@ namespace MueLu {
           RCP<doubleMultiVector> ghostedCoords;
           {
             SubFactoryMonitor m2(*this, "Ghosted coords construction", currentLevel);
-            ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, coords->getNumVectors());
+            ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nonUniqueMap, coords->getNumVectors());
             ghostedCoords->doImport(*coords, *importer, Xpetra::INSERT);
           }
 

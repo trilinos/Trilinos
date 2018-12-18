@@ -77,14 +77,34 @@ void IOShell::Interface::enroll_options()
   options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
 
   options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database type for input file: pamgen|generated|exodus. exodus is the default.",
+                  "Database type for input file: generated"
+#if defined(SEACAS_HAVE_PAMGEN)
+                  "|pamgen"
+#endif
+#if defined(SEACAS_HAVE_EXODUS)
+                  "|exodus"
+#endif
+#if defined(SEACAS_HAVE_CGNS)
+                  "|cgns"
+#endif
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
+                  "|data_warehouse"
+#endif
+                  ".\n\t\tIf not specified, guess from extension or exodus is the default.",
                   "unknown");
 
   options_.enroll("out_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database type for output file: exodus. exodus is the default.", "unknown");
-
+                  "Database type for output file:"
+#if defined(SEACAS_HAVE_EXODUS)
+                  " exodus"
+#endif
+#if defined(SEACAS_HAVE_CGNS)
+                  " cgns"
+#endif
+                  ".\n\t\tIf not specified, guess from extension or exodus is the default.",
+                  "unknown");
   options_.enroll("extract_group", Ioss::GetLongOption::MandatoryValue,
-                  "Write the data from the specified group to the output file.\n", nullptr);
+                  "Write the data from the specified group to the output file.", nullptr);
 
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "Use 64-bit integers on output database",
                   nullptr);
@@ -120,8 +140,8 @@ void IOShell::Interface::enroll_options()
 #if defined(PARALLEL_AWARE_EXODUS)
   options_.enroll(
       "compose", Ioss::GetLongOption::MandatoryValue,
-      "Specify the parallel-io method to be used to output a single file in a parallel run. "
-      "Options are default, mpiio, mpiposix, pnetcdf, external",
+      "Specify the parallel-io method to be used to output a single file in a parallel run.\n"
+      "\t\tOptions are default, mpiio, mpiposix, pnetcdf, external",
       nullptr);
 
   options_.enroll(
@@ -154,19 +174,19 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
-                  "Use the linear method to decompose the input mesh in a parallel run. "
-                  "elements in order first n/p to proc 0, next to proc 1.",
+                  "Use the linear method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements in order first n/p to proc 0, next to proc 1.",
                   nullptr);
 
   options_.enroll("cyclic", Ioss::GetLongOption::NoValue,
-                  "Use the cyclic method to decompose the input mesh in a parallel run. "
-                  "elements handed out to id % proc_count",
+                  "Use the cyclic method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements handed out to id % proc_count",
                   nullptr);
 
   options_.enroll("random", Ioss::GetLongOption::NoValue,
-                  "Use the random method to decompose the input mesh in a parallel run."
-                  "elements assigned randomly to processors in a way that preserves balance (do "
-                  "not use for a real run)",
+                  "Use the random method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements assigned randomly to processors in a way that preserves balance\n"
+                  "\t\t(do *not* use for a real run)",
                   nullptr);
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
@@ -221,6 +241,12 @@ void IOShell::Interface::enroll_options()
       "Sleep for <$val> seconds between timestep output to simulate application calculation time",
       nullptr);
 
+  options_.enroll("flush_interval", Ioss::GetLongOption::MandatoryValue,
+                  "Specify the number of steps between database flushes.\n"
+                  "\t\tIf not specified, then the default database-dependent setting is used.\n"
+                  "\t\tA value of 0 disables flushing.",
+                  nullptr);
+
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
                   "\t\t when recognizing vector, tensor fields. Enter '0' for no separator",
@@ -260,8 +286,8 @@ void IOShell::Interface::enroll_options()
       nullptr);
 
   options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
-                  "Do not lowercase variable names and replace spaces with underscores. Variable "
-                  "names are left as they appear in the input mesh file",
+                  "Do not lowercase variable names and replace spaces with underscores.\n"
+                  "\t\tVariable names are left as they appear in the input mesh file",
                   nullptr);
 
   options_.enroll("delete_timesteps", Ioss::GetLongOption::NoValue,
@@ -289,8 +315,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("help") != nullptr) {
-    options_.usage();
-    std::cerr << "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n";
+    options_.usage(std::cerr);
+    std::cerr << "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for io_shell support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
@@ -552,6 +578,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("append_after_time");
     if (temp != nullptr) {
       append_time = std::strtod(temp, nullptr);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("flush_interval");
+    if (temp != nullptr) {
+      flush_interval = std::strtod(temp, nullptr);
     }
   }
 

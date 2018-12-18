@@ -114,7 +114,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
     std::vector<INT> eblk_ids(neblks);
     std::vector<INT> eblk_ecnts(neblks);
 
-    if (ex_get_ids(exoid, EX_ELEM_BLOCK, &eblk_ids[0]) < 0) {
+    if (ex_get_ids(exoid, EX_ELEM_BLOCK, eblk_ids.data()) < 0) {
       Gen_Error(0, "fatal: unable to get element block IDs");
       ex_close(exoid);
       return 0;
@@ -206,6 +206,18 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
   mesh->num_node_sets = exo.num_node_sets;
   mesh->num_side_sets = exo.num_side_sets;
 
+  /* Read the element block IDs */
+  mesh->eb_ids.resize(mesh->num_el_blks);
+  mesh->eb_cnts.resize(mesh->num_el_blks);
+  mesh->eb_npe.resize(mesh->num_el_blks);
+  mesh->eb_type.resize(mesh->num_el_blks);
+
+  if (ex_get_ids(exoid, EX_ELEM_BLOCK, mesh->eb_ids.data()) < 0) {
+    Gen_Error(0, "fatal: unable to get element block IDs");
+    ex_close(exoid);
+    return 0;
+  }
+
   /* Get the length of the concatenated node set node list */
   if (mesh->num_node_sets > 0) {
     mesh->ns_list_len = ex_inquire_int(exoid, EX_INQ_NS_NODE_LEN);
@@ -230,38 +242,30 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     sphere->end[cnt]    = 0;
   }
 
-  std::vector<INT> el_blk_ids(mesh->num_el_blks);
-
-  /* Read the element block IDs */
-  if (ex_get_ids(exoid, EX_ELEM_BLOCK, &el_blk_ids[0]) < 0) {
-    Gen_Error(0, "fatal: unable to get element block IDs");
-    ex_close(exoid);
-    return 0;
-  }
-
   /* Determine the maximum number of nodes per element */
   mesh->max_np_elem = 0;
   for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
-    INT num_elems;
     INT nodes_in_elem;
 
-    if (ex_get_block(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], elem_type, &num_elems, &nodes_in_elem,
+    if (ex_get_block(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], elem_type, &(mesh->eb_cnts[cnt]), &nodes_in_elem,
                      nullptr, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: unable to get element block");
       ex_close(exoid);
       return 0;
     }
+    mesh->eb_npe[cnt] = nodes_in_elem;
+    mesh->eb_type[cnt] = get_elem_type(elem_type, nodes_in_elem, mesh->num_dims);
 
-    if (num_elems == 0) {
+    if (mesh->eb_cnts[cnt] == 0) {
       continue;
     }
 
     if (cnt == 0) {
-      sphere->end[0] = num_elems;
+      sphere->end[0] = mesh->eb_cnts[cnt];
     }
 
-    if (get_elem_type(elem_type, nodes_in_elem, mesh->num_dims) == SPHERE && problem->no_sph != 1) {
-      sphere->num += num_elems;
+    if (mesh->eb_type[cnt] == SPHERE && problem->no_sph != 1) {
+      sphere->num += mesh->eb_cnts[cnt];
       sphere->adjust[cnt] = 0;
     }
     else {
@@ -270,7 +274,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
 
     if (cnt != 0) {
       sphere->begin[cnt] = sphere->end[cnt - 1];
-      sphere->end[cnt]   = sphere->begin[cnt] + num_elems;
+      sphere->end[cnt]   = sphere->begin[cnt] + mesh->eb_cnts[cnt];
     }
 
     mesh->max_np_elem = MAX(mesh->max_np_elem, (size_t)nodes_in_elem);
@@ -313,9 +317,6 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
               Mesh_Description<INT> *mesh, Weight_Description<INT> *weight)
 {
   float  version, *xptr, *yptr, *zptr;
-  char   elem_type[MAX_STR_LENGTH + 1];
-  E_Type blk_elem_type;
-
   /*---------------------------Execution Begins--------------------------------*/
 
   /* Open the ExodusII file */
@@ -328,12 +329,13 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   /* Read the coordinates, if desired */
   xptr = yptr = zptr = nullptr;
+
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
     case 3: zptr = (mesh->coords) + 2 * (mesh->num_nodes);
-    /* FALLTHRU */
+      /* FALLTHRU */
     case 2: yptr = (mesh->coords) + (mesh->num_nodes);
-    /* FALLTHRU */
+      /* FALLTHRU */
     case 1: xptr = mesh->coords;
     }
 
@@ -344,38 +346,21 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   } /* End "if(problem->read_coords == ELB_TRUE)" */
 
-  /* Read the element block IDs */
-  std::vector<INT> el_blk_ids(mesh->num_el_blks);
-  std::vector<INT> el_blk_cnts(mesh->num_el_blks);
-
-  if (ex_get_ids(exoid, EX_ELEM_BLOCK, &el_blk_ids[0]) < 0) {
-    Gen_Error(0, "fatal: unable to read element block IDs");
-    return 0;
-  }
-
   /* Read the element connectivity */
   size_t gelem_cnt = 0;
   for (size_t cnt = 0; cnt < mesh->num_el_blks; cnt++) {
-    INT nodes_per_elem;
-    if (ex_get_block(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], elem_type, &(el_blk_cnts[cnt]),
-                     &nodes_per_elem, nullptr, nullptr, nullptr) < 0) {
-      Gen_Error(0, "fatal: unable to read element block");
-      return 0;
-    }
-    if (el_blk_cnts[cnt] == 0) {
+    if (mesh->eb_cnts[cnt] == 0) {
       continue;
     }
 
-    blk_elem_type = get_elem_type(elem_type, nodes_per_elem, mesh->num_dims);
-
-    INT *blk_connect = (INT *)malloc(sizeof(INT) * el_blk_cnts[cnt] * nodes_per_elem);
+    INT *blk_connect = (INT *)malloc(sizeof(INT) * mesh->eb_cnts[cnt] * mesh->eb_npe[cnt]);
     if (!blk_connect) {
       Gen_Error(0, "fatal: insufficient memory");
       return 0;
     }
 
     /* Get the connectivity for this element block */
-    if (ex_get_conn(exoid, EX_ELEM_BLOCK, el_blk_ids[cnt], blk_connect, nullptr, nullptr) < 0) {
+    if (ex_get_conn(exoid, EX_ELEM_BLOCK, mesh->eb_ids[cnt], blk_connect, nullptr, nullptr) < 0) {
       Gen_Error(0, "fatal: failed to get element connectivity");
       return 0;
     }
@@ -383,15 +368,15 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     /* find out if this element block is weighted */
     int wgt = -1;
     if (weight->type & EL_BLK) {
-      wgt = in_list(el_blk_ids[cnt], weight->elemblk);
+      wgt = in_list(mesh->eb_ids[cnt], weight->elemblk);
     }
 
     /* Fill the 2D global connectivity array */
     if (((problem->type == ELEMENTAL) && (weight->type & EL_BLK)) ||
         ((problem->type == NODAL) && (weight->type & EL_BLK))) {
 
-      for (int64_t cnt2 = 0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
-        mesh->elem_type[gelem_cnt] = blk_elem_type;
+      for (int64_t cnt2 = 0; cnt2 < mesh->eb_cnts[cnt]; cnt2++) {
+        mesh->elem_type[gelem_cnt] = mesh->eb_type[cnt];
 
         /* while going through the blocks, take care of the weighting */
         if ((problem->type == ELEMENTAL) && (weight->type & EL_BLK)) {
@@ -416,8 +401,8 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
           }
         }
 
-        for (int64_t cnt3 = 0; cnt3 < nodes_per_elem; cnt3++) {
-          INT node = blk_connect[cnt3 + cnt2 * nodes_per_elem] - 1;
+        for (int64_t cnt3 = 0; cnt3 < mesh->eb_npe[cnt]; cnt3++) {
+          INT node = blk_connect[cnt3 + cnt2 * mesh->eb_npe[cnt]] - 1;
           assert(node >= 0);
           mesh->connect[gelem_cnt][cnt3] = node;
 
@@ -456,15 +441,14 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     }
     else {
       // No weights...
-      for (int64_t cnt2 = 0; cnt2 < el_blk_cnts[cnt]; cnt2++) {
-        mesh->elem_type[gelem_cnt] = blk_elem_type;
+      for (int64_t cnt2 = 0; cnt2 < mesh->eb_cnts[cnt]; cnt2++) {
+        mesh->elem_type[gelem_cnt] = mesh->eb_type[cnt];
 
-        for (int64_t cnt3 = 0; cnt3 < nodes_per_elem; cnt3++) {
-          INT node = blk_connect[cnt2 * nodes_per_elem + cnt3] - 1;
+        for (int64_t cnt3 = 0; cnt3 < mesh->eb_npe[cnt]; cnt3++) {
+          INT node = blk_connect[cnt2 * mesh->eb_npe[cnt] + cnt3] - 1;
           assert(node >= 0);
           mesh->connect[gelem_cnt][cnt3] = node;
         }
-
         gelem_cnt++;
       }
     }
@@ -475,7 +459,7 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
   /* if there is a group designator, then parse it here */
   if (problem->groups != nullptr) {
-    if (!parse_groups(&el_blk_ids[0], &el_blk_cnts[0], mesh, problem)) {
+    if (!parse_groups(mesh, problem)) {
       Gen_Error(0, "fatal: unable to parse group designator");
       ex_close(exoid);
       return 0;

@@ -59,12 +59,13 @@ void panzer::BasisValues2<Scalar>::
 evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> & cub_points,
                const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv)
+               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+               const int in_num_cells)
 {
   PHX::MDField<Scalar,Cell,IP> weighted_measure;
   PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates;
-  build_weighted = false; 
-  evaluateValues(cub_points,jac,jac_det,jac_inv,weighted_measure,vertex_coordinates,false);
+  build_weighted = false;
+  evaluateValues(cub_points,jac,jac_det,jac_inv,weighted_measure,vertex_coordinates,false,in_num_cells);
 }
 
 template <typename Scalar>
@@ -75,113 +76,164 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> &
                const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
                const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-               bool use_vertex_coordinates)
+               bool use_vertex_coordinates,
+               const int in_num_cells)
 {
   MDFieldArrayFactory af("",ddims_,true);
- 
+
   int num_dim   = basis_layout->dimension();
 
   // currently this just copies on the basis objects are converted
   // in intrepid
   evaluateReferenceValues(cub_points,compute_derivatives,use_vertex_coordinates);
 
+  const int num_cells = in_num_cells < 0 ? jac.extent(0) : in_num_cells;
+  const std::pair<int,int> cell_range(0,num_cells);
+
   PureBasis::EElementSpace elmtspace = getElementSpace();
   if(elmtspace==PureBasis::CONST ||
      elmtspace==PureBasis::HGRAD) {
+    auto s_basis_scalar = Kokkos::subview(basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HGRADtransformVALUE(basis_scalar.get_view(),
+      HGRADtransformVALUE(s_basis_scalar,
                           basis_ref_scalar.get_view());
 
     if(build_weighted) {
+      auto s_weighted_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_basis_scalar.get_view(), 
-                        weighted_measure.get_view(), 
-                        basis_scalar.get_view());
+        multiplyMeasure(s_weighted_basis_scalar,
+                        s_weighted_measure,
+                        s_basis_scalar);
     }
   }
   else if(elmtspace==PureBasis::HCURL) {
+    auto s_basis_vector = Kokkos::subview(basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HCURLtransformVALUE(basis_vector.get_view(),
-                          jac_inv.get_view(),
+      HCURLtransformVALUE(s_basis_vector,
+                          s_jac_inv,
                           basis_ref_vector.get_view());
-    
+
     if(build_weighted) {
+      auto s_weighted_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_basis_vector.get_view(), 
-                        weighted_measure.get_view(), 
-                        basis_vector.get_view());
+        multiplyMeasure(s_weighted_basis_vector,
+                        s_weighted_measure,
+                        s_basis_vector);
     }
   }
   else if(elmtspace==PureBasis::HDIV)
   {
+    auto s_basis_vector = Kokkos::subview(basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac = Kokkos::subview(jac.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_det = Kokkos::subview(jac_det.get_view(),cell_range,Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HDIVtransformVALUE(basis_vector.get_view(),
-                         jac.get_view(),
-                         jac_det.get_view(),
+      HDIVtransformVALUE(s_basis_vector,
+                         s_jac,
+                         s_jac_det,
                          basis_ref_vector.get_view());
 
     if(build_weighted) {
+      auto s_weighted_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_basis_vector.get_view(), 
-                        weighted_measure.get_view(), 
-                        basis_vector.get_view());
+        multiplyMeasure(s_weighted_basis_vector,
+                        s_weighted_measure,
+                        s_basis_vector);
+    }
+  }
+  else if(elmtspace==PureBasis::HVOL)
+  {
+    auto s_basis_scalar = Kokkos::subview(basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_det = Kokkos::subview(jac_det.get_view(),cell_range,Kokkos::ALL());
+    Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+      HVOLtransformVALUE(s_basis_scalar,
+                         s_jac_det,
+                         basis_ref_scalar.get_view());
+
+    if(build_weighted) {
+      auto s_weighted_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
+      Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
+        multiplyMeasure(s_weighted_basis_scalar,
+                        s_weighted_measure,
+                        s_basis_scalar);
     }
   }
   else { TEUCHOS_ASSERT(false); }
 
   if(elmtspace==PureBasis::HGRAD && compute_derivatives) {
+    auto s_grad_basis = Kokkos::subview(grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HGRADtransformGRAD(grad_basis.get_view(),
-                         jac_inv.get_view(),
+      HGRADtransformGRAD(s_grad_basis,
+                         s_jac_inv,
                          grad_basis_ref.get_view());
 
     if(build_weighted) {
+      auto s_weighted_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_grad_basis.get_view(), 
-                        weighted_measure.get_view(), 
-                        grad_basis.get_view());
+        multiplyMeasure(s_weighted_grad_basis,
+                        s_weighted_measure,
+                        s_grad_basis);
     }
   }
   else if(elmtspace==PureBasis::HCURL && num_dim==2 && compute_derivatives) {
+    auto s_curl_basis_scalar = Kokkos::subview(curl_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_det = Kokkos::subview(jac_det.get_view(),cell_range,Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HDIVtransformDIV(curl_basis_scalar.get_view(),
-                       jac_det.get_view(),   // note only volume deformation is needed!
-                                             // this relates directly to this being in
-                                             // the divergence space in 2D!
+      HDIVtransformDIV(s_curl_basis_scalar,
+                       s_jac_det,   // note only volume deformation is needed!
+                                    // this relates directly to this being in
+                                    // the divergence space in 2D!
                        curl_basis_ref_scalar.get_view());
 
     if(build_weighted) {
+      auto s_weighted_curl_basis_scalar = Kokkos::subview(weighted_curl_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_curl_basis_scalar.get_view(), 
-                        weighted_measure.get_view(), 
-                        curl_basis_scalar.get_view());
+        multiplyMeasure(s_weighted_curl_basis_scalar,
+                        s_weighted_measure,
+                        s_curl_basis_scalar);
     }
   }
   else if(elmtspace==PureBasis::HCURL && num_dim==3 && compute_derivatives) {
+    auto s_curl_basis_vector = Kokkos::subview(curl_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac = Kokkos::subview(jac.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_det = Kokkos::subview(jac_det.get_view(),cell_range,Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HCURLtransformCURL(curl_basis_vector.get_view(),
-                         jac.get_view(),
-                         jac_det.get_view(),
+      HCURLtransformCURL(s_curl_basis_vector,
+                         s_jac,
+                         s_jac_det,
                          curl_basis_ref_vector.get_view());
 
     if(build_weighted) {
+      auto s_weighted_curl_basis_vector = Kokkos::subview(weighted_curl_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_curl_basis_vector.get_view(), 
-                        weighted_measure.get_view(), 
-                        curl_basis_vector.get_view());
+        multiplyMeasure(s_weighted_curl_basis_vector,
+                        s_weighted_measure,
+                        s_curl_basis_vector);
     }
   }
   else if(elmtspace==PureBasis::HDIV && compute_derivatives) {
+    auto s_div_basis = Kokkos::subview(div_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_jac_det = Kokkos::subview(jac_det.get_view(),cell_range,Kokkos::ALL());
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-      HDIVtransformDIV(div_basis.get_view(),
-                       jac_det.get_view(),
+      HDIVtransformDIV(s_div_basis,
+                       s_jac_det,
                        div_basis_ref.get_view());
-    
+
     if(build_weighted) {
+      auto s_weighted_div_basis = Kokkos::subview(weighted_div_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+      auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
       Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
-        multiplyMeasure(weighted_div_basis.get_view(), 
-                        weighted_measure.get_view(), 
-                        div_basis.get_view());
+        multiplyMeasure(s_weighted_div_basis,
+                        s_weighted_measure,
+                        s_div_basis);
     }
   }
 
@@ -198,13 +250,15 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> &
       // fill in basis coordinates
       for (size_type i = 0; i < basis_coordinates_ref.extent(0); ++i)
         for (size_type j = 0; j < basis_coordinates_ref.extent(1); ++j)
-           basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j); 
+           basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j);
 */
 
+    auto s_basis_coordinates = Kokkos::subview(basis_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_vertex_coordinates = Kokkos::subview(vertex_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
-    cell_tools.mapToPhysicalFrame(basis_coordinates.get_view(), 
+    cell_tools.mapToPhysicalFrame(s_basis_coordinates,
                                   basis_coordinates_ref.get_view(),
-                                  vertex_coordinates.get_view(),
+                                  s_vertex_coordinates,
                                   intrepid_basis->getBaseCellTopology());
   }
 }
@@ -217,7 +271,8 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim,void,void,void,void,void,void> &
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
-evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates)
+evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                         const int in_num_cells)
 {
   MDFieldArrayFactory af("",ddims_,true);
 
@@ -234,10 +289,15 @@ evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coord
     for (int j = 0; j < basis_coordinates_ref.extent_int(1); ++j)
       basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j);
 
+  const int num_cells = in_num_cells < 0 ? vertex_coordinates.extent(0) : in_num_cells;
+  const std::pair<int,int> cell_range(0,num_cells);
+  const auto s_basis_coordinates = Kokkos::subview(basis_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+  const auto s_vertex_coordinates = Kokkos::subview(vertex_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
-  cell_tools.mapToPhysicalFrame(basis_coordinates.get_view(),
+  cell_tools.mapToPhysicalFrame(s_basis_coordinates,
                                 basis_coordinates_ref.get_view(),
-                                vertex_coordinates.get_view(),
+                                s_vertex_coordinates,
                                 intrepid_basis->getBaseCellTopology());
 }
 
@@ -253,19 +313,22 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> &
                const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
                const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-               bool use_vertex_coordinates)
+               bool use_vertex_coordinates,
+               const int in_num_cells)
 {
 
   PureBasis::EElementSpace elmtspace = getElementSpace();
 
   if(elmtspace == PureBasis::CONST){
-    evaluateValues_Const(cub_points,jac_inv,weighted_measure);
+    evaluateValues_Const(cub_points,jac_inv,weighted_measure,in_num_cells);
+  } else if(elmtspace == PureBasis::HVOL){
+    evaluateValues_HVol(cub_points,jac_det,jac_inv,weighted_measure,in_num_cells);
   } else if(elmtspace == PureBasis::HGRAD){
-    evaluateValues_HGrad(cub_points,jac_inv,weighted_measure);
+    evaluateValues_HGrad(cub_points,jac_inv,weighted_measure,in_num_cells);
   } else if(elmtspace == PureBasis::HCURL){
-    evaluateValues_HCurl(cub_points,jac,jac_det,jac_inv,weighted_measure);
+    evaluateValues_HCurl(cub_points,jac,jac_det,jac_inv,weighted_measure,in_num_cells);
   } else if(elmtspace == PureBasis::HDIV){
-    evaluateValues_HDiv(cub_points,jac,jac_det,weighted_measure);
+    evaluateValues_HDiv(cub_points,jac,jac_det,weighted_measure,in_num_cells);
   } else {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"panzer::BasisValues2::evaluateValues : Element space not recognized.");
   }
@@ -281,7 +344,8 @@ template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
 evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                      const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
-                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                     const int in_num_cells)
 {
 
   TEUCHOS_ASSERT(getElementSpace() == PureBasis::CONST);
@@ -294,7 +358,7 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
   const int num_points = basis_layout->numPoints();
   const int num_basis  = basis.cardinality();
   const int num_dim    = basis_layout->dimension();
-  const int num_cells  = basis_layout->numCells();
+  const int num_cells = in_num_cells < 0 ? basis_layout->numCells() : in_num_cells;
 
   auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_basis,num_points);
   auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
@@ -346,9 +410,15 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
 
 
   if(build_weighted){
-    fst::multiplyMeasure(weighted_basis_scalar.get_view(),weighted_measure.get_view(),basis_scalar.get_view());
+    const std::pair<int,int> cell_range(0,num_cells);
+    auto s_weighted_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
+    auto s_basis_scalar = Kokkos::subview(basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    fst::multiplyMeasure(s_weighted_basis_scalar,s_weighted_measure,s_basis_scalar);
     if(compute_derivatives){
-      fst::multiplyMeasure(weighted_grad_basis.get_view(),weighted_measure.get_view(),grad_basis.get_view());
+      auto s_weighted_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      auto s_grad_basis = Kokkos::subview(grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      fst::multiplyMeasure(s_weighted_grad_basis,s_weighted_measure,s_grad_basis);
     }
   }
 
@@ -357,9 +427,75 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
+evaluateValues_HVol(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
+                    const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+                    const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
+                    const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                    const int in_num_cells)
+{
+
+  TEUCHOS_ASSERT(getElementSpace() == PureBasis::HVOL);
+
+  typedef Intrepid2::FunctionSpaceTools<PHX::Device::execution_space> fst;
+  MDFieldArrayFactory af("",ddims_,true);
+
+  const panzer::PureBasis & basis = *(basis_layout->getBasis());
+
+  const int num_points = basis_layout->numPoints();
+  const int num_basis  = basis.cardinality();
+  const int num_dim    = basis_layout->dimension();
+  const int num_cells = in_num_cells < 0 ? basis_layout->numCells() : in_num_cells;
+
+  auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_basis,num_points);
+  auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
+  auto cell_jac_det = af.buildStaticArray<Scalar,Cell,IP>("cell_jac_det",1,num_points);
+
+  auto cell_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("cell_basis_ref_scalar",num_basis,num_points);
+
+  for(int cell=0;cell<num_cells;++cell){
+
+    // =============================================
+    // Load external into cell-local arrays
+
+    for(int p=0;p<num_points;++p)
+      cell_jac_det(0,p)=jac_det(cell,p);
+    for(int p=0;p<num_points;++p)
+      for(int d=0;d<num_dim;++d)
+        cell_cub_points(p,d)=cub_points(cell,p,d);
+
+    // =============================================
+    // Load Reference Values
+
+    intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+
+    // =============================================
+    // Transform reference values to physical values
+
+    fst::HVOLtransformVALUE(cell_basis_scalar.get_view(),cell_jac_det.get_view(),cell_basis_ref_scalar.get_view());
+    for(int b=0;b<num_basis;++b)
+      for(int p=0;p<num_points;++p)
+        basis_scalar(cell,b,p)=cell_basis_scalar(0,b,p);
+
+    // =============================================
+  }
+
+
+  if(build_weighted) {
+    const std::pair<int,int> cell_range(0,num_cells);
+    auto s_weighted_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
+    auto s_basis_scalar = Kokkos::subview(basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    fst::multiplyMeasure(s_weighted_basis_scalar,s_weighted_measure,s_basis_scalar);
+  }
+
+}
+
+template <typename Scalar>
+void panzer::BasisValues2<Scalar>::
 evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
                      const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
-                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                     const int in_num_cells)
 {
 
   TEUCHOS_ASSERT(getElementSpace() == PureBasis::HGRAD);
@@ -372,7 +508,7 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
   const int num_points = basis_layout->numPoints();
   const int num_basis  = basis.cardinality();
   const int num_dim    = basis_layout->dimension();
-  const int num_cells  = cub_points.extent(0);
+  const int num_cells = in_num_cells < 0 ? cub_points.extent(0) : in_num_cells;
 
   auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_basis,num_points);
   auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
@@ -423,9 +559,15 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
   }
 
   if(build_weighted){
-    fst::multiplyMeasure(weighted_basis_scalar.get_view(),weighted_measure.get_view(),basis_scalar.get_view());
+    const std::pair<int,int> cell_range(0,num_cells);
+    auto s_weighted_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
+    auto s_basis_scalar = Kokkos::subview(basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    fst::multiplyMeasure(s_weighted_basis_scalar,s_weighted_measure,s_basis_scalar);
     if(compute_derivatives){
-      fst::multiplyMeasure(weighted_grad_basis.get_view(),weighted_measure.get_view(),grad_basis.get_view());
+      auto s_weighted_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      auto s_grad_basis = Kokkos::subview(grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+      fst::multiplyMeasure(s_weighted_grad_basis,s_weighted_measure,s_grad_basis);
     }
   }
 
@@ -438,7 +580,8 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
                const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
                const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
                const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv,
-               const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+                     const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                     const int in_num_cells)
 {
 
   TEUCHOS_ASSERT(getElementSpace() == PureBasis::HCURL);
@@ -452,7 +595,7 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
   const int num_points = basis_layout->numPoints();
   const int num_basis  = basis.cardinality();
   const int num_dim    = basis_layout->dimension();
-  const int num_cells  = basis_layout->numCells();
+  const int num_cells = in_num_cells < 0 ? basis_layout->numCells() : in_num_cells;
 
   auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
   auto cell_jac = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac",1,num_points,num_dim,num_dim);
@@ -530,12 +673,20 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
   }
 
   if(build_weighted){
-    fst::multiplyMeasure(weighted_basis_vector.get_view(),weighted_measure.get_view(),basis_vector.get_view());
+    const std::pair<int,int> cell_range(0,num_cells);
+    auto s_weighted_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
+    auto s_basis_vector = Kokkos::subview(basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    fst::multiplyMeasure(s_weighted_basis_vector,s_weighted_measure,s_basis_vector);
     if(compute_derivatives){
       if(num_dim==2){
-        fst::multiplyMeasure(weighted_curl_basis_scalar.get_view(),weighted_measure.get_view(),curl_basis_scalar.get_view());
+        auto s_weighted_curl_basis_scalar = Kokkos::subview(weighted_curl_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+        auto s_curl_basis_scalar = Kokkos::subview(curl_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+        fst::multiplyMeasure(s_weighted_curl_basis_scalar,s_weighted_measure,s_curl_basis_scalar);
       } else if(num_dim==3){
-        fst::multiplyMeasure(weighted_curl_basis_vector.get_view(),weighted_measure.get_view(),curl_basis_vector.get_view());
+        auto s_weighted_curl_basis_vector = Kokkos::subview(weighted_curl_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+        auto s_curl_basis_vector = Kokkos::subview(curl_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+        fst::multiplyMeasure(s_weighted_curl_basis_vector,s_weighted_measure,s_curl_basis_vector);
       }
     }
   }
@@ -545,9 +696,10 @@ evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,v
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
 evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void> & cub_points,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
-               const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP> & weighted_measure)
+                    const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac,
+                    const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jac_det,
+                    const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
+                    const int in_num_cells)
 {
 
   TEUCHOS_ASSERT(getElementSpace() == PureBasis::HDIV);
@@ -560,7 +712,7 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,vo
   const int num_points = basis_layout->numPoints();
   const int num_basis  = basis.cardinality();
   const int num_dim    = basis_layout->dimension();
-  const int num_cells  = basis_layout->numCells();
+  const int num_cells = in_num_cells < 0 ? basis_layout->numCells() : in_num_cells;
 
   auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
   auto cell_jac = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac",1,num_points,num_dim,num_dim);
@@ -613,9 +765,15 @@ evaluateValues_HDiv(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,vo
   }
 
   if(build_weighted){
-    fst::multiplyMeasure(weighted_basis_vector.get_view(),weighted_measure.get_view(),basis_vector.get_view());
+    const std::pair<int,int> cell_range(0,num_cells);
+    auto s_weighted_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
+    auto s_basis_vector = Kokkos::subview(basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    fst::multiplyMeasure(s_weighted_basis_vector,s_weighted_measure,s_basis_vector);
     if(compute_derivatives){
-      fst::multiplyMeasure(weighted_div_basis.get_view(),weighted_measure.get_view(),div_basis.get_view());
+      auto s_weighted_div_basis = Kokkos::subview(weighted_div_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+      auto s_div_basis = Kokkos::subview(div_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+      fst::multiplyMeasure(s_weighted_div_basis,s_weighted_measure,s_div_basis);
     }
   }
 
@@ -671,7 +829,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                  const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jac_inv)
 {
   MDFieldArrayFactory af("",ddims_,true);
- 
+
   int num_ip    = basis_layout->numPoints();
   int num_card  = basis_layout->cardinality();
   int num_dim   = basis_layout->dimension();
@@ -693,36 +851,61 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
        ArrayDynamic dyn_basis_ref_scalar = af.buildArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_ip);
 
        intrepid_basis->getValues(dyn_basis_ref_scalar.get_view(),
-                                 dyn_cub_points.get_view(), 
+                                 dyn_cub_points.get_view(),
                                  Intrepid2::OPERATOR_VALUE);
 
        // transform values method just transfers values to array with cell index - no need to call
        for (int b = 0; b < num_card; ++b)
-         for (int ip = 0; ip < num_ip; ++ip) 
+         for (int ip = 0; ip < num_ip; ++ip)
            basis_scalar(icell,b,ip) = dyn_basis_ref_scalar(b,ip);
+
+    }
+    if(elmtspace==PureBasis::HVOL) {
+      ArrayDynamic dyn_basis_ref_scalar = af.buildArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_ip);
+
+      intrepid_basis->getValues(dyn_basis_ref_scalar.get_view(),
+                                dyn_cub_points.get_view(),
+                                Intrepid2::OPERATOR_VALUE);
+
+      int one_cell= 1;
+      ArrayDynamic dyn_basis_scalar = af.buildArray<Scalar,Cell,BASIS,IP>("dyn_basis_vector",one_cell,num_card,num_ip);
+      ArrayDynamic dyn_jac = af.buildArray<Scalar,Cell,IP,Dim,Dim>("dyn_jac",one_cell,num_ip,num_dim,num_dim);
+      ArrayDynamic dyn_jac_det = af.buildArray<Scalar,Cell,IP>("dyn_jac_det",one_cell,num_ip);
+
+      int cellInd = 0;
+      for (int ip = 0; ip < num_ip; ++ip)
+        dyn_jac_det(cellInd,ip) = jac_det(icell,ip);
+
+      Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::HVOLtransformVALUE(dyn_basis_scalar.get_view(),
+                                                                                      dyn_jac_det.get_view(),
+                                                                                      dyn_basis_ref_scalar.get_view());
+
+       for (int b = 0; b < num_card; ++b)
+         for (int ip = 0; ip < num_ip; ++ip)
+           basis_scalar(icell,b,ip) = dyn_basis_scalar(0,b,ip);
 
     }
     if(elmtspace==PureBasis::HGRAD) {
        ArrayDynamic dyn_basis_ref_scalar = af.buildArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_ip);
 
        intrepid_basis->getValues(dyn_basis_ref_scalar.get_view(),
-                                 dyn_cub_points.get_view(), 
+                                 dyn_cub_points.get_view(),
                                  Intrepid2::OPERATOR_VALUE);
-       
+
        // transform values method just transfers values to array with cell index - no need to call
        for (int b = 0; b < num_card; ++b)
-         for (int ip = 0; ip < num_ip; ++ip) 
+         for (int ip = 0; ip < num_ip; ++ip)
            basis_scalar(icell,b,ip) = dyn_basis_ref_scalar(b,ip);
-       
+
        if(compute_derivatives) {
- 
+
           int one_cell = 1;
           ArrayDynamic dyn_grad_basis_ref = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_grad_basis_ref",num_card,num_ip,num_dim);
           ArrayDynamic dyn_grad_basis = af.buildArray<Scalar,Cell,BASIS,IP,Dim>("dyn_grad_basis",one_cell,num_card,num_ip,num_dim);
           ArrayDynamic dyn_jac_inv = af.buildArray<Scalar,Cell,IP,Dim,Dim>("dyn_jac_inv",one_cell,num_ip,num_dim,num_dim);
 
           intrepid_basis->getValues(dyn_grad_basis_ref.get_view(),
-                                    dyn_cub_points.get_view(), 
+                                    dyn_cub_points.get_view(),
                                     Intrepid2::OPERATOR_GRAD);
 
           int cellInd = 0;
@@ -736,7 +919,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                                                   dyn_grad_basis_ref.get_view());
 
           for (int b = 0; b < num_card; ++b)
-            for (int ip = 0; ip < num_ip; ++ip) 
+            for (int ip = 0; ip < num_ip; ++ip)
               for (int d = 0; d < num_dim; ++d)
                  grad_basis(icell,b,ip,d) = dyn_grad_basis(0,b,ip,d);
 
@@ -744,11 +927,11 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
     }
     else if(elmtspace==PureBasis::HCURL) {
       ArrayDynamic dyn_basis_ref_vector = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_ip,num_dim);
-  
+
       intrepid_basis->getValues(dyn_basis_ref_vector.get_view(),
-                                dyn_cub_points.get_view(), 
+                                dyn_cub_points.get_view(),
                                 Intrepid2::OPERATOR_VALUE);
-  
+
       int one_cell = 1;
       ArrayDynamic dyn_basis_vector = af.buildArray<Scalar,Cell,BASIS,IP,Dim>("dyn_basis_vector",one_cell,num_card,num_ip,num_dim);
       ArrayDynamic dyn_jac_inv = af.buildArray<Scalar,Cell,IP,Dim,Dim>("dyn_jac_inv",one_cell,num_ip,num_dim,num_dim);
@@ -764,19 +947,19 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                                        dyn_basis_ref_vector.get_view());
 
       for (int b = 0; b < num_card; ++b)
-        for (int ip = 0; ip < num_ip; ++ip) 
-          for (int d = 0; d < num_dim; ++d) 
+        for (int ip = 0; ip < num_ip; ++ip)
+          for (int d = 0; d < num_dim; ++d)
              basis_vector(icell,b,ip,d) = dyn_basis_vector(0,b,ip,d);
 
       if(compute_derivatives && num_dim ==2) {
- 
+
           int one_cell = 1;
           ArrayDynamic dyn_curl_basis_ref_scalar = af.buildArray<Scalar,BASIS,IP>("dyn_curl_basis_ref_scalar",num_card,num_ip);
           ArrayDynamic dyn_curl_basis_scalar = af.buildArray<Scalar,Cell,BASIS,IP>("dyn_curl_basis_scalar",one_cell,num_card,num_ip);
           ArrayDynamic dyn_jac_det = af.buildArray<Scalar,Cell,IP>("dyn_jac_det",one_cell,num_ip);
 
           intrepid_basis->getValues(dyn_curl_basis_ref_scalar.get_view(),
-                                    dyn_cub_points.get_view(), 
+                                    dyn_cub_points.get_view(),
                                     Intrepid2::OPERATOR_CURL);
 
           int cellInd = 0;
@@ -788,7 +971,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                                         dyn_curl_basis_ref_scalar.get_view());
 
           for (int b = 0; b < num_card; ++b)
-            for (int ip = 0; ip < num_ip; ++ip) 
+            for (int ip = 0; ip < num_ip; ++ip)
                 curl_basis_scalar(icell,b,ip) = dyn_curl_basis_scalar(0,b,ip);
 
       }
@@ -801,7 +984,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
           ArrayDynamic dyn_jac = af.buildArray<Scalar,Cell,IP,Dim,Dim>("dyn_jac",one_cell,num_ip,num_dim,num_dim);
 
           intrepid_basis->getValues(dyn_curl_basis_ref.get_view(),
-                                    dyn_cub_points.get_view(), 
+                                    dyn_cub_points.get_view(),
                                     Intrepid2::OPERATOR_CURL);
 
           int cellInd = 0;
@@ -819,8 +1002,8 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                                           dyn_curl_basis_ref.get_view());
 
           for (int b = 0; b < num_card; ++b)
-            for (int ip = 0; ip < num_ip; ++ip) 
-               for (int d = 0; d < num_dim; ++d) 
+            for (int ip = 0; ip < num_ip; ++ip)
+               for (int d = 0; d < num_dim; ++d)
                   curl_basis_vector(icell,b,ip,d) = dyn_curl_basis(0,b,ip,d);
 
       }
@@ -831,7 +1014,7 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
       ArrayDynamic dyn_basis_ref_vector = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_ip,num_dim);
 
       intrepid_basis->getValues(dyn_basis_ref_vector.get_view(),
-                                dyn_cub_points.get_view(), 
+                                dyn_cub_points.get_view(),
                                 Intrepid2::OPERATOR_VALUE);
 
       int one_cell= 1;
@@ -854,8 +1037,8 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
                                                                                       dyn_basis_ref_vector.get_view());
 
        for (int b = 0; b < num_card; ++b)
-         for (int ip = 0; ip < num_ip; ++ip) 
-           for (int d = 0; d < num_dim; ++d) 
+         for (int ip = 0; ip < num_ip; ++ip)
+           for (int d = 0; d < num_dim; ++d)
               basis_vector(icell,b,ip,d) = dyn_basis_vector(0,b,ip,d);
 
        if(compute_derivatives) {
@@ -864,17 +1047,17 @@ evaluateValuesCV(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void>
            ArrayDynamic dyn_div_basis = af.buildArray<Scalar,Cell,BASIS,IP>("dyn_div_basis_scalar",one_cell,num_card,num_ip);
 
            intrepid_basis->getValues(dyn_div_basis_ref.get_view(),
-                                     dyn_cub_points.get_view(), 
+                                     dyn_cub_points.get_view(),
                                      Intrepid2::OPERATOR_DIV);
 
            Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::HDIVtransformDIV<Scalar>(dyn_div_basis.get_view(),
                                                                                                  dyn_jac_det.get_view(),
                                                                                                  dyn_div_basis_ref.get_view());
-           
+
            for (int b = 0; b < num_card; ++b)
-             for (int ip = 0; ip < num_ip; ++ip) 
+             for (int ip = 0; ip < num_ip; ++ip)
                  div_basis(icell,b,ip) = dyn_div_basis(0,b,ip);
-  
+
         }
 
     }
@@ -901,27 +1084,27 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
       dyn_cub_points(ip,d) = cub_points(ip,d);
 
   PureBasis::EElementSpace elmtspace = getElementSpace();
-  if(elmtspace==PureBasis::HGRAD || elmtspace==PureBasis::CONST) {
+  if(elmtspace==PureBasis::HGRAD || elmtspace==PureBasis::CONST || elmtspace==PureBasis::HVOL) {
     ArrayDynamic dyn_basis_ref_scalar = af.buildArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_quad);
 
     intrepid_basis->getValues(dyn_basis_ref_scalar.get_view(),
-                              dyn_cub_points.get_view(), 
+                              dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_VALUE);
 
     for (int b = 0; b < num_card; ++b)
-      for (int ip = 0; ip < num_quad; ++ip) 
+      for (int ip = 0; ip < num_quad; ++ip)
         basis_ref_scalar(b,ip) = dyn_basis_ref_scalar(b,ip);
   }
   else if(elmtspace==PureBasis::HDIV || elmtspace==PureBasis::HCURL) {
     ArrayDynamic dyn_basis_ref_vector = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
 
     intrepid_basis->getValues(dyn_basis_ref_vector.get_view(),
-                              dyn_cub_points.get_view(), 
+                              dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_VALUE);
 
     for (int b = 0; b < num_card; ++b)
-      for (int ip = 0; ip < num_quad; ++ip) 
-        for (int d = 0; d < num_dim; ++d) 
+      for (int ip = 0; ip < num_quad; ++ip)
+        for (int d = 0; d < num_dim; ++d)
            basis_ref_vector(b,ip,d) = dyn_basis_ref_vector(b,ip,d);
   }
   else { TEUCHOS_ASSERT(false); }
@@ -930,12 +1113,12 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
     ArrayDynamic dyn_grad_basis_ref = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
 
     intrepid_basis->getValues(dyn_grad_basis_ref.get_view(),
-                              dyn_cub_points.get_view(), 
+                              dyn_cub_points.get_view(),
                               Intrepid2::OPERATOR_GRAD);
 
     for (int b = 0; b < num_card; ++b)
-      for (int ip = 0; ip < num_quad; ++ip) 
-        for (int d = 0; d < num_dim; ++d) 
+      for (int ip = 0; ip < num_quad; ++ip)
+        for (int d = 0; d < num_dim; ++d)
            grad_basis_ref(b,ip,d) = dyn_grad_basis_ref(b,ip,d);
   }
   else if(elmtspace==PureBasis::HCURL && compute_derivatives && num_dim==2) {
@@ -946,7 +1129,7 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
                               Intrepid2::OPERATOR_CURL);
 
     for (int b = 0; b < num_card; ++b)
-      for (int ip = 0; ip < num_quad; ++ip) 
+      for (int ip = 0; ip < num_quad; ++ip)
         curl_basis_ref_scalar(b,ip) = dyn_curl_basis_ref(b,ip);
   }
   else if(elmtspace==PureBasis::HCURL && compute_derivatives && num_dim==3) {
@@ -957,8 +1140,8 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
                               Intrepid2::OPERATOR_CURL);
 
     for (int b = 0; b < num_card; ++b)
-      for (int ip = 0; ip < num_quad; ++ip) 
-        for (int d = 0; d < num_dim; ++d) 
+      for (int ip = 0; ip < num_quad; ++ip)
+        for (int d = 0; d < num_dim; ++d)
            curl_basis_ref_vector(b,ip,d) = dyn_curl_basis_ref(b,ip,d);
   }
   else if(elmtspace==PureBasis::HDIV && compute_derivatives) {
@@ -969,11 +1152,11 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
                               Intrepid2::OPERATOR_DIV);
 
     for (int b = 0; b < num_card; ++b)
-      for (int ip = 0; ip < num_quad; ++ip) 
+      for (int ip = 0; ip < num_quad; ++ip)
         div_basis_ref(b,ip) = dyn_div_basis_ref(b,ip);
   }
-  
-  
+
+
   if(use_vertex_coordinates) {
     // Intrepid removes fad types from the coordinate scalar type. We
     // pull the actual field scalar type from the basis object to be
@@ -984,23 +1167,24 @@ evaluateReferenceValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,bool comp
                                                                                  basis_coordinates_ref.extent(0),
                                                                                  basis_coordinates_ref.extent(1));
       intrepid_basis->getDofCoords(dyn_basis_coordinates_ref.get_view());
-      
+
       // fill in basis coordinates
       for (int i = 0; i < basis_coordinates_ref.extent_int(0); ++i)
         for (int j = 0; j < basis_coordinates_ref.extent_int(1); ++j)
-          basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j); 
+          basis_coordinates_ref(i,j) = dyn_basis_coordinates_ref(i,j);
     }
   }
-  
+
   references_evaluated = true;
 }
 
 // method for applying orientations
 template <typename Scalar>
 void BasisValues2<Scalar>::
-applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
+applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
+                  const int in_num_cells)
 {
-  if (!intrepid_basis->requireOrientation()) 
+  if (!intrepid_basis->requireOrientation())
     return;
 
   typedef Intrepid2::OrientationTools<PHX::Device> ots;
@@ -1010,12 +1194,13 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
   // thus, its size is the actual number of elements to be applied.
   // on the other hand, basis_layout num cell indicates workset size.
   // to get right size of cells, use minimum of them.
-  const int num_cell_basis_layout = basis_layout->numCells(), num_cell_orientation = orientations.size();
+  const int num_cell_basis_layout = in_num_cells < 0 ? basis_layout->numCells() : in_num_cells;
+  const int num_cell_orientation = orientations.size();
   const int num_cell  = num_cell_basis_layout < num_cell_orientation ? num_cell_basis_layout : num_cell_orientation;
   const int num_dim   = basis_layout->dimension();
   const Kokkos::pair<int,int> range_cell(0, num_cell);
 
-  // Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> 
+  // Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device>
   //   drv_orts((Intrepid2::Orientation*)orientations.data(), num_cell);
   Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> drv_orts("drv_orts", num_cell);
   auto host_drv_orts = Kokkos::create_mirror_view(drv_orts);
@@ -1032,58 +1217,58 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       {
         auto drv_basis_scalar = Kokkos::subview(basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_scalar_tmp = Kokkos::createDynRankView(basis_scalar.get_view(),
-                                                              "drv_basis_scalar_tmp", 
+                                                              "drv_basis_scalar_tmp",
                                                               drv_basis_scalar.extent(0),  // C
                                                               drv_basis_scalar.extent(1),  // F
                                                               drv_basis_scalar.extent(2)); // P
         Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
-        ots::modifyBasisByOrientation(drv_basis_scalar, 
-                                      drv_basis_scalar_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_scalar,
+                                      drv_basis_scalar_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
       if(build_weighted) {
         auto drv_basis_scalar = Kokkos::subview(weighted_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_scalar_tmp = Kokkos::createDynRankView(weighted_basis_scalar.get_view(),
-                                                              "drv_basis_scalar_tmp", 
+                                                              "drv_basis_scalar_tmp",
                                                               drv_basis_scalar.extent(0),  // C
                                                               drv_basis_scalar.extent(1),  // F
                                                               drv_basis_scalar.extent(2)); // P
         Kokkos::deep_copy(drv_basis_scalar_tmp, drv_basis_scalar);
-        ots::modifyBasisByOrientation(drv_basis_scalar, 
-                                      drv_basis_scalar_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_scalar,
+                                      drv_basis_scalar_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
 
-    } 
+    }
 
     if (compute_derivatives) {
       {
         auto drv_grad_basis = Kokkos::subview(grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_grad_basis_tmp = Kokkos::createDynRankView(grad_basis.get_view(),
-                                                            "drv_grad_basis_tmp", 
+                                                            "drv_grad_basis_tmp",
                                                             drv_grad_basis.extent(0),  // C
                                                             drv_grad_basis.extent(1),  // F
                                                             drv_grad_basis.extent(2),  // P
                                                             drv_grad_basis.extent(3)); // D
         Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
-        ots::modifyBasisByOrientation(drv_grad_basis, 
-                                      drv_grad_basis_tmp, 
+        ots::modifyBasisByOrientation(drv_grad_basis,
+                                      drv_grad_basis_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
       if(build_weighted) {
         auto drv_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_grad_basis_tmp = Kokkos::createDynRankView(weighted_grad_basis.get_view(),
-                                                            "drv_grad_basis_tmp", 
+                                                            "drv_grad_basis_tmp",
                                                             drv_grad_basis.extent(0),  // C
                                                             drv_grad_basis.extent(1),  // F
                                                             drv_grad_basis.extent(2),  // P
                                                             drv_grad_basis.extent(3)); // D
         Kokkos::deep_copy(drv_grad_basis_tmp, drv_grad_basis);
-        ots::modifyBasisByOrientation(drv_grad_basis, 
-                                      drv_grad_basis_tmp, 
+        ots::modifyBasisByOrientation(drv_grad_basis,
+                                      drv_grad_basis_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
@@ -1098,28 +1283,28 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       {
         auto drv_basis_vector = Kokkos::subview(basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(basis_vector.get_view(),
-                                                              "drv_basis_vector_tmp", 
+                                                              "drv_basis_vector_tmp",
                                                               drv_basis_vector.extent(0),  // C
                                                               drv_basis_vector.extent(1),  // F
                                                               drv_basis_vector.extent(2),  // P
                                                               drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
-        ots::modifyBasisByOrientation(drv_basis_vector, 
-                                      drv_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_vector,
+                                      drv_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(weighted_basis_vector.get_view(),
-                                                              "drv_basis_vector_tmp", 
+                                                              "drv_basis_vector_tmp",
                                                               drv_basis_vector.extent(0),  // C
                                                               drv_basis_vector.extent(1),  // F
                                                               drv_basis_vector.extent(2),  // P
                                                               drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
-        ots::modifyBasisByOrientation(drv_basis_vector, 
-                                      drv_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_vector,
+                                      drv_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
@@ -1129,13 +1314,13 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       {
         auto drv_curl_basis_scalar = Kokkos::subview(curl_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_scalar_tmp = Kokkos::createDynRankView(curl_basis_scalar.get_view(),
-                                                                   "drv_curl_basis_scalar_tmp", 
+                                                                   "drv_curl_basis_scalar_tmp",
                                                                    drv_curl_basis_scalar.extent(0),  // C
                                                                    drv_curl_basis_scalar.extent(1),  // F
-                                                                   drv_curl_basis_scalar.extent(2));  // P        
+                                                                   drv_curl_basis_scalar.extent(2));  // P
         Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
-        ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
-                                      drv_curl_basis_scalar_tmp, 
+        ots::modifyBasisByOrientation(drv_curl_basis_scalar,
+                                      drv_curl_basis_scalar_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
@@ -1143,19 +1328,19 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       if(build_weighted) {
         auto drv_curl_basis_scalar = Kokkos::subview(weighted_curl_basis_scalar.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_scalar_tmp = Kokkos::createDynRankView(weighted_curl_basis_scalar.get_view(),
-                                                                   "drv_curl_basis_scalar_tmp", 
+                                                                   "drv_curl_basis_scalar_tmp",
                                                                    drv_curl_basis_scalar.extent(0),  // C
                                                                    drv_curl_basis_scalar.extent(1),  // F
-                                                                   drv_curl_basis_scalar.extent(2));  // P        
+                                                                   drv_curl_basis_scalar.extent(2));  // P
         Kokkos::deep_copy(drv_curl_basis_scalar_tmp, drv_curl_basis_scalar);
-        ots::modifyBasisByOrientation(drv_curl_basis_scalar, 
-                                      drv_curl_basis_scalar_tmp, 
+        ots::modifyBasisByOrientation(drv_curl_basis_scalar,
+                                      drv_curl_basis_scalar_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
     }
   }
-  
+
   ///
   /// hcurl 3d elements
   ///
@@ -1164,62 +1349,62 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       {
         auto drv_basis_vector = Kokkos::subview(basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(basis_vector.get_view(),
-                                                              "drv_basis_vector_tmp", 
+                                                              "drv_basis_vector_tmp",
                                                               drv_basis_vector.extent(0),  // C
                                                               drv_basis_vector.extent(1),  // F
                                                               drv_basis_vector.extent(2),  // P
                                                               drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
-        ots::modifyBasisByOrientation(drv_basis_vector, 
-                                      drv_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_vector,
+                                      drv_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
       if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(weighted_basis_vector.get_view(),
-                                                              "drv_basis_vector_tmp", 
+                                                              "drv_basis_vector_tmp",
                                                               drv_basis_vector.extent(0),  // C
                                                               drv_basis_vector.extent(1),  // F
                                                               drv_basis_vector.extent(2),  // P
                                                               drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
-        ots::modifyBasisByOrientation(drv_basis_vector, 
-                                      drv_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_vector,
+                                      drv_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
-    } 
-    
+    }
+
     if (compute_derivatives) {
       {
         auto drv_curl_basis_vector = Kokkos::subview(curl_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_vector_tmp = Kokkos::createDynRankView(curl_basis_vector.get_view(),
-                                                                   "drv_curl_basis_vector_tmp", 
+                                                                   "drv_curl_basis_vector_tmp",
                                                                    drv_curl_basis_vector.extent(0),  // C
                                                                    drv_curl_basis_vector.extent(1),  // F
                                                                    drv_curl_basis_vector.extent(2),  // P
-                                                                   drv_curl_basis_vector.extent(3));  // D        
+                                                                   drv_curl_basis_vector.extent(3));  // D
         Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
-        ots::modifyBasisByOrientation(drv_curl_basis_vector, 
-                                      drv_curl_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_curl_basis_vector,
+                                      drv_curl_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
       if(build_weighted) {
         auto drv_curl_basis_vector = Kokkos::subview(weighted_curl_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_curl_basis_vector_tmp = Kokkos::createDynRankView(weighted_curl_basis_vector.get_view(),
-                                                                   "drv_curl_basis_vector_tmp", 
+                                                                   "drv_curl_basis_vector_tmp",
                                                                    drv_curl_basis_vector.extent(0),  // C
                                                                    drv_curl_basis_vector.extent(1),  // F
                                                                    drv_curl_basis_vector.extent(2),  // P
-                                                                   drv_curl_basis_vector.extent(3));  // D        
+                                                                   drv_curl_basis_vector.extent(3));  // D
         Kokkos::deep_copy(drv_curl_basis_vector_tmp, drv_curl_basis_vector);
-        ots::modifyBasisByOrientation(drv_curl_basis_vector, 
-                                      drv_curl_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_curl_basis_vector,
+                                      drv_curl_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
-      }      
+      }
     }
   }
   ///
@@ -1230,28 +1415,28 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       {
         auto drv_basis_vector = Kokkos::subview(basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(basis_vector.get_view(),
-                                                              "drv_basis_vector_tmp", 
+                                                              "drv_basis_vector_tmp",
                                                               drv_basis_vector.extent(0),  // C
                                                               drv_basis_vector.extent(1),  // F
                                                               drv_basis_vector.extent(2),  // P
                                                               drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
-        ots::modifyBasisByOrientation(drv_basis_vector, 
-                                      drv_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_vector,
+                                      drv_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
-      } 
-      if(build_weighted) {      
+      }
+      if(build_weighted) {
         auto drv_basis_vector = Kokkos::subview(weighted_basis_vector.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto drv_basis_vector_tmp = Kokkos::createDynRankView(weighted_basis_vector.get_view(),
-                                                              "drv_basis_vector_tmp", 
+                                                              "drv_basis_vector_tmp",
                                                               drv_basis_vector.extent(0),  // C
                                                               drv_basis_vector.extent(1),  // F
                                                               drv_basis_vector.extent(2),  // P
                                                               drv_basis_vector.extent(3)); // D
         Kokkos::deep_copy(drv_basis_vector_tmp, drv_basis_vector);
-        ots::modifyBasisByOrientation(drv_basis_vector, 
-                                      drv_basis_vector_tmp, 
+        ots::modifyBasisByOrientation(drv_basis_vector,
+                                      drv_basis_vector_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
@@ -1260,26 +1445,26 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations)
       {
         auto drv_div_basis = Kokkos::subview(div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
         auto drv_div_basis_tmp = Kokkos::createDynRankView(div_basis.get_view(),
-                                                           "drv_div_basis_tmp", 
-                                                           drv_div_basis.extent(0),  // C
-                                                           drv_div_basis.extent(1),  // F
-                                                           drv_div_basis.extent(2));  // P        
-        Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
-        ots::modifyBasisByOrientation(drv_div_basis, 
-                                      drv_div_basis_tmp, 
-                                      drv_orts,
-                                      intrepid_basis);
-      }
-      if(build_weighted) {      
-        auto drv_div_basis = Kokkos::subview(weighted_div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
-        auto drv_div_basis_tmp = Kokkos::createDynRankView(weighted_div_basis.get_view(),
-                                                           "drv_div_basis_tmp", 
+                                                           "drv_div_basis_tmp",
                                                            drv_div_basis.extent(0),  // C
                                                            drv_div_basis.extent(1),  // F
                                                            drv_div_basis.extent(2));  // P
         Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
-        ots::modifyBasisByOrientation(drv_div_basis, 
-                                      drv_div_basis_tmp, 
+        ots::modifyBasisByOrientation(drv_div_basis,
+                                      drv_div_basis_tmp,
+                                      drv_orts,
+                                      intrepid_basis);
+      }
+      if(build_weighted) {
+        auto drv_div_basis = Kokkos::subview(weighted_div_basis.get_view(), range_cell, Kokkos::ALL(), Kokkos::ALL());
+        auto drv_div_basis_tmp = Kokkos::createDynRankView(weighted_div_basis.get_view(),
+                                                           "drv_div_basis_tmp",
+                                                           drv_div_basis.extent(0),  // C
+                                                           drv_div_basis.extent(1),  // F
+                                                           drv_div_basis.extent(2));  // P
+        Kokkos::deep_copy(drv_div_basis_tmp, drv_div_basis);
+        ots::modifyBasisByOrientation(drv_div_basis,
+                                      drv_div_basis_tmp,
                                       drv_orts,
                                       intrepid_basis);
       }
@@ -1407,9 +1592,9 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   int numcells = basisDesc->numCells();
   panzer::PureBasis::EElementSpace elmtspace = basisDesc->getElementSpace();
   Teuchos::RCP<const shards::CellTopology> cellTopo = basisDesc->getCellTopology();
-  
+
   intrepid_basis = basisDesc->getIntrepid2Basis<PHX::Device::execution_space,Scalar,Scalar>();
-  
+
   // allocate field containers
   // field sizes defined by http://trilinos.sandia.gov/packages/docs/dev/packages/intrepid/doc/html/basis_page.html#basis_md_array_sec
 
@@ -1466,14 +1651,14 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
           // curl of HCURL basis is not dimension dependent
           curl_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("curl_basis_ref",card,num_quad); // F, P
           curl_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("curl_basis",numcells,card,num_quad);
-  
+
           if(build_weighted)
             weighted_curl_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("weighted_curl_basis",numcells,card,num_quad);
        }
        else if(dim==3){
           curl_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("curl_basis_ref",card,num_quad,dim); // F, P, D
           curl_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("curl_basis",numcells,card,num_quad,dim);
-  
+
           if(build_weighted)
             weighted_curl_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("weighted_curl_basis",numcells,card,num_quad,dim);
        }
@@ -1508,12 +1693,12 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
      if(compute_derivatives) {
        div_basis_ref = af.buildStaticArray<Scalar,BASIS,IP>("div_basis_ref",card,num_quad); // F, P
        div_basis = af.buildStaticArray<Scalar,Cell,BASIS,IP>("div_basis",numcells,card,num_quad);
-  
+
        if(build_weighted)
          weighted_div_basis = af.buildStaticArray<Scalar,Cell,BASIS,IP>("weighted_div_basis",numcells,card,num_quad);
      }
   }
-  else if(elmtspace==panzer::PureBasis::CONST) {
+  else if(elmtspace==panzer::PureBasis::CONST || elmtspace==panzer::PureBasis::HVOL) {
      // CONST is a nodal field
 
      // build values
@@ -1534,7 +1719,7 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
 
      // nothing - CONST does not support CURL operation
 
-     // build div 
+     // build div
      ///////////////////////////////////////////////
 
      // nothing - CONST does not support DIV operation

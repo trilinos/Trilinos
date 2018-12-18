@@ -286,9 +286,9 @@ namespace Iocgns {
     if (m_lineOrdinal == 2 || m_ordinal[2] == 1)
       work2 = 0;
 
-    auto delta0 = std::make_pair(abs((double)work0 - avg_work), -(int)m_ordinal[0]);
-    auto delta1 = std::make_pair(abs((double)work1 - avg_work), -(int)m_ordinal[1]);
-    auto delta2 = std::make_pair(abs((double)work2 - avg_work), -(int)m_ordinal[2]);
+    auto delta0 = std::make_pair(std::abs((double)work0 - avg_work), -(int)m_ordinal[0]);
+    auto delta1 = std::make_pair(std::abs((double)work1 - avg_work), -(int)m_ordinal[1]);
+    auto delta2 = std::make_pair(std::abs((double)work2 - avg_work), -(int)m_ordinal[2]);
 
     auto min_ordinal = 0;
     auto min_delta   = delta0;
