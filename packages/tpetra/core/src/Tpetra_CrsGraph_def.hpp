@@ -7062,7 +7062,7 @@ namespace Tpetra {
     std::swap(graph.domainMap_, this->domainMap_);
 
     std::swap(graph.importer_, this->importer_);
-    std::swap(graph.importer_, this->importer_);
+    std::swap(graph.exporter_, this->exporter_);
 
     std::swap(graph.lclGraph_, this->lclGraph_);
 

@@ -610,7 +610,6 @@ namespace Tpetra {
     ///
     /// \param graph [in] a crsGraph to compare against this one.
     ///
-    /// WCMCLEN WORK_IN_PROGRESS
     bool isSameAs(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
 
 
