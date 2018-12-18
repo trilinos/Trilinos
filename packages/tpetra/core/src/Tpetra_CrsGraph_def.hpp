@@ -7060,7 +7060,7 @@ namespace Tpetra {
     std::swap(graph.nonlocals_, this->nonlocals_);                // std::map
   }
 
-  // WCMCLEN : WORK_IN_PROGRESS
+
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -7077,15 +7077,13 @@ namespace Tpetra {
         {
           auto v1 = m1.find(key)->second;
           auto v2 = m2.find(key)->second;
-          auto v1c = v1;
-          auto v2c = v2;
-          std::sort(v1c.begin(), v1c.end());
-          std::sort(v2c.begin(), v2c.end());
+          std::sort(v1.begin(), v1.end());
+          std::sort(v2.begin(), v2.end());
 
           output = v1.size() == v2.size() ? output : false;
           for(size_t i=0; output && i<v1.size(); i++)
           {
-            output = v1c[i]==v2c[i] ? output : false;
+            output = v1[i]==v2[i] ? output : false;
           }
         }
       }
@@ -7106,7 +7104,7 @@ namespace Tpetra {
     output = this->globalNumDiags_ == graph.globalNumDiags_ ? output : false;
     output = this->globalMaxNumRowEntries_ == graph.globalMaxNumRowEntries_ ? output : false;
 
-    output = this->pftype_ == graph.pftype_ ? output : false;    // ProfileType is a enum scalar
+    output = this->pftype_ == graph.pftype_ ? output : false;    // ProfileType is a enum (scalar)
 
     output = this->numAllocForAllRows_ == graph.numAllocForAllRows_ ? output : false;
 
@@ -7129,8 +7127,6 @@ namespace Tpetra {
 
     // Compare nonlocals_ -- std::map<GlobalOrdinal, std::vector<GlobalOrdinal> >
     // nonlocals_ isa std::map<GO, std::vector<GO> >
-    // std::map overloads == which will match correctly since maps sort the keys, but if we want to have an unordered match
-    // we should sort the vector or something...
     output = __compare_nonlocals(this->nonlocals_, graph.nonlocals_) ? output : false;
 
     // Compare k_numAllocPerRow_ isa Kokkos::View::HostMirror
@@ -7187,13 +7183,45 @@ namespace Tpetra {
         output = k_gblInds1D_host_this(i) == k_gblInds1D_host_graph(i) ? output : false;
     }
 
-    // todo: check lclGraph_      // isa Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
+    // Check lclGraph_      // isa Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
     // Kokkos::StaticCrsGraph has 3 data members in it:
-    //   Kokkos::View<size_type*, ...> row_map
-    //   Kokkos::View<data_type*, ...> entries
-    //   Kokkos::View<size_type*, ...> row_block_offsets
+    //   Kokkos::View<size_type*, ...> row_map            (local_graph_type::row_map_type)
+    //   Kokkos::View<data_type*, ...> entries            (local_graph_type::entries_type)
+    //   Kokkos::View<size_type*, ...> row_block_offsets  (local_graph_type::row_block_type)
+    // There is currently no Kokkos::StaticCrsGraph comparison function that's built-in, so we will just compare
+    // the three data items here. This can be replaced if Kokkos ever puts in its own comparison routine.
+    output = this->lclGraph_.row_map.extent(0) == graph.lclGraph_.row_map.extent(0) ? output : false;
+    if(output && this->lclGraph_.row_map.extent(0) > 0)
+    {
+      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_this  = Kokkos::create_mirror_view(this->lclGraph_.row_map);
+      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.row_map);
+      Kokkos::deep_copy(lclGraph_rowmap_host_this, this->lclGraph_.row_map);
+      Kokkos::deep_copy(lclGraph_rowmap_host_graph, graph.lclGraph_.row_map);
+      for(size_t i=0; output && i<lclGraph_rowmap_host_this.extent(0); i++)
+        output = lclGraph_rowmap_host_this(i) == lclGraph_rowmap_host_graph(i) ? output : false;
+    }
 
+    output = this->lclGraph_.entries.extent(0) == graph.lclGraph_.entries.extent(0) ? output : false;
+    if(output && this->lclGraph_.entries.extent(0) > 0)
+    {
+      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_this = Kokkos::create_mirror_view(this->lclGraph_.entries);
+      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.entries);
+      Kokkos::deep_copy(lclGraph_entries_host_this, this->lclGraph_.entries);
+      Kokkos::deep_copy(lclGraph_entries_host_graph, graph.lclGraph_.entries);
+      for(size_t i=0; output && i<lclGraph_entries_host_this.extent(0); i++)
+        output = lclGraph_entries_host_this(i) == lclGraph_entries_host_graph(i) ? output : false;
+    }
 
+    output = this->lclGraph_.row_block_offsets.extent(0) == graph.lclGraph_.row_block_offsets.extent(0) ? output : false;
+    if(output && this->lclGraph_.row_block_offsets.extent(0) > 0)
+    {
+      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_this = Kokkos::create_mirror_view(this->lclGraph_.row_block_offsets);
+      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.row_block_offsets);
+      Kokkos::deep_copy(lclGraph_rbo_host_this, this->lclGraph_.row_block_offsets);
+      Kokkos::deep_copy(lclGraph_rbo_host_graph, graph.lclGraph_.row_block_offsets);
+      for(size_t i=0; output && i < lclGraph_rbo_host_this.extent(0); i++)
+        output = lclGraph_rbo_host_this(i) == lclGraph_rbo_host_graph(i) ? output : false;
+    }
 
     // For the Importer and Exporter, we shouldn't need to explicitly check them since
     // they will be consistent with the maps.
