@@ -214,6 +214,8 @@ int main(int argc, char* argv[])
  
   if (verbose) std::cout << "STEQR test ... ";
 
+#ifndef TEUCHOSNUMERICS_DISABLE_STEQR_TEST
+
   const int n_steqr = 10;
   std::vector<MagnitudeType> diagonal(n_steqr);
   std::vector<MagnitudeType> subdiagonal(n_steqr-1);
@@ -253,6 +255,12 @@ int main(int argc, char* argv[])
     if (verbose) std::cout << "FAILED" << std::endl;
     numberFailedTests++;
   }
+
+#else // TEUCHOSNUMERICS_DISABLE_STEQR_TEST
+
+  if (verbose) std::cout << "SKIPPED!\n";
+
+#endif // TEUCHOSNUMERICS_DISABLE_STEQR_TEST
 
   if(numberFailedTests > 0)
     {
