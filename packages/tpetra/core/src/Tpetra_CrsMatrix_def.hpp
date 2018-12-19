@@ -6545,6 +6545,7 @@ namespace Tpetra {
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
     typedef typename device_type::memory_space dev_mem_space;
+
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
@@ -8226,7 +8227,7 @@ namespace Tpetra {
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
 
-   int mm_optimization_core_count=3000; // ~3000 for serrano
+   int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
    RCP<ParameterList> matrixparams; // parameters for the destination matrix
    if (! params.is_null ()) {
       matrixparams = sublist (params, "CrsMatrix");

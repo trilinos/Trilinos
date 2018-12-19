@@ -460,6 +460,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 	} else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
+          if(!coordinates.is_null()) {
+            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(coordinates);
+            if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
+            if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
+            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);            
+          }
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
 #endif
         }

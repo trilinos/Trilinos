@@ -5077,25 +5077,10 @@ namespace Tpetra {
   template <class ST, class LO, class GO, class NT>
   void MultiVector<ST, LO, GO, NT>::
   swap(MultiVector<ST, LO, GO, NT> & mv) {
-    // Cache maps & views
-    Teuchos::RCP<const map_type> map = mv.map_;
-    dual_view_type  view, origView;
-    Teuchos::Array<size_t> whichVectors; // FIXME: This is a deep copy
-    view         = mv.view_;
-    origView     = mv.origView_;
-    whichVectors = mv.whichVectors_;
-
-    // Swap this-> mv
-    mv.map_          = this->map_;
-    mv.view_         = this->view_;
-    mv.origView_     = this->origView_;
-    mv.whichVectors_ = this->whichVectors_;
-
-    // Swap mv -> this
-    this->map_          = map;
-    this->view_         = view;
-    this->origView_     = origView;
-    this->whichVectors_ = whichVectors;
+    std::swap(mv.map_, this->map_);
+    std::swap(mv.view_, this->view_);
+    std::swap(mv.origView_, this->origView_);
+    std::swap(mv.whichVectors_, this->whichVectors_);
   }
 
   template <class Scalar, class LO, class GO, class NT>

@@ -374,8 +374,8 @@ void Jacobi(Scalar omega,
       int mm_optimization_core_count=0;
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount ());
-      int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       auto & ip1slist = importParams1->sublist("matrixmatrix: kernel params",false);
       ip1slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
@@ -402,8 +402,8 @@ void Jacobi(Scalar omega,
       int mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount () );
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
       auto & ip2slist = importParams2->sublist("matrixmatrix: kernel params",false);
-      int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       ip2slist.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       ip2slist.set("isMatrixMatrix_TransferAndFillComplete",isMM);
   }
@@ -1506,10 +1506,10 @@ void mult_AT_B_newmatrix(
       importParams1->set("compute global constants",params->get("compute global constants: temporaries",false));
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       auto & sip1 = importParams1->sublist("matrixmatrix: kernel params",false);
       sip1.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       sip1.set("isMatrixMatrix_TransferAndFillComplete",isMM);
@@ -1522,10 +1522,10 @@ void mult_AT_B_newmatrix(
       importParams2->set("compute global constants",params->get("compute global constants: temporaries",false));
       auto slist = params->sublist("matrixmatrix: kernel params",false);
       bool isMM = slist.get("isMatrixMatrix_TransferAndFillComplete",false);
-      int mm_optimization_core_count=3000; // ~3000 for serrano
+      int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
       mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-      if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+      int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+      if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
       auto & sip2 = importParams2->sublist("matrixmatrix: kernel params",false);
       sip2.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
       sip2.set("isMatrixMatrix_TransferAndFillComplete",isMM);
@@ -1571,10 +1571,10 @@ void mult_AT_B_newmatrix(
     if(!params.is_null()) {
         Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
         Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-        int mm_optimization_core_count = 3000;
+        int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
         mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
         labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
 
         labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
@@ -3292,15 +3292,15 @@ void import_and_extract_views(
     labelList.set("isMatrixMatrix_TransferAndFillComplete",true,
                   "This parameter should be set to true only for MatrixMatrix operations, with source and target matricies that have non-pathalogical graphs");
 
-    int mm_optimization_core_count=2999; // ~3000 for serrano    
+    int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
     // Minor speedup tweak - avoid computing the global constants
     Teuchos::ParameterList params_sublist;
     if(!params.is_null()) {
         labelList.set("compute global constants", params->get("compute global constants",false));
         params_sublist = params->sublist("matrixmatrix: kernel params",false);
         mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-        if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+        int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+        if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
     }
     labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
     

@@ -18,8 +18,11 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosBlas3_gemm.hpp"
 
-#if defined(HAVE_IFPACK2_AZTECOO) && defined(HAVE_IFPACK2_EPETRA)
+#if defined(HAVE_IFPACK2_AZTECOO)
 #  include "AztecOO.h"
+#endif // defined(HAVE_IFPACK2_AZTECOO)
+
+#if defined(HAVE_IFPACK2_EPETRA)
 #  include "Epetra_Comm.h"
 #  if defined(HAVE_MPI)
 #    include "mpi.h"
@@ -33,7 +36,7 @@
 #  if defined(HAVE_TPETRACORE_MPI)
 #    include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
 #  endif // HAVE_TPETRACORE_MPI
-#endif // defined(HAVE_IFPACK2_AZTECOO) && defined(HAVE_IFPACK2_EPETRA)
+#endif // defined(HAVE_IFPACK2_EPETRA)
 
 #include <algorithm> // std::transform
 #include <cctype> // std::toupper
