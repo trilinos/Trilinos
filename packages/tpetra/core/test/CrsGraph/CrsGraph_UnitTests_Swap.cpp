@@ -125,28 +125,25 @@ TEUCHOS_STATIC_SETUP()
 // gbl_num_columns: Max # of columns in the matrix-representation of the graph.
 //                  This should be >= the highest value of v from all edges (u,v) in edges.
 //                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
-template<class LO, class GO, class Node, class comm_type>
-Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node>>
-generate_crsgraph(Teuchos::RCP<comm_type>                      comm,
-                  const std::vector<std::pair<GO, GO>>&     gbl_edges,
-                  const std::vector<std::pair<GO, size_t>>& gbl_row_owners,
-                  const size_t                              gbl_num_columns,
-                  const bool                                do_fillComplete=true)
+template<class LO, class GO, class Node>
+Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> >
+generate_crsgraph(Teuchos::RCP<Teuchos::Comm<int> >&      comm,
+                  const std::vector<std::pair<GO, GO> >&  gbl_edges,
+                  const std::vector<std::pair<GO, int> >& gbl_row_owners,
+                  const size_t                            gbl_num_columns,
+                  const bool                              do_fillComplete=true)
 {
     using Teuchos::Comm;
 
-    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
-    typedef Tpetra::Map<LO, GO, Node>      map_type;
-
-    typedef typename std::map<GO, size_t> map_rows_type;      // row_id, num_entries
-
-
-    typedef typename std::vector<GO>        vec_go_type;
-    typedef typename std::map<GO, vec_go_type> map_row_to_cols_type;
+    using graph_type           = Tpetra::CrsGraph<LO,GO,Node>;      // Tpetra CrsGraph type
+    using map_type             = Tpetra::Map<LO,GO,Node>;           // Tpetra Map type
+    using map_rows_type        = std::map<GO,int>;                  // map rows to pid's
+    using vec_go_type          = std::vector<GO>;                   // vector of GlobalOrdinals
+    using map_row_to_cols_type = std::map<GO, vec_go_type>;         // Map rows to columns
 
     const bool verbose = Tpetra::Details::Behavior::verbose();
 
-    const size_t comm_rank = comm->getRank();
+    const int comm_rank = (size_t)comm->getRank();
 
     map_row_to_cols_type gbl_rows;
     for(auto& e: gbl_edges)
@@ -221,8 +218,8 @@ generate_crsgraph(Teuchos::RCP<comm_type>                      comm,
     for(auto& r: gbl_rows)
     {
         const GO     irow    = r.first;
-        const size_t row_pid = gbl_row2pid.find(irow)->second;
-        if(row_pid == comm_rank)
+        const int row_pid = gbl_row2pid.find(irow)->second;
+        if(comm_rank == row_pid)
         {
             num_ent_per_row[ idx++ ] = r.second.size();
         }
@@ -243,8 +240,8 @@ generate_crsgraph(Teuchos::RCP<comm_type>                      comm,
     for(auto& r: gbl_rows)
     {
         const GO     irow = r.first;
-        const size_t pid  = gbl_row2pid.find(irow)->second;
-        if(pid == comm_rank)
+        const int pid  = gbl_row2pid.find(irow)->second;
+        if(comm_rank == pid)
         {
             std::vector<GO> gbl_inds;
             for(auto& v: r.second)
@@ -293,18 +290,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     using Teuchos::outArg;
     using Teuchos::RCP;
 
-    typedef Teuchos::Comm<int>             comm_type;
-    typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+    using graph_type      = Tpetra::CrsGraph<LO,GO,Node>;       // Tpetra CrsGraph type
+    using pair_edge_type  = std::pair<GO,GO>;                   // Edge typs, (u,v) using GlobalOrdinal type
+    using pair_owner_type = std::pair<GO,int>;                  // For row owners, pairs are (rowid, comm rank)
 
-    typedef typename std::pair<GO, GO>     pair_edge_type;
-    typedef typename std::pair<GO, size_t> pair_owner_type;
-
-    typedef typename std::vector<pair_edge_type>  vec_edges_type;
-    typedef typename std::vector<pair_owner_type> vec_owners_type;
+    using vec_edges_type  = std::vector<pair_edge_type>;        // For vectors of edges
+    using vec_owners_type = std::vector<pair_owner_type>;       // For vectors of owners
 
     bool verbose = Tpetra::Details::Behavior::verbose();
 
     auto initialComm = getDefaultComm();
+
     TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
 
     // Set up a communicator that has exactly two processors in it for the actual test.
@@ -335,12 +331,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
          }
 
         out << ">>> create graph_a" << std::endl;
-        RCP<graph_type> graph_a = generate_crsgraph<LO, GO, Node, comm_type>(comm, vec_edges, vec_owners, 12);
-        //graph_a->describe(out, Teuchos::VERB_DEFAULT);
+        RCP<graph_type> graph_a = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        if(verbose) graph_a->describe(out, Teuchos::VERB_DEFAULT);
 
         out << ">>> create graph_b" << std::endl;
-        RCP<graph_type> graph_b = generate_crsgraph<LO, GO, Node, comm_type>(comm, vec_edges, vec_owners, 12);
-        //graph_b->describe(out, Teuchos::VERB_DEFAULT);
+        RCP<graph_type> graph_b = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        if(verbose) graph_b->describe(out, Teuchos::VERB_DEFAULT);
 
         vec_edges.clear();
         vec_owners.clear();
@@ -351,23 +347,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
                       pair_owner_type(10, 1)};
 
         out << ">>> create graph_c" << std::endl;
-        RCP<graph_type> graph_c = generate_crsgraph<LO, GO, Node, comm_type>(comm, vec_edges, vec_owners, 12);
-        //graph_c->describe(out, Teuchos::VERB_DEFAULT);
+        RCP<graph_type> graph_c = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        if(verbose) graph_c->describe(out, Teuchos::VERB_DEFAULT);
 
         out << ">>> create graph_d" << std::endl;
-        RCP<graph_type> graph_d = generate_crsgraph<LO, GO, Node, comm_type>(comm, vec_edges, vec_owners, 12);
-        //graph_d->describe(out, Teuchos::VERB_DEFAULT);
+        RCP<graph_type> graph_d = generate_crsgraph<LO, GO, Node>(comm, vec_edges, vec_owners, 12);
+        if(verbose) graph_d->describe(out, Teuchos::VERB_DEFAULT);
 
+        // Verify the initial identical-to state of the graphs.
         TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), true);       // graph_a and graph_b should be the same
         TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), true);       // graph_c and graph_d should be the same
         TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), false);      // graph_a and graph_c should be different
         TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
 
-
         // Swap graph b and c
         out << ">>> swap graph_b and graph_c" << std::endl;
         graph_c->swap(*graph_b);
 
+        // Verify that the graphs did get swapped.
         TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), false);    // graph_a and graph_b should be different
         TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), false);    // graph_c and graph_d should be different
         TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), true);     // graph_a and graph_c should be the same
