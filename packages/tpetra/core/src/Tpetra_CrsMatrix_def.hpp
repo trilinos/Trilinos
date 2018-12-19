@@ -6545,6 +6545,7 @@ namespace Tpetra {
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
     typedef typename device_type::memory_space dev_mem_space;
+
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
