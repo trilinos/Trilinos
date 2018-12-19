@@ -38,11 +38,12 @@ function test_pr_constraints_master()
     then
         echo -e "NOTICE: Destination branch is trilinos/Trilnos::master"
 
-        if [[ ! "${src_repo:?}" =~ ${re_trilinos_url:?} ]] || [[ ! "${src_branch:?}" == "develop" ]]
+        re_src_branchname="master_merge_[0-9]{8}_[0-9]{6}"
+
+        if [[ ! "${src_repo:?}" =~ ${re_trilinos_url:?} ]] || [[ ! "${src_branch:?}" =~ ${re_src_branchname:?} ]]
         then
-            echo -e "ERROR : Source branch is NOT trilinos/Trilinos::develop"
-            echo -e "      : This violates Trilinos policy, pull requests into the master branch"
-            echo -e "      : are only allowed from the develop branch."
+            echo -e "ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS"
+            echo -e "      : This violates Trilinos policy, pull requests into the master branch are restricted."
             echo -e "      : Perhaps you forgot to specify the develop branch as the target in your PR?"
             echo -e "------------------------------------------------------------------------------------------"
             echo -e ""
