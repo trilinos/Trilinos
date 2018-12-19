@@ -144,6 +144,8 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
     typedef typename std::vector<GO>        vec_go_t;
     typedef typename std::map<GO, vec_go_t> map_row_to_cols_t;
 
+    const bool verbose = Tpetra::Details::Behavior::verbose();
+
     const size_t comm_rank = comm->getRank();
 
     map_row_to_cols_t gbl_rows;
@@ -160,20 +162,21 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
     for(auto& p: gbl_row_owners) { gbl_row2pid.insert(p); }
 
     // Print out some debugging information on what's in the graph
-    #if 0
-    std::cout << "p=0 | gbl_num_rows: " << gbl_rows.size() << std::endl;
-    for(auto& p: gbl_rows)
+    if(verbose)
     {
-        std::cout << "p=0 | gbl_row     : " << p.first << " (" << p.second.size() << ") ";
-        for(auto& j: p.second)
+        std::cout << "p=0 | gbl_num_rows: " << gbl_rows.size() << std::endl;
+        for(auto& p: gbl_rows)
         {
-            std::cout << j << " ";
+            std::cout << "p=0 | gbl_row     : " << p.first << " (" << p.second.size() << ") ";
+            for(auto& j: p.second)
+            {
+                std::cout << j << " ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
+        for(auto& p: gbl_row2pid)
+            std::cout << "p=0 | gbl_row2pid : " << p.first << " => " << p.second << std::endl;
     }
-    for(auto& p: gbl_row2pid)
-        std::cout << "p=0 | gbl_row2pid : " << p.first << " => " << p.second << std::endl;
-    #endif
 
     GO gbl_num_rows = gbl_rows.size();      // the number of global rows
     LO lcl_num_rows = 0;                    // this will be updated later
@@ -187,9 +190,8 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
         }
     }
 
-    #if 0
-    std::cout << "p=" << comm_rank << " | " << "lcl_num_rows = " << lcl_num_rows << std::endl;
-    #endif
+    if(verbose)
+        std::cout << "p=" << comm_rank << " | " << "lcl_num_rows = " << lcl_num_rows << std::endl;
 
     // Set up global ids
     std::vector<GO> global_ids;
@@ -200,18 +202,18 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
             global_ids.push_back(r.first);
         }
     }
-    #if 0
-    for(size_t i = 0; i < global_ids.size(); i++)
+
+    if(verbose)
     {
-        std::cout << "p=" << comm_rank << " | " << "global_ids[" << i << "] = " << global_ids[i] << std::endl;
+        for(size_t i = 0; i < global_ids.size(); i++)
+        {
+            std::cout << "p=" << comm_rank << " | " << "global_ids[" << i << "] = " << global_ids[i] << std::endl;
+        }
+        std::cout << "p=" << comm_rank << " | " << "row_map = map_t(" << gbl_num_rows << ", " 
+                  << "global_ids.data(), " << lcl_num_rows << ", 0, comm)" << std::endl;
     }
-    #endif
 
     // Create the Row Map
-    #if 0
-    std::cout << "p=" << comm_rank << " | " << "row_map = map_t(" << gbl_num_rows << ", " << "global_ids.data(), "
-              << lcl_num_rows << ", 0, comm)" << std::endl;
-    #endif
     RCP<const map_t> row_map(new map_t(gbl_num_rows, global_ids.data(), lcl_num_rows, 0, comm));
 
     Teuchos::ArrayRCP<size_t> num_ent_per_row(lcl_num_rows);
@@ -226,13 +228,15 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
         }
     }
 
-    #if 0
-    std::cout << "p=" << comm_rank << " | lcl_num_rows = " << lcl_num_rows << std::endl;
-    for(int i=0; i<lcl_num_rows; i++)
+    if(verbose)
     {
-        std::cout << "p=" << comm_rank << " | " << "num_ent_per_row[" << i << "] = " << num_ent_per_row[i] << std::endl;
+        std::cout << "p=" << comm_rank << " | lcl_num_rows = " << lcl_num_rows << std::endl;
+        for(int i=0; i<lcl_num_rows; i++)
+        {
+            std::cout << "p=" << comm_rank << " | " << "num_ent_per_row[" << i << "] = " 
+                      << num_ent_per_row[i] << std::endl;
+        }
     }
-    #endif
 
     RCP<graph_t> output_graph(new graph_t(row_map, num_ent_per_row, Tpetra::StaticProfile));
 
@@ -245,20 +249,21 @@ generate_crsgraph(Teuchos::RCP<comm_t>                      comm,
             std::vector<GO> gbl_inds;
             for(auto& v: r.second)
             {
-                // std::cout << "p=" << comm_rank << " | " << "gbl_inds.push_back(" << v << ")" << std::endl;
                 gbl_inds.push_back(v);
             }
 
-            #if 0
-            std::cout << "p=" << comm_rank << " | " << "gbl_inds size = " << r.second.size() << std::endl;
-            for(size_t i=0; i<gbl_inds.size(); i++)
+            if(verbose)
             {
-                std::cout << "p=" << comm_rank << " | " << "gbl_inds[" << i << "] = " << gbl_inds[i] << std::endl;
+                std::cout << "p=" << comm_rank << " | " << "gbl_inds size = " << r.second.size() << std::endl;
+                for(size_t i=0; i<gbl_inds.size(); i++)
+                {
+                    std::cout << "p=" << comm_rank << " | " << "gbl_inds[" << i << "] = " 
+                              << gbl_inds[i] << std::endl;
+                }
+                std::cout << "p=" << comm_rank << " | " << "insertGlobalIndices(" << irow << ", " 
+                          << r.second.size() << ", gbl_inds.data())" << std::endl;
             }
-            #endif
 
-            // std::cout << "p=" << comm_rank << " | " << "insertGlobalIndices(" << irow << ", " << r.second.size() << ",
-            // gbl_inds.data())" << std::endl;
             output_graph->insertGlobalIndices(irow, r.second.size(), gbl_inds.data());
         }
     }
