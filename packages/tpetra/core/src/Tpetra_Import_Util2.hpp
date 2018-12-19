@@ -54,6 +54,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_MpiTypeTraits.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
@@ -383,7 +384,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         offset+=ReverseRecvSizes[i];
         MPI_Irecv(rec_bptr,
                   recv_data_size,
-                  MPI_LONG_LONG_INT,
+                  ::Tpetra::Details::MpiTypeTraits<GO>::getType(rec_bptr[0]),
                   ProcsTo[i],
                   recvData_MPI_Tag,
                   rawComm,
@@ -397,7 +398,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
         int sendData_MPI_Tag = mpi_tag_base_*2+MyPID;
         MPI_Isend(send_bptr,
                   send_data_size,
-                  MPI_LONG_LONG_INT,
+                  ::Tpetra::Details::MpiTypeTraits<GO>::getType(send_bptr[0]),
                   ProcsFrom[ii],
                   sendData_MPI_Tag,
                   rawComm,

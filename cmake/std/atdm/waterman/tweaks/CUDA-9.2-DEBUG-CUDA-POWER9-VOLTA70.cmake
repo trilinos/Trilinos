@@ -1,5 +1,5 @@
-#disable from issue #2410
-ATDM_SET_ENABLE(TeuchosNumerics_LAPACK_test_MPI_1_DISABLE ON)
+# #2410: STEQR() test fails on IBM Power systems with current TPL setup
+ATDM_SET_ENABLE(TeuchosNumerics_DISABLE_STEQR_TEST ON)
 
 # Disable timing out unit test in this debug build (#3336)
 ATDM_SET_ENABLE(KokkosContainers_UnitTest_Serial_MPI_1_DISABLE ON)
