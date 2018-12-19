@@ -114,8 +114,6 @@ TEUCHOS_STATIC_SETUP()
                   " this option is ignored and a serial comm is always used.");
     clp.setOption("error-tol-slack", &errorTolSlack, "Slack off of machine epsilon used to check test results");
 }
-// todo: update options so that this test won't run in serial (it's not set up for that currently)
-
 
 
 
