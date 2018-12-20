@@ -2587,8 +2587,6 @@ namespace Tpetra {
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::Blas::fill;
     typedef typename dual_view_type::t_dev::memory_space DMS;
-    //typedef typename dual_view_type::t_host::memory_space HMS;
-    typedef typename dual_view_type::t_host::device_type HMS; // avoid CudaUVMSpace issues
     typedef typename dual_view_type::t_dev::execution_space DES;
     typedef typename dual_view_type::t_host::execution_space HES;
     typedef LocalOrdinal LO;
