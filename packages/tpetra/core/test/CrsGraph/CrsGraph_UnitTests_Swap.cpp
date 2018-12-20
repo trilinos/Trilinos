@@ -141,7 +141,7 @@ generate_crsgraph(Teuchos::RCP<Teuchos::Comm<int> >&      comm,
 
     const bool verbose = Tpetra::Details::Behavior::verbose();
 
-    const int comm_rank = (size_t)comm->getRank();
+    const int comm_rank = comm->getRank();
 
     map_row_to_cols_type gbl_rows;
     for(auto& e: gbl_edges)
