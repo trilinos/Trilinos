@@ -74,6 +74,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("coarseCoordinates",            Teuchos::null, "Factory for coarse coordinates generation");
     validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",           Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");
+    validParamList->set<RCP<const FactoryBase> >("numDimensions"     ,           Teuchos::null, "Factory providing the number of spatial dimensions of the mesh");
     validParamList->set<int>                    ("write start",                  -1, "first level at which coordinates should be written to file");
     validParamList->set<int>                    ("write end",                    -1, "last level at which coordinates should be written to file");
     validParamList->set<RCP<const FactoryBase> >("aggregationRegionTypeCoarse",  Teuchos::null, "Factory indicating what aggregation type is to be used on the coarse level of the region");
@@ -93,6 +94,7 @@ namespace MueLu {
         Input(fineLevel, "gCoarseNodesPerDim");
       }
       Input(fineLevel, "lCoarseNodesPerDim");
+      Input(fineLevel, "numDimensions");
     } else if(pL.get<bool>("Geometric") == true) {
       Input(coarseLevel, "coarseCoordinates");
       Input(coarseLevel, "gCoarseNodesPerDim");
@@ -121,6 +123,7 @@ namespace MueLu {
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
+    int numDimensions;
     RCP<xdMV> coarseCoords;
     RCP<xdMV> fineCoords;
     Array<GO> gCoarseNodesPerDir;
@@ -142,6 +145,8 @@ namespace MueLu {
       }
       lCoarseNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
       Set<Array<LO> >(coarseLevel, "lNodesPerDim", lCoarseNodesPerDir);
+      numDimensions = Get<int>(fineLevel, "numDimensions");
+      Set<int>(coarseLevel, "numDimensions", numDimensions);
     } else if(pL.get<bool>("Geometric") == true) {
       coarseCoords       = Get<RCP<xdMV> >(coarseLevel, "coarseCoordinates");
       gCoarseNodesPerDir = Get<Array<GO> >(coarseLevel, "gCoarseNodesPerDim");

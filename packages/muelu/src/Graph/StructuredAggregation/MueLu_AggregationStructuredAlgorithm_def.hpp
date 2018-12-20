@@ -131,7 +131,7 @@ namespace MueLu {
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, RCP<CrsGraph>& myGraph,
              RCP<const Map>& coarseCoordinatesFineMap, RCP<const Map>& coarseCoordinatesMap) const {
-    Monitor m(*this, "BuildAggregates");
+    Monitor m(*this, "BuildGraphP");
 
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_STRUCTUREDALGORITHM_DEBUG")) {
@@ -242,14 +242,20 @@ namespace MueLu {
                                                    graph.GetDomainMap()->getNode());
     }
 
+    *out << "Call constructor of CrsGraph" << std::endl;
     myGraph = CrsGraphFactory::Build(graph.GetDomainMap(),
                                      colMap,
                                      nnzOnRow,
                                      Xpetra::DynamicProfile);
+
+    *out << "Fill CrsGraph" << std::endl;
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
       myGraph->insertLocalIndices(nodeIdx, colIndex(rowPtr[nodeIdx], nnzOnRow[nodeIdx]) );
     }
+
+    *out << "Call fillComplete on CrsGraph" << std::endl;
     myGraph->fillComplete(domainMap, graph.GetDomainMap());
+    *out << "Prolongator CrsGraph computed" << std::endl;
 
   } // BuildAggregates()
 

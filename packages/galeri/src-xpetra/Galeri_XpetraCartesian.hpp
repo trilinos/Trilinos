@@ -74,7 +74,8 @@ namespace Galeri {
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
       Teuchos::RCP<Map> Cartesian1D(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                     const GlobalOrdinal nx,
-                                    const GlobalOrdinal mx) {
+                                    const GlobalOrdinal mx,
+                                    Teuchos::ParameterList & list) {
         if (nx <= 0 || mx <= 0 || (mx > nx))
           throw Exception(__FILE__, __LINE__,
                           "Incorrect input parameter to Maps::Cartesian1D()",
@@ -82,11 +83,16 @@ namespace Galeri {
                           ", mx = " + toString(mx));
 
         typedef GlobalOrdinal GO;
+        typedef LocalOrdinal  LO;
 
         int myPID = comm->getRank();
 
         GO startx, endx;
         Utils::getSubdomainData<GO>(nx, mx, myPID, startx, endx);
+
+        list.set("lnx", Teuchos::as<LO>(endx - startx));
+        list.set("lny", -1);
+        list.set("lnz", -1);
 
         size_t numMyElements = endx - startx;
         std::vector<GO> myGlobalElements(numMyElements);
@@ -104,7 +110,8 @@ namespace Galeri {
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
       Teuchos::RCP<Map> Cartesian2D(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                     const GlobalOrdinal nx, const GlobalOrdinal ny,
-                                    const GlobalOrdinal mx, const GlobalOrdinal my) {
+                                    const GlobalOrdinal mx, const GlobalOrdinal my,
+                                    Teuchos::ParameterList & list) {
         if (nx <= 0 || ny <= 0 || mx <= 0 || my <= 0 || (mx > nx) || (my > ny))
           throw(Exception(__FILE__, __LINE__,
                           "Incorrect input parameter to Maps::Cartesian2D()",
@@ -114,12 +121,17 @@ namespace Galeri {
                           ", my = " + toString(my)));
 
         typedef GlobalOrdinal GO;
+        typedef LocalOrdinal  LO;
 
         int myPID = comm->getRank();
 
         GO startx, starty, endx, endy;
         Utils::getSubdomainData(nx, mx, myPID % mx, startx, endx);
         Utils::getSubdomainData(ny, my, myPID / mx, starty, endy);
+
+        list.set("lnx", Teuchos::as<LO>(endx - startx));
+        list.set("lny", Teuchos::as<LO>(endy - starty));
+        list.set("lnz", -1);
 
         size_t numMyElements = (endx - startx) * (endy - starty);
         std::vector<GO> myGlobalElements(numMyElements);
@@ -138,7 +150,8 @@ namespace Galeri {
       template <class LocalOrdinal, class GlobalOrdinal, class Map>
       Teuchos::RCP<Map> Cartesian3D(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                                     const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
-                                    const GlobalOrdinal mx, const GlobalOrdinal my, const GlobalOrdinal mz) {
+                                    const GlobalOrdinal mx, const GlobalOrdinal my, const GlobalOrdinal mz,
+                                    Teuchos::ParameterList & list) {
         if (nx <= 0 || ny <= 0 || nz <= 0 ||
             mx <= 0 || my <= 0 || mz <= 0 ||
             (mx > nx) || (my > ny) || (mz > nz))
@@ -152,6 +165,7 @@ namespace Galeri {
                           ", mz = " + toString(mz));
 
         typedef GlobalOrdinal GO;
+        typedef LocalOrdinal  LO;
 
         GO mxy = mx * my;
 
@@ -161,6 +175,10 @@ namespace Galeri {
         Utils::getSubdomainData(nx, mx, (myPID % mxy) % mx, startx, endx);
         Utils::getSubdomainData(ny, my, (myPID % mxy) / mx, starty, endy);
         Utils::getSubdomainData(nz, mz,  myPID / mxy      , startz, endz);
+
+        list.set("lnx", Teuchos::as<LO>(endx - startx));
+        list.set("lny", Teuchos::as<LO>(endy - starty));
+        list.set("lnz", Teuchos::as<LO>(endz - startz));
 
         size_t numMyElements = (endx - startx) * (endy - starty) * (endz - startz);
         std::vector<GO> myGlobalElements(numMyElements);
