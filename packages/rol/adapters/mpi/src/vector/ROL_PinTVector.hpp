@@ -83,14 +83,18 @@ protected:
   int stepStart_;
   int stepEnd_;
   int replicate_;
+  int bufferSize_; // boundary exchange buffer size
 
   mutable Ptr<PinTVector<Real>> dual_;
 
   Ptr<PartitionedVector<Real>> stepVectors_;
+  std::vector<Ptr<Vector<Real>>> bufferVectors_;
+
   std::vector<Ptr<Vector<Real>>> leftVectors_;
   std::vector<Ptr<Vector<Real>>> rightVectors_;
 
   Ptr<const PinTVectorCommunication<Real>> vectorComm_;
+
 
   // Using parallel communication and a linear decomposition
   // determine where this processor lives in the global
@@ -125,30 +129,13 @@ protected:
     assert(stepEnd_>stepStart_);
   }
 
-  void allocateBoundaryExchangeVectors()
+  void allocateBoundaryExchangeVectors(int sz)
   {
-    int numLeft = 0;
-    int numRight = 0;
- 
-    for(int i=0;i<(int)stencil_.size();i++) {
-      if(stencil_[i]<0) 
-        numLeft = std::max(numLeft,std::abs(stencil_[i]));
-      else if(stencil_[i]>0) 
-        numRight = std::max(numRight,stencil_[i]);
-    }
+    bufferVectors_.resize(sz);
 
-    // there is a slight over allocation here if the stencil is sparse
-    leftVectors_.resize(numLeft);
-    for(int i=0;i<numLeft;i++) {
-      leftVectors_[i]  = localVector_->clone();
-      leftVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
-    }
-
-    // there is a slight over allocation here if the stencil is sparse
-    rightVectors_.resize(numRight);
-    for(int i=0;i<numRight;i++) {
-      rightVectors_[i]  = localVector_->clone();
-      rightVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
+    for(int i=0;i<sz;i++) {
+      bufferVectors_[i]  = localVector_->clone();
+      bufferVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
     }
   }
 
@@ -162,15 +149,7 @@ public:
 
   PinTVector(const PinTVector & v)
   {
-    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.steps_,v.stencil_,v.replicate_);
-
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<leftVectors_.size();i++)
-      leftVectors_[i]->set(*v.leftVectors_[i]);     
-
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<rightVectors_.size();i++)
-      rightVectors_[i]->set(*v.rightVectors_[i]);  
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.steps_,v.bufferSize_,v.replicate_);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -181,7 +160,18 @@ public:
              int replicate=1)
     : isInitialized_(false)
   {
-    initialize(comm,vectorComm,localVector,steps,stencil,replicate);
+    initialize(comm,vectorComm,localVector,steps,1,replicate);
+  }
+
+  PinTVector(const Ptr<const PinTCommunicators> & comm,
+             const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
+             const Ptr<Vector<Real>> & localVector,
+             int steps,
+             int bufferSize,
+             int replicate=1)
+    : isInitialized_(false)
+  {
+    initialize(comm,vectorComm,localVector,steps,bufferSize,replicate);
   }
 
   virtual ~PinTVector() {}
@@ -190,25 +180,25 @@ public:
                   const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                   const Ptr<Vector<Real>> & localVector,
                   int steps,
-                  const std::vector<int> & stencil,
+                  int bufferSize,
                   int replicate=1)
   {
     replicate_     = replicate;
+    bufferSize_    = bufferSize;
     communicators_ = comm;
     localVector_   = localVector;
     steps_         = steps;
-    stencil_       = stencil;
+    // stencil_       = stencil;
     vectorComm_    = vectorComm; // makePtr<PinTVectorCommunication_StdVector<Real>>();
 
     computeStepStartEnd(steps_);
-    allocateBoundaryExchangeVectors();
+    allocateBoundaryExchangeVectors(bufferSize);
 
     std::vector<Ptr<Vector<Real>>> stepVectors;
-    // replicate is a hack to allow virtual variables to be automatically allocated: this calculation is nonsense
-    stepVectors.resize(replicate*(stepEnd_-stepStart_-1)+ 1 + rightVectors_.size() + leftVectors_.size());
-    
+    stepVectors.resize(replicate*(stepEnd_ - stepStart_));
+
     // build up local vectors
-    for(int i=0;i<(int)stepVectors.size();i++) {
+    for(int i=0;i<(int) stepVectors.size();i++) {
       stepVectors[i]  = localVector_->clone();
       stepVectors[i]->set(*localVector_);      // make sure each subvector is initialized
     }
@@ -238,7 +228,7 @@ public:
     */
   int numOwnedSteps() const 
   { 
-    return stepVectors_->numVectors()-leftVectors_.size()-rightVectors_.size(); 
+    return numOwnedVectors()/replicate_;
   }
 
   /** What is the stencil used to build this vector?
@@ -261,65 +251,106 @@ public:
     */
   Ptr<const PinTVectorCommunication<Real>> vectorCommunicationPtr() const { return vectorComm_; }
 
-  /** \brief Determine if an index is valid including the stencil.
-
-      An index is valid if is in [min(stencil),max(stencil)+numOwnedSteps()-1]
-      Note that this treats owned vectors that live in the "shared" region as
-      negative numbers, or numbers greater than numOwnedSteps()-1
+  /** \brief Determine if an index is valid.
    */
   bool isValidIndex(int i) const
   {
-    int leftCount = leftVectors_.size();
-    int rightCount = rightVectors_.size();
+    if(i<0 or i>=numOwnedVectors()) 
+      return false;
 
-    if(0<=i && i <numOwnedSteps()) {
-      return true;
-    }
-
-    // these are "neighbor" unowned vectors (left) 
-    if(-leftCount <= i && i < 0) {
-      return true;
-    }
-
-    // these are "neighbor" unowned vectors (right)
-    if((int)numOwnedSteps() <= i && i<numOwnedSteps()+rightCount) {
-      return true;
-    }
-
-    return false;
+    return true;
   }
 
-  /** Get a vector pointer. This range is valid from i in [min(stencil),max(stencil)+numOwnedSteps()-1]
+  /** Get a vector pointer. 
    */
   Ptr<Vector<Real>> getVectorPtr(int i) const
   {
     if(not isValidIndex(i))
       return nullPtr;
 
-    return stepVectors_->get(i+leftVectors_.size());
+    return stepVectors_->get(i);
   }
 
-  /** Get a vector pointer to the local buffer. This uses the same numbering scheme as
-    * <code>getVectorPtr</code>. The valid range is valid from i in [min(stencil),-1],
-    * [max(stencil),max(stencil)+numOwnedSteps()-1]
+  /** Get a vector pointer to the local buffer. 
    */
   Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
   {
-    assert(isValidIndex(i));
-    assert(i<0 or i>=numOwnedSteps());
+    assert(0<=i or i<bufferVectors_.size());
 
-    int leftCount = leftVectors_.size();
-    int rightCount = rightVectors_.size();
+    return bufferVectors_[i];
+  }
 
-      // these are "neighbor" unowned vectors (left)
-    if(-leftCount <= i && i < 0) 
-      return leftVectors_[leftVectors_.size()+i];
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the last vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is less than the recieving.
 
-    // these are "neighbor" unowned vectors (right)
-    if(numOwnedSteps() <= i && i<numOwnedSteps()+rightCount)
-      return rightVectors_[i-numOwnedSteps()];
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeLeftToRight(ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    MPI_Comm timeComm = communicators_->getTimeCommunicator();
+    int      myRank   = communicators_->getTimeRank();
 
-    return nullPtr;
+    bool sendToRight   = stepEnd_ < steps_;
+    bool recvFromLeft = stepStart_ > 0;
+
+    // this allows finer granularity of control of send recieve
+    // and will permit some blocking communication
+    if(send_recv==SEND_ONLY) {
+     recvFromLeft = false;
+    }
+    if(send_recv==RECV_ONLY) {
+     sendToRight = false;
+    }
+    // do nothing if(send_recv==SEND_AND_RECV) 
+    
+    // send from left to right
+    {
+
+      if(sendToRight)
+        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()-1)); // this is "owned"
+      
+      if(recvFromLeft)
+        vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(0),false);                  
+    }
+  }
+
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the first vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is greater than the recieving.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeRightToLeft(ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    MPI_Comm timeComm = communicators_->getTimeCommunicator();
+    int      myRank   = communicators_->getTimeRank();
+
+    bool recvFromRight = stepEnd_ < steps_;
+    bool sendToLeft   = stepStart_ > 0;
+
+    // this allows finer granularity of control of send recieve
+    // and will permit some blocking communication
+    if(send_recv==SEND_ONLY) {
+     recvFromRight = false;
+    }
+    if(send_recv==RECV_ONLY) {
+     sendToLeft = false;
+    }
+    // do nothing if(send_recv==SEND_AND_RECV) 
+    
+    // send from right to left
+    {
+      if(sendToLeft)
+        vectorComm_->send(timeComm,myRank-1,*getVectorPtr(0)); // this is "owned"
+      
+      if(recvFromRight)
+        vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(0),false);
+    }
   }
 
   /** \brief Exchange unknowns with neighboring processors.
@@ -360,7 +391,7 @@ public:
         continue;
 
       if(sendToRight)
-        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset)); // this is "owned"
+        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()+offset)); // this is "owned"
       
       if(recvFromLeft)
         vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(offset),false);                  
@@ -583,13 +614,8 @@ public:
   {
     stepVectors_->zero();
 
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<leftVectors_.size();i++)
-      leftVectors_[i]->zero();
-
-    // make sure you copy boundary exchange "end points" - handles initial conditions
-    for(std::size_t i=0;i<rightVectors_.size();i++)
-      rightVectors_[i]->zero();
+    for(std::size_t i=0;i<bufferVectors_.size();i++)
+      bufferVectors_[i]->zero();
   }
 
 #if 0
