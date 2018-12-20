@@ -508,13 +508,14 @@ namespace MueLu {
     MaxNnz = 2*DofsPerNode*Ndofs;
 
     RCP<const Map> rowMap = Amat->getRowMap();
-    int GNdofs= rowMap->getGlobalNumElements();
+    Xpetra::global_size_t GNdofs= rowMap->getGlobalNumElements();
 
     std::vector<size_t> stridingInfo_;
     stridingInfo_.push_back(DofsPerNode);
 
+   Xpetra::global_size_t     itemp = GNdofs/nz;
     coarseMap = StridedMapFactory::Build(rowMap->lib(),
-        (NCLayers*GNdofs)/nz,
+        NCLayers*itemp, 
         NCLayers*NVertLines*DofsPerNode,
         0, /* index base */
         stridingInfo_,

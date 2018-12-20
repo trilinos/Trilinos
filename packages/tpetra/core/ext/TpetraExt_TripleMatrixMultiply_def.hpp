@@ -301,10 +301,10 @@ namespace Tpetra {
         if(!params.is_null()) {
           Teuchos::ParameterList& params_sublist = params->sublist("matrixmatrix: kernel params",false);
           Teuchos::ParameterList& labelList_subList = labelList.sublist("matrixmatrix: kernel params",false);
-          int mm_optimization_core_count = 3000;
+          int mm_optimization_core_count = ::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
           mm_optimization_core_count = params_sublist.get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-          int foo = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
-          if(foo<mm_optimization_core_count) mm_optimization_core_count=foo;
+          int mm_optimization_core_count2 = params->get("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count);
+          if(mm_optimization_core_count2<mm_optimization_core_count) mm_optimization_core_count=mm_optimization_core_count2;
           labelList_subList.set("MM_TAFC_OptimizationCoreCount",mm_optimization_core_count,"Core Count above which the optimized neighbor discovery is used");
 
           labelList_subList.set("isMatrixMatrix_TransferAndFillComplete",true,
