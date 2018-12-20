@@ -357,7 +357,6 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    typedef typename local_matrix_type::values_type values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>,local_matrix_type::values_type,[, "
       "RCP<ParameterList>]): ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -378,7 +377,6 @@ namespace Tpetra {
 
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
     auto lclGraph = graph->getLocalGraph ();
-    const size_t numEnt = lclGraph.entries.extent (0);
     this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
                                           numCols, values, lclGraph);
     // FIXME (22 Jun 2016) I would very much like to get rid of
