@@ -136,20 +136,64 @@ public:
     if(level==0)
       return timeStamps_;
 
-    int timeRank = getLevelCommunicators(level)->getTimeRank();
+    auto comm = getLevelCommunicators(level);
+    int timeRank = comm->getTimeRank();
 
     Ptr<std::vector<TimeStamp<Real>>> higherLevel = getTimeStampsByLevel(level-1);
 
+    int myFirstIndex = 0;
+    int myLength = int(higherLevel->size());
+    MPI_Exscan(&myLength,&myFirstIndex,1,MPI_INT,MPI_SUM,comm->getTimeCommunicator());
+
+    // send your end point to the right
+    double coarseTimeEnd = (higherLevel->end()-1)->t[0];
+    if(timeRank!=comm->getTimeSize()-1 and ((myFirstIndex+higherLevel->size()) % 2)==0) {
+      int tag = 0;
+      MPI_Send(&coarseTimeEnd,1,MPI_DOUBLE,comm->getTimeRank()+1,tag,comm->getTimeCommunicator());
+    }
+
+    // recieve the left time node on the coarse grid
+    double coarseTimeStart = 0.0;
+    if(timeRank!=0 and (myFirstIndex % 2)==0) {
+      int tag = 0;
+      MPI_Recv(&coarseTimeStart,1,MPI_DOUBLE,comm->getTimeRank()-1,tag,comm->getTimeCommunicator(),MPI_STATUS_IGNORE);
+    }
+    else {
+      coarseTimeStart = higherLevel->begin()->t[0];
+    }
+
+    // get the size of the array
     int currentStamps = -1; 
     if(higherLevel->size() % 2 ==0) {
       currentStamps = higherLevel->size()/2;
     }
     else {
-      currentStamps = (higherLevel->size()-1)/2+1;
+      currentStamps = (higherLevel->size()-1)/2+(myFirstIndex+1)%2;
     }
 
     Ptr<std::vector<TimeStamp<Real>>> currentLevel 
         = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(currentStamps);
+
+    // you offset based on your starting index (and if you are on rank 0
+    int offset = -1;
+    if(myFirstIndex % 2 ==0)
+      offset = 0;
+    else 
+      offset = 1;
+
+    for(size_t k=0;k<currentLevel->size();k++) {
+      currentLevel->at(k).t.resize(2);
+
+      if(k==0) {
+        currentLevel->at(k).t.at(0) = coarseTimeStart;
+        currentLevel->at(k).t.at(1) = higherLevel->at(2*k+offset).t.at(1);
+      }
+      else {
+        currentLevel->at(k).t.at(0) = higherLevel->at(2*k+offset-1).t.at(0);
+        currentLevel->at(k).t.at(1) = higherLevel->at(2*k+offset).t.at(1);
+      }
+    }
+/*
 
     // build up the current level
     if(timeRank==0) {
@@ -174,6 +218,7 @@ public:
         currentLevel->at(k).t.at(1) = higherLevel->at(2*k+1).t.at(1);
       }
     }
+*/
 
     return currentLevel;
   }
@@ -274,7 +319,7 @@ public:
      // ECC: something a bit fragile here does the buildStatePinTVector distribute the vectors in
      //      the same way as we expect... this should probably take local steps instead of global
      //      steps this way its guranteed.
-     return buildStatePinTVector(comm,vectorComm,totalSteps,pint_ref.getVectorPtr(0)->clone());
+     return makePtr<PinTVector<Real>>(comm,vectorComm,pint_ref.getVectorPtr(0)->clone(),totalSteps,mySteps,1,2);
    }
 
    /**
@@ -319,15 +364,6 @@ public:
 
      int numSteps = pint_input.numOwnedSteps();
      std::pair<int,int> fneRange = pint_input.ownedStepRange();
-     std::pair<int,int> crsRange = pint_output.ownedStepRange();
-
-     // make sure they line up
-     if(pint_input.numOwnedSteps() % 2 ==0) {
-       assert(fneRange.first-1 == 2*(crsRange.first-1));
-     }
-     else {
-       assert(fneRange.first == 2*crsRange.first);
-     }
 
      int crs_i = 0;
      for(int i=0;i<numSteps;i++) {

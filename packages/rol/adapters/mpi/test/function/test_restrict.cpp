@@ -229,11 +229,13 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_1 = hierarchy.getTimeStampsByLevel(1);
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_2 = hierarchy.getTimeStampsByLevel(2);
 
+  /*
   *outStream << std::endl;
   *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
   *outStream << printTimeStamps(rank+"Level 1 = ",*stamps_1) << std::endl;
   *outStream << printTimeStamps(rank+"Level 2 = ",*stamps_2) << std::endl;
   *outStream << std::endl;
+  */
 
   // check the sizing of the simulation vector (should include the virtual state
   //////////////////////////////////////////////////////////////////////////////////////
@@ -252,16 +254,6 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
     throw std::logic_error(ss.str());
   }
 
-  if(pintSimVec_1.numOwnedVectors() != 2*((localNt-1)/2+1)) {
-    ss << rank << "Level 1: Incorrect number of owned vectors: " << pintSimVec_1.numOwnedVectors() << "!=" << 2*((localNt-1)/2+1) << std::endl;
-    throw std::logic_error(ss.str());
-  }
-
-  if(pintSimVec_2.numOwnedVectors() != 2*((localNt-1)/4+1)) {
-    ss << rank << "Level 2: Incorrect number of owned vectors: " << pintSimVec_2.numOwnedVectors() << "!=" << 2*((localNt-1)/4+1) << std::endl;
-    throw std::logic_error(ss.str());
-  }
-  
   // simulation vectors contain the virtual variable, this is all shifted backwards by one
   //////////////////////////////////////////////////////////////////////////////////////
   
@@ -325,6 +317,8 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
       throw std::logic_error(ss.str());
     }
   }
+
+  *outStream << rank << "Restriction: PASSED" << std::endl;
 
   // perform prolong, and test that it works (check for preservation of linear functions)
   //////////////////////////////////////////////////////////////////////////////////////
