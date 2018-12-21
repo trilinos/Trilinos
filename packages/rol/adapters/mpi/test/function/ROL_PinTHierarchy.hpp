@@ -146,14 +146,14 @@ public:
     MPI_Exscan(&myLength,&myFirstIndex,1,MPI_INT,MPI_SUM,comm->getTimeCommunicator());
 
     // send your end point to the right
-    double coarseTimeEnd = (higherLevel->end()-1)->t[0];
+    Real coarseTimeEnd = (higherLevel->end()-1)->t[0];
     if(timeRank!=comm->getTimeSize()-1 and ((myFirstIndex+higherLevel->size()) % 2)==0) {
       int tag = 0;
       MPI_Send(&coarseTimeEnd,1,MPI_DOUBLE,comm->getTimeRank()+1,tag,comm->getTimeCommunicator());
     }
 
     // recieve the left time node on the coarse grid
-    double coarseTimeStart = 0.0;
+    Real coarseTimeStart = 0.0;
     if(timeRank!=0 and (myFirstIndex % 2)==0) {
       int tag = 0;
       MPI_Recv(&coarseTimeStart,1,MPI_DOUBLE,comm->getTimeRank()-1,tag,comm->getTimeCommunicator(),MPI_STATUS_IGNORE);
@@ -193,32 +193,6 @@ public:
         currentLevel->at(k).t.at(1) = higherLevel->at(2*k+offset).t.at(1);
       }
     }
-/*
-
-    // build up the current level
-    if(timeRank==0) {
-      for(size_t k=0;k<currentLevel->size();k++) {
-        currentLevel->at(k).t.resize(2);
-
-        if(k==0) {
-          currentLevel->at(k).t.at(0) = higherLevel->at(2*k).t.at(0);
-          currentLevel->at(k).t.at(1) = higherLevel->at(2*k).t.at(1);
-        }
-        else {
-          currentLevel->at(k).t.at(0) = higherLevel->at(2*k-1).t.at(0);
-          currentLevel->at(k).t.at(1) = higherLevel->at(2*k+0).t.at(1);
-        }
-      }
-    }
-    else {
-      for(size_t k=0;k<currentLevel->size();k++) {
-        currentLevel->at(k).t.resize(2);
-
-        currentLevel->at(k).t.at(0) = higherLevel->at(2*k).t.at(0);
-        currentLevel->at(k).t.at(1) = higherLevel->at(2*k+1).t.at(1);
-      }
-    }
-*/
 
     return currentLevel;
   }
@@ -425,19 +399,20 @@ public:
      std::pair<int,int> crsRange = pint_input.ownedStepRange();
 
      int timeRank = pint_output.communicators().getTimeRank();
-
-     // make sure they line up
-     if(pint_input.numOwnedSteps() % 2 ==0) {
-       assert(fneRange.first-1 == 2*(crsRange.first-1));
-     }
-     else {
-       assert(fneRange.first == 2*crsRange.first);
-     }
-
      int fineSteps = pint_output.numOwnedSteps();
 
-     // communicate last two points
+     // communicate points on the left of this interval
      pint_input.boundaryExchangeLeftToRight();
+     auto u_fineStart = pint_input.getRemoteBufferPtr(0)->clone();
+     auto v_fineStart = pint_input.getRemoteBufferPtr(1)->clone();
+     u_fineStart->set(*pint_input.getRemoteBufferPtr(0));             // this is a little unpalatable since we are
+     v_fineStart->set(*pint_input.getRemoteBufferPtr(1));             // allocating more memory. it might be better for
+                                                                      // the user to pass in a buffer
+
+     // communicate points on the right of this interval
+     pint_input.boundaryExchangeRightToLeft();
+     auto u_fineEnd = pint_input.getRemoteBufferPtr(0);
+     auto v_fineEnd = pint_input.getRemoteBufferPtr(1);
      
      for(int fne_i=0;fne_i<fineSteps;fne_i++) {
        int fneIndex = fne_i+fneRange.first;
@@ -469,10 +444,11 @@ public:
          u_crs_index = 2*coarse_si_0;
          v_crs_index = 2*coarse_si_0+1;
 
+         // this special case is used when the first fine time step does not belong to the 
+         // coarse grid
          if(coarse_si_0 < 0) {
-           assert(timeRank>0);
-           pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getRemoteBufferPtr(0));
-           pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getRemoteBufferPtr(1));
+           pint_output.getVectorPtr(u_fne_index)->set(*u_fineStart);
+           pint_output.getVectorPtr(v_fne_index)->set(*v_fineStart);
          }
          else {
            pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getVectorPtr(u_crs_index));
@@ -482,9 +458,18 @@ public:
          u_crs_index = 2*coarse_si_1;
          v_crs_index = 2*coarse_si_1+1;
 
-         pint_output.getVectorPtr(u_fne_index)->axpy(1.0,*pint_input.getVectorPtr(u_crs_index));
-         pint_output.getVectorPtr(v_fne_index)->axpy(1.0,*pint_input.getVectorPtr(v_crs_index));
+         // this special case is used when the last fine time step does not belong to the 
+         // coarse grid
+         if(coarse_si_1 >= pint_input.numOwnedSteps()) {
+           pint_output.getVectorPtr(u_fne_index)->axpy(1.0,*u_fineEnd);
+           pint_output.getVectorPtr(v_fne_index)->axpy(1.0,*v_fineEnd);
+         }
+         else {
+           pint_output.getVectorPtr(u_fne_index)->axpy(1.0,*pint_input.getVectorPtr(u_crs_index));
+           pint_output.getVectorPtr(v_fne_index)->axpy(1.0,*pint_input.getVectorPtr(v_crs_index));
+         }
 
+         // average the two points
          pint_output.getVectorPtr(u_fne_index)->scale(0.5);
          pint_output.getVectorPtr(v_fne_index)->scale(0.5);
        }

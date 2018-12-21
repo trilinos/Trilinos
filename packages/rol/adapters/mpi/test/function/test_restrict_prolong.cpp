@@ -55,12 +55,8 @@
 
 typedef double Real;
 
-namespace ROL {
-
-
-}
-
-void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
+void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
 int main(int argc, char* argv[]) 
 {
@@ -81,7 +77,7 @@ int main(int argc, char* argv[])
   int errorFlag  = 0;
 
   try {
-    testRestrictionProlong(MPI_COMM_WORLD,outStream);
+    testRestrictionProlong_SimVector(MPI_COMM_WORLD,outStream);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
@@ -161,7 +157,7 @@ std::string printVector_Virtual(const ROL::PinTVector<Real> & pintVec)
   return ss.str();
 }
 
-void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream) 
+void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream) 
 {
   std::stringstream ss;
 
@@ -188,10 +184,7 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
 
   // build fine pint vector
   ROL::Ptr<ROL::Vector<Real>> simVec_0 = ROL::buildStatePinTVector(pintComm,vectorComm,numSteps,localVector);
-  ROL::Ptr<ROL::Vector<Real>> optVec_0 = ROL::buildControlPinTVector(pintComm,vectorComm,numSteps,localVector);
-
   ROL::PinTVector<Real> & pintSimVec_0 = dynamic_cast<ROL::PinTVector<Real>&>(*simVec_0);
-  ROL::PinTVector<Real> & pintOptVec_0 = dynamic_cast<ROL::PinTVector<Real>&>(*optVec_0);
 
   // Build the hiearchy
   //////////////////////////////////////////////////////////////////////////////////////
@@ -228,14 +221,6 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_0 = hierarchy.getTimeStampsByLevel(0);
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_1 = hierarchy.getTimeStampsByLevel(1);
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_2 = hierarchy.getTimeStampsByLevel(2);
-
-  /*
-  *outStream << std::endl;
-  *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
-  *outStream << printTimeStamps(rank+"Level 1 = ",*stamps_1) << std::endl;
-  *outStream << printTimeStamps(rank+"Level 2 = ",*stamps_2) << std::endl;
-  *outStream << std::endl;
-  */
 
   // check the sizing of the simulation vector (should include the virtual state
   //////////////////////////////////////////////////////////////////////////////////////
@@ -318,7 +303,7 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
     }
   }
 
-  *outStream << rank << "Restriction: PASSED" << std::endl;
+  *outStream << rank << "Sim Vector Restriction: PASSED" << std::endl;
 
   // perform prolong, and test that it works (check for preservation of linear functions)
   //////////////////////////////////////////////////////////////////////////////////////
@@ -374,4 +359,6 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
       throw std::logic_error(ss.str());
     }
   }
+
+  *outStream << rank << "Sim Vector Prolongation: PASSED" << std::endl;
 }

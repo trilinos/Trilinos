@@ -8,8 +8,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PinT_Restrict
-  SOURCES test_restrict.cpp
+  PinT_RestrictProlong
+  SOURCES test_restrict_prolong.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 4
   PASS_REGULAR_EXPRESSION "TEST PASSED"
