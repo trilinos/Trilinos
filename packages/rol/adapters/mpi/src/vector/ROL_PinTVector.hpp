@@ -231,6 +231,9 @@ public:
     return numOwnedVectors()/replicate_;
   }
 
+  std::pair<int,int> ownedStepRange() const
+  { return std::make_pair(stepStart_,stepEnd_); }
+
   /** What is the stencil used to build this vector?
  
       This accessor is directly based on what the user intiializes the
