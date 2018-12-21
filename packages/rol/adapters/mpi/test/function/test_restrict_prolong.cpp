@@ -77,7 +77,8 @@ int main(int argc, char* argv[])
   int errorFlag  = 0;
 
   try {
-    testRestrictionProlong_SimVector(MPI_COMM_WORLD,outStream);
+    // testRestrictionProlong_SimVector(MPI_COMM_WORLD,outStream);
+    testRestrictionProlong_OptVector(MPI_COMM_WORLD,outStream);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
@@ -117,6 +118,24 @@ std::string printTimeStamps(const std::string & prefix, const std::vector<ROL::T
 
   ss << prefix << "-------------------------------------------------------------"
                   "-------------------------------------------------------------";
+
+  return ss.str();
+}
+
+// print the first spatial entry of each vector
+std::string printVector_Control(const ROL::PinTVector<Real> & pintVec)
+{
+  std::stringstream ss;
+
+  int steps = pintVec.numOwnedSteps();
+ 
+  ss << std::setprecision(3);
+  ss << std::fixed;
+  ss << "Control: ";
+  for(int i=0;i<steps;i++) {
+    Real value = dynamic_cast<ROL::StdVector<Real>&>(*pintVec.getVectorPtr(i)).getVector()->at(0);
+    ss << std::setw(6) << value << " ";
+  }
 
   return ss.str();
 }
@@ -361,4 +380,204 @@ void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   }
 
   *outStream << rank << "Sim Vector Prolongation: PASSED" << std::endl;
+}
+
+void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream) 
+{
+  std::stringstream ss;
+
+  int spatialProcs = 1;
+  int spaceDim = 2;
+  int numSteps = 16+1; // power of two plus one
+  double dt = 0.1;
+
+  // build communicators
+  ROL::Ptr<ROL::PinTCommunicators> pintComm = ROL::makePtr<ROL::PinTCommunicators>(comm,spatialProcs);
+  ROL::Ptr<const ROL::PinTVectorCommunication<Real>> vectorComm = ROL::makePtr<ROL::PinTVectorCommunication_StdVector<Real>>();
+
+  std::string rank;
+  {
+    std::stringstream rank_ss;
+    rank_ss << "P" << pintComm->getTimeRank() << ". ";
+    rank = rank_ss.str();
+  }
+
+  // build local vector
+  std::vector<Real> data(spaceDim,0.0);
+  ROL::Ptr<ROL::Vector<Real>> localVector = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtrFromRef(data));
+
+  // build fine pint vector
+  ROL::Ptr<ROL::Vector<Real>> optVec_0 = ROL::buildControlPinTVector(pintComm,vectorComm,numSteps,localVector);
+  ROL::PinTVector<Real> & pintOptVec_0 = dynamic_cast<ROL::PinTVector<Real>&>(*optVec_0);
+
+  // Build the hiearchy
+  //////////////////////////////////////////////////////////////////////////////////////
+  //
+  *outStream << rank << "Computing time offset" << std::endl; 
+
+  // do a scan to get the starting time
+  int localNt = pintOptVec_0.numOwnedSteps();
+  double myFinalTime = dt*localNt;
+  double timeOffset  = 0.0;
+  MPI_Exscan(&myFinalTime,&timeOffset,1,MPI_DOUBLE,MPI_SUM,pintComm->getTimeCommunicator());
+
+  *outStream << rank << "Setting the time steps: " << timeOffset << " " << localNt << "/" << numSteps << std::endl; 
+ 
+  // build time stamps
+  auto timeStamps_ptr = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(localNt);
+  auto & timeStamps = *timeStamps_ptr;
+  for(size_t k=0; k<localNt; ++k ) {
+    timeStamps[k].t.resize(2);
+    timeStamps[k].t.at(0) = k*dt + timeOffset;
+    timeStamps[k].t.at(1) = (k+1)*dt + timeOffset;
+  }
+  
+  *outStream << rank << "Setting up the hierarchy: " << timeStamps_ptr->size() << std::endl; 
+
+  ROL::PinTHierarchy<Real> hierarchy(timeStamps_ptr);
+  hierarchy.setMaxLevels(3);
+  hierarchy.buildLevels(pintComm,vectorComm);
+
+  // Check the time stamps by level
+  //////////////////////////////////////////////////////////////////////////////////////
+  
+  *outStream << rank << "Building Time stamps" << std::endl;
+  ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_0 = hierarchy.getTimeStampsByLevel(0);
+  ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_1 = hierarchy.getTimeStampsByLevel(1);
+  ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_2 = hierarchy.getTimeStampsByLevel(2);
+
+  // check the sizing of the optimization vector
+  //////////////////////////////////////////////////////////////////////////////////////
+  
+  *outStream << rank << "Building restricted vectors" << std::endl; 
+
+  ROL::Ptr<ROL::Vector<Real>> optVec_1 = hierarchy.allocateOptVector(*optVec_0,1);
+  ROL::Ptr<ROL::Vector<Real>> optVec_2 = hierarchy.allocateOptVector(*optVec_0,2);
+
+  ROL::PinTVector<Real> & pintOptVec_1 = dynamic_cast<ROL::PinTVector<Real>&>(*optVec_1);
+  ROL::PinTVector<Real> & pintOptVec_2 = dynamic_cast<ROL::PinTVector<Real>&>(*optVec_2);
+  
+  if(pintOptVec_0.numOwnedVectors() != localNt) {
+    ss << rank << "Level 0: Incorrect number of owned vectors: " << pintOptVec_0.numOwnedVectors() << "!=" << localNt << std::endl;
+    throw std::logic_error(ss.str());
+  }
+
+  // optimization vectors contain the virtual variable, this is all shifted backwards by one
+  //////////////////////////////////////////////////////////////////////////////////////
+  
+  *outStream << rank << "Setting linear function on fine grid" << std::endl; 
+
+  Real shift = 0.0;
+  
+  for(size_t i=0;i<timeStamps.size();i++) {
+    Real value = 0.5*(timeStamps[i].t[0]+timeStamps[i].t[1]);
+    pintOptVec_0.getVectorPtr(i)->setScalar(value+shift);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////
+  //
+  // Prolongation and restriction are designed to preserve linear functions - 12/21/2018
+  //
+  //////////////////////////////////////////////////////////////////////////////////////
+
+  // perform restriction, and test that it works (check for preservation of linear functions)
+  //////////////////////////////////////////////////////////////////////////////////////
+  
+  *outStream << rank << std::endl;
+  *outStream << rank << "Test Restriction " << std::endl;
+  *outStream << rank << "**********************************************************************" << std::endl;
+
+  hierarchy.restrictOptVector(pintOptVec_0,pintOptVec_1);
+  hierarchy.restrictOptVector(pintOptVec_1,pintOptVec_2);
+
+  *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
+  *outStream << rank << "Level 0 = " << printVector_Control(pintOptVec_0) << std::endl;
+
+  *outStream << rank << std::endl;
+  *outStream << rank << std::endl;
+
+  *outStream << printTimeStamps(rank+"Level 1 = ",*stamps_1) << std::endl;
+  *outStream << rank << "Level 1 = " << printVector_Control(pintOptVec_1) << std::endl;
+
+  *outStream << rank << std::endl;
+  *outStream << rank << std::endl;
+
+  *outStream << printTimeStamps(rank+"Level 2 = ",*stamps_2) << std::endl;
+  *outStream << rank << "Level 2 = " << printVector_Control(pintOptVec_2) << std::endl;
+
+  // check errors on the coarsest level
+  for(size_t i=0;i<stamps_2->size();i++) {
+    Real value_exact = 0.5*((*stamps_2)[i].t[0]+(*stamps_2)[i].t[1]);
+
+    Real value = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_2.getVectorPtr(i)).getVector()->at(0);
+
+    if(std::fabs(value-value_exact) > 1e-15) {
+      ss << rank << "Two levels of restriction are not correct: " << value << " != " << value_exact << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  *outStream << rank << "Opt Vector Restriction: PASSED" << std::endl;
+
+  // perform prolong, and test that it works (check for preservation of linear functions)
+  //////////////////////////////////////////////////////////////////////////////////////
+  
+  *outStream << rank << std::endl;
+  *outStream << rank << "Test Prolongation " << std::endl;
+  *outStream << rank << "**********************************************************************" << std::endl;
+  
+  ROL::Ptr<ROL::Vector<Real>> optVec_0_prolong = hierarchy.allocateOptVector(*optVec_0,0);
+  ROL::PinTVector<Real> & pintOptVec_0_prolong = dynamic_cast<ROL::PinTVector<Real>&>(*optVec_0_prolong);
+  ROL::Ptr<ROL::Vector<Real>> optVec_1_prolong = hierarchy.allocateOptVector(*optVec_0,1);
+  ROL::PinTVector<Real> & pintOptVec_1_prolong = dynamic_cast<ROL::PinTVector<Real>&>(*optVec_1_prolong);
+
+  pintOptVec_0_prolong.zero(); 
+  pintOptVec_1_prolong.zero(); 
+
+  hierarchy.prolongOptVector(pintOptVec_2,pintOptVec_1_prolong);
+  hierarchy.prolongOptVector(pintOptVec_1_prolong,pintOptVec_0_prolong);
+
+  *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
+  *outStream << rank << "Level 0 = " << printVector_Control(pintOptVec_0_prolong) << std::endl;
+
+  *outStream << rank << std::endl;
+
+  *outStream << printTimeStamps(rank+"Level 1 = ",*stamps_1) << std::endl;
+  *outStream << rank << "Level 1 = " << printVector_Control(pintOptVec_1_prolong) << std::endl;
+
+  *outStream << rank << std::endl;
+
+  *outStream << printTimeStamps(rank+"Level 2 = ",*stamps_2) << std::endl;
+  *outStream << rank << "Level 2 = " << printVector_Control(pintOptVec_2) << std::endl;
+
+  std::pair<int,int> fneRange = pintOptVec_0_prolong.ownedStepRange();
+  int offset = 0;
+  if(fneRange.first==0) {
+    offset = 1;
+
+    Real value_prlng = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_0_prolong.getVectorPtr(0)).getVector()->at(0);
+    Real value_exact = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_2.getVectorPtr(0)).getVector()->at(0);
+
+    if(std::fabs(value_prlng-value_exact) > 1e-15) {
+      ss << rank << "Two levels of prolongation are not correct index 0: " << value_prlng << " != " << value_exact << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  // check errors on the finest level
+  for(size_t i=0;i<stamps_0->size();i++) {
+
+    // prolonged values
+    Real value_prlng = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_0_prolong.getVectorPtr(i)).getVector()->at(0);
+
+    // original (or exact) values from  the initialized fine grid vector
+    Real value_exact = dynamic_cast<ROL::StdVector<Real>&>(*pintOptVec_2.getVectorPtr(offset+(i-offset)/4)).getVector()->at(0);
+
+    if(std::fabs(value_prlng-value_exact) > 1e-15) {
+      ss << rank << "Two levels of prolongation are not correct: " << value_prlng << " != " << value_exact << std::endl;
+      throw std::logic_error(ss.str());
+    }
+  }
+
+  *outStream << rank << "Opt Vector Prolongation: PASSED" << std::endl;
 }

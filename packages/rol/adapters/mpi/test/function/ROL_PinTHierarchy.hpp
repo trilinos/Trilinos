@@ -287,26 +287,26 @@ public:
      int totalSteps = 0;
      Ptr<std::vector<TimeStamp<Real>>> stamps = getTimeStampsByLevel(level);
      int mySteps = int(stamps->size());
-
      MPI_Allreduce(&mySteps,&totalSteps,1,MPI_INT,MPI_SUM,comm->getTimeCommunicator());
 
-     // ECC: something a bit fragile here does the buildStatePinTVector distribute the vectors in
-     //      the same way as we expect... this should probably take local steps instead of global
-     //      steps this way its guranteed.
      return makePtr<PinTVector<Real>>(comm,vectorComm,pint_ref.getVectorPtr(0)->clone(),totalSteps,mySteps,1,2);
    }
 
    /**
-    * \brief Allocate a simulation space vector at a particular multigrid level.
+    * \brief Allocate a optimization space vector at a particular multigrid level.
     */
    Ptr<Vector<Real>> allocateOptVector(const Vector<Real> & level_0_ref,int level) const
    {
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
-     auto comm = pint_ref.communicatorsPtr();
+     ROL::Ptr<const PinTCommunicators> comm = getLevelCommunicators(level);
      auto vectorComm = pint_ref.vectorCommunicationPtr();
      
-     Ptr<std::vector<TimeStamp<Real>>> stamps  = getTimeStampsByLevel(level);
-     return buildControlPinTVector(comm,vectorComm,comm->getTimeSize()*(stamps->size()-1),pint_ref.getVectorPtr(0)->clone());
+     int totalSteps = 0;
+     Ptr<std::vector<TimeStamp<Real>>> stamps = getTimeStampsByLevel(level);
+     int mySteps = int(stamps->size());
+     MPI_Allreduce(&mySteps,&totalSteps,1,MPI_INT,MPI_SUM,comm->getTimeCommunicator());
+
+     return makePtr<PinTVector<Real>>(comm,vectorComm,pint_ref.getVectorPtr(0)->clone(),totalSteps,mySteps,1,1);
    }
    
    /**
@@ -339,6 +339,8 @@ public:
      int numSteps = pint_input.numOwnedSteps();
      std::pair<int,int> fneRange = pint_input.ownedStepRange();
 
+     int timeRank = pint_output.communicators().getTimeRank();
+
      int crs_i = 0;
      for(int i=0;i<numSteps;i++) {
        // only do evens
@@ -369,12 +371,23 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     // handle interior
-     for(int k=0;k<pint_output.numOwnedSteps();k++) {
-       ROL::Vector<Real> & out = *pint_output.getVectorPtr(k);
+     // communicate points on the left of this interval
+     pint_input.boundaryExchangeLeftToRight();
+     auto leftStart = pint_input.getRemoteBufferPtr(0)->clone();
 
-       out.axpy(1.0/2.0,*pint_input.getVectorPtr(2*k+0)); 
-       out.axpy(1.0/2.0,*pint_input.getVectorPtr(2*k+1)); 
+     int offset = 0;
+     std::pair<int,int> fneRange = pint_input.ownedStepRange();
+     if(fneRange.first==0) {
+       offset = 1;
+       pint_output.getVectorPtr(0)->set(*pint_input.getVectorPtr(0));
+     }
+
+     // handle interior
+     for(int k=offset;k<pint_output.numOwnedSteps();k++) {
+       pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(2*k-offset));
+       pint_output.getVectorPtr(k)->axpy(1.0,*pint_input.getVectorPtr(2*k+1-offset)); 
+
+       pint_output.getVectorPtr(k)->scale(1.0/2.0);
      }
    }
 
@@ -396,7 +409,6 @@ public:
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
      std::pair<int,int> fneRange = pint_output.ownedStepRange();
-     std::pair<int,int> crsRange = pint_input.ownedStepRange();
 
      int timeRank = pint_output.communicators().getTimeRank();
      int fineSteps = pint_output.numOwnedSteps();
@@ -490,11 +502,22 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     // handle interior
-     for(int k=0;k<pint_input.numOwnedSteps();k++) {
+     // communicate points on the left of this interval
+     pint_input.boundaryExchangeLeftToRight();
+     auto leftStart = pint_input.getRemoteBufferPtr(0)->clone();
 
-       pint_output.getVectorPtr(2*k+0)->set(*pint_input.getVectorPtr(k)); 
-       pint_output.getVectorPtr(2*k+1)->set(*pint_input.getVectorPtr(k)); 
+     int offset = 0;
+     std::pair<int,int> fneRange = pint_output.ownedStepRange();
+     if(fneRange.first==0) {
+       offset = 1;
+       pint_output.getVectorPtr(0)->set(*pint_input.getVectorPtr(0));
+     }
+
+     // handle interior
+     for(int k=offset;k<pint_input.numOwnedSteps();k++) {
+
+       pint_output.getVectorPtr(2*k-offset+0)->set(*pint_input.getVectorPtr(k)); 
+       pint_output.getVectorPtr(2*k-offset+1)->set(*pint_input.getVectorPtr(k)); 
      }
    }
 
