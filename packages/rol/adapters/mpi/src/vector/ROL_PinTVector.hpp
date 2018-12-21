@@ -184,7 +184,7 @@ public:
                   int replicate=1)
   {
     replicate_     = replicate;
-    bufferSize_    = bufferSize;
+    bufferSize_    = bufferSize*replicate;
     communicators_ = comm;
     localVector_   = localVector;
     steps_         = steps;
@@ -192,7 +192,7 @@ public:
     vectorComm_    = vectorComm; // makePtr<PinTVectorCommunication_StdVector<Real>>();
 
     computeStepStartEnd(steps_);
-    allocateBoundaryExchangeVectors(bufferSize);
+    allocateBoundaryExchangeVectors(bufferSize_);
 
     std::vector<Ptr<Vector<Real>>> stepVectors;
     stepVectors.resize(replicate*(stepEnd_ - stepStart_));
@@ -310,13 +310,13 @@ public:
     // do nothing if(send_recv==SEND_AND_RECV) 
     
     // send from left to right
-    {
+    for(int i=0;i<bufferSize_;i++) {
 
       if(sendToRight)
-        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()-1)); // this is "owned"
+        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()-bufferSize_+i),i); // this is "owned"
       
       if(recvFromLeft)
-        vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(0),false);                  
+        vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(i),false,i);                  
     }
   }
 
@@ -347,12 +347,12 @@ public:
     // do nothing if(send_recv==SEND_AND_RECV) 
     
     // send from right to left
-    {
+    for(int i=0;i<bufferSize_;i++) {
       if(sendToLeft)
-        vectorComm_->send(timeComm,myRank-1,*getVectorPtr(0)); // this is "owned"
+        vectorComm_->send(timeComm,myRank-1,*getVectorPtr(i),i); // this is "owned"
       
       if(recvFromRight)
-        vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(0),false);
+        vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(i),false,i);
     }
   }
 
