@@ -177,7 +177,7 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
   std::string rank;
   {
     std::stringstream rank_ss;
-    rank_ss << pintComm->getTimeRank() << ". ";
+    rank_ss << "P" << pintComm->getTimeRank() << ". ";
     rank = rank_ss.str();
   }
 
@@ -224,9 +224,16 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
   // Check the time stamps by level
   //////////////////////////////////////////////////////////////////////////////////////
   
+  *outStream << rank << "Building Time stamps" << std::endl;
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_0 = hierarchy.getTimeStampsByLevel(0);
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_1 = hierarchy.getTimeStampsByLevel(1);
   ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps_2 = hierarchy.getTimeStampsByLevel(2);
+
+  *outStream << std::endl;
+  *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
+  *outStream << printTimeStamps(rank+"Level 1 = ",*stamps_1) << std::endl;
+  *outStream << printTimeStamps(rank+"Level 2 = ",*stamps_2) << std::endl;
+  *outStream << std::endl;
 
   // check the sizing of the simulation vector (should include the virtual state
   //////////////////////////////////////////////////////////////////////////////////////
@@ -304,17 +311,17 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
 
   // check errors on the coarsest level
   for(size_t i=0;i<stamps_2->size();i++) {
-    Real virtualValue = timeOffset+(*stamps_2)[i].t[1];
+    Real virtualValue = (*stamps_2)[i].t[1];
 
     Real u_value = dynamic_cast<ROL::StdVector<Real>&>(*pintSimVec_2.getVectorPtr(2*i)).getVector()->at(0);
     Real v_value = dynamic_cast<ROL::StdVector<Real>&>(*pintSimVec_2.getVectorPtr(2*i+1)).getVector()->at(0);
 
     if(std::fabs(u_value-(3.0*virtualValue+shift)) > 1e-15) {
-      ss << "Two levels of restriction are not correct: u " << u_value << " != " << 3.0*virtualValue+shift << std::endl;
+      ss << rank << "Two levels of restriction are not correct: u " << u_value << " != " << 3.0*virtualValue+shift << std::endl;
       throw std::logic_error(ss.str());
     }
     if(std::fabs(v_value-(virtualValue+shift)) > 1e-15) {
-      ss << "Two levels of restriction are not correct: v " << v_value << " != " << virtualValue+shift << std::endl;
+      ss << rank << "Two levels of restriction are not correct: v " << v_value << " != " << virtualValue+shift << std::endl;
       throw std::logic_error(ss.str());
     }
   }
@@ -365,11 +372,11 @@ void testRestrictionProlong(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStr
     Real v_value_exact = dynamic_cast<ROL::StdVector<Real>&>(*pintSimVec_0.getVectorPtr(2*i+1)).getVector()->at(0);
 
     if(std::fabs(u_value_prlng-u_value_exact) > 1e-15) {
-      ss << "Two levels of restriction are not correct: u " << u_value_prlng << " != " << u_value_exact << std::endl;
+      ss << rank << "Two levels of prolongation are not correct: u " << u_value_prlng << " != " << u_value_exact << std::endl;
       throw std::logic_error(ss.str());
     }
     if(std::fabs(v_value_prlng-v_value_exact) > 1e-15) {
-      ss << "Two levels of restriction are not correct: v " << v_value_prlng << " != " << v_value_exact << std::endl;
+      ss << rank << "Two levels of prolongation are not correct: v " << v_value_prlng << " != " << v_value_exact << std::endl;
       throw std::logic_error(ss.str());
     }
   }

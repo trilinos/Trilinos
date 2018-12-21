@@ -47,6 +47,7 @@
 
 #include "ROL_TimeStamp.hpp"
 #include "ROL_PinTVector.hpp"
+#include "ROL_StdVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_SerialConstraint.hpp"
 #include "ROL_SerialConstraint.hpp"
@@ -135,25 +136,42 @@ public:
     if(level==0)
       return timeStamps_;
 
+    int timeRank = getLevelCommunicators(level)->getTimeRank();
+
     Ptr<std::vector<TimeStamp<Real>>> higherLevel = getTimeStampsByLevel(level-1);
 
-    // let's start easy!
-    assert((higherLevel->size()-1) % 2 == 0);
+    int currentStamps = -1; 
+    if(higherLevel->size() % 2 ==0) {
+      currentStamps = higherLevel->size()/2;
+    }
+    else {
+      currentStamps = (higherLevel->size()-1)/2+1;
+    }
 
     Ptr<std::vector<TimeStamp<Real>>> currentLevel 
-        = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>((higherLevel->size()-1)/2+1);
+        = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(currentStamps);
 
     // build up the current level
-    for(size_t k=0;k<currentLevel->size();k++) {
-      currentLevel->at(k).t.resize(2);
+    if(timeRank==0) {
+      for(size_t k=0;k<currentLevel->size();k++) {
+        currentLevel->at(k).t.resize(2);
 
-      if(k==0) {
-        currentLevel->at(k).t.at(0) = higherLevel->at(2*k).t.at(0);
-        currentLevel->at(k).t.at(1) = higherLevel->at(2*k).t.at(1);
+        if(k==0) {
+          currentLevel->at(k).t.at(0) = higherLevel->at(2*k).t.at(0);
+          currentLevel->at(k).t.at(1) = higherLevel->at(2*k).t.at(1);
+        }
+        else {
+          currentLevel->at(k).t.at(0) = higherLevel->at(2*k-1).t.at(0);
+          currentLevel->at(k).t.at(1) = higherLevel->at(2*k+0).t.at(1);
+        }
       }
-      else {
-        currentLevel->at(k).t.at(0) = higherLevel->at(2*k-1).t.at(0);
-        currentLevel->at(k).t.at(1) = higherLevel->at(2*k+0).t.at(1);
+    }
+    else {
+      for(size_t k=0;k<currentLevel->size();k++) {
+        currentLevel->at(k).t.resize(2);
+
+        currentLevel->at(k).t.at(0) = higherLevel->at(2*k).t.at(0);
+        currentLevel->at(k).t.at(1) = higherLevel->at(2*k+1).t.at(1);
       }
     }
 
@@ -185,7 +203,8 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////
    
    ROL::Ptr<const PinTCommunicators> getLevelCommunicators(int level) const
-   { return communicators_[level]; }
+   { return communicators_[0]; }
+   // { return communicators_[level]; }
 
    /** 
     * \brief Builds up communicators and time stamps for each level
@@ -222,60 +241,17 @@ public:
      assert(level>0);
 
      // don't go too deep (base case)
-     if(level>=maxLevels_)
+     if(level>=maxLevels_) {
        return;
-
+     }
+    
      // this processor is no longer participating (base case)
-     if(ROL::is_nullPtr(communicators_[level-1]))
+     if(ROL::is_nullPtr(communicators_[level-1])) {
        return;
+     }
 
      // this will subdivide the communicators by two
      communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
-
-     // we now build the satmps to be distributed to other processors, we are halfing the size
-     auto & fineStamps = *stamps_[level-1];
-     std::vector<ROL::TimeStamp<Real>> sourceStamps((fineStamps.size()-1)/2+1); 
-
-     for(size_type i=0;i<fineStamps.size();i+=2) {
-       auto & stamp = sourceStamps[i/2];
-
-       // buld a stamp skipping one step
-       stamp.t.resize(2);
-
-       if(i==0) {
-         stamp.t[0] = fineStamps[i].t[0];
-         stamp.t[1] = fineStamps[i].t[1];
-       }
-       else {
-         stamp.t[0] = fineStamps[i-1].t[0];
-         stamp.t[1] = fineStamps[i].t[1];
-       }
-     }
-
-     // export to coarse distribution always requires a reference to the stamps, however that is only filled
-     // if its on the right processor. The builtStamps states if that vector was filled.
-     // ROL::Ptr<std::vector<ROL::TimeStamp<Real>>> stamps = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>();
-     // bool builtStamps = PinT::exportToCoarseDistribution_TimeStamps(sourceStamps,*stamps,*communicators_[level-1],0);
-
-     // setup false step (this is to ensure the control is properly handled
-     if(false) 
-     {
-       stamps_[level] = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>(sourceStamps);
-
-/*
-       Real ta = stamps_[level]->at(0).t.at(0);
-       Real tb = stamps_[level]->at(0).t.at(1);
-       Real dt =  tb-ta;
- 
-       // the serial constraint should never see this!
-       ROL::TimeStamp<Real> stamp; 
-       stamp.t.resize(2);
-       stamp.t.at(0) = ta-dt;
-       stamp.t.at(1) = ta;
-
-       stamps_[level]->insert(stamps_[level]->begin(),stamp);
-*/
-     }
 
      buildLevelDataStructures(level+1);
    }
@@ -286,12 +262,19 @@ public:
    Ptr<Vector<Real>> allocateSimVector(const Vector<Real> & level_0_ref,int level) const
    {
      const PinTVector<Real> & pint_ref  = dynamic_cast<const PinTVector<Real>&>(level_0_ref);
-     auto comm = pint_ref.communicatorsPtr();
+     ROL::Ptr<const PinTCommunicators> comm = getLevelCommunicators(level);
      auto vectorComm = pint_ref.vectorCommunicationPtr();
-     
+   
+     int totalSteps = 0;
      Ptr<std::vector<TimeStamp<Real>>> stamps = getTimeStampsByLevel(level);
+     int mySteps = int(stamps->size());
 
-     return buildStatePinTVector(comm,vectorComm,comm->getTimeSize()*stamps->size(),pint_ref.getVectorPtr(0)->clone());
+     MPI_Allreduce(&mySteps,&totalSteps,1,MPI_INT,MPI_SUM,comm->getTimeCommunicator());
+
+     // ECC: something a bit fragile here does the buildStatePinTVector distribute the vectors in
+     //      the same way as we expect... this should probably take local steps instead of global
+     //      steps this way its guranteed.
+     return buildStatePinTVector(comm,vectorComm,totalSteps,pint_ref.getVectorPtr(0)->clone());
    }
 
    /**
@@ -336,18 +319,21 @@ public:
 
      int numSteps = pint_input.numOwnedSteps();
      std::pair<int,int> fneRange = pint_input.ownedStepRange();
-     std::pair<int,int> crsRange = pint_input.ownedStepRange();
+     std::pair<int,int> crsRange = pint_output.ownedStepRange();
 
-     // make sure they line up, we are assuming we are only coarsening even indexed points
-     assert(fneRange.first == 2*crsRange.first);
+     // make sure they line up
+     if(pint_input.numOwnedSteps() % 2 ==0) {
+       assert(fneRange.first-1 == 2*(crsRange.first-1));
+     }
+     else {
+       assert(fneRange.first == 2*crsRange.first);
+     }
 
      int crs_i = 0;
      for(int i=0;i<numSteps;i++) {
        // only do evens
        if((i+fneRange.first) % 2 != 0) 
          continue;
-
-       int coarseStep = crs_i+crsRange.second;
 
        ROL::Vector<Real> & out_u = *pint_output.getVectorPtr(2*crs_i);
        out_u.axpy(1.0,*pint_input.getVectorPtr(2*i)); 
@@ -399,21 +385,33 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input); // coarse vector
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
+     std::pair<int,int> fneRange = pint_output.ownedStepRange();
+     std::pair<int,int> crsRange = pint_input.ownedStepRange();
+
+     int timeRank = pint_output.communicators().getTimeRank();
+
+     // make sure they line up
+     if(pint_input.numOwnedSteps() % 2 ==0) {
+       assert(fneRange.first-1 == 2*(crsRange.first-1));
+     }
+     else {
+       assert(fneRange.first == 2*crsRange.first);
+     }
+
      int fineSteps = pint_output.numOwnedSteps();
 
-     // handle left exterior points
-     ////////////////////////////////////////////////////////////////////////////////////////////////////////
-     
+     // communicate last two points
      pint_input.boundaryExchangeLeftToRight();
      
      for(int fne_i=0;fne_i<fineSteps;fne_i++) {
+       int fneIndex = fne_i+fneRange.first;
 
        // fine indices
        int u_fne_index = 2*fne_i;   
        int v_fne_index = 2*fne_i+1;   
 
-       if(fne_i % 2 == 0) {
-         int crs_i = fne_i/2;
+       if(fneIndex % 2 == 0) {
+         int crs_i = fne_i/2;   // here fne_i can be odd, but it still works out ... right?
          int u_crs_index = 2*crs_i;
          int v_crs_index = 2*crs_i+1;
 
@@ -421,16 +419,29 @@ public:
          pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getVectorPtr(v_crs_index));
        }
        else {
-         int coarse_si_0 = (fne_i-1)/2;
+         
+         int coarse_si_0 = (fne_i-1)/2;     // coarse step index
          int coarse_si_1 = coarse_si_0+1;
+         if(fne_i-1 < 0) {
+           coarse_si_0 = -1;
+           coarse_si_1 = 0;
+         }
+
          int u_crs_index = -1; 
          int v_crs_index = -1;
  
          u_crs_index = 2*coarse_si_0;
          v_crs_index = 2*coarse_si_0+1;
 
-         pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getVectorPtr(u_crs_index));
-         pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getVectorPtr(v_crs_index));
+         if(coarse_si_0 < 0) {
+           assert(timeRank>0);
+           pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getRemoteBufferPtr(0));
+           pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getRemoteBufferPtr(1));
+         }
+         else {
+           pint_output.getVectorPtr(u_fne_index)->set(*pint_input.getVectorPtr(u_crs_index));
+           pint_output.getVectorPtr(v_fne_index)->set(*pint_input.getVectorPtr(v_crs_index));
+         }
 
          u_crs_index = 2*coarse_si_1;
          v_crs_index = 2*coarse_si_1+1;
