@@ -76,7 +76,8 @@ protected:
   Ptr<const PinTCommunicators> communicators_;
 
   Ptr<Vector<Real>> localVector_;
-  int steps_;
+  int globalSteps_;
+  int localSteps_;
   std::vector<int> stencil_;
 
   // parallel distribution information
@@ -99,15 +100,16 @@ protected:
   // Using parallel communication and a linear decomposition
   // determine where this processor lives in the global
   // scheme of things
-  void computeStepStartEnd(int steps)
+  void computeStepStartEnd()
   {
     int numRanks = communicators_->getTimeSize();
     int myRank   = communicators_->getTimeRank();
 
-    // determine which steps are owned by this processor
-    {
-      int stepsPerRank = steps / numRanks;
-      int remainder    = steps % numRanks; 
+    if(localSteps_<0 and globalSteps_>=0) {
+
+      // determine which steps are owned by this processor
+      int stepsPerRank = globalSteps_ / numRanks;
+      int remainder    = globalSteps_ % numRanks; 
 
       stepStart_ = 0;
 
@@ -123,6 +125,26 @@ protected:
         stepStart_ = myRank*stepsPerRank + remainder;
         stepEnd_   = (myRank+1)*stepsPerRank + remainder;
       }
+
+      localSteps_ = stepEnd_-stepStart_;
+    }
+    else if(localSteps_>=0) {
+      int foundTotalSteps = 0;
+      MPI_Allreduce(&localSteps_,&foundTotalSteps,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+      if(globalSteps_>=0) 
+        assert(foundTotalSteps==globalSteps_);
+      else 
+        globalSteps_ = foundTotalSteps;
+
+      stepStart_ = 0;
+      MPI_Exscan(&localSteps_,&stepStart_,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+      stepEnd_ = stepStart_+localSteps_;
+    }
+    else {
+      std::stringstream ss;
+      ss << "ROL::PinTVector::must assign positive number to one of local or global steps: found local = " 
+         << localSteps_ << ", global = " << globalSteps_;
+      throw std::logic_error(ss.str());
     }
 
     assert(stepStart_>=0);
@@ -149,7 +171,7 @@ public:
 
   PinTVector(const PinTVector & v)
   {
-    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.steps_,v.bufferSize_,v.replicate_);
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.globalSteps_,v.localSteps_,v.bufferSize_,v.replicate_);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -160,18 +182,19 @@ public:
              int replicate=1)
     : isInitialized_(false)
   {
-    initialize(comm,vectorComm,localVector,steps,1,replicate);
+    initialize(comm,vectorComm,localVector,steps,-1,1,replicate);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
              const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
              const Ptr<Vector<Real>> & localVector,
-             int steps,
+             int globalSteps,
+             int localSteps,
              int bufferSize,
              int replicate=1)
     : isInitialized_(false)
   {
-    initialize(comm,vectorComm,localVector,steps,bufferSize,replicate);
+    initialize(comm,vectorComm,localVector,globalSteps,localSteps,bufferSize,replicate);
   }
 
   virtual ~PinTVector() {}
@@ -179,19 +202,21 @@ public:
   void initialize(const Ptr<const PinTCommunicators> & comm,
                   const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                   const Ptr<Vector<Real>> & localVector,
-                  int steps,
+                  int globalSteps,
+                  int localSteps,
                   int bufferSize,
-                  int replicate=1)
+                  int replicate)
   {
     replicate_     = replicate;
     bufferSize_    = bufferSize*replicate;
     communicators_ = comm;
     localVector_   = localVector;
-    steps_         = steps;
+    globalSteps_   = globalSteps;
+    localSteps_    = localSteps;
     // stencil_       = stencil;
     vectorComm_    = vectorComm; // makePtr<PinTVectorCommunication_StdVector<Real>>();
 
-    computeStepStartEnd(steps_);
+    computeStepStartEnd();
     allocateBoundaryExchangeVectors(bufferSize_);
 
     std::vector<Ptr<Vector<Real>>> stepVectors;
@@ -296,7 +321,7 @@ public:
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool sendToRight   = stepEnd_ < steps_;
+    bool sendToRight   = stepEnd_ < globalSteps_;
     bool recvFromLeft = stepStart_ > 0;
 
     // this allows finer granularity of control of send recieve
@@ -333,7 +358,7 @@ public:
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool recvFromRight = stepEnd_ < steps_;
+    bool recvFromRight = stepEnd_ < globalSteps_;
     bool sendToLeft   = stepStart_ > 0;
 
     // this allows finer granularity of control of send recieve
@@ -369,8 +394,8 @@ public:
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool sendToRight   = stepEnd_ < steps_;
-    bool recvFromRight = stepEnd_ < steps_;
+    bool sendToRight   = stepEnd_ < globalSteps_;
+    bool recvFromRight = stepEnd_ < globalSteps_;
 
     bool sendToLeft   = stepStart_ > 0;
     bool recvFromLeft = stepStart_ > 0;
@@ -427,8 +452,8 @@ public:
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool sendToRight   = stepEnd_ < steps_;
-    bool recvFromRight = stepEnd_ < steps_;
+    bool sendToRight   = stepEnd_ < globalSteps_;
+    bool recvFromRight = stepEnd_ < globalSteps_;
 
     bool sendToLeft   = stepStart_ > 0;
     bool recvFromLeft = stepStart_ > 0;

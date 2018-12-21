@@ -77,7 +77,7 @@ buildStatePinTVector(const Ptr<const PinTCommunicators> & communicators,
   const int replicate = 2; // use virtual variables
   if((steps - 1) % 2!=0) // steps must be 2^n+1
     throw std::logic_error("Wrong number of steps, must be 2^n+1");
-  return makePtr<PinTVector<Real>>(communicators,vectorComm,localVector,steps,stencil,replicate); }
+  return makePtr<PinTVector<Real>>(communicators,vectorComm,localVector,steps,-1,1,replicate); }
 
 /** This helper method builds a pint "control" vector for use in the 
     PinTConstraint class. 
@@ -94,10 +94,10 @@ buildControlPinTVector(const Ptr<const PinTCommunicators> & communicators,
                        const Ptr<const PinTVectorCommunication<Real>> & vectorComm,
                        int steps,
                        const Ptr<Vector<Real>> & localVector)
-{ std::vector<int> stencil = {0};
+{ const int replicate = 1; // no virtual variables
   if((steps - 1) % 2!=0) // steps must be 2^n+1
     throw std::logic_error("Wrong number of steps, must be 2^n+1");
-  return makePtr<PinTVector<Real>>(communicators,vectorComm,localVector,steps,stencil); }
+  return makePtr<PinTVector<Real>>(communicators,vectorComm,localVector,steps,-1,0,replicate); }
 
 template<typename Real> 
 class PinTConstraint : public ROL::Constraint_SimOpt<Real> {
