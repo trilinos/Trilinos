@@ -125,17 +125,17 @@ TEUCHOS_STATIC_SETUP()
 //                  Note: u and v are 0-indexed, so if the highest v is 11, then this should be 12.
 template<class LO, class GO, class Node>
 Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> >
-generate_crsgraph(Teuchos::RCP<Teuchos::Comm<int> >&      comm,
-                  const std::vector<std::pair<GO, GO> >&  gbl_edges,
-                  const std::vector<std::pair<GO, int> >& gbl_row_owners,
-                  const size_t                            gbl_num_columns,
-                  const bool                              do_fillComplete=true)
+generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
+                  const std::vector<std::pair<GO, GO>>   & gbl_edges,
+                  const std::vector<std::pair<GO, int>>  & gbl_row_owners,
+                  const size_t                             gbl_num_columns,
+                  const bool                               do_fillComplete=true)
 {
     using Teuchos::Comm;
 
-    using graph_type           = Tpetra::CrsGraph<LO,GO,Node>;      // Tpetra CrsGraph type
-    using map_type             = Tpetra::Map<LO,GO,Node>;           // Tpetra Map type
-    using map_rows_type        = std::map<GO,int>;                  // map rows to pid's
+    using graph_type           = Tpetra::CrsGraph<LO, GO, Node>;    // Tpetra CrsGraph type
+    using map_type             = Tpetra::Map<LO, GO, Node>;         // Tpetra Map type
+    using map_rows_type        = std::map<GO, int>;                 // map rows to pid's
     using vec_go_type          = std::vector<GO>;                   // vector of GlobalOrdinals
     using map_row_to_cols_type = std::map<GO, vec_go_type>;         // Map rows to columns
 
@@ -288,23 +288,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     using Teuchos::outArg;
     using Teuchos::RCP;
 
-    using graph_type      = Tpetra::CrsGraph<LO,GO,Node>;       // Tpetra CrsGraph type
-    using pair_edge_type  = std::pair<GO,GO>;                   // Edge typs, (u,v) using GlobalOrdinal type
-    using pair_owner_type = std::pair<GO,int>;                  // For row owners, pairs are (rowid, comm rank)
+    using comm_type       = Teuchos::RCP<const Teuchos::Comm<int>>;    // The comm type
+    using graph_type      = Tpetra::CrsGraph<LO, GO, Node>;            // Tpetra CrsGraph type
+    using pair_edge_type  = std::pair<GO, GO>;                         // Edge typs, (u,v) using GlobalOrdinal type
+    using pair_owner_type = std::pair<GO,int>;                         // For row owners, pairs are (rowid, comm rank)
 
-    using vec_edges_type  = std::vector<pair_edge_type>;        // For vectors of edges
-    using vec_owners_type = std::vector<pair_owner_type>;       // For vectors of owners
+    using vec_edges_type  = std::vector<pair_edge_type>;               // For vectors of edges
+    using vec_owners_type = std::vector<pair_owner_type>;              // For vectors of owners
 
     bool verbose = Tpetra::Details::Behavior::verbose();
 
-    auto initialComm = getDefaultComm();
+    comm_type initialComm = getDefaultComm();
 
     TEUCHOS_TEST_FOR_EXCEPTION(initialComm->getSize() < 2, std::runtime_error, "This test requires at least two processors.");
 
     // Set up a communicator that has exactly two processors in it for the actual test.
-    const int color = (initialComm->getRank() < 2) ? 0 : 1;
-    const int key   = 0;
-    auto      comm  = initialComm->split(color, key);
+    const int  color = (initialComm->getRank() < 2) ? 0 : 1;
+    const int  key   = 0;
+    comm_type comm   = initialComm->split(color, key);
 
     // If I am involved in this test (i.e., my pid == 0 or 1)
     if(0 == color)

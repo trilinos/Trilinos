@@ -54,6 +54,8 @@ namespace panzer {
     int team_size_;           /// User specified team size.
     int vector_size_;         /// Default vector size for non-AD types.
     int fad_vector_size_;     /// FAD vector size.
+    bool use_shared_memory_;     /// Use shared memory kokkos kernels for non-fad types.
+    bool fad_use_shared_memory_; /// Use shared memory kokkos kernels for fad types.
 
     HP(); /// Private ctor.
 
@@ -84,6 +86,32 @@ namespace panzer {
       return Sacado::IsADType<Scalar>::value ? fad_vector_size_ : vector_size_;
     }
 
+    /** \brief Tell kokkos kernels if they should use shared memory. This is very problem dependent.
+
+	If a panzer hierarchic kernel can use shared memory to speed
+	the calculation, then it carries a second implementation that
+	takes advantage of shared memory. Shared memory on the GPU is
+	very limited. On some of the example problems, the shared
+	memory runs out if the basis is greated than order 2 on a hex
+	mesh. This is also very dependent on the size of the
+	derivative array. A large derivative array uses up memory much
+	quicker. The default is that for non-fad types, we always
+	enable shared memory. For fad types the default is to disable
+	use of shared memory, but this function can override for
+	specific problems. For example, the
+	adapters-stk/examples/MixedPoission problem can use shared
+	memory for fad types for basis order 2 or less. It will call
+	this function based on the basis order to improve performance.
+     */
+    void setUseSharedMemory(const bool& use_shared_memory,
+			    const bool& fad_use_shared_memory);
+
+    template<typename Scalar>
+    bool useSharedMemory() const
+    {
+      return Sacado::IsADType<Scalar>::value ? fad_use_shared_memory_ : use_shared_memory_;
+    }
+
     /// Returns a TeamPolicy for hierarchic parallelism.
     template<typename ScalarT, typename ... TeamPolicyProperties>
     Kokkos::TeamPolicy<TeamPolicyProperties...> teamPolicy(const int& league_size)
@@ -93,7 +121,7 @@ namespace panzer {
       if (use_auto_team_size_)
 	return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,Kokkos::AUTO(),
 							   tmp_vector_size);
-      
+
       return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,team_size_,tmp_vector_size);
     }
   };
