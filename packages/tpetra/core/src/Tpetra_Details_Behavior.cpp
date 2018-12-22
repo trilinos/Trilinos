@@ -15,7 +15,6 @@ namespace Details {
 
 namespace BehaviorDetails {
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
-bool verboseDisabled_ = false;
 }
 
 namespace { // (anonymous)
@@ -260,8 +259,6 @@ bool Behavior::debug ()
 
 bool Behavior::verbose ()
 {
-  if (BehaviorDetails::verboseDisabled_) return false;
-
   constexpr char envVarName[] = "TPETRA_VERBOSE";
   constexpr bool defaultValue = verboseDefault ();
 
@@ -321,8 +318,6 @@ bool Behavior::debug (const char name[])
 
 bool Behavior::verbose (const char name[])
 {
-  if (BehaviorDetails::verboseDisabled_) return false;
-
   constexpr char envVarName[] = "TPETRA_VERBOSE";
   constexpr bool defaultValue = false;
 
@@ -333,14 +328,6 @@ bool Behavior::verbose (const char name[])
                                                         initialized_,
                                                         envVarName,
                                                         defaultValue);
-}
-
-void Behavior::enable_verbose_behavior () {
-  BehaviorDetails::verboseDisabled_ = false;
-}
-
-void Behavior::disable_verbose_behavior () {
-  BehaviorDetails::verboseDisabled_ = true;
 }
 
 } // namespace Details
