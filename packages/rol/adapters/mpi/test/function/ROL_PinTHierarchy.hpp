@@ -371,23 +371,34 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
+     int timeRank = pint_output.communicators().getTimeRank();
      // communicate points on the left of this interval
      pint_input.boundaryExchangeLeftToRight();
      auto leftStart = pint_input.getRemoteBufferPtr(0)->clone();
+     leftStart->set(*pint_input.getRemoteBufferPtr(0));
 
-     int offset = 0;
      std::pair<int,int> fneRange = pint_input.ownedStepRange();
-     if(fneRange.first==0) {
-       offset = 1;
-       pint_output.getVectorPtr(0)->set(*pint_input.getVectorPtr(0));
-     }
+     std::pair<int,int> crsRange = pint_output.ownedStepRange();
 
      // handle interior
-     for(int k=offset;k<pint_output.numOwnedSteps();k++) {
-       pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(2*k-offset));
-       pint_output.getVectorPtr(k)->axpy(1.0,*pint_input.getVectorPtr(2*k+1-offset)); 
-
-       pint_output.getVectorPtr(k)->scale(1.0/2.0);
+     for(int k=0;k<pint_output.numOwnedSteps();k++) {
+       int crsIndex = crsRange.first+k;
+       // std::cout <<"P" << timeRank << ". k = " << k << ", "  << fneRange.first << "->" << fneRange.second 
+       //                          << " : " << crsRange.first << "->" << crsRange.second 
+       //                          << " : " << 2*k+1-offset << std::endl; 
+       if(crsIndex == 0) {
+         pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(0));
+       }
+       else {
+         int fineLocal = 2*crsIndex-1-fneRange.first;
+         if(fineLocal>=0)
+           pint_output.getVectorPtr(k)->set(     *pint_input.getVectorPtr(fineLocal));
+         else
+           pint_output.getVectorPtr(k)->set(     *leftStart);
+         pint_output.getVectorPtr(k)->axpy(1.0,*pint_input.getVectorPtr(fineLocal+1));
+         pint_output.getVectorPtr(k)->scale(1.0/2.0);
+       }
+ //      std::cout <<"P" << timeRank << ".   k = " << k << ", " << fneRange.first << "->" << fneRange.second << std::endl; 
      }
    }
 
