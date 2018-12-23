@@ -519,8 +519,6 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
 
   *outStream << rank << "Opt Vector Restriction: PASSED" << std::endl;
 
-  return;
-
   // perform prolong, and test that it works (check for preservation of linear functions)
   //////////////////////////////////////////////////////////////////////////////////////
   

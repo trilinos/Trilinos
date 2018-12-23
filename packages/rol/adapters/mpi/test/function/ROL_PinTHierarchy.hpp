@@ -383,9 +383,6 @@ public:
      // handle interior
      for(int k=0;k<pint_output.numOwnedSteps();k++) {
        int crsIndex = crsRange.first+k;
-       // std::cout <<"P" << timeRank << ". k = " << k << ", "  << fneRange.first << "->" << fneRange.second 
-       //                          << " : " << crsRange.first << "->" << crsRange.second 
-       //                          << " : " << 2*k+1-offset << std::endl; 
        if(crsIndex == 0) {
          pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(0));
        }
@@ -398,7 +395,6 @@ public:
          pint_output.getVectorPtr(k)->axpy(1.0,*pint_input.getVectorPtr(fineLocal+1));
          pint_output.getVectorPtr(k)->scale(1.0/2.0);
        }
- //      std::cout <<"P" << timeRank << ".   k = " << k << ", " << fneRange.first << "->" << fneRange.second << std::endl; 
      }
    }
 
@@ -513,22 +509,34 @@ public:
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
-     // communicate points on the left of this interval
-     pint_input.boundaryExchangeLeftToRight();
-     auto leftStart = pint_input.getRemoteBufferPtr(0)->clone();
+     // communicate points on the right of this interval
+     pint_input.boundaryExchangeRightToLeft();
+     auto rightStart = pint_input.getRemoteBufferPtr(0)->clone();
+     rightStart->set(*pint_input.getRemoteBufferPtr(0));
 
      int offset = 0;
+     std::pair<int,int> crsRange = pint_input.ownedStepRange();
      std::pair<int,int> fneRange = pint_output.ownedStepRange();
-     if(fneRange.first==0) {
-       offset = 1;
-       pint_output.getVectorPtr(0)->set(*pint_input.getVectorPtr(0));
-     }
+
+     int timeRank = pint_output.communicators().getTimeRank();
 
      // handle interior
-     for(int k=offset;k<pint_input.numOwnedSteps();k++) {
+     for(int k=0;k<pint_output.numOwnedSteps();k++) {
+       int fineIndex = fneRange.first+k;
 
-       pint_output.getVectorPtr(2*k-offset+0)->set(*pint_input.getVectorPtr(k)); 
-       pint_output.getVectorPtr(2*k-offset+1)->set(*pint_input.getVectorPtr(k)); 
+       if(fineIndex==0) {
+         pint_output.getVectorPtr(0)->set(*pint_input.getVectorPtr(0)); 
+       }
+       else {
+         int crsIndex = (fineIndex+1)/2 - crsRange.first;
+         if(crsIndex<0)
+           throw std::logic_error("uh oh... didn't think this could happen");
+
+         if(crsIndex<pint_input.numOwnedSteps())
+           pint_output.getVectorPtr(k)->set(*pint_input.getVectorPtr(crsIndex)); 
+         else
+           pint_output.getVectorPtr(k)->set(*rightStart);
+       }
      }
    }
 
@@ -538,4 +546,3 @@ public:
 } // namespace ROL 
 
 #endif // ROL_PINTCONSTRAINT_HPP
-
