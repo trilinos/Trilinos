@@ -66,10 +66,10 @@ namespace Harness {
 
       // Given a global object, get its (default) memory space instance.
       static type space (const GlobalObjectType& /* G */) {
-	// This stub just assumes that 'type' is default constructible.
-	// In Kokkos, default-constructing a memory space instance just
-	// gives the default memory space.
-	return type ();
+        // This stub just assumes that 'type' is default constructible.
+        // In Kokkos, default-constructing a memory space instance just
+        // gives the default memory space.
+        return type ();
       }
     };
 
@@ -77,8 +77,8 @@ namespace Harness {
     // local data.  Do not use this directly; start with readOnly,
     // writeOnly, or readWrite.
     template<class GlobalObjectType,
-	     class MemorySpace,
-	     const AccessMode am>
+             class MemorySpace,
+             const AccessMode am>
     class LocalAccess; // forward declaration
 
     // Mapping from LocalAccess to the "master" local object type.  The
@@ -146,30 +146,30 @@ namespace Harness {
   // data in read-only mode.
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
-		    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-		    ReadOnly>
+                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                    ReadOnly>
   readOnly (GlobalObjectType&);
 
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
-		    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-		    ReadOnly>
+                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                    ReadOnly>
   readOnly (const GlobalObjectType&);
 
   // Declare that you want to access the given global object's local
   // data in write-only mode.
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
-		    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-		    WriteOnly>
+                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                    WriteOnly>
   writeOnly (GlobalObjectType&);
 
   // Declare that you want to access the given global object's local
   // data in read-and-write mode.
   template<class GlobalObjectType>
   Impl::LocalAccess<GlobalObjectType,
-		    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
-		    ReadWrite>
+                    typename Impl::DefaultMemorySpace<GlobalObjectType>::type,
+                    ReadWrite>
   readWrite (GlobalObjectType&);
 
   namespace Impl {
@@ -180,12 +180,12 @@ namespace Harness {
     // methods like on() and valid() on the resulting LocalAccess
     // instance.
     template<class GlobalObjectType,
-	     class MemorySpace,
-	     const AccessMode am>
+             class MemorySpace,
+             const AccessMode am>
     class LocalAccess {
     public:
       using global_object_type = GlobalObjectType;
-      using memory_space = typename MemorySpace::memory_space;    
+      using memory_space = typename MemorySpace::memory_space;
       static constexpr AccessMode access_mode = am;
 
       // Users must NOT call the LocalAccess constructor directly.  They
@@ -204,17 +204,17 @@ namespace Harness {
       // the space.  Otherwise, it may make sense to get the default
       // memory space from G.
       LocalAccess (global_object_type& G,
-		   memory_space space = memory_space (),
-		   const bool isValid = true) :
-	G_ (G),
-	space_ (space),
-	valid_ (isValid)
+                   memory_space space = memory_space (),
+                   const bool isValid = true) :
+        G_ (G),
+        space_ (space),
+        valid_ (isValid)
       {}
 
       // Type users see, that's an argument to the function that they give
       // to withLocalAccess.
       using function_argument_type =
-	typename LocalAccessFunctionArgument<LocalAccess<global_object_type, memory_space, access_mode> >::type;
+        typename LocalAccessFunctionArgument<LocalAccess<global_object_type, memory_space, access_mode> >::type;
 
     public:
       // Give users run-time control over whether they actually want to
@@ -225,8 +225,8 @@ namespace Harness {
       // construct "null" / empty master local objects.
       LocalAccess<GlobalObjectType, MemorySpace, am>
       valid (const bool isValid) const {
-	std::cout << "  .valid(" << (isValid ? "true" : "false") << ")" << std::endl;
-	return {this->G_, this->space_, isValid};
+        std::cout << "  .valid(" << (isValid ? "true" : "false") << ")" << std::endl;
+        return {this->G_, this->space_, isValid};
       }
 
       // Let users access this object in a different memory space.
@@ -239,15 +239,15 @@ namespace Harness {
       template<class NewMemorySpace>
       LocalAccess<GlobalObjectType, NewMemorySpace, am>
       on (NewMemorySpace space) const {
-	std::cout << "  .on(" << space.name () << ")" << std::endl;
-	return {this->G_, space, this->valid_};
+        std::cout << "  .on(" << space.name () << ")" << std::endl;
+        return {this->G_, space, this->valid_};
       }
 
       // Is access supposed to be valid?  (See valid() above.)
       bool isValid () const { return this->valid_; }
 
       memory_space getSpace () const { return space_; }
-  
+
     public:
       // Keep by reference, because this struct is only valid in a
       // delimited scope.
@@ -286,7 +286,7 @@ namespace Harness {
     GOT& G_nc = const_cast<GOT&> (G);
     return {G_nc, Impl::DefaultMemorySpace<GOT>::space (G_nc), true};
   }
-  
+
   template<class GOT>
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, WriteOnly>
   writeOnly (GOT& G)
@@ -299,13 +299,13 @@ namespace Harness {
   Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadWrite>
   readWrite (GOT& G)
   {
-    std::cout << "readWrite" << std::endl;  
+    std::cout << "readWrite" << std::endl;
     return {G, Impl::DefaultMemorySpace<GOT>::space (G), true};
   }
 
   namespace Impl {
     template<class SC, class LO, class GO, class NT,
-	     class MemorySpace>
+             class MemorySpace>
     using multivector_nonconst_nonowning_local_object_type =
       typename std::conditional<
         std::is_same<typename MemorySpace::memory_space, Kokkos::HostSpace>::value,
@@ -313,30 +313,30 @@ namespace Harness {
         typename Tpetra::MultiVector<SC, LO, GO, NT>::dual_view_type::t_dev>::type;
 
     template<class SC, class LO, class GO, class NT,
-	     class MemorySpace>
+             class MemorySpace>
     using multivector_const_nonowning_local_object_type =
       typename multivector_nonconst_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace>::const_type;
 
     template<class SC, class LO, class GO, class NT,
-	     class MemorySpace, 
-	     const AccessMode am>
+             class MemorySpace,
+             const AccessMode am>
     using multivector_nonowning_local_object_type =
       typename std::conditional<
-        am == ReadOnly, 
-	multivector_const_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace>,
-	multivector_nonconst_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace> >::type;
+        am == ReadOnly,
+        multivector_const_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace>,
+        multivector_nonconst_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace> >::type;
   } // namespace Impl
 
   template<class SC, class LO, class GO, class NT,
-	   class MemorySpace, 
-	   const AccessMode access_mode>
+           class MemorySpace,
+           const AccessMode access_mode>
   Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace, access_mode>
   getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
   {
     using memory_space = typename MemorySpace::memory_space;
     using ret_type =
       Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT,
-						    memory_space, access_mode>;
+                                                    memory_space, access_mode>;
     std::cout << "getMultiVector" << std::endl;
 
     // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
@@ -356,7 +356,7 @@ namespace Harness {
     // custom deleter.
     if (LA.isValid ()) {
       // this converts to const if applicable
-      return ret_type (LA.G_.template getLocalView<memory_space> ()); 
+      return ret_type (LA.G_.template getLocalView<memory_space> ());
     }
     else {
       return ret_type (); // "null" Kokkos::View
@@ -364,11 +364,11 @@ namespace Harness {
   }
 
   template<class SC, class LO, class GO, class NT,
-	   class MemorySpace, 
-	   const AccessMode access_mode>
+           class MemorySpace,
+           const AccessMode access_mode>
   auto
   getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA,
-	     const int whichColumn = 0)
+             const int whichColumn = 0)
     -> decltype (Kokkos::subview (getMultiVector (LA), Kokkos::ALL (), whichColumn))
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
@@ -380,120 +380,169 @@ namespace Harness {
   }
 
   template<class SC, class LO, class GO, class NT,
-	   class MemorySpace, 
-	   const AccessMode access_mode>
+           class MemorySpace,
+           const AccessMode access_mode>
   auto
   getVector (Impl::LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, access_mode> LA,
-	     const int whichColumn = 0)
+             const int whichColumn = 0)
     -> decltype (getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_, LA.valid_), whichColumn))
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
     using local_access_type = Impl::LocalAccess<MV, MemorySpace, access_mode>;
     return getVector (local_access_type (LA.G_, LA.space_, LA.valid_), whichColumn);
   }
-  
+
+  /// \brief X := f(X) entrywise, where X is a Tpetra::MultiVector and
+  ///   f takes the current entry, the local row index, and the local
+  ///   column index.
+  ///
+  /// \param execSpace [in] Kokkos execution space on which to run.
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function taking (SC, LO, LO) and returning SC.
   template<class SC, class LO, class GO, class NT,
-	   class UnaryFunction,
-	   class ExecutionSpace,
-	   class MemorySpace = typename ExecutionSpace::memory_space>
+           class UnaryFunction,
+           class ExecutionSpace>
   void
-  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-	     UnaryFunction f,
-	     ExecutionSpace execSpace = ExecutionSpace (),
-	     MemorySpace memSpace = MemorySpace (),
-	     typename std::enable_if<std::is_convertible<decltype (f(SC (), LO (), LO ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
+  transform (ExecutionSpace execSpace,
+             Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f,
+             typename std::enable_if<std::is_convertible<decltype (f(SC (), LO (), LO ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
   {
-    using execution_space =
-      typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
+    using execution_space = typename ExecutionSpace::execution_space;
+    using memory_space = typename ExecutionSpace::memory_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    memory_space memSpace;
     if (X.getNumVectors () == size_t (1)) {
       auto X_lcl = getVector (readWrite (X).on (memSpace));
       Kokkos::parallel_for ("transform",
-			    range_type (execSpace, 0, X_lcl.extent (0)),
-			    KOKKOS_LAMBDA (const LO i) {
-			      X_lcl(i) = f (X_lcl(i), i, 0);
-			    });
+                            range_type (execSpace, 0, X_lcl.extent (0)),
+                            KOKKOS_LAMBDA (const LO i) {
+                              X_lcl(i) = f (X_lcl(i), i, 0);
+                            });
     }
     else {
       auto X_lcl = getMultiVector (readWrite (X).on (memSpace));
       Kokkos::parallel_for ("transform",
-			    range_type (execSpace, 0, X_lcl.extent (0)),
-			    KOKKOS_LAMBDA (const LO i) {
-			      const LO numVecs = X_lcl.extent (1);
-			      for (LO j = 0; j < numVecs; ++j) {
-				X_lcl(i,j) = f (X_lcl(i,j), i, j);
-			      }
-			    });
+                            range_type (execSpace, 0, X_lcl.extent (0)),
+                            KOKKOS_LAMBDA (const LO i) {
+                              const LO numVecs = X_lcl.extent (1);
+                              for (LO j = 0; j < numVecs; ++j) {
+                                X_lcl(i,j) = f (X_lcl(i,j), i, j);
+                              }
+                            });
     }
   }
 
+  /// \brief X := f(X) entrywise, where X is a Tpetra::MultiVector and
+  ///   f takes the current entry and the local row index.
+  ///
+  /// \param execSpace [in] Kokkos execution space on which to run.
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function taking (SC, LO) and returning SC.
   template<class SC, class LO, class GO, class NT,
-	   class UnaryFunction,
-	   class ExecutionSpace,
-	   class MemorySpace = typename ExecutionSpace::memory_space>
+           class UnaryFunction,
+           class ExecutionSpace>
   void
-  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-	     UnaryFunction f,
-	     ExecutionSpace execSpace = ExecutionSpace (),
-	     MemorySpace memSpace = MemorySpace (),
-	     typename std::enable_if<std::is_convertible<decltype (f(SC ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
+  transform (ExecutionSpace execSpace,
+             Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f,
+             typename std::enable_if<std::is_convertible<decltype (f(SC (), LO ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
   {
-    using execution_space =
-      typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
+    using execution_space = typename ExecutionSpace::execution_space;
+    using memory_space = typename ExecutionSpace::memory_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    memory_space memSpace;
     if (X.getNumVectors () == size_t (1)) {
       auto X_lcl = getVector (readWrite (X).on (memSpace));
       Kokkos::parallel_for ("transform",
-			    range_type (execSpace, 0, X_lcl.extent (0)),
-			    KOKKOS_LAMBDA (const LO i) {
-			      X_lcl(i) = f (X_lcl(i));
-			    });
+                            range_type (execSpace, 0, X_lcl.extent (0)),
+                            KOKKOS_LAMBDA (const LO i) {
+                              X_lcl(i) = f (X_lcl(i), i);
+                            });
     }
     else {
       auto X_lcl = getMultiVector (readWrite (X).on (memSpace));
       Kokkos::parallel_for ("transform",
-			    range_type (execSpace, 0, X_lcl.extent (0)),
-			    KOKKOS_LAMBDA (const LO i) {
-			      const LO numVecs = X_lcl.extent (1);
-			      for (LO j = 0; j < numVecs; ++j) {
-				X_lcl(i,j) = f (X_lcl(i,j));
-			      }
-			    });
+                            range_type (execSpace, 0, X_lcl.extent (0)),
+                            KOKKOS_LAMBDA (const LO i) {
+                              const LO numVecs = X_lcl.extent (1);
+                              for (LO j = 0; j < numVecs; ++j) {
+                                X_lcl(i,j) = f (X_lcl(i,j), i);
+                              }
+                            });
     }
   }
 
+  /// \brief X := f(X) entrywise, where X is a Tpetra::MultiVector and
+  ///   f takes the current entry.
+  ///
+  /// \param execSpace [in] Kokkos execution space on which to run.
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function taking (SC) and returning SC.
   template<class SC, class LO, class GO, class NT,
-	   class UnaryFunction>
+           class UnaryFunction,
+           class ExecutionSpace>
   void
-  transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-	     UnaryFunction f,
-	     typename std::enable_if<std::is_convertible<decltype (f(SC (), LO (), LO ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
+  transform (ExecutionSpace execSpace,
+             Tpetra::MultiVector<SC, LO, GO, NT>& X,
+             UnaryFunction f,
+             typename std::enable_if<std::is_convertible<decltype (f(SC ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
   {
-    using execution_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
-    using memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;    
-    transform (X, f, execution_space (), memory_space ());
+    using execution_space = typename ExecutionSpace::execution_space;
+    using memory_space = typename ExecutionSpace::memory_space;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    memory_space memSpace;
+    if (X.getNumVectors () == size_t (1)) {
+      auto X_lcl = getVector (readWrite (X).on (memSpace));
+      Kokkos::parallel_for ("transform",
+                            range_type (execSpace, 0, X_lcl.extent (0)),
+                            KOKKOS_LAMBDA (const LO i) {
+                              X_lcl(i) = f (X_lcl(i));
+                            });
+    }
+    else {
+      auto X_lcl = getMultiVector (readWrite (X).on (memSpace));
+      Kokkos::parallel_for ("transform",
+                            range_type (execSpace, 0, X_lcl.extent (0)),
+                            KOKKOS_LAMBDA (const LO i) {
+                              const LO numVecs = X_lcl.extent (1);
+                              for (LO j = 0; j < numVecs; ++j) {
+                                X_lcl(i,j) = f (X_lcl(i,j));
+                              }
+                            });
+    }
   }
 
+  /// \brief Overload of transform (see above) that runs on X's
+  ///   default Kokkos execution space.
+  ///
+  /// \param X [in/out] MultiVector to modify.
+  /// \param f [in] Function to apply entrywise to X (could have
+  ///   different signatures; see above).
   template<class SC, class LO, class GO, class NT,
-	   class UnaryFunction>
+           class UnaryFunction>
   void
   transform (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-	     UnaryFunction f,
-	     typename std::enable_if<std::is_convertible<decltype (f(SC ())), typename Tpetra::MultiVector<SC, LO, GO, NT>::impl_scalar_type>::value, int>::type* = nullptr)
+             UnaryFunction f)
   {
-    using execution_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::execution_space;
-    using memory_space = typename Tpetra::MultiVector<SC, LO, GO, NT>::device_type::memory_space;    
-    transform (X, f, execution_space (), memory_space ());
+    using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+    using execution_space = typename MV::device_type::execution_space;
+    using memory_space = typename MV::device_type::memory_space;
+
+    transform (execution_space (), X, f);
   }
-	     
+
   namespace Impl {
     // Specialization of GetMasterLocalObject for Tpetra::MultiVector.
     template<class SC, class LO, class GO, class NT,
-	     class MemorySpace,
-	     const AccessMode am>
+             class MemorySpace,
+             const AccessMode am>
     struct GetMasterLocalObject<LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am> > {
     public:
-      using local_access_type = LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;        
+      using local_access_type = LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, am>;
     private:
       using global_object_type = typename local_access_type::global_object_type;
       using memory_space = typename local_access_type::memory_space;
@@ -503,50 +552,50 @@ namespace Harness {
         access_mode == ReadOnly,
         const non_const_value_type,
         non_const_value_type
-	>::type;
+        >::type;
 
     public:
       // FIXME (mfh 22 Oct 2018) See FIXME below.
       using master_local_object_type =
-	Kokkos::View<value_type**, 
-		     typename global_object_type::dual_view_type::t_dev::array_layout,
-		     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+        Kokkos::View<value_type**,
+                     typename global_object_type::dual_view_type::t_dev::array_layout,
+                     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
 
       static master_local_object_type get (local_access_type LA) {
-	std::cout << "Get master local object" << std::endl;
+        std::cout << "Get master local object" << std::endl;
 
-	// if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
-	if (LA.G_.template need_sync<memory_space> ()) {
-	  LA.G_.template sync<memory_space> ();
-	}
-	if (access_mode != ReadWrite) {
-	  LA.G_.template modify<memory_space> ();
-	}
-	// FIXME (mfh 22 Oct 2018) This might break if we need copy-back
-	// semantics, e.g., for a memory space for which the
-	// Tpetra::MultiVector does not store data.  In that case, we
-	// would need some kind of object whose destructor copies back,
-	// and it would need to have the whole DualView, not just the
-	// View on one side.  Watch out for copy elision.  The object
-	// could just be std::shared_ptr and could handle copy-back via
-	// custom deleter.
-	if (LA.isValid ()) {
-	  // this converts to const if applicable
-	  return master_local_object_type (LA.G_.template getLocalView<memory_space> ()); 
-	}
-	else {
-	  return master_local_object_type (); // "null" Kokkos::View
-	}
+        // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
+        if (LA.G_.template need_sync<memory_space> ()) {
+          LA.G_.template sync<memory_space> ();
+        }
+        if (access_mode != ReadWrite) {
+          LA.G_.template modify<memory_space> ();
+        }
+        // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
+        // semantics, e.g., for a memory space for which the
+        // Tpetra::MultiVector does not store data.  In that case, we
+        // would need some kind of object whose destructor copies back,
+        // and it would need to have the whole DualView, not just the
+        // View on one side.  Watch out for copy elision.  The object
+        // could just be std::shared_ptr and could handle copy-back via
+        // custom deleter.
+        if (LA.isValid ()) {
+          // this converts to const if applicable
+          return master_local_object_type (LA.G_.template getLocalView<memory_space> ());
+        }
+        else {
+          return master_local_object_type (); // "null" Kokkos::View
+        }
       }
     };
 
     // Specialization of GetMasterLocalObject for Tpetra::Vector.
     template<class SC, class LO, class GO, class NT,
-	     class MemorySpace,
-	     const AccessMode am>
+             class MemorySpace,
+             const AccessMode am>
     struct GetMasterLocalObject<LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am> > {
     public:
-      using local_access_type = LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;        
+      using local_access_type = LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, am>;
     private:
       using global_object_type = typename local_access_type::global_object_type;
       using memory_space = typename local_access_type::memory_space;
@@ -556,64 +605,64 @@ namespace Harness {
         access_mode == ReadOnly,
         const non_const_value_type,
         non_const_value_type
-	>::type;
+        >::type;
 
     public:
       // FIXME (mfh 22 Oct 2018) See FIXME below.
       using master_local_object_type =
-	Kokkos::View<value_type**, 
-		     typename global_object_type::dual_view_type::t_dev::array_layout,
-		     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
+        Kokkos::View<value_type**,
+                     typename global_object_type::dual_view_type::t_dev::array_layout,
+                     MemorySpace>; // FIXME (mfh 22 Oct 2018) need to make sure execution_space matches
 
       static master_local_object_type get (local_access_type LA) {
-	std::cout << "Get master local object" << std::endl;
+        std::cout << "Get master local object" << std::endl;
 
-	// if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
-	if (LA.G_.template need_sync<memory_space> ()) {
-	  LA.G_.template sync<memory_space> ();
-	}
-	if (access_mode != ReadWrite) {
-	  LA.G_.template modify<memory_space> ();
-	}
-	// FIXME (mfh 22 Oct 2018) This might break if we need copy-back
-	// semantics, e.g., for a memory space for which the
-	// Tpetra::MultiVector does not store data.  In that case, we
-	// would need some kind of object whose destructor copies back,
-	// and it would need to have the whole DualView, not just the
-	// View on one side.  Watch out for copy elision.  The object
-	// could just be std::shared_ptr and could handle copy-back via
-	// custom deleter.
-	if (LA.isValid ()) {
-	  // this converts to const if applicable
-	  return master_local_object_type (LA.G_.template getLocalView<memory_space> ()); 
-	}
-	else {
-	  return master_local_object_type (); // "null" Kokkos::View
-	}
+        // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
+        if (LA.G_.template need_sync<memory_space> ()) {
+          LA.G_.template sync<memory_space> ();
+        }
+        if (access_mode != ReadWrite) {
+          LA.G_.template modify<memory_space> ();
+        }
+        // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
+        // semantics, e.g., for a memory space for which the
+        // Tpetra::MultiVector does not store data.  In that case, we
+        // would need some kind of object whose destructor copies back,
+        // and it would need to have the whole DualView, not just the
+        // View on one side.  Watch out for copy elision.  The object
+        // could just be std::shared_ptr and could handle copy-back via
+        // custom deleter.
+        if (LA.isValid ()) {
+          // this converts to const if applicable
+          return master_local_object_type (LA.G_.template getLocalView<memory_space> ());
+        }
+        else {
+          return master_local_object_type (); // "null" Kokkos::View
+        }
       }
     };
 
     // Specialization of GetNonowningLocalObject for StubMasterLocalObject.
     template<class ValueType,
-	     class LayoutType,
-	     class MemorySpace>
+             class LayoutType,
+             class MemorySpace>
     struct GetNonowningLocalObject<Kokkos::View<ValueType**, LayoutType, MemorySpace> > {
       using master_local_object_type = Kokkos::View<ValueType**, LayoutType, MemorySpace>;
       using nonowning_local_object_type = Kokkos::View<ValueType**, LayoutType, MemorySpace, Kokkos::MemoryUnmanaged>;
       static nonowning_local_object_type get (const master_local_object_type& M) {
-	return nonowning_local_object_type (M); // standard Kokkos::View assignment
+        return nonowning_local_object_type (M); // standard Kokkos::View assignment
       }
     };
-  
+
   } // namespace Impl
-  
+
 } // namespace Harness
 
 namespace { // (anonymous)
 
   using Tpetra::TestingUtilities::getDefaultComm;
   using Teuchos::outArg;
-  using Teuchos::RCP;  
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
@@ -747,9 +796,9 @@ namespace { // (anonymous)
     {
       const int whichColumn = 2;
       TEST_ASSERT( size_t (whichColumn) < numVecs );
-      TEST_ASSERT( size_t (whichColumn) < mvec.getNumVectors () );      
+      TEST_ASSERT( size_t (whichColumn) < mvec.getNumVectors () );
       auto X_lcl_1d_wr =
-	Harness::getVector (Harness::readWrite (mvec), whichColumn);
+        Harness::getVector (Harness::readWrite (mvec), whichColumn);
       Kokkos::View<double*, Kokkos::LayoutLeft, multivec_type::device_type, Kokkos::MemoryUnmanaged> X_lcl_1d_wr2 = X_lcl_1d_wr;
       static_assert (decltype (X_lcl_1d_wr)::Rank == 1, "Rank is not 1");
       TEST_ASSERT( size_t (X_lcl_1d_wr.extent (0)) == numLocal );
@@ -767,13 +816,13 @@ namespace { // (anonymous)
 
       auto X_lcl_1d_wo = Harness::getVector (Harness::writeOnly (vec).on (memory_space ()));
       static_assert (std::is_same<
-		       decltype (X_lcl_1d_wo)::device_type::execution_space,
-		       vec_type::dual_view_type::t_host::execution_space>::value,
-		     "Not host execution space");
+                       decltype (X_lcl_1d_wo)::device_type::execution_space,
+                       vec_type::dual_view_type::t_host::execution_space>::value,
+                     "Not host execution space");
       Kokkos::parallel_for (
-	"Device kernel for write-only getVector",
-	range_type (0, LO (numLocal)),
-	KOKKOS_LAMBDA (const LO lclRow) { X_lcl_1d_wo(lclRow) = 42.0; });
+        "Device kernel for write-only getVector",
+        range_type (0, LO (numLocal)),
+        KOKKOS_LAMBDA (const LO lclRow) { X_lcl_1d_wo(lclRow) = 42.0; });
     }
 
     {
@@ -783,24 +832,24 @@ namespace { // (anonymous)
 
       auto X_lcl_1d_wo = Harness::getVector (Harness::writeOnly (vec).on (Kokkos::HostSpace ()));
       static_assert (std::is_same<
-		       decltype (X_lcl_1d_wo)::device_type::execution_space,
-		       vec_type::dual_view_type::t_host::execution_space>::value,
-		     "Not host execution space");
+                       decltype (X_lcl_1d_wo)::device_type::execution_space,
+                       vec_type::dual_view_type::t_host::execution_space>::value,
+                     "Not host execution space");
       Kokkos::parallel_for (
-	"Host kernel for write-only getVector",
-	range_type (0, LO (numLocal)),
-	[=] (const LO lclRow) {
-	  std::pair<double, double> p {3.0, 4.0}; // some not-device function
-	  X_lcl_1d_wo(lclRow) = p.first * p.second;
-	});
+        "Host kernel for write-only getVector",
+        range_type (0, LO (numLocal)),
+        [=] (const LO lclRow) {
+          std::pair<double, double> p {3.0, 4.0}; // some not-device function
+          X_lcl_1d_wo(lclRow) = p.first * p.second;
+        });
 
       // Just plain modify some entries, in some sequential order.
       // Just in case LO is unsigned, start at +1.
       for (LO lclRowPlusOne = LO (numLocal); lclRowPlusOne > LO (0); --lclRowPlusOne) {
-	const LO lclRow = lclRowPlusOne - LO (1);
-	// operator[] for 1-D Kokkos::View does the same thing as
-	// operator().
-	X_lcl_1d_wo[lclRow] = double (lclRow) + 42.0;
+        const LO lclRow = lclRowPlusOne - LO (1);
+        // operator[] for 1-D Kokkos::View does the same thing as
+        // operator().
+        X_lcl_1d_wo[lclRow] = double (lclRow) + 42.0;
       }
     }
 
@@ -837,77 +886,115 @@ namespace { // (anonymous)
     multivec_type X (map, numVecs);
     TEST_EQUALITY( X.getNumVectors (), numVecs );
 
+    // Test overload of transform that runs on X's default execution
+    // space, and whose function takes (SC, LO, LO) arguments.
+    // Exercise it for a MultiVector with multiple columns.
     using Harness::transform;
     transform (X, [] (const double X_ij, const LO i, const LO j) {
-	return X_ij + double (i+1.0) + double (j+1.0);
+        return X_ij + double (i+1.0) + double (j+1.0);
+      });
+    transform (Kokkos::DefaultHostExecutionSpace (),
+               X, [] (const double X_ij, const LO i, const LO j) {
+        return X_ij + double (i+1.0) + double (j+1.0);
       });
     transform (X, [] (const double X_ij, const LO i, const LO j) {
-	return X_ij + double (i+1.0) + double (j+1.0);
-      }, Kokkos::DefaultHostExecutionSpace ());
-    transform (X, [] (const double X_ij, const LO i, const LO j) {
-	return X_ij + double (i+1.0) + double (j+1.0);
+        return X_ij + double (i+1.0) + double (j+1.0);
       });
-    transform (X, [] (const double X_ij, const LO i, const LO j) {
-	return X_ij + double (i+1.0) + double (j+1.0);
-      }, Kokkos::DefaultHostExecutionSpace (), Kokkos::HostSpace ());
+    transform (Kokkos::DefaultHostExecutionSpace (),
+               X, [] (const double X_ij, const LO i, const LO j) {
+        return X_ij + double (i+1.0) + double (j+1.0);
+      });
 
     {
       X.sync<Kokkos::HostSpace> ();
       auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
-      bool ok = true;    
+      bool ok = true;
       for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
-	for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-	  if (X_lcl(i,j) != 4.0 * (double (i+1.0) + double(j+1.0))) {
-	    ok = false;
-	  }
-	}
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          if (X_lcl(i,j) != 4.0 * (double (i+1.0) + double(j+1.0))) {
+            ok = false;
+          }
+        }
       }
       TEST_ASSERT( ok );
     }
+
+    X.sync<vec_type::device_type::memory_space> ();
+    // Exercise overload of transform that runs on X's default
+    // execution space, and whose function takes (SC, LO) arguments.
+    // Exercise it for a MultiVector with multiple columns.
+    transform (X, [] (const double X_ij, const LO i) {
+        return X_ij + double (i+1.0);
+      });
+
+    {
+      X.sync<Kokkos::HostSpace> ();
+      auto X_lcl = X.getLocalView<Kokkos::HostSpace> ();
+      bool ok = true;
+      for (LO j = 0; j < LO (X.getNumVectors ()); ++j) {
+        for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
+          const double expectedVal = double (i+1.0) +
+            4.0 * (double (i+1.0) + double (j+1.0));
+          if (X_lcl(i,j) != expectedVal) {
+            ok = false;
+          }
+        }
+      }
+      TEST_ASSERT( ok );
+    }
+    X.sync<vec_type::device_type::memory_space> ();
 
     myOut << "Create a Vector, and make sure that "
       "it has exactly one vector (column)" << endl;
     vec_type vec (map);
     TEST_EQUALITY_CONST(vec.getNumVectors (), size_t (1));
 
+    // Exercise overload of transform that runs on X's default
+    // execution space, and whose function takes (SC, LO, LO)
+    // arguments.  Exercise it for a Vector.
     transform (vec, [] (const double X_ij, const LO i, const LO j) {
-	return X_ij + double (i+1.0) + double (j+1.0);
+        return X_ij + double (i+1.0) + double (j+1.0);
       });
 
-    // 1-argument function
+    // Exercise overload of transform that runs on X's default
+    // execution space, and whose function takes (SC) arguments.
+    // Exercise it for a Vector.
     transform (vec, [] (const double /* X_ij */) {
-	return 42.0;
+        return 42.0;
       });
-    
+
     {
       vec.sync<Kokkos::HostSpace> ();
       auto vec_lcl = Kokkos::subview (vec.getLocalView<Kokkos::HostSpace> (), Kokkos::ALL (), 0);
-      bool ok = true;    
+      bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-	if (vec_lcl(i) != 42.0) {
-	  ok = false;
-	}
+        if (vec_lcl(i) != 42.0) {
+          ok = false;
+        }
       }
       TEST_ASSERT( ok );
     }
 
     vec.sync<vec_type::device_type::memory_space> ();
     transform (vec, [] (const double X_ij) {
-	return X_ij + 1.0;
+        return X_ij + 1.0;
       });
 
     {
       vec.sync<Kokkos::HostSpace> ();
       auto vec_lcl = Kokkos::subview (vec.getLocalView<Kokkos::HostSpace> (), Kokkos::ALL (), 0);
-      bool ok = true;    
+      bool ok = true;
       for (LO i = 0; i < LO (X.getLocalLength ()); ++i) {
-	if (vec_lcl(i) != 43.0) {
-	  ok = false;
-	}
+        if (vec_lcl(i) != 43.0) {
+          ok = false;
+        }
       }
       TEST_ASSERT( ok );
     }
-  }  
+
+
+
+  }
 } // namespace (anonymous)
 
 int
@@ -918,4 +1005,3 @@ main (int argc, char* argv[])
     Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
   return errCode;
 }
-
