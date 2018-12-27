@@ -327,78 +327,129 @@ namespace Harness {
         multivector_nonconst_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace> >::type;
   } // namespace Impl
 
+
+  // Return a nonowning rank-2 Kokkos::View of the
+  // Tpetra::MultiVector's local data.
   template<class SC, class LO, class GO, class NT,
            class MemorySpace,
            const AccessMode access_mode>
-  Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT, MemorySpace, access_mode>
-  getMultiVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA)
+  Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT,
+                                                MemorySpace,
+                                                access_mode>
+  getMultiVector (Impl::LocalAccess<
+                    Tpetra::MultiVector<SC, LO, GO, NT>,
+                    MemorySpace,
+                    access_mode> LA)
   {
+    // Use the execution space when calling sync etc., to avoid
+    // confusion between CudaSpace and CudaUVMSpace that could result
+    // in sync'ing the wrong way.
+    using execution_space = typename MemorySpace::execution_space;
     using memory_space = typename MemorySpace::memory_space;
     using ret_type =
       Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT,
-                                                    memory_space, access_mode>;
-    std::cout << "getMultiVector" << std::endl;
+                                                    memory_space,
+                                                    access_mode>;
+    if (! LA.isValid ()) {
+      return ret_type (); // "null" Kokkos::View
+    }
 
-    // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
-    if (LA.G_.template need_sync<memory_space> ()) {
-      LA.G_.template sync<memory_space> ();
+    if (access_mode == WriteOnly) {
+      LA.G_.clear_sync_state ();
     }
+    else {
+      if (LA.G_.template need_sync<execution_space> ()) {
+        LA.G_.template sync<execution_space> ();
+      }
+    }
+
     if (access_mode != ReadWrite) {
-      LA.G_.template modify<memory_space> ();
+      LA.G_.template modify<execution_space> ();
     }
+
     // FIXME (mfh 22 Oct 2018) This might break if we need copy-back
     // semantics, e.g., for a memory space for which the
     // Tpetra::MultiVector does not store data.  In that case, we
     // would need some kind of object whose destructor copies back,
-    // and it would need to have the whole DualView, not just the
-    // View on one side.  Watch out for copy elision.  The object
-    // could just be std::shared_ptr and could handle copy-back via
-    // custom deleter.
-    if (LA.isValid ()) {
-      // this converts to const if applicable
-      return ret_type (LA.G_.template getLocalView<memory_space> ());
-    }
-    else {
-      return ret_type (); // "null" Kokkos::View
-    }
+    // and it would need to have the whole DualView, not just the View
+    // on one side.  Watch out for copy elision.  The object could
+    // just be std::shared_ptr and could handle copy-back via custom
+    // deleter.
+
+    // this converts to const if applicable
+    return ret_type (LA.G_.template getLocalView<execution_space> ());
   }
 
+  // Overload of getVector for Tpetra::MultiVector.  Return a
+  // nonowning rank-1 Kokkos::View of the Tpetra::MultiVector's 0th
+  // column's local data.
   template<class SC, class LO, class GO, class NT,
            class MemorySpace,
            const AccessMode access_mode>
   auto
-  getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> LA,
+  getVector (Impl::LocalAccess<
+               Tpetra::MultiVector<SC, LO, GO, NT>,
+               MemorySpace,
+               access_mode> LA,
              const int whichColumn = 0)
-    -> decltype (Kokkos::subview (getMultiVector (LA), Kokkos::ALL (), whichColumn))
+    -> decltype (Kokkos::subview (getMultiVector (LA),
+                                  Kokkos::ALL (),
+                                  whichColumn))
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    using local_access_type = Impl::LocalAccess<MV, MemorySpace, access_mode>;
-    // FIXME (mfh 25 Oct 2018) If not valid, should not call getVectorNonConst.
+    using local_access_type =
+      Impl::LocalAccess<MV, MemorySpace, access_mode>;
+    using ret_type =
+      decltype (Kokkos::subview (X_wc_lcl, Kokkos::ALL (), 0));
+
+    // Don't call getVectorNonConst if not valid, since it could throw.
+    if (! LA.isValid ()) {
+      return ret_type ();
+    }
     Teuchos::RCP<MV> X_wc = LA.G_.getVectorNonConst (whichColumn);
-    auto X_wc_lcl = getMultiVector (local_access_type (*X_wc, LA.space_, LA.valid_));
+    auto X_wc_lcl =
+      getMultiVector (local_access_type (*X_wc, LA.space_, LA.valid_));
     return Kokkos::subview (X_wc_lcl, Kokkos::ALL (), 0);
   }
 
+  // Overload of getVector for Tpetra::Vector.  Return a nonowning
+  // rank-1 Kokkos::View of the Tpetra::Vector's local data.
   template<class SC, class LO, class GO, class NT,
            class MemorySpace,
            const AccessMode access_mode>
   auto
-  getVector (Impl::LocalAccess<Tpetra::Vector<SC, LO, GO, NT>, MemorySpace, access_mode> LA,
+  getVector (Impl::LocalAccess<
+               Tpetra::Vector<SC, LO, GO, NT>,
+               MemorySpace,
+               access_mode> LA,
              const int whichColumn = 0)
-    -> decltype (getVector (Impl::LocalAccess<Tpetra::MultiVector<SC, LO, GO, NT>, MemorySpace, access_mode> (LA.G_, LA.space_, LA.valid_), whichColumn))
+    -> decltype (getVector (Impl::LocalAccess<
+                              Tpetra::MultiVector<SC, LO, GO, NT>,
+                               MemorySpace,
+                               access_mode> (LA.G_, LA.space_, LA.valid_),
+                            whichColumn))
   {
     using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
-    using local_access_type = Impl::LocalAccess<MV, MemorySpace, access_mode>;
-    return getVector (local_access_type (LA.G_, LA.space_, LA.valid_), whichColumn);
+    using local_access_type =
+      Impl::LocalAccess<MV, MemorySpace, access_mode>;
+    return getVector (local_access_type (LA.G_, LA.space_, LA.valid_),
+                      whichColumn);
   }
 
-  /// \brief X := f(X) entrywise, where X is a Tpetra::MultiVector and
-  ///   f takes the current entry, the local row index, and the local
-  ///   column index.
+  /// \brief Apply a function entrywise to each entry of a
+  ///   Tpetra::MultiVector.
+  ///
+  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
+  /// takes the current entry (as impl_scalar_type), the local row
+  /// index (as LO), and the local column index (as LO).
   ///
   /// \param execSpace [in] Kokkos execution space on which to run.
   /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function taking (SC, LO, LO) and returning SC.
+  /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// Let IST =
+  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
+  /// f takes (IST, LO, LO) and returns IST.
   template<class SC, class LO, class GO, class NT,
            class UnaryFunction,
            class ExecutionSpace>
@@ -411,6 +462,12 @@ namespace Harness {
     using execution_space = typename ExecutionSpace::execution_space;
     using memory_space = typename ExecutionSpace::memory_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    // Use the execution space, not the memory space, so that the sync
+    // happens to the right place, even despite CudaUVMSpace.
+    if (X.template need_sync<execution_space> ()) {
+      X.template sync<execution_space> ();
+    }
 
     memory_space memSpace;
     if (X.getNumVectors () == size_t (1)) {
@@ -434,12 +491,20 @@ namespace Harness {
     }
   }
 
-  /// \brief X := f(X) entrywise, where X is a Tpetra::MultiVector and
-  ///   f takes the current entry and the local row index.
+  /// \brief Apply a function (taking current value and row index)
+  ///   entrywise to each entry of a Tpetra::MultiVector.
+  ///
+  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
+  /// takes the current entry (as impl_scalar_type) and the local row
+  /// index (as LO).
   ///
   /// \param execSpace [in] Kokkos execution space on which to run.
   /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function taking (SC, LO) and returning SC.
+  /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// Let IST =
+  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
+  /// f takes (IST, LO) and returns IST.
   template<class SC, class LO, class GO, class NT,
            class UnaryFunction,
            class ExecutionSpace>
@@ -452,6 +517,12 @@ namespace Harness {
     using execution_space = typename ExecutionSpace::execution_space;
     using memory_space = typename ExecutionSpace::memory_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    // Use the execution space, not the memory space, so that the sync
+    // happens to the right place, even despite CudaUVMSpace.
+    if (X.template need_sync<execution_space> ()) {
+      X.template sync<execution_space> ();
+    }
 
     memory_space memSpace;
     if (X.getNumVectors () == size_t (1)) {
@@ -475,12 +546,19 @@ namespace Harness {
     }
   }
 
-  /// \brief X := f(X) entrywise, where X is a Tpetra::MultiVector and
-  ///   f takes the current entry.
+  /// \brief Apply a function (taking current value) entrywise to each
+  ///   entry of a Tpetra::MultiVector.
+  ///
+  /// X := f(X) entrywise, where X is a Tpetra::MultiVector and f
+  /// takes the current entry (as impl_scalar_type).
   ///
   /// \param execSpace [in] Kokkos execution space on which to run.
   /// \param X [in/out] MultiVector to modify.
-  /// \param f [in] Function taking (SC) and returning SC.
+  /// \param f [in] Function to apply to each entry of X.
+  ///
+  /// Let IST =
+  /// <tt>Tpetra::MultiVector<SC,LO,GO,NT>::impl_scalar_type</tt>.
+  /// f takes (IST) and returns IST.
   template<class SC, class LO, class GO, class NT,
            class UnaryFunction,
            class ExecutionSpace>
@@ -493,6 +571,12 @@ namespace Harness {
     using execution_space = typename ExecutionSpace::execution_space;
     using memory_space = typename ExecutionSpace::memory_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+    // Use the execution space, not the memory space, so that the sync
+    // happens to the right place, even despite CudaUVMSpace.
+    if (X.template need_sync<execution_space> ()) {
+      X.template sync<execution_space> ();
+    }
 
     memory_space memSpace;
     if (X.getNumVectors () == size_t (1)) {
@@ -826,7 +910,8 @@ namespace { // (anonymous)
     }
 
     {
-      using host_execution_space = vec_type::dual_view_type::t_host::execution_space;
+      using host_execution_space =
+        vec_type::dual_view_type::t_host::execution_space;
       using LO = vec_type::local_ordinal_type;
       using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
 
@@ -991,9 +1076,6 @@ namespace { // (anonymous)
       }
       TEST_ASSERT( ok );
     }
-
-
-
   }
 } // namespace (anonymous)
 
