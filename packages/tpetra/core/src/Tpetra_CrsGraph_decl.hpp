@@ -61,7 +61,6 @@
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
-#include "Kokkos_UnorderedMap.hpp"
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Describable.hpp"
@@ -82,16 +81,6 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
-    template<class LO, class GO, class NT>
-    void
-    unpackCrsGraphAndCombine(
-        CrsGraph<LO, GO, NT>& graph,
-        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        const Teuchos::ArrayView<const LO>& importLIDs,
-        size_t constantNumPackets,
-        Distributor & distor,
-        CombineMode combineMode);
   } // namespace Details
 
   namespace { // (anonymous)
@@ -1229,19 +1218,6 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
 
-    void
-    applyCrsPadding (const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
-
-    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
-    computeCrsPadding (const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& source,
-                       size_t numSameIDs,
-                       const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                       const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
-
-    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
-    computeCrsPadding (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                       const Teuchos::ArrayView<size_t> &numPacketsPerLID);
-
     virtual void
     packAndPrepare (const SrcDistObject& source,
                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
@@ -1257,13 +1233,6 @@ namespace Tpetra {
           size_t& constantNumPackets,
           Distributor& distor) const override;
 
-    void
-    packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                    Teuchos::Array<GlobalOrdinal>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor) const;
-
     virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
                       const Teuchos::ArrayView<const GlobalOrdinal>& imports,
@@ -1271,7 +1240,6 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor& distor,
                       CombineMode CM) override;
-
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -1573,17 +1541,6 @@ namespace Tpetra {
                                                                  typename CrsGraphType::global_ordinal_type,
                                                                  typename CrsGraphType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-    template<class LO, class GO, class NT>
-    friend void
-    ::Tpetra::Details::unpackCrsGraphAndCombine(
-        CrsGraph<LO, GO, NT>& graph,
-        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        const Teuchos::ArrayView<const LO>& importLIDs,
-        size_t constantNumPackets,
-        Distributor & distor,
-        CombineMode combineMode);
 
   public:
     /// \brief Import from <tt>this</tt> to the given destination
