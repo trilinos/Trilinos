@@ -149,7 +149,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   uint nx         = pl->get("Spatial Discretization",     64); // Set spatial discretization.
   uint nt         = pl->get("Temporal Discretization",   128); // Set temporal discretization.
   RealT T         = pl->get("End Time",                  1.0); // Set end time.
-  RealT dt        = T/(static_cast<RealT>(nt)-1.0);
+  RealT dt        = T/(static_cast<RealT>(nt));
 
   // Initialize objective function.
   ROL::Ptr<ROL::DynamicConstraint<RealT>> dyn_con
@@ -213,8 +213,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     CHECK_ASSERT(errors[6][3]/errors[6][1] < 1e-6);
   }
 
-  return;
-
   // check the Jacobian_2
   /////////////////////////////////////////////////////////////////////////////
   {
@@ -225,6 +223,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     CHECK_ASSERT(errors[6][3]/errors[6][1] < 1e-6);
   }
 
+#if 0
   // check the Adjoint Jacobian_1
   /////////////////////////////////////////////////////////////////////////////
   {
@@ -244,6 +243,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto error = pint_constraint.checkAdjointConsistencyJacobian_2(*w_u,*v_z,*state,*control,true,*outStream);
     CHECK_ASSERT(error<1e-8);
   }
+#endif
 
   // check inverse Jacobian_1
   /////////////////////////////////////////////////////////////////////////////
@@ -252,6 +252,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     CHECK_ASSERT(inv_1 < tol);
   }
+
+  return;
 
   // check inverse adjoint Jacobian_1
   /////////////////////////////////////////////////////////////////////////////

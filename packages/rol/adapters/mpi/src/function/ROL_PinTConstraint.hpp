@@ -162,7 +162,7 @@ private:
       vecs.push_back(val);
     }
     else if(oldTimeIndex==-1) 
-      vecs.push_back(src.getRemoteBufferPtr(1));  // this index is 1, as this is the virtual variable from the left processor
+      vecs.push_back(src.getRemoteBufferPtr(1));  // this index is 1 to get the the virtual variable from the left processor
     else if(oldTimeIndex>=0) 
       vecs.push_back(src.getVectorPtr(oldTimeIndex));   
     else {
@@ -294,9 +294,6 @@ public:
   
   /**
    * \brief Get the time stamps for by level
-   *
-   * The current implementation is recursive and expensive, but its the easiest
-   * way to do this right now. FIXME-B
    */
   Ptr<std::vector<TimeStamp<Real>>> getTimeStampsByLevel(int level) const
   {
@@ -322,19 +319,31 @@ public:
     else
       timeStamps = getTimeStampsByLevel(level);
 
-    // build a singl epoint time stamp
+    // build a single point time stamp
+
     VecPtr localTimeStamps = makePtr<std::vector<TimeStamp<Real>>>(2);
-    localTimeStamps->at(0) = timeStamps->at(step);
-    localTimeStamps->at(1) = timeStamps->at(step+1);
+    if(step==0) {
+      localTimeStamps->at(0) = timeStamps->at(step);
+
+      // shift it backwards in time one step... this is a hack
+      Real dt = localTimeStamps->at(0).t[1] - localTimeStamps->at(0).t[0];
+      localTimeStamps->at(0).t[0] -= dt; 
+      localTimeStamps->at(0).t[1] -= dt;
+ 
+      localTimeStamps->at(0).k--;
+    }
+    else {
+      localTimeStamps->at(0) = timeStamps->at(step-1);
+    }
+
+    localTimeStamps->at(1) = timeStamps->at(step);
 
     if(ROL::is_nullPtr(timeDomainConstraint_)) {
 
       timeDomainConstraint_ = ROL::makePtr<SerialConstraint<Real>>(stepConstraint_,*ui,localTimeStamps);
-        // FIXME-A: Change the Nt+1 back to Nt...
     }
     else {
       timeDomainConstraint_->setTimeStampsPtr(localTimeStamps);
-        // FIXME-A: Change the Nt+1 back to Nt...
       timeDomainConstraint_->setInitialCondition(*ui);
     }
 
@@ -354,7 +363,6 @@ public:
     stepConstraint_ = stepConstraint;
     initialCond_ = initialCond->clone();
     initialCond_->set(*initialCond);
-    initialCond_->setScalar(0.0);
     userTimeStamps_ = timeStamps;
 
     hierarchy_.initialize(timeStamps);
@@ -399,7 +407,7 @@ public:
     pint_z.boundaryExchangeLeftToRight();
     pint_u.boundaryExchangeLeftToRight(PinTVector<Real>::RECV_ONLY); // this is going to block
 
-    size_t numSteps = getTimeStampsByLevel(0)->size()-1;
+    size_t numSteps = getTimeStampsByLevel(0)->size();
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_c = getStateVector(pint_c,s,false);   
@@ -413,9 +421,7 @@ public:
       constraint->solve(*part_c,*part_u,*part_z,tol);
 
       // satisfy the time continuity constraint, note that this just using the identity matrix
-      if(s>0) {
-        pint_u.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s));
-      }
+      pint_u.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s));
     }
 
     pint_u.boundaryExchangeLeftToRight(PinTVector<Real>::SEND_ONLY);
@@ -441,26 +447,24 @@ public:
     pint_u.boundaryExchangeLeftToRight();
     pint_z.boundaryExchangeLeftToRight();
 
-    size_t numSteps = getTimeStampsByLevel(0)->size()-1;
+    size_t numSteps = getTimeStampsByLevel(0)->size();
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_c = getStateVector(pint_c,s,false);   
       auto part_u = getStateVector(pint_u,s,true);   
       auto part_z = getControlVector(pint_z,s); 
-  
+
       // compute the constraint for this subdomain
       //    u_s = F(v_{s-1},z_s)
       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
-  
+
       constraint->value(*part_c,*part_u,*part_z,tol);
-  
+
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
-      if(s>0) {
-        pint_c.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s+1));     // this is the virtual value
-        pint_c.getVectorPtr(2*s+1)->axpy(-1.0,*pint_u.getVectorPtr(2*s)); // this is the u value
-        pint_c.getVectorPtr(2*s+1)->scale(globalScale_);
-      }
+      pint_c.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s+1));     // this is the virtual value
+      pint_c.getVectorPtr(2*s+1)->axpy(-1.0,*pint_u.getVectorPtr(2*s)); // this is the u value
+      pint_c.getVectorPtr(2*s+1)->scale(globalScale_);
     }
   } 
 
@@ -488,27 +492,25 @@ public:
     pint_u.boundaryExchangeLeftToRight();
     pint_z.boundaryExchangeLeftToRight();
 
-    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size();
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
       auto part_jv = getStateVector(pint_jv,s,false); 
       auto part_v  = getStateVector(pint_v,s,false);    
       auto part_u  = getStateVector(pint_u,s,true);   
       auto part_z  = getControlVector(pint_z,s); 
-  
+
       // compute the constraint for this subdomain
       //    u_s = F(v_{s-1},z_s)
       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
-  
+
       constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
-  
+
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
-      if(s>0) {
-        pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));     // this is the virtual value
-        pint_jv.getVectorPtr(2*s+1)->axpy(-1.0,*pint_v.getVectorPtr(2*s)); // this is the u value
-        pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);
-      }
+      pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));     // this is the virtual value
+      pint_jv.getVectorPtr(2*s+1)->axpy(-1.0,*pint_v.getVectorPtr(2*s)); // this is the u value
+      pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);
     }
   }
 
@@ -587,40 +589,27 @@ public:
     assert(pint_z.numOwnedSteps()==pint_v.numOwnedSteps());
 
     // communicate neighbors, these are block calls
-    pint_v.boundaryExchange();
-    pint_u.boundaryExchange();
-    pint_z.boundaryExchange();
-//  Unused
-//    int timeRank = pint_u.communicators().getTimeRank();
-    const std::vector<int> & stencil = pint_jv.stencil();
+    pint_v.boundaryExchangeLeftToRight();
+    pint_u.boundaryExchangeLeftToRight();
+    pint_z.boundaryExchangeLeftToRight();
 
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
-
-    // v0 - u0
-    pint_jv.getVectorPtr(-1)->zero();
-
-    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size();
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
-      auto part_jv = getStateVector(pint_jv,s); 
+      auto part_jv = getStateVector(pint_jv,s,false); 
       auto part_v  = getControlVector(pint_v,s);    
-      auto part_u  = getStateVector(pint_u,s);   
+      auto part_u  = getStateVector(pint_u,s,true);   
       auto part_z  = getControlVector(pint_z,s); 
   
       // compute the constraint for this subdomain
       //    u_s = F(v_{s-1},z_s)
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
   
       constraint->applyJacobian_2(*part_jv,*part_v,*part_u,*part_z,tol);
   
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
-      if(s<numSteps-1) {
-        pint_jv.getVectorPtr(2*s+1)->zero();
-      }
+      pint_jv.getVectorPtr(2*s+1)->zero();
     }
    }
 
@@ -636,64 +625,48 @@ public:
                                        const V& z, 
                                        Real& tol,
                                        int level) {
-    // applyInverseJacobian_1 is weird because it serializes in time. But we want to get it
-    // working so that we can test, but it won't be a performant way to do this. 
-    // We could do a parallel in time solve here but thats not really the focus.
-    
-    PinTVector<Real>       & pint_ijv = dynamic_cast<PinTVector<Real>&>(ijv);
-    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
-    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
-    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+     // applyInverseJacobian_1 is weird because it serializes in time. But we want to get it
+     // working so that we can test, but it won't be a performant way to do this. 
+     // We could do a parallel in time solve here but thats not really the focus.
+     
+     // ijv.zero();
+
+     PinTVector<Real>       & pint_ijv = dynamic_cast<PinTVector<Real>&>(ijv);
+     const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+     const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
- 
-    assert(pint_ijv.numOwnedSteps()==pint_u.numOwnedSteps());
-    assert(pint_ijv.numOwnedSteps()==pint_v.numOwnedSteps());
 
-    pint_z.boundaryExchange();
-    pint_v.boundaryExchange();
-    pint_u.boundaryExchange();
-    pint_ijv.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
+     assert(pint_ijv.numOwnedSteps()==pint_u.numOwnedSteps());
+     assert(pint_ijv.numOwnedSteps()==pint_v.numOwnedSteps());
 
-    int timeRank = pint_u.communicators().getTimeRank();
-    const std::vector<int> & stencil = pint_ijv.stencil();
+     pint_z.boundaryExchangeLeftToRight();
+     pint_v.boundaryExchangeLeftToRight();
+     pint_u.boundaryExchangeLeftToRight();
+     pint_ijv.boundaryExchangeLeftToRight(PinTVector<Real>::RECV_ONLY); // this is going to block
 
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
+     size_t numSteps = getTimeStampsByLevel(level)->size();
+     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
-    // initial constraint
-    if(timeRank==0) {
-      // update the old time information
-      pint_ijv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1));
-      pint_ijv.getVectorPtr(-1)->scale(1.0/globalScale_);
-    }
-    else {
-      pint_ijv.getVectorPtr(-1)->set(*pint_ijv.getRemoteBufferPtr(-1));    
-      pint_ijv.getVectorPtr(-1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(-1));        
-    }
+       auto part_ijv = getStateVector(pint_ijv,s,false);   
+       auto part_v   = getStateVector(pint_v,s,false);   
+       auto part_u   = getStateVector(pint_u,s,true);   
+       auto part_z   = getControlVector(pint_z,s); 
 
-    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
-    for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
+       // compute the constraint for this subdomain
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
 
-      auto part_ijv = getStateVector(pint_ijv,s);   
-      auto part_v   = getStateVector(pint_v,s);   
-      auto part_u   = getStateVector(pint_u,s);   
-      auto part_z   = getControlVector(pint_z,s); 
+       constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
 
-      // compute the constraint for this subdomain
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+       // satisfy the time continuity constraint, note that this just using the identity matrix
+       // g * v - g * u = r
+       // v = u + r/g;
 
-      constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
+       pint_ijv.getVectorPtr(2*s+1)->set(*pint_ijv.getVectorPtr(2*s));    
+       pint_ijv.getVectorPtr(2*s+1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(2*s+1));        
+     }
 
-      // satisfy the time continuity constraint, note that this just using the identity matrix
-      if(s<numSteps-1) {
-        pint_ijv.getVectorPtr(2*s+1)->set(*pint_ijv.getVectorPtr(2*s));    
-        pint_ijv.getVectorPtr(2*s+1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(2*s+1));        
-      }
-    }
-
-    pint_ijv.boundaryExchange(PinTVector<Real>::SEND_ONLY);
+     pint_ijv.boundaryExchangeLeftToRight(PinTVector<Real>::SEND_ONLY); // this releases the block
    }
 
    void applyAdjointJacobian_1( V& ajv, 
