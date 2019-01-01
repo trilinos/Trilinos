@@ -95,7 +95,7 @@ int main( int argc, char* argv[] )
 //  int numProcs = Teuchos::GlobalMPISession::getNProc();
 
 //  int iprint     = argc - 1;
-  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 and myRank==0 );
 
   int errorFlag  = 0;
 
@@ -212,6 +212,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto errors = pint_constraint.checkApplyJacobian_1(*state,*control,*v_u,*jv,true,*outStream);
     CHECK_ASSERT(errors[6][3]/errors[6][1] < 1e-6);
   }
+
+  return;
 
   // check the Jacobian_2
   /////////////////////////////////////////////////////////////////////////////

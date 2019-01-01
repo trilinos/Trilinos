@@ -51,6 +51,7 @@
 #include "ROL_SerialConstraint.hpp"
 #include "ROL_SerialConstraint.hpp"
 #include "ROL_PinTCommunicationUtilities.hpp"
+#include "ROL_PinTHierarchy.hpp"
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -118,11 +119,13 @@ private:
 
   Ptr<DynamicConstraint<Real>> stepConstraint_;
   Ptr<SerialConstraint<Real>>  timeDomainConstraint_;
-  Ptr<const Vector<Real>>      initialCond_;
+  Ptr<Vector<Real>>      initialCond_;
 
   Ptr<const std::vector<TimeStamp<Real>>>         userTimeStamps_;    // these are the untouched ones the user passes in
   Ptr<std::vector<TimeStamp<Real>>>               timeStamps_;        // these are used internally
   std::vector<Ptr<std::vector<TimeStamp<Real>>>>  stamps_;            // these are used internally on each level
+
+  ROL::PinTHierarchy<Real> hierarchy_;
 
   // preconditioner settings
   bool applyMultigrid_;         // default to block jacobi
@@ -141,25 +144,39 @@ private:
   bool useRepart_;
 
   // Get the state vector required by the serial constraint object
-  Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src,int s=0)
+  Ptr<Vector<Real>> getStateVector(const PinTVector<Real> & src,int s,bool useInitialCond=false)
   {
-    // notice this ignores the stencil for now
-   
-    /*
+    int timeRank = src.communicators().getTimeRank();
+    int oldTimeIndex = 2*s-1;
+
+    // the state PinTVector is assuemd to have two vectors per time step,
+    // one for the "primary" variable (first, even index), and the "virtual" variable (second, odd index)
+
     std::vector<Ptr<Vector<Real>>> vecs;
-
-    vecs.push_back(src.getVectorPtr(-1));  // inject the initial condition
-
-    for(int i=0;i<src.numOwnedSteps();i+=2) { // ignoring the stencil
-      vecs.push_back(src.getVectorPtr(i+1)); 
+    if(oldTimeIndex==-1 and timeRank==0) {
+      auto val = initialCond_->clone();
+      if(useInitialCond) 
+        val->set(*initialCond_); 
+      else 
+        val->scale(0.0);
+      vecs.push_back(val);
+    }
+    else if(oldTimeIndex==-1) 
+      vecs.push_back(src.getRemoteBufferPtr(1));  // this index is 1, as this is the virtual variable from the left processor
+    else if(oldTimeIndex>=0) 
+      vecs.push_back(src.getVectorPtr(oldTimeIndex));   
+    else {
+      std::stringstream ss; 
+      ss << "ROL::PinTConstraint::getStateVector: unxpected step index\n"
+         << "   (dev info: s=" << s 
+         << ", timeRank=" << timeRank 
+         << ", oldTimeIndex=" << oldTimeIndex 
+         << ")" << std::endl;
+  
+      throw std::logic_error(ss.str());
     }
 
-    return makePtr<PartitionedVector<Real>>(vecs);
-    */
-
-    std::vector<Ptr<Vector<Real>>> vecs;
-    vecs.push_back(src.getVectorPtr(2*s-1)); // virtual value lives on the odds (and negatives)
-    vecs.push_back(src.getVectorPtr(2*s));   // true value lives on the evens (the vector ends on the evens)
+    vecs.push_back(src.getVectorPtr(oldTimeIndex+1));   // true value lives on the evens
 
     return makePtr<PartitionedVector<Real>>(vecs);
   }
@@ -168,29 +185,12 @@ private:
   Ptr<Vector<Real>> getControlVector(const PinTVector<Real> & src,int s=0)
   {
     // notice this ignores the stencil for now
- 
-    /*
-    std::vector<Ptr<Vector<Real>>> vecs;
- 
-    vecs.push_back(src.getVectorPtr(0)->clone());
-      // FIXME-A: this control index is never used. This stems from not wanting to set
-      //          an intial condition for the test function. But instead use the 
-      //          "setSkipInitialCondition" option. This all needs to be rethought. 
-      //          This is linked to the FIXME's in "getStateConstraint"
-      //             -- ECC, June 11, 2018
-
-    for(int i=0;i<src.numOwnedSteps();i++) { // ignore the intial step...ignoring the stencil
-      vecs.push_back(src.getVectorPtr(i)); 
-    }
-    return makePtr<PartitionedVector<Real>>(vecs);
-    */
 
     std::vector<Ptr<Vector<Real>>> vecs;
     vecs.push_back(src.getVectorPtr(0)->clone());
       // FIXME-A: this control index is never used. This stems from not wanting to set
       //          an intial condition for the test function. But instead use the 
       //          "setSkipInitialCondition" option. This all needs to be rethought. 
-      //          This is linked to the FIXME's in "getStateConstraint"
       //             -- ECC, June 11, 2018
     vecs.push_back(src.getVectorPtr(s));
     return makePtr<PartitionedVector<Real>>(vecs);
@@ -219,7 +219,7 @@ public:
    * Multigrid in time preconditioning is disabled by default.
    * 
    * \param[in] stepConstraint Constraint for a single step.
-   * \param[in] initialCond Initial condition
+   * \param[in] initialCond Initial condition, this will be replicated with a deep copy
    */
   PinTConstraint(const Ptr<DynamicConstraint<Real>> & stepConstraint,
                  const Ptr<const Vector<Real>> & initialCond,
@@ -300,40 +300,7 @@ public:
    */
   Ptr<std::vector<TimeStamp<Real>>> getTimeStampsByLevel(int level) const
   {
-    assert(level>=0); // precondition
-
-    // base case
-    if(level==0)
-      return timeStamps_;
-
-    Ptr<std::vector<TimeStamp<Real>>> higherLevel = getTimeStampsByLevel(level-1);
-
-    // let's start easy!
-    assert((higherLevel->size()-1) % 2 == 0);
-
-    Ptr<std::vector<TimeStamp<Real>>> currentLevel 
-        = ROL::makePtr<std::vector<ROL::TimeStamp<Real>>>((higherLevel->size()-1)/2+1);
-
-    // build up the current level
-    for(size_t k=0;k<currentLevel->size()-1;k++) {
-      currentLevel->at(k+1).t.resize(2);
-      currentLevel->at(k+1).t.at(0) = higherLevel->at(1+2*k+0).t.at(0);
-      currentLevel->at(k+1).t.at(1) = higherLevel->at(1+2*k+1).t.at(1);
-    }
-
-    // setup false step (this is to ensure the control is properly handled
-    {
-      Real ta = currentLevel->at(1).t.at(0);
-      Real tb = currentLevel->at(1).t.at(1);
-      Real dt =  tb-ta;
-
-      // the serial constraint should never see this!
-      currentLevel->at(0).t.resize(2);
-      currentLevel->at(0).t.at(0) = ta-dt;
-      currentLevel->at(0).t.at(1) = ta;
-    }
-
-    return currentLevel;
+    return hierarchy_.getTimeStampsByLevel(level);
   }
 
   /**
@@ -385,8 +352,12 @@ public:
   {
     // initialize user member variables
     stepConstraint_ = stepConstraint;
-    initialCond_ = initialCond;
+    initialCond_ = initialCond->clone();
+    initialCond_->set(*initialCond);
+    initialCond_->setScalar(0.0);
     userTimeStamps_ = timeStamps;
+
+    hierarchy_.initialize(timeStamps);
 
     // build up the internally used time stamps
     ////////////////////////////////////////////////////////////////
@@ -425,50 +396,32 @@ public:
  
     assert(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
 
-    pint_z.boundaryExchange();
-    pint_u.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
-
-    int timeRank = pint_u.communicators().getTimeRank();
-    const std::vector<int> & stencil = pint_c.stencil();
-
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
-
-    // v0 = u0
-    if(timeRank==0)
-      pint_u.getVectorPtr(-1)->set(*initialCond_);
-    else
-      pint_u.getVectorPtr(-1)->set(*pint_u.getRemoteBufferPtr(-1));
+    pint_z.boundaryExchangeLeftToRight();
+    pint_u.boundaryExchangeLeftToRight(PinTVector<Real>::RECV_ONLY); // this is going to block
 
     size_t numSteps = getTimeStampsByLevel(0)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
-      auto part_c = getStateVector(pint_c,s);   
-      auto part_u = getStateVector(pint_u,s);   
+      auto part_c = getStateVector(pint_c,s,false);   
+      auto part_u = getStateVector(pint_u,s,true);   
       auto part_z = getControlVector(pint_z,s); 
 
       // compute the constraint for this subdomain
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+      //    u_s = F(v_{s-1},z_s)
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
 
       constraint->solve(*part_c,*part_u,*part_z,tol);
 
       // satisfy the time continuity constraint, note that this just using the identity matrix
-      if(s<numSteps-1) {
-        pint_u.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s));     // assign true value to virtual value
+      if(s>0) {
+        pint_u.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s));
       }
     }
 
-    pint_u.boundaryExchange(PinTVector<Real>::SEND_ONLY);
-
-    // c.scale(-10000.0);
+    pint_u.boundaryExchangeLeftToRight(PinTVector<Real>::SEND_ONLY);
 
     // call the original implementation
     value(c,u,z,tol);
-
-    // std::cout << "U NORM = " << u.norm() << std::endl;
-    // std::cout << "Z NORM = " << z.norm() << std::endl;
   }  
 
   void value( V& c, const V& u, const V& z, Real& tol ) override {
@@ -485,41 +438,25 @@ public:
     assert(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
 
     // communicate neighbors, these are block calls
-    pint_u.boundaryExchange();
-    pint_z.boundaryExchange();
-
-    int timeRank = pint_u.communicators().getTimeRank();
-    const std::vector<int> & stencil = pint_c.stencil();
-
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
-
-    // v0 - u0
-    pint_c.getVectorPtr(-1)->set(*pint_u.getVectorPtr(-1)); 
-    if(timeRank==0)
-      pint_c.getVectorPtr(-1)->axpy(-1,*initialCond_);
-    else
-      pint_c.getVectorPtr(-1)->axpy(-1,*pint_u.getRemoteBufferPtr(-1));
-    pint_c.getVectorPtr(-1)->scale(globalScale_);
+    pint_u.boundaryExchangeLeftToRight();
+    pint_z.boundaryExchangeLeftToRight();
 
     size_t numSteps = getTimeStampsByLevel(0)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
-      auto part_c = getStateVector(pint_c,s);   // strip out initial condition/constraint
-      auto part_u = getStateVector(pint_u,s);   // strip out initial condition/constraint
+      auto part_c = getStateVector(pint_c,s,false);   
+      auto part_u = getStateVector(pint_u,s,true);   
       auto part_z = getControlVector(pint_z,s); 
   
       // compute the constraint for this subdomain
       //    u_s = F(v_{s-1},z_s)
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
   
       constraint->value(*part_c,*part_u,*part_z,tol);
   
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
-      if(s<numSteps-1) {
+      if(s>0) {
         pint_c.getVectorPtr(2*s+1)->set(*pint_u.getVectorPtr(2*s+1));     // this is the virtual value
         pint_c.getVectorPtr(2*s+1)->axpy(-1.0,*pint_u.getVectorPtr(2*s)); // this is the u value
         pint_c.getVectorPtr(2*s+1)->scale(globalScale_);
@@ -547,41 +484,27 @@ public:
     assert(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
 
     // communicate neighbors, these are blocking calls
-    pint_v.boundaryExchange();
-    pint_u.boundaryExchange();
-    pint_z.boundaryExchange();
-
-    int timeRank = pint_u.communicators().getTimeRank();
-    const std::vector<int> & stencil = pint_jv.stencil();
-
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
-
-    // v0 - u0
-    pint_jv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1)); 
-    if(timeRank!=0)
-      pint_jv.getVectorPtr(-1)->axpy(-1,*pint_v.getRemoteBufferPtr(-1));
-    pint_jv.getVectorPtr(-1)->scale(globalScale_);
+    pint_v.boundaryExchangeLeftToRight();
+    pint_u.boundaryExchangeLeftToRight();
+    pint_z.boundaryExchangeLeftToRight();
 
     size_t numSteps = getTimeStampsByLevel(level)->size()-1;
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
-      auto part_jv = getStateVector(pint_jv,s); 
-      auto part_v  = getStateVector(pint_v,s);    
-      auto part_u  = getStateVector(pint_u,s);   
+      auto part_jv = getStateVector(pint_jv,s,false); 
+      auto part_v  = getStateVector(pint_v,s,false);    
+      auto part_u  = getStateVector(pint_u,s,true);   
       auto part_z  = getControlVector(pint_z,s); 
   
       // compute the constraint for this subdomain
       //    u_s = F(v_{s-1},z_s)
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
   
       constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
-      if(s<numSteps-1) {
+      if(s>0) {
         pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));     // this is the virtual value
         pint_jv.getVectorPtr(2*s+1)->axpy(-1.0,*pint_v.getVectorPtr(2*s)); // this is the u value
         pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);

@@ -171,7 +171,7 @@ public:
 
   PinTVector(const PinTVector & v)
   {
-    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.globalSteps_,v.localSteps_,v.bufferSize_,v.replicate_);
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.globalSteps_,v.localSteps_,v.bufferSize_/v.replicate_,v.replicate_);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -337,11 +337,15 @@ public:
     // send from left to right
     for(int i=0;i<bufferSize_;i++) {
 
-      if(sendToRight)
+      if(sendToRight) {
+        // std::cout << myRank << ". SENDING " << i << "= " << getVectorPtr(numOwnedVectors()-bufferSize_+i)->norm() << std::endl;
         vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()-bufferSize_+i),i); // this is "owned"
+      }
       
-      if(recvFromLeft)
+      if(recvFromLeft) {
         vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(i),false,i);                  
+        // std::cout << myRank << ". RECVING " << i << " = " << getRemoteBufferPtr(i)->norm() << std::endl;
+      }
     }
   }
 
