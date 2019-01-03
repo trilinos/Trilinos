@@ -16,6 +16,7 @@ if [ "$called" == "$0" ] ; then
   echo "This script '$0' is being called.  Instead, it must be sourced!"
   exit 1
 fi
+unset called
 
 # Assert that ATDM_CONFIG_BUILD_NAME is set!
 if [ -z "$ATDM_CONFIG_BUILD_NAME" ] ; then
