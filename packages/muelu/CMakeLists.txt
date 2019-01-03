@@ -176,12 +176,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   OFF)
 
 # Define option to enable code that is refactored to use Kokkos
-# This is ON by default, unless only Serial is enabled, in which case it is off.
-# Define option to enable code that is refactored to use Kokkos
-# This is ON by default, unless only Serial is enabled, in which case it is off.
-IF ( ${PACKAGE_NAME}_ENABLE_Tpetra AND (Tpetra_INST_OPENMP OR Tpetra_INST_CUDA) )
+# This is ON by default when Kokkos is enabled.
+IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
   SET(Kokkos_Refactor_On_By_Default ON)
-  MESSAGE("-- MueLu: Kokkos_Refactor ON by default")
+  MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
 ELSE()
   SET(Kokkos_Refactor_On_By_Default OFF)
 ENDIF()

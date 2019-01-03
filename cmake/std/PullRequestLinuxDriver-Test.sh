@@ -6,6 +6,63 @@
 # merged with the Trilinos:develop branch by PullRequestLinuxDriver.sh.
 #
 
+#
+# Functions
+# 
+
+# Test the branch constraints for a Pull Request:
+# - Only pull requests from trilinos/Trilnos::develop are allowed
+#   to go into trilinos/Trilinos::master.  This check will help
+#   reduce accidental PR's into master directly.
+#
+# Parameters:
+#    src_repo   - Source repository of the PR (i.e., https://github.com/trilinos/Trilnos.git)
+#    src_branch - Branchname from the source repository.
+#    dst_repo   - Destination repository url
+#    dst_branch - Branchname in the destination repository
+#
+# On error, this function will exit the script with error code 99.
+#
+function test_pr_constraints_master()
+{
+    src_repo=${1:?}
+    src_branch=${2:?}
+    dst_repo=${3:?}
+    dst_branch=${4:?}
+
+    echo -e "------------------------------------------------------------------------------------------"
+
+    re_trilinos_url="(git@github.com:|https:\/\/github.com\/){1}trilinos\/Trilinos(\.git)?$"
+
+    if [[ "${dst_repo:?}" =~ ${re_trilinos_url:?} ]] && [[ "${dst_branch:?}" == "master"  ]]
+    then
+        echo -e "NOTICE: Destination branch is trilinos/Trilnos::master"
+
+        re_src_branchname="master_merge_[0-9]{8}_[0-9]{6}"
+
+        if [[ ! "${src_repo:?}" =~ ${re_trilinos_url:?} ]] || [[ ! "${src_branch:?}" =~ ${re_src_branchname:?} ]]
+        then
+            echo -e "ERROR : Source branch is NOT trilinos/Trilinos::master_merge_YYYYMMDD_HHMMSS"
+            echo -e "      : This violates Trilinos policy, pull requests into the master branch are restricted."
+            echo -e "      : Perhaps you forgot to specify the develop branch as the target in your PR?"
+            echo -e "------------------------------------------------------------------------------------------"
+            echo -e ""
+            exit 99
+        else
+            echo -e "NOTICE: Source branch IS trilinos/Trilinos::develop"
+            echo -e "      : This is allowed, proceeding with testing."
+        fi
+    else
+        echo -e "NOTICE: Destination branch is NOT trilinos/Trilinos::master"
+        echo -e "      : PR testing will proceed."
+    fi
+
+    echo -e "------------------------------------------------------------------------------------------"
+    echo -e ""
+}
+
+
+
 # This script expects to start out in the root level of the Jenkins workspace.
 # Let's make sure we're there.
 cd ${WORKSPACE:?}
@@ -52,21 +109,33 @@ which -a env
 
 # Useful information for when it counts.
 echo -e ""
-echo -e "================================================================================"
+echo -e "=========================================================================================="
 echo -e "Jenkins Environment Variables:"
 echo -e "- JOB_BASE_NAME: ${JOB_BASE_NAME:?}"
 echo -e "- JOB_NAME     : ${JOB_NAME:?}"
 echo -e "- WORKSPACE    : ${WORKSPACE:?}"
 echo -e "- NODE_NAME    : ${NODE_NAME:?}"
 echo -e ""
-echo -e "================================================================================"
+echo -e "=========================================================================================="
+echo -e "Parameters:"
+echo -e "- TRILINOS_SOURCE_BRANCH: ${TRILINOS_SOURCE_BRANCH:?}"
+echo -e "- TRILINOS_SOURCE_REPO  : ${TRILINOS_SOURCE_REPO:?}"
+echo -e "- TRILINOS_SOURCE_SHA   : ${TRILINOS_SOURCE_SHA:?}"
+echo -e ""
+echo -e "- TRILINOS_TARGET_BRANCH: ${TRILINOS_TARGET_BRANCH:?}"
+echo -e "- TRILINOS_TARGET_REPO  : ${TRILINOS_TARGET_REPO:?}"
+echo -e "- TRILINOS_TARGET_SHA   : ${TRILINOS_TARGET_SHA:?}"
+echo -e ""
+echo -e "- PULLREQUESTNUM        : ${PULLREQUESTNUM:?}"
+echo -e ""
+echo -e "=========================================================================================="
 echo -e "Environment:"
 echo -e ""
 echo -e "  pwd = `pwd`"
 echo -e ""
 env
 echo -e ""
-echo -e "================================================================================"
+echo -e "=========================================================================================="
 echo -e ""
 
 ## Rather than do proper option handling right now I am just going to
@@ -86,6 +155,18 @@ source /projects/sems/modulefiles/utils/sems-modules-init.sh
 declare -i ierror=0
 #Have to keep loading git
 module load sems-git/2.10.1
+
+
+
+#--------------------------------------------
+# Apply Guards
+#--------------------------------------------
+
+# if the target branch is master and source branch is not develop then
+# we should auto-fail the PR.
+test_pr_constraints_master ${TRILINOS_SOURCE_REPO:?} ${TRILINOS_SOURCE_BRANCH:?} \
+                           ${TRILINOS_TARGET_REPO:?} ${TRILINOS_TARGET_BRANCH:?}
+
 
 
 #--------------------------------------------
