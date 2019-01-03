@@ -237,6 +237,9 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   typedef Tpetra::CrsMatrix<LO,LO,GO> crs_type;
   typedef Tpetra::Import<LO,GO> import_type;
 
+
+  PANZER_FUNC_TIME_MONITOR("panzer_stk::buildNodeToCellMatrix");
+
   TEUCHOS_ASSERT(owned_cells.extent(0)==owned_cells_to_nodes.extent(0));
 
   // build a unque node map to use with fill complete
@@ -254,7 +257,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   // This is essentially another way to store cells_to_nodes
   RCP<crs_type> cell_to_node;
   {
-
+    PANZER_FUNC_TIME_MONITOR("Build matrix");
     // The matrix is indexed by (global cell, global node) = local node
     cell_to_node = rcp(new crs_type(cell_map,0));
     cell_to_node->resumeFill();
@@ -285,6 +288,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   // Transpose the cell_to_node array to create the node_to_cell array
   RCP<crs_type> node_to_cell;
   {
+    PANZER_FUNC_TIME_MONITOR("Tranpose matrix");
     // Create an object designed to transpose the (global cell, global node) matrix to give
     // a (global node, global cell) matrix
     Tpetra::RowMatrixTransposer<LO,LO,GO> transposer(cell_to_node);
@@ -320,6 +324,8 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                         Kokkos::View<const GO*> cells,
                         Kokkos::View<const GO**> cells_to_nodes)
 {
+
+  PANZER_FUNC_TIME_MONITOR("panzer_stk::buildGhostedCellOneRing");
   typedef Tpetra::CrsMatrix<int,int,GO> crs_type;
 
   // cells : (local cell index) -> global cell index
@@ -479,7 +485,10 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
       cell_pattern = Teuchos::rcp(new panzer::ElemFieldPattern(topology));
     }
 
-    conn.buildConnectivity(*cell_pattern);
+    {
+      PANZER_FUNC_TIME_MONITOR("Build connectivity");
+      conn.buildConnectivity(*cell_pattern);
+    }
   }
 
   std::vector<LO> owned_block_cells;
@@ -498,9 +507,10 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
   block_info.num_owned_cells = owned_block_cells.size();
   block_info.element_block_name = element_block_name;
   block_info.cell_topology = mesh.getCellTopology(element_block_name);
-
-  panzer::partitioning_utilities::setupSubLocalMeshInfo<LO,GO>(mesh_info, owned_block_cells, block_info);
-
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::partitioning_utilities::setupSubLocalMeshInfo");
+    panzer::partitioning_utilities::setupSubLocalMeshInfo<LO,GO>(mesh_info, owned_block_cells, block_info);
+  }
 }
 
 
@@ -868,6 +878,8 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
   Kokkos::View<GO*> virtual_cells = Kokkos::View<GO*>("virtual_cells",num_virtual_cells);
   {
+    PANZER_FUNC_TIME_MONITOR("Initial global index creation");
+
     const int num_ranks = comm->getSize();
     const int rank = comm->getRank();
 
@@ -917,6 +929,8 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   // Transfer information from 'faceToElement' datasets to local arrays
   {
+    PANZER_FUNC_TIME_MONITOR("Transer faceToElement to local");
+
     int virtual_cell_index = num_real_cells;
     for(size_t f=0;f<elems_by_face.extent(0);f++) {
 
@@ -982,77 +996,81 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // There are two of everything, an "owned" data structured corresponding to "owned"
   // cells. And a "ghstd" data structure corresponding to ghosted cells
   ////////////////////////////////////////////////////////////////////////////////////
+  {
+    PANZER_FUNC_TIME_MONITOR("Assign Indices");
+    mesh_info.cell_to_faces           = cell_to_face;
+    mesh_info.face_to_cells           = face_to_cells;      // faces
+    mesh_info.face_to_lidx            = face_to_localidx;
 
-  mesh_info.cell_to_faces           = cell_to_face;
-  mesh_info.face_to_cells           = face_to_cells;      // faces
-  mesh_info.face_to_lidx            = face_to_localidx;
+    mesh_info.num_owned_cells = owned_cells.extent(0);
+    mesh_info.num_ghstd_cells = ghstd_cells.extent(0);
+    mesh_info.num_virtual_cells = virtual_cells.extent(0);
 
-  mesh_info.num_owned_cells = owned_cells.extent(0);
-  mesh_info.num_ghstd_cells = ghstd_cells.extent(0);
-  mesh_info.num_virtual_cells = virtual_cells.extent(0);
+    mesh_info.global_cells = Kokkos::View<GO*>("global_cell_indices",num_total_cells);
+    mesh_info.local_cells = Kokkos::View<LO*>("local_cell_indices",num_total_cells);
 
-  mesh_info.global_cells = Kokkos::View<GO*>("global_cell_indices",num_total_cells);
-  mesh_info.local_cells = Kokkos::View<LO*>("local_cell_indices",num_total_cells);
+    for(int i=0;i<num_owned_cells;++i){
+      mesh_info.global_cells(i) = owned_cells(i);
+      mesh_info.local_cells(i) = i;
+    }
 
-  for(int i=0;i<num_owned_cells;++i){
-    mesh_info.global_cells(i) = owned_cells(i);
-    mesh_info.local_cells(i) = i;
-  }
+    for(int i=0;i<num_ghstd_cells;++i){
+      mesh_info.global_cells(i+num_owned_cells) = ghstd_cells(i);
+      mesh_info.local_cells(i+num_owned_cells) = i+num_owned_cells;
+    }
 
-  for(int i=0;i<num_ghstd_cells;++i){
-    mesh_info.global_cells(i+num_owned_cells) = ghstd_cells(i);
-    mesh_info.local_cells(i+num_owned_cells) = i+num_owned_cells;
-  }
+    for(int i=0;i<num_virtual_cells;++i){
+      mesh_info.global_cells(i+num_real_cells) = virtual_cells(i);
+      mesh_info.local_cells(i+num_real_cells) = i+num_real_cells;
+    }
 
-  for(int i=0;i<num_virtual_cells;++i){
-    mesh_info.global_cells(i+num_real_cells) = virtual_cells(i);
-    mesh_info.local_cells(i+num_real_cells) = i+num_real_cells;
-  }
+    mesh_info.cell_vertices = Kokkos::View<double***, PHX::Device>("cell_vertices",num_total_cells,vertices_per_cell,space_dim);
 
-  mesh_info.cell_vertices = Kokkos::View<double***, PHX::Device>("cell_vertices",num_total_cells,vertices_per_cell,space_dim);
+    // Initialize coordinates to zero
+    Kokkos::deep_copy(mesh_info.cell_vertices, 0.);
 
-  // Initialize coordinates to zero
-  Kokkos::deep_copy(mesh_info.cell_vertices, 0.);
-
-  for(int i=0;i<num_owned_cells;++i){
-    for(int j=0;j<vertices_per_cell;++j){
-      for(int k=0;k<space_dim;++k){
-        mesh_info.cell_vertices(i,j,k) = owned_vertices(i,j,k);
+    for(int i=0;i<num_owned_cells;++i){
+      for(int j=0;j<vertices_per_cell;++j){
+        for(int k=0;k<space_dim;++k){
+          mesh_info.cell_vertices(i,j,k) = owned_vertices(i,j,k);
+        }
       }
     }
-  }
 
-  for(int i=0;i<num_ghstd_cells;++i){
-    for(int j=0;j<vertices_per_cell;++j){
-      for(int k=0;k<space_dim;++k){
-        mesh_info.cell_vertices(i+num_owned_cells,j,k) = ghstd_vertices(i,j,k);
+    for(int i=0;i<num_ghstd_cells;++i){
+      for(int j=0;j<vertices_per_cell;++j){
+        for(int k=0;k<space_dim;++k){
+          mesh_info.cell_vertices(i+num_owned_cells,j,k) = ghstd_vertices(i,j,k);
+        }
       }
     }
-  }
 
-  // This will backfire at some point, but we're going to make the virtual cell have the same geometry as the cell it interfaces with
-  // This way we can define a virtual cell geometry without extruding the face outside of the domain
-  for(int i=0;i<num_virtual_cells;++i){
+    // This will backfire at some point, but we're going to make the virtual cell have the same geometry as the cell it interfaces with
+    // This way we can define a virtual cell geometry without extruding the face outside of the domain
+    {
+      PANZER_FUNC_TIME_MONITOR("Assign geometry traits");
+      for(int i=0;i<num_virtual_cells;++i){
 
-    const LO virtual_cell = i+num_real_cells;
-    bool exists = false;
-    for(int local_face=0; local_face<faces_per_cell; ++local_face){
-      const LO face = cell_to_face(virtual_cell, local_face);
-      if(face >= 0){
-        exists = true;
-        const LO other_side = (face_to_cells(face, 0) == virtual_cell) ? 1 : 0;
-        const LO real_cell = face_to_cells(face,other_side);
-        TEUCHOS_ASSERT(real_cell < num_real_cells);
-        for(int j=0;j<vertices_per_cell;++j){
-          for(int k=0;k<space_dim;++k){
-            mesh_info.cell_vertices(virtual_cell,j,k) = mesh_info.cell_vertices(real_cell,j,k);
+        const LO virtual_cell = i+num_real_cells;
+        bool exists = false;
+        for(int local_face=0; local_face<faces_per_cell; ++local_face){
+          const LO face = cell_to_face(virtual_cell, local_face);
+          if(face >= 0){
+            exists = true;
+            const LO other_side = (face_to_cells(face, 0) == virtual_cell) ? 1 : 0;
+            const LO real_cell = face_to_cells(face,other_side);
+            TEUCHOS_ASSERT(real_cell < num_real_cells);
+            for(int j=0;j<vertices_per_cell;++j){
+              for(int k=0;k<space_dim;++k){
+                mesh_info.cell_vertices(virtual_cell,j,k) = mesh_info.cell_vertices(real_cell,j,k);
+              }
+            }
+            break;
           }
         }
-        break;
+        TEUCHOS_TEST_FOR_EXCEPT_MSG(!exists, "panzer_stk::generateLocalMeshInfo : Virtual cell is not linked to real cell");
       }
     }
-
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!exists, "panzer_stk::generateLocalMeshInfo : Virtual cell is not linked to real cell");
   }
 
   // Setup element blocks and sidesets
@@ -1060,11 +1078,13 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   mesh.getSidesetNames(sideset_names);
 
   for(const std::string & element_block_name : element_block_names){
+    PANZER_FUNC_TIME_MONITOR("Set up setupLocalMeshBlockInfo");
     panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks[element_block_name];
     setupLocalMeshBlockInfo(mesh, conn, mesh_info, element_block_name, block_info);
 
     // Setup sidesets
     for(const std::string & sideset_name : sideset_names){
+      PANZER_FUNC_TIME_MONITOR("Setup LocalMeshSidesetInfo");
       panzer::LocalMeshSidesetInfo<LO,GO> & sideset_info = mesh_info.sidesets[element_block_name][sideset_name];
       setupLocalMeshSidesetInfo(mesh, conn, mesh_info, element_block_name, sideset_name, sideset_info);
     }
