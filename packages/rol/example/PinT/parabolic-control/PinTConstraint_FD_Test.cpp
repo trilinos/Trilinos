@@ -67,7 +67,7 @@
     else if(myRank==0) { \
       std::stringstream ss; \
       ss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
-      std::cout << ss.str() << std::endl; \
+      *outStream << ss.str() << std::endl; \
     }}
 
 #define CHECK_EQUALITY(expr1,expr2) \
@@ -77,7 +77,7 @@
       ss << myRank << ".  " << expr1 << " != " << expr2 << std::endl; \
       throw std::logic_error(ss.str()); \
     } else if(myRank==0) \
-    std::cout << myRank << ".  CHECK_EQUALITY line " << __LINE__ << " (passed): " << expr1 << " == " << expr2 << std::endl; \
+    *outStream << myRank << ".  CHECK_EQUALITY line " << __LINE__ << " (passed): " << expr1 << " == " << expr2 << std::endl; \
 
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
@@ -223,7 +223,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     CHECK_ASSERT(errors[6][3]/errors[6][1] < 1e-6);
   }
 
-#if 0
   // check the Adjoint Jacobian_1
   /////////////////////////////////////////////////////////////////////////////
   {
@@ -243,7 +242,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto error = pint_constraint.checkAdjointConsistencyJacobian_2(*w_u,*v_z,*state,*control,true,*outStream);
     CHECK_ASSERT(error<1e-8);
   }
-#endif
 
   // check inverse Jacobian_1
   /////////////////////////////////////////////////////////////////////////////
@@ -253,8 +251,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     CHECK_ASSERT(inv_1 < tol);
   }
 
-  return;
-
   // check inverse adjoint Jacobian_1
   /////////////////////////////////////////////////////////////////////////////
   {
@@ -262,6 +258,8 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     CHECK_ASSERT(adj_inv_1 < tol);
   }
+
+  return;
 
   auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
   auto v_1 = x->clone();
@@ -307,7 +305,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                      *state,
                                      *control,tol);
 
-    pint_jv.boundaryExchange();
+    pint_jv.boundaryExchangeLeftToRight();
 
     // fix up right hand side to give the right solution for the sub domain solvers
     if(myRank!=0) {

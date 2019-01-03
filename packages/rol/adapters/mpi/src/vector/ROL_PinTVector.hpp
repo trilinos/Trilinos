@@ -318,6 +318,28 @@ public:
   */
   void boundaryExchangeLeftToRight(ESendRecv   send_recv=SEND_AND_RECV) const
   {
+    // build the send buffer 
+    std::vector<Ptr<Vector<Real>>> sendBuffer;
+    for(int i=0;i<bufferSize_;i++) {
+        sendBuffer.push_back(getVectorPtr(numOwnedVectors()-bufferSize_+i));
+    }
+
+    boundaryExchangeLeftToRight(sendBuffer,send_recv);
+  }
+
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the last vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is less than the recieving.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeLeftToRight(const std::vector<Ptr<Vector<Real>>> & sendBuffer,
+                                   ESendRecv   send_recv=SEND_AND_RECV) const
+  {
+    assert(sendBuffer.size() <= bufferSize_);
+
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
@@ -335,16 +357,15 @@ public:
     // do nothing if(send_recv==SEND_AND_RECV) 
     
     // send from left to right
-    for(int i=0;i<bufferSize_;i++) {
+    int bufferSize = int(sendBuffer.size());
+    for(int i=0;i<bufferSize;i++) {
 
       if(sendToRight) {
-        // std::cout << myRank << ". SENDING " << i << "= " << getVectorPtr(numOwnedVectors()-bufferSize_+i)->norm() << std::endl;
-        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedVectors()-bufferSize_+i),i); // this is "owned"
+        vectorComm_->send(timeComm,myRank+1,*sendBuffer[i],i); // this is "owned"
       }
       
       if(recvFromLeft) {
         vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(i),false,i);                  
-        // std::cout << myRank << ". RECVING " << i << " = " << getRemoteBufferPtr(i)->norm() << std::endl;
       }
     }
   }
@@ -359,6 +380,26 @@ public:
   */
   void boundaryExchangeRightToLeft(ESendRecv   send_recv=SEND_AND_RECV) const
   {
+    // build the send buffer 
+    std::vector<Ptr<Vector<Real>>> sendBuffer;
+    for(int i=0;i<bufferSize_;i++) {
+        sendBuffer.push_back(getVectorPtr(i));
+    }
+
+    boundaryExchangeRightToLeft(sendBuffer,send_recv);
+  }
+
+  /** \brief Exchange unknowns with neighboring processors.
+      
+      Send the first vector on the sending processor to the remote buffer on the receiving
+      processor. In this case the time rank of the sending process is greater than the recieving.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does ensure the components are correct on processor.
+  */
+  void boundaryExchangeRightToLeft(const std::vector<Ptr<Vector<Real>>> & sendBuffer,
+                                   ESendRecv   send_recv=SEND_AND_RECV) const
+  {
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
@@ -368,18 +409,19 @@ public:
     // this allows finer granularity of control of send recieve
     // and will permit some blocking communication
     if(send_recv==SEND_ONLY) {
-     recvFromRight = false;
+      recvFromRight = false;
     }
     if(send_recv==RECV_ONLY) {
-     sendToLeft = false;
+      sendToLeft = false;
     }
     // do nothing if(send_recv==SEND_AND_RECV) 
-    
+
     // send from right to left
-    for(int i=0;i<bufferSize_;i++) {
+    int bufferSize = int(sendBuffer.size());
+    for(int i=0;i<bufferSize;i++) {
       if(sendToLeft)
-        vectorComm_->send(timeComm,myRank-1,*getVectorPtr(i),i); // this is "owned"
-      
+        vectorComm_->send(timeComm,myRank-1,*sendBuffer[i],i); // this is "owned"
+
       if(recvFromRight)
         vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(i),false,i);
     }
