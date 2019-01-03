@@ -189,8 +189,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     Tpetra::endFill(g2);
     g1.fillComplete();
 
-    // FIXME: Use graph comparison here
-    success=true;
+    success = compare_final_graph_structure(out,g1,g2);
     TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
@@ -232,11 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   g1.fillComplete();
   g2.endFill();
 
-#ifdef CRSGRAPH_ACTUALLY_WORKS
   success = compare_final_graph_structure(out,g1,g2);
-#else
-  success = true;
-#endif
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
