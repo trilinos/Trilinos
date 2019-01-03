@@ -157,9 +157,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsGraph() {
 
   if(inactiveCrsGraph_.is_null()) return;
 
-  // FIXME: Use CrsGraph's swap routine here once it is implemented!!!
-  // 
-  //  this->swap(*inactiveCrsGraph_);
+  this->swap(*inactiveCrsGraph_);
 
 }//end switchActiveCrsGraph
 
