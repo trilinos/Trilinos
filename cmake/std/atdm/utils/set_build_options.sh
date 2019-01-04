@@ -84,12 +84,12 @@ elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-9.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2-gnu-7.2.0"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2_gnu-7.2.0"* ]]; then
-  export ATDM_CONFIG_COMPILER=CUDA-9.2-GNU-7.2.0
+  export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-9.2"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-9.2
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0-gnu-7.4.0"* ]] \
   || [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0_gnu-7.4.0"* ]]; then
-  export ATDM_CONFIG_COMPILER=CUDA-10.0-GNU-7.4.0
+  export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda-10.0"* ]]; then
   export ATDM_CONFIG_COMPILER=CUDA-10.0
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"cuda"* ]]; then
@@ -192,13 +192,13 @@ fi
 # Set the optimization level
 # Defaults to debug
 if [[ $ATDM_CONFIG_BUILD_NAME == *"release-debug"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"release_debug"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt-dbg"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"opt_dbg"* ]]; then
-  export ATDM_CONFIG_BUILD_TYPE=RELEASE_DEBUG;
+  export ATDM_CONFIG_BUILD_TYPE=RELEASE-DEBUG;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"release"* ]]; then
   export ATDM_CONFIG_BUILD_TYPE=RELEASE;
 elif [[ $ATDM_CONFIG_BUILD_NAME == *"debug"* ]]; then
