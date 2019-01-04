@@ -155,6 +155,16 @@ atdm_config_add_libs_to_var ATDM_CONFIG_BLAS_LIBS ${CBLAS_ROOT}/lib/intel64 .so 
 
 export ATDM_CONFIG_LAPACK_LIBS=${ATDM_CONFIG_BLAS_LIBS}
 
+# Boost
+
+atdm_config_add_libs_to_var ATDM_CONFIG_BOOST_LIBS ${BOOST_ROOT}/lib .a \
+  boost_program_options boost_system
+
+# NOTE: Above, the SPARC-installed TPLs only have *.a files.  There are no
+# *.so files.
+
+# HDF5 and Netcdf
+
 # NOTE: HDF5_ROOT and NETCDF_ROOT should already be set in env from above
 # module loads!
 
