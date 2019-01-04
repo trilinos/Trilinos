@@ -259,8 +259,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     CHECK_ASSERT(adj_inv_1 < tol);
   }
 
-  return;
-
   auto x   = makePtr<ROL::Vector_SimOpt<RealT>>(state,control);
   auto v_1 = x->clone();
   auto v_2 = state->clone();
@@ -284,37 +282,38 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     PinTVector<RealT> & pint_ajv = dynamic_cast<PinTVector<RealT>&>(*ajv);
 
     ROL::RandomizeVector<RealT>(*v);
+    // v->setScalar(3.3);
+    // state->setScalar(1.1);
+    // control->setScalar(1.1);
 
     double tol = 1e-12;
 
-    // make sure we are globally consistent
-    state->boundaryExchange();
-    control->boundaryExchange();
-    pint_v.boundaryExchange();
+    std::stringstream ss;
 
     // compute jacobian action
     pint_constraint.applyJacobian_1(*jv,
-                              *v,
-                              *state,
-                              *control,tol);
-
+                                    *v,
+                                    *state,
+                                    *control,tol);
 
     // compute jacobian action
     pint_constraint.applyAdjointJacobian_1(*ajv,
-                                     *v,
-                                     *state,
-                                     *control,tol);
-
-    pint_jv.boundaryExchangeLeftToRight();
+                                           *v,
+                                           *state,
+                                           *control,tol);
 
     // fix up right hand side to give the right solution for the sub domain solvers
-    if(myRank!=0) {
-      pint_jv.getVectorPtr(-1)->axpy(1.0,*pint_v.getRemoteBufferPtr(-1)); 
+    int numSteps = pint_jv.numOwnedSteps();
 
-      pint_ajv.getRemoteBufferPtr(-1)->set(*pint_v.getVectorPtr(-1));
+    // for the adjoint call
+    pint_v.boundaryExchangeRightToLeft();
+
+    if(myRank+1<numRanks) {
+      // the last rank is handled special to include the last constraint
+      pint_jv.getVectorPtr(2*(numSteps-1)+1)->axpy(1.0,*pint_v.getVectorPtr(2*(numSteps-1))); 
+
+      pint_ajv.getVectorPtr(2*(numSteps-1))->axpy(1.0,*pint_v.getVectorPtr(2*(numSteps-1)+1));
     }
-
-    pint_ajv.boundaryExchangeSumInto();
 
     int level = 0;
     pint_constraint.invertTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*fv),
@@ -341,7 +340,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   
       if(myRank==0)
         *outStream << "Testing vector norm = " << v_norm  << " (error = " << fv_norm/v_norm << ")" << std::endl;
-  
+
       // check norms
       CHECK_ASSERT(fv_norm/v_norm <= 1e-12);
 
@@ -361,13 +360,12 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                                   tol,
                                                   level);
 
-    lfv->zero();
     pint_constraint.applyAdjointJacobian_1_leveled_approx(*lfv,
-                                                   *afv,
-                                                   *state,
-                                                   *control,
-                                                   tol,
-                                                   level);
+                                                          *afv,
+                                                          *state,
+                                                          *control,
+                                                          tol,
+                                                          level);
 
     RealT ajv_norm  = ajv->norm();
     
@@ -376,8 +374,15 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       afv->axpy(-1.0,*v);
       RealT afv_norm = afv->norm();
 
+      afv->print(ss);
+
       if(myRank==0)
         *outStream << "Testing vector norm = " << v_norm  << " (error = " << afv_norm/v_norm << ")" << std::endl;
+
+      // std::cout << "====================Q===============\n"
+      //           << "PROCESSOR " << myRank << "\n"
+      //           << ss.str() 
+      //           << "\n==================Q=================\n" << std::endl;
 
       CHECK_ASSERT(afv_norm/v_norm <= 1e-12);
   
@@ -388,10 +393,11 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
       lfv->axpy(-1.0,*ajv);
       RealT lfv_norm  = lfv->norm();
 
-      if(myRank==0)
-        *outStream << "Testing vector norm = " << ajv_norm  << " (error = " << lfv_norm/ajv_norm << ")" << std::endl;
-
       CHECK_ASSERT(lfv_norm/ajv_norm <= 1e-13);
+
+      if(myRank==0)
+        *outStream << "Adjoint block Jacobi subdomain apply PASSED with proc " 
+                   << " (relative error = " << lfv_norm / ajv_norm  << ")\n" << std::endl;
     }
 
   }

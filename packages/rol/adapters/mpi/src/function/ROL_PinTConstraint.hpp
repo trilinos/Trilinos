@@ -516,55 +516,44 @@ public:
 
   void applyJacobian_1_leveled_approx( V& jv, const V& v, const V& u, 
                        const V& z, Real& tol,int level) {
-    jv.zero();
-
     PinTVector<Real>       & pint_jv = dynamic_cast<PinTVector<Real>&>(jv);
     const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
     const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(u);
     const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
        // its possible we won't always want to cast to a PinT vector here
+      
+    int timeRank = pint_u.communicators().getTimeRank();
+    int timeSize = pint_u.communicators().getTimeSize();
+    bool lastRank = (timeRank+1==timeSize); // do something special on the last rank
  
     assert(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
     assert(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
 
     // communicate neighbors, these are blocking calls
-    pint_v.boundaryExchange();
-    pint_u.boundaryExchange();
-    pint_z.boundaryExchange();
+    pint_v.boundaryExchangeLeftToRight();
+    pint_u.boundaryExchangeLeftToRight();
+    pint_z.boundaryExchangeLeftToRight();
 
-    // int timeRank = pint_u.communicators().getTimeRank(); // Unused
-    const std::vector<int> & stencil = pint_jv.stencil();
-
-    // assert a forward stencil
-    assert(stencil.size()==2);
-    assert(stencil[0]==-1);
-    assert(stencil[1]== 0);
-
-    // v0 - u0
-    pint_jv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1)); 
-    pint_jv.getVectorPtr(-1)->scale(globalScale_);
-
-    size_t numSteps = getTimeStampsByLevel(level)->size()-1;
+    size_t numSteps = getTimeStampsByLevel(level)->size();
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
 
-      auto part_jv = getStateVector(pint_jv,s); 
-      auto part_v  = getStateVector(pint_v,s);    
-      auto part_u  = getStateVector(pint_u,s);   
+      auto part_jv = getStateVector(pint_jv,s,false); 
+      auto part_v  = getStateVector(pint_v,s,false);    
+      auto part_u  = getStateVector(pint_u,s,true);   
       auto part_z  = getControlVector(pint_z,s); 
   
       // compute the constraint for this subdomain
       //    u_s = F(v_{s-1},z_s)
-      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+      auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
   
       constraint->applyJacobian_1(*part_jv,*part_v,*part_u,*part_z,tol);
   
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
-      if(s<numSteps-1) {
-        pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));     // this is the virtual value
+      pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));       // this is the virtual value
+      if(s+1<numSteps or lastRank)
         pint_jv.getVectorPtr(2*s+1)->axpy(-1.0,*pint_v.getVectorPtr(2*s)); // this is the u value
-        pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);
-      }
+      pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);
     }
   }
 
@@ -760,7 +749,11 @@ public:
      const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
      const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
      const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
-     // its possible we won't always want to cast to a PinT vector here
+       // its possible we won't always want to cast to a PinT vector here
+     
+     int timeRank = pint_u.communicators().getTimeRank();
+     int timeSize = pint_u.communicators().getTimeSize();
+     bool lastRank = (timeRank+1==timeSize); // do something special on the last rank
 
      assert(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
      assert(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
@@ -769,46 +762,40 @@ public:
      pint_ajv.zeroAll();
 
      // communicate neighbors, these are block calls
-     pint_v.boundaryExchange();
-     pint_u.boundaryExchange();
-     pint_z.boundaryExchange();
+     pint_v.boundaryExchangeLeftToRight();
+     pint_u.boundaryExchangeLeftToRight();
+     pint_z.boundaryExchangeLeftToRight();
 
-     // int timeRank = pint_u.communicators().getTimeRank();
-     const std::vector<int> & stencil = pint_ajv.stencil();
-
-     // assert a forward stencil
-     assert(stencil.size()==2);
-     assert(stencil[0]==-1);
-     assert(stencil[1]== 0);
-
-     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
-     for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
-       auto part_ajv = getStateVector(pint_ajv,s);
-       auto part_v   = getStateVector(pint_v,s);   
-       auto part_u   = getStateVector(pint_u,s);   
+     std::vector<Ptr<Vector<Real>>> sendBuffer(1);
+ 
+     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size());
+     for(int s=numSteps-1;s>=0;s--) { 
+       auto part_ajv = getStateVector(pint_ajv,s,false);
+       auto part_v   = getStateVector(pint_v,s,false);   
+       auto part_u   = getStateVector(pint_u,s,true);   
        auto part_z   = getControlVector(pint_z,s); 
 
        // handle the constraint adjoint: Required for correctly applying step adjoint
-       if(s<numSteps-1)
-         pint_ajv.getVectorPtr(2*s+1)->axpy(globalScale_,*pint_v.getVectorPtr(2*s+1));
+       pint_ajv.getVectorPtr(2*s+1)->axpy(globalScale_,*pint_v.getVectorPtr(2*s+1));
 
        // compute the constraint for this subdomain
-       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
 
        constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
 
        // this is the remainder of the constraint application
-       if(s<numSteps-1)
+       if(s+1<numSteps or lastRank) 
          pint_ajv.getVectorPtr(2*s)->axpy(-globalScale_,*pint_v.getVectorPtr(2*s+1));
+
+       sendBuffer[0] = part_ajv->get(0);
      }
 
-     pint_ajv.getVectorPtr(-1)->axpy(globalScale_,*pint_v.getVectorPtr(-1));
-     // pint_ajv.getRemoteBufferPtr(-1)->set(*pint_v.getVectorPtr(-1)); // this will be sent to the remote processor
-     // pint_ajv.getRemoteBufferPtr(-1)->scale(-globalScale_);
-     pint_ajv.getRemoteBufferPtr(-1)->zero();
+     pint_ajv.boundaryExchangeRightToLeft(sendBuffer);
 
      // this sums from the remote buffer into the local buffer which is part of the vector
-     // pint_ajv.boundaryExchangeSumInto();
+     if(not lastRank) {
+       pint_ajv.getVectorPtr(2*(numSteps-1)+1)->axpy(1.0,*pint_ajv.getRemoteBufferPtr(0));
+     }
    }
 
    void applyAdjointJacobian_2( V& ajv,  const V& v, const V& u,
@@ -960,7 +947,7 @@ public:
      invertAdjointTimeStepJacobian(pint_pv,pint_v,pint_u,pint_z,tol,level);
    }
 
-   // Done in parallel, no blocking, solve a linear system on this processor
+   // Solve a linear system on this processor
    void invertTimeStepJacobian(PinTVector<Real>       & pint_ijv,
                                const PinTVector<Real> & pint_v,
                                const PinTVector<Real> & pint_u,
@@ -968,30 +955,40 @@ public:
                                Real &tol,
                                int level) 
    {
-//  Unused
-//     int timeRank = pint_u.communicators().getTimeRank();
+     int timeRank = pint_u.communicators().getTimeRank();
+     int timeSize = pint_u.communicators().getTimeSize();
+     bool lastRank = (timeRank+1==timeSize); // do something special on the last rank
 
-     // update the old time information
-     pint_ijv.getVectorPtr(-1)->set(*pint_v.getVectorPtr(-1));
-     pint_ijv.getVectorPtr(-1)->scale(1.0/globalScale_);
+     pint_z.boundaryExchangeLeftToRight();
+     pint_v.boundaryExchangeLeftToRight();
+     pint_u.boundaryExchangeLeftToRight();
 
-     size_t numSteps = getTimeStampsByLevel(level)->size()-1;
-     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
+     // fix up old data with previous time step information: This is the match to *** below
+     pint_ijv.getRemoteBufferPtr(1)->set(*pint_v.getRemoteBufferPtr(1));
+     pint_ijv.getRemoteBufferPtr(1)->scale(1.0/globalScale_);
 
-       auto part_ijv = getStateVector(pint_ijv,s);   
-       auto part_v   = getStateVector(pint_v,s);   
-       auto part_u   = getStateVector(pint_u,s);   
+     size_t numSteps = getTimeStampsByLevel(level)->size();
+     for(size_t s=0;s<numSteps;s++) { 
+
+       auto part_ijv = getStateVector(pint_ijv,s,false);   
+       auto part_v   = getStateVector(pint_v,s,false);   
+       auto part_u   = getStateVector(pint_u,s,true);   
        auto part_z   = getControlVector(pint_z,s); 
 
        // compute the constraint for this subdomain
-       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
 
        constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
 
        // satisfy the time continuity constraint, note that this just using the identity matrix
-       if(s<numSteps-1) {
+       if(s+1<numSteps or lastRank) {
          pint_ijv.getVectorPtr(2*s+1)->set(*pint_ijv.getVectorPtr(2*s));    
          pint_ijv.getVectorPtr(2*s+1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(2*s+1));        
+       }
+       else {
+         // ***
+         pint_ijv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));      
+         pint_ijv.getVectorPtr(2*s+1)->scale(1.0/globalScale_);
        }
      }
    }
@@ -1004,32 +1001,58 @@ public:
                                       Real &tol,
                                       int level)
    {
+     int timeRank = pint_u.communicators().getTimeRank();
+     int timeSize = pint_u.communicators().getTimeSize();
+     bool lastRank = (timeRank+1==timeSize); // do something special on the last rank
+
      // this is an inefficient hack (see line below where pint_v is modified!!!!)
      ///////////////////////////////////
      auto v_copy = pint_v_src.clone();
      v_copy->set(pint_v_src);
      PinTVector<Real> & pint_v = dynamic_cast<PinTVector<Real>&>(*v_copy);
      ///////////////////////////////////
-     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size())-1;
 
-     for(int s=numSteps-1;s>=0;s--) { // num time steps == num time stamps-1 
-       auto part_iajv = getStateVector(pint_iajv,s);   
-       auto part_v    = getStateVector(pint_v,s);   
-       auto part_u    = getStateVector(pint_u,s);   
-       auto part_z    = getControlVector(pint_z,s); 
+     assert(pint_iajv.numOwnedSteps()==pint_u.numOwnedSteps());
+     assert(pint_iajv.numOwnedSteps()==pint_v.numOwnedSteps());
 
-       if(s<numSteps-1) {
-         pint_iajv.getVectorPtr(2*s+1)->scale(1.0/globalScale_);
-         pint_v.getVectorPtr(2*s)->axpy(globalScale_,*pint_iajv.getVectorPtr(2*s+1));
-       }
+     pint_z.boundaryExchangeLeftToRight();
+     pint_v.boundaryExchangeLeftToRight();
+     pint_u.boundaryExchangeLeftToRight();
 
-       // compute the constraint for this subdomain
-       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s-1),level,s);
-
-       constraint->applyInverseAdjointJacobian_1(*part_iajv,*part_v,*part_u,*part_z,tol);
+     int numSteps = Teuchos::as<int>(getTimeStampsByLevel(level)->size());
+     if(lastRank) {
+       // this is the last rank case
+       pint_iajv.getVectorPtr(2*(numSteps-1)+1)->set(*pint_v.getVectorPtr(2*(numSteps-1)+1));
+     }
+     else {
+       pint_iajv.getVectorPtr(2*(numSteps-1)+1)->zero();
      }
 
-     pint_iajv.getVectorPtr(-1)->scale(1.0/globalScale_);
+     std::vector<Ptr<Vector<Real>>> sendBuffer(1);
+     for(int s=numSteps-1;s>=0;s--) {
+       auto part_iajv = getStateVector(pint_iajv,s,false);   
+       auto part_v    = getStateVector(pint_v,s,false);   
+       auto part_u    = getStateVector(pint_u,s,true);   
+       auto part_z    = getControlVector(pint_z,s); 
+
+       pint_iajv.getVectorPtr(2*s+1)->scale(1.0/globalScale_);
+       pint_v.getVectorPtr(2*s)->axpy(globalScale_,*pint_iajv.getVectorPtr(2*s+1));
+
+       // compute the constraint for this subdomain
+       auto constraint = getSerialConstraint(pint_u.getVectorPtr(2*s),level,s);
+
+       constraint->applyInverseAdjointJacobian_1(*part_iajv,*part_v,*part_u,*part_z,tol);
+
+       sendBuffer[0] = part_iajv->get(0);
+     }
+
+     pint_iajv.boundaryExchangeRightToLeft(sendBuffer);
+
+     if(not lastRank) {
+       // grab the pre-computed solution for the right hand side
+       pint_iajv.getVectorPtr(2*(numSteps-1)+1)->set(*pint_iajv.getRemoteBufferPtr(0));
+       pint_iajv.getVectorPtr(2*(numSteps-1)+1)->scale(1.0/globalScale_);
+     }
    }
  
    virtual void applyPreconditioner(Vector<Real> &pv,
