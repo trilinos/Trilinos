@@ -32,20 +32,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AugmentedSystem_test
-  SOURCES AugmentedSystem_test.cpp
+  SOURCES AugmentedSystem.cpp
   ARGS PrintItAll
   COMM mpi
   NUM_MPI_PROCS 2
   PASS_REGULAR_EXPRESSION "TEST PASSED"
   ADD_DIR_TO_NAME
 )
-
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(
-# RestrictProlongOps 
-#  SOURCES RestrictProlongOps.cpp
-#  ARGS PrintItAll
-#  COMM mpi
-#  NUM_MPI_PROCS 2
-#  PASS_REGULAR_EXPRESSION "TEST PASSED"
-#  ADD_DIR_TO_NAME
-#)

@@ -67,8 +67,6 @@
 using RealT = double;
 using size_type = std::vector<RealT>::size_type;
 
-void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
-void run_test_simple(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
 int main( int argc, char* argv[] ) 
@@ -86,8 +84,6 @@ int main( int argc, char* argv[] )
 
   try {
 
-    // run_test(MPI_COMM_WORLD, outStream);
-    // run_test_simple(MPI_COMM_WORLD, outStream);
     run_test_kkt(MPI_COMM_WORLD, outStream);
 
   }
