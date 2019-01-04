@@ -176,6 +176,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   }
 
   ROL::PinTConstraint<RealT> pint_constraint(dyn_con,u0,timeStamp);
+  pint_constraint.applyMultigrid(2,communicators,vectorComm);
 
   double tol = 1e-10;
 

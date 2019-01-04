@@ -284,8 +284,8 @@ void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   *outStream << rank << "Test Restriction " << std::endl;
   *outStream << rank << "**********************************************************************" << std::endl;
 
-  hierarchy.restrictSimVector(pintSimVec_0,pintSimVec_1);
-  hierarchy.restrictSimVector(pintSimVec_1,pintSimVec_2);
+  hierarchy.restrictSimVector(pintSimVec_0,pintSimVec_1,0);
+  hierarchy.restrictSimVector(pintSimVec_1,pintSimVec_2,1);
 
   *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
   *outStream << rank << "Level 0 = " << printVector_Primary(pintSimVec_0) << std::endl;
@@ -339,8 +339,8 @@ void testRestrictionProlong_SimVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   pintSimVec_0_prolong.zero(); 
   pintSimVec_1_prolong.zero(); 
 
-  hierarchy.prolongSimVector(pintSimVec_2,pintSimVec_1_prolong);
-  hierarchy.prolongSimVector(pintSimVec_1_prolong,pintSimVec_0_prolong);
+  hierarchy.prolongSimVector(pintSimVec_2,pintSimVec_1_prolong,2);
+  hierarchy.prolongSimVector(pintSimVec_1_prolong,pintSimVec_0_prolong,1);
 
   *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
   *outStream << rank << "Level 0 = " << printVector_Primary(pintSimVec_0_prolong) << std::endl;
@@ -487,8 +487,8 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   *outStream << rank << "Test Restriction " << std::endl;
   *outStream << rank << "**********************************************************************" << std::endl;
 
-  hierarchy.restrictOptVector(pintOptVec_0,pintOptVec_1);
-  hierarchy.restrictOptVector(pintOptVec_1,pintOptVec_2);
+  hierarchy.restrictOptVector(pintOptVec_0,pintOptVec_1,0);
+  hierarchy.restrictOptVector(pintOptVec_1,pintOptVec_2,1);
 
   *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
   *outStream << rank << "Level 0 = " << printVector_Control(pintOptVec_0) << std::endl;
@@ -534,8 +534,8 @@ void testRestrictionProlong_OptVector(MPI_Comm comm, const ROL::Ptr<std::ostream
   pintOptVec_0_prolong.zero(); 
   pintOptVec_1_prolong.zero(); 
 
-  hierarchy.prolongOptVector(pintOptVec_2,pintOptVec_1_prolong);
-  hierarchy.prolongOptVector(pintOptVec_1_prolong,pintOptVec_0_prolong);
+  hierarchy.prolongOptVector(pintOptVec_2,pintOptVec_1_prolong,2);
+  hierarchy.prolongOptVector(pintOptVec_1_prolong,pintOptVec_0_prolong,1);
 
   *outStream << printTimeStamps(rank+"Level 0 = ",*stamps_0) << std::endl;
   *outStream << rank << "Level 0 = " << printVector_Control(pintOptVec_0_prolong) << std::endl;

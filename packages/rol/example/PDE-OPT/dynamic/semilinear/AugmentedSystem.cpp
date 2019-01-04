@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
 
     // build the parallel in time constraint from the user constraint
     ROL::Ptr<ROL::PinTConstraint<RealT>> pint_con = ROL::makePtr<ROL::PinTConstraint<RealT>>(dyn_con,u0,timeStamp);
-    pint_con->applyMultigrid(numLevels);
+    pint_con->applyMultigrid(numLevels,communicators,vectorComm);
     pint_con->setSweeps(sweeps);
     pint_con->setRelaxation(omega);
     pint_con->setCoarseSweeps(coarseSweeps);
@@ -273,7 +273,6 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*kkt_x_in);
     kkt_b->zero();
  
-   
     if(myRank==0) {
       (*outStream) << "Applying augmented KKT system" << std::endl;
     }

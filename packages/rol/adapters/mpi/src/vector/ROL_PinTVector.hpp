@@ -105,6 +105,8 @@ protected:
     int numRanks = communicators_->getTimeSize();
     int myRank   = communicators_->getTimeRank();
 
+    bool stepOff = false;
+
     if(localSteps_<0 and globalSteps_>=0) {
 
       // determine which steps are owned by this processor
@@ -128,9 +130,14 @@ protected:
 
       localSteps_ = stepEnd_-stepStart_;
     }
-    else if(localSteps_>=0) {
+
+   //  else if(localSteps_>=0) 
+    {
+      stepOff = true;
+
       int foundTotalSteps = 0;
       MPI_Allreduce(&localSteps_,&foundTotalSteps,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+
       if(globalSteps_>=0) 
         assert(foundTotalSteps==globalSteps_);
       else 
@@ -138,17 +145,25 @@ protected:
 
       stepStart_ = 0;
       MPI_Exscan(&localSteps_,&stepStart_,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+      if(myRank==0) stepStart_ = 0;
+
       stepEnd_ = stepStart_+localSteps_;
     }
-    else {
-      std::stringstream ss;
-      ss << "ROL::PinTVector::must assign positive number to one of local or global steps: found local = " 
-         << localSteps_ << ", global = " << globalSteps_;
-      throw std::logic_error(ss.str());
-    }
 
-    assert(stepStart_>=0);
-    assert(stepEnd_>stepStart_);
+    // else {
+    //   std::stringstream ss;
+    //   ss << "ROL::PinTVector::must assign positive number to one of local or global steps: found local = " 
+    //      << localSteps_ << ", global = " << globalSteps_;
+    //   throw std::logic_error(ss.str());
+    // }
+ 
+    int input = stepEnd_>globalSteps_;
+    int test = 0;
+    MPI_Allreduce(&input,&test,1,MPI_INT,MPI_SUM,communicators_->getTimeCommunicator());
+
+    if(test) {
+      std::cout << "P" << myRank << ". step range = " << stepStart_ << " " << stepEnd_ << " of " << globalSteps_ << " " << stepOff << std::endl;
+    }
   }
 
   void allocateBoundaryExchangeVectors(int sz)
@@ -167,11 +182,24 @@ public:
 
   PinTVector()
     : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {}
 
   PinTVector(const PinTVector & v)
+    : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {
-    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.globalSteps_,v.localSteps_,v.bufferSize_/v.replicate_,v.replicate_);
+    initialize(v.communicators_,v.vectorComm_,v.localVector_,v.globalSteps_,v.localSteps_,v.bufferSize_/v.replicate_,v.replicate_,v.stepStart_,v.stepEnd_);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -181,8 +209,15 @@ public:
              const std::vector<int> & stencil,
              int replicate=1)
     : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {
-    initialize(comm,vectorComm,localVector,steps,-1,1,replicate);
+    initialize(comm,vectorComm,localVector,steps,-1,1,replicate,-1,-1);
+    TEUCHOS_ASSERT(false);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -193,8 +228,14 @@ public:
              int bufferSize,
              int replicate=1)
     : isInitialized_(false)
+    , globalSteps_(-1)
+    , localSteps_(-1)
+    , stepStart_(-1)
+    , stepEnd_(-1)
+    , replicate_(-1)
+    , bufferSize_(-1)
   {
-    initialize(comm,vectorComm,localVector,globalSteps,localSteps,bufferSize,replicate);
+    initialize(comm,vectorComm,localVector,globalSteps,localSteps,bufferSize,replicate,-1,-1);
   }
 
   virtual ~PinTVector() {}
@@ -205,7 +246,9 @@ public:
                   int globalSteps,
                   int localSteps,
                   int bufferSize,
-                  int replicate)
+                  int replicate,
+                  int stepStart,
+                  int stepEnd)
   {
     replicate_     = replicate;
     bufferSize_    = bufferSize*replicate;
@@ -213,10 +256,19 @@ public:
     localVector_   = localVector;
     globalSteps_   = globalSteps;
     localSteps_    = localSteps;
-    // stencil_       = stencil;
     vectorComm_    = vectorComm; // makePtr<PinTVectorCommunication_StdVector<Real>>();
 
-    computeStepStartEnd();
+    if(stepStart<0)
+      computeStepStartEnd();
+    else {
+      stepStart_ = stepStart;
+      stepEnd_ = stepEnd;
+    }
+
+    assert(stepStart_>=0);
+    assert(stepEnd_>stepStart_);
+    assert(stepEnd_<=globalSteps_);
+
     allocateBoundaryExchangeVectors(bufferSize_);
 
     std::vector<Ptr<Vector<Real>>> stepVectors;

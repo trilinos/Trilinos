@@ -85,50 +85,13 @@ private:
 
   bool useRepart_;
 
-public:
-
-  //! Default constructor
-  PinTHierarchy()
-    : isInitialized_(false)
-    , maxLevels_(-1)
-    , useRepart_(false)
-  { }
-
-  /**
-   * \brief Constructor
-   *
-   * Build a parallel-in-time constraint with a specified step constraint. This specifies
-   * any communication you might need between processors and steps using "stencils".
-   * Multigrid in time preconditioning is disabled by default.
-   * 
-   * \param[in] stepConstraint Constraint for a single step.
-   * \param[in] initialCond Initial condition
-   */
-  PinTHierarchy(const Ptr<std::vector<TimeStamp<Real>>> & timeStamps)
-    : isInitialized_(false)
-    , maxLevels_(-1)
-    , useRepart_(false)
-  { 
-    initialize(timeStamps);
-  }
-
-  /**
-   * Turn on multigrid preconditioning in time with a specified number of levels.
-   *
-   * \param[in] maxLevels Largest number of levels
-   */
-  void setMaxLevels(int maxLevels)
-  {
-    maxLevels_ = maxLevels;
-  }
-
   /**
    * \brief Get the time stamps for by level
    *
    * The current implementation is recursive and expensive, but its the easiest
    * way to do this right now. 
    */
-  Ptr<std::vector<TimeStamp<Real>>> getTimeStampsByLevel(int level) const
+  Ptr<std::vector<TimeStamp<Real>>> buildTimeStampsByLevel(int level) const
   {
     assert(level>=0); // precondition
 
@@ -197,6 +160,54 @@ public:
     return currentLevel;
   }
 
+public:
+
+  //! Default constructor
+  PinTHierarchy()
+    : isInitialized_(false)
+    , maxLevels_(-1)
+    , useRepart_(false)
+  { }
+
+  /**
+   * \brief Constructor
+   *
+   * Build a parallel-in-time constraint with a specified step constraint. This specifies
+   * any communication you might need between processors and steps using "stencils".
+   * Multigrid in time preconditioning is disabled by default.
+   * 
+   * \param[in] stepConstraint Constraint for a single step.
+   * \param[in] initialCond Initial condition
+   */
+  PinTHierarchy(const Ptr<std::vector<TimeStamp<Real>>> & timeStamps)
+    : isInitialized_(false)
+    , maxLevels_(-1)
+    , useRepart_(false)
+  { 
+    initialize(timeStamps);
+  }
+
+  /**
+   * Turn on multigrid preconditioning in time with a specified number of levels.
+   *
+   * \param[in] maxLevels Largest number of levels
+   */
+  void setMaxLevels(int maxLevels)
+  {
+    maxLevels_ = maxLevels;
+  }
+
+  /**
+   * \brief Get the time stamps for by level
+   *
+   * The current implementation is recursive and expensive, but its the easiest
+   * way to do this right now. 
+   */
+  Ptr<std::vector<TimeStamp<Real>>> getTimeStampsByLevel(int level) const
+  {
+    return stamps_[level];
+  }
+
 
   /** \brief Initialize this class, setting up parallel distribution.
    
@@ -234,7 +245,7 @@ public:
     * \param[in] level_0_ref Reference vector that is used to pull out all the communication
     *                        devices.
     */
-   void buildLevels(const ROL::Ptr<ROL::PinTCommunicators> & pintComm,
+   void buildLevels(const ROL::Ptr<const ROL::PinTCommunicators> & pintComm,
                     const ROL::Ptr<const ROL::PinTVectorCommunication<Real>> & vectorComm)
    {
      // set the vector communicator
@@ -263,14 +274,16 @@ public:
      if(level>=maxLevels_) {
        return;
      }
+
+     stamps_[level] = buildTimeStampsByLevel(level);
     
-     // this processor is no longer participating (base case)
-     if(ROL::is_nullPtr(communicators_[level-1])) {
-       return;
-     }
+     // // this processor is no longer participating (base case)
+     // if(ROL::is_nullPtr(communicators_[level-1])) {
+     //   return;
+     // }
 
      // this will subdivide the communicators by two
-     communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
+     // communicators_[level] = communicators_[level-1]->buildCoarseCommunicators();
 
      buildLevelDataStructures(level+1);
    }
@@ -306,7 +319,7 @@ public:
      int mySteps = int(stamps->size());
      MPI_Allreduce(&mySteps,&totalSteps,1,MPI_INT,MPI_SUM,comm->getTimeCommunicator());
 
-     return makePtr<PinTVector<Real>>(comm,vectorComm,pint_ref.getVectorPtr(0)->clone(),totalSteps,mySteps,1,1);
+     return  makePtr<PinTVector<Real>>(comm,vectorComm,pint_ref.getVectorPtr(0)->clone(),totalSteps,mySteps,1,1);
    }
    
    /**
@@ -327,11 +340,11 @@ public:
     * at the origin for v and the terminus for u only the relavant two points are taken and the sum is divided
     * by two.
     *
-    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
     * \param[in] input The input vector to be "restricted" 
     * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
     */
-   void restrictSimVector(const Vector<Real> & input,Vector<Real> & output)
+   void restrictSimVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
@@ -366,12 +379,13 @@ public:
     * \param[in] input The input vector to be "restricted" 
     * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
     */
-   void restrictOptVector(const Vector<Real> & input,Vector<Real> & output)
+   void restrictOptVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
 
      int timeRank = pint_output.communicators().getTimeRank();
+
      // communicate points on the left of this interval
      pint_input.boundaryExchangeLeftToRight();
      auto leftStart = pint_input.getRemoteBufferPtr(0)->clone();
@@ -388,6 +402,7 @@ public:
        }
        else {
          int fineLocal = 2*crsIndex-1-fneRange.first;
+                          
          if(fineLocal>=0)
            pint_output.getVectorPtr(k)->set(     *pint_input.getVectorPtr(fineLocal));
          else
@@ -406,11 +421,11 @@ public:
     *
     * Note: Currently if the timeRank==0, the initial condition is assumed to be zero. 
     *
-    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
     * \param[in] input The input vector to be "restricted" 
     * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
+    * \param[in] inputLevel Multigrid level of the input vector (not currently used)
     */
-   void prolongSimVector(const Vector<Real> & input,Vector<Real> & output)
+   void prolongSimVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input); // coarse vector
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
@@ -504,7 +519,7 @@ public:
     * \param[in] input The input vector to be "restricted" 
     * \param[in] output The output vector resulting from restriction, must be at level inputLevel+1
     */
-   void prolongOptVector(const Vector<Real> & input,Vector<Real> & output)
+   void prolongOptVector(const Vector<Real> & input,Vector<Real> & output,int inputLevel)
    {
      const PinTVector<Real> & pint_input  = dynamic_cast<const PinTVector<Real>&>(input);
      PinTVector<Real>       & pint_output = dynamic_cast<PinTVector<Real>&>(output);
