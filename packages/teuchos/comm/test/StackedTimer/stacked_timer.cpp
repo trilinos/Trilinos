@@ -91,15 +91,15 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
           const std::string label = "Rank 0 ONLY";
           timer.start(label);
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          TEST_ASSERT((timer.findTimer("Total Time@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
           timer.stop(label);
-          TEST_ASSERT(not (timer.findTimer("Total Time@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
         } else {
           timer.start("Not Rank 0");
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          TEST_ASSERT((timer.findTimer("Total Time@Solve@Not Rank 0")).running);
+          TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
           timer.stop("Not Rank 0");
-          TEST_ASSERT(not (timer.findTimer("Total Time@Solve@Not Rank 0")).running);
+          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
         }
       }
       timer.stop("Solve");
@@ -109,20 +109,20 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   timer.stop("Total Time");
   timer.stopBaseTimer();
 
-  TEST_EQUALITY((timer.findTimer("Total Time")).count, 1);
-  TEST_EQUALITY((timer.findTimer("Total Time@Assembly")).count, 10);
-  TEST_EQUALITY((timer.findTimer("Total Time@Solve")).count, 10);
-  TEST_EQUALITY((timer.findTimer("Total Time@Solve@Prec")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time")).count, 1);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Assembly")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve@Prec")).count, 10);
 
   // Test for exception for bad timer name
   TEST_THROW(timer.findTimer("Testing misspelled timer name!"),std::runtime_error);
 
   // Pre-aggregation
   if (myRank == 0) {
-    TEST_EQUALITY((timer.findTimer("Total Time@Solve@Rank 0 ONLY")).count, 10);
+    TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).count, 10);
   }
   else {
-    TEST_EQUALITY((timer.findTimer("Total Time@Solve@Not Rank 0")).count, 10);
+    TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).count, 10);
   }
 
   Teuchos::StackedTimer::OutputOptions options;
@@ -267,13 +267,13 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 
   assert(size(*comm)>0);
 
-  TEST_EQUALITY((timer->findTimer("Total Time")).count, 1);
-  TEST_EQUALITY((timer->findTimer("Total Time@Assembly")).count, 10);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time")).count, 1);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time@Assembly")).count, 10);
 
   // Make sure the TimeMonitor added the timers
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  TEST_EQUALITY((timer->findTimer("Total Time@Solve@Prec")).count, 10);
-  TEST_EQUALITY((timer->findTimer("Total Time@Solve@GMRES")).count, 10);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time@Solve@Prec")).count, 10);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time@Solve@GMRES")).count, 10);
 #endif
 
   Teuchos::StackedTimer::OutputOptions options;

@@ -256,7 +256,7 @@ protected:
      */
     std::string get_full_name() {
       std::string parent_name("");
-      if ((parent_ != NULL) && (parent_->level_ > 0))
+      if ((parent_ != NULL))
         parent_name = parent_->get_full_name() + "@";
 
       std::string my_name(name_);
