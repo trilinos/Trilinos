@@ -40,6 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Panzer_NodeType.hpp"
 #include "Panzer_STK_LocalMeshUtilities.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
@@ -182,7 +183,7 @@ buildCellToNodes(panzer::ConnManager<LO,GO> & conn, Kokkos::View<GO**> & globals
 }
 
 template <typename LO,typename GO>
-Teuchos::RCP<const Tpetra::Map<LO,GO> >
+Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType> >
 buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                     Kokkos::View<const GO**> cells_to_nodes)
 {
@@ -201,7 +202,7 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
    */
 
-  typedef Tpetra::Map<LO,GO> map_type;
+  typedef Tpetra::Map<LO,GO,panzer::TpetraNodeType> map_type;
 
   // get locally unique global ids
   std::set<GO> global_nodes;
@@ -225,7 +226,7 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   * to cell map using a transpose operation.
   */
 template <typename LO,typename GO>
-Teuchos::RCP<Tpetra::CrsMatrix<LO,LO,GO> >
+Teuchos::RCP<Tpetra::CrsMatrix<LO,LO,GO,panzer::TpetraNodeType> >
 buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                       Kokkos::View<const GO*> owned_cells,
                       Kokkos::View<const GO**> owned_cells_to_nodes)
@@ -233,9 +234,9 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Tpetra::Map<LO,GO> map_type;
-  typedef Tpetra::CrsMatrix<LO,LO,GO> crs_type;
-  typedef Tpetra::Import<LO,GO> import_type;
+  typedef Tpetra::Map<LO,GO,panzer::TpetraNodeType> map_type;
+  typedef Tpetra::CrsMatrix<LO,LO,GO,panzer::TpetraNodeType> crs_type;
+  typedef Tpetra::Import<LO,GO,panzer::TpetraNodeType> import_type;
 
 
   PANZER_FUNC_TIME_MONITOR("panzer_stk::buildNodeToCellMatrix");
@@ -260,7 +261,6 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     PANZER_FUNC_TIME_MONITOR("Build matrix");
     // The matrix is indexed by (global cell, global node) = local node
     cell_to_node = rcp(new crs_type(cell_map,0));
-    cell_to_node->resumeFill();
 
     // fill in the cell to node matrix
     const unsigned int num_local_cells = owned_cells_to_nodes.extent(0);
@@ -291,7 +291,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
     PANZER_FUNC_TIME_MONITOR("Tranpose matrix");
     // Create an object designed to transpose the (global cell, global node) matrix to give
     // a (global node, global cell) matrix
-    Tpetra::RowMatrixTransposer<LO,LO,GO> transposer(cell_to_node);
+    Tpetra::RowMatrixTransposer<LO,LO,GO,panzer::TpetraNodeType> transposer(cell_to_node);
 
     // Create the transpose crs matrix
     auto trans = transposer.createTranspose();
@@ -326,7 +326,7 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 {
 
   PANZER_FUNC_TIME_MONITOR("panzer_stk::buildGhostedCellOneRing");
-  typedef Tpetra::CrsMatrix<int,int,GO> crs_type;
+  typedef Tpetra::CrsMatrix<int,int,GO,panzer::TpetraNodeType> crs_type;
 
   // cells : (local cell index) -> global cell index
   // cells_to_nodes : (local cell index, local node_index) -> global node index
@@ -411,13 +411,13 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   */
 template <typename GO>
 Kokkos::DynRankView<double,PHX::Device>
-buildGhostedVertices(const Tpetra::Import<int,GO> & importer,
+buildGhostedVertices(const Tpetra::Import<int,GO,panzer::TpetraNodeType> & importer,
                      Kokkos::DynRankView<const double,PHX::Device> owned_vertices)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Tpetra::MultiVector<double,int,GO> mvec_type;
+  typedef Tpetra::MultiVector<double,int,GO,panzer::TpetraNodeType> mvec_type;
   typedef typename mvec_type::dual_view_type dual_view_type;
 
   size_t owned_cell_cnt = importer.getSourceMap()->getNodeNumElements();
@@ -761,8 +761,8 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   using Teuchos::rcp;
 
   //typedef Tpetra::CrsMatrix<int,LO,GO> crs_type;
-  typedef Tpetra::Map<LO,GO> map_type;
-  typedef Tpetra::Import<LO,GO> import_type;
+  typedef Tpetra::Map<LO,GO,panzer::TpetraNodeType> map_type;
+  typedef Tpetra::Import<LO,GO,panzer::TpetraNodeType> import_type;
   //typedef Tpetra::MultiVector<double,LO,GO> mvec_type;
   //typedef Tpetra::MultiVector<GO,LO,GO> ordmvec_type;
 
