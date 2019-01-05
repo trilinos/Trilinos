@@ -35,13 +35,13 @@ IF(${PROJECT_NAME}_ENABLE_Tpetra)
 ENDIF()
 
 IF(${PROJECT_NAME}_ENABLE_Tpetra)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    PinTTpetraMultiVector
-    SOURCES test_04.cpp
-    ARGS PrintItAll
-    COMM mpi
-    NUM_MPI_PROCS 3
-    PASS_REGULAR_EXPRESSION "TEST PASSED"
-    ADD_DIR_TO_NAME
-    )
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    PinTTpetraMultiVector
+#    SOURCES test_04.cpp
+#    ARGS PrintItAll
+#    COMM mpi
+#    NUM_MPI_PROCS 3
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#    ADD_DIR_TO_NAME
+#    )
 ENDIF()

@@ -102,9 +102,9 @@ int main(int argc, char* argv[])
   
       std::vector<int> stencil = {-1,0};
   
-      ROL::Ptr<ROL::PinTVector<RealT>> x_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,x_vec,3*numRanks,stencil,2);
-      ROL::Ptr<ROL::PinTVector<RealT>> y_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,y_vec,3*numRanks,stencil,2);
-      ROL::Ptr<ROL::PinTVector<RealT>> z_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,z_vec,3*numRanks,stencil,2);
+      ROL::Ptr<ROL::PinTVector<RealT>> x_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,x_vec,3*numRanks,-1,1,2);
+      ROL::Ptr<ROL::PinTVector<RealT>> y_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,y_vec,3*numRanks,-1,1,2);
+      ROL::Ptr<ROL::PinTVector<RealT>> z_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,z_vec,3*numRanks,-1,1,2);
   
       /*
       *outStream << "X = " << std::endl;
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
 
       std::vector<RealT> p_data(2); p_data[0] = 1.0; p_data[1] = 1.0;
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
-      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,stencil,replicate);
+      ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,vectorComm,p_vec,3*numRanks,-1,1,replicate);
 
       TEUCHOS_ASSERT(  ROL::is_nullPtr(p_pint->getVectorPtr(-1)) );
       TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
