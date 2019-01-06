@@ -136,6 +136,26 @@ private:
 
   Real globalScale_;
 
+  // clone vector storage
+  struct InverseKKTStorage {
+    Ptr<Vector<Real>> temp_u;
+    Ptr<Vector<Real>> temp_z;
+    Ptr<Vector<Real>> temp_v;
+    Ptr<Vector<Real>> temp_schur;
+  };
+
+  // clone vector storage
+  struct MGAugmentedKKTStorage {
+    Ptr<Vector<Real>> dx;
+    Ptr<Vector<Real>> residual;
+  };
+
+  std::map<int,InverseKKTStorage> inverseKKTStorage_; 
+
+  std::map<int,MGAugmentedKKTStorage> mgAugmentedKKTStorage_;
+
+  std::map<int,Ptr<Vector<Real>>> inverseAdjointStorage_;
+
   /** Get the state vector required by the serial constraint object
     *
     * \param[in] src Vector to build the state vector from
@@ -511,8 +531,8 @@ public:
 
     // communicate neighbors, these are blocking calls
     pint_v.boundaryExchangeLeftToRight();
-    pint_u.boundaryExchangeLeftToRight();
-    pint_z.boundaryExchangeLeftToRight();
+    // pint_u.boundaryExchangeLeftToRight();
+    // pint_z.boundaryExchangeLeftToRight();
 
     size_t numSteps = hierarchy_.getTimeStampsByLevel(level)->size();
     for(size_t s=0;s<numSteps;s++) { // num time steps == num time stamps-1 
@@ -743,8 +763,8 @@ public:
 
      // communicate neighbors, these are block calls
      pint_v.boundaryExchangeLeftToRight();
-     pint_u.boundaryExchangeLeftToRight();
-     pint_z.boundaryExchangeLeftToRight();
+     // pint_u.boundaryExchangeLeftToRight();
+     // pint_z.boundaryExchangeLeftToRight();
 
      std::vector<Ptr<Vector<Real>>> sendBuffer(1);
  
@@ -843,7 +863,20 @@ public:
 
      // this is an inefficient hack (see line below where pint_v is modified!!!!)
      ///////////////////////////////////
-     auto v_copy = v.clone();
+     Ptr<Vector<Real>> v_copy;
+
+     // handle the lazy construction by level
+     {
+       auto store = inverseAdjointStorage_.find(level);
+       if(store==inverseAdjointStorage_.end()) {
+         v_copy = v.clone();
+         inverseAdjointStorage_[level] = v_copy;
+       }
+       else {
+         v_copy = store->second;
+       }
+     }
+
      v_copy->set(v);
      ///////////////////////////////////
 
@@ -939,9 +972,9 @@ public:
      int timeSize = pint_u.communicators().getTimeSize();
      bool lastRank = (timeRank+1==timeSize); // do something special on the last rank
 
-     pint_z.boundaryExchangeLeftToRight();
      pint_v.boundaryExchangeLeftToRight();
-     pint_u.boundaryExchangeLeftToRight();
+     // pint_z.boundaryExchangeLeftToRight();
+     // pint_u.boundaryExchangeLeftToRight();
 
      // fix up old data with previous time step information: This is the match to *** below
      pint_ijv.getRemoteBufferPtr(1)->set(*pint_v.getRemoteBufferPtr(1));
@@ -987,17 +1020,30 @@ public:
 
      // this is an inefficient hack (see line below where pint_v is modified!!!!)
      ///////////////////////////////////
-     auto v_copy = pint_v_src.clone();
+     Ptr<Vector<Real>> v_copy;
+
+     // handle the lazy construction by level (this is shared with the inverse adjoint call)
+     {
+       auto store = inverseAdjointStorage_.find(level);
+       if(store==inverseAdjointStorage_.end()) {
+         v_copy = pint_v_src.clone();
+         inverseAdjointStorage_[level] = v_copy;
+       }
+       else {
+         v_copy = store->second;
+       }
+     }
      v_copy->set(pint_v_src);
+
      PinTVector<Real> & pint_v = dynamic_cast<PinTVector<Real>&>(*v_copy);
      ///////////////////////////////////
 
      assert(pint_iajv.numOwnedSteps()==pint_u.numOwnedSteps());
      assert(pint_iajv.numOwnedSteps()==pint_v.numOwnedSteps());
 
-     pint_z.boundaryExchangeLeftToRight();
+     // pint_z.boundaryExchangeLeftToRight();
+     // pint_u.boundaryExchangeLeftToRight();
      pint_v.boundaryExchangeLeftToRight();
-     pint_u.boundaryExchangeLeftToRight();
 
      int numSteps = Teuchos::as<int>(hierarchy_.getTimeStampsByLevel(level)->size());
      if(lastRank) {
@@ -1067,6 +1113,17 @@ public:
    {
      using PartitionedVector = PartitionedVector<Real>;
 
+     auto timer = Teuchos::TimeMonitor::getStackedTimer();
+
+     std::string levelStr = "";
+     {
+       std::stringstream ss;
+       ss << "-" << level;
+       levelStr = ss.str();
+     }
+
+     timer->start("applyAugmentedKKT"+levelStr); 
+
      auto part_output = dynamic_cast<PartitionedVector&>(output);
      auto part_input = dynamic_cast<const PartitionedVector&>(input);
 
@@ -1093,6 +1150,8 @@ public:
      applyJacobian_2_leveled(*output_v,*input_z,u,z,tol,level);   // BAD ???
 
      output_v->axpy(1.0,*output_v_tmp);
+
+     timer->stop("applyAugmentedKKT"+levelStr); 
    }
 
    /**
@@ -1143,13 +1202,34 @@ public:
      auto output_u = part_output.get(0);
      auto output_z = part_output.get(1);
      auto output_v = part_output.get(2);
-     auto temp_u = output_u->clone();
-     auto temp_z = output_z->clone();
-     auto temp_v = output_v->clone();
- 
+
      auto input_u  = part_input.get(0);
      auto input_z  = part_input.get(1);
      auto input_v  = part_input.get(2);
+
+     Ptr<Vector<Real>> temp_u, temp_z, temp_v, temp_schur;
+
+     auto store = inverseKKTStorage_.find(level);
+     if(store==inverseKKTStorage_.end()) {
+       temp_u = output_u->clone();
+       temp_z = output_z->clone();
+       temp_v = output_v->clone();
+       temp_schur = output_v->clone();
+       
+       InverseKKTStorage data;
+       data.temp_u = temp_u;
+       data.temp_z = temp_z;
+       data.temp_v = temp_v;
+       data.temp_schur = temp_schur;
+
+       inverseKKTStorage_[level] = data;
+     }
+     else {
+       temp_u = store->second.temp_u;
+       temp_z = store->second.temp_z;
+       temp_v = store->second.temp_v;
+       temp_schur = store->second.temp_schur;
+     }
  
      temp_u->zero();
      temp_z->zero();
@@ -1180,16 +1260,15 @@ public:
      
      // schur complement (Wathen style)
      {
-       auto temp = output_v->clone();
-       temp->zero();
+       temp_schur->zero();
  
        if(not approx) {
-         applyInverseJacobian_1_leveled(*temp, *temp_v, u,z,tol,level);
-         applyInverseAdjointJacobian_1_leveled(*output_v,*temp,u,z,tol,level);
+         applyInverseJacobian_1_leveled(*temp_schur, *temp_v, u,z,tol,level);
+         applyInverseAdjointJacobian_1_leveled(*output_v,*temp_schur,u,z,tol,level);
        }
        else {
-         invertTimeStepJacobian(*temp, *temp_v, u,z,tol,level);
-         invertAdjointTimeStepJacobian(*output_v,*temp,u,z,tol,level);
+         invertTimeStepJacobian(*temp_schur, *temp_v, u,z,tol,level);
+         invertAdjointTimeStepJacobian(*output_v,*temp_schur,u,z,tol,level);
        }
        output_v->scale(-1.0);
      }
@@ -1232,7 +1311,11 @@ public:
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
 
      const PinTVector<Real>       & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+     const PinTVector<Real>       & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
      int timeRank = pint_u.communicators().getTimeRank();
+
+     pint_u.boundaryExchangeLeftToRight();
+     pint_z.boundaryExchangeLeftToRight();
 
      std::string levelStr = "";
      std::string levelRankStr = "";
@@ -1246,14 +1329,31 @@ public:
 
      double b_norm = b.norm();
 
+     Ptr<Vector<Real>> dx;
+     Ptr<Vector<Real>> residual;
+
+     auto store = mgAugmentedKKTStorage_.find(level);
+     if(store==mgAugmentedKKTStorage_.end()) {
+       dx       = x.clone();
+       residual = b.clone();
+
+       MGAugmentedKKTStorage data;
+       data.dx       = dx;
+       data.residual = residual;
+
+       mgAugmentedKKTStorage_[level] = data;
+     }
+     else {
+       dx       = store->second.dx;
+       residual = store->second.residual;
+     }
+
      std::string levelIndent = "";
 
      // base case: solve the KKT system directly
      if(level+1==maxLevels_) {
        bool approxSmoother = false;
 
-       auto dx = x.clone();
-       auto residual = b.clone();
        residual->set(b);
 
        double relax = omegaCoarse_;
@@ -1276,8 +1376,6 @@ public:
 
      timer->start("applyMGAugmentedKKT-preSmooth");
 
-     auto dx = x.clone();
-     auto residual = b.clone();
      residual->set(b);
 
      // apply one smoother sweep

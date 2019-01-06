@@ -56,6 +56,10 @@
 #include "ROL_PinTCommunicators.hpp"
 #include "ROL_PinTVectorCommunication.hpp"
 
+#include "Teuchos_Time.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
+
 /** @ingroup la_group
     \class ROL::PinTVector
     \brief Defines a parallel in time vector.
@@ -390,6 +394,9 @@ public:
   void boundaryExchangeLeftToRight(const std::vector<Ptr<Vector<Real>>> & sendBuffer,
                                    ESendRecv   send_recv=SEND_AND_RECV) const
   {
+    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    timer->start("PinTVector::boundaryExchangeLeftToRight");
+
     assert(sendBuffer.size() <= bufferSize_);
 
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
@@ -420,6 +427,8 @@ public:
         vectorComm_->recv(timeComm,myRank-1,*getRemoteBufferPtr(i),false,i);                  
       }
     }
+
+    timer->stop("PinTVector::boundaryExchangeLeftToRight");
   }
 
   /** \brief Exchange unknowns with neighboring processors.
@@ -452,6 +461,9 @@ public:
   void boundaryExchangeRightToLeft(const std::vector<Ptr<Vector<Real>>> & sendBuffer,
                                    ESendRecv   send_recv=SEND_AND_RECV) const
   {
+    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    timer->start("PinTVector::boundaryExchangeRightToLeft");
+
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
@@ -477,6 +489,8 @@ public:
       if(recvFromRight)
         vectorComm_->recv(timeComm,myRank+1,*getRemoteBufferPtr(i),false,i);
     }
+
+    timer->stop("PinTVector::boundaryExchangeRightToLeft");
   }
 
   /** \brief Exchange unknowns with neighboring processors.
@@ -678,7 +692,14 @@ public:
   */
   virtual ROL::Ptr<Vector<Real>> clone() const override
   {
-    return clonePinT();
+    auto timer = Teuchos::TimeMonitor::getStackedTimer();
+    timer->start("PinTVector::clone");
+
+    auto v = clonePinT();
+    
+    timer->stop("PinTVector::clone");
+
+    return v;
   }
 
   /** \brief Clone that provides direct access to a PinT vector.
