@@ -28,7 +28,7 @@ extern void popRegion ();
 
 
 namespace Teuchos {
-  
+
 //! Error reporting function for stacked timer.
 void error_out(const std::string& msg, const bool fail_all = false);
 
@@ -46,14 +46,14 @@ class BaseTimer {
 public:
 
   using Clock = std::chrono::high_resolution_clock;
-  
+
   BaseTimer() : accumulation_(0.0), count_started_(0), count_updates_(0), running_(false) {}
 
   /// Start a currently stopped timer
   void start(){
     if (running_)
       error_out("Base_Timer:start Failed timer already running");
-    start_time_ = Clock::now(); 
+    start_time_ = Clock::now();
 
     count_started_++;
     running_ = true;
@@ -216,7 +216,7 @@ protected:
     LevelTimer(const LevelTimer &src) :
       BaseTimer(src), level_(src.level_), name_(src.name_),parent_(src.parent_), sub_timers_(src.sub_timers_)
     {
-      for (unsigned i=0;i<sub_timers_.size();++i) 
+      for (unsigned i=0;i<sub_timers_.size();++i)
         sub_timers_[i].parent_ = this;
     }
 
@@ -250,13 +250,13 @@ protected:
     }
 
 
-    /** 
+    /**
      * Return the full name of the timer with each level split by :
      * @return The full name of the timer
      */
     std::string get_full_name() {
       std::string parent_name("");
-      if ((parent_ != NULL) && (parent_->level_ > 0))
+      if ((parent_ != NULL))
         parent_name = parent_->get_full_name() + "@";
 
       std::string my_name(name_);
@@ -276,7 +276,7 @@ protected:
         count += sub_timers_[i].countTimers();
       return count;
     }
-    
+
     void addTimerNames(Array<std::string> &names, unsigned &pos) {
       names[pos++] = get_full_name();
       for (unsigned i=0;i<sub_timers_.size(); ++i)
@@ -403,43 +403,70 @@ protected:
 public:
    /**
     * Construct a stacked timer
-    * @param name Top level name of the timer
+    * @param [in] name Top level name of the timer
+    * @param [in] start_top_timer Automatically start the top level timer. If set to false, the user will have to start it manually.
     */
-  explicit StackedTimer(const char *name) :timer_(0,name,NULL,true) {top_ = &timer_;}
-  //  ~StackedTimer();
+  explicit StackedTimer(const char *name, const bool start_base_timer = true)
+    : timer_(0,name,NULL,false)
+  {
+    top_ = &timer_;
+    if (start_base_timer)
+      this->startBaseTimer();
+  }
+
   /**
-   * Start the base level timer only, used really in testing only
+   * Start the base level timer only
    */
-  void start() { 
+  void startBaseTimer() {
     timer_.BaseTimer::start();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    ::Kokkos::Profiling::pushRegion("ANONYMOUS");
+    ::Kokkos::Profiling::pushRegion(timer_.get_full_name());
 #endif
-}
+  }
+
+  /**
+   * Stop the base level timer only
+   */
+  void stopBaseTimer() {
+    timer_.BaseTimer::stop();
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+    ::Kokkos::Profiling::popRegion();
+#endif
+  }
+
   /**
    * Start a sublevel timer
    * @param [in] name Name of the timer you wish to start
+   * @param [in] push_kokkos_profiling_region Optional parameter that if set to true, will pushRegion() in kokkos profiling for this timer. The TimeMonitor will always set this to false since it does its own pushRegion() in the Timer object (this prevents double registering with kokkos).
    */
-  void start(const std::string name) {
+  void start(const std::string name,
+             const bool push_kokkos_profiling_region = true) {
     if (top_ == NULL)
       top_ = timer_.start(name.c_str());
     else
       top_ = top_->start(name.c_str());
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    ::Kokkos::Profiling::pushRegion(name);
+    if (push_kokkos_profiling_region) {
+      ::Kokkos::Profiling::pushRegion(name);
+    }
 #endif
   }
 
   /**
    * Stop the current top running timer, should be called for the root timer prior to final output
+   * @param [in] name Name of the timer you wish to stop
+   * @param [in] pop_kokkos_profiling_region Optional parameter that if set to true, will popRegion() in kokkos profiling for this timer. The TimeMonitor will always set this to false since it does its own pushRegion() in the Timer object (this prevents double registering with kokkos).
    */
-  void stop(const std::string &name = "RootTimer") {
+  void stop(const std::string &name,
+            const bool pop_kokkos_profiling_region = true) {
     if (top_)
       top_ = top_->stop(name);
     else
-      timer_.BaseTimer::stop( );
+      timer_.BaseTimer::stop();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    ::Kokkos::Profiling::popRegion();
+    if (pop_kokkos_profiling_region) {
+      ::Kokkos::Profiling::popRegion();
+    }
 #endif
   }
 
