@@ -182,7 +182,8 @@ int main(int argc, char *argv[]) {
     int coarseSweeps  = parlist->get("MGRIT Coarse Sweeps", 1);
     RealT coarseOmega = parlist->get("MGRIT Coarse Relaxation",1.0);
     int numLevels     = parlist->get("MGRIT Levels",3);
-    double relTol     = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
+    double absTol     = parlist->get("MGRIT Krylov Relative Tolerance",1e-4);
+    double relTol     = parlist->get("MGRIT Krylov Absolute Tolerance",1e-4);
     int spaceProc     = parlist->get("MGRIT Spatial Procs",1);
 
     ROL::Ptr<const ROL::PinTCommunicators> communicators           = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spaceProc);
@@ -328,8 +329,9 @@ int main(int argc, char *argv[]) {
       }
   
       Teuchos::ParameterList parlist;
-      parlist.set("Absolute Tolerance",1.e-9);
-      parlist.set("Relative Tolerance",relTol);
+      ROL::ParameterList &krylovList = parlist.sublist("General").sublist("Krylov");
+      krylovList.set("Absolute Tolerance",absTol);
+      krylovList.set("Relative Tolerance",relTol);
 
       if(myRank==0) 
         (*outStream) << "RELATIVE TOLERANCE = " << relTol << std::endl;
