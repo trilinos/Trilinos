@@ -214,7 +214,9 @@ namespace FROSch {
         if(MyPID == 0)std::cout<<"solve done\n";
         
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
-        adaptedMatrix->applyPartitioningSolution(*Xgraph, ReGraph,problem->getSolution());
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"RE \n";
+        adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0)std::cout<<"ReGraph\n";
         
@@ -225,10 +227,7 @@ namespace FROSch {
         
         //TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         //if(MyPID == 0)std::cout<<"NodeElementList\n";
-        
-        
-        
-        
+ 
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
         
         Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
@@ -283,7 +282,7 @@ namespace FROSch {
         
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),-1,repeatedIndices(),0,ReGraph->getColMap()->getComm());
         
-        RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        //RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
         
         return RepeatedMap;
         

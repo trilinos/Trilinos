@@ -50,8 +50,6 @@
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
-#include "Thyra_FROSchLinearOp_def.hpp"
-#include "Thyra_FROSchXpetraFactory_def.hpp"
 #include "FROSch_Tools_def.hpp"
 
 typedef unsigned UN;

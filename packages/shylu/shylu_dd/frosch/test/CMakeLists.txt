@@ -1,5 +1,6 @@
 ADD_SUBDIRECTORIES(
-   # TwoLevelPreconditioner
+    RepMap_test
+    TwoLevelPreconditioner
     Import_Tpetra
     InterfacePartitionOfUnity
     InterfaceSets
