@@ -260,7 +260,7 @@ namespace Teuchos {
       counter().start(reset);
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
       if (nonnull(stackedTimer_))
-        stackedTimer_->start(counter().name());
+        stackedTimer_->start(counter().name(),false);
 #endif
     }
   }
@@ -271,7 +271,7 @@ namespace Teuchos {
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
       try {
         if (nonnull(stackedTimer_))
-          stackedTimer_->stop(counter().name());
+          stackedTimer_->stop(counter().name(),false);
       }
       catch (std::runtime_error&) {
         std::ostringstream warning;

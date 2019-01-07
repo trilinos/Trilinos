@@ -157,6 +157,8 @@ int main(int argc, char *argv[]) {
     belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    belosList.set( "Flexible Gmres", true );               // DON'T DO THIS IN PRACTICE, it is not true.  
+                                                           // Just make sure the solver doesn't error out.
     int verbLevel = Belos::Errors + Belos::Warnings;
     if (debug) {
       verbLevel += Belos::Debug;
@@ -174,6 +176,7 @@ int main(int argc, char *argv[]) {
     // Construct an unpreconditioned linear problem instance.
     //
     Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    problem.setInitResVec( B );
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)
