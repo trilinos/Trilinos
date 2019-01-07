@@ -77,30 +77,30 @@ int main(int argc, char *argv[])
     RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
     
     CommandLineProcessor My_CLP;
-    
+
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
-    
+
     bool useepetra = true;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-    
+
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
-    
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-    
+
     assert(CommWorld->getSize()==8);
-    
+
     CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
-    
+
     ParameterList GaleriList;
     GaleriList.set("nx", 8);
     GaleriList.set("ny", 8);
@@ -108,22 +108,22 @@ int main(int argc, char *argv[])
     GaleriList.set("mx", 2);
     GaleriList.set("my", 2);
     GaleriList.set("mz", 2);
-    
+
     RCP<const Map<LO,GO,NO> > uniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",CommWorld,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
     RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",uniqueMap,GaleriList);
     RCP<Matrix<SC,LO,GO,NO> > K = Problem->BuildMatrix();
-    
+
     RCP<Map<LO,GO,NO> > overlappingMap = MapFactory<LO,GO,NO>::Build(uniqueMap,1);
     FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K,overlappingMap);
-    
+
     RCP<Matrix<SC,LO,GO,NO> > tmpMatrix = K;
     K = MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
-    
+
     CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "#############\n# Performing Import #\n#############\n" << endl;
     RCP<Export<LO,GO,NO> > gather = ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
     K->doImport(*tmpMatrix,*gather,ADD);
-    
+
     CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
-    
+
     return(EXIT_SUCCESS);
 }

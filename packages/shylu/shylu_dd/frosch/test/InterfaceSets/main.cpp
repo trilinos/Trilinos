@@ -75,30 +75,30 @@ int main(int argc, char *argv[])
     using namespace Teuchos;
     using namespace Xpetra;
     using namespace FROSch;
-    
+
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
     
     RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
     
     CommandLineProcessor My_CLP;
-    
+
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
-    
+
     int M = 4;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 3;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");
     bool useepetra = true;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-    
+
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
-    
+
     int N;
     int color=1;
     if (Dimension == 2) {
@@ -114,20 +114,20 @@ int main(int argc, char *argv[])
     } else {
         assert(false);
     }
-    
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-    
+
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
-    
+
     if (color==0) {
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
-        
+
         ParameterList GaleriList;
         GaleriList.set("nx", int(N*M));
         GaleriList.set("ny", int(N*M));
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
         GaleriList.set("mx", int(N));
         GaleriList.set("my", int(N));
         GaleriList.set("mz", int(N));
-        
+
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
         RCP<Matrix<SC,LO,GO,NO> > K;
@@ -150,38 +150,38 @@ int main(int argc, char *argv[])
             RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         }
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Constructing Repeated Map #\n#############\n" << endl;
         RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<SC,LO,GO,NO>(K);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "#############\n# Identification of Interface Sets #\n#############\n" << endl;
         RCP<EntitySet<SC,LO,GO,NO> > vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         //RCP<Map<LO,GO,NO> > verticesMap,shortEdgesMap,straightEdgesMap,edgesMap,facesMap;
-        
+
         DDInterface<SC,LO,GO,NO> dDInterface(Dimension,1,RepeatedMap);
         dDInterface.divideUnconnectedEntities(K);
         dDInterface.sortEntities();
-        
+
         ////////////////////////////////
         // Build Processor Map Coarse //
         ////////////////////////////////
         ArrayRCP<RCP<Map<LO,GO,NO> > > MapVector(5);
-        
+
         vertices = dDInterface.getVertices();
         vertices->buildEntityMap(RepeatedMap);
-        
+
         shortEdges = dDInterface.getShortEdges();
         shortEdges->buildEntityMap(RepeatedMap);
-        
+
         straightEdges = dDInterface.getStraightEdges();
         straightEdges->buildEntityMap(RepeatedMap);
-        
+
         edges = dDInterface.getEdges();
         edges->buildEntityMap(RepeatedMap);
-        
+
         faces = dDInterface.getFaces();
         faces->buildEntityMap(RepeatedMap);
-        
+
         // Vertices
         LO ii=0;
         for (UN i=0; i<1; i++) {
@@ -208,35 +208,35 @@ int main(int argc, char *argv[])
             MapVector[ii] = faces->getEntityMap();
             ii++;
         }
-        
+
         vector<LO> NumEntitiesGlobal(5);
         NumEntitiesGlobal[0] = vertices->getEntityMap()->getMaxAllGlobalIndex();
         if (vertices->getEntityMap()->lib()==Xpetra::UseEpetra || vertices->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[0] += 1;
         }
-        
+
         NumEntitiesGlobal[1] = shortEdges->getEntityMap()->getMaxAllGlobalIndex();
         if (shortEdges->getEntityMap()->lib()==Xpetra::UseEpetra || shortEdges->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[1] += 1;
         }
-        
+
         NumEntitiesGlobal[2] = straightEdges->getEntityMap()->getMaxAllGlobalIndex();
         if (straightEdges->getEntityMap()->lib()==Xpetra::UseEpetra || straightEdges->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[2] += 1;
         }
-        
+
         NumEntitiesGlobal[3] = edges->getEntityMap()->getMaxAllGlobalIndex();
         if (edges->getEntityMap()->lib()==Xpetra::UseEpetra || edges->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[3] += 1;
         }
-        
+
         NumEntitiesGlobal[4] = faces->getEntityMap()->getMaxAllGlobalIndex();
         if (faces->getEntityMap()->lib()==Xpetra::UseEpetra || faces->getEntityMap()->getGlobalNumElements()>0) {
             NumEntitiesGlobal[4] += 1;
         }
-        
+
         if (Comm->getRank()==0) {
-            
+
             cout << "\n\
             --------------------------------------------\n\
             # vertices:       --- " << NumEntitiesGlobal.at(0) << "\n\
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
             faces: rotations            --- " << true << "\n\
             --------------------------------------------\n";
         }
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
     return(EXIT_SUCCESS);
