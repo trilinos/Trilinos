@@ -69,7 +69,6 @@ template<class RowPtr, class Indices, class Padding>
 void
 pad_crs_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const Padding& padding)
 {
-  using range = Kokkos::pair<typename RowPtr::value_type, typename RowPtr::value_type>;
 
   if (padding.size() == 0 || row_ptr_beg.size() == 0) {
     // Nothing to do
@@ -78,10 +77,11 @@ pad_crs_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const
 
   // Determine if the indices array is large enough
   auto num_row = row_ptr_beg.size() - 1;
+  auto policy = Kokkos::RangePolicy<typename Padding::execution_space>(0, num_row);
   RowPtr entries_this_row("entries_this_row", num_row);
   Kokkos::deep_copy(entries_this_row, 0);
   size_t additional_size_needed = 0;
-  Kokkos::parallel_reduce("Determine additional size needed", num_row,
+  Kokkos::parallel_reduce("Determine additional size needed", policy,
     KOKKOS_LAMBDA(const int& i, size_t& ladditional_size_needed) {
 
       auto allocated_this_row = row_ptr_beg(i+1) - row_ptr_beg(i);
@@ -110,6 +110,7 @@ pad_crs_arrays(RowPtr& row_ptr_beg, RowPtr& row_ptr_end, Indices& indices, const
   // for fence()ing relating to UVM.
   auto this_row_beg = row_ptr_beg(0);
   auto this_row_end = row_ptr_end(0);
+  using range = Kokkos::pair<typename RowPtr::value_type, typename RowPtr::value_type>;
   for (typename RowPtr::size_type i=0; i<num_row-1; i++) {
 
     // First, copy over indices for this row

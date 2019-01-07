@@ -306,7 +306,8 @@ computeCrsPadding(const NumPackets& num_packets_per_lid,
   using key_type = typename ImportLids::non_const_value_type;
   using val_type = typename NumPackets::non_const_value_type;
   Kokkos::UnorderedMap<key_type, val_type, Device> padding(import_lids.size());
-  Kokkos::parallel_for("Fill padding", import_lids.size(),
+  auto policy = Kokkos::RangePolicy<typename Device::execution_space>(0, import_lids.size());
+  Kokkos::parallel_for("Fill padding", policy,
       KOKKOS_LAMBDA(typename ImportLids::size_type i) {
         auto how_much_padding = (unpack_pids) ? num_packets_per_lid(i)/2
                                               : num_packets_per_lid(i);
@@ -369,8 +370,8 @@ unpackAndCombine(
   // device.
   size_t max_num_ent;
   Kokkos::parallel_reduce("MaxReduce",
-    num_packets_per_lid.size(),
-    KOKKOS_LAMBDA(const int& i, size_t& running_max_num_ent) {
+    range_policy(0, static_cast<LO>(num_packets_per_lid.size())),
+    KOKKOS_LAMBDA(const LO& i, size_t& running_max_num_ent) {
       size_t num_packets_this_lid = num_packets_per_lid(i);
       size_t num_ent = (unpack_pids) ? num_packets_this_lid/2
                                      : num_packets_this_lid;
@@ -443,7 +444,7 @@ unpackAndCombineWithOwningPIDsCount(
   {
     // Count entries received from other MPI processes.
     size_t tot_num_ent = 0;
-    Kokkos::parallel_reduce("SumReduce",
+    parallel_reduce("SumReduce",
         num_packets_per_lid.size(),
         KOKKOS_LAMBDA(const int& i, size_t& lsum) {
           lsum += num_packets_per_lid(i) / 2;
@@ -868,6 +869,7 @@ unpackCrsGraphAndCombine(
 
   TEUCHOS_TEST_FOR_EXCEPTION(!graph.isGloballyIndexed(), std::invalid_argument,
       "Graph must be globally indexed!");
+
 
   using Kokkos::View;
   using UnpackAndCombineCrsGraphImpl::unpackAndCombine;

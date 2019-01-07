@@ -5709,9 +5709,10 @@ namespace Tpetra {
         row_ptrs_beg, row_ptrs_end, indices, padding);
 
     if (refill_num_row_entries) {
+      auto num_row_entries = this->k_numRowEntries_;
       Kokkos::parallel_for("Fill num entries", range_policy(0, N),
         KOKKOS_LAMBDA(const size_t i){
-          this->k_numRowEntries_(i) = row_ptrs_end(i) - row_ptrs_beg(i);
+          num_row_entries(i) = row_ptrs_end(i) - row_ptrs_beg(i);
         }
       );
     }
