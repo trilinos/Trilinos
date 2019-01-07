@@ -42,6 +42,7 @@
 //#ifdef HAVE_MPI
 #include "mpi.h"
 
+#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 #include <Xpetra_DefaultPlatform.hpp>
