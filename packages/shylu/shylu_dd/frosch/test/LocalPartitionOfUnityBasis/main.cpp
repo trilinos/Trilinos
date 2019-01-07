@@ -44,6 +44,7 @@
 
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
+#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
@@ -65,9 +66,9 @@ int main(int argc, char *argv[])
 {
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-    
-    RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
-    
+
+    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
     CommandLineProcessor My_CLP;
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
