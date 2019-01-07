@@ -55,6 +55,7 @@
 
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
+#include <Xpetra_DefaultPlatform.hpp>
 
 #include <FROSch_GDSWInterfacePartitionOfUnity_def.hpp>
 
@@ -75,9 +76,9 @@ int main(int argc, char *argv[])
 
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-    
-    RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
-    
+
+    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
     CommandLineProcessor My_CLP;
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
