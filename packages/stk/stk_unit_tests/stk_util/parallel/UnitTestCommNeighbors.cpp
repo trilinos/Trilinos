@@ -54,13 +54,11 @@ std::vector<int> get_neighbor_procs(int numAllProcs, int localProc, int numNeigh
 
 TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
 {
-#ifdef OMPI_MAJOR_VERSION
-#if OMPI_MAJOR_VERSION < 2
+#if (defined(OMPI_MAJOR_VERSION) && (OMPI_MAJOR_VERSION < 2 ))
 //this test doesn't pass with open-mpi 1.10 but does pass
 //with intel-mpi and (presumably) newer open-mpi versions.
   return;
-#endif
-#endif
+#else
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = 1;
@@ -148,6 +146,7 @@ TEST(Parallel, CommNeighborsOneSided_Raw_MPI)
           EXPECT_EQ(expected, val);
       }
   }
+#endif
 }
 
 TEST(Parallel, CommNeighborsOneSided)

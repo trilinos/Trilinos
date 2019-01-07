@@ -30,24 +30,28 @@ namespace KokkosBatched {
     invoke(const AViewType &A,
            const typename MagnitudeScalarType<typename AViewType::non_const_value_type>::type tiny) {
       typedef typename AViewType::value_type vector_type;
-      typedef typename vector_type::value_type value_type;
+      //typedef typename vector_type::value_type value_type;
 
       const int
         m = A.dimension(0),
-        n = A.dimension(1),
-        vl = vector_type::vector_length;
+        n = A.dimension(1);
+
+      static_assert(is_vector<vector_type>::value, "value type is not vector type");      
+      static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8, 
+                    "AVX, AVX2 and AVX512 is supported");
+      const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ?  MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
       int r_val = 0;
       if (A.stride_0() == 1) {
-        LAPACKE_dgetrf_compact(CblasColMajor, 
-                               m, n, 
-                               (double*)A.data(), A.stride_1(), 
-                               (MKL_INT)vl, (MKL_INT)1);
+        mkl_dgetrfnp_compact(MKL_COL_MAJOR, 
+                             m, n, 
+                             (double*)A.data(), A.stride_1(), 
+                             (MKL_INT*)&r_val, format, (MKL_INT)vector_type::vector_length);
       } else if (A.stride_1() == 1) {
-        LAPACKE_dgetrf_compact(CblasRowMajor, 
-                               m, n, 
-                               (double*)A.data(), A.stride_0(), 
-                               (MKL_INT)vl, (MKL_INT)1);
+        mkl_dgetrfnp_compact(MKL_ROW_MAJOR, 
+                             m, n, 
+                             (double*)A.data(), A.stride_0(), 
+                             (MKL_INT*)&r_val, format, (MKL_INT)vector_type::vector_length);
       } else {
         r_val = -1;
       }

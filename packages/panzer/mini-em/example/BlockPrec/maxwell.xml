@@ -11,41 +11,6 @@
       </ParameterList>
     </ParameterList>
 
-    <!-- <ParameterList name="Exodus File"> -->
-    <!--   <Parameter name="dt" type="double" value="6.0e-12"/> -->
-    <!--   <ParameterList name="Exodus Parameters"> -->
-    <!--     <Parameter name="File Name" type="string" value="blob-R0.g" /> -->
-    <!--   </ParameterList> -->
-    <!-- </ParameterList> -->
-
-    <!-- <ParameterList name="Exodus File"> -->
-    <!--   <Parameter name="dt" type="double" value="3.0e-12"/> -->
-    <!--   <ParameterList name="Exodus Parameters"> -->
-    <!--     <Parameter name="File Name" type="string" value="blob-R1.g" /> -->
-    <!--   </ParameterList> -->
-    <!-- </ParameterList> -->
-
-    <!-- <ParameterList name="Exodus File"> -->
-    <!--   <Parameter name="dt" type="double" value="1.5e-12"/> -->
-    <!--   <ParameterList name="Exodus Parameters"> -->
-    <!--     <Parameter name="File Name" type="string" value="blob-R2.g" /> -->
-    <!--   </ParameterList> -->
-    <!-- </ParameterList> -->
-
-    <!-- <ParameterList name="Exodus File"> -->
-    <!--   <Parameter name="dt" type="double" value="0.75e-12"/> -->
-    <!--   <ParameterList name="Exodus Parameters"> -->
-    <!--     <Parameter name="File Name" type="string" value="blob-R3.g" /> -->
-    <!--   </ParameterList> -->
-    <!-- </ParameterList> -->
-
-    <!-- <ParameterList name="Exodus File"> -->
-    <!--   <Parameter name="dt" type="double" value="0.375e-12"/> -->
-    <!--   <ParameterList name="Exodus Parameters"> -->
-    <!--     <Parameter name="File Name" type="string" value="blob-R4.g" /> -->
-    <!--   </ParameterList> -->
-    <!-- </ParameterList> -->
-
     <ParameterList name="Inline Mesh">
       <Parameter name="Mesh Dimension" type="int" value="3"/>
       <Parameter name="Mesh Type" type="string" value="quad"/>
@@ -158,6 +123,9 @@
       <ParameterList name="sigma">
         <Parameter name="Type" type="string" value="TENSOR CONDUCTIVITY"/>
         <Parameter name="sigma" type="double" value="0.0"/>
+        <Parameter name="betax" type="double" value="0.0"/>
+        <Parameter name="betay" type="double" value="0.0"/>
+        <Parameter name="betaz" type="double" value="0.0"/>
         <Parameter name="DoF Name" type="string" value="E_edge"/>
       </ParameterList>
       <!-- Inverse of the permeability -->

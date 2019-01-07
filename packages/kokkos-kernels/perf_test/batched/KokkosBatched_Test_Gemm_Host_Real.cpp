@@ -27,7 +27,7 @@ void run(const int N) {
 int main(int argc, char *argv[]) {
   
   Kokkos::initialize(argc, argv);
-
+#if !defined(__CUDA_ARCH__)
   const int ntest = 1;
   //const int N[6] = { 256, 512, 768, 1024, 1280, 1536 };
   int N[1] = { 128*128 };
@@ -46,9 +46,16 @@ int main(int argc, char *argv[]) {
       
       std::cout << "\n Testing Algo::Gemm::Blocked\n";
       run<Algo::Gemm::Blocked>(N[i]);
+
+#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+      std::cout << "\n Testing Algo::Gemm::CompactMKL\n";
+      run<Algo::Gemm::CompactMKL>(N[i]);
+#endif
+
     }
   }
 
+#endif
   Kokkos::finalize();
 
   return 0;

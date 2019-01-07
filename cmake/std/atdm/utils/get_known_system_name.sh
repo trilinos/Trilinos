@@ -17,9 +17,9 @@ if [ "$called" == "$0" ] ; then
   exit 1
 fi
 
-# Assert that ATDM_CONFIG_JOB_NAME is set!
-if [ -z "$ATDM_CONFIG_JOB_NAME" ] ; then
-  echo "Error, must set ATDM_CONFIG_JOB_NAME in env!"
+# Assert that ATDM_CONFIG_BUILD_NAME is set!
+if [ -z "$ATDM_CONFIG_BUILD_NAME" ] ; then
+  echo "Error, must set ATDM_CONFIG_BUILD_NAME in env!"
   return
 fi
 
@@ -46,7 +46,7 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "ride"* ]] ; then
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "chama"* ]] ; then
   ATDM_HOSTNAME=chama
   ATDM_SYSTEM_NAME=chama
-elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] ; then
+elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "serrano"* ]] || [[ $ATDM_CONFIG_REAL_HOSTNAME =~ ser[0-9]+ ]] ; then
   ATDM_HOSTNAME=serrano
   ATDM_SYSTEM_NAME=serrano
 elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "mutrino"* ]] ; then
@@ -58,17 +58,21 @@ elif [[ $ATDM_CONFIG_REAL_HOSTNAME == "waterman"* ]] ; then
 elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
   # This machine has the SEMS modules!
   ATDM_SYSTEM_NAME=`source /projects/sems/modulefiles/utils/get-platform`
-  if [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
+  if [[ $ATDM_SYSTEM_NAME == "rhel7-x86_64" ]] ; then
+    # This is a RHEL7 platform that has the SEMS modules.
+    ATDM_HOSTNAME=sems-rhel7
+    ATDM_SYSTEM_NAME=sems-rhel7
+  elif [[ $ATDM_SYSTEM_NAME == "rhel6-x86_64" ]] ; then
     # This is a RHEL6 platform that has the SEMS modules.  But is this also a
     # CEE LAN mahcine?
     if [[ -f /projects/sparc/modules/cee-rhel6/sparc/master ]] ; then
       ATDM_IS_CEE_RHEL6_MACHINE=1
     fi
     # Now select the env based on the above logic
-    if [[ $ATDM_CONFIG_JOB_NAME == *"sems-rhel6"* ]] ; then
+    if [[ $ATDM_CONFIG_BUILD_NAME == *"sems-rhel6"* ]] ; then
       ATDM_HOSTNAME=sems-rhel6
       ATDM_SYSTEM_NAME=sems-rhel6
-    elif [[ $ATDM_CONFIG_JOB_NAME == *"cee-rhel6"* ]] ; then
+    elif [[ $ATDM_CONFIG_BUILD_NAME == *"cee-rhel6"* ]] ; then
       if [[ $ATDM_IS_CEE_RHEL6_MACHINE == "1" ]] ; then
         # This is a CEE RHEL6 machine and 'cee-rhel6' was given in build name,
         # so select the system name 'sem-rhel6'
@@ -79,7 +83,7 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
         echo "***"
         echo "*** Error, hostname='$ATDM_CONFIG_REAL_HOSTNAME' is a 'sems-rhel6' machine but is"
         echo "*** is *not* a 'cee-rhel6' machine but 'cee-rhel6' was given in the"
-        echo "*** build name string '$ATDM_CONFIG_JOB_NAME'!  Please remove 'cee-rhel6'"
+        echo "*** build name string '$ATDM_CONFIG_BUILD_NAME'!  Please remove 'cee-rhel6'"
 	echo "*** from the build name or provide 'sems-rhel6' and then the 'sems-rhel6'"
 	echo "*** env will be used."
         echo "***"
@@ -91,6 +95,13 @@ elif [[ -f /projects/sems/modulefiles/utils/get-platform ]] ; then
       ATDM_HOSTNAME=sems-rhel6
       ATDM_SYSTEM_NAME=sems-rhel6
     fi
+  else
+    echo
+    echo "***"
+    echo "*** Error, hostname='$ATDM_CONFIG_REAL_HOSTNAME' has the SEMS env"
+    echo "*** mounted but the SEMS system '${ATDM_SYSTEM_NAME}' is not yet supported!"
+    echo "***"
+    return
   fi
 fi
 

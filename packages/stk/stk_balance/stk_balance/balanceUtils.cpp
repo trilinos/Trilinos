@@ -238,46 +238,33 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
         case stk::topology::BEAM_2:
         case stk::topology::BEAM_3:
             return 1;
-            break;
         case stk::topology::SHELL_TRIANGLE_3:
             return 3;
-            break;
         case stk::topology::SHELL_TRIANGLE_6:
             return 6;
-            break;
         case stk::topology::SHELL_QUADRILATERAL_4:
             return 6;
-            break;
         case stk::topology::SHELL_QUADRILATERAL_8:
             return 12;
-            break;
         case stk::topology::HEXAHEDRON_8:
             return 3;
-            break;
         case stk::topology::HEXAHEDRON_20:
             return 12;
-            break;
         case stk::topology::TETRAHEDRON_4:
             return 1;
-            break;
         case stk::topology::TETRAHEDRON_10:
             return 3;
-            break;
         case stk::topology::WEDGE_6:
             return 2;
-            break;
         case stk::topology::WEDGE_15:
             return 12;
-            break;
         default:
             if ( type.is_superelement( ))
             {
                 return 10;
             }
             throw("Invalid Element Type In WeightsOfElement");
-            break;
     }
-    return 0;
 }
 
 BalanceSettings::GraphOption GraphCreationSettings::getGraphOption() const

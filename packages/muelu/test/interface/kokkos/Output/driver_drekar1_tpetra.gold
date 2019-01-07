@@ -100,9 +100,11 @@ ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -112,6 +114,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -222,9 +225,11 @@ ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -234,6 +239,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction
@@ -344,9 +350,11 @@ ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 repartition: print partition distribution = 0   [default]
 repartition: remap parts = 1
 repartition: remap num values = 4   [default]
+repartition: remap accept partition = 1   [default]
 
 Using original prolongator
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Interpolation
@@ -356,6 +364,7 @@ write end = -1   [default]
 Build (MueLu::RebalanceTransferFactory)
 Using original restrictor
 repartition: rebalance P and R = 0   [default]
+repartition: rebalance Nullspace = 1   [default]
 transpose: use implicit = 0   [default]
 repartition: use subcommunicators = 1   [default]
 type = Restriction

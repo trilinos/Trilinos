@@ -165,7 +165,7 @@ identityMultiVectorNew(const RCP<const Thyra::VectorSpaceBase<Scalar> > &space)
 
 // Floating point tolerances
 const double tightTol = 1.0e-8;
-const double relaxedTol = 1.0e-5;
+const double relaxedTol = 1.0e-4;
 
 // Tests: Operator
 

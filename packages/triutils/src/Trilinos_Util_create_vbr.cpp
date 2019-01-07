@@ -112,10 +112,17 @@ void Trilinos_Util_create_vbr(
           partition_file);
       data = fopen(partition_file,"r") ;
       N_blk_equations = 0;
+#ifndef NDEBUG
+      // Avoid "set but never used" (-Wunused-but-set-variable in GCC) warning.
+      // assert is a macro; its contents don't compile if NDEBUG is defined.
       int cnt;
+#endif // NDEBUG
       while(cur_blk_ptr !=*N_global)
       {
-        cnt = fscanf(data, "%d", &cur_blk_ptr);
+#ifndef NDEBUG
+        cnt =
+#endif // NDEBUG            
+          fscanf(data, "%d", &cur_blk_ptr);
         assert(cnt > 0);
         N_blk_equations++;
       }
@@ -126,12 +133,18 @@ void Trilinos_Util_create_vbr(
 
       N_blk_equations = 0;
       data = fopen(partition_file,"r") ;
-      cnt = fscanf(data, "%d", &prev_blk_ptr);
+#ifndef NDEBUG
+      cnt =
+#endif // NDEBUG
+        fscanf(data, "%d", &prev_blk_ptr);
       assert(cnt > 0);
       cur_blk_ptr = 0;
       while(cur_blk_ptr !=*N_global)
       {
-        cnt = fscanf(data, "%d", &cur_blk_ptr);
+#ifndef NDEBUG          
+        cnt =
+#endif // NDEBUG            
+          fscanf(data, "%d", &cur_blk_ptr);
         assert(cnt > 0);
         (*cpntr)[N_blk_equations] = cur_blk_ptr - prev_blk_ptr;
         prev_blk_ptr = cur_blk_ptr;

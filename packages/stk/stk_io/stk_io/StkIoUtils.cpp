@@ -33,6 +33,7 @@
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/diag/StringUtil.hpp"           // for Type, etc
 #include "stk_util/util/string_case_compare.hpp"
+#include <stk_util/environment/RuntimeWarning.hpp>
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -47,7 +48,7 @@ namespace io {
 stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_selector,
                                             const stk::mesh::Selector *output_selector,
                                             const stk::mesh::Selector *shared_selector,
-                                            stk::mesh::Part &part,
+                                            const stk::mesh::Part &part,
                                             bool include_shared)
 {
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
@@ -67,7 +68,7 @@ stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_se
 }
 
 size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
-                    stk::mesh::Part &part,
+                    const stk::mesh::Part &part,
                     stk::mesh::EntityRank type,
                     stk::mesh::EntityVector &entities,
                     bool include_shared)
@@ -78,12 +79,12 @@ size_t get_entities_for_nodeblock(stk::io::OutputParams &params,
                                                             part,
                                                             include_shared);
 
-    get_selected_nodes(params.bulk_data(), params.io_region(), selector, entities);
+    get_selected_nodes(params, selector, entities);
     return entities.size();
 }
 
 size_t get_entities(stk::io::OutputParams &params,
-                        stk::mesh::Part &part,
+                        const stk::mesh::Part &part,
                         stk::mesh::EntityRank type,
                         stk::mesh::EntityVector &entities,
                         bool include_shared)
@@ -135,9 +136,26 @@ void fill_block_parts_given_names(const std::vector<std::string>& side_block_nam
     for(const std::string& partName : side_block_names)
     {
         stk::mesh::Part* block = meta.get_part(partName);
-        ThrowRequireWithSierraHelpMsg(block != nullptr);
-        blocks.push_back(block);
+        if (block)
+        {
+            blocks.push_back(block);
+        }
     }
+}
+
+bool is_elem_side_pair_in_sideset(const stk::mesh::SideSet& sset, stk::mesh::Entity elem, stk::mesh::ConnectivityOrdinal ordinal)
+{
+    bool isPresent = false;
+    for(const stk::mesh::SideSetEntry& entry : sset)
+    {
+        if(entry.element == elem && entry.side == ordinal)
+        {
+            isPresent = true;
+            break;
+        }
+    }
+
+    return isPresent;
 }
 
 stk::mesh::EntityVector get_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Part& sidesetPart)
@@ -169,9 +187,13 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
             const stk::mesh::Entity* elements = bulkData.begin_elements(side);
             const stk::mesh::ConnectivityOrdinal *ordinals = bulkData.begin_element_ordinals(side);
 
-            for(unsigned i=0;i<numElements;++i)
-                if(bulkData.bucket(elements[i]).owned() && elementSelector(bulkData.bucket(elements[i])))
-                    (*sideSet).push_back(stk::mesh::SideSetEntry{elements[i], ordinals[i]});
+            for(unsigned i=0;i<numElements;++i) {
+                bool isOwned = bulkData.bucket(elements[i]).owned();
+                bool isSelected = elementSelector(bulkData.bucket(elements[i]));
+                if(isOwned && isSelected) {
+                    (*sideSet).add(stk::mesh::SideSetEntry{elements[i], ordinals[i]});
+                }
+            }
         }
 
         if(sidesetExists)
@@ -179,21 +201,140 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
     }
 }
 
+bool is_face_represented_in_sideset(const stk::mesh::BulkData& bulk, const stk::mesh::Entity face, const stk::mesh::SideSet& sset)
+{
+    stk::mesh::EntityRank sideRank = bulk.mesh_meta_data().side_rank();
+    ThrowRequire(bulk.entity_rank(face) == sideRank);
+
+    std::vector<stk::mesh::Entity> side_elements;
+    std::vector<stk::mesh::Entity> side_nodes(bulk.begin_nodes(face), bulk.end_nodes(face));
+
+    stk::mesh::get_entities_through_relations(bulk, side_nodes, stk::topology::ELEMENT_RANK, side_elements);
+
+    bool found = false;
+
+    for(stk::mesh::Entity elem : side_elements)
+    {
+        const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
+        stk::mesh::ConnectivityOrdinal const * side_ordinal = bulk.begin_ordinals(elem, sideRank);
+        const size_t num_elem_sides = bulk.num_connectivity(elem, sideRank);
+
+        for(size_t k = 0; k < num_elem_sides; ++k)
+        {
+            if(elem_sides[k] == face)
+            {
+                if(is_elem_side_pair_in_sideset(sset, elem, side_ordinal[k])) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if(found) {
+            break;
+        }
+    }
+
+    return found;
+}
+
+bool should_reconstruct_sideset(const stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart)
+{
+    bool reconstructSideset = false;
+
+    const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(surfacePart);
+    if (bulkData.does_sideset_exist(parentPart))
+    {
+        const stk::mesh::SideSet& ss = bulkData.get_sideset(parentPart);
+        if (ss.is_from_input())
+        {
+            reconstructSideset = false;
+        }
+
+        for(const stk::mesh::SideSetEntry &entry : ss)
+        {
+            stk::mesh::Entity elem = entry.element;
+
+            if(!bulkData.is_valid(elem) || !bulkData.bucket(elem).owned())
+            {
+                reconstructSideset = true;
+                break;
+            }
+        }
+
+        stk::mesh::EntityVector faces;
+        stk::topology::rank_t sideRank = bulkData.mesh_meta_data().side_rank();
+        stk::mesh::get_selected_entities(surfacePart, bulkData.buckets(sideRank), faces);
+
+        for(stk::mesh::Entity face : faces)
+        {
+            bool modifiedState    = (bulkData.state(face) != stk::mesh::Unchanged);
+            bool emptySideset     = (ss.size() == 0);
+            bool faceNotInSideset = (emptySideset || !is_face_represented_in_sideset(bulkData, face, ss));
+
+            if(modifiedState && faceNotInSideset)
+            {
+                reconstructSideset = true;
+                break;
+            }
+        }
+    }
+    else
+    {
+        reconstructSideset = true;
+    }
+
+    return reconstructSideset;
+}
+
+void reconstruct_sideset(stk::mesh::BulkData& bulkData, const stk::mesh::Part& surfacePart)
+{
+    bulkData.clear_sideset(surfacePart);
+    std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(&surfacePart);
+
+    stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
+    fill_sideset(surfacePart, bulkData, elementSelector);
+}
+
 void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
 {
     if(bulkData.was_mesh_modified_since_sideset_creation())
     {
-        bulkData.clear_sidesets();
-
         std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
+
+        bool reconstructSideset = false;
         for(size_t i=0;i<surfacesInMap.size();++i)
         {
-            std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacesInMap[i]);
-
-            stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
-            fill_sideset(*surfacesInMap[i], bulkData, elementSelector);
+            const stk::mesh::Part* surfacePart = surfacesInMap[i];
+            reconstructSideset = should_reconstruct_sideset(bulkData, *surfacePart) || reconstructSideset;
+        }
+        if (reconstructSideset)
+        {
+            for(size_t i=0;i<surfacesInMap.size();++i)
+            {
+                const stk::mesh::Part* surfacePart = surfacesInMap[i];
+                reconstruct_sideset(bulkData, *surfacePart);
+            }
         }
     }
+}
+
+std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkData& bulkData, stk::mesh::Entity face)
+{
+    ThrowRequire(bulkData.entity_rank(face) == bulkData.mesh_meta_data().side_rank());
+    const stk::mesh::PartVector& parts = bulkData.bucket(face).supersets();
+
+    std::vector<const stk::mesh::Part *> sidesetParts;
+
+    for(const stk::mesh::Part *part : parts)
+    {
+        if(stk::mesh::is_side_set(*part))
+        {
+            sidesetParts.push_back(part);
+        }
+    }
+
+    return sidesetParts;
 }
 
 const stk::mesh::Part* getElementBlockSelectorForElement(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -365,7 +506,6 @@ template
 void write_global_to_stk_io<double>(stk::io::StkMeshIoBroker& stkIo, size_t dbIndex,
                                     const std::string& externalName,
                                     size_t component_count, const void* ptr);
-
 
 bool storage_type_is_general(const std::string &storage)
 {
@@ -578,6 +718,147 @@ std::pair<size_t, Ioss::Field::BasicType> get_io_parameter_size_and_type(const s
               << " Maybe you need to call add_global_ref() instead of add_global() or vice-versa.";
     throw;
   }
+}
+
+std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bulk,
+                                                  const stk::mesh::Part& sideSetPart,
+                                                  stk::mesh::Entity face)
+{
+    std::pair<bool,bool> returnValue(false,false);
+
+    stk::mesh::EntityRank sideRank = bulk.mesh_meta_data().side_rank();
+    ThrowRequire(bulk.entity_rank(face) == sideRank);
+    ThrowRequire(bulk.bucket(face).member(sideSetPart));
+
+    const stk::mesh::Part &parentPart = stk::io::get_sideset_parent(sideSetPart);
+
+    if(!bulk.does_sideset_exist(parentPart))
+    {
+        stk::RuntimeWarning() << "Sideset parent part: " << parentPart.name() << " does not exist for surface part: " << sideSetPart.name();
+        return returnValue;
+    }
+
+    const stk::mesh::SideSet& sset = bulk.get_sideset(parentPart);
+
+    std::vector<stk::mesh::Entity> side_elements;
+    std::vector<stk::mesh::Entity> side_nodes(bulk.begin_nodes(face), bulk.end_nodes(face));
+
+    stk::mesh::get_entities_through_relations(bulk, side_nodes, stk::topology::ELEMENT_RANK, side_elements);
+
+    int numFound = 0;
+
+    bool foundElemWithPermutationZero = false;
+
+    stk::mesh::Entity foundElem;
+
+    for(stk::mesh::Entity elem : side_elements)
+    {
+        const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
+        stk::mesh::ConnectivityOrdinal const * side_ordinal = bulk.begin_ordinals(elem, sideRank);
+        stk::mesh::Permutation const * side_permutations = bulk.begin_permutations(elem, sideRank);
+        const size_t num_elem_sides = bulk.num_connectivity(elem, sideRank);
+
+        for(size_t k = 0; k < num_elem_sides; ++k)
+        {
+            if(elem_sides[k] == face)
+            {
+                if(is_elem_side_pair_in_sideset(sset, elem, side_ordinal[k])) {
+                    numFound++;
+                    foundElem = elem;
+
+                    if (side_permutations[k] == 0) {
+                        foundElemWithPermutationZero = true;
+                    }
+                }
+            }
+        }
+    }
+
+    returnValue.first = true;
+
+    if(numFound == 1) {
+        returnValue.second = foundElemWithPermutationZero;
+    } else if(numFound == 0 && side_elements.size() == 1) {
+
+        stk::mesh::Entity elem = side_elements[0];
+        const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
+        stk::mesh::Permutation const * side_permutations = bulk.begin_permutations(elem, sideRank);
+        const size_t num_elem_sides = bulk.num_connectivity(elem, sideRank);
+
+        for(size_t k = 0; k < num_elem_sides; ++k)
+        {
+            if(elem_sides[k] == face)
+            {
+                if (side_permutations[k] == 0) {
+                    foundElemWithPermutationZero = true;
+                }
+            }
+        }
+
+        returnValue.second = !foundElemWithPermutationZero;
+    }
+
+    return returnValue;
+}
+
+std::pair<bool,bool> is_positive_sideset_face_polarity(const stk::mesh::BulkData &bulk, stk::mesh::Entity face)
+{
+    std::pair<bool,bool> returnValue(false,false);
+    std::vector<const stk::mesh::Part*> sidesetParts = stk::io::get_sideset_io_parts(bulk, face);
+
+    if(sidesetParts.size() == 0) {
+        return returnValue;
+    }
+
+    returnValue = stk::io::is_positive_sideset_polarity(bulk, *sidesetParts[0], face);
+
+    for(unsigned i=1; i<sidesetParts.size(); ++i)
+    {
+        const stk::mesh::Part* sidesetPart = sidesetParts[i];
+        std::pair<bool,bool> partPolarity = stk::io::is_positive_sideset_polarity(bulk, *sidesetPart, face);
+
+        ThrowRequireMsg(partPolarity == returnValue,
+                        "Polarity for face: " << bulk.identifier(face) << " on sideset: "
+                                              << sidesetParts[0]->name()  << " does not match that on sideset: " << sidesetPart->name());
+    }
+
+    return returnValue;
+}
+
+void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& supersetParts)
+{
+  bool is_io_part = stk::io::is_part_io_part(part);
+  if(is_io_part) {
+    for(auto& i : part.supersets()) {
+      if(i == nullptr || stk::mesh::is_auto_declared_part(*i)) {
+        continue;
+      }
+
+      supersetParts.push_back(i);
+
+      stk::mesh::PartVector supersets2 = i->supersets();
+      for(size_t j = 0; j < supersets2.size(); ++j) {
+        if(supersets2[j] != nullptr && !stk::mesh::is_auto_declared_part(*supersets2[j])) {
+          supersetParts.push_back(supersets2[j]);
+        }
+      }
+    }
+  }
+}
+
+stk::mesh::Selector construct_sideset_selector(stk::io::OutputParams &params)
+{
+    const mesh::BulkData &bulk_data = params.bulk_data();
+    const stk::mesh::Selector *subset_selector = params.get_subset_selector();
+    const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+
+    stk::mesh::Selector selector = ( bulk_data.mesh_meta_data().locally_owned_part() | bulk_data.mesh_meta_data().globally_shared_part() );
+    if(subset_selector)
+        selector &= *subset_selector;
+    if(output_selector)
+        selector &= *output_selector;
+
+    return selector;
 }
 
 }}

@@ -28,9 +28,7 @@ namespace panzer {
   class WorksetContainer;
 
   /** \brief Unified set of tools for building objects for lumped and
-      consistent L2 projects between bases. Currently only supports
-      projections onto HGrad bases from any type of source basis. It
-      is design to be extensible to all cases.
+      consistent L2 projects between bases.
   */
   template<typename LO, typename GO>
   class L2Projection {
@@ -72,18 +70,31 @@ namespace panzer {
     /** \brief Allocates, fills and returns a mass matrix for L2
         projection onto a target basis.
 
+        \param use_lumping (optional) If set to true, the returned mass matrix is a lumped diagonal mass matrix following Hinton, et al. 1976.
         \returns Filled mass matrix in a Tpetra::CrsMatrix
     */
     Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-      buildMassMatrix();
+      buildMassMatrix(bool use_lumping=false);
 
     /** \brief Allocates, fills and returns a Tpetra::MultiVector
-        containing the inverse lumped mass matrix values. This is
-        currently inefficient in that it uses the consistent mass
-        matrix to generate the row sums. This saves significant code
-        duplication at the temporary runtime cost of allocating the
-        mass matrix. The temporary matrix is deallocated on exit from
-        this function so it should not be an issue.
+        containing the inverse lumped mass matrix values as computed via Hinton 1976. 
+
+        References:
+
+        [1] E. Hinton, T. Rock and O. C. Zienkiewicz, "A Note
+        on MAss Lumping and Related Processes in the Finite Element
+        Method," Earthquake Engineering and Structural Dynamics, 4
+        (1976), 245-249.
+
+        [2] T. J. R. Hughes, "The Finite Element Method: Linear Static
+        and Dynamic Finite Element Analysis," (1987), Section 7.3.2.
+
+        NOTE: This is currently sligtly inefficient in that it
+        temporarily allocates the consistent mass matrix. This saves
+        significant code duplication at the temporary runtime cost of
+        allocating the mass matrix. The temporary matrix is
+        deallocated on exit from this function so it should not be an
+        issue.
 
         \returns Filled inverse lumped mass matrix in a Tpetra::MultiVector (diagonal entries mass matrix)
     */

@@ -189,8 +189,13 @@ public:
     (void)alpha;
     (void)beta;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
-    const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
-    const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
+    const auto& X_view = X.template getLocalView<Kokkos::HostSpace> ();
+    const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace> ();
+#else
+    const auto& X_view = X.getLocalViewHost ();
+    const auto& Y_view = Y.getLocalViewHost ();
+#endif
     // Only does something if #rhs > current capacity.
     HTST::reset_max_nrhs(Timpl_.get(), X_view.extent(1));
     // Switch alpha and beta because of HTS's opposite convention.
@@ -688,13 +693,24 @@ localTriangularSolve (const MV& Y,
   // https://github.com/kokkos/kokkos-kernels/issues/48.  This
   // means that we need to sync to host, then sync back to device
   // when done.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   X.template sync<host_memory_space> ();
   const_cast<MV&> (Y).template sync<host_memory_space> ();
   X.template modify<host_memory_space> (); // we will write to X
+#else
+  X.sync_host ();
+  const_cast<MV&> (Y).sync_host ();
+  X.modify_host (); // we will write to X
+#endif
 
   if (X.isConstantStride () && Y.isConstantStride ()) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto X_lcl = X.template getLocalView<host_memory_space> ();
     auto Y_lcl = Y.template getLocalView<host_memory_space> ();
+#else
+    auto X_lcl = X.getLocalViewHost ();
+    auto Y_lcl = Y.getLocalViewHost ();
+#endif
     KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                         A_lcl, Y_lcl, X_lcl);
   }
@@ -704,8 +720,13 @@ localTriangularSolve (const MV& Y,
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVector (j);
       auto Y_j = X.getVector (j);
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       auto X_lcl = X_j->template getLocalView<host_memory_space> ();
       auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
+#else
+      auto X_lcl = X_j->getLocalViewHost ();
+      auto Y_lcl = Y_j->getLocalViewHost ();
+#endif
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                           diag.c_str (), A_lcl, Y_lcl, X_lcl);
     }

@@ -71,10 +71,18 @@ class SolverFactorySelector<double,MultiVec<double>,Operator<double>> {
 };
 
 #ifdef HAVE_TEUCHOS_COMPLEX
+class BelosComplexSolverFactory : public Impl::SolverFactoryParent<std::complex<double>,MultiVec<std::complex<double>>,Operator<std::complex<double>>>
+{
+  public:
+    BelosComplexSolverFactory() {
+      Details::registerSolverFactory();
+    };
+};
+
 template<>
 class SolverFactorySelector<std::complex<double>,MultiVec<std::complex<double>>,Operator<std::complex<double>>> {
   public:
-    typedef BelosSolverFactory type;
+    typedef BelosComplexSolverFactory type;
 };
 #endif
 

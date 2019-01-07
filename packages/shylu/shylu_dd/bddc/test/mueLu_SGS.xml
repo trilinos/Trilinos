@@ -1,0 +1,19 @@
+<ParameterList name="MueLu">
+  <Parameter name="problem: type"        type="string"  value="Poisson-3D"/>
+  <Parameter name="verbosity"            type="string"  value="none"/>
+  <Parameter name="coarse: max size"     type="int"     value="3"/>
+  <Parameter name="max levels"           type="int"     value="2"/>
+  <Parameter name="smoother: type"       type="string"  value="RELAXATION"/>
+  <ParameterList name="smoother: params">
+    <Parameter name="relaxation: type"   type="string"  value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int"     value="1"/>
+    <Parameter name="relaxation: damping factor"  type="double" value="1.0"/>
+  </ParameterList>
+  <Parameter name="aggregation: type"  type="string"    value="uncoupled"/>
+  <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
+  <Parameter name="repartition: enable"  type="bool"    value="true"/>
+  <Parameter name="repartition: min rows per proc" type="int" value="1000"/>
+  <Parameter name="repartition: start level"       type="int" value="2"/>
+  <Parameter name="repartition: max imbalance"     type="double" value="1.327"/>
+  <Parameter name="repartition: partitioner"       type="string" value="zoltan2"/>
+</ParameterList>

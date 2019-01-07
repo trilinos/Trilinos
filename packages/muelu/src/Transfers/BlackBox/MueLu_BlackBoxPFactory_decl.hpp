@@ -170,14 +170,14 @@ namespace MueLu {
       LO  LID, lexiInd;
     };
 
-    void GetGeometricData(RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates,
+    void GetGeometricData(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> >& coordinates,
                           const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
                           const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
                           Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
                           Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
                           Array<LO>& glCoarseNodesPerDir, Array<GO>& ghostGIDs,
                           Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes,
-                          LO& lNumCoarseNodes, ArrayRCP<Array<double> > coarseNodes,
+                          LO& lNumCoarseNodes, ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes,
                           Array<int>& boundaryFlags, RCP<NodesIDs> ghostedCoarseNodes) const;
 
     void ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,

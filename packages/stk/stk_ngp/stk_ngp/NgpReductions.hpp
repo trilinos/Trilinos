@@ -30,12 +30,12 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef PACKAGES_STK_STK_LEARNING_KOKKOS_REDUCTIONS_H_
-#define PACKAGES_STK_STK_LEARNING_KOKKOS_REDUCTIONS_H_
+#ifndef STK_NGP_REDUCTIONS_H_
+#define STK_NGP_REDUCTIONS_H_
 
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
-#include <stk_util/util/StkVector.hpp>
+#include <stk_util/util/StkNgpVector.hpp>
 
 namespace ngp {
 
@@ -74,14 +74,7 @@ struct ReductionTeamFunctor
         JoinOp (value_type& value_) : value (&value_) {}
 
         STK_FUNCTION
-        void join (value_type& dest, const value_type& src) const {
-            ReductionOp() (dest, src);
-        }
-
-        STK_FUNCTION
-        void join (volatile value_type& dest, const volatile value_type& src) const {
-            ReductionOp() (dest, src);
-        }
+        void join (value_type& dest, const value_type& src) const { ReductionOp() (dest, src); }
 
         STK_FUNCTION
         void init (value_type& val) const {
@@ -100,7 +93,7 @@ struct ReductionTeamFunctor
     };
 
     STK_FUNCTION
-    ReductionTeamFunctor(const Mesh m, Field f, stk::Vector<unsigned> b, FieldData i) : mesh(m), field(f), bucketIds(b), initialValue(i) { }
+    ReductionTeamFunctor(const Mesh m, Field f, stk::NgpVector<unsigned> b, FieldData i) : mesh(m), field(f), bucketIds(b), initialValue(i) { }
 
     STK_FUNCTION
     void init(FieldData &update) const
@@ -132,14 +125,14 @@ struct ReductionTeamFunctor
 private:
     const Mesh mesh;
     Field field;
-    stk::Vector<unsigned> bucketIds;
+    stk::NgpVector<unsigned> bucketIds;
     FieldData initialValue;
 };
 
 template <typename Mesh, typename Field, typename ReductionOp>
 typename Field::value_type get_field_reduction(Mesh &mesh, Field field, const stk::mesh::Selector &selector, const typename Field::value_type &initialValue)
 {
-    stk::Vector<unsigned> bucketIds = mesh.get_bucket_ids(field.get_rank(), selector);
+    stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(field.get_rank(), selector);
     const unsigned numBuckets = bucketIds.size();
     ReductionTeamFunctor<Mesh, Field, ReductionOp> teamFunctor(mesh, field, bucketIds, initialValue);
     typename Field::value_type reduction = initialValue;
@@ -196,4 +189,4 @@ typename Field::value_type get_field_sum(Mesh &mesh, Field field, const stk::mes
 }
 
 
-#endif /* PACKAGES_STK_STK_LEARNING_KOKKOS_REDUCTIONS_H_ */
+#endif /* STK_NGP_REDUCTIONS_H_ */

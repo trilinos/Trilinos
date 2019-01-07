@@ -41,9 +41,6 @@ namespace sierra {
 // Force inclusion of array_dimension_error by linker
 FArrayBootstrap::~FArrayBootstrap()
 {
-  static void (*array_dimension_error_bootstrap)(const std::type_info &typeinfo, unsigned dimension, unsigned value, unsigned upper) = array_dimension_error;
-
-  static_cast<void>(array_dimension_error_bootstrap); // suppress compiler warning for unused variable
 }
 
 namespace {

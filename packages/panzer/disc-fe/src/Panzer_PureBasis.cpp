@@ -122,12 +122,17 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
     element_space_ = HDIV;
   else if(basis_type_=="Const")
     element_space_ = CONST;
+  else if(basis_type_=="HVol")
+    element_space_ = HVOL;
   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
 				    "PureBasis::initializeIntrospection - Invalid basis name \"" 
 				    << basis_type_ << "\""); }
   
   switch(getElementSpace()) {
   case CONST:
+     basis_rank_ = 0;
+     break;
+  case HVOL:
      basis_rank_ = 0;
      break;
   case HGRAD:

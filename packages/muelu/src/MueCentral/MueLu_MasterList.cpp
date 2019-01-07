@@ -247,8 +247,10 @@ namespace MueLu {
   "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=\"1.2\"/>"
   "<Parameter name=\"repartition: remap parts\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: remap num values\" type=\"int\" value=\"4\"/>"
+  "<Parameter name=\"repartition: remap accept partition\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: print partition distribution\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
@@ -258,6 +260,8 @@ namespace MueLu {
   "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<Parameter name=\"rap: triple product\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
+  "<Parameter name=\"matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount \" type=\"int\" value=\"3000 \"/>"
+  "<Parameter name=\"isMatrixMatrix_TransferAndFillComplete \" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
@@ -642,9 +646,13 @@ namespace MueLu {
       
          ("repartition: remap num values","repartition: remap num values")
       
+         ("repartition: remap accept partition","repartition: remap accept partition")
+      
          ("repartition: print partition distribution","repartition: print partition distribution")
       
          ("repartition: rebalance P and R","repartition: rebalance P and R")
+      
+         ("repartition: rebalance Nullspace","repartition: rebalance Nullspace")
       
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
@@ -663,6 +671,10 @@ namespace MueLu {
          ("rap: triple product","rap: triple product")
       
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
+      
+         ("matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount ","matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount ")
+      
+         ("isMatrixMatrix_TransferAndFillComplete ","isMatrixMatrix_TransferAndFillComplete ")
       
          ("reuse: type","reuse: type")
       

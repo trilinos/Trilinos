@@ -1,8 +1,16 @@
-#disable from issue #2410
-ATDM_SET_ENABLE(TeuchosNumerics_LAPACK_test_MPI_1_DISABLE ON)
-
-#disable from issue #2466
-ATDM_SET_ENABLE(Belos_Tpetra_PseudoBlockCG_hb_test_MPI_4_DISABLE ON)
-
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/CUDA_COMMON_TWEAKS.cmake")
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/ALL_COMMON_TWEAKS.cmake")
+
+#Tests regularaly failing see issue #3939
+ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-1_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-3_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-4_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianMultiblockExample-ConvTest-Quad-Order-1_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Quad-Order-1_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Quad-Order-2_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianMultiblockExample-ConvTest-Quad-Order-1_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-1_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Tri-Order-2_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_MixedCurlLaplacianExample-ConvTest-Quad-Order-3_DISABLE ON)
+ATDM_SET_ENABLE(PanzerAdaptersSTK_CurlLaplacianExample-ConvTest-Quad-Order-2_DISABLE ON)

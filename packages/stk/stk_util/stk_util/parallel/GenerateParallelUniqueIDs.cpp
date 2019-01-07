@@ -75,7 +75,6 @@ namespace stk {
     mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return newIds;
     }
     //
     //  Compute the total number of ids requested
@@ -96,7 +95,6 @@ namespace stk {
 
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
-      return newIds;
     }
     if(globalNumIdsRequested == 0) {
       return newIds;

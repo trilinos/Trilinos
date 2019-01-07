@@ -84,14 +84,14 @@ namespace MueLuTests {
     virtual ~BlackBoxPFactoryTester() { }
     //@}
 
-    void TestGetGeometricData(Teuchos::RCP<Xpetra::MultiVector<double, LO, GO, NO> >& coordinates,
+    void TestGetGeometricData(Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> >& coordinates,
                               Array<LO> coarseRate, Array<GO> gNodesPerDim, Array<LO> lNodesPerDim,
                               LO BlkSize, Array<GO>& gIndices, Array<GO>& gCoarseNodesPerDir,
                               Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs,
                               GO& gNumCoarseNodes, Array<LO>& myOffset,
                               Array<LO>& lCoarseNodesPerDir, Array<LO>& glCoarseNodesPerDir,
                               Array<LO>& endRate, LO& lNumCoarseNodes, Array<bool>& ghostInterface,
-                              ArrayRCP<Array<double> > coarseNodes, Array<int>& boundaryFlags) const
+                              ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes, Array<int>& boundaryFlags) const
     {
       // Call the method to be tested.
       RCP<typename MueLu::BlackBoxPFactory<SC,LO,GO,Node>::NodesIDs> ghostedCoarseNodes
@@ -151,7 +151,7 @@ namespace MueLuTests {
   void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
                       const LocalOrdinal numDimensions, const std::string stencilType,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
-                      RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
+                      RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
                       RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                       Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
@@ -237,25 +237,25 @@ namespace MueLuTests {
 
     // Construct map and local coordinates
     Teuchos::Array<GO>     myGIDs(lNumPoints);
-    Teuchos::Array<double> myXCoords(lNumPoints);
-    Teuchos::Array<double> myYCoords(lNumPoints);
-    Teuchos::Array<double> myZCoords(lNumPoints);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myXCoords(lNumPoints);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myYCoords(lNumPoints);
+    Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myZCoords(lNumPoints);
     for(LO k = 0; k < lNodesPerDim[2]; ++k) {
       for(LO j = 0; j < lNodesPerDim[1]; ++j) {
         for(LO i = 0; i < lNodesPerDim[0]; ++i) {
           myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myOffset
             + k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i;
           myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
-            (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
+            (i + myXoffset) / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[0] - 1);
           myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
-            (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
+            (j + myYoffset) / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[1] - 1);
           myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
-            (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
+            (k + myZoffset) / Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(gNodesPerDim[2] - 1);
         }
       }
     }
 
-    Teuchos::Array<Teuchos::ArrayView<const double> > myCoordinates(numDimensions);
+    Teuchos::Array<Teuchos::ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > myCoordinates(numDimensions);
     if(numDimensions == 1) {
       myCoordinates[0] = myXCoords();
     } else if(numDimensions == 2) {
@@ -269,7 +269,7 @@ namespace MueLuTests {
 
     // Create the map and store coordinates using the above array views
     map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
-    Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(),
+    Coordinates = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(map, myCoordinates(),
                                                                      numDimensions);
 
     // small parameter list for Galeri
@@ -351,7 +351,7 @@ namespace MueLuTests {
     const std::string stencilType = "reduced";
 
     RCP<Matrix> Op;
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates;
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
@@ -372,8 +372,8 @@ namespace MueLuTests {
     Array<LO> myOffset(3), lCoarseNodesPerDir(3), glCoarseNodesPerDir(3), endRate(3);
     Array<bool> ghostInterface(6);
     Array<int> boundaryFlags(3);
-    Array<ArrayView<const double> > fineNodes(numDimensions);
-    ArrayRCP<Array<double> > coarseNodes(numDimensions);
+    Array<ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > fineNodes(numDimensions);
+    ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes(numDimensions);
     GO gNumCoarseNodes = 0;
     LO lNumCoarseNodes = 0;
     for(LO dim = 0; dim < numDimensions; ++dim) {
@@ -536,7 +536,7 @@ namespace MueLuTests {
     const std::string stencilType = "reduced";
 
     RCP<Matrix> A;
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates;
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
@@ -552,7 +552,7 @@ namespace MueLuTests {
     Array<LO> glCoarseNodesPerDir(3), lCoarseElementsPerDir(3);
     Array<bool> ghostInterface(6);
     Array<int> boundaryFlags(3);
-    ArrayRCP<Array<double> > coarseNodes(numDimensions);
+    ArrayRCP<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > coarseNodes(numDimensions);
     for(int i = 0; i < numDimensions; ++i) {
       coarseRate[i] = 2;
     }
@@ -759,7 +759,7 @@ namespace MueLuTests {
     const std::string stencilType = "reduced";
 
     RCP<Matrix> A;
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates;
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);

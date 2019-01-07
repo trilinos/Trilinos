@@ -81,8 +81,13 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
 #else
     PetscTruth lflg;  // Needed to permit two ways of specification
 #endif
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-snes_max_it", &maxIters, &flg);CHKERRQ(ierr);
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-nox_conv_maxiters", &maxIters, &lflg);CHKERRQ(ierr);
+#if  (PETSC_VERSION_MAJOR >= 3) || (PETSC_VERSION_MINOR >= 7)
+  #define OPT_DB_PRE PETSC_NULL, PETSC_NULL
+#else
+  #define OPT_DB_PRE PETSC_NULL
+#endif
+    ierr = PetscOptionsGetInt(OPT_DB_PRE,"-snes_max_it", &maxIters, &flg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(OPT_DB_PRE,"-nox_conv_maxiters", &maxIters, &lflg);CHKERRQ(ierr);
     if(flg || lflg)
     {
       testMaxIters = Teuchos::rcp( new NOX::StatusTest::MaxIters(maxIters) );
@@ -95,8 +100,8 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
     // Check for (absolute) residual norm (L2-norm) tolerance
     double absResNorm;
     PetscReal petscVal;
-    ierr = PetscOptionsGetReal(PETSC_NULL,"-snes_atol", &petscVal, &flg);CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL,"-nox_conv_abs_res", &petscVal, &lflg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(OPT_DB_PRE,"-snes_atol", &petscVal, &flg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(OPT_DB_PRE,"-nox_conv_abs_res", &petscVal, &lflg);CHKERRQ(ierr);
     if(flg || lflg)
     {
       absResNorm = (double) petscVal;
@@ -109,8 +114,8 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
 
     // Check for update norm (L2-norm) tolerance
     double absUpdateNorm;
-    ierr = PetscOptionsGetReal(PETSC_NULL,"-snes_stol", &petscVal, &flg);CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL,"-nox_conv_update", &petscVal, &lflg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(OPT_DB_PRE,"-snes_stol", &petscVal, &flg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(OPT_DB_PRE,"-nox_conv_update", &petscVal, &lflg);CHKERRQ(ierr);
     if(flg || lflg)
     {
       absUpdateNorm = (double) petscVal;
@@ -136,19 +141,19 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
 
 
   // Allow solution-type to be specified
-  ierr = PetscOptionsHasName(PETSC_NULL,"-nox_trustregion_based",&flg);
+  ierr = PetscOptionsHasName(OPT_DB_PRE,"-nox_trustregion_based",&flg);
          CHKERRQ(ierr);
   if(flg)
     nlParams.set("Nonlinear Solver", "Trust Region Based");
   else // default
     // This is done to allow PetscOptions to register that this option was used
-    ierr = PetscOptionsHasName(PETSC_NULL,"-nox_linesearch_based",&flg);
+    ierr = PetscOptionsHasName(OPT_DB_PRE,"-nox_linesearch_based",&flg);
            CHKERRQ(ierr);
     nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Now allow linesearch type to be specified
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
-  ierr = PetscOptionsGetString(PETSC_NULL,"-nox_linesearch_type",
+  ierr = PetscOptionsGetString(OPT_DB_PRE,"-nox_linesearch_type",
                optionString, maxStringLength, &flg);CHKERRQ(ierr);
   if(flg)
   {
@@ -170,7 +175,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
 
   // Now allow direction type to be specified
   Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-  ierr = PetscOptionsGetString(PETSC_NULL,"-nox_direction_type",
+  ierr = PetscOptionsGetString(OPT_DB_PRE,"-nox_direction_type",
                optionString, maxStringLength, &flg);CHKERRQ(ierr);
   if(flg)
   {
@@ -186,7 +191,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
 #else
       PetscTruth lflg;
 #endif
-      ierr = PetscOptionsGetString(PETSC_NULL,"-nox_sd_scaling_type",
+      ierr = PetscOptionsGetString(OPT_DB_PRE,"-nox_sd_scaling_type",
                    optionString, maxStringLength, &lflg);CHKERRQ(ierr);
       if(lflg)
       {

@@ -131,7 +131,7 @@ namespace MueLu {
     void writeFileVTKOpening(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<int> & geomSizesFine) const;
     void writeFileVTKNodes(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::RCP<const Map> & nodeMap) const;
     void writeFileVTKData(std::ofstream & fout, std::vector<int> & uniqueFine, LocalOrdinal myAggOffset, ArrayRCP<LocalOrdinal> & vertex2AggId, int myRank) const;
-    void writeFileVTKCoordinates(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz, int dim) const;
+    void writeFileVTKCoordinates(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fz, int dim) const;
     void writeFileVTKCells(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const;
     void writeFileVTKClosing(std::ofstream & fout) const;
     void writePVTU(std::ofstream& pvtu, std::string baseFname, int numProcs, bool bFineEdges = false, bool bCoarseEdges = false) const;
@@ -144,15 +144,15 @@ namespace MueLu {
     // move these routines to a common base class for visualization factories?
     static void doPointCloud(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes);
     static void doJacks(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId);
-    static void doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords);
-    static void doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+    static void doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords);
+    static void doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& zCoords);
 
 #ifdef HAVE_MUELU_CGAL
-    static void doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords);
-    static void doCGALConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+    static void doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords);
+    static void doCGALConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& zCoords);
 #endif
 
-    static void doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz);
+    static void doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fx, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fy, Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & fz);
 
     static myVec3 crossProduct(myVec3 v1, myVec3 v2);
     static double dotProduct(myVec2 v1, myVec2 v2);
@@ -167,8 +167,8 @@ namespace MueLu {
     static myVec2 getNorm(myVec2 v);
     static myVec3 getNorm(myVec3 v1, myVec3 v2, myVec3 v3);
     static double pointDistFromTri(myVec3 point, myVec3 v1, myVec3 v2, myVec3 v3);
-    static std::vector<myTriangle> processTriangle(std::list<myTriangle>& tris, myTriangle tri, std::list<int>& pointsInFront, myVec3& barycenter, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
-    static std::vector<int> giftWrap(std::vector<myVec2>& points, std::vector<int>& nodes, const Teuchos::ArrayRCP<const double> & xCoords, const Teuchos::ArrayRCP<const double> & yCoords);
+    static std::vector<myTriangle> processTriangle(std::list<myTriangle>& tris, myTriangle tri, std::list<int>& pointsInFront, myVec3& barycenter, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& yCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& zCoords);
+    static std::vector<int> giftWrap(std::vector<myVec2>& points, std::vector<int>& nodes, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & xCoords, const Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> & yCoords);
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
     std::vector<int> makeUnique(std::vector<int>& vertices) const; //!< replaces node indices in vertices with compressed unique indices, and returns list of unique points

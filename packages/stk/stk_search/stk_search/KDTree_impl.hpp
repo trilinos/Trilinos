@@ -38,8 +38,9 @@
 #include <algorithm>                    // for min
 #include <cassert>                      // for assert
 #include <cmath>                        // for fabs
-#include <utility>                      // for pair, make_pair
 #include <stk_search/KDTree_Threaded_Sort.hpp>    // for ThreadedSort
+#include <utility>                      // for pair, make_pair
+#include <stk_math/StkMath.hpp>         // for stk::math::max, stk::math::min
 
 
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -49,13 +50,13 @@ namespace stk {
 
 ///< Set output box to contain both input boxes
 template <typename BoxType>
-KOKKOS_FORCEINLINE_FUNCTION void UnionBoxes(const BoxType& inBox1, const BoxType& inBox2, BoxType& outputBox) {
-  outputBox.set_box(std::min(inBox1.get_x_min(), inBox2.get_x_min()),
-                    std::min(inBox1.get_y_min(), inBox2.get_y_min()),
-                    std::min(inBox1.get_z_min(), inBox2.get_z_min()),
-                    std::max(inBox1.get_x_max(), inBox2.get_x_max()),
-                    std::max(inBox1.get_y_max(), inBox2.get_y_max()),
-                    std::max(inBox1.get_z_max(), inBox2.get_z_max()));
+KOKKOS_INLINE_FUNCTION void UnionBoxes(const BoxType& inBox1, const BoxType& inBox2, BoxType& outputBox) {
+  outputBox.set_box(stk::math::min(inBox1.get_x_min(), inBox2.get_x_min()),
+                    stk::math::min(inBox1.get_y_min(), inBox2.get_y_min()),
+                    stk::math::min(inBox1.get_z_min(), inBox2.get_z_min()),
+                    stk::math::max(inBox1.get_x_max(), inBox2.get_x_max()),
+                    stk::math::max(inBox1.get_y_max(), inBox2.get_y_max()),
+                    stk::math::max(inBox1.get_z_max(), inBox2.get_z_max()));
 }
 
 
@@ -154,7 +155,7 @@ inline void store_1_node_tree(ObjectBoundingBoxHierarchy_T<RangeBoxType> *root_n
 
 
 template <typename RangeBoxType>
-inline void store_2_node_tree(ObjectBoundingBoxHierarchy_T<RangeBoxType> *root_node, const stk::search::ObjectBoundingBox_T<RangeBoxType> *const boxes) {
+KOKKOS_INLINE_FUNCTION void store_2_node_tree(ObjectBoundingBoxHierarchy_T<RangeBoxType> *root_node, const stk::search::ObjectBoundingBox_T<RangeBoxType> *const boxes) {
   //
   //  Special case, only two boxes passed in.  This happens often due to the top to bottom tree structure.
   //  Significant optimizations are avalable for this case
@@ -1391,7 +1392,7 @@ inline void create_hierarchy_fork_threaded(ObjectBoundingBoxHierarchy_T<RangeBox
 
 template<typename RangeBoxType>
 template<typename DomainBox>
-KOKKOS_FORCEINLINE_FUNCTION void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBox& searchObject, std::vector<int>& returnList) const {
+inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBox& searchObject, std::vector<int>& returnList) const {
   returnList.clear();
   if(m_tree.empty()) {
     return;
@@ -1419,7 +1420,7 @@ KOKKOS_FORCEINLINE_FUNCTION void ProximitySearchTree_T<RangeBoxType>::SearchForO
 
  template<typename RangeBoxType>
  template<typename DomainBox>
-   KOKKOS_FORCEINLINE_FUNCTION void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBox&           searchObject, 
+   inline void ProximitySearchTree_T<RangeBoxType>::SearchForOverlap(const DomainBox&           searchObject,
                                                                                           std::vector<int>&          returnIndexList,
                                                                                           std::vector<RangeBoxType>& returnBoxList) {
    returnIndexList.clear();
@@ -1451,7 +1452,7 @@ KOKKOS_FORCEINLINE_FUNCTION void ProximitySearchTree_T<RangeBoxType>::SearchForO
 
 template<typename RangeBoxType>
 template<typename DomainBox>
-KOKKOS_FORCEINLINE_FUNCTION bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& searchObject) {
+inline bool ProximitySearchTree_T<RangeBoxType>::AnyOverlap(const DomainBox& searchObject) {
   if(m_tree.empty()) {
     return false;
   } else {

@@ -72,8 +72,8 @@ namespace Iotr {
     bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
-    int    intOffset;
-    double realOffset;
+    int    intOffset{0};
+    double realOffset{0.0};
   };
 } // namespace Iotr
 

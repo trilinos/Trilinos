@@ -82,6 +82,52 @@ struct obj_stats *exoII_nm  = 0;
 static char  ret_string[10 * (MAX_VAR_NAME_LENGTH + 1)];
 static char *cur_string = &ret_string[0];
 
+void ex_print_config(void)
+{
+  fprintf(stderr, "\nExodus Configuration Information:\n");
+  fprintf(stderr, "\tExodus Version %.2f\n", EX_API_VERS);
+#if defined(HAVE_PARALLEL)
+  fprintf(stderr, "\tExodus Parallel enabled\n");
+#else
+  fprintf(stderr, "\tExodus Parallel NOT enabled\n");
+#endif
+#if defined(EXODUS_THREADSAFE)
+  fprintf(stderr, "\tExodus Thread Safe enabled\n");
+#else
+  fprintf(stderr, "\tExodus Thread Safe NOT enabled\n");
+#endif
+#if defined(SEACAS_HIDE_DEPRECATED_CODE)
+  fprintf(stderr, "\tExodus Deprecated Functions NOT built\n\n");
+#else
+  fprintf(stderr, "\tExodus Deprecated Functions Available\n\n");
+#endif
+  fprintf(stderr, "\tNetCDF Version %s\n", NC_VERSION);
+#if NC_HAS_HDF5
+  fprintf(stderr, "\tUsing NetCDF with HDF5 enabled\n");
+#endif
+#if NC_HAS_PARALLEL
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5 and/or PnetCDF\n");
+#endif
+#if NC_HAS_PNETCDF
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via PnetCDF\n");
+#endif
+#if NC_HAS_PARALLEL4
+  fprintf(stderr, "\tUsing NetCDF with parallel IO enabled via HDF5\n");
+#endif
+#if NC_HAS_CDF5
+  fprintf(stderr, "\tUsing NetCDF with CDF5 support\n");
+#endif
+#if NC_HAS_ERANGE_FILL
+  fprintf(stderr, "\tUsing NetCDF with ERANGE_FILL support\n");
+#endif
+#if NC_RELAX_COORD_BOUND
+  fprintf(stderr, "\tUsing NetCDF with RELAX_COORD_BOUND defined\n");
+#endif
+#if defined(NC_HAVE_META_H)
+  fprintf(stderr, "\tUsing NetCDF with NC_HAVE_META_H defined\n\n");
+#endif
+}
+
 int ex_check_file_type(const char *path, int *type)
 {
   /* Based on (stolen from?) NC_check_file_type from netcdf sources.
@@ -1473,12 +1519,10 @@ static int warning_output = 0;
 
 int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 {
-  char errmsg[MAX_ERR_LENGTH];
-  int  nc_mode = 0;
-#if NC_HAS_HDF5
+  char       errmsg[MAX_ERR_LENGTH];
+  int        nc_mode      = 0;
   static int netcdf4_mode = -1;
-#endif /* NC_NETCDF4 */
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
   static int netcdf5_mode = -1;
 #endif
 
@@ -1518,7 +1562,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   }
 #endif
 
-#if !defined(NC_64BIT_DATA)
+#if !NC_HAS_CDF5
   if (my_mode & EX_64BIT_DATA) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "EXODUS: ERROR: File format specified as 64bit_data, but "
@@ -1563,7 +1607,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   int64_status = my_mode & (EX_ALL_INT64_DB | EX_ALL_INT64_API);
 
   if ((int64_status & EX_ALL_INT64_DB) != 0) {
-#if NC_HAS_HDF5 || defined(NC_64BIT_DATA)
+#if NC_HAS_HDF5 || NC_HAS_CDF5
     /* Library DOES support netcdf4 and/or cdf5 ... See if user
      * specified either of these and use that one; if not, pick
      * netcdf4, non-classic as default.
@@ -1571,7 +1615,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     if (my_mode & EX_NETCDF4) {
       my_mode |= EX_NOCLASSIC;
     }
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
     else if (my_mode & EX_64BIT_DATA) {
       ; /* Do nothing, already set */
     }
@@ -1697,7 +1741,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
     nc_mode |= NC_CLASSIC_MODEL;
   }
 
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
   if (my_mode & EX_64BIT_DATA) {
     nc_mode |= (NC_64BIT_DATA);
   }
@@ -1727,7 +1771,7 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
 #if NC_HAS_HDF5
       !(nc_mode & NC_NETCDF4) &&
 #endif
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
       !(nc_mode & NC_64BIT_DATA) &&
 #endif
       filesiz == 1) {
@@ -1755,12 +1799,15 @@ int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
   if (my_mode & EX_DISKLESS) {
     nc_mode |= NC_DISKLESS;
     nc_mode |= NC_WRITE;
+#if defined NC_PERSIST
+    nc_mode |= NC_PERSIST;
+#endif
   }
 #endif
   return nc_mode | pariomode;
 }
 
-int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_ws, int *io_ws)
+int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws, int *io_ws)
 {
   int status;
   int old_fill;
@@ -1768,7 +1815,6 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_w
   int filesiz     = 1;
   int is_hdf5     = 0;
   int is_pnetcdf  = 0;
-  int is_parallel = 0;
 
   float vers;
   char  errmsg[MAX_ERR_LENGTH];
@@ -1808,11 +1854,19 @@ int ex_int_populate_header(int exoid, const char *path, int my_mode, int *comp_w
     is_pnetcdf = 1;
   }
 
-  if (my_mode & EX_MPIPOSIX) {
+  if (my_mode & EX_NETCDF4) {
     is_hdf5 = 1;
   }
 
-  is_parallel = (my_mode & EX_PNETCDF) || (my_mode & EX_MPIPOSIX);
+  /*
+   * NetCDF has deprecated use of MPIIO and MPIPOSIX and instead rely
+   * on explicitly specifying either NetCDF-4 of PNetCDF output. For
+   * backward-compatibility, we map the MPIIO and MPIPOSIX over to
+   * NetCDF4 which is hdf5-based...
+   */
+  if (is_parallel && ((my_mode & EX_MPIIO) || (my_mode & EX_MPIPOSIX))) {
+    is_hdf5 = 1;
+  }
 
   if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, is_parallel, is_hdf5, is_pnetcdf) !=
       EX_NOERR) {

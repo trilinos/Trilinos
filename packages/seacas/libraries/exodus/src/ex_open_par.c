@@ -244,7 +244,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
 #endif
     }
     else if (type == 4) {
-#if defined(NC_64BIT_DATA)
+#if NC_HAS_CDF5
       fprintf(stderr,
               "EXODUS: ERROR: Attempting to open the CDF5 "
               "file:\n\t'%s'\n\t failed. The netcdf library supports "

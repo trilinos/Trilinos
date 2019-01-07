@@ -7,6 +7,8 @@
 #include <stk_mesh/base/BulkData.hpp>              // for BulkData
 #include <stk_mesh/base/MetaData.hpp>              // for MetaData, etc
 #include <utility>                                 // for pair
+
+#include "stk_util/util/SortAndUnique.hpp"
 #include "IossBridge.hpp"                          // for include_entity, etc
 #include "Ioss_ElementTopology.h"                  // for ElementTopology
 #include "Ioss_Field.h"                            // for Field, etc
@@ -148,6 +150,58 @@ void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   }
 }
 
+void create_processed_edge(stk::mesh::BulkData& bulk,
+                           const stk::mesh::Entity elem,
+                           int side_ordinal,
+                           const stk::mesh::PartVector& add_parts,
+                           stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior,
+                           stk::mesh::EntityId side_id_for_classic_behavior)
+{
+    if(bulk.mesh_meta_data().spatial_dimension() == 2 &&
+       behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
+    {
+        bulk.declare_element_side(elem, side_ordinal, add_parts);
+    }
+    else
+    {
+        stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_id_for_classic_behavior, elem, side_ordinal);
+        bulk.change_entity_parts(side, add_parts);
+    }
+}
+
+void create_processed_face(stk::mesh::BulkData& bulk,
+                          const stk::mesh::Entity elem,
+                          int side_ordinal,
+                          const stk::mesh::PartVector& add_parts,
+                          stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior,
+                          stk::mesh::EntityId side_id_for_classic_behavior,
+                          std::vector<ElemSidePartOrds>& sidesToMove)
+{
+    if(behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CLASSIC) {
+        bulk.declare_element_side(elem, side_ordinal, add_parts);
+    }
+    else if(behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
+        stk::mesh::Entity new_face =
+                stk::mesh::impl::get_or_create_face_at_element_side(bulk, elem, side_ordinal,
+                                                                    side_id_for_classic_behavior,
+                                                                    add_parts);
+        stk::mesh::impl::connect_face_to_other_elements(bulk, new_face, elem, side_ordinal);
+    }
+    else if(behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
+        if(bulk.bucket(elem).owned()) {
+            bulk.declare_element_side(elem, side_ordinal, add_parts);
+        }
+        else {
+            stk::mesh::OrdinalVector ords(add_parts.size());
+            for(size_t n = 0; n < add_parts.size(); ++n)
+            {
+                ords[n] = add_parts[n]->mesh_meta_data_ordinal();
+            }
+            sidesToMove.push_back( {bulk.identifier(elem), side_ordinal, ords});
+        }
+    }
+}
+
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, std::vector<ElemSidePartOrds> &sidesToMove, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
@@ -156,9 +210,24 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
     const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
 
     Ioss::Region *region = sset->get_database()->get_region();
-    const std::string universalAlias = region->get_alias("universal_sideset");
-    if (sset->name() == universalAlias)
-        return;
+//    const std::string universalAlias = region->get_alias("universal_sideset");
+//    if (sset->name() == universalAlias)
+//        return;
+
+    stk::mesh::SideSet *stkSideSet = nullptr;
+    stk::mesh::Part *stkSideSetPart = get_part_for_grouping_entity(*region, meta, sset);
+
+    if(nullptr != stkSideSetPart)
+    {
+        if(bulk.does_sideset_exist(*stkSideSetPart))
+        {
+            stkSideSet = & bulk.get_sideset(*stkSideSetPart);
+        }
+        else
+        {
+            stkSideSet = & bulk.create_sideset(*stkSideSetPart, true);
+        }
+    }
 
     size_t block_count = sset->block_count();
     for (size_t i=0; i < block_count; i++) {
@@ -170,11 +239,6 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             if (sb_part == nullptr)
             {
                sb_part = get_part_for_grouping_entity(*region, meta, sset);
-            }
-
-            if (sb_part == nullptr)
-            {
-                continue;
             }
 
             stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
@@ -189,7 +253,11 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
             // face.
 
             block->get_field_data("element_side", elem_side);
-            stk::mesh::PartVector add_parts( 1 , sb_part );
+            stk::mesh::PartVector add_parts;
+
+            if(nullptr != sb_part) {
+                add_parts.push_back(sb_part);
+            }
 
             // Get topology of the sides being defined to see if they
             // are 'faces' or 'edges'.  This is needed since for shell-type
@@ -214,42 +282,36 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     int side_ordinal = elem_side[is*2+1] - 1;
                     stk::mesh::EntityId side_id_for_classic_behavior = stk::mesh::impl::side_id_formula(elem_side[is*2], side_ordinal);
 
+                    if(par_dimen == 0)
+                    {
+                        stk::topology elemTopo = bulk.bucket(elem).topology();
+                        stk::topology faceTopo = elemTopo.sub_topology(elemTopo.side_rank(), side_ordinal);
+
+                        Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(faceTopo.name(), false);
+                        par_dimen = ioss_topo->parametric_dimension();
+                    }
+
+                    ThrowRequireMsg((par_dimen == 1) || (par_dimen == 2), "Invalid value for par_dimen:" << par_dimen);
+
+                    if(nullptr != stkSideSet)
+                    {
+                        stkSideSet->add({elem, side_ordinal});
+                    }
+
                     if (par_dimen == 1) {
-                        if(bulk.mesh_meta_data().spatial_dimension()==2 && behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
-                        {
-                            bulk.declare_element_side(elem, side_ordinal, add_parts);
-                        }
-                        else
-                        {
-                            stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_id_for_classic_behavior, elem, side_ordinal);
-                            bulk.change_entity_parts( side, add_parts );
-                        }
+                        create_processed_edge(bulk, elem, side_ordinal, add_parts, behavior, side_id_for_classic_behavior);
                     }
                     else if (par_dimen == 2) {
-                        if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CLASSIC) {
-                            bulk.declare_element_side(elem, side_ordinal, add_parts);
-                        }
-                        else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
-                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_id_for_classic_behavior,stk::mesh::PartVector(1,sb_part));
-                            stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
-                        }
-                        else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
-                            if(bulk.bucket(elem).owned()) {
-                                bulk.declare_element_side(elem, side_ordinal, add_parts);
-                            }
-                            else
-                            {
-                                stk::mesh::OrdinalVector ords(add_parts.size());
-                                for(size_t n=0; n<add_parts.size(); ++n) {
-                                    ords[n] = add_parts[n]->mesh_meta_data_ordinal();
-                                }
-                                sidesToMove.push_back({bulk.identifier(elem), side_ordinal, ords});
-                            }
-                        }
+                        create_processed_face(bulk, elem, side_ordinal, add_parts, behavior,
+                                              side_id_for_classic_behavior, sidesToMove);
                     }
                 }
             }
         }
+    }
+    if (stkSideSet != nullptr)
+    {
+        stk::util::sort_and_unique(*stkSideSet);
     }
 }
 
@@ -343,27 +405,35 @@ void populate_hidden_nodesets(Ioss::Region &io, const stk::mesh::MetaData & meta
     }
 }
 
+stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name)
+{
+    stk::mesh::Part* part = nullptr;
+
+    std::vector<std::string> aliases;
+    region.get_aliases(name, aliases);
+
+    for(std::string &alias : aliases)
+    {
+        if(sierra::case_strcmp(alias, name) != 0)
+        {
+            part = meta.get_part(alias);
+
+            if(nullptr != part) {
+                break;
+            }
+        }
+    }
+
+    return part;
+}
+
 stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity)
 {
     const std::string &name = entity->name();
     stk::mesh::Part* part = meta.get_part(name);
 
-    if(nullptr == part)
-    {
-        std::vector<std::string> aliases;
-        region.get_aliases(name, aliases);
-
-        for(std::string &alias : aliases)
-        {
-            if(sierra::case_strcmp(alias, name) != 0)
-            {
-                part = meta.get_part(alias);
-
-                if(nullptr != part) {
-                    return part;
-                }
-            }
-        }
+    if(nullptr == part) {
+        part = get_part_from_alias(region, meta, name);
     }
     return part;
 }

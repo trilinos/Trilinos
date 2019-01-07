@@ -287,8 +287,8 @@ namespace {
         ts_count = region.get_property("state_count").get_int();
       }
 
-      // Flush interval on output database -- do not flush until end
-      properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
+      int flush_interval = interface.flush_interval; // Default is zero -- do not flush until end
+      properties.add(Ioss::Property("FLUSH_INTERVAL", flush_interval));
 
       if (interface.split_times == 0 || interface.delete_timesteps || ts_count == 0 || append ||
           interface.inputFile.size() > 1) {

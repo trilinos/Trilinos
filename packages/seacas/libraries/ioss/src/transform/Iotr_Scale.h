@@ -72,8 +72,8 @@ namespace Iotr {
     bool internal_execute(const Ioss::Field &field, void *data) override;
 
   private:
-    int    intMultiplier;
-    double realMultiplier;
+    int    intMultiplier{1};
+    double realMultiplier{1.0};
   };
 } // namespace Iotr
 

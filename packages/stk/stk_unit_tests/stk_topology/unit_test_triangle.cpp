@@ -65,38 +65,38 @@ TEST( stk_topology, tri_3)
 
   {
     const char b[] = "abc";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,0u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
   }
 
   {
     const char b[] = "cab";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,1u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
   }
 
   {
     const char b[] = "bca";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,2u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,2u);
   }
 
   {
     const char b[] = "acb";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,3u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,3u);
   }
 
   {
     const char b[] = "cba";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,4u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,4u);
   }
 
   {
     const char b[] = "bac";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,5u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,5u);
   }
 }
 
@@ -130,38 +130,38 @@ TEST( stk_topology, tri_4)
 
   {
     const char b[] = "abcd";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,0u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
   }
 
   {
     const char b[] = "cabd";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,1u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
   }
 
   {
     const char b[] = "bcad";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,2u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,2u);
   }
 
   {
     const char b[] = "acbd";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,3u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,3u);
   }
 
   {
     const char b[] = "cbad";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,4u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,4u);
   }
 
   {
     const char b[] = "bacd";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,5u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,5u);
   }
 }
 
@@ -194,38 +194,38 @@ TEST( stk_topology, tri_6)
 
   {
     const char b[] = "abc012";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,0u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,0u);
   }
 
   {
     const char b[] = "cab201";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,1u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,1u);
   }
 
   {
     const char b[] = "bca120";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,2u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,2u);
   }
 
   {
     const char b[] = "acb210";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,3u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,3u);
   }
 
   {
     const char b[] = "cba102";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,4u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,4u);
   }
 
   {
     const char b[] = "bac021";
-    EXPECT_TRUE(t.equivalent(a,b).first);
-    EXPECT_EQ(t.equivalent(a,b).second,5u);
+    EXPECT_TRUE(t.equivalent((char*)a,(char*)b).first);
+    EXPECT_EQ(t.equivalent((char*)a,(char*)b).second,5u);
   }
 }
 

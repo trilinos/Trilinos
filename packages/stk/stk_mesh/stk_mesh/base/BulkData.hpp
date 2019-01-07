@@ -413,6 +413,10 @@ public:
                             const std::vector<PartVector>& add_parts,
                             const std::vector<PartVector>& remove_parts);
 
+  void batch_change_entity_parts( const stk::mesh::EntityVector& entities, // Mod Mark
+                            const PartVector& add_parts,
+                            const PartVector& remove_parts);
+
   /** \brief  Request the destruction an entity on the local process.
    *
    * \paragraph destroy_requirements  Requirements
@@ -744,6 +748,7 @@ public:
   // out.close();
   void dump_all_mesh_info(std::ostream& out) const;
   void dump_mesh_per_proc(const std::string& fileNamePrefix) const;
+  void dump_mesh_bucket_info(std::ostream& out, Bucket* bucket) const;
 
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
@@ -779,8 +784,12 @@ public:
 
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
-  void register_observer(stk::mesh::ModificationObserver *observer);
-  void unregister_observer(ModificationObserver *observer);
+  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer);
+  void unregister_observer(std::shared_ptr<ModificationObserver> observer);
+  template<typename ObserverType>
+  bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }
+  template<typename ObserverType>
+  std::vector<ObserverType*> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
 
   void initialize_face_adjacent_element_graph();
   void delete_face_adjacent_element_graph();
@@ -797,12 +806,13 @@ public:
   void destroy_elements_of_topology(stk::topology topologyToDelete);
 
   bool does_sideset_exist(const stk::mesh::Part &part) const;
-  SideSet& create_sideset(const stk::mesh::Part &part);
+  SideSet& create_sideset(const stk::mesh::Part &part, bool fromInput = false);
   const SideSet& get_sideset(const stk::mesh::Part &part) const;
   SideSet& get_sideset(const stk::mesh::Part &part);
   size_t get_number_of_sidesets() const;
   bool was_mesh_modified_since_sideset_creation();
   void clear_sidesets();
+  void clear_sideset(const stk::mesh::Part &part);
   std::vector<SideSet *> get_sidesets();
 
   void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
@@ -1490,9 +1500,9 @@ private: // data
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   //stk::ModificationSummary m_modSummary;
-  stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
+  std::shared_ptr<stk::mesh::MeshDiagnosticObserver> m_meshDiagnosticObserver;
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
-  stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
+  std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
   stk::mesh::impl::SideSetImpl<std::string> m_sideSetData;
 
 protected:

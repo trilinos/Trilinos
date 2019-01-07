@@ -59,7 +59,19 @@ namespace Intrepid2 {
   FunctionSpaceTools<SpT>::
   HGRADtransformVALUE(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
                        const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
-    ArrayTools<SpT>::cloneFields(output, input);
+    if(output.rank() == input.rank()) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      for (size_type i=0;i< input.rank();++i) {
+        INTREPID2_TEST_FOR_EXCEPTION( (input.extent(i) != output.extent(i)), std::invalid_argument,
+                                        ">>> ERROR (FunctionSpaceTools::HGRADtransformVALUE): Dimensions of input and output fields containers do not match.");
+      }
+    }
+#endif
+      RealSpaceTools<SpT>::clone(output, input);
+    }
+    else
+      ArrayTools<SpT>::cloneFields(output, input);
   }
 
   // ------------------------------------------------------------------------------------
@@ -112,27 +124,7 @@ namespace Intrepid2 {
   HGRADtransformGRAD(       Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                       const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
                       const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
-#ifdef HAVE_INTREPID2_DEBUG
-    {
-      INTREPID2_TEST_FOR_EXCEPTION( inputVals.rank()       != 3 ||
-                                    jacobianInverse.rank() != 4 ||
-                                    outputVals.rank()      != 4, std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): Ranks are not compatible.");
-      INTREPID2_TEST_FOR_EXCEPTION( outputVals.extent(0) != jacobianInverse.extent(0), std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): Cell dimension does not match.");
-      INTREPID2_TEST_FOR_EXCEPTION( outputVals.extent(1) != inputVals.extent(0), std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): Field dimension does not match.");
-      INTREPID2_TEST_FOR_EXCEPTION( outputVals.extent(2)      != inputVals.extent(1) || 
-                                    jacobianInverse.extent(1) != inputVals.extent(1), std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): Point dimension does not match.");
-      const auto spaceDim = outputVals.extent(3);
-      INTREPID2_TEST_FOR_EXCEPTION( jacobianInverse.extent(2) != spaceDim || 
-                                    jacobianInverse.extent(3) != spaceDim || 
-                                    inputVals.extent(2)       != spaceDim , std::invalid_argument,
-                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformGRAD): matvec dimensions are not compatible.");
-    }
-#endif
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
+    return HCURLtransformVALUE(outputVals, jacobianInverse, inputVals);
 
     // this modification is for 2d and 3d (not 1d)
     // this is an attempt to measure the overhead of subview of dynrankview. 
@@ -198,8 +190,52 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                       const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobian, inputVals, 'N');
-    ArrayTools<SpT>::scalarMultiplyDataField(outputVals, jacobianDet, outputVals, true);
+    if(jacobian.data()==NULL || jacobian.extent(2)==2) //2D case
+      return HVOLtransformVALUE(outputVals, jacobianDet, inputVals);
+    else
+      return HDIVtransformVALUE(outputVals, jacobian, jacobianDet, inputVals);
+  }
+
+  // ------------------------------------------------------------------------------------
+
+  template<typename SpT>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename jacobianDetValueType, class ...jacobianDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<SpT>::
+  HCURLtransformCURL(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                      const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( outputVals.rank() == 4, std::invalid_argument,
+                                    ">>> ERROR (FunctionSpaceTools::HCURLtransformCURL): Output rank must have rank 3.\n If these are 3D fields, then use the appropriate overload of this function.");
+    }
+#endif
+    return HVOLtransformVALUE(outputVals, jacobianDet, inputVals);
+  }
+
+  // ------------------------------------------------------------------------------------
+
+  template<typename SpT>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename jacobianValueType,    class ...jacobianProperties,
+           typename jacobianDetValueType, class ...jacobianDetProperties,
+           typename inputValValueType,    class ...inputValProperties>
+  void
+  FunctionSpaceTools<SpT>::
+  HGRADtransformCURL(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                      const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
+                      const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( outputVals.extent(3)!=2, std::invalid_argument,
+                                    ">>> ERROR (FunctionSpaceTools::HGRADtransformCURL):\n output field is 3D by the function is meant for 2D fields");
+    }
+#endif
+    return HDIVtransformVALUE(outputVals, jacobian, jacobianDet, inputVals);
   }
 
   // ------------------------------------------------------------------------------------
@@ -230,7 +266,7 @@ namespace Intrepid2 {
   HDIVtransformDIV(       Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                     const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
                     const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
-    ArrayTools<SpT>::scalarMultiplyDataField(outputVals, jacobianDet, inputVals, true);
+    return HVOLtransformVALUE(outputVals, jacobianDet, inputVals);
   }
 
   // ------------------------------------------------------------------------------------

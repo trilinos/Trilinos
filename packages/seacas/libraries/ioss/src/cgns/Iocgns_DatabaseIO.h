@@ -96,21 +96,22 @@ namespace Iocgns {
 
     bool node_major() const override { return false; }
 
-    void openDatabase__() const override;
-    void closeDatabase__() const override;
-
-    bool begin__(Ioss::State state) override;
-    bool end__(Ioss::State state) override;
-
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
-
     // Metadata-related functions.
     void read_meta_data__() override;
     void write_meta_data();
     void write_results_meta_data();
 
   private:
+    void openDatabase__() const override;
+    void closeDatabase__() const override;
+
+    bool begin__(Ioss::State state) override;
+    bool end__(Ioss::State state) override;
+
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
+    void flush_database__() const override;
+
     bool   check_valid_file_open(int status) const;
     void   create_structured_block(int base, int zone, size_t &num_node);
     void   create_structured_block_fpp(int base, int zone, size_t &num_node);
@@ -181,8 +182,9 @@ namespace Iocgns {
                              int64_t file_count, entity_type type) const;
 
     int         get_file_pointer() const;
-    mutable int cgnsFilePtr{-1};
+    mutable int m_cgnsFilePtr{-1};
 
+    int m_flushInterval{0}; // Default is no flushing after each timestep
     int m_currentVertexSolutionIndex     = 0;
     int m_currentCellCenterSolutionIndex = 0;
 

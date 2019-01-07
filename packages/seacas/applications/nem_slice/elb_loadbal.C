@@ -797,7 +797,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       free(tmp_z);
     }
     free(problem->group_no);
-    free(mesh->eb_cnts);
+    vec_free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
     vec_free(graph->start);
     vec_free(graph->adj);
@@ -985,7 +985,7 @@ cleanup:
       free(tmp_z);
     }
     free(problem->group_no);
-    free(mesh->eb_cnts);
+    vec_free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
     vec_free(graph->start);
     vec_free(graph->adj);

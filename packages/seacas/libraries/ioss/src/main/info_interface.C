@@ -96,10 +96,22 @@ void Info::Interface::enroll_options()
                   "_");
 
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database Type: exodus, generated", "unknown");
-
-  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database Type: exodus, generated (alias for db_type)", nullptr);
+                  "Database Type: generated"
+#if defined(SEACAS_HAVE_PAMGEN)
+                  ", pamgen"
+#endif
+#if defined(SEACAS_HAVE_EXODUS)
+                  ", exodus"
+#endif
+#if defined(SEACAS_HAVE_CGNS)
+                  ", cgns"
+#endif
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
+                  ", data_warehouse"
+#endif
+                  ".",
+                  "unknown");
+  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr);
 
   options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
                   "List information only for the specified group.", nullptr);
@@ -149,19 +161,19 @@ void Info::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
-                  "Use the linear method to decompose the input mesh in a parallel run. "
-                  "elements in order first n/p to proc 0, next to proc 1.",
+                  "Use the linear method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements in order first n/p to proc 0, next to proc 1.",
                   nullptr);
 
   options_.enroll("cyclic", Ioss::GetLongOption::NoValue,
-                  "Use the cyclic method to decompose the input mesh in a parallel run. "
-                  "elements handed out to id % proc_count",
+                  "Use the cyclic method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements handed out to id % proc_count",
                   nullptr);
 
   options_.enroll("random", Ioss::GetLongOption::NoValue,
-                  "Use the random method to decompose the input mesh in a parallel run."
-                  "elements assigned randomly to processors in a way that preserves balance (do "
-                  "not use for a real run)",
+                  "Use the random method to decompose the input mesh in a parallel run.\n"
+                  "\t\tElements assigned randomly to processors in a way that preserves balance.\n"
+                  "\t\t(do not use for a real run)",
                   nullptr);
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
@@ -187,7 +199,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("help") != nullptr) {
-    options_.usage();
+    options_.usage(std::cerr);
     std::cerr << "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
