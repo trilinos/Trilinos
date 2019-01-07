@@ -418,7 +418,7 @@ namespace FROSch {
             //Repeated Map on first level needs to be correct--Build ElementNodeList
             Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),this->MpiComm_->getSize(), CoarseSolveComm_);
             
-            //GraphMap->describe(*fancy,Teuchos::VERB_EXTREME);
+            GraphMap->describe(*fancy,Teuchos::VERB_EXTREME);
             //kRowMap_->describe(*fancy,Teuchos::VERB_EXTREME);->Nicht Korrekt bei BuildRepeatedMap!
             Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
             const size_t numMyElements = GraphMap->getNodeNumElements();
@@ -439,35 +439,37 @@ namespace FROSch {
             //ElementNodeList_->describe(*fancy,Teuchos::VERB_EXTREME);
             //--------GraphEntriesList to correct Map------------------
             Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
-            
             Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > GraphEntries = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphEntriesList_,*scatter);
-            
+            //this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
+            //if(this->MpiComm_->getRank() == 0) std::cout<<"Test1 \n";
             //---------------------------------------------------------
             
             GO numGlobal = GraphEntries->getGlobalNumRows();
             SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap,7);
+            //this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
+            //if(this->MpiComm_->getRank() == 0) std::cout<<"Test2 \n";
             
             Teuchos::ArrayView<const LO> in;
             Teuchos::ArrayView<const GO> vals_graph;
-            if( OnCoarseSolveComm_){
-                for (size_t k = 0;k<GraphMap->getNodeNumElements();k++){
+            
+                for (size_t k = 0;k<numMyElements;k++){
                     //size_t numENTRY = GraphEntries->getNumEntriesInLocalRow(k);
                     //GraphEntries->getGlobalRowCopy(k,in,vals_graph,numENTRY);
+                    GO kg = GraphMap->getGlobalElement(k);
                     GraphEntries->getLocalRowView(k,in,vals_graph);
                     Teuchos::Array<GO> vals(vals_graph);
                     //LO ab = GraphMap->getLocalElement(k);
-                    SubdomainConnectGraph_->insertGlobalIndices(k,vals());
-                    
+                    SubdomainConnectGraph_->insertGlobalIndices(kg,vals());
                 }
-                
+                //CoarseSolveComm_->barrier();
+                //if(CoarseSolveComm_->getRank() == 0) std::cout<<"Test 3 \n";
                 SubdomainConnectGraph_->fillComplete();
-                this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
+            
                 SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
-                //CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
-                //CoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
-                this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
+                CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
+                CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                 //-----------------------------------------------------------------------------------------------------------------
-            }
+        
             
 
         } else if(!DistributionList_->get("Type","linear").compare("Zoltan2")){
@@ -507,7 +509,7 @@ namespace FROSch {
             
             
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
-           GOVec elementList(tmpCoarseMap->getNodeElementList());
+            GOVec elementList(tmpCoarseMap->getNodeElementList());
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(tmpCoarseMap->lib(),-1,elementList,0,CoarseSolveComm_);
             //Build RepeatedMap CoarseLevel------------------------------------------------------------------------------------
             //Repeated Map on first level needs to be correct--Build ElementNodeList
