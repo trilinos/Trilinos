@@ -625,7 +625,7 @@ int Internals::initialize_state_file(Mesh &mesh, const ex_var_params &var_params
       }
     }
 
-    if (var_params.num_eset > 0) {
+    if (var_params.num_fset > 0) {
       if (define_netcdf_vars(exodusFilePtr, "face set", mesh.facesets.size(), DIM_NUM_FS,
                              VAR_FS_STAT, VAR_FS_IDS, VAR_NAME_FS) != EX_NOERR) {
         return (EX_FATAL);

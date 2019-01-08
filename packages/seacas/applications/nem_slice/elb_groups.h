@@ -44,8 +44,8 @@ template <typename INT> struct Mesh_Description;
 
 /* Function prototypes */
 template <typename INT>
-int parse_groups(Mesh_Description<INT> *mesh,        /* Mesh information structure */
-                 Problem_Description *  prob);         /* Problem information */
+int parse_groups(Mesh_Description<INT> *mesh, /* Mesh information structure */
+                 Problem_Description *  prob);  /* Problem information */
 
 template <typename INT>
 int get_group_info(Machine_Description *machine, Problem_Description *prob,

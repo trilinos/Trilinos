@@ -610,8 +610,9 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
    * If debugging is not on go ahead and report errors from init. This
    * will show version mismatch information by default.
    */
+  int old_opt = 0;
   if (Debug_Flag == 0) {
-    ex_opts(EX_VERBOSE);
+    old_opt = ex_opts(EX_VERBOSE);
   }
 
   /* Read the title of the LB File and about the size of the mesh */
@@ -622,7 +623,7 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
   check_exodus_error(error, "ex_get_init");
 
   if (Debug_Flag == 0) {
-    ex_opts(!EX_VERBOSE);
+    ex_opts(old_opt);
   }
 
 #ifdef DEBUG
