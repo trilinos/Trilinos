@@ -147,7 +147,7 @@ int executeInsertGlobalIndicesFEDP_(const comm_ptr_t& comm, const struct CmdLine
   RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
-  RCP<fe_graph_t> fe_graph = rcp(new fe_graph_t(row_map, owned_plus_shared_map, 0));
+  RCP<fe_graph_t> fe_graph = rcp(new fe_graph_t(row_map, owned_plus_shared_map, 16));
 
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
   Teuchos::Array<global_ordinal_t> global_ids_in_row(4);
