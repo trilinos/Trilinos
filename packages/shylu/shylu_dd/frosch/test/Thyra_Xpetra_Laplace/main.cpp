@@ -79,6 +79,7 @@
 
 // Xpetra include
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
     
-    RCP<const Comm<int> > CommWorld = Tpetra::getDefaultComm();
+    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
     
     CommandLineProcessor My_CLP;
     
