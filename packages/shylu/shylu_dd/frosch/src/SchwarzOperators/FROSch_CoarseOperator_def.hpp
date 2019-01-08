@@ -418,7 +418,7 @@ namespace FROSch {
             //Repeated Map on first level needs to be correct--Build ElementNodeList
             Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > GraphMap = Xpetra::MapFactory<LO,GO,NO>::createUniformContigMap(CoarseSolveMap_->lib(),this->MpiComm_->getSize(), CoarseSolveComm_);
             
-            GraphMap->describe(*fancy,Teuchos::VERB_EXTREME);
+            //GraphMap->describe(*fancy,Teuchos::VERB_EXTREME);
             //kRowMap_->describe(*fancy,Teuchos::VERB_EXTREME);->Nicht Korrekt bei BuildRepeatedMap!
             Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
             const size_t numMyElements = GraphMap->getNodeNumElements();
