@@ -2,6 +2,8 @@
 // @HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
@@ -11,6 +13,10 @@
 #include <tuple>
 #include <regex>
 #include <iterator>
+
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
+#include "Kokkos_Core.hpp"
+#endif
 
 TEUCHOS_UNIT_TEST(PerformanceMonitorBase, UnsortedMergeUnion) {
 
@@ -60,7 +66,6 @@ TEUCHOS_UNIT_TEST(PerformanceMonitorBase, UnsortedMergeIntersection) {
   TEST_EQUALITY(tmp_b[1], "bar");
 }
 
-
 TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 {
   const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
@@ -86,15 +91,15 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
           const std::string label = "Rank 0 ONLY";
           timer.start(label);
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          TEST_ASSERT((timer.findTimer("Total Time@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
           timer.stop(label);
-          TEST_ASSERT(not (timer.findTimer("Total Time@Solve@Rank 0 ONLY")).running);
+          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).running);
         } else {
           timer.start("Not Rank 0");
           std::this_thread::sleep_for(std::chrono::milliseconds{50});
-          TEST_ASSERT((timer.findTimer("Total Time@Solve@Not Rank 0")).running);
+          TEST_ASSERT((timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
           timer.stop("Not Rank 0");
-          TEST_ASSERT(not (timer.findTimer("Total Time@Solve@Not Rank 0")).running);
+          TEST_ASSERT(not (timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).running);
         }
       }
       timer.stop("Solve");
@@ -102,22 +107,22 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
     }
   }
   timer.stop("Total Time");
+  timer.stopBaseTimer();
 
-
-  TEST_EQUALITY((timer.findTimer("Total Time")).count, 1);
-  TEST_EQUALITY((timer.findTimer("Total Time@Assembly")).count, 10);
-  TEST_EQUALITY((timer.findTimer("Total Time@Solve")).count, 10);
-  TEST_EQUALITY((timer.findTimer("Total Time@Solve@Prec")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time")).count, 1);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Assembly")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve@Prec")).count, 10);
 
   // Test for exception for bad timer name
   TEST_THROW(timer.findTimer("Testing misspelled timer name!"),std::runtime_error);
 
   // Pre-aggregation
   if (myRank == 0) {
-    TEST_EQUALITY((timer.findTimer("Total Time@Solve@Rank 0 ONLY")).count, 10);
+    TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve@Rank 0 ONLY")).count, 10);
   }
   else {
-    TEST_EQUALITY((timer.findTimer("Total Time@Solve@Not Rank 0")).count, 10);
+    TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Solve@Not Rank 0")).count, 10);
   }
 
   Teuchos::StackedTimer::OutputOptions options;
@@ -137,7 +142,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
 
   // Gold file results (timer name,expected runtime,number of calls)
   std::vector<std::tuple<std::string,double,unsigned long>> lineChecks;
-  lineChecks.push_back(std::make_tuple("My New Timer:",0.0,1));
+  lineChecks.push_back(std::make_tuple("My New Timer:",2.0,1));
   lineChecks.push_back(std::make_tuple("Total Time:",2.0,1));
   lineChecks.push_back(std::make_tuple("Assembly:",1.0,10));
   lineChecks.push_back(std::make_tuple("Solve:",1.0,10));
@@ -258,16 +263,17 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
     }
   }
   timer->stop("Total Time");
+  timer->stopBaseTimer();
 
   assert(size(*comm)>0);
 
-  TEST_EQUALITY((timer->findTimer("Total Time")).count, 1);
-  TEST_EQUALITY((timer->findTimer("Total Time@Assembly")).count, 10);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time")).count, 1);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time@Assembly")).count, 10);
 
   // Make sure the TimeMonitor added the timers
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  TEST_EQUALITY((timer->findTimer("Total Time@Solve@Prec")).count, 10);
-  TEST_EQUALITY((timer->findTimer("Total Time@Solve@GMRES")).count, 10);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time@Solve@Prec")).count, 10);
+  TEST_EQUALITY((timer->findTimer("TM:Interoperability@Total Time@Solve@GMRES")).count, 10);
 #endif
 
   Teuchos::StackedTimer::OutputOptions options;
@@ -319,6 +325,9 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersException)
   timer.start("Inner");
   // Should stop inner before outer
   TEST_THROW(timer.stop("Outer"),std::runtime_error);
+  timer.stop("Inner");
+  timer.stop("Outer");
+  timer.stopBaseTimer();
 }
 
 
@@ -335,4 +344,25 @@ TEUCHOS_UNIT_TEST(StackedTimer, OverlappingTimersViaRCP)
 }
 #endif
 
+// Use our own main to initialize kokkos before calling
+// runUnitTestsFromMain(). The kokkos space_time_stack profiler seg
+// faults due to inconsistent push/pop of timers in the teuchos unit
+// test startup code. By calling initialize here we can use the
+// space_time_stack profiler with this unit test.
+int main( int argc, char* argv[] )
+{
+  // Note that the dtor for GlobalMPISession will call
+  // Kokkos::finalize_all().
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize(argc,argv);
+  {
+    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+    out.setOutputToRootOnly(0);
+  }
+  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
 
+  auto return_val = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  if (Kokkos::is_initialized())
+    Kokkos::finalize_all();
+  return return_val;
+}
