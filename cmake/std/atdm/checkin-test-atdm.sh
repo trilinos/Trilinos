@@ -206,7 +206,10 @@ fi
 #
 
 echo
-echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds: $ATDM_BUILD_NAME_KEYS_LIST"
+echo "Running configure, build, and/or testing for $ATDM_NUM_BULDS builds:"
+for build_name in $ATDM_BUILD_NAME_KEYS_LIST ; do
+  echo "    ${build_name}"
+done
 echo
 
 ATDM_CHT_BUILD_CASE_IDX=0
