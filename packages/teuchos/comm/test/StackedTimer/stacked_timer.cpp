@@ -354,7 +354,9 @@ int main( int argc, char* argv[] )
   // Note that the dtor for GlobalMPISession will call
   // Kokkos::finalize_all().
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
   Kokkos::initialize(argc,argv);
+#endif
   {
     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
     out.setOutputToRootOnly(0);
@@ -362,7 +364,9 @@ int main( int argc, char* argv[] )
   Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
 
   auto return_val = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
   if (Kokkos::is_initialized())
     Kokkos::finalize_all();
+#endif
   return return_val;
 }
