@@ -104,7 +104,7 @@ int Ioss::Edge2::number_edges_face(int face) const
 
 Ioss::IntVector Ioss::Edge2::edge_connectivity(int /* edge_number */) const
 {
-  Ioss::IntVector connectivity(Constants::nedgenode);
+  Ioss::IntVector connectivity;
   return connectivity;
 }
 

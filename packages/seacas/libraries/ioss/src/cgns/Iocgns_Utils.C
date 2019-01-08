@@ -210,12 +210,7 @@ namespace {
       // Need to create a new sideset since didn't see this earlier.
       auto *db = block->get_database();
       sset     = new Ioss::SideSet(db, fam_name);
-      if (sset == nullptr) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: CGNS: Could not create sideset named '" << fam_name << "' on block '"
-               << block->name() << "'.\n";
-        IOSS_ERROR(errmsg);
-      }
+
       // Get all previous sidesets to make sure we set a unique id...
       int64_t     max_id   = 0;
       const auto &sidesets = db->get_region()->get_sidesets();
@@ -932,13 +927,13 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
         zgc_names; // Used to detect duplicate zgc names in parallel but non-parallel-io case
     for (const auto &zgc : sb->m_zoneConnectivity) {
       if (zgc.is_valid() && zgc.is_active()) {
-        int                zgc_idx = 0;
+        int                     zgc_idx = 0;
         std::array<cgsize_t, 6> owner_range{{zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeBeg[1],
-					     zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0],
-					     zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeEnd[2]}};
+                                             zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0],
+                                             zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeEnd[2]}};
         std::array<cgsize_t, 6> donor_range{{zgc.m_donorRangeBeg[0], zgc.m_donorRangeBeg[1],
-					     zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0],
-					     zgc.m_donorRangeEnd[1], zgc.m_donorRangeEnd[2]}};
+                                             zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[0],
+                                             zgc.m_donorRangeEnd[1], zgc.m_donorRangeEnd[2]}};
 
         std::string donor_name   = zgc.m_donorName;
         std::string connect_name = zgc.m_connectionName;
