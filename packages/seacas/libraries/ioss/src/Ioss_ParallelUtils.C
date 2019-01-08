@@ -71,15 +71,17 @@ namespace {
 
 Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator) : communicator_(the_communicator) {}
 
-void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &properties,
-                                                     bool                   do_print)
+void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &properties)
 {
+  static bool do_print = true; // Print the first time called
+
   std::string env_props;
   if (get_environment("IOSS_PROPERTIES", env_props, parallel_size() > 1)) {
     // env_props string should be of the form
     // "PROP1=VALUE1:PROP2=VALUE2:..."
     std::vector<std::string> prop_val = tokenize(env_props, ":");
 
+    int rank = parallel_rank();
     for (auto &elem : prop_val) {
       std::vector<std::string> property = tokenize(elem, "=");
       if (property.size() != 2) {
@@ -94,7 +96,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       std::string up_value  = Utils::uppercase(value);
       bool        all_digit = value.find_first_not_of("0123456789") == std::string::npos;
 
-      if (do_print) {
+      if (do_print && rank == 0) {
         std::cerr << "IOSS: Adding property '" << prop << "' with value '" << value << "'\n";
       }
       if (all_digit) {
@@ -112,6 +114,7 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
       }
     }
   }
+  do_print = false;
 }
 
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value,
@@ -412,9 +415,7 @@ T Ioss::ParallelUtils::global_minmax(T local_minmax, Ioss::ParallelUtils::MinMax
   return minmax;
 }
 
-template void Ioss::ParallelUtils::global_array_minmax(unsigned long *, unsigned long,
-                                                       MinMax) const;
-
+template void Ioss::ParallelUtils::gather(double, std::vector<double> &) const;
 template void Ioss::ParallelUtils::gather(int, std::vector<int> &) const;
 template void Ioss::ParallelUtils::gather(int64_t, std::vector<int64_t> &) const;
 template void Ioss::ParallelUtils::all_gather(int, std::vector<int> &) const;
