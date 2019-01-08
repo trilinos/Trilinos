@@ -37,6 +37,22 @@ StackedTimer::LevelTimer::report(std::ostream &os) {
 
 }
 
+const BaseTimer*
+StackedTimer::LevelTimer::findBaseTimer(const std::string &name) const {
+  const BaseTimer* t = NULL;
+  if (get_full_name() == name) {
+    return this;
+  }
+  else {
+    for (unsigned i=0;i<sub_timers_.size(); ++i){
+      t = sub_timers_[i].findBaseTimer(name);
+      if (t != NULL)
+        return t;
+    }
+  }
+  return t;
+}
+  
 BaseTimer::TimeInfo
 StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;
