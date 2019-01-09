@@ -81,14 +81,13 @@ namespace FROSch {
         typedef typename SchwarzPreconditioner<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
         typedef typename Teuchos::ArrayRCP<DofOrdering> DofOrderingVecPtr;
         
+        
         TwoLevelBlockPreconditioner(CrsMatrixPtr k,
                                     ParameterListPtr parameterList);
-        
         
         int initialize(UN dimension,
                        UNVecPtr dofsPerNodeVec,
                        DofOrderingVecPtr dofOrderingVec,
-                       GOVecPtr blockMaxGIDVec,
                        int overlap = -1,
                        MapPtrVecPtr repeatedMapVec = Teuchos::null,                       
                        MultiVectorPtrVecPtr nullSpaceBasisVec = Teuchos::null,

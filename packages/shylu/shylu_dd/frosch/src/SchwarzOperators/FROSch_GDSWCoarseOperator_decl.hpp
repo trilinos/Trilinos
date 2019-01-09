@@ -97,7 +97,7 @@ namespace FROSch {
         
         virtual int initialize()
         {
-            FROSCH_ASSERT(0!=0,"GDSWCoarseOperator cannot be built without a repeated Map");
+            FROSCH_ASSERT(false,"GDSWCoarseOperator cannot be built without a repeated Map");
             return 0;
         };
         
@@ -190,21 +190,7 @@ namespace FROSch {
                                           MapPtr nodesMap,
                                           MapPtrVecPtr dofsMaps,
                                           GOVecPtr dirichletBoundaryDofs,
-                                          MultiVectorPtr nodeList);
-        
-        int phiGammaGDSW(UN blockId,
-                         bool buildRotations,
-                         UN dimension,
-                         UN dofsPerNode,
-                         MultiVectorPtr nodeList,
-                         LOVecPtr2D partMappings,
-                         EntitySetPtr vertices,
-                         EntitySetPtr shortEdges,
-                         EntitySetPtr straightEdges,
-                         EntitySetPtr edges,
-                         EntitySetPtr faces,
-                         BoolVecPtr coarseSpaceFunctions);
-        
+                                          MultiVectorPtr nodeList);                
         
         DDInterfacePtr DDInterface_;
 

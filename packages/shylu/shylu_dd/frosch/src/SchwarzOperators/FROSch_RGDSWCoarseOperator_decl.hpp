@@ -77,6 +77,7 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
         
@@ -97,16 +98,16 @@ namespace FROSch {
         
         protected:
         
-        int phiGammaReducedGDSW(UN blockId,
-                                int option,
-                                bool buildRotations,
-                                UN dimension,
-                                UN dofsPerNode,
-                                MultiVectorPtr nodeList,
-                                LOVecPtr2D partMappings,
-                                EntitySetPtr vertices,
-                                EntitySetPtr edges,
-                                EntitySetPtr faces); // Sollte man hier nicht auch die typen noch auswählen können
+        MultiVectorPtr phiGammaReducedGDSW(UN blockId,
+                                           int option,
+                                           bool buildRotations,
+                                           UN dimension,
+                                           MultiVectorPtr nodeList,
+                                           LOVecPtr2D partMappings,
+                                           EntitySetPtr vertices,
+                                           EntitySetPtr edges,
+                                           EntitySetPtr faces,
+                                           MapPtr blockMap); // Sollte man hier nicht auch die typen noch auswählen können
         
     };
     

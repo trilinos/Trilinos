@@ -1,131 +1,114 @@
-#ifndef THYRA_FROSCH_LINEAR_OP_HPP
-#define THYRA_FROSCH_LINEAR_OP_HPP
+//@HEADER
+// ************************************************************************
+//
+//               ShyLU: Hybrid preconditioner package
+//                 Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
+//
+// ************************************************************************
+//@HEADER
 
-//Thyra
+#ifndef THYRA_FROSCH_LINEAR_OP_DEF_HPP
+#define THYRA_FROSCH_LINEAR_OP_DEF_HPP
 
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_SpmdMultiVectorBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_AssertOp.hpp"
 #include "Thyra_FROSchLinearOp_decl.hpp"
-#include "Thyra_LinearOpBase.hpp"
-#include "Thyra_EpetraLinearOpBase.hpp"
-#include "Thyra_ScaledLinearOpBase.hpp"
-#include "Thyra_RowStatLinearOpBase.hpp"
-#include "Thyra_SpmdVectorSpaceBase.hpp"
 
+#ifdef HAVE_SHYLU_DDFROSCH_THYRA
 
-
-
-//Teuchos
-#include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_getConst.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include <Teuchos_PtrDecl.hpp>
-#include "Teuchos_TypeNameTraits.hpp"
-
-//FROSch
-#include <FROSch_Tools_def.hpp>
-
-//Xpetra
-#include "Xpetra_MapExtractor.hpp"
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_Parameters.hpp>
-
-//Epetra
-#include <Epetra_MpiComm.h>
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_RowMatrix.h"
-
-
-
-using namespace std;
-using namespace Teuchos;
-using namespace Xpetra;
-using namespace FROSch;
-using namespace Belos;
 namespace Thyra {
     
+    using namespace std;
+//    using namespace Belos;
+    using namespace FROSch;
+    using namespace Teuchos;
+    using namespace Xpetra;
     
     // Constructors/initializers
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::FROSchLinearOp()
+    template <class SC, class LO, class GO, class NO>
+    FROSchLinearOp<SC,LO,GO,NO>::FROSchLinearOp()
     {}
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
-                                                                            const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-                                                                            const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                                                                            const RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
-                                                                            bool bIsEpetra,
-                                                                            bool bIsTpetra
-                                                                            )
+    template <class SC, class LO, class GO, class NO>
+    void FROSchLinearOp<SC,LO,GO,NO>::initialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
+                                                 const RCP<const VectorSpaceBase<SC> > &domainSpace,
+                                                 const RCP<Xpetra::Operator<SC,LO,GO,NO> > &xpetraOperator,
+                                                 bool bIsEpetra,
+                                                 bool bIsTpetra)
     {
         initializeImpl(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
     }
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::constInitialize(
-                                                                                 const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-                                                                                 const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                                                                                 const RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &xpetraOperator,
-                                                                                 bool bIsEpetra,
-                                                                                 bool bIsTpetra
-                                                                                 )
+    template <class SC, class LO, class GO, class NO>
+    void FROSchLinearOp<SC,LO,GO,NO>::constInitialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
+                                                      const RCP<const VectorSpaceBase<SC> > &domainSpace,
+                                                      const RCP<const Xpetra::Operator<SC,LO,GO,NO> > &xpetraOperator,
+                                                      bool bIsEpetra,
+                                                      bool bIsTpetra)
     {
         initializeImpl(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
     }
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-    FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getXpetraOperator()
+    template <class SC, class LO, class GO, class NO>
+    RCP<Xpetra::Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getXpetraOperator()
     {
         return xpetraOperator_.getNonconstObj();
     }
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP<const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-    FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstXpetraOperator() const
+    template <class SC, class LO, class GO, class NO>
+    RCP<const Xpetra::Operator<SC,LO,GO,NO> > FROSchLinearOp<SC,LO,GO,NO>::getConstXpetraOperator() const
     {
         return xpetraOperator_;
     }
     
-    
     // Public Overridden functions from LinearOpBase
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP<const Thyra::VectorSpaceBase<Scalar> >
-    FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::range() const
+    template <class SC, class LO, class GO, class NO>
+    RCP<const VectorSpaceBase<SC> > FROSchLinearOp<SC,LO,GO,NO>::range() const
     {
         return rangeSpace_;
     }
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP<const Thyra::VectorSpaceBase<Scalar> >
-    FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domain() const
+    template <class SC, class LO, class GO, class NO>
+    RCP<const VectorSpaceBase<SC> > FROSchLinearOp<SC,LO,GO,NO>::domain() const
     {
         return domainSpace_;
     }
     
     // Protected Overridden functions from LinearOpBase
     
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    bool FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::opSupportedImpl(
-                                                                                 Thyra::EOpTransp M_trans) const
+    template <class SC, class LO, class GO, class NO>
+    bool FROSchLinearOp<SC,LO,GO,NO>::opSupportedImpl(EOpTransp M_trans) const
     {
         if (is_null(xpetraOperator_))
         return false;
@@ -136,52 +119,47 @@ namespace Thyra {
         if (M_trans == CONJ) {
             // For non-complex scalars, CONJ is always supported since it is equivalent to NO_TRANS.
             // For complex scalars, Xpetra does not support conjugation without transposition.
-            return !Teuchos::ScalarTraits<Scalar>::isComplex;
+            return !ScalarTraits<SC>::isComplex;
         }
         
         return xpetraOperator_->hasTransposeApply();
     }
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
-                                                                           const Thyra::EOpTransp M_trans,
-                                                                           const Thyra::MultiVectorBase<Scalar> &X_in,
-                                                                           const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
-                                                                           const Scalar alpha,
-                                                                           const Scalar beta
-                                                                           ) const
+    template <class SC, class LO, class GO, class NO>
+    void FROSchLinearOp<SC,LO,GO,NO>::applyImpl(const EOpTransp M_trans,
+                                                const MultiVectorBase<SC> &X_in,
+                                                const Ptr<MultiVectorBase<SC> > &Y_inout,
+                                                const SC alpha,
+                                                const SC beta) const
     {
-        using Teuchos::rcpFromRef;
-        using Teuchos::rcpFromPtr;
-        
         const EOpTransp real_M_trans = real_trans(M_trans);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(getConstXpetraOperator() == Teuchos::null, MueLu::Exceptions::RuntimeError, "XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
-        RCP< const Teuchos::Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
+        FROSCH_ASSERT(getConstXpetraOperator()!=Teuchos::null,"XpetraLinearOp::applyImpl: internal Xpetra::Operator is null.");
+        RCP< const Comm<int> > comm = getConstXpetraOperator()->getRangeMap()->getComm();
         //Transform to Xpetra MultiVector
-        RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xY;
+        RCP<MultiVector<SC,LO,GO,NO> > xY;
         
-        Teuchos::ETransp transp;
+        ETransp transp;
         switch (M_trans) {
             case NOTRANS:   transp = Teuchos::NO_TRANS;   break;
             case TRANS:     transp = Teuchos::TRANS;      break;
             case CONJTRANS: transp = Teuchos::CONJ_TRANS; break;
-            default: TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::NotImplemented, "Thyra::XpetraLinearOp::apply. Unknown value for M_trans. Only NOTRANS, TRANS and CONJTRANS are supported.");
+            default: FROSCH_ASSERT(false,"Thyra::XpetraLinearOp::apply. Unknown value for M_trans. Only NOTRANS, TRANS and CONJTRANS are supported.");
         }
         //Epetra NodeType
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         if(this->bIsEpetra_){
             const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
             
-            Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > DomainM = this->xpetraOperator_->getDomainMap();
+            RCP<const Map<LO,GO,NO> > DomainM = this->xpetraOperator_->getDomainMap();
         
-            Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >RangeM = this->xpetraOperator_->getRangeMap();
+            RCP<const Map<LO,GO,NO> >RangeM = this->xpetraOperator_->getRangeMap();
         
-            RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > eDomainM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(DomainM);
+            RCP<const EpetraMapT<GO,NO> > eDomainM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(DomainM);
         
             const Epetra_Map epetraDomain = eDomainM->getEpetra_Map();
         
-            RCP<const Xpetra::EpetraMapT<GlobalOrdinal,Node> > eRangeM = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal,Node> >(RangeM);
+            RCP<const EpetraMapT<GO,NO> > eRangeM = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(RangeM);
         
             const Epetra_Map epetraRange = eRangeM->getEpetra_Map();
             
@@ -189,73 +167,61 @@ namespace Thyra {
         
             RCP<Epetra_MultiVector> Y;
        
-            THYRA_FUNC_TIME_MONITOR_DIFF(
-                                         "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
+            THYRA_FUNC_TIME_MONITOR_DIFF("Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
             // X
-            X = Thyra::get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
-            RCP<Epetra_MultiVector> X_nonconst = Teuchos::rcp_const_cast<Epetra_MultiVector>(X);
-            RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xX = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*X_nonconst,comm);
+            X = get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraDomain: epetraRange, X_in );
+            RCP<Epetra_MultiVector> X_nonconst = rcp_const_cast<Epetra_MultiVector>(X);
+            RCP<MultiVector<SC,LO,GO,NO> > xX = FROSch::ConvertToXpetra<SC,LO,GO,NO>(UseEpetra,*X_nonconst,comm);
             // Y
-            Y = Thyra::get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraRange: epetraDomain, *Y_inout );
-            xY = FROSch::ConvertToXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(UseEpetra,*Y,comm);
+            Y = get_Epetra_MultiVector(real_M_trans==NOTRANS ? epetraRange: epetraDomain, *Y_inout );
+            xY = FROSch::ConvertToXpetra<SC,LO,GO,NO>(UseEpetra,*Y,comm);
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
 
         } //Tpetra NodeType
-        else if(bIsTpetra_){
-            const RCP<const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xX =
-            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromRef(X_in), comm);
-            xY = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(rcpFromPtr(Y_inout), comm);
+        else
+#endif
+        if(bIsTpetra_){
+            const RCP<const MultiVector<SC,LO,GO,NO> > xX = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromRef(X_in), comm);
+            xY = ThyraUtils<SC,LO,GO,NO>::toXpetra(rcpFromPtr(Y_inout), comm);
             xpetraOperator_->apply(*xX, *xY, transp, alpha, beta);
             
+        } else {
+            FROSCH_ASSERT(false,"There is a problem with the underlying lib in FROSchLinearOp.");
+            //åstd::cout<<"Only Implemented for Epetra and Tpetra\n";
         }
-        else{
-            std::cout<<"Only Implemented for Epetra and Tpetra\n";
-        }
- 
-       
         
-        RCP<Thyra::MultiVectorBase<Scalar> >thyraX =
-        Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(xY));
+        RCP<MultiVectorBase<SC> >thyraX =
+        rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xY));
         
-        
-        typedef Thyra::SpmdVectorSpaceBase<Scalar> ThySpmdVecSpaceBase;
-        RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(Teuchos::rcpFromPtr(Y_inout)->range());
+        typedef SpmdVectorSpaceBase<SC> ThySpmdVecSpaceBase;
+        RCP<const ThySpmdVecSpaceBase> mpi_vs = rcp_dynamic_cast<const ThySpmdVecSpaceBase>(rcpFromPtr(Y_inout)->range());
         
         TEUCHOS_TEST_FOR_EXCEPTION(mpi_vs == Teuchos::null, std::logic_error, "Failed to cast Thyra::VectorSpaceBase to Thyra::SpmdVectorSpaceBase.");
-        const LocalOrdinal localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
-        const LocalOrdinal localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : Teuchos::rcpFromPtr(Y_inout)->range()->dim() );
+        const LO localOffset = ( mpi_vs != Teuchos::null ? mpi_vs->localOffset() : 0 );
+        const LO localSubDim = ( mpi_vs != Teuchos::null ? mpi_vs->localSubDim() : rcpFromPtr(Y_inout)->range()->dim() );
         
-        RCP<Thyra::DetachedMultiVectorView<Scalar> > thyData =
-        Teuchos::rcp(new Thyra::DetachedMultiVectorView<Scalar>(*Teuchos::rcpFromPtr(Y_inout),Teuchos::Range1D(localOffset,localOffset+localSubDim-1)));
+        RCP<DetachedMultiVectorView<SC> > thyData =
+        rcp(new DetachedMultiVectorView<SC>(*rcpFromPtr(Y_inout),Range1D(localOffset,localOffset+localSubDim-1)));
         
-        for(size_t j = 0; j <xY
-            ->getNumVectors(); ++j) {
-            Teuchos::ArrayRCP< const Scalar > xpData = xY->getData(j); // access const data from Xpetra object
+        for( size_t j = 0; j <xY->getNumVectors(); ++j) {
+            Teuchos::ArrayRCP< const SC > xpData = xY->getData(j); // access const data from Xpetra object
             // loop over all local rows
-            for(LocalOrdinal i = 0; i < localSubDim; ++i) {
+            for( LO i = 0; i < localSubDim; ++i) {
                 (*thyData)(i,j) = xpData[i];
             }
         }
-        
-        
- 
     }
-    
     
     // private
     
-    
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    template <class SC, class LO, class GO, class NO>
     template<class XpetraOperator_t>
-    void FROSchLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializeImpl(
-                                                                                const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-                                                                                const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-                                                                                const RCP<XpetraOperator_t> &xpetraOperator,
-                                                                                bool bIsEpetra,
-                                                                                bool bIsTpetra
-                                                                                )
+    void FROSchLinearOp<SC,LO,GO,NO>::initializeImpl(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
+                                                     const RCP<const VectorSpaceBase<SC> > &domainSpace,
+                                                     const RCP<XpetraOperator_t> &xpetraOperator,
+                                                     bool bIsEpetra,
+                                                     bool bIsTpetra)
     {
-        
 #ifdef THYRA_DEBUG
         TEUCHOS_ASSERT(nonnull(rangeSpace));
         TEUCHOS_ASSERT(nonnull(domainSpace));
@@ -268,8 +234,8 @@ namespace Thyra {
         bIsTpetra_ = bIsTpetra;
     }
     
-    
 } // namespace Thyra
 
+#endif
 
 #endif  // THYRA_XPETRA_LINEAR_OP_HPP

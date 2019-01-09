@@ -486,7 +486,7 @@ namespace FROSch {
             return dir1;
             
         } else {
-            FROSCH_ASSERT(0!=0,"There is a problem while computing the direction of an edge!");
+            FROSCH_ASSERT(false,"There is a problem while computing the direction of an edge!");
         }
     }
 }

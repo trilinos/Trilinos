@@ -69,8 +69,10 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ExporterPtrVecPtr ExporterPtrVecPtr;
         
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterList    ParameterList;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterList ParameterList;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr CoarseSpacePtr;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
         
@@ -97,7 +99,11 @@ namespace FROSch {
         
         virtual int initialize() = 0;
         
-        virtual int compute() = 0;
+        virtual int compute();
+        
+        virtual MapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
+        
+        virtual int clearCoarseSpace();
         
         virtual void apply(const MultiVector &x,
                           MultiVector &y,
@@ -116,8 +122,11 @@ namespace FROSch {
         virtual void applyPhi(MultiVector& x,
                              MultiVector& y) const;
 
+        virtual CoarseSpacePtr getCoarseSpace() const;
         
     protected:
+        
+        virtual MapPtr assembleSubdomainMap() = 0;
         
         virtual int setUpCoarseOperator();
         
@@ -132,10 +141,11 @@ namespace FROSch {
         
         LO NumProcsCoarseSolve_;
         
+        CoarseSpacePtr CoarseSpace_;
+        
         CrsMatrixPtr Phi_;
         CrsMatrixPtr CoarseMatrix_;
         
-        MapPtr CoarseMap_;
         MapPtrVecPtr GatheringMaps_;
         MapPtr CoarseSolveMap_;
         MapPtr CoarseSolveRepeatedMap_;

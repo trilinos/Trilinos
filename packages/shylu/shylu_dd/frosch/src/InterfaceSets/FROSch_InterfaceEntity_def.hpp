@@ -151,7 +151,7 @@ namespace FROSch {
             if ((0<=dofIDs[i])&&(dofIDs[i]<=DofsPerNode_)) {
                 NodeVector_[iD].DofsGlobal_[dofIDs[i]] = dofsGlobal[dofIDs[i]];
             } else {
-                FROSCH_ASSERT(0!=0,"dofIDs[i] is out of range.");
+                FROSCH_ASSERT(false,"dofIDs[i] is out of range.");
             }
         }
         
@@ -217,15 +217,15 @@ namespace FROSch {
     int InterfaceEntity<SC,LO,GO,NO>::findAncestors(EntitySetPtr entitySet)
     {
         if (Type_ == VertexType) {
-            FROSCH_ASSERT(0!=0,"There are no Ancestors to vertices.")
+            FROSCH_ASSERT(false,"There are no Ancestors to vertices.")
         } else if ((Type_ == ShortEdgeType) || (Type_ == StraightEdgeType) || (Type_ == EdgeType)) {
             FROSCH_ASSERT(entitySet->getEntityType()==VertexType,"entitySet has the wrong type.")
         } else if (Type_ == FaceType) {
             FROSCH_ASSERT((entitySet->getEntityType()==ShortEdgeType)||(entitySet->getEntityType()==StraightEdgeType)||(entitySet->getEntityType()==EdgeType),"entitySet has the wrong type.")
         } else if (Type_ == SurfaceType) {
-            FROSCH_ASSERT(0!=0,"SurfaceType not yet implemented...")
+            FROSCH_ASSERT(false,"SurfaceType not yet implemented...")
         } else if (Type_ == VolumeType) {
-            FROSCH_ASSERT(0!=0,"VolumeType not yet implemented...")
+            FROSCH_ASSERT(false,"VolumeType not yet implemented...")
         }
         
         //

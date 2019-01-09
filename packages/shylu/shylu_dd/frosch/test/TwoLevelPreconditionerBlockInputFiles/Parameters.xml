@@ -55,7 +55,7 @@
             <Parameter name="Level ID"                                      type="int"      value="1"/>            
             <ParameterList name="Solver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="klu"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -180,7 +180,7 @@
             
             <ParameterList name="ExtensionSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -217,7 +217,7 @@
             
             <ParameterList name="CoarseSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -281,7 +281,7 @@
             
             <ParameterList name="ExtensionSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -327,7 +327,7 @@
             
             <ParameterList name="CoarseSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="klu"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -377,7 +377,7 @@
                         <Parameter name="Level ID"                                      type="int"      value="2"/>
                         <ParameterList name="Solver">
                             <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                            <Parameter name="Solver"                                    type="string"   value="klu"/>
+                            <Parameter name="Solver"                                    type="string"   value="Klu"/>
                             <ParameterList name="Amesos">
                                 <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                                 <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -423,7 +423,7 @@
 
             <ParameterList name="ExtensionSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -460,7 +460,7 @@
             
             <ParameterList name="CoarseSolver">
                 <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                <Parameter name="Solver"                                    type="string"   value="KLU"/>
+                <Parameter name="Solver"                                    type="string"   value="Klu"/>
                 <ParameterList name="Amesos">
                     <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                     <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
@@ -510,7 +510,7 @@
                         <Parameter name="Level ID"                                      type="int"      value="2"/>
                         <ParameterList name="Solver">
                             <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
-                            <Parameter name="Solver"                                    type="string"   value="klu"/>
+                            <Parameter name="Solver"                                    type="string"   value="Klu"/>
                             <ParameterList name="Amesos">
                                 <Parameter name="MatrixProperty"                        type="string"   value="general"/>
                                 <Parameter name="DroppingTolerance"                     type="double"   value="1.0e-14"/>
