@@ -348,12 +348,6 @@ namespace panzer {
       }
     }
 
-    // Fill complete with range and domain map
-    ghostedGraph->fillComplete(ghostedSourceMap,ghostedTargetMap);
-
-    // *****************
-    // Build owned graph
-    // *****************
     RCP<MapType> ownedTargetMap;
     {
       std::vector<GO> indices;
@@ -367,6 +361,13 @@ namespace panzer {
       sourceGlobalIndexer.getOwnedIndices(indices);
       ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
+
+    // Fill complete with owned range and domain map
+    ghostedGraph->fillComplete(ownedSourceMap,ownedTargetMap);
+
+    // *****************
+    // Build owned graph
+    // *****************
 
     RCP<GraphType> ownedGraph = rcp(new GraphType(ownedTargetMap,0));
     RCP<const ExportType> exporter = rcp(new ExportType(ghostedTargetMap,ownedTargetMap));
@@ -495,7 +496,7 @@ namespace panzer {
       }
 
     }
-    ghostedMatrix->fillComplete(ghostedSourceMap,ghostedTargetMap);
+    ghostedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);
     ownedMatrix->resumeFill();
     ownedMatrix->doExport(*ghostedMatrix,*exporter,Tpetra::ADD);
     ownedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);
