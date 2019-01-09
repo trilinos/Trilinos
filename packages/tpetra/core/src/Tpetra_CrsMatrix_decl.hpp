@@ -1021,6 +1021,13 @@ namespace Tpetra {
     //! Destructor.
     virtual ~CrsMatrix ();
 
+
+    /// \brief Swaps the data from *this with the data and maps from crsMatrix
+    ///
+    /// \param matrix [in/out] a crsMatrix
+    void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
+
+
     //@}
     //! @name Methods for inserting, modifying, or removing entries
     //@{
