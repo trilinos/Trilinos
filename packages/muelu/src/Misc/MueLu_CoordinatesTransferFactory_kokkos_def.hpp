@@ -173,7 +173,7 @@ namespace MueLu {
 
                                auto aggregate = aggGraph.rowConst(i);
 
-                               double sum = 0.0; // do not use Scalar here (Stokhos)
+                               typename Teuchos::ScalarTraits<Scalar>::magnitudeType sum = 0.0; // do not use Scalar here (Stokhos)
                                for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
                                  sum += fineCoordsRandomView(aggregate(colID),j);
 
