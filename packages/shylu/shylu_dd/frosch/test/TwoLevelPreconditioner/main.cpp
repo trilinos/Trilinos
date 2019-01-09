@@ -135,11 +135,11 @@ int main(int argc, char *argv[])
 
 			RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
 
-			if (Comm->MyPID()==0) {
+			/*if (Comm->MyPID()==0) {
 				cout << "--------------------------------------------------------------------------------\nPARAMETERS:" << endl;
 				parameterList->print(cout);
 				cout << "--------------------------------------------------------------------------------\n\n";
-			}
+			}*/
 
 			if (Comm->MyPID()==0) cout << "ASSEMBLY...";
 

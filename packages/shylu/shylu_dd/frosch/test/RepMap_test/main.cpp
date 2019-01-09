@@ -3,6 +3,11 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_SerialDenseMatrix.h"
 
 #include <Galeri_Maps.h>
 #include <Galeri_CrsMatrices.h>
@@ -420,6 +425,10 @@ int main(int argc, char *argv[])
         Teuchos::RCP<Teuchos::ParameterList> parameterList = Teuchos::getParametersFromXmlFile(xmlFile);
         
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(Xgraph,B,parameterList,TeuchosComm);
+        //RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > cRep = RepeatedMap;
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > UniqueMap = FROSch::BuildUniqueMap(cRep);
+        
     }
     
     MPI_Finalize();
@@ -427,6 +436,39 @@ int main(int argc, char *argv[])
     return(EXIT_SUCCESS);
 
 }
+
+void compute_loc_matrix( double *x_triangle, double *y_triangle,
+                        Epetra_SerialDenseMatrix & Ke )
+{
+    int    ii, jj;
+    double det_J;
+    double xa, ya, xb, yb, xc, yc;
+    xa = x_triangle[0];
+    xb = x_triangle[1];
+    xc = x_triangle[2];
+    ya = y_triangle[0];
+    yb = y_triangle[1];
+    yc = y_triangle[2];
+    Ke(0,0) = (yc-yb)*(yc-yb) + (xc-xb)*(xc-xb);
+    Ke(0,1) = (yc-yb)*(ya-yc) + (xc-xb)*(xa-xc);
+    Ke(0,2) = (yb-ya)*(yc-yb) + (xb-xa)*(xc-xb);
+    Ke(1,0) = (yc-yb)*(ya-yc) + (xc-xb)*(xa-xc);
+    Ke(1,1) = (yc-ya)*(yc-ya) + (xc-xa)*(xc-xa);
+    Ke(1,2) = (ya-yc)*(yb-ya) + (xa-xc)*(xb-xa);
+    Ke(2,0) = (yb-ya)*(yc-yb) + (xb-xa)*(xc-xb);
+    Ke(2,1) = (ya-yc)*(yb-ya) + (xa-xc)*(xb-xa);
+    Ke(2,2) = (yb-ya)*(yb-ya) + (xb-xa)*(xb-xa);
+    det_J = (xb-xa)*(yc-ya)-(xc-xa)*(yb-ya);
+    det_J = 2*det_J;
+    if( det_J<0 ) det_J *=-1;
+    for (ii = 0; ii < 3; ii++) {
+        for (jj = 0; jj < 3; jj++) {
+            Ke(ii,jj) = Ke(ii,jj) / det_J;
+        }
+    }
+    return;
+} /* compute_loc_matrix */
+
 
 
 
