@@ -327,10 +327,15 @@ getCoordinateByField(int dim,const std::string & field) const
   TEUCHOS_ASSERT(dim<=2);
 
   // get the coordinate vector you want
-  const std::map<std::string,std::vector<double> > * coord;
+  const std::map<std::string,std::vector<double> > * coord = nullptr;
   if(dim==0) coord = &xcoords_;
   else if(dim==1) coord = &ycoords_;
   else if(dim==2) coord = &zcoords_;
+  else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                               "ParameterListCallbackBlocked::getCoordinateByField: dim is not in range of [0,2] for field \""
+                               << field << "\".");
+  }
 
   std::map<std::string,std::vector<double> >::const_iterator itr;
   itr = coord->find(field);

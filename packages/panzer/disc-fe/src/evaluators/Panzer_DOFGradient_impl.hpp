@@ -55,9 +55,8 @@ namespace {
 
   template <typename ScalarT,typename ArrayT>
   struct evaluateGrad_withSens {
-    using exec_space = typename PHX::exec_space;
-    using scratch_view = Kokkos::View<ScalarT*,typename exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
-    using team_policy = Kokkos::TeamPolicy<exec_space>::member_type;
+    using scratch_view = Kokkos::View<ScalarT*,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
+    using team_policy = Kokkos::TeamPolicy<PHX::exec_space>::member_type;
 
     PHX::MDField<ScalarT>  dof_grad_;
     PHX::MDField<const ScalarT,Cell,Point>  dof_value_;
