@@ -1308,7 +1308,7 @@ namespace Ifpack2 {
           
           // Allocate values.
           { 
-            const local_ordinal_type npacks = packptr.extent(0) - 1;
+            //const local_ordinal_type npacks = packptr.extent(0) - 1;
             const auto pack_td_ptr_last = Kokkos::subview(btdm.pack_td_ptr, nparts);
             const auto num_packed_blocks = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), pack_td_ptr_last);
             btdm.values = vector_type_3d_view("btdm.values", num_packed_blocks(), blocksize, blocksize);
