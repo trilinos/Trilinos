@@ -33,15 +33,21 @@
  *
  */
 
-#include <array>
 #include <iostream>
 #include <numeric>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <vector>
 
 #include "exodusII.h"
+
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
+#define TOPTR(x) (x.empty() ? nullptr : &x[0])
+#endif
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -86,9 +92,9 @@ int main(int argc, char **argv)
   /* write nodal coordinates values and names to database */
 
   /* Quad #1 */
-  std::array<double, num_nodes> x;
-  std::array<double, num_nodes> y;
-  std::array<double, num_nodes> z;
+  std::vector<double> x(num_nodes);
+  std::vector<double> y(num_nodes);
+  std::vector<double> z(num_nodes);
 
   x[0] = 0.00;
   x[1] = 0.75;
@@ -158,13 +164,16 @@ int main(int argc, char **argv)
     z[i + num_nodes / 2] = 1.0;
   }
 
-  EXCHECK(ex_put_coord(exoid, x.data(), y.data(), z.data()));
+  EXCHECK(ex_put_coord(exoid, TOPTR(x), TOPTR(y), TOPTR(z)));
 
-  std::array<const char *, 3> coord_names = {{"xcoor", "ycoor", "zcoor"}};
+  const char *coord_names[3];
+  coord_names[0] = "xcoor";
+  coord_names[1] = "ycoor";
+  coord_names[2] = "zcoor";
 
-  EXCHECK(ex_put_coord_names(exoid, (char **)coord_names.data()));
+  EXCHECK(ex_put_coord_names(exoid, (char **)coord_names));
 
-  std::array<ex_block, num_elem_blk> blocks;
+  std::vector<ex_block> blocks(num_elem_blk);
 
   blocks[0].id                  = 10;
   blocks[0].type                = EX_ELEM_BLOCK;
@@ -185,9 +194,12 @@ int main(int argc, char **argv)
   strncpy(blocks[1].topology, "wedge", 32);
   strncpy(blocks[2].topology, "hex", 32);
 
-  std::array<const char *, num_elem_blk> block_names{{"block_10", "block_20", "block_30"}};
+  const char *block_names[3];
+  block_names[0] = "block_10";
+  block_names[1] = "block_20";
+  block_names[2] = "block_30";
 
-  EXCHECK(ex_put_block_params(exoid, num_elem_blk, blocks.data()));
+  EXCHECK(ex_put_block_params(exoid, num_elem_blk, TOPTR(blocks)));
 
   /* Write element block names */
   for (int i = 0; i < num_elem_blk; i++) {
@@ -195,11 +207,11 @@ int main(int argc, char **argv)
   }
 
   /* write element connectivity */
-  std::array<int, 64> connect0{{1,  3,  12, 10, 2,  7,  11, 6,  3,  5,  16, 14, 4,  9,  15, 8,
-                                10, 18, 30, 28, 17, 25, 29, 24, 20, 16, 32, 30, 21, 27, 31, 26}};
-  std::array<int, 48> connect1{{3,  14, 12, 8,  13, 7,  14, 16, 20, 15, 21, 23,
-                                18, 20, 30, 19, 26, 25, 10, 12, 18, 11, 22, 17}};
-  std::array<int, 16> connect2{{12, 14, 20, 18, 13, 23, 19, 22}};
+  int connect0[64] = {1,  3,  12, 10, 2,  7,  11, 6,  3,  5,  16, 14, 4,  9,  15, 8,
+                      10, 18, 30, 28, 17, 25, 29, 24, 20, 16, 32, 30, 21, 27, 31, 26};
+  int connect1[48] = {3,  14, 12, 8,  13, 7,  14, 16, 20, 15, 21, 23,
+                      18, 20, 30, 19, 26, 25, 10, 12, 18, 11, 22, 17};
+  int connect2[16] = {12, 14, 20, 18, 13, 23, 19, 22};
 
   for (int i = 0; i < blocks[0].num_entry * blocks[0].num_nodes_per_entry / 2; i++) {
     connect0[i + 32] = connect0[i] + 32;
@@ -213,28 +225,27 @@ int main(int argc, char **argv)
     connect2[i + 8] = connect2[i] + 32;
   }
 
-  EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[0].id, connect0.data(), NULL, NULL));
-  EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[1].id, connect1.data(), NULL, NULL));
-  EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[2].id, connect2.data(), NULL, NULL));
+  EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[0].id, connect0, NULL, NULL));
+  EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[1].id, connect1, NULL, NULL));
+  EXCHECK(ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[2].id, connect2, NULL, NULL));
 
   /* write information records; test empty and just blank-filled records */
-  constexpr int                      num_info = 3;
-  std::array<const char *, num_info> info;
-
+  constexpr int num_info = 3;
+  const char *  info[3];
   info[0] = "This is the first information record.";
   info[1] = "";
   info[2] = "                                     ";
 
-  EXCHECK(ex_put_info(exoid, num_info, (char **)info.data()));
+  EXCHECK(ex_put_info(exoid, num_info, (char **)info));
 
   /* write results variables parameters and names */
   const int num_glo_vars = 1;
 
-  std::array<const char *, 4> var_names;
+  const char *var_names[4];
   var_names[0] = "glo_vars";
 
   EXCHECK(ex_put_variable_param(exoid, EX_GLOBAL, num_glo_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_GLOBAL, num_glo_vars, (char **)var_names.data()));
+  EXCHECK(ex_put_variable_names(exoid, EX_GLOBAL, num_glo_vars, (char **)var_names));
 
   const int num_nod_vars = 2;
   /*              12345678901234567890123456789012 */
@@ -242,7 +253,7 @@ int main(int argc, char **argv)
   var_names[1] = "nod_var1";
 
   EXCHECK(ex_put_variable_param(exoid, EX_NODAL, num_nod_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_NODAL, num_nod_vars, (char **)var_names.data()));
+  EXCHECK(ex_put_variable_names(exoid, EX_NODAL, num_nod_vars, (char **)var_names));
 
   const int num_ele_vars = 3;
   /*              0        1         2         3   */
@@ -252,7 +263,7 @@ int main(int argc, char **argv)
   var_names[2] = "this_variable_name_is_tooooo_long";
 
   EXCHECK(ex_put_variable_param(exoid, EX_ELEM_BLOCK, num_ele_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_ele_vars, (char **)var_names.data()));
+  EXCHECK(ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_ele_vars, (char **)var_names));
 
   // for each time step, write the analysis results;
   // the code below fills the arrays glob_var_vals,
@@ -260,9 +271,9 @@ int main(int argc, char **argv)
   int       whole_time_step = 1;
   const int num_time_steps  = 10;
 
-  std::array<double, num_glo_vars> glob_var_vals;
-  std::array<double, num_nodes>    nodal_var_vals;
-  std::array<double, 4>            elem_var_vals;
+  std::vector<double> glob_var_vals(num_glo_vars);
+  std::vector<double> nodal_var_vals(num_nodes);
+  std::vector<double> elem_var_vals(4);
 
   for (int i = 0; i < num_time_steps; i++) {
     double time_value = (float)(i + 1) / 100.;
@@ -276,14 +287,14 @@ int main(int argc, char **argv)
     }
 
     EXCHECK(
-        ex_put_var(exoid, whole_time_step, EX_GLOBAL, 1, 1, num_glo_vars, glob_var_vals.data()));
+        ex_put_var(exoid, whole_time_step, EX_GLOBAL, 1, 1, num_glo_vars, TOPTR(glob_var_vals)));
 
     // write nodal variables
     for (int k = 1; k <= num_nod_vars; k++) {
       for (int j = 0; j < num_nodes; j++) {
         nodal_var_vals[j] = (float)k + ((float)(j + 1) * time_value);
       }
-      EXCHECK(ex_put_var(exoid, whole_time_step, EX_NODAL, k, 1, num_nodes, nodal_var_vals.data()));
+      EXCHECK(ex_put_var(exoid, whole_time_step, EX_NODAL, k, 1, num_nodes, TOPTR(nodal_var_vals)));
     }
 
     // write element variables
@@ -293,7 +304,7 @@ int main(int argc, char **argv)
           elem_var_vals[m] = (float)(k + 1) + (float)(j + 2) + ((float)(m + 1) * time_value);
         }
         EXCHECK(ex_put_var(exoid, whole_time_step, EX_ELEM_BLOCK, k, blocks[j].id,
-                           blocks[j].num_entry, elem_var_vals.data()));
+                           blocks[j].num_entry, TOPTR(elem_var_vals)));
       }
     }
 

@@ -256,9 +256,9 @@ struct UnpackCrsMatrixAndCombineFunctor {
     num_bytes_per_value (num_bytes_per_value_in),
     atomic (atomic_in),
     tokens (XS()),
-    lids_scratch ("pids_scratch", tokens.size() * max_num_ent),
+    lids_scratch ("lids_scratch", tokens.size() * max_num_ent),
     gids_scratch ("gids_scratch", tokens.size() * max_num_ent),
-    pids_scratch ("lids_scratch", tokens.size() * max_num_ent),
+    pids_scratch ("pids_scratch", tokens.size() * max_num_ent),
     vals_scratch ("vals_scratch", tokens.size() * max_num_ent)
   {}
 
