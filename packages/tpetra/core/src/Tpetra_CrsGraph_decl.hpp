@@ -608,7 +608,7 @@ namespace Tpetra {
     /// content and order. This is not performing any sort of isomorphic
     /// search.
     ///
-    /// \param graph [in] a crsGraph to compare against this one.
+    /// \param graph [in] a CrsGraph to compare against this one.
     ///
     /// \return True if the other CrsGraph's data structure is identical to this
     ///         CrsGraph.

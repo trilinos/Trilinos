@@ -47,6 +47,7 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Details_Behavior.hpp>
 #include <Tpetra_TestingUtilities.hpp>
 #include <type_traits>      // std::is_same
@@ -277,6 +278,27 @@ generate_crsgraph(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 }
 
 
+template<class Scalar, class LO, class GO, class Node>
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node> >
+generate_crsmatrix(Teuchos::RCP<const Teuchos::Comm<int>> & comm,
+                   const Teuchos::RCP<Tpetra::CrsGraph<LO, GO, Node> > & graph)
+{
+    using Teuchos::Comm;
+
+    using graph_type  = Tpetra::CrsGraph<LO, GO, Node>;           // Tpetra CrsGraph type
+    using matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;  // Tpetra CrsMatrix type
+    using map_type    = Tpetra::Map<LO, GO, Node>;                // Tpetra Map type
+
+    // Create the matrix using the input graph.
+    RCP<matrix_type> output_matrix(new matrix_type(graph));
+
+
+    // WCMCLEN-SCAFFOLDING:  fill this in.
+
+
+    return output_matrix;
+}
+
 
 //
 // UNIT TESTS
@@ -289,12 +311,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
     using Teuchos::RCP;
 
     using comm_type       = Teuchos::RCP<const Teuchos::Comm<int>>;    // The comm type
+
     using graph_type      = Tpetra::CrsGraph<LO, GO, Node>;            // Tpetra CrsGraph type
     using pair_edge_type  = std::pair<GO, GO>;                         // Edge typs, (u,v) using GlobalOrdinal type
     using pair_owner_type = std::pair<GO,int>;                         // For row owners, pairs are (rowid, comm rank)
-
     using vec_edges_type  = std::vector<pair_edge_type>;               // For vectors of edges
     using vec_owners_type = std::vector<pair_owner_type>;              // For vectors of owners
+
+    using Scalar = int;
+    using matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;       // Tpetra CrsMatrix type
+
 
     bool verbose = Tpetra::Details::Behavior::verbose();
 
@@ -360,7 +386,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
 
         // Swap graph b and c
-        out << ">>> swap graph_b and graph_c" << std::endl;
+        out << std::endl << ">>> swap graph_b and graph_c" << std::endl;
         graph_c->swap(*graph_b);
 
         // Verify that the graphs did get swapped.
@@ -368,7 +394,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, Swap, LO, GO, Node)
         TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), false);    // graph_c and graph_d should be different
         TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), true);     // graph_a and graph_c should be the same
         TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), true);     // graph_b and graph_d should be the same
-    }
+
+        // Swap graph b and c again.
+        out << std::endl << ">>> swap graph_b and graph_c" << std::endl;
+        graph_b->swap(*graph_c);
+
+        // Verify the initial identical-to state of the graphs (they should be back to the original state)
+        TEST_EQUALITY(graph_a->isIdenticalTo(*graph_b), true);       // graph_a and graph_b should be the same
+        TEST_EQUALITY(graph_c->isIdenticalTo(*graph_d), true);       // graph_c and graph_d should be the same
+        TEST_EQUALITY(graph_a->isIdenticalTo(*graph_c), false);      // graph_a and graph_c should be different
+        TEST_EQUALITY(graph_b->isIdenticalTo(*graph_d), false);      // graph_b and graph_d should be different
+
+
+        // todo: Create a matrix for each graph.  matrix_a and matrix_b will be identical and use graph_a/b
+        //       Then matrix_c and matrix_d will match up with graph_c/d.
+        //       Verify that they match in the same manner as the graphs.
+        //       Swap matrices b and c and do the check...
+        RCP<matrix_type> matrix_a = generate_crsmatrix<Scalar,LO,GO,Node>(comm, graph_a);
+
+
+
+
+    }       // if(0==color) ...   i.e., if I am in the active communicator group for the test.
 }
 
 
