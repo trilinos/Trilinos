@@ -81,9 +81,9 @@ namespace panzer
     const Teuchos::RCP<PHX::DataLayout>& vecDL       /* = Teuchos::null */)
     :
     evalStyle_(evalStyle),
+    multiplier_(multiplier),
     numDims_(resNames.size()),
     numGradDims_(ir.dl_vector->extent(2)),
-    multiplier_(multiplier),
     basisName_(basis.name())
   {
     using Kokkos::View;
@@ -120,7 +120,7 @@ namespace panzer
         tmpVecDL->extent(2) < ir.dl_vector->extent(2), logic_error,
         "Error:  Integrator_GradBasisCrossVector:  Dimension of space "       \
         "exceeds dimension of Vector Data Layout.")
-      TEUCHOS_TEST_FOR_EXCEPTION(numDims_ != vecDL->extent(2), logic_error,
+        TEUCHOS_TEST_FOR_EXCEPTION(numDims_ != static_cast<int>(vecDL->extent(2)), logic_error,
         "Error:  Integrator_GradBasisCrossVector:  The vector must be the "   \
         "same length as the number of residuals.")
     } // end if (not vecDL.is_null())
@@ -147,7 +147,7 @@ namespace panzer
         this->addEvaluatedField(field);
 
     // Add the dependent field multipliers, if there are any.
-    int i(0);
+    int i = 0;
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ = View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>(
       "GradBasisCrossVector::KokkosFieldMultipliers", fmNames.size());
@@ -164,8 +164,8 @@ namespace panzer
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       n += "EVALUATES";
     n += "):  {";
-    for (size_t i(0); i < fields_.size() - 1; ++i)
-      n += fields_[i].fieldTag().name() + ", ";
+    for (size_t j=0; j < fields_.size() - 1; ++j)
+      n += fields_[j].fieldTag().name() + ", ";
     n += fields_.back().fieldTag().name() + "}";
     this->setName(n);
   } // end of Constructor
@@ -482,6 +482,7 @@ namespace panzer
 
     // Create a ParameterList with all the valid keys we support.
     RCP<ParameterList> p = rcp(new ParameterList);
+
     RCP<const vector<string>> resNames;
     p->set("Residual Names", resNames);
     p->set<string>("Vector Name", "?");
@@ -494,6 +495,8 @@ namespace panzer
     p->set("Field Multipliers", fms);
     RCP<DataLayout> vecDL;
     p->set("Data Layout Vector", vecDL);
+
+    return p;
   } // end of getValidParameters()
 
 } // end of namespace panzer

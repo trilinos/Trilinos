@@ -65,12 +65,12 @@ buildClosureModels(const std::string& model_id,
     bool found = false;
     
     const std::string key = model_it->first;
-    ParameterList input;
     const Teuchos::ParameterEntry& entry = model_it->second;
     const ParameterList& plist = Teuchos::getValue<Teuchos::ParameterList>(entry);
 
     if (plist.isType<double>("Value")) {
       { // at IP
+        ParameterList input;
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", ir->dl_scalar);
@@ -81,6 +81,7 @@ buildClosureModels(const std::string& model_id,
       
       for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
 	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
+        ParameterList input;
 	input.set("Name", key);
 	input.set("Value", plist.get<double>("Value"));
 	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
