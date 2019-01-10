@@ -41,6 +41,7 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Assert.hpp"
+#include <limits>
 
 // Define this to throw exceptions when any Teuchos::ScalarTraits function
 // encounters a NaN or an Inf.
@@ -119,7 +120,7 @@ bool Teuchos::operator&&(const qd_real &a, const qd_real &b) {
 #ifndef __sun
 // This is an intentional computation of NaN.
 namespace Teuchos {
-const float  flt_nan = +returnFloatZero()/returnFloatZero();
-const double dbl_nan = +returnDoubleZero()/returnDoubleZero();
+  const float  flt_nan = std::numeric_limits<float>::signaling_NaN();
+  const double dbl_nan = std::numeric_limits<double>::signaling_NaN();
 }
 #endif
