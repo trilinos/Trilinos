@@ -744,8 +744,8 @@ protected:
   /// \brief Kokkos::Device specialization for communication buffers.
   ///
   /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
-  typedef typename DistObject<Scalar, LO, GO,
-                              Node>::buffer_device_type buffer_device_type;
+  using buffer_device_type = typename DistObject<Scalar, LO, GO,
+                                                 Node>::buffer_device_type;
 
   virtual void
   copyAndPermuteNew (const SrcDistObject& sourceObj,
@@ -769,27 +769,6 @@ protected:
                        Distributor& /* distor */,
                        const CombineMode combineMode);
 
-  // virtual void
-  // copyAndPermute (const ::Tpetra::SrcDistObject& source,
-  //                 size_t numSameIDs,
-  //                 const Teuchos::ArrayView<const LO>& permuteToLIDs,
-  //                 const Teuchos::ArrayView<const LO>& permuteFromLIDs);
-
-  // virtual void
-  // packAndPrepare (const ::Tpetra::SrcDistObject& source,
-  //                 const Teuchos::ArrayView<const LO>& exportLIDs,
-  //                 Teuchos::Array<packet_type>& exports,
-  //                 const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-  //                 size_t& constantNumPackets,
-  //                 ::Tpetra::Distributor& distor);
-
-  // virtual void
-  // unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
-  //                   const Teuchos::ArrayView<const packet_type> &imports,
-  //                   const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-  //                   size_t constantNumPackets,
-  //                   ::Tpetra::Distributor& distor,
-  //                   ::Tpetra::CombineMode CM);
   //@}
 
 private:
