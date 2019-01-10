@@ -49,8 +49,6 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Tpetra_Details_Profiling.hpp" 
 
-#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
-
 #include "Teuchos_TimeMonitor.hpp"
 #ifdef HAVE_TPETRA_DEBUG
 #  include <set>
@@ -2185,7 +2183,7 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   copyAndPermuteNew (const ::Tpetra::SrcDistObject& source,
-                     size_t numSameIDs,
+                     const size_t numSameIDs,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
   {
@@ -2221,7 +2219,7 @@ public:
     //
     // Verbose input dual view status  
     //
-    if (debug || verbose) {
+    if (verbose) {
       std::ostringstream os;
       os << prefix << std::endl
          << prefix << "  " << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << std::endl
@@ -2277,7 +2275,7 @@ public:
     const bool canUseLocalColumnIndices = srcColMap.locallySameAs (dstColMap);
 
     const size_t numPermute = static_cast<size_t> (permuteFromLIDs.extent(0));
-    if (debug) {
+    if (verbose) {
       std::ostringstream os;
       os << prefix
          << "canUseLocalColumnIndices: "
@@ -2287,17 +2285,16 @@ public:
       std::cerr << os.str ();
     }
 
-    if (permuteFromLIDs.need_sync_host() || permuteToLIDs.need_sync_host()) {
-      // permute vector is const input; if they need a sync, the data is corrupted.
-      std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix
-         << "permuteFromLIDs need sync to host : " << permuteFromLIDs.need_sync_host()
-         << ", permuteToLIDs need sync to host : " << permuteToLIDs.need_sync_host()
-         << std::endl;
-      return;
+    // work around for const object sync
+    if (permuteToLIDs.need_sync_host()) {
+      Kokkos::DualView<const local_ordinal_type*, device_type> permuteToLIDsTemp = permuteToLIDs;
+      permuteToLIDsTemp.sync_host();
     }
-
     const auto permuteToLIDsHost = permuteToLIDs.view_host();
+    if (permuteFromLIDs.need_sync_host()) {
+      Kokkos::DualView<const local_ordinal_type*, device_type> permuteFromLIDsTemp = permuteFromLIDs;
+      permuteFromLIDsTemp.sync_host();
+    }
     const auto permuteFromLIDsHost = permuteFromLIDs.view_host();
 
     if (canUseLocalColumnIndices) {
@@ -2886,7 +2883,7 @@ public:
     //
     // Verbose input dual view status  
     //
-    if (debug || verbose) {
+    if (verbose) {
       std::ostringstream os;
       os << prefix << std::endl
          << prefix << "  " << dualViewStatusToString (exportLIDs, "exportLIDs") << std::endl
@@ -2932,12 +2929,9 @@ public:
     const crs_graph_type& srcGraph = src->graph_;
     const size_t blockSize = static_cast<size_t> (src->getBlockSize ());
     const size_t numExportLIDs = exportLIDs.extent (0);
-    // Kyungjoo: We do not consider runtime sizable types e.g., Stokhos DFAD
-    //    using DFAD types in Tpetra is not a good idea as its derivative array
-    //    is located in a different place. Even if it works, most runtime will
-    //    be consumed by pointer chasing. 
     const size_t numBytesPerValue = 
-      PackTraits<impl_scalar_type, host_exec>::packValueCount(impl_scalar_type());
+      PackTraits<impl_scalar_type, host_exec>
+      ::packValueCount(this->val_.extent(0) ? this->val_.view_host()(0) : impl_scalar_type());
 
     // Compute the number of bytes ("packets") per row to pack.  While
     // we're at it, compute the total # of block entries to send, and
@@ -2947,12 +2941,10 @@ public:
 
     // Graph information is on host; let's do this on host parallel reduce
     // Sync necessary data to host
+
     if (exportLIDs.need_sync_host()) {
-      std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix
-         << "exportLIDs need sync to host : " << exportLIDs.need_sync_host()
-         << std::endl;
-      return;
+      Kokkos::DualView<const local_ordinal_type*, device_type> exportLIDsTemp = exportLIDs;
+      exportLIDsTemp.sync_host();
     }
     auto exportLIDsHost = exportLIDs.view_host();
     auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this
@@ -2961,7 +2953,7 @@ public:
       const auto policy = Kokkos::RangePolicy<host_exec>(0, numExportLIDs);
       Kokkos::parallel_reduce
         (policy, 
-         KOKKOS_LAMBDA(const int &i, typename reducer_type::value_type &update) {
+         [=](const int &i, typename reducer_type::value_type &update) {
           const LO lclRow = exportLIDsHost(i);
           size_t numEnt = srcGraph.getNumEntriesInLocalRow (lclRow);
           numEnt = (numEnt == Teuchos::OrdinalTraits<size_t>::invalid () ? 0 : numEnt);
@@ -2970,9 +2962,10 @@ public:
           numPacketsPerLIDHost(i) = numBytes;
           update += typename reducer_type::value_type(numEnt, numBytes, numEnt);
         }, rowReducerStruct);
-      // Kyungjoo: we just modify numPacketsPerLID; in order to raise modify flag, this needs to 
-      //    be non-const object. Should we change interface ?
-      // numPacketsPerLID.modify_host(); // for a case that this data is used in device, check the modify flag
+      {
+        Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
+        numPacketsPerLIDTemp.modify_host();
+      }
     }
     
     // Compute the number of bytes ("packets") per row to pack.  While
@@ -3004,7 +2997,7 @@ public:
         const auto policy = Kokkos::RangePolicy<host_exec>(0, numExportLIDs+1);
         Kokkos::parallel_scan
           (policy,
-           KOKKOS_LAMBDA(const int &i, size_t &update, const bool &final) {
+           [=](const int &i, size_t &update, const bool &final) {
             if (final) offset(i) = update;
             update += (i == numExportLIDs ? 0 : numPacketsPerLIDHost(i));
           });
@@ -3035,7 +3028,7 @@ public:
           .set_scratch_size(0, Kokkos::PerTeam(sizeof(GO)*maxRowLength));
         Kokkos::parallel_for
           (policy, 
-           KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+           [=](const typename policy_type::member_type &member) {
             const int i = member.league_rank();            
             Kokkos::View<GO*, typename host_exec::scratch_memory_space> 
               gblColInds(member.team_scratch(0), maxRowLength);
@@ -3139,7 +3132,7 @@ public:
     //
     // Verbose input dual view status  
     //
-    if (debug || verbose) {
+    if (verbose) {
       std::ostringstream os;
       os << prefix << std::endl
          << prefix << "  " << dualViewStatusToString (importLIDs, "importLIDs") << std::endl
@@ -3179,7 +3172,9 @@ public:
     // Const values
     const size_t blockSize = this->getBlockSize ();
     const size_t numImportLIDs = importLIDs.extent(0);
-    const size_t numBytesPerValue = PackTraits<impl_scalar_type, host_exec>::packValueCount(impl_scalar_type());
+    const size_t numBytesPerValue 
+      = PackTraits<impl_scalar_type, host_exec>
+      ::packValueCount(this->val_.extent(0) ? this->val_.view_host()(0) : impl_scalar_type()); 
     const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
     
@@ -3201,15 +3196,16 @@ public:
 
     Kokkos::View<char*,host_exec> importsByteHost((char*)imports.view_host().data(), imports.extent(0)*numBytesPerValue);
 
-    if (importLIDs.need_sync_host() || numPacketsPerLID.need_sync_host()) {
-      std::ostream& err = this->markLocalErrorAndGetStream ();
-      err << prefix
-          << "importLIDs need sync to host : " << importLIDs.need_sync_host()
-          << ", numPacketsPerLID need sync to host : " << numPacketsPerLID.need_sync_host()
-          << std::endl;
-      return;
+    if (importLIDs.need_sync_host()) {
+      Kokkos::DualView<const local_ordinal_type*, device_type> importLIDsTemp = importLIDs;
+      importLIDsTemp.sync_host();
     }
     const auto importLIDsHost = importLIDs.view_host(); 
+
+    if (numPacketsPerLID.need_sync_host()) {
+      Kokkos::DualView<const size_t*, buffer_device_type> numPacketsPerLIDTemp = numPacketsPerLID;
+      numPacketsPerLIDTemp.sync_host();
+    }
     const auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); 
     
     Kokkos::View<size_t*,host_exec> offset("offset", numImportLIDs+1);
@@ -3217,7 +3213,7 @@ public:
       const auto policy = Kokkos::RangePolicy<host_exec>(0, numImportLIDs+1);
       Kokkos::parallel_scan
         (policy,
-         KOKKOS_LAMBDA(const int &i, size_t &update, const bool &final) {
+         [=](const int &i, size_t &update, const bool &final) {
           if (final) offset(i) = update;
           update += (i == numImportLIDs ? 0 : numPacketsPerLIDHost(i));
         });
@@ -3237,7 +3233,7 @@ public:
       typedef typename host_exec::scratch_memory_space host_scratch_space;
       Kokkos::parallel_for
         (policy, 
-         KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+         [=](const typename policy_type::member_type &member) {
           const int i = member.league_rank();            
           Kokkos::View<GO*,host_scratch_space> gblColInds(member.team_scratch(0), maxRowNumEnt);
           Kokkos::View<LO*,host_scratch_space> lclColInds(member.team_scratch(0), maxRowNumEnt);
