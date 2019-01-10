@@ -265,8 +265,6 @@ namespace Ioss {
     static size_t get_memory_info();
     static size_t get_hwm_memory_info();
 
-    static void abort();
-
     // Return a filename relative to the specified working directory (if any)
     // of the current execution. Working_directory must end with '/' or be empty.
     static std::string local_filename(const std::string &relative_filename, const std::string &type,

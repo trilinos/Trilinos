@@ -40,26 +40,21 @@
 //@HEADER
 
 #include <mpi.h>
-#include <Epetra_MpiComm.h>
 
-#include <Epetra_Map.h>
-#include <Epetra_CrsMatrix.h>
-
-#include <Galeri_Maps.h>
-#include <Galeri_CrsMatrices.h>
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraMatrixTypes.hpp"
+#include "Galeri_XpetraParameters.hpp"
+#include "Galeri_XpetraUtils.hpp"
+#include "Galeri_XpetraMaps.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_XMLParameterListCoreHelpers.hpp>
 
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
-
-#include <BelosOperatorT.hpp>
-#include <BelosXpetraAdapter.hpp>
-#include <BelosSolverFactory.hpp>
-//#include <BelosPseudoBlockGmresSolMgr.hpp>
 
 #include "FROSch_Tools_def.hpp"
 
@@ -67,75 +62,69 @@ typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
-typedef EpetraNode NO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 using namespace std;
 using namespace Teuchos;
 using namespace Xpetra;
-using namespace Belos;
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-	MPI_Init(&argc,&argv);
+    oblackholestream blackhole;
+    GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-	{
+    RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
-		Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
+    CommandLineProcessor My_CLP;
 
-		RCP<Epetra_MpiComm> Comm(new Epetra_MpiComm(MPI_COMM_WORLD));
-		RCP<const Teuchos::Comm<int> > TeuchosComm = rcp(new MpiComm<int> (MPI_COMM_WORLD));
+    RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
 
-		assert(TeuchosComm->getSize()==8);
+    bool useepetra = true;
+    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
 
-		ParameterList GalerList;
-		GalerList.set("nx", 8);
-		GalerList.set("ny", 8);
-		GalerList.set("nz", 8);
-		GalerList.set("mx", 2);
-		GalerList.set("my", 2);
-		GalerList.set("mz", 2);
+    My_CLP.recogniseAllOptions(true);
+    My_CLP.throwExceptions(false);
+    CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
+    if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
+        return(EXIT_SUCCESS);
+    }
 
-		RCP<Epetra_Map> UniqueMapEpetra;
-		RCP<Epetra_CrsMatrix> KEpetra;
+    UnderlyingLib xpetraLib = UseTpetra;
+    if (useepetra) {
+        xpetraLib = UseEpetra;
+    } else {
+        xpetraLib = UseTpetra;
+    }
 
-		UniqueMapEpetra.reset(Galeri::CreateMap("Cartesian3D", *Comm, GalerList));
-		KEpetra.reset(Galeri::CreateCrsMatrix("Laplace3D", UniqueMapEpetra.get(), GalerList));
+    assert(CommWorld->getSize()==8);
 
-		ArrayView<GO> uniqueMapArrayView(UniqueMapEpetra->MyGlobalElements(),UniqueMapEpetra->NumMyElements());
-		RCP<Map<LO,GO,NO> > UniqueMap = MapFactory<LO,GO,NO>::Build(UseTpetra,-1,uniqueMapArrayView,0,TeuchosComm);
-		RCP<Matrix<SC,LO,GO,NO> > K = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KEpetra->MaxNumEntries());
-		for (LO i=0; i<UniqueMapEpetra->NumMyElements(); i++) {
-			LO numEntries;
-			GO* indices;
-			SC* values;
-			KEpetra->ExtractMyRowView(i,numEntries,values,indices);
+    CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "#############\n# Assembly #\n#############\n" << endl;
 
-			Array<GO> indicesArray(numEntries);
-			ArrayView<SC> valuesArrayView(values,numEntries);
-			for (LO j=0; j<numEntries; j++) {
-				indicesArray[j] = KEpetra->ColMap().GID(indices[j]);
-			}
-			K->insertGlobalValues(UniqueMapEpetra->GID(i),indicesArray(),valuesArrayView);
-		}
-		K->fillComplete(UniqueMap,UniqueMap);
+    ParameterList GaleriList;
+    GaleriList.set("nx", 8);
+    GaleriList.set("ny", 8);
+    GaleriList.set("nz", 8);
+    GaleriList.set("mx", 2);
+    GaleriList.set("my", 2);
+    GaleriList.set("mz", 2);
 
-		Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueMap,1);
-		Teuchos::RCP<Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap;
-		FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K,overlappingMap);
+    RCP<const Map<LO,GO,NO> > uniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",CommWorld,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
+    RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",uniqueMap,GaleriList);
+    RCP<Matrix<SC,LO,GO,NO> > K = Problem->BuildMatrix();
 
-		Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = K;
-		K = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
-		Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
-		TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "BEFORE IMPORT\n";
-		K->doImport(*tmpMatrix,*gather,Xpetra::ADD);
-		TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "AFTER IMPORT\n";
+    RCP<Map<LO,GO,NO> > overlappingMap = MapFactory<LO,GO,NO>::Build(uniqueMap,1);
+    FROSch::ExtendOverlapByOneLayer<SC,LO,GO,NO>(K,overlappingMap);
 
-	}
+    RCP<Matrix<SC,LO,GO,NO> > tmpMatrix = K;
+    K = MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
 
-	MPI_Finalize();
+    CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "#############\n# Performing Import #\n#############\n" << endl;
+    RCP<Export<LO,GO,NO> > gather = ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
+    K->doImport(*tmpMatrix,*gather,ADD);
 
-	return(EXIT_SUCCESS);
+    CommWorld->barrier(); if (CommWorld->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
+
+    return(EXIT_SUCCESS);
 }

@@ -2,6 +2,9 @@
 #
 # Get the known system name (or error out)
 #
+# This script gets sourced from <system_name>/enviornment.sh scripts to
+# determine how many cores are on a generic system.
+#
 ################################################################################
 
 unset ATDM_CONFIG_NUM_CORES_ON_MACHINE
@@ -12,6 +15,7 @@ if [ "$called" == "$0" ] ; then
   echo "This script '$0' is being called.  Instead, it must be sourced!"
   exit 1
 fi
+unset called
 
 # Get num cores on rhel machines
 export ATDM_CONFIG_NUM_CORES_ON_MACHINE=`grep processor /proc/cpuinfo | wc -l`
