@@ -422,23 +422,51 @@ namespace FROSch {
                 Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > GraphEntries = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphEntriesList_,*scatter);
             
                 //GraphMap->describe(*fancy,Teuchos::VERB_EXTREME);
-                kRowMap_->describe(*fancy,Teuchos::VERB_EXTREME);-
-                Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
+                //kRowMap_->describe(*fancy,Teuchos::VERB_EXTREME);
+            //GraphEntriesList_->getMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+            Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
+            //elements müssen gespeochert werden und auf den richtigen kommunikator gebracht werden.
+            Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> >  Elem = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(GraphEntriesList_->getMap(),10);
+            Teuchos::ArrayView<const GO> myGlobals = GraphEntriesList_->getMap()->getNodeElementList();
+
+            
+            std::vector<GO> col_vec(elements_.size());
+            for(int i = 0;i<elements_.size();i++)
+            {
+                col_vec.at(i) =i;
+            }
+            Teuchos::ArrayView<GO> cols(col_vec);
+            for (size_t i = 0; i < GraphEntriesList_->getMap()->getNodeNumElements(); ++i){
+                Elem->insertGlobalValues(myGlobals[i],cols, elements_);
+
+            }
+            Elem->fillComplete();
+           //Elem->describe(*fancy,Teuchos::VERB_EXTREME);
+            
+            Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter2 = Xpetra::ImportFactory<LO,GO,NO>::Build(GraphEntriesList_->getMap(),GraphMap);
+            Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > ElemS = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(Elem,*scatter2);
+         
+            
+            if(OnCoarseSolveComm_){
+                
                 const size_t numMyElements = GraphMap->getNodeNumElements();
                 Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
-                std::vector<GO> col_vec(elements_.size());
-                for(int i = 0;i<elements_.size();i++)
-                {
-                    col_vec.at(i) =i;
-                }
-                Teuchos::ArrayView<GO> cols(col_vec);
+                
+                size_t NumEnt;
+                Teuchos::ArrayView<const GO > idEl;
+                Teuchos::ArrayView<const GO > va;
+                
+                
                 ElementNodeList_ = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
+                
                 for (size_t i = 0; i < numMyElements; ++i){
-                    ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols, elements_);
+                    ElemS->getLocalRowView(i,idEl,va);
+                    
+                    ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols,va);
                 }
                 ElementNodeList_->fillComplete();
-                //ElementNodeList_->describe(*fancy,Teuchos::VERB_EXTREME);
-            if(OnCoarseSolveComm_){
+                ElementNodeList_->describe(*fancy,Teuchos::VERB_EXTREME);
+             
                 //---------------------------------------------------------
                 GO numGlobal = GraphEntries->getGlobalNumRows();
                 SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(GraphMap,7);
@@ -465,7 +493,8 @@ namespace FROSch {
                 if(CoarseSolveComm_->getRank() == 0) std::cout<<"-----------------------Start Rep Map--------------------------------------\n";
                 //SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
                 CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
-                //CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
+                
+                CoarseSolveRepeatedMap_->describe(*fancy,Teuchos::VERB_EXTREME);
                 CoarseSolveComm_->barrier();
                if(CoarseSolveComm_->getRank() == 0) std::cout<<"-----------------------------------------------------------------------------\n";
             }
@@ -517,7 +546,7 @@ namespace FROSch {
             //kRowMap_->describe(*fancy,Teuchos::VERB_EXTREME);
             Teuchos::ArrayView<const GO> elements_ = kRowMap_->getNodeElementList();
             ElementNodeList_ = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (kRowMap_, 10));
-            const size_t numMyElements = GraphMap->getNodeNumElements();
+            const size_t numMyElements = kRowMap_->getNodeNumElements();
             Teuchos::ArrayView<const GO> myGlobalElements = GraphMap->getNodeElementList();
             
             std::vector<GO> col_vec(elements_.size());
@@ -528,6 +557,7 @@ namespace FROSch {
             Teuchos::ArrayView<GO> cols(col_vec);
             
             for (size_t i = 0; i < numMyElements; ++i){
+                
                 ElementNodeList_->insertGlobalValues(myGlobalElements[i],cols, elements_);
             }
             ElementNodeList_->fillComplete();
@@ -556,11 +586,10 @@ namespace FROSch {
             }
           
             SubdomainConnectGraph_->fillComplete();
-            this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
+            
             //SubdomainConnectGraph_->describe(*fancy,Teuchos::VERB_EXTREME);
             //CoarseSolveRepeatedMap_ = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(SubdomainConnectGraph_, ElementNodeList_, DistributionList_,SubdomainConnectGraph_->getMap()->getComm());
             //CoarseMap_->describe(*fancy,Teuchos::VERB_EXTREME);
-            this->MpiComm_->barrier();this->MpiComm_->barrier();this->MpiComm_->barrier();
             //-----------------------------------------------------------------------------------------------------------------
             }
         }
