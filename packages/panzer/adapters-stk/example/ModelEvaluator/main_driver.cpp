@@ -123,26 +123,26 @@ int main(int argc, char *argv[])
   }
 
   try {
-    
-    Teuchos::RCP<Teuchos::Time> total_time = 
+
+    Teuchos::RCP<Teuchos::Time> total_time =
       Teuchos::TimeMonitor::getNewTimer("User App: Total Time");
-    
-    Teuchos::TimeMonitor timer(*total_time); 
-    
-    Teuchos::RCP<const Teuchos::MpiComm<int> > comm 
+
+    Teuchos::TimeMonitor timer(*total_time);
+
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm
         = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
-    
+
     // Parse the command line arguments
     std::string input_file_name = "user_app.xml";
     {
       Teuchos::CommandLineProcessor clp;
-      
+
       clp.setOption("i", &input_file_name, "User_App input xml filename");
-      
-      Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
+
+      Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
          clp.parse(argc,argv,&std::cerr);
-      
-      TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
+
+      TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL,
                             std::runtime_error, "Failed to parse command line!");
     }
 
@@ -163,10 +163,10 @@ int main(int argc, char *argv[])
 
     RCP<panzer::GlobalData> globalData = panzer::createGlobalData();
     RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-    user_app::BCFactory bc_factory; 
+    user_app::BCFactory bc_factory;
 
     user_app::MyModelFactory_TemplateBuilder cm_builder;
-    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;  
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     cm_factory.buildObjects(cm_builder);
 
     // read in mesh database, build un committed data
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
     // read in physics blocks
     ////////////////////////////////////////////////////////////
-    
+
     std::map<std::string,std::string> block_ids_to_physics_ids;
     panzer::buildBlockIdToPhysicsIdMap(block_ids_to_physics_ids, block_to_physics_pl);
 
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
                                physicsBlocks,
                                tangentParamNames);
 
-   // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the 
+   // Add fields to the mesh data base (this is a peculiarity of how STK classic requires the
    // fields to be setup)
    //////////////////////////////////////////////////////////////////////////////////////////
    for(std::size_t i=0;i<physicsBlocks.size();i++) {
@@ -228,34 +228,34 @@ int main(int argc, char *argv[])
          if(basis->getElementSpace()==panzer::PureBasis::HGRAD)
             mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
          else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
-            for(int i=0;i<basis->dimension();i++) 
-               mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+            for(int dim=0;dim<basis->dimension();++dim)
+               mesh->addCellField(fieldItr->first+dimenStr[dim],pb->elementBlockID());
          }
       }
 
       mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
- 
+
       mesh->setupExodusFile("output.exo");
     }
 
     // build worksets
     //////////////////////////////////////////////////////////////
-    
+
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer             // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
+    for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
     wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
- 
-    // build the connection manager 
-    const Teuchos::RCP<panzer::ConnManager<int,int> > 
+
+    // build the connection manager
+    const Teuchos::RCP<panzer::ConnManager<int,int> >
       conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     // build the state dof manager and LOF
@@ -267,17 +267,17 @@ int main(int argc, char *argv[])
       linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
     }
 
-    // build linear solver 
+    // build linear solver
     /////////////////////////////////////////////////////////////
-    
+
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
-        = panzer_stk::buildLOWSFactory(false, dofManager, conn_manager, 
-                                               Teuchos::as<int>(mesh->getDimension()), 
+        = panzer_stk::buildLOWSFactory(false, dofManager, conn_manager,
+                                               Teuchos::as<int>(mesh->getDimension()),
                                                comm, lin_solver_pl,Teuchos::null);
-  
-    // build and setup model evaluatorlinear solver 
+
+    // build and setup model evaluatorlinear solver
     /////////////////////////////////////////////////////////////
-    
+
     std::vector<panzer::BC> bcs;
     panzer::buildBCs(bcs,bcs_pl,globalData);
 
@@ -292,21 +292,21 @@ int main(int argc, char *argv[])
 
     // setup a response library to write to the mesh
     /////////////////////////////////////////////////////////////
-    
+
     RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
         = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
                                     closure_models_pl,user_data_pl);
 
-  
+
     // setup the nonlinear solver
     /////////////////////////////////////////////////////////////
-    
+
     RCP<Thyra::NOXNonlinearSolver> noxSolver_obj = rcp(new Thyra::NOXNonlinearSolver);
     noxSolver_obj->setParameterList(rcp(new Teuchos::ParameterList(nonlinsolver_pl)));
 
     // do a nonlinear solve
     /////////////////////////////////////////////////////////////
-    
+
     RCP<Thyra::VectorBase<double> > solution_vec = Thyra::createMember(physics->get_x_space());
     Thyra::assign(solution_vec.ptr(),0.0);
 
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
     // write to an exodus file
     /////////////////////////////////////////////////////////////
     writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
-     
+
   }
   catch (std::exception& e) {
     *out << "*********** Caught Exception: Begin Error Report ***********" << std::endl;
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
     *out << "************ Caught Exception: End Error Report ************" << std::endl;
     status = -1;
   }
-  
+
   // Teuchos::TimeMonitor::summarize(*out,false,true,false);
 
   if (status == 0)
@@ -373,7 +373,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
       = rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,globalIndexer,linObjFactory));
 
-  // get a vector of all the element blocks 
+  // get a vector of all the element blocks
   std::vector<std::string> eBlocks;
   mesh->getElementBlockNames(eBlocks);
 

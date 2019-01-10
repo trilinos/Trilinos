@@ -52,11 +52,11 @@ namespace panzer
   struct MemUsage
   {
     size_t currMin, currMax, currTot, peakMin, peakMax, peakTot;
-    MemUsage(size_t currMin = 0, size_t currMax = 0, size_t currTot = 0,
-      size_t peakMin = 0, size_t peakMax = 0, size_t peakTot = 0)
+    MemUsage(size_t inCurrMin = 0, size_t inCurrMax = 0, size_t inCurrTot = 0,
+      size_t inPeakMin = 0, size_t inPeakMax = 0, size_t inPeakTot = 0)
       :
-      currMin(currMin), currMax(currMax), currTot(currTot), peakMin(peakMin),
-      peakMax(peakMax), peakTot(peakTot)
+      currMin(inCurrMin), currMax(inCurrMax), currTot(inCurrTot), peakMin(inPeakMin),
+      peakMax(inPeakMax), peakTot(inPeakTot)
     {
     }
     MemUsage operator+(const MemUsage& that) const

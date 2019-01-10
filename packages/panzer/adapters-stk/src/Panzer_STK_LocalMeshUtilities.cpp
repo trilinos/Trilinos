@@ -239,7 +239,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   typedef Tpetra::Import<LO,GO,panzer::TpetraNodeType> import_type;
 
 
-  PANZER_FUNC_TIME_MONITOR("panzer_stk::buildNodeToCellMatrix");
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::buildNodeToCellMatrix",BNTCM);
 
   TEUCHOS_ASSERT(owned_cells.extent(0)==owned_cells_to_nodes.extent(0));
 
@@ -258,7 +258,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   // This is essentially another way to store cells_to_nodes
   RCP<crs_type> cell_to_node;
   {
-    PANZER_FUNC_TIME_MONITOR("Build matrix");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Build matrix",BuildMatrix);
     // The matrix is indexed by (global cell, global node) = local node
     cell_to_node = rcp(new crs_type(cell_map,0));
 
@@ -288,7 +288,7 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   // Transpose the cell_to_node array to create the node_to_cell array
   RCP<crs_type> node_to_cell;
   {
-    PANZER_FUNC_TIME_MONITOR("Tranpose matrix");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Tranpose matrix",TransposeMatrix);
     // Create an object designed to transpose the (global cell, global node) matrix to give
     // a (global node, global cell) matrix
     Tpetra::RowMatrixTransposer<LO,LO,GO,panzer::TpetraNodeType> transposer(cell_to_node);
@@ -325,7 +325,7 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                         Kokkos::View<const GO**> cells_to_nodes)
 {
 
-  PANZER_FUNC_TIME_MONITOR("panzer_stk::buildGhostedCellOneRing");
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::buildGhostedCellOneRing",BGCOR);
   typedef Tpetra::CrsMatrix<int,int,GO,panzer::TpetraNodeType> crs_type;
 
   // cells : (local cell index) -> global cell index
@@ -664,9 +664,9 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
     LO parent_virtual_cell_offset = mesh_info.num_owned_cells + mesh_info.num_ghstd_cells;
     for(const auto & local_cell_index_pair : owned_parent_cell_index_map){
       const LO local_cell = local_cell_index_pair.first;
-      const std::vector<LO> & subcell_indexes = local_cell_index_pair.second;
+      const std::vector<LO> & subcell_indexes_vec = local_cell_index_pair.second;
 
-      for(const LO & subcell_index : subcell_indexes){
+      for(const LO & subcell_index : subcell_indexes_vec){
 
         const LO face = mesh_info.cell_to_faces(local_cell, subcell_index);
         const LO face_other_side = (mesh_info.face_to_cells(face,0) == local_cell) ? 1 : 0;
@@ -774,7 +774,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = mesh.getComm();
 
-  TEUCHOS_FUNC_TIME_MONITOR("panzer_stk::generateLocalMeshInfo");
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("panzer_stk::generateLocalMeshInfo",GenerateLocalMeshInfo);
 
   // This horrible line of code is required since the connection manager only takes rcps of a mesh
   RCP<const panzer_stk::STK_Interface> mesh_rcp = Teuchos::rcpFromRef(mesh);
@@ -878,7 +878,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
   Kokkos::View<GO*> virtual_cells = Kokkos::View<GO*>("virtual_cells",num_virtual_cells);
   {
-    PANZER_FUNC_TIME_MONITOR("Initial global index creation");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Initial global index creation",InitialGlobalIndexCreation);
 
     const int num_ranks = comm->getSize();
     const int rank = comm->getRank();
@@ -929,7 +929,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
 
   // Transfer information from 'faceToElement' datasets to local arrays
   {
-    PANZER_FUNC_TIME_MONITOR("Transer faceToElement to local");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Transer faceToElement to local",TransferFaceToElementLocal);
 
     int virtual_cell_index = num_real_cells;
     for(size_t f=0;f<elems_by_face.extent(0);f++) {
@@ -997,7 +997,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   // cells. And a "ghstd" data structure corresponding to ghosted cells
   ////////////////////////////////////////////////////////////////////////////////////
   {
-    PANZER_FUNC_TIME_MONITOR("Assign Indices");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Assign Indices",AssignIndices);
     mesh_info.cell_to_faces           = cell_to_face;
     mesh_info.face_to_cells           = face_to_cells;      // faces
     mesh_info.face_to_lidx            = face_to_localidx;
@@ -1048,7 +1048,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
     // This will backfire at some point, but we're going to make the virtual cell have the same geometry as the cell it interfaces with
     // This way we can define a virtual cell geometry without extruding the face outside of the domain
     {
-      PANZER_FUNC_TIME_MONITOR("Assign geometry traits");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Assign geometry traits",AssignGeometryTraits);
       for(int i=0;i<num_virtual_cells;++i){
 
         const LO virtual_cell = i+num_real_cells;
@@ -1078,13 +1078,13 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
   mesh.getSidesetNames(sideset_names);
 
   for(const std::string & element_block_name : element_block_names){
-    PANZER_FUNC_TIME_MONITOR("Set up setupLocalMeshBlockInfo");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Set up setupLocalMeshBlockInfo",SetupLocalMeshBlockInfo);
     panzer::LocalMeshBlockInfo<LO,GO> & block_info = mesh_info.element_blocks[element_block_name];
     setupLocalMeshBlockInfo(mesh, conn, mesh_info, element_block_name, block_info);
 
     // Setup sidesets
     for(const std::string & sideset_name : sideset_names){
-      PANZER_FUNC_TIME_MONITOR("Setup LocalMeshSidesetInfo");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Setup LocalMeshSidesetInfo",SetupLocalMeshSidesetInfo);
       panzer::LocalMeshSidesetInfo<LO,GO> & sideset_info = mesh_info.sidesets[element_block_name][sideset_name];
       setupLocalMeshSidesetInfo(mesh, conn, mesh_info, element_block_name, sideset_name, sideset_info);
     }
