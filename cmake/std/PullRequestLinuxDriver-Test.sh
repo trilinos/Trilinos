@@ -280,7 +280,7 @@ if [[ ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
     echo -e "Job is SERIAL"
 elif [[ ${JOB_BASE_NAME:?} =~ ${regex_cuda} ]]; then
     echo -e "Job is CUDA"
-    echo -e "MPI type = sems-${MPI_NAME:?}/${MPI_VERSION:?}"
+    echo -e "MPI type = sems-${MPI_VENDOR:?}/${MPI_VERSION:?}"
 else
     echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
