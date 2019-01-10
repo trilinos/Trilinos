@@ -137,7 +137,7 @@ namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
     int MultiplicativeOperator<SC,LO,GO,NO>::compute()
-    {
+    {        
         if (this->Verbose_) {
             FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be computed manually.");
         }

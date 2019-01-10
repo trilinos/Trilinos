@@ -32,15 +32,15 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-9.2-GNU-7.2.0  # The default CUDA version currently
+    export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0  # The default CUDA version currently
   elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-9.2-GNU-7.2.0
-  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2-GNU-7.2.0" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-9.2-GNU-7.2.0
+    export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
   elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-10.0-GNU-7.4.0
-  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0-GNU-7.4.0" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-10.0-GNU-7.4.0
+    export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0_GNU-7.4.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
   else
     echo
     echo "***"
@@ -160,7 +160,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.4.0" ] ; then
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2-GNU-7.2.0" ]] ; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
 
   module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
   module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
@@ -179,7 +179,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2-GNU-7.2.0" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
   # ABove avoids timeouts due to not running on separate GPUs (see #2446)
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0-GNU-7.4.0" ]] ; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0_GNU-7.4.0" ]] ; then
 
   module load devpack/20181218/openmpi/3.1.3/gcc/7.4.0/cuda/10.0.130
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}

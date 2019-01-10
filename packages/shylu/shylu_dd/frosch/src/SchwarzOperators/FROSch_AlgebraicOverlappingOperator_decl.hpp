@@ -68,7 +68,7 @@ namespace FROSch {
         
         virtual int initialize()
         {
-            FROSCH_ASSERT(0!=0,"AlgebraicOverlappingOperator cannot be built without input parameters.");
+            FROSCH_ASSERT(false,"AlgebraicOverlappingOperator cannot be built without input parameters.");
             return 0;
         };
         
