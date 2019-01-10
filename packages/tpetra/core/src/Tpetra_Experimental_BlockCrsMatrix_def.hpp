@@ -2950,10 +2950,10 @@ public:
     auto numPacketsPerLIDHost = numPacketsPerLID.view_host(); // we will modify this
     {
       typedef Impl::BlockCrsReducer<Impl::BlockCrsRowStruct<size_t>,host_exec> reducer_type;
-      const auto policy = Kokkos::RangePolicy<host_exec>(0, numExportLIDs);
+      const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs);
       Kokkos::parallel_reduce
         (policy, 
-         [=](const int &i, typename reducer_type::value_type &update) {
+         [=](const size_t &i, typename reducer_type::value_type &update) {
           const LO lclRow = exportLIDsHost(i);
           size_t numEnt = srcGraph.getNumEntriesInLocalRow (lclRow);
           numEnt = (numEnt == Teuchos::OrdinalTraits<size_t>::invalid () ? 0 : numEnt);
@@ -2994,10 +2994,10 @@ public:
       // Current position (in bytes) in the 'exports' output array.
       Kokkos::View<size_t*, host_exec> offset("offset", numExportLIDs+1);
       {
-        const auto policy = Kokkos::RangePolicy<host_exec>(0, numExportLIDs+1);
+        const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numExportLIDs+1);
         Kokkos::parallel_scan
           (policy,
-           [=](const int &i, size_t &update, const bool &final) {
+           [=](const size_t &i, size_t &update, const bool &final) {
             if (final) offset(i) = update;
             update += (i == numExportLIDs ? 0 : numPacketsPerLIDHost(i));
           });
@@ -3029,7 +3029,7 @@ public:
         Kokkos::parallel_for
           (policy, 
            [=](const typename policy_type::member_type &member) {
-            const int i = member.league_rank();            
+            const size_t i = member.league_rank();            
             Kokkos::View<GO*, typename host_exec::scratch_memory_space> 
               gblColInds(member.team_scratch(0), maxRowLength);
 
@@ -3066,23 +3066,23 @@ public:
             if (debug) {
               const size_t offsetDiff = offset(i+1) - offset(i);
               if (numBytes != offsetDiff) {
-                std::ostream& err = this->markLocalErrorAndGetStream ();  
-                err << prefix 
-                    << "numBytes computed from packRowForBlockCrs is different from "
-                    << "precomputed offset values, LID = " << i << std::endl;
+                std::ostringstream os;
+                os << prefix 
+                   << "numBytes computed from packRowForBlockCrs is different from "
+                   << "precomputed offset values, LID = " << i << std::endl;
+                std::cerr << os.str ();
               }
             }
-          }); // for each LID (of a row) to send
+          }); // for each LID (of a row) to send        
       }
     } // if totalNumEntries > 0
 
     if (debug) {
-      std::ostringstream os;
+      std::ostream& err = this->markLocalErrorAndGetStream ();  
       const bool lclSuccess = ! (* (this->localError_));
-      os << prefix 
-         << (lclSuccess ? "succeeded" : "FAILED")
-         << " (totalNumEntries = " << totalNumEntries << ") ***" << std::endl;
-      std::cerr << os.str ();
+      err << prefix 
+          << (lclSuccess ? "succeeded" : "FAILED")
+          << " (totalNumEntries = " << totalNumEntries << ") ***" << std::endl;
     }
   }
   
@@ -3210,10 +3210,10 @@ public:
     
     Kokkos::View<size_t*,host_exec> offset("offset", numImportLIDs+1);
     {
-      const auto policy = Kokkos::RangePolicy<host_exec>(0, numImportLIDs+1);
+      const auto policy = Kokkos::RangePolicy<host_exec>(size_t(0), numImportLIDs+1);
       Kokkos::parallel_scan
         (policy,
-         [=](const int &i, size_t &update, const bool &final) {
+         [=](const size_t &i, size_t &update, const bool &final) {
           if (final) offset(i) = update;
           update += (i == numImportLIDs ? 0 : numPacketsPerLIDHost(i));
         });
@@ -3234,7 +3234,7 @@ public:
       Kokkos::parallel_for
         (policy, 
          [=](const typename policy_type::member_type &member) {
-          const int i = member.league_rank();            
+          const size_t i = member.league_rank();            
           Kokkos::View<GO*,host_scratch_space> gblColInds(member.team_scratch(0), maxRowNumEnt);
           Kokkos::View<LO*,host_scratch_space> lclColInds(member.team_scratch(0), maxRowNumEnt);
           Kokkos::View<impl_scalar_type*,host_scratch_space> vals(member.team_scratch(0), maxRowNumScalarEnt);
@@ -3250,11 +3250,12 @@ public:
             if (numEnt > maxRowNumEnt) {
               errorDuringUnpack() = true;
               if (debug) {
-                std::ostream& err = this->markLocalErrorAndGetStream ();
-                err << prefix 
-                    << "At i = " << i << ", numEnt = " << numEnt
-                    << " > maxRowNumEnt = " << maxRowNumEnt 
-                    << std::endl;
+                std::ostringstream os;
+                os << prefix 
+                   << "At i = " << i << ", numEnt = " << numEnt
+                   << " > maxRowNumEnt = " << maxRowNumEnt 
+                   << std::endl;
+                std::cerr << os.str();
               }
             }
           }
@@ -3277,11 +3278,12 @@ public:
           if (numBytes != numBytesOut) {
             errorDuringUnpack() = true; 
             if (debug) {
-              std::ostream& err = this->markLocalErrorAndGetStream ();
-              err << prefix 
-                  << "At i = " << i << ", numBytes = " << numBytes
-                  << " != numBytesOut = " << numBytesOut << "."
-                  << std::endl;
+              std::ostringstream os;
+              os << prefix 
+                 << "At i = " << i << ", numBytes = " << numBytes
+                 << " != numBytesOut = " << numBytesOut << "."
+                 << std::endl;
+              std::cerr << os.str();  
             }
           }
 
@@ -3291,11 +3293,12 @@ public:
             if (lidsOut(k) == Teuchos::OrdinalTraits<LO>::invalid ()) {
               errorDuringUnpack() = true; 
               if (debug) {
-                std::ostream& err = this->markLocalErrorAndGetStream ();
-                err << prefix 
+                std::ostringstream os;
+                os << prefix 
                     << "At i = " << i << ", GID " << gidsOut(k)
                     << " is not owned by the calling process." 
                     << std::endl;
+                std::cerr << os.str();  
               }
             }
           }
