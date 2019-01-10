@@ -230,12 +230,15 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    procRank_ = stk::parallel_machine_rank(*mpiComm_->getRawMpiComm());
 
    // associating the field with a part: universal part!
-   stk::mesh::put_field_on_mesh( *coordinatesField_ , metaData_->universal_part(), getDimension(),nullptr);
-   stk::mesh::put_field_on_mesh( *edgesField_ , metaData_->universal_part(), getDimension(),nullptr);
+   stk::mesh::FieldTraits<VectorFieldType>::data_type* init_vf = nullptr; // gcc 4.8 hack
+   stk::mesh::FieldTraits<ProcIdFieldType>::data_type* init_pid = nullptr; // gcc 4.8 hack
+   stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr; // gcc 4.8 hack
+   stk::mesh::put_field_on_mesh( *coordinatesField_ , metaData_->universal_part(), getDimension(),init_vf);
+   stk::mesh::put_field_on_mesh( *edgesField_ , metaData_->universal_part(), getDimension(),init_vf);
    if (dimension_ > 2)
-     stk::mesh::put_field_on_mesh( *facesField_ , metaData_->universal_part(), getDimension(),nullptr);
-   stk::mesh::put_field_on_mesh( *processorIdField_ , metaData_->universal_part(),nullptr);
-   stk::mesh::put_field_on_mesh( *loadBalField_ , metaData_->universal_part(),nullptr);
+     stk::mesh::put_field_on_mesh( *facesField_ , metaData_->universal_part(), getDimension(),init_vf);
+   stk::mesh::put_field_on_mesh( *processorIdField_ , metaData_->universal_part(),init_pid);
+   stk::mesh::put_field_on_mesh( *loadBalField_ , metaData_->universal_part(),init_sol);
 
    initializeFieldsInSTK(fieldNameToSolution_, setupIO);
    initializeFieldsInSTK(fieldNameToCellField_, setupIO);
@@ -299,8 +302,9 @@ void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,s
 
    {
       std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+      stk::mesh::FieldTraits<SolutionFieldType>::data_type* init_sol = nullptr; // gcc 4.8 hack
       for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-        stk::mesh::put_field_on_mesh(*(*uniqueFieldIter),metaData_->universal_part(),nullptr);
+        stk::mesh::put_field_on_mesh(*(*uniqueFieldIter),metaData_->universal_part(),init_sol);
    }
 
 #ifdef PANZER_HAVE_IOSS
