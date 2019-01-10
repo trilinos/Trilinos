@@ -288,7 +288,7 @@ namespace MueLu {
       return;
     }
 
-    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
     double_multivector_type *Coords = (double_multivector_type*) data;
 
     if (dim != Teuchos::as<int>(Coords->getNumVectors())) {
@@ -299,7 +299,7 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(numObjectIDs != Teuchos::as<int>(Coords->getLocalLength()), Exceptions::Incompatible, "Length of coordinates must be the same as the number of objects");
 
-    ArrayRCP<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> > CoordsData(dim);
+    ArrayRCP<ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> > CoordsData(dim);
     for (int j = 0; j < dim; ++j)
       CoordsData[j] = Coords->getData(j);
 
