@@ -77,16 +77,16 @@ echo -e ""
 : ${BUILD_NUMBER:?}
 : ${WORKSPACE:?}
 
-source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 declare -i ierror=0
 #Have to keep loading git
 regex=".*(_cuda_).*"
 if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
-  module load sems-git/2.10.1
+    source /projects/sems/modulefiles/utils/sems-modules-init.sh
+    module load sems-git/2.10.1
 else
-  echo -e "Job is CUDA and assumed on Ride"
-  module load git/2.10.1
+    echo -e "Job is CUDA"
+    module load git/2.10.1
 fi
 
 #--------------------------------------------

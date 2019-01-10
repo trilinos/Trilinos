@@ -154,11 +154,11 @@ declare -i ierror=0
 #Have to keep loading git
 regex=".*(_cuda_).*"
 if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
-  source /projects/sems/modulefiles/utils/sems-modules-init.sh
-  module load sems-git/2.10.1
+    source /projects/sems/modulefiles/utils/sems-modules-init.sh
+    module load sems-git/2.10.1
 else
-  echo -e "Job is CUDA and assumed on Ride"
-  module load git/2.10.1
+    echo -e "Job is CUDA and assumed on Ride"
+    module load git/2.10.1
 fi
 
 #--------------------------------------------
@@ -275,10 +275,14 @@ module list
 # - See Issue #3625
 # - wcm: bugfix #3673
 regex=".*(_SERIAL)$"
-if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
-    echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
-else
+regex_cuda=".*(_cuda_).*"
+if [[ ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
     echo -e "Job is SERIAL"
+elif [[ ${JOB_BASE_NAME:?} =~ ${regex_cuda} ]]; then
+    echo -e "Job is CUDA"
+    echo -e "MPI type = sems-${MPI_NAME:?}/${MPI_VERSION:?}"
+else
+    echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
 
 CDASH_TRACK="Pull Request"
