@@ -186,7 +186,7 @@ int executeInsertGlobalIndicesFESP_(const comm_ptr_t& comm, const struct CmdLine
 
 
   // HAQ for now
-  return 0;
+  //  return 0;
 
   // Print out verbose information about the fe_graph.
   if(opts.verbose) fe_graph->describe(out, Teuchos::VERB_EXTREME);

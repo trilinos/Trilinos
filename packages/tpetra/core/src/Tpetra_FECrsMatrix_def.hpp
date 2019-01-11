@@ -74,7 +74,7 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
   activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
   // Make an "inactive" matrix, if we need to
-  if(graph->inactiveCrsGraph_.is_null() ) {
+  if(!graph->inactiveCrsGraph_.is_null() ) {
     // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
     // guy for the Owned matrix.
     values_type myvals = this->getLocalMatrix().values;
@@ -115,10 +115,8 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsMatr
     *activeCrsMatrix_ = FE_ACTIVE_OWNED_PLUS_SHARED;
 
   if(inactiveCrsMatrix_.is_null()) return;
-
-  // FIXME: Use CrsMatrix's swap routine here once it is implemented!!!
-  // 
-  //  this->swap(*inactiveCrsMatrix_);
+  
+  this->swap(*inactiveCrsMatrix_);
 
 }//end switchActiveCrsMatrix
 
