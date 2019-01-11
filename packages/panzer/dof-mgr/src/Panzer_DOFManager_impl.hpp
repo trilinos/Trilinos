@@ -761,7 +761,7 @@ DOFManager<LO,GO>::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<GO,LO,GO,pa
 
     exp = rcp(new Export(overlap_map,non_overlap_map));
 
-#ifdef PANZER_REQUIRE_CUDA
+#ifdef PANZER_DOFMGR_REQUIRE_CUDA
     // Note:  ETP 04/26/16  Temporarily create an importer for all of the
     // doImport() calls below.  This works around mysterious failures when
     // using the exporter for Cuda builds.
