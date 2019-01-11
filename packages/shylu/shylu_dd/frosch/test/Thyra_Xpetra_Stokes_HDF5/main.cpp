@@ -119,14 +119,23 @@ int main(int argc, char *argv[])
     CommandLineProcessor My_CLP;
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
-    
+
+    // Overlap
     int Overlap = 0;
     My_CLP.setOption("O",&Overlap,"Overlap.");
+
+    // XML-file specifying the solver configuration
     string xmlFile = "ParameterList_TwoLevelBlockPreconditioner_GDSW.xml";
     My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
+
+    // Use Epetra as linear algebra stack
     bool useepetra = false;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-    
+
+    // File name of HDF5 file to be read
+    string hdf5File = "stokes.h5";
+    My_CLP.setOption("HDF5FILE", &hdf5File, "File name of HDF5 file to be read.");
+
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
@@ -161,8 +170,8 @@ int main(int argc, char *argv[])
 
         unsigned Dimension = 2;
         RCP<HDF5> hDF5IO(new HDF5(*EpetraComm));
-        hDF5IO->Open("stokes.h5");
-        
+        hDF5IO->Open(hdf5File);
+
         ///////////////////
         // Repeated Maps //
         ///////////////////
