@@ -139,7 +139,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // As per Fuller, this will import into the static graph.
     // NOTE: If the globalIndices were aliased, this would cause a problem (if the owned matrix was too small),
     // so we're not going to worry about that for now.  We might want to fix this later.
-    // FIXME: This will segfault until #4070
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
   }
 }//end doOverlapToLocal
