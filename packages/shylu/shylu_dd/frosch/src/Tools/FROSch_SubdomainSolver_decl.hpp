@@ -135,40 +135,94 @@ namespace FROSch {
         typedef Teuchos::RCP<MueLu::Hierarchy<SC,LO,GO,NO> > MueLuHierarchyPtr;
 #endif
 
+        /*!
+        \brief Constructor
+
+        @param k Matrix
+        @param parameterList Parameter list
+        @param blockCoarseSize
+        */
         SubdomainSolver(CrsMatrixPtr k,
                         ParameterListPtr parameterList,
                         GOVecPtr blockCoarseSize=Teuchos::null);
 
+        //! Destructor
         virtual ~SubdomainSolver();
 
+        //! Initialize member variables
         virtual int initialize();
 
+        /*!
+        \brief Compute/setup this operator/solver
+
+        \pre Routine initialize() has been called and #isInitialized_ is set to \c true.
+
+        @return Integer error code
+        */
         virtual int compute();
 
-        // Y = alpha * A^mode * X + beta * Y
+        /*! \brief Apply subdomain solver to input \c x
+         *
+         * y = alpha * A^mode * X + beta * Y
+         *
+         * \param[in] x Input vector
+         * \param[out] y result vector
+         * \param[in] mode
+         */
+
+        /*!
+        \brief Computes the operator-multivector application.
+
+        Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
+        vary according to the values of \c alpha and \c beta. Specifically
+        - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+        - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+        */
         virtual void apply(const MultiVector &x,
                            MultiVector &y,
                            Teuchos::ETransp mode=Teuchos::NO_TRANS,
                            SC alpha=Teuchos::ScalarTraits<SC>::one(),
                            SC beta=Teuchos::ScalarTraits<SC>::zero()) const;
 
+        //! Get domain map
         virtual ConstMapPtr getDomainMap() const;
 
+        //! Get range map
         virtual ConstMapPtr getRangeMap() const;
 
+        /*!
+        \brief Print description of this object to given output stream
+
+        \param out Output stream to be used
+        \param Verbosity level used for printing
+        */
         virtual void describe(Teuchos::FancyOStream &out,
                               const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
+        /*!
+        \brief Get description of this operator
+
+        \return String describing this operator
+        */
         virtual std::string description() const;
-        
+
+        //! @name Access to class members
+        //!@{
+
+        //! Get #IsInitialized_
         bool isInitialized() const;
-        
+
+        //! Get #IsComputed_
         bool isComputed() const;
-        
+
+        //!@}
+
     protected:
 
+        //! Matrix
         CrsMatrixPtr K_;
 
+        //! Paremter list
         ParameterListPtr ParameterList_;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -185,7 +239,10 @@ namespace FROSch {
         Amesos2SolverTpetraPtr Amesos2SolverTpetra_;
 
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU
+        //! Factory to create a MueLu hierarchy
         MueLuFactoryPtr MueLuFactory_;
+
+        //! MueLu hierarchy object
         MueLuHierarchyPtr MueLuHierarchy_;
 #endif
 
@@ -195,7 +252,9 @@ namespace FROSch {
 #endif
 
         bool IsInitialized_;
-        bool IsComputed_;        
+
+        //! Flag to indicated whether this subdomain solver has been setup/computed
+        bool IsComputed_;
     };
 
 }
