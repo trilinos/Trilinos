@@ -17,5 +17,6 @@ set (TPL_ENABLE_CUDA ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Cuda ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Cuda_UVM ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ARCH Power8 CACHE STRING "Set by default for CUDA PR testing")
-
+set (TPL_BLAS_LIBRARIES "-L${BLAS_ROOT}/lib -lblas -lgfortran -lgomp -lm" CACHE STRING "Set by default for CUDA PR testing")
+set (TPL_LAPACK_LIBRARIES "-L${LAPACK_ROOT}/lib -llapack -lgfortran -lgomp" CACHE STRING "Set by default for CUDA PR testing")
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
