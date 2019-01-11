@@ -87,6 +87,8 @@ int main(int argc, char *argv[])
         Epetra_IntSerialDenseMatrix ElementNodeList;
         Teuchos::Array<Teuchos::Array<GO> > NodesInElement(8);
         
+        Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
         Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = Teuchos::rcp(new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
         
         
@@ -288,6 +290,7 @@ int main(int argc, char *argv[])
         
         Teuchos::RCP<Xpetra::TpetraMap<LO,GO,NO> > MapT = Teuchos::rcp(new Xpetra::TpetraMap<LO,GO,NO>  (32,FEelements(),0,TeuchosComm));
         
+        Epetra_Map EMap(-1,NumMyElements,MyGlobalElements,0,Comm);
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0) cout<<" Map build\n";
         
@@ -432,14 +435,141 @@ int main(int argc, char *argv[])
         //All Maps Build
         
         //Coordinates
-        switch (MyPID) {
-            case 0:
-                
-                break;
-                
-            default:
-                break;
+        Epetra_Vector CoordX_noExt(EMap);
+        Epetra_Vector CoordY_noExt(EMap);
+
+        for(int i = 0;i<NumMyElements;i++){
+            CoordX_noExt[i] = (MyGlobalElements[i]%5)*0.25;
+            CoordY_noExt[i] = (MyGlobalElements[0]%5)*0.25;
+            
         }
+        
+        Epetra_Map TargetMap(-1,NumMyTotalElements,
+                             MyGlobalElements, 0, Comm);
+        
+        Epetra_Import Importer(TargetMap,Map);
+        Epetra_Vector CoordX(TargetMap);
+        Epetra_Vector CoordY(TargetMap);
+        CoordX.Import(CoordX_noExt,Importer,Insert);
+        CoordY.Import(CoordY_noExt,Importer,Insert);
+        
+        // NOTE: better to construct CoordX and CoordY as MultiVector
+        // - - - - - - - - - - - - //
+        // M A T R I X   S E T U P //
+        // - - - - - - - - - - - - //
+        // build the CRS matrix corresponding to the grid
+        // some vectors are allocated
+        const int MaxNnzRow2 = 8;
+        Epetra_CrsMatrix A(Copy,Map,MaxNnzRow2);
+        int i, j, k;
+        Epetra_IntSerialDenseMatrix Struct; // temp to create the matrix connectivity
+        Struct.Shape(NumMyElements,MaxNnzRow2);
+        for( i=0 ; i<NumMyElements ; ++i )
+            for( j=0 ; j<MaxNnzRow2 ; ++j )
+                Struct(i,j) = -1;
+        // cycle over all the finite elements
+        for( Element=0 ; Element<FE_NumMyElements ; ++Element ) {
+            // cycle over each row
+            for( i=0 ; i<3 ; ++i ) {
+                // get the global and local number of this row
+                GlobalRow = NodesInElement.at(Element).at(i);
+                MyRow = A.LRID(GlobalRow);
+                if( MyRow != -1 ) { // only rows stored on this proc
+                    // cycle over the columns
+                    for( j=0 ; j<3 ; ++j ) {
+                        // get the global number only of this column
+                        GlobalCol = NodesInElement.at(Element).at(j);
+                        // look if GlobalCol was already put in Struct
+                        for( k=0 ; k<MaxNnzRow2 ; ++k ) {
+                            if( Struct(MyRow,k) == GlobalCol ||
+                               Struct(MyRow,k) == -1 ) break;
+                        }
+                        if( Struct(MyRow,k) == -1 ) { // new entry
+                            Struct(MyRow,k) = GlobalCol;
+                        } else if( Struct(MyRow,k) != GlobalCol ) {
+                            // maybe not enough space has beenn allocated
+                            cerr << "ERROR: not enough space for element "
+                            << GlobalRow << "," << GlobalCol << endl;
+                            return( 0 );
+                        }
+                    }
+                }
+            }
+        }//Loop over Elements
+        
+        int * Indices = new int [MaxNnzRow2];
+        double * Values  = new double [MaxNnzRow2];
+        for( i=0 ; i<MaxNnzRow2; ++i ) Values[i] = 0.0;
+        // now use Struct to fill build the matrix structure
+        for( int Row=0 ; Row<NumMyElements ; ++Row ) {
+            int Length = 0;
+            for( int j=0 ; j<MaxNnzRow2 ; ++j ) {
+                if( Struct(Row,j) == -1 ) break;
+                Indices[Length] = Struct(Row,j);
+                Length++;
+            }
+            GlobalRow = MyGlobalElements[Row];
+            A.InsertGlobalValues(GlobalRow, Length, Values, Indices);
+        }//end Row
+        
+        // replace global numbering with local one in T
+        for( int Element=0 ; Element<FE_NumMyElements ; ++Element ) {
+            for( int i=0 ; i<3 ; ++i ) {
+                int global = NodesInElement.at(Element).at(i);
+                int local = find(MyGlobalElements,NumMyTotalElements,
+                                 global);
+                if( global == -1 ) {
+                    cerr << "ERROR\n";
+                    return( EXIT_FAILURE );
+                }
+                NodesInElement.at(Element).at(i) = local;
+            }
+        }//End Replace
+        // - - - - - - - - - - - - - - //
+        // M A T R I X   F I L L - I N //
+        // - - - - - - - - - - - - - - //
+        // room for the local matrix
+        Epetra_SerialDenseMatrix Ke;
+        Ke.Shape(3,3);
+        // now fill the matrix
+        for(  int Element=0 ; Element<FE_NumMyElements ; ++Element ) {
+            // variables used inside
+            int GlobalRow;
+            int MyRow;
+            int GlobalCol;
+            double x_triangle[3];
+            double y_triangle[3];
+            // get the spatial coordinate of each local node
+            for( int i=0 ; i<3 ; ++i ) {
+                MyRow = NodesInElement.at(Element).at(i) ;
+                y_triangle[i] = CoordX[MyRow];
+                x_triangle[i] = CoordY[MyRow];
+            }
+            // compute the local matrix for Element
+            compute_loc_matrix( x_triangle, y_triangle,Ke );
+            // insert it in the global one
+            // cycle over each row
+            for( int i=0 ; i<3 ; ++i ) {
+                // get the global and local number of this row
+                MyRow = NodesInElement.at(Element).at(i);
+                if( MyRow < NumMyElements ) {
+                    for( int j=0 ; j<3 ; ++j ) {
+                        // get global column number
+                        GlobalRow = MyGlobalElements[MyRow];
+                        GlobalCol = MyGlobalElements[NodesInElement.at(Element).at(j)];
+                        A.SumIntoGlobalValues(GlobalRow,1,&(Ke(i,j)),&GlobalCol);
+                    }
+                }
+            }
+        }//End ELement for Loop
+        A.FillComplete();
+        Epetra_Vector x(EMap), b(EMap);
+        x.Random(); b.PutScalar(0.0);
+        // Solution can be obtained using Aztecoo
+        // free memory before leaving
+        delete[] Indices;
+        delete[] Values;
+        
     }
     
     MPI_Finalize();
