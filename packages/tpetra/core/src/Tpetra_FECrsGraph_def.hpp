@@ -42,6 +42,7 @@
 #ifndef TPETRA_FECRSGRAPH_DEF_HPP
 #define TPETRA_FECRSGRAPH_DEF_HPP
 
+#include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 
 
@@ -61,7 +62,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   importer_(ownedPlusSharedToOwnedimporter),
   domainMap_(domainMap),
   rangeMap_(rangeMap)
-{
+{  
   setup(ownedRowMap,ownedPlusSharedRowMap,params,maxNumEntriesPerRow);
 }
 
@@ -79,9 +80,12 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   importer_(ownedPlusSharedToOwnedimporter),
   domainMap_(domainMap),
   rangeMap_(rangeMap)
-{
-  // FIXME: Restrict the buffer (or get rid of that arg entirely)
-  setup(ownedRowMap,ownedPlusSharedRowMap,params,numEntPerRow);
+
+{  
+  // Only pass in numEntries for "owned rows"
+  size_t numOwnedRows = ownedRowMap->getNodeNumElements();
+  auto sv = Kokkos::subview(numEntPerRow,Kokkos::pair<size_t,size_t>(0,numOwnedRows));
+  setup(ownedRowMap,ownedPlusSharedRowMap,params,sv);
 }
 
 
@@ -109,10 +113,16 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    }
  
    // Build the inactive graph
-   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
+#define USE_UNALIASED_MEMORY
+#ifdef  USE_UNALIASED_MEMORY
+     inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
+#else
+   #error "Tpetra::FECrsGraph does not have aliased memory implemented yet"
+
+#endif
 
    // FIXME: For starters, we're not going to alias anything.  This will likely cause a memory high water mark issue.
-   // Perhaps we will alias the  k_rowPtrs_/his->getLocalMatrix().row_map; but not k_glblInds1D due to concerns over
+   // Perhaps we will alias the  k_rowPtrs_/this->getLocalMatrix().row_map; but not k_glblInds1D due to concerns over
    // how Fuller's graph resizing import will work w/ aliasing.  
  
    // This dance here is because C++ doesn't like you calling protected members of functions (even if they have the same class)
