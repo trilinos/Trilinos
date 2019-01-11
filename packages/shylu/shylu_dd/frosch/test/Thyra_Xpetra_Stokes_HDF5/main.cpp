@@ -113,11 +113,11 @@ int main(int argc, char *argv[])
 {
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-    
+
     RCP<const Comm<int> > CommWorld = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
-    
+
     CommandLineProcessor My_CLP;
-    
+
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
     
     int Overlap = 0;
@@ -133,32 +133,32 @@ int main(int argc, char *argv[])
     if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
-    
+
     int color=1;
     if (CommWorld->getRank()<4) {
         color=0;
     }
-    
+
     UnderlyingLib xpetraLib = UseTpetra;
     if (useepetra) {
         xpetraLib = UseEpetra;
     } else {
         xpetraLib = UseTpetra;
     }
-    
+
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
-    
+
     MPI_Comm COMM;
     MPI_Comm_split(MPI_COMM_WORLD,color,CommWorld->getRank(),&COMM);
     RCP<Epetra_MpiComm> EpetraComm(new Epetra_MpiComm(COMM));
     
 #ifdef HAVE_EPETRAEXT_HDF5
     if (color==0) {
-        
+
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Import Monolythic System #\n##############################\n" << endl;
-        
+
         unsigned Dimension = 2;
         RCP<HDF5> hDF5IO(new HDF5(*EpetraComm));
         hDF5IO->Open("stokes.h5");
@@ -170,46 +170,46 @@ int main(int argc, char *argv[])
         Epetra_Map *repeatedMapEpetraVelo;
         hDF5IO->Read(groupNameRepeatedMapVelo,repeatedMapEpetraVelo);
         RCP<Map<LO,GO,NO> > repeatedMapVelo = ConvertToXpetra<LO,GO,NO>(xpetraLib,*repeatedMapEpetraVelo,Comm);
-        
+
         string groupNameRepeatedMapPress =  "RepeatedMapPressure";
         Epetra_Map *repeatedMapEpetraPress;
         hDF5IO->Read(groupNameRepeatedMapPress,repeatedMapEpetraPress);
         RCP<Map<LO,GO,NO> > repeatedMapPress = ConvertToXpetra<LO,GO,NO>(xpetraLib,*repeatedMapEpetraPress,Comm);
-        
+
 //        GO offsetVelocityMap = repeatedMapVelo->getMaxAllGlobalIndex()+1;
 //        Array<GO> elementList(repeatedMapEpetraPress->NumMyElements());
 //        for (unsigned i=0; i<elementList.size(); i++) {
 //            elementList[i] = repeatedMapEpetraPress->GID(i) + offsetVelocityMap;
 //        }
 //        RCP<Map<LO,GO,NO> > repeatedMapPress = Xpetra::MapFactory<LO,GO,NO>::Build(xpetraLib,-1,elementList,0,Comm);
-        
+
         Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > repeatedMapsVector(2);
-        
+
         repeatedMapsVector[0] = repeatedMapVelo;
         repeatedMapsVector[1] = repeatedMapPress;
-        
+
         RCP<Map<LO,GO,NO> > repeatedMap = MergeMaps(repeatedMapsVector);
-        
-        
+
+
         ////////////////
         // Unique Map //
         ////////////////
         RCP<Map<LO,GO,NO> > uniqueMap = BuildUniqueMap<LO,GO,NO>(repeatedMap);
-        
-        
+
+
         /////////
         // RHS //
         /////////
         string groupNameRHS = "RHS";
         Epetra_MultiVector *rhsEpetra;
         hDF5IO->Read(groupNameRHS,rhsEpetra);
-        
+
         RCP<MultiVector<SC,LO,GO,NO> > rhsTmp = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*rhsEpetra,Comm);
         RCP<MultiVector<SC,LO,GO,NO> > rhs = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
         RCP<Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(rhsTmp->getMap(),uniqueMap);
         rhs->doImport(*rhsTmp,*scatter,Xpetra::ADD);
-        
-        
+
+
         ////////////
         // Matrix //
         ////////////
@@ -218,82 +218,82 @@ int main(int argc, char *argv[])
         hDF5IO->Read(groupNameMatrix,matrixEpetra);
         RCP<Matrix<SC,LO,GO,NO> > matrixTmp = ConvertToXpetra<SC,LO,GO,NO>(xpetraLib,*matrixEpetra,Comm);
         RCP<Matrix<SC,LO,GO,NO> > matrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,matrixTmp->getGlobalMaxNumRowEntries());
-        
+
         matrix->doImport(*matrixTmp,*scatter,Xpetra::ADD);
         matrix->fillComplete();
-        
-        
+
+
         //////////////////////
         // Convert to Thyra //
         //////////////////////
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(uniqueMap,1);
-        
+
         xSolution->putScalar(0.0);
         xRightHandSide->putScalar(1.0);
-        
+
         Teuchos::RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > tmpCrsWrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(matrix);
-        
+
         RCP<const Thyra::LinearOpBase<SC> > K_thyra = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyra(tmpCrsWrap->getCrsMatrix());
-        
+
         RCP<Thyra::MultiVectorBase<SC> >thyraX =
         Teuchos::rcp_const_cast<Thyra::MultiVectorBase<SC> >(Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xSolution));
         RCP<const Thyra::MultiVectorBase<SC> >thyraB = Xpetra::ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
-        
-        
+
+
         ///////////////////
         // ParameterList //
         ///////////////////
         RCP<ParameterList> plList = sublist(parameterList,"Preconditioner Types");
         sublist(plList,"FROSch")->set("Overlap",Overlap);
-        
+
         sublist(plList,"FROSch")->set("Repeated Map Vector",repeatedMapsVector);
-        
+
         ArrayRCP<DofOrdering> dofOrderings(2);
         ArrayRCP<UN> dofsPerNodeVector(2);
         dofOrderings[0] = NodeWise;
         dofOrderings[1] = NodeWise;
         dofsPerNodeVector[0] = Dimension;
         dofsPerNodeVector[1] = 1;
-        
+
         sublist(plList,"FROSch")->set("DofOrdering Vector",dofOrderings);
         sublist(plList,"FROSch")->set("DofsPerNode Vector",dofsPerNodeVector);
-        
+
         Comm->barrier();
         if(Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;
         }
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
         Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Thyra PrepForSolve #\n######################\n" << endl;
-        
+
         RCP<LinearOpWithSolveFactoryBase<SC> > lowsFactory =
         linearSolverBuilder.createLinearSolveStrategy("");
-        
+
         lowsFactory->setOStream(out);
         lowsFactory->setVerbLevel(Teuchos::VERB_HIGH);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Thyra LinearOpWithSolve #\n###########################" << endl;
-        
+
         RCP<LinearOpWithSolveBase<SC> > lows =
         linearOpWithSolve(*lowsFactory, K_thyra);
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
         SolveStatus<double> status =
         solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-        
-        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;        
+
+        Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }
 #endif
     
     return(EXIT_SUCCESS);
-    
+
 }
 
 
