@@ -62,7 +62,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap),
   rangeMap_(rangeMap)
 {
-  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+  setup(ownedRowMap,ownedPlusSharedRowMap,params,maxNumEntriesPerRow);
 }
 
 
@@ -80,12 +80,14 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap),
   rangeMap_(rangeMap)
 {
-  setup(ownedRowMap,ownedPlusSharedRowMap,params);
+  // FIXME: Restrict the buffer (or get rid of that arg entirely)
+  setup(ownedRowMap,ownedPlusSharedRowMap,params,numEntPerRow);
 }
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params) {
+template <class NumEntries_t>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params, NumEntries_t &ne) {
  const char tfecfFuncName[] = "FECrsGraph::setup(): ";
 
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
@@ -107,9 +109,9 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    }
  
    // Build the inactive graph
-   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
+   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
 
-   // For starters, we're not going to alias anything.  This will likely cause a memory high water mark issue.
+   // FIXME: For starters, we're not going to alias anything.  This will likely cause a memory high water mark issue.
    // Perhaps we will alias the  k_rowPtrs_/his->getLocalMatrix().row_map; but not k_glblInds1D due to concerns over
    // how Fuller's graph resizing import will work w/ aliasing.  
  

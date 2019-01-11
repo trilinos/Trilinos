@@ -307,4 +307,4 @@ int executeInsertGlobalIndicesFESP_(const comm_ptr_t& comm, const struct CmdLine
 
 } // namespace TpetraExamples
 
-#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_INSERTGLOBALINDICES_SP_HPP
+#endif // TPETRAEXAMPLES_FEM_ASSEMBLY_INSERTGLOBALINDICES_FE_SP_HPP

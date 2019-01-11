@@ -355,7 +355,8 @@ namespace Tpetra {
   private:
 
     // Common core guts of the constructor   
-    void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params);
+    template <class NumEntries_t>
+    void setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params, NumEntries_t &ne);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
