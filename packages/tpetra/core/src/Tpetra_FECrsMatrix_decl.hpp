@@ -163,8 +163,6 @@ public:
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-
-  // FIXME: This constructor will be replaced  by FECrsGraph
     explicit FECrsMatrix (const Teuchos::RCP<const fe_crs_graph_type>& graph,
                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
