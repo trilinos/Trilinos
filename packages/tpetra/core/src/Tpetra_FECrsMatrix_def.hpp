@@ -80,8 +80,13 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
     values_type myvals = this->getLocalMatrix().values;
 
     // Remember: The Graph is in OWNED mode
+#define USE_UNALIASED_MEMORY
+#ifdef  USE_UNALIASED_MEMORY
+    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph));
+#else
     size_t numOwnedVals = graph->getLocalGraph().entries.extent(0);
     inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
+#endif
   }
 }
 
