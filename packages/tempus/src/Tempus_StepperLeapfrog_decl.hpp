@@ -117,7 +117,7 @@ public:
     virtual Scalar getOrderMax() const {return 2.0;}
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
-      {return std::numeric_limits<Scalar>::max();}
+      {return Scalar(1.0e+99);}
 
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
