@@ -429,13 +429,35 @@ int main(int argc, char *argv[])
         const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > cRep = RepeatedMap;
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > UniqueMap = FROSch::BuildUniqueMap(cRep);
         
+        //All Maps Build
+        
+        //Coordinates
+        switch (MyPID) {
+            case 0:
+                
+                break;
+                
+            default:
+                break;
+        }
     }
     
     MPI_Finalize();
     
     return(EXIT_SUCCESS);
 
-}
+}//main
+
+int find( const int list[], const int length, const int index)
+{
+    int pos=-1;
+    for( int i=0 ; i<length ; ++i )
+        if( list[i] == index ) {
+            pos = i;
+            break;
+        }
+    return pos;
+} /* find */
 
 void compute_loc_matrix( double *x_triangle, double *y_triangle,
                         Epetra_SerialDenseMatrix & Ke )
