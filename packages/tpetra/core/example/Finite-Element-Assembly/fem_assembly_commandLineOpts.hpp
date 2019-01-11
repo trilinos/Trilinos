@@ -159,11 +159,10 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
 {
   int err = 0;
 
-  if( 1 != (opts.execInsertGlobalIndicesFE + opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
+  if( !opts.useStaticProfile && 1 != (opts.execInsertGlobalIndices + opts.execLocalElementLoop + opts.execTotalElementLoop))
   {
     out << std::endl
         << "Please select one algorithm to run.  Options are:" << std::endl
-        << "  --with-insert-global-indices-fe  :  Execute the FE Insert Global Indices example." << std::endl
         << "  --with-insert-global-indices     :  Execute the Insert Global Indices example." << std::endl
         << "  --with-local-element-loop        :  Execute the Local Element Loop example." << std::endl
         << "  --with-total-element-loop        :  Execute the Total Element Loop example." << std::endl
@@ -173,9 +172,10 @@ int checkCmdLineOpts(std::ostream& out, const struct CmdLineOpts& opts)
   else
   {
     // Currently we only have StaticProfile for TotalElementLoop
-    if(opts.useStaticProfile && !(opts.execTotalElementLoop))
+    if(opts.useStaticProfile && 1 != (opts.execInsertGlobalIndicesFE + opts.execTotalElementLoop))
     {
       out << std::endl
+        << "  --with-insert-global-indices-fe  :  Execute the FE Insert Global Indices example." << std::endl
           << "StaticProfile is currently only implemented with Total Element Loop, please use:" << std::endl
           << "  --with-total-element-loop :  Execute the Total Element Loop example." << std::endl
           << std::endl;
