@@ -115,12 +115,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    // Build the inactive graph
 #define USE_UNALIASED_MEMORY
 #ifdef  USE_UNALIASED_MEMORY
-     inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
-#else
-   #error "Tpetra::FECrsGraph does not have aliased memory implemented yet"
-
-#endif
-
+   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
+   
    // FIXME: For starters, we're not going to alias anything.  This will likely cause a memory high water mark issue.
    // Perhaps we will alias the  k_rowPtrs_/this->getLocalMatrix().row_map; but not k_glblInds1D due to concerns over
    // how Fuller's graph resizing import will work w/ aliasing.  
@@ -129,6 +125,16 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    switchActiveCrsGraph();
    this->allocateIndices(GlobalIndices);
    switchActiveCrsGraph();
+
+#else
+   // All the constructor really does it set (not allocate) this guy: k_numAllocPerRow_, allocateIndices() does the rest.
+   // Ergo, it is safe to call the constructor w/ ne as the arg, BUT we'll need to duplicate a chunk of the allocateIndices()
+   // functionality here in order to make sure everything else aliases.
+   // FIXME: This code needs to be implemeneted.
+   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
+   #error "Tpetra::FECrsGraph does not have aliased memory implemented yet"
+
+#endif
  }
 
 }
