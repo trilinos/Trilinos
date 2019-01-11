@@ -84,10 +84,8 @@ namespace MueLu {
                                                  "Fine level nullspace used to construct the coarse level nullspace.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
-    validParamList->set<RCP<const FactoryBase> >("numDimensions",                Teuchos::null,
-                                                 "Number of spatial dimensions of the mesh.");
-    validParamList->set<RCP<const FactoryBase> >("interpolationOrder",           Teuchos::null,
-                                                 "Interpolation order use to construct the prolongator.");
+    validParamList->set<RCP<const FactoryBase> >("numDimensions",          Teuchos::null,
+                                                 "Number of spatial dimensions in the problem.");
 
     return validParamList;
   }
@@ -102,7 +100,6 @@ namespace MueLu {
     Input(fineLevel, "prolongatorGraph");
     Input(fineLevel, "lCoarseNodesPerDim");
     Input(fineLevel, "numDimensions");
-    Input(fineLevel, "interpolationOrder");
 
     if( pL.get<bool>("gmg: build coarse coordinates") ||
         (pL.get<int>("gmg: interpolation order") == 1) ) {
@@ -144,8 +141,8 @@ namespace MueLu {
     RCP<CrsGraph> prolongatorGraph = Get<RCP<CrsGraph> >(fineLevel, "prolongatorGraph");
     RCP<realvaluedmultivector_type> fineCoordinates, coarseCoordinates;
     RCP<Matrix> P;
+    const int interpolationOrder = pL.get<int>("gmg: interpolation order");
     const int numDimensions = Get<int>(fineLevel, "numDimensions");
-    const int interpolationOrder = Get<int>(fineLevel, "interpolationOrder");
 
     // Check if we need to build coarse coordinates as they are used if we construct
     // a linear interpolation prolongator
@@ -194,6 +191,7 @@ namespace MueLu {
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;
 
     Array<LO> lNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
+    Set(coarseLevel, "numDimensions", numDimensions);
     Set(coarseLevel, "lNodesPerDim", lNodesPerDir);
     Set(coarseLevel, "P", P);
 
@@ -214,18 +212,24 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
+    *out << "BuildConstantP" << std::endl;
+
     // Get the number of dofs per nodes from A and use that number to manually unamalgamate
-    // the maps of the prolongator graph. Eventually this operation will no longer
+    // the maps of the prolongator graph. Eventually this operation will no longer be needed
+    // after the structured aggregation is refactored to handle this.
     int dofsPerNode = A->GetFixedBlockSize();
     ArrayView<const GO> initialDomainMapLIDs =
       prolongatorGraph->getDomainMap()->getNodeElementList();
     Array<GO> domainMapLIDs(initialDomainMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(domainMapLIDs.size()); ++elementIdx) {
+    for(LO elementIdx = 0; elementIdx < as<LO>(initialDomainMapLIDs.size()); ++elementIdx) {
       for(int dof = 0; dof < dofsPerNode; ++dof) {
         domainMapLIDs[elementIdx*dofsPerNode + dof] =
           initialDomainMapLIDs[elementIdx]*dofsPerNode + dof;
       }
     }
+
+    *out << "Call domain map constructor" << std::endl;
+
     RCP<Map> domainMap = MapFactory::Build(prolongatorGraph->getRowMap()->lib(),
                                            prolongatorGraph->getGlobalNumCols()*dofsPerNode,
                                            domainMapLIDs(),
@@ -236,12 +240,15 @@ namespace MueLu {
     ArrayView<const GO> initialColMapLIDs =
       prolongatorGraph->getColMap()->getNodeElementList();
     Array<GO> colMapLIDs(initialColMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(colMapLIDs.size()); ++elementIdx) {
+    for(LO elementIdx = 0; elementIdx < as<LO>(initialColMapLIDs.size()); ++elementIdx) {
       for(int dof = 0; dof < dofsPerNode; ++dof) {
         colMapLIDs[elementIdx*dofsPerNode + dof] =
           initialColMapLIDs[elementIdx]*dofsPerNode + dof;
       }
     }
+
+    *out << "Call column map constructor" << std::endl;
+
     RCP<Map> colMap = MapFactory::Build(prolongatorGraph->getColMap()->lib(),
                                         prolongatorGraph->getGlobalNumCols()*dofsPerNode,
                                         colMapLIDs(),
@@ -252,6 +259,8 @@ namespace MueLu {
     std::vector<size_t> strideInfo(1);
     strideInfo[0]    = dofsPerNode;
     RCP<const StridedMap> stridedDomainMap = StridedMapFactory::Build(domainMap, strideInfo);
+
+    *out << "Call prolongator constructor" << std::endl;
 
     // Create the prolongator matrix and its associated objects
     P = rcp(new CrsMatrixWrap(A->getDomainMap(), colMap, 0, Xpetra::StaticProfile));
@@ -269,6 +278,8 @@ namespace MueLu {
     ArrayView<SC>     val = valP();
     ia[0] = 0;
 
+    *out << "Fill prolongator" << std::endl;
+
     // Actually fill up the matrix, in this case all values are one, pretty easy!
     int dofIdx;
     ArrayView<const LO> colIdx;
@@ -281,6 +292,8 @@ namespace MueLu {
         val[dofIdx]    = 1.0;
       }
     }
+
+    *out << "Set values and call fillComplete on prolongator" << std::endl;
 
     // call fill complete on the prolongator
     PCrs->setAllValues(iaP, jaP, valP);
@@ -314,18 +327,18 @@ namespace MueLu {
     *out << "Entering BuildLinearP" << std::endl;
 
     // Extract coordinates for interpolation stencil calculations
-    Array<ArrayView<const real_type> > fineCoords(3);
-    Array<ArrayView<const real_type> > ghostCoords(3);
-    real_type realZero = Teuchos::as<real_type>(0.0);
-    Array<real_type> fineZero(fineCoordinates->getLocalLength(), realZero);
-    Array<real_type> ghostZero(ghostCoordinates->getLocalLength(), realZero);
+    Array<ArrayRCP<const real_type> > fineCoords(3);
+    Array<ArrayRCP<const real_type> > ghostCoords(3);
+    const real_type realZero = Teuchos::as<real_type>(0.0);
+    ArrayRCP<real_type> fineZero(fineCoordinates->getLocalLength(), realZero);
+    ArrayRCP<real_type> ghostZero(ghostCoordinates->getLocalLength(), realZero);
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
-        fineCoords[dim]  = fineCoordinates->getData(dim)();
-        ghostCoords[dim] = ghostCoordinates->getData(dim)();
+        fineCoords[dim]  = fineCoordinates->getData(dim);
+        ghostCoords[dim] = ghostCoordinates->getData(dim);
       } else {
-        fineCoords[dim]  = fineZero();
-        ghostCoords[dim] = ghostZero();
+        fineCoords[dim]  = fineZero;
+        ghostCoords[dim] = ghostZero;
       }
     }
 
@@ -337,7 +350,7 @@ namespace MueLu {
     ArrayView<const GO> initialDomainMapLIDs =
       prolongatorGraph->getDomainMap()->getNodeElementList();
     Array<GO> domainMapLIDs(initialDomainMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(domainMapLIDs.size()); ++elementIdx) {
+    for(LO elementIdx = 0; elementIdx < as<LO>(initialDomainMapLIDs.size()); ++elementIdx) {
       for(int dof = 0; dof < dofsPerNode; ++dof) {
         domainMapLIDs[elementIdx*dofsPerNode + dof] =
           initialDomainMapLIDs[elementIdx]*dofsPerNode + dof;
@@ -353,7 +366,7 @@ namespace MueLu {
     ArrayView<const GO> initialColMapLIDs =
       prolongatorGraph->getColMap()->getNodeElementList();
     Array<GO> colMapLIDs(initialColMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(colMapLIDs.size()); ++elementIdx) {
+    for(LO elementIdx = 0; elementIdx < as<LO>(initialColMapLIDs.size()); ++elementIdx) {
       for(int dof = 0; dof < dofsPerNode; ++dof) {
         colMapLIDs[elementIdx*dofsPerNode + dof] =
           initialColMapLIDs[elementIdx]*dofsPerNode + dof;
@@ -540,7 +553,7 @@ namespace MueLu {
     }
 
     // Load the interpolation values onto the stencil.
-    for(LO i = 0; i < 8; ++i) {
+    for(LO i = 0; i < numInterpolationPoints; ++i) {
       stencil[i] = functions[0][i];
     }
 
