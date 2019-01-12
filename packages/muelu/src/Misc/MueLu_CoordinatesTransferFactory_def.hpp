@@ -119,7 +119,7 @@ namespace MueLu {
   void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    using xdMV = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>;
+    using xdMV = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>;
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
@@ -186,7 +186,7 @@ namespace MueLu {
 
       RCP<const Map>   uniqueMap      = fineCoords->getMap();
       RCP<const Map>   coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
-      coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+      coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
       // Create overlapped fine coordinates to reduce global communication
       RCP<xdMV> ghostedCoords = fineCoords;
@@ -194,7 +194,7 @@ namespace MueLu {
         RCP<const Map>    nonUniqueMap = aggregates->GetMap();
         RCP<const Import> importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-        ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
+        ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
         ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
       }
 
@@ -207,15 +207,15 @@ namespace MueLu {
 
       // Fill in coarse coordinates
       for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-        ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> fineCoordsData = ghostedCoords->getData(j);
-        ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>     coarseCoordsData = coarseCoords->getDataNonConst(j);
+        ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> fineCoordsData = ghostedCoords->getData(j);
+        ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType>     coarseCoordsData = coarseCoords->getDataNonConst(j);
 
         for (LO lnode = 0; lnode < vertex2AggID.size(); lnode++) {
           if (procWinner[lnode] == myPID &&
               lnode < vertex2AggID.size() &&
               lnode < fineCoordsData.size() && // TAW do not access off-processor coordinates
               vertex2AggID[lnode] < coarseCoordsData.size() &&
-              Teuchos::ScalarTraits<double>::isnaninf(fineCoordsData[lnode]) == false) {
+              Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::coordinateType>::isnaninf(fineCoordsData[lnode]) == false) {
             coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
           }
         }
@@ -232,13 +232,13 @@ namespace MueLu {
       std::ostringstream buf;
       buf << fineLevel.GetLevelID();
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName,*fineCoords);
+      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Write(fileName,*fineCoords);
     }
     if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd) {
       std::ostringstream buf;
       buf << coarseLevel.GetLevelID();
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
-      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName,*coarseCoords);
+      Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Write(fileName,*coarseCoords);
     }
   }
 
