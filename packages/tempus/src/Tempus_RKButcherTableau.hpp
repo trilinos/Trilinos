@@ -1655,8 +1655,9 @@ class GeneralDIRK_RKBT :
 
     // Tableau ParameterList
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    std::string gamma = std::to_string((2.0 - ST::squareroot(2.0))/(2.0));
-    std::string one_gamma = std::to_string(1.0-(2.0-ST::squareroot(2.0))/(2.0));
+    const Scalar one = ST::one();
+    std::string gamma = std::to_string(Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one)));
+    std::string one_gamma = std::to_string(Teuchos::as<Scalar>(one-(2*one-ST::squareroot(2*one))/(2*one)));
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
     tableauPL->set<std::string>("A", gamma + " 0.0; " + one_gamma + " "+gamma);
     tableauPL->set<std::string>("b", one_gamma + " " + gamma);
@@ -3222,16 +3223,16 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
     const Scalar zero = ST::zero();
     const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(12*one) );
-    A(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
-    A(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
+    A(0,1) = as<Scalar>( (-one-ST::squareroot(5*one))/(24*one) );
+    A(0,2) = as<Scalar>( (-one+ST::squareroot(5*one))/(24*one) );
     A(0,3) = zero;
     A(1,0) = as<Scalar>( one/(12*one) );
-    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5))/(120*one) );
-    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5))/(120*one) );
+    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5*one))/(120*one) );
+    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5*one))/(120*one) );
     A(1,3) = zero;
     A(2,0) = as<Scalar>( one/(12*one) );
-    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5))/(120*one) );
-    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5))/(120*one) );
+    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5*one))/(120*one) );
+    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5*one))/(120*one) );
     A(2,3) = zero;
     A(3,0) = as<Scalar>( one/(12*one) );
     A(3,1) = as<Scalar>( (11*one-ST::squareroot(5*one))/(24*one) );

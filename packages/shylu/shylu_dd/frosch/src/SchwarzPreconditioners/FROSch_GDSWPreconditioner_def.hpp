@@ -77,7 +77,7 @@ namespace FROSch {
             } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("Custom")) {
                 dofOrdering = Custom;
             } else {
-                FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
+                FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
             
             return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),dofOrdering,this->ParameterList_->get("Overlap",1),repeatedMap);
@@ -108,7 +108,7 @@ namespace FROSch {
             } else if (!this->ParameterList_->get("DofOrdering","NodeWise").compare("Custom")) {
                 dofOrdering = Custom;
             } else {
-                FROSCH_ASSERT(0!=0,"ERROR: Specify a valid DofOrdering.");
+                FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
             }
             
             return initialize(this->ParameterList_->get("Dimension",1),this->ParameterList_->get("DofsPerNode",1),dofOrdering,this->ParameterList_->get("Overlap",1),repeatedMap,dirichletBoundaryDofs);
@@ -238,7 +238,7 @@ namespace FROSch {
     void GDSWPreconditioner<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                                    const Teuchos::EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(0!=0,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
     
     template <class SC,class LO,class GO,class NO>

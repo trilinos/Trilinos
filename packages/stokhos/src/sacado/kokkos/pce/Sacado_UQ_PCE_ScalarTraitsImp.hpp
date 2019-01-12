@@ -76,6 +76,7 @@ namespace Sacado {
       typedef value_mag_type magnitudeType;
       typedef typename Sacado::mpl::apply<PCEType, storage_half_type>::type halfPrecision;
       typedef typename Sacado::mpl::apply<PCEType, storage_double_type>::type doublePrecision;
+      typedef typename TVT::coordinateType coordinateType;
 
       typedef value_type innerProductType;
 

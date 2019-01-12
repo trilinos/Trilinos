@@ -166,12 +166,12 @@ namespace MueLu {
     static const int CONTRAST_3_ = -3;
 
     //Data that the different styles need to have available when building geometry
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> xCoords_; //fine local coordinates
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> yCoords_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> zCoords_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cx_; //coarse local coordinates
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cy_;
-    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cz_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xCoords_; //fine local coordinates
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yCoords_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zCoords_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx_; //coarse local coordinates
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy_;
+    mutable Teuchos::ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz_;
     mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
     mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
     mutable std::vector<bool> isRoot_;

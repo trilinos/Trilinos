@@ -72,10 +72,10 @@ namespace panzer {
   {return targetGlobalIndexer_;}
 
   template<typename LO, typename GO>
-  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping)
   {
-    PANZER_FUNC_TIME_MONITOR("L2Projection::Build Mass Matrix");
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection::Build Mass Matrix",TopBuildMassMatrix);
     TEUCHOS_ASSERT(setupCalled_);
 
     // Allocate the owned matrix
@@ -260,8 +260,9 @@ namespace panzer {
     PHX::exec_space::fence();
 
     {
-      PANZER_FUNC_TIME_MONITOR("Exporting of mass matrix");
-      ghostedMatrix->fillComplete();
+      PANZER_FUNC_TIME_MONITOR_DIFF("Exporting of mass matrix",ExportMM);
+      auto map = factory.getMap(0);
+      ghostedMatrix->fillComplete(map,map);
       const auto exporter = factory.getGhostedExport(0);
       ownedMatrix->doExport(*ghostedMatrix, *exporter, Tpetra::ADD);
       ownedMatrix->fillComplete();
@@ -270,30 +271,30 @@ namespace panzer {
   }
 
   template<typename LO, typename GO>
-  Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+  Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildInverseLumpedMassMatrix()
   {
-    PANZER_FUNC_TIME_MONITOR("L2Projection<LO,GO>::buildInverseLumpedMassMatrix");
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection<LO,GO>::buildInverseLumpedMassMatrix",buildInvLMM);
     using Teuchos::rcp;
     const auto massMatrix = this->buildMassMatrix(true);
-    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getDomainMap(),1,true));
-    const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getRangeMap(),1,false));
+    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>(massMatrix->getDomainMap(),1,true));
+    const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>(massMatrix->getRangeMap(),1,false));
     tmp->putScalar(1.0);
     {
-      PANZER_FUNC_TIME_MONITOR("Apply");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Apply",Apply);
       massMatrix->apply(*tmp,*lumpedMassMatrix);
     }
     {
-      PANZER_FUNC_TIME_MONITOR("reciprocal");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Reciprocal",Reciprocal);
       lumpedMassMatrix->reciprocal(*lumpedMassMatrix);
     }
     return lumpedMassMatrix;
   }
 
   template<typename LO, typename GO>
-  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildRHSMatrix(const panzer::UniqueGlobalIndexer<LO,GO>& sourceGlobalIndexer,
-                                              const Teuchos::RCP<const Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& inputOwnedSourceMap,
+                                              const Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType>>& inputOwnedSourceMap,
                                               const std::string& sourceFieldName,
                                               const panzer::BasisDescriptor& sourceBasisDescriptor,
                                               const int directionIndex)
@@ -303,10 +304,10 @@ namespace panzer {
     // *******************
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using MapType = Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
-    using GraphType = Tpetra::CrsGraph<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
-    using ExportType = Tpetra::Export<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
-    using MatrixType = Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
+    using MapType = Tpetra::Map<LO,GO,panzer::TpetraNodeType>;
+    using GraphType = Tpetra::CrsGraph<LO,GO,panzer::TpetraNodeType>;
+    using ExportType = Tpetra::Export<LO,GO,panzer::TpetraNodeType>;
+    using MatrixType = Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>;
 
     // *******************
     // Build ghosted graph
@@ -347,12 +348,6 @@ namespace panzer {
       }
     }
 
-    // Fill complete with range and domain map
-    ghostedGraph->fillComplete(ghostedSourceMap,ghostedTargetMap);
-
-    // *****************
-    // Build owned graph
-    // *****************
     RCP<MapType> ownedTargetMap;
     {
       std::vector<GO> indices;
@@ -366,6 +361,13 @@ namespace panzer {
       sourceGlobalIndexer.getOwnedIndices(indices);
       ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
+
+    // Fill complete with owned range and domain map
+    ghostedGraph->fillComplete(ownedSourceMap,ownedTargetMap);
+
+    // *****************
+    // Build owned graph
+    // *****************
 
     RCP<GraphType> ownedGraph = rcp(new GraphType(ownedTargetMap,0));
     RCP<const ExportType> exporter = rcp(new ExportType(ghostedTargetMap,ownedTargetMap));
@@ -494,7 +496,7 @@ namespace panzer {
       }
 
     }
-    ghostedMatrix->fillComplete(ghostedSourceMap,ghostedTargetMap);
+    ghostedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);
     ownedMatrix->resumeFill();
     ownedMatrix->doExport(*ghostedMatrix,*exporter,Tpetra::ADD);
     ownedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);

@@ -160,7 +160,7 @@ namespace { // (anonymous)
     }
     else if (! std::is_same<MagnitudeType, double>::value &&
 	     params.isType<double> (pname)) {
-      const MagnitudeType value = double (params.get<MagnitudeType> (pname));
+      const MagnitudeType value = params.get<double> (pname);
       return {value, true};
     }
     else {
@@ -190,7 +190,7 @@ void ILUT<MatrixType>::setParameters (const Teuchos::ParameterList& params)
     }
     else if (! std::is_same<magnitude_type, double>::value &&
 	     params.isType<double> (fillLevelParamName)) {
-      fillLevel = static_cast<double> (params.get<magnitude_type> (fillLevelParamName));
+      fillLevel = params.get<double> (fillLevelParamName);
       gotFillLevel = true;
     }
     TEUCHOS_TEST_FOR_EXCEPTION

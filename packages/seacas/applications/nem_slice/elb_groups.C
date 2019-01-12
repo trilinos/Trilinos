@@ -85,13 +85,10 @@ extern int ilog2i(size_t n);
  *   - "1-20/40-45/5-10 21-41   1-4,11-20       42,43,45   5-10 31-41
  *
  *****************************************************************************/
-template int parse_groups(Mesh_Description<int> *mesh,
-                          Problem_Description *prob);
+template int parse_groups(Mesh_Description<int> *mesh, Problem_Description *prob);
 template int parse_groups(Mesh_Description<int64_t> *mesh, Problem_Description *prob);
 
-template <typename INT>
-int parse_groups(Mesh_Description<INT> *mesh,
-                 Problem_Description *prob)
+template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_Description *prob)
 {
   char *id;
   int   last, found;
@@ -151,8 +148,8 @@ int parse_groups(Mesh_Description<INT> *mesh,
     printf("Block ID and associated groups:\n");
     printf("   block   #elems  group   type\n");
     for (i = 0; i < mesh->num_el_blks; i++) {
-      printf("%8lu%8lu%8d%8s\n", (size_t)mesh->eb_ids[i], (size_t)mesh->eb_cnts[i], prob->group_no[i],
-             elem_name_from_enum(mesh->elem_type[first_el]));
+      printf("%8lu%8lu%8d%8s\n", (size_t)mesh->eb_ids[i], (size_t)mesh->eb_cnts[i],
+             prob->group_no[i], elem_name_from_enum(mesh->elem_type[first_el]));
       first_el += mesh->eb_cnts[i];
     }
     printf("There are %d groups of blocks\n", prob->num_groups);

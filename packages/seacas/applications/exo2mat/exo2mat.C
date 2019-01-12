@@ -751,12 +751,12 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
 
       std::vector<matvar_t *> cell_element(num_sets * 7);
 
-      size_t              num_sides = ex_inquire_int(exo_file, EX_INQ_SS_ELEM_LEN);
-      size_t              num_nodes = ex_inquire_int(exo_file, EX_INQ_SS_NODE_LEN);
-      std::vector<int>    elem_list(num_sides);
-      std::vector<int>    side_list(num_sides);
-      std::vector<int>    num_nodes_per_side(num_sides);
-      std::vector<int>    side_nodes(num_nodes);
+      size_t           num_sides = ex_inquire_int(exo_file, EX_INQ_SS_ELEM_LEN);
+      size_t           num_nodes = ex_inquire_int(exo_file, EX_INQ_SS_NODE_LEN);
+      std::vector<int> elem_list(num_sides);
+      std::vector<int> side_list(num_sides);
+      std::vector<int> num_nodes_per_side(num_sides);
+      std::vector<int> side_nodes(num_nodes);
 
       // size_t num_df    = ex_inquire_int(exo_file, EX_INQ_SS_DF_LEN);
       // If `num_df == 0` or if it isn't equal to `num_nodes`, then
@@ -785,7 +785,7 @@ std::vector<int> handle_side_sets(int exo_file, int num_sets, bool use_cell_arra
         dims[1]             = 1;
         index               = 7 * i + 1;
         cell_element[index] = Mat_VarCreate(nullptr, MAT_C_INT32, MAT_T_INT32, 2, dims, &ids[i],
-					    MAT_F_DONT_COPY_DATA);
+                                            MAT_F_DONT_COPY_DATA);
         Mat_VarSetCell(cell_array, index, cell_element[index]);
 
         int n1, n2;

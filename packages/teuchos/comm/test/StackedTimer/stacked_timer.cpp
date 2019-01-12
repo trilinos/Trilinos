@@ -13,6 +13,7 @@
 #include <tuple>
 #include <regex>
 #include <iterator>
+#include <limits>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
 #include "Kokkos_Core.hpp"
@@ -208,6 +209,63 @@ TEUCHOS_UNIT_TEST(StackedTimer, Basic)
   timer.report(out, comm, options);
 }
 
+TEUCHOS_UNIT_TEST(StackedTimer, UnitTestSupport)
+{
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  const int myRank = Teuchos::rank(*comm);
+
+  const auto timeMonitorDefaultStackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+  const auto timer = Teuchos::rcp(new Teuchos::StackedTimer("Total Time", false));
+  timer->startBaseTimer();
+  for (int i=0; i < 10; ++i) {
+    timer-> start("Subtask");
+    timer->incrementUpdates();
+    timer->incrementUpdates(2);
+    timer-> stop("Subtask");
+  }
+  timer->stopBaseTimer();
+
+  // If users want to set timer values for unit testing, force them to
+  // const_cast the timer by returning a const Timer object.
+  auto top_timer = const_cast<Teuchos::BaseTimer*>(timer->findBaseTimer("Total Time"));
+  auto sub_timer = const_cast<Teuchos::BaseTimer*>(timer->findBaseTimer("Total Time@Subtask"));
+  TEST_ASSERT(top_timer != nullptr);
+  TEST_ASSERT(sub_timer != nullptr);
+
+  // Test for exception for bad timer name
+  TEST_THROW(timer->findBaseTimer("Testing misspelled timer name!"),std::runtime_error);
+
+  {
+    TEST_EQUALITY(top_timer->numCalls(),1);
+    TEST_EQUALITY(top_timer->numUpdates(),0);
+    TEST_EQUALITY(sub_timer->numCalls(),10);
+    TEST_EQUALITY(sub_timer->numUpdates(),30);
+  }
+
+  // Test the serial version of report
+  if (myRank == 0)
+    timer->report(out);
+
+  // Override timers for unit testing
+  top_timer->setAccumulatedTime(5000.0);
+  top_timer->overrideNumCallsForUnitTesting(2);
+  top_timer->overrideNumUpdatesForUnitTesting(3);
+  sub_timer->setAccumulatedTime(4000.0);
+  sub_timer->overrideNumCallsForUnitTesting(4);
+  sub_timer->overrideNumUpdatesForUnitTesting(5);
+  {
+    const double timerTolerance = 100.0 * std::numeric_limits<double>::epsilon();
+    TEST_FLOATING_EQUALITY(5000.0,top_timer->accumulatedTime(),timerTolerance);
+    TEST_EQUALITY(top_timer->numCalls(),2);
+    TEST_EQUALITY(top_timer->numUpdates(),3);
+    TEST_FLOATING_EQUALITY(4000.0,sub_timer->accumulatedTime(),timerTolerance);
+    TEST_EQUALITY(sub_timer->numCalls(),4);
+    TEST_EQUALITY(sub_timer->numUpdates(),5);
+  }
+
+  if (myRank == 0)
+    timer->report(out);
+}
 
 TEUCHOS_UNIT_TEST(StackedTimer, TimeMonitorInteroperability)
 {
@@ -354,7 +412,9 @@ int main( int argc, char* argv[] )
   // Note that the dtor for GlobalMPISession will call
   // Kokkos::finalize_all().
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
   Kokkos::initialize(argc,argv);
+#endif
   {
     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
     out.setOutputToRootOnly(0);
@@ -362,7 +422,9 @@ int main( int argc, char* argv[] )
   Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
 
   auto return_val = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
   if (Kokkos::is_initialized())
     Kokkos::finalize_all();
+#endif
   return return_val;
 }
