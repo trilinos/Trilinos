@@ -70,14 +70,14 @@
 template <typename Scalar>
 Piro::NOXSolver<Scalar>::
 NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model_,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model_,
     const Teuchos::RCP<ObserverBase<Scalar> > &observer_) :
-    SteadyStateSolver<Scalar>(model_),
+    SteadyStateSolver<Scalar>(in_model_),
     appParams(appParams_),
     observer(observer_),
     solver(new Thyra::NOXNonlinearSolver),
     out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-    model(model_),
+    model(in_model_),
     writeOnlyConvergedSol(appParams_->get("Write Only Converged Solution", true)),
     current_iteration(-1)
     {
@@ -94,11 +94,11 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
 
   if (jacobianSource == "Matrix-Free") {
     if (appParams->isParameter("Matrix-Free Perturbation")) {
-      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model_,
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model_,
           appParams->get<double>("Matrix-Free Perturbation")));
     }
     else 
-      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model_));
+      model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(in_model_));
   }
   solver->setModel(model);
     }
@@ -327,9 +327,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
       auto x_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(x_space);
       bool g_dist = !g_space_plus->isLocallyReplicated();//g_space->DistributedGlobal();
       bool x_dist = !x_space_plus->isLocallyReplicated();//x_space->DistributedGlobal();
-      Thyra::ModelEvaluatorBase::DerivativeSupport ds =  modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx,j);
       DerivativeLayout dgdx_layout;
       { //if (sensitivity_method == "Adjoint")
+        Thyra::ModelEvaluatorBase::DerivativeSupport ds =  modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx,j);
         if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist)
           dgdx_layout = ROW;
         else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !x_dist)
@@ -373,13 +373,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
         if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i).none()) {
           Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp = outArgs.get_DgDp(j,i);
           if (dgdp.getLinearOp() != Teuchos::null) {
-            auto g_space = this->getModel().get_g_space(j);
             auto p_space = this->getModel().get_p_space(i);
-            int num_responses = g_space->dim();
             int num_params = p_space->dim();
-            auto g_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(g_space);
             auto p_space_plus = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceDefaultBase<Scalar>>(p_space);
-            bool g_dist = !g_space_plus->isLocallyReplicated();//g_space->DistributedGlobal();
             bool p_dist = !p_space_plus->isLocallyReplicated();//p_space->DistributedGlobal();
             Thyra::ModelEvaluatorBase::DerivativeSupport ds = modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,j,i);
             if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
@@ -393,15 +389,15 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
               modelOutArgs.set_DgDp(j,i,dgdp_op);
             }
             else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) && !p_dist) {
-              auto dgdp = createMembers(g_space, num_params);
+              auto tmp_dgdp = createMembers(g_space, num_params);
               Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-              dmv_dgdp(dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+              dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
               modelOutArgs.set_DgDp(j,i,dmv_dgdp);
             }
             else if (ds.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) && !g_dist) {
-              auto dgdp = createMembers(p_space, num_responses);
+              auto tmp_dgdp = createMembers(p_space, num_responses);
               Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-              dmv_dgdp(dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+              dmv_dgdp(tmp_dgdp, Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
               modelOutArgs.set_DgDp(j,i,dmv_dgdp);
             }
             else
@@ -524,9 +520,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                 auto dfdp_op = dfdp_dv.getLinearOp();
                 auto dfdp = dfdp_dv.getMultiVector();
                 Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdx_dv = modelOutArgs.get_DgDx(j);
-                Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
-                    outArgs.get_DgDp(j,i).getMultiVectorOrientation();
                 if (dfdp_op != Teuchos::null) {
+                  Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
+                    outArgs.get_DgDp(j,i).getMultiVectorOrientation();
                   bool transpose = false;
                   if (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)
                     transpose = true;
@@ -548,9 +544,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                         " transposed, distributed dg/dp. " << std::endl);
                     Thyra::DetachedMultiVectorView<Scalar> dgdp_out_view(dgdp_out);
                     Thyra::DetachedMultiVectorView<Scalar> tmp_view(tmp);
-                    for (int j=0; j<dgdp_out_view.numSubCols(); j++)
-                      for (int i=0; i<dgdp_out_view.subDim(); i++)
-                        dgdp_out_view(i,j) += tmp_view(j,i);
+                    for (int jj=0; jj<dgdp_out_view.numSubCols(); jj++)
+                      for (int ii=0; ii<dgdp_out_view.subDim(); ii++)
+                        dgdp_out_view(ii,jj) += tmp_view(jj,ii);
                   }
                   else {
                     Thyra::update(1.0,  *tmp, dgdp_out.ptr());
@@ -567,9 +563,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
 
                   Thyra::DetachedMultiVectorView<Scalar> dgdp_out_view(dgdp_out);
-                  int num_g = (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
+                  int sub_num_g = (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
                       dgdp_out_view.subDim() : dgdp_out_view.numSubCols();
-                  int num_p = (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
+                  int sub_num_p = (dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) ?
                       dgdp_out_view.numSubCols() : dgdp_out_view.subDim();
                   if(dgdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM){
                     //dgdp (np columns of g_space vectors)
@@ -578,22 +574,22 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                       Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
                       Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
                       if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                        for (int ip=0; ip<num_p; ip++)
-                          for (int ig=0; i<num_g; ig++) {
+                        for (int ip=0; ip<sub_num_p; ip++)
+                          for (int ig=0; i<sub_num_g; ig++) {
                             for (int ix=0; ix<xbar_view.numSubCols(); ix++)
                               dgdp_out_view(ip,ig) += xbar_view(ix,ig)*dfdp_view(ip,ix);
                           }
                       }
                       else {
-                        for (int ip=0; ip<num_p; ip++)
-                          for (int ig=0; ig<num_g; ig++)
+                        for (int ip=0; ip<sub_num_p; ip++)
+                          for (int ig=0; ig<sub_num_g; ig++)
                             for (int ix=0; ix<xbar_view.numSubCols(); ix++)
                               dgdp_out_view(ip,ig) += xbar_view(ix,ig)*dfdp_view(ix,ip);
                       }
                     }
                     else if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                      for (int ip=0; ip<num_p; ip++)
-                        for (int ig=0; ig<num_g; ig++)
+                      for (int ip=0; ip<sub_num_p; ip++)
+                        for (int ig=0; ig<sub_num_g; ig++)
                           dgdp_out_view(ip,ig) += Thyra::scalarProd(*xbar->col(ig),*dfdp->col(ip));
                     }
                     else {
@@ -611,22 +607,22 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
                       Thyra::DetachedMultiVectorView<Scalar> xbar_view(xbar);
                       Thyra::DetachedMultiVectorView<Scalar> dfdp_view(dfdp);
                       if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                        for (int ip=0; ip<num_p; ip++)
-                          for (int ig=0; i<num_g; ig++) {
+                        for (int ip=0; ip<sub_num_p; ip++)
+                          for (int ig=0; i<sub_num_g; ig++) {
                             for (int ix=0; ix<xbar_view.numSubCols(); ix++)
                               dgdp_out_view(ig,ip) += xbar_view(ix,ig)*dfdp_view(ip,ix);
                           }
                       }
                       else {
-                        for (int ip=0; ip<num_p; ip++)
-                          for (int ig=0; ig<num_g; ig++)
+                        for (int ip=0; ip<sub_num_p; ip++)
+                          for (int ig=0; ig<sub_num_g; ig++)
                             for (int ix=0; ix<xbar_view.numSubCols(); ix++)
                               dgdp_out_view(ig,ip) += xbar_view(ix,ig)*dfdp_view(ix,ip);
                       }
                     }
                     else if (dfdp_orient == Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) {
-                      for (int ip=0; ip<num_p; ip++)
-                        for (int ig=0; ig<num_g; ig++)
+                      for (int ip=0; ip<sub_num_p; ip++)
+                        for (int ig=0; ig<sub_num_g; ig++)
                           dgdp_out_view(ig,ip) += Thyra::scalarProd(*xbar->col(ig),*dfdp->col(ip));
                     }
                     else {

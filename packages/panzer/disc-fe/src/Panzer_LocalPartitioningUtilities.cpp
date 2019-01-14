@@ -66,7 +66,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
                       const std::vector<LO> & owned_parent_cells,
                       panzer::LocalMeshInfoBase<LO,GO> & sub_info)
 {
-  PANZER_FUNC_TIME_MONITOR("panzer::partitioning_utilities::setupSubLocalMeshInfo");
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::partitioning_utilities::setupSubLocalMeshInfo",setupSLMI);
   // The goal of this function is to fill a LocalMeshInfoBase (sub_info) with
   // a subset of cells from a given parent LocalMeshInfoBase (parent_info)
 
@@ -99,7 +99,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   std::vector<LO> ghstd_parent_cells;
   std::vector<LO> virtual_parent_cells;
   {
-    PANZER_FUNC_TIME_MONITOR("Construct parent cell vector");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Construct parent cell vector",ParentCell);
     // We grab all of the owned cells and put their global indexes into sub_info
     // We also put all of the owned cell indexes in the parent's indexing scheme into a set to use for lookups
     std::unordered_set<LO> owned_parent_cells_set(owned_parent_cells.begin(), owned_parent_cells.end());
@@ -230,7 +230,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & parent_info,
   // First create the faces
   std::vector<face_t> faces;
   {
-    PANZER_FUNC_TIME_MONITOR("Create faces");
+    PANZER_FUNC_TIME_MONITOR_DIFF("Create faces",CreateFaces);
     // faces_set: cell_0, subcell_index_0, cell_1, subcell_index_1
     std::unordered_map<LO,std::unordered_map<LO, std::pair<LO,LO> > > faces_set;
 

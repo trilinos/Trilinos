@@ -112,9 +112,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
 
     // only one NS vector -> exercises manual orthogonalization
     LocalOrdinal NSdim = 1;
@@ -215,9 +216,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
 
     // only one NS vector -> exercises manual orthogonalization
     LocalOrdinal NSdim = 1;
@@ -318,9 +320,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
 
     // only one NS vector -> exercises manual orthogonalization
     LocalOrdinal NSdim = 1;
@@ -422,9 +425,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
     fineLevel.Set("aggregation: mesh data", meshData);
 
     // only one NS vector -> exercises manual orthogonalization
@@ -527,9 +531,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
     fineLevel.Set("aggregation: mesh data", meshData);
 
     // only one NS vector -> exercises manual orthogonalization
@@ -632,9 +637,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
     fineLevel.Set("aggregation: mesh data", meshData);
 
     // only one NS vector -> exercises manual orthogonalization
@@ -745,6 +751,7 @@ namespace MueLuTests {
     fineLevel.Request("A");
     fineLevel.Set("A", A);
     fineLevel.Set("Coordinates", Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
     fineLevel.Set("gNodesPerDim", gNodesPerDir);
     fineLevel.Set("lNodesPerDim", lNodesPerDir);
     fineLevel.Set("aggregation: mesh data", meshData);
@@ -857,9 +864,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
     fineLevel.Set("aggregation: mesh data", meshData);
 
     // only one NS vector -> exercises manual orthogonalization
@@ -970,9 +978,10 @@ namespace MueLuTests {
     RCP<Matrix> A = Pr->BuildMatrix();
     fineLevel.Request("A");
     fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", Coordinates);
-    fineLevel.Set("gNodesPerDim", gNodesPerDir);
-    fineLevel.Set("lNodesPerDim", lNodesPerDir);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
     fineLevel.Set("aggregation: mesh data", meshData);
 
     // only one NS vector -> exercises manual orthogonalization
@@ -1131,6 +1140,7 @@ namespace MueLuTests {
     M.SetFactory("Nullspace",          NSfact);
     M.SetFactory("Graph",              CDropfact);
     M.SetFactory("lNodesPerDim",       Tfact);
+    M.SetFactory("numDimensions",      Tfact);
     M.SetFactory("lCoarseNodesPerDim", Aggfact);
 
     // setup smoothers
@@ -1154,7 +1164,8 @@ namespace MueLuTests {
     Finest->Set("A", A);                        // set fine level matrix
     Finest->Set("Nullspace", nullSpace);        // set null space information for finest level
     // Finest->Set("Coordinates", Coordinates);    // set fine level coordinates
-    Finest->Set("lNodesPerDim", lNodesPerDir);  // set GeneralGeometricPFactory specific info
+    Finest->Set("numDimensions", numDimensions);  // set GeneralGeometricPFactory specific info
+    Finest->Set("lNodesPerDim",  lNodesPerDir);  // set GeneralGeometricPFactory specific info
 
     // Setup the hierarchy
     LO maxLevels = 5;

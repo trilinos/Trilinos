@@ -95,6 +95,8 @@ struct ScalarTraits
   typedef T halfPrecision;
   //! Typedef for double precision
   typedef T doublePrecision;
+  //! Typedef for coordinates
+  typedef T coordinateType;
   //! Determines if scalar type is std::complex
   static const bool isComplex = false;
   //! Determines if scalar type is an ordinal type

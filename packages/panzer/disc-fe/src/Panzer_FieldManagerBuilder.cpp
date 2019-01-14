@@ -78,7 +78,7 @@ void panzer::FieldManagerBuilder::print(std::ostream& os) const
 
 //=======================================================================
 void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
-                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
+                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
                                             const std::vector<WorksetDescriptor> & wkstDesc,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
@@ -114,9 +114,9 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     TEUCHOS_ASSERT(wd.getElementBlock()==pb->elementBlockID());
 
     // build a field manager object
-    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm 
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
           = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
-    
+
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
     if(!physicsBlockGatherDisabled())
@@ -129,7 +129,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
       pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,pb->elementBlockID(),closure_models,user_data);
     else
       pb->buildAndRegisterClosureModelEvaluators(*fm,cm_factory,closure_models,user_data);
- 
+
     // register additional model evaluator from the generic evaluator factory
     gEvalFact.registerEvaluators(*fm,wd,*pb);
 
@@ -139,24 +139,24 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     // build the setup data using passed in information
     fm->postRegistrationSetup(setupData);
 
-    // make sure to add the field manager & workset to the list 
+    // make sure to add the field manager & workset to the list
     volume_workset_desc_.push_back(wd);
-    phx_volume_field_managers_.push_back(fm); 
+    phx_volume_field_managers_.push_back(fm);
   }
 }
 
 //=======================================================================
 void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
-                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, 
+                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
 					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
 					    const Teuchos::ParameterList& closure_models,
                                             const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
 					    const Teuchos::ParameterList& user_data)
 {
    std::vector<WorksetDescriptor> wkstDesc;
-   for(std::size_t i=0;i<physicsBlocks.size();i++) 
+   for(std::size_t i=0;i<physicsBlocks.size();i++)
      wkstDesc.push_back(blockDescriptor(physicsBlocks[i]->elementBlockID()));
-  
+
    EmptyEvaluatorFactory eef;
    setupVolumeFieldManagers(physicsBlocks,wkstDesc,cm_factory,closure_models,lo_factory,user_data,eef);
 }
@@ -209,7 +209,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
       for (std::map<unsigned,panzer::Workset>::const_iterator wkst = currentWkst->begin();
            wkst != currentWkst->end(); ++wkst) {
         // Build one FieldManager for each local side workset for each bc
-        std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
+        std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers =
           bc_field_managers_[*bc];
 
         PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
@@ -227,8 +227,8 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 
           const Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
           const Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
-          
-          // register evaluators from strategy      
+
+          // register evaluators from strategy
           const panzer::CellData side_cell_data(wkst->second.num_cells,
                                                 wkst->second.details(block_id_index).subcell_index,
                                                 volume_cell_topology);
@@ -237,11 +237,11 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);
 
           Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-            bcs = bc_factory.buildBCStrategy(*bc, side_pb->globalData());
+            bcstm = bc_factory.buildBCStrategy(*bc, side_pb->globalData());
 
           // Iterate over evaluation types
-          for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator 
-                 bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
+          for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
+                 bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type) {
             bcs_type->setDetailsIndex(block_id_index);
             side_pb->setDetailsIndex(block_id_index);
             bcs_type->setup(*side_pb, user_data);
@@ -262,7 +262,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           #ifdef Panzer_BUILD_HESSIAN_SUPPORT
             fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
           #endif
-          
+
           derivative_dimensions[0] = 1;
           if (user_data.isType<int>("Tangent Dimension"))
             derivative_dimensions[0] = user_data.get<int>("Tangent Dimension");
@@ -281,7 +281,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     } else {
       const std::string element_block_id = bc->elementBlockID();
 
-      std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator volume_pb_itr 
+      std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator volume_pb_itr
 	= physicsBlocks_map.find(element_block_id);
 
       TEUCHOS_TEST_FOR_EXCEPTION(volume_pb_itr==physicsBlocks_map.end(),std::logic_error,
@@ -289,31 +289,31 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 
       Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
       Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
-    
+
       // Build one FieldManager for each local side workset for each dirichlet bc
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
+      std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers =
         bc_field_managers_[*bc];
 
       // Loop over local face indices and setup each field manager
-      for (std::map<unsigned,panzer::Workset>::const_iterator wkst = 
+      for (std::map<unsigned,panzer::Workset>::const_iterator wkst =
 	     currentWkst->begin(); wkst != currentWkst->end();
 	   ++wkst) {
 
         PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
-      
-        // register evaluators from strategy      
+
+        // register evaluators from strategy
         const panzer::CellData side_cell_data(wkst->second.num_cells,
-	                                      wkst->first,volume_cell_topology);      
+	                                      wkst->first,volume_cell_topology);
 
 	// Copy the physics block for side integrations
 	Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);
 
-	Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs = 
+	Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcstm =
 	  bc_factory.buildBCStrategy(*bc,side_pb->globalData());
 
 	// Iterate over evaluation types
-	for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator 
-	       bcs_type = bcs->begin(); bcs_type != bcs->end(); ++bcs_type) {
+	for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
+	       bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type) {
 	  bcs_type->setup(*side_pb,user_data);
 	  bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
 	  bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
@@ -323,7 +323,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 
 	// Setup the fieldmanager
 	Traits::SD setupData;
-	Teuchos::RCP<std::vector<panzer::Workset> > worksets = 
+	Teuchos::RCP<std::vector<panzer::Workset> > worksets =
 	  Teuchos::rcp(new(std::vector<panzer::Workset>));
 	worksets->push_back(wkst->second);
 	setupData.worksets_ = worksets;
@@ -343,7 +343,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 void panzer::FieldManagerBuilder::
 writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 				   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
-{  
+{
   if(phx_volume_field_managers_.size()<1)
     return; // nothing to see here folks
 
@@ -362,14 +362,14 @@ writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
 //=======================================================================
 void panzer::FieldManagerBuilder::
 writeBCGraphvizDependencyFiles(std::string filename_prefix) const
-{  
+{
   typedef std::map<panzer::BC,std::map<unsigned,PHX::FieldManager<panzer::Traits> >,panzer::LessBC> FMMap;
 
   FMMap::const_iterator blkItr;
   int bc_index = 0;
   for (blkItr=bc_field_managers_.begin();blkItr!=bc_field_managers_.end();++blkItr,++bc_index) {
     panzer::BC bc = blkItr->first;
-    const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
+    const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager
 
     BCType bc_type = bc.bcType();
     std::string type;
@@ -394,7 +394,7 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
 void panzer::FieldManagerBuilder::
 writeVolumeTextDependencyFiles(std::string filename_prefix,
 			       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
-{  
+{
   if(phx_volume_field_managers_.size()<1)
     return; // nothing to see here folks
 
@@ -421,14 +421,14 @@ writeVolumeTextDependencyFiles(std::string filename_prefix,
 //=======================================================================
 void panzer::FieldManagerBuilder::
 writeBCTextDependencyFiles(std::string filename_prefix) const
-{  
+{
   typedef std::map<panzer::BC,std::map<unsigned,PHX::FieldManager<panzer::Traits> >,panzer::LessBC> FMMap;
 
   FMMap::const_iterator blkItr;
   int bc_index = 0;
   for (blkItr=bc_field_managers_.begin();blkItr!=bc_field_managers_.end();++blkItr,++bc_index) {
     panzer::BC bc = blkItr->first;
-    const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
+    const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager
 
     BCType bc_type = bc.bcType();
     std::string type;

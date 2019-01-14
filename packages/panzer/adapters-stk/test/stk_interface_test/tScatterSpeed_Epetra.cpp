@@ -134,9 +134,9 @@ void newAssembly(Teuchos::FancyOStream& /* out */)
     Teuchos::TimeMonitor LocalTimer(*New_Time);
 
     for ( size_t e = 0; e < myElements.size(); ++e) {
-      for (size_t i = 0; i < gids[e].size(); ++i) {
-        int accid=lids[e][i];
-        crsmat->SumIntoMyValues(accid,lids[e].size(),&miniMat[e][i][0],&lids[e][0]);
+      for (size_t j = 0; j < gids[e].size(); ++j) {
+        int accid=lids[e][j];
+        crsmat->SumIntoMyValues(accid,lids[e].size(),&miniMat[e][j][0],&lids[e][0]);
       }
     }
   }

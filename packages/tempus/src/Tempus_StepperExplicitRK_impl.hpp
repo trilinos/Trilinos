@@ -105,7 +105,7 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& sh) const
 {
 
-   Scalar dt = std::numeric_limits<Scalar>::max();
+   Scalar dt = Scalar(1.0e+99);
    if (!stepperPL_->get<bool>("Use Embedded")) return dt;
 
    Teuchos::RCP<SolutionState<Scalar> > currentState=sh->getCurrentState();

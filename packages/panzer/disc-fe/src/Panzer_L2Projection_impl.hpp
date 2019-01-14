@@ -75,7 +75,7 @@ namespace panzer {
   Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping)
   {
-    PANZER_FUNC_TIME_MONITOR("L2Projection::Build Mass Matrix");
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection::Build Mass Matrix",TopBuildMassMatrix);
     TEUCHOS_ASSERT(setupCalled_);
 
     // Allocate the owned matrix
@@ -260,7 +260,7 @@ namespace panzer {
     PHX::exec_space::fence();
 
     {
-      PANZER_FUNC_TIME_MONITOR("Exporting of mass matrix");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Exporting of mass matrix",ExportMM);
       auto map = factory.getMap(0);
       ghostedMatrix->fillComplete(map,map);
       const auto exporter = factory.getGhostedExport(0);
@@ -274,18 +274,18 @@ namespace panzer {
   Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildInverseLumpedMassMatrix()
   {
-    PANZER_FUNC_TIME_MONITOR("L2Projection<LO,GO>::buildInverseLumpedMassMatrix");
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection<LO,GO>::buildInverseLumpedMassMatrix",buildInvLMM);
     using Teuchos::rcp;
     const auto massMatrix = this->buildMassMatrix(true);
     const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>(massMatrix->getDomainMap(),1,true));
     const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>(massMatrix->getRangeMap(),1,false));
     tmp->putScalar(1.0);
     {
-      PANZER_FUNC_TIME_MONITOR("Apply");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Apply",Apply);
       massMatrix->apply(*tmp,*lumpedMassMatrix);
     }
     {
-      PANZER_FUNC_TIME_MONITOR("reciprocal");
+      PANZER_FUNC_TIME_MONITOR_DIFF("Reciprocal",Reciprocal);
       lumpedMassMatrix->reciprocal(*lumpedMassMatrix);
     }
     return lumpedMassMatrix;

@@ -106,7 +106,7 @@ public:
     virtual Scalar getOrderMax() const {return stateStepper_->getOrderMax();}
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
-      {return std::numeric_limits<Scalar>::max();}
+      {return Scalar(1.0e+99);}
 
     virtual bool isExplicit()         const
       {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}
@@ -119,10 +119,10 @@ public:
       {return stateStepper_->isOneStepMethod() and
               sensitivityStepper_->isOneStepMethod();}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-    
+
   //@}
-    
-  /// Pass initial guess to Newton solver (only relevant for explicit schemes)  
+
+  /// Pass initial guess to Newton solver (only relevant for explicit schemes)
   virtual void setInitialGuess(Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
      {initial_guess_ = initial_guess;}
 
@@ -164,7 +164,7 @@ private:
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;  
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
 };
 
 } // namespace Tempus

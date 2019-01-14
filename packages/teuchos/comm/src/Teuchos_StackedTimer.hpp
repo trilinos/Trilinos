@@ -213,7 +213,7 @@ protected:
      */
     LevelTimer(int level,
         const char* name = "RootTimer",
-        LevelTimer *parent=NULL,
+        LevelTimer *parent=nullptr,
         bool start_timer=true) :
           BaseTimer(),
           level_(level),
@@ -269,7 +269,7 @@ protected:
      */
     std::string get_full_name() const {
       std::string parent_name("");
-      if ((parent_ != NULL))
+      if ((parent_ != nullptr))
         parent_name = parent_->get_full_name() + "@";
 
       std::string my_name(name_);
@@ -400,7 +400,7 @@ protected:
     /**
      * Return pointer to the BaseTimer corresponding to a given string
      * @param name input string to search for
-     * @return pointer to BaseTimer (NULL if none found)
+     * @return pointer to BaseTimer (nullptr if none found)
      */
     const BaseTimer* findBaseTimer(const std::string &name) const;
     
@@ -427,7 +427,7 @@ public:
     * @param [in] start_top_timer Automatically start the top level timer. If set to false, the user will have to start it manually.
     */
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
-    : timer_(0,name,NULL,false)
+    : timer_(0,name,nullptr,false)
   {
     top_ = &timer_;
     if (start_base_timer)
@@ -461,7 +461,7 @@ public:
    */
   void start(const std::string name,
              const bool push_kokkos_profiling_region = true) {
-    if (top_ == NULL)
+    if (top_ == nullptr)
       top_ = timer_.start(name.c_str());
     else
       top_ = top_->start(name.c_str());
@@ -540,7 +540,7 @@ public:
    */
   const BaseTimer* findBaseTimer(const std::string &name) const {
     const BaseTimer* baseTimer = timer_.findBaseTimer(name);
-    TEUCHOS_TEST_FOR_EXCEPTION(baseTimer == NULL, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(baseTimer == nullptr, std::runtime_error,
                                "StackedTimer::findBaseTimer() failed to find a timer named \"" << name << "\"!\n");
     return baseTimer;
   }
