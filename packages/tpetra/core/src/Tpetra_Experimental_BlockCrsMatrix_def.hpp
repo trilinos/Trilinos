@@ -3104,8 +3104,6 @@ public:
 
     typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space host_exec;
 
-    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombineNew");
 
     const bool debug = Behavior::debug();
