@@ -190,6 +190,12 @@ public:
   */
   SerialDenseMatrix<OrdinalType, ScalarType>& assign (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
 
+  //! Swap values between this matrix and incoming matrix.
+  /*!
+    Swaps pointers without copying any data.
+  */
+  void swap (SerialDenseMatrix<OrdinalType, ScalarType> &B);
+
   //! Set all values in the matrix to a constant value.
   /*!
     \param value - Value to use;
@@ -537,6 +543,40 @@ SerialDenseMatrix<OrdinalType, ScalarType>::~SerialDenseMatrix()
 //  Shape methods
 //----------------------------------------------------------------------------------------------------
 
+template<typename OrdinalType, typename ScalarType> void
+SerialDenseMatrix<OrdinalType, ScalarType>::swap(
+  SerialDenseMatrix<OrdinalType, ScalarType> &B)
+{
+  // Notes:
+  // > DefaultBLASImpl::SWAP() uses a deep copy. This fn uses a pointer swap.
+  // > this fn covers both Vector and Matrix, such that some care must be
+  //   employed to not swap across types (creating a Vector with non-unitary
+  //   numCols_)
+  // > Inherited data that is not currently swapped (since inactive/deprecated):
+  //   >> Teuchos::CompObject:
+  //       Flops *flopCounter_ [Note: all SerialDenseMatrix ctors initialize a
+  //       NULL flop-counter using CompObject(), such that any flop increments
+  //       that are computed are not accumulated.]
+  //   >> Teuchos::Object:
+  //       static int tracebackMode (no swap for statics)
+  //       std::string label_ (has been reported as a cause of memory overhead)
+
+  // cache B values
+  ScalarType* B_ptr  = B.values_;
+  OrdinalType B_rows = B.numRows_, B_cols = B.numCols_, B_str = B.stride_;
+  bool B_vc = B.valuesCopied_;
+
+  // assign values from this to B
+  B.values_  = values_;
+  B.numRows_ = numRows_; B.numCols_ = numCols_; B.stride_ = stride_;
+  B.valuesCopied_ = valuesCopied_;
+
+  // assign cached B values to this
+  values_  = B_ptr;
+  numRows_ = B_rows;  numCols_ = B_cols;  stride_ = B_str;
+  valuesCopied_ = B_vc;
+}
+
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::shape(
   OrdinalType numRows_in, OrdinalType numCols_in
@@ -791,7 +831,8 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
             anorm = absSum;
           }
   }
-  updateFlops(numRows_ * numCols_);
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops(numRows_ * numCols_);
   return(anorm);
 }
 
@@ -808,7 +849,8 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
     }
     anorm = TEUCHOS_MAX( anorm, sum );
   }
-  updateFlops(numRows_ * numCols_);
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops(numRows_ * numCols_);
   return(anorm);
 }
 
@@ -823,7 +865,8 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
     }
   }
   anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::squareroot(anorm));
-  updateFlops(numRows_ * numCols_);
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops(numRows_ * numCols_);
   return(anorm);
 }
 
@@ -883,7 +926,8 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const ScalarType alpha )
     ptr = values_ + j*stride_;
     for (i=0; i<numRows_; i++) { *ptr = alpha * (*ptr); ptr++; }
   }
-  updateFlops( numRows_*numCols_ );
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops( numRows_*numCols_ );
   return(0);
 }
 
@@ -902,7 +946,8 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const SerialDenseMatrix<O
     ptr = values_ + j*stride_;
     for (i=0; i<numRows_; i++) { *ptr = A(i,j) * (*ptr); ptr++; }
   }
-  updateFlops( numRows_*numCols_ );
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) updateFlops( numRows_*numCols_ );
   return(0);
 }
 
@@ -920,10 +965,14 @@ int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETrans
   }
   // Call GEMM function
   this->GEMM(transa, transb, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
-  double nflops = 2 * numRows_;
-  nflops *= numCols_;
-  nflops *= A_ncols;
-  updateFlops(nflops);
+
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) {
+    double nflops = 2 * numRows_;
+    nflops *= numCols_;
+    nflops *= A_ncols;
+    updateFlops(nflops);
+  }
   return(0);
 }
 
@@ -947,10 +996,14 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::multiply (ESide sideA, ScalarTyp
   // Call SYMM function
   EUplo uplo = (A.upper() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI);
   this->SYMM(sideA, uplo, numRows_, numCols_, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
-  double nflops = 2 * numRows_;
-  nflops *= numCols_;
-  nflops *= A_ncols;
-  updateFlops(nflops);
+
+  // don't compute flop increment unless there is an accumulator
+  if (flopCounter_!=0) {
+    double nflops = 2 * numRows_;
+    nflops *= numCols_;
+    nflops *= A_ncols;
+    updateFlops(nflops);
+  }
   return(0);
 }
 
