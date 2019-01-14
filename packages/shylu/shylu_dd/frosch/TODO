@@ -18,12 +18,17 @@
 
 27.08.2018 Alexander Heinlein:
     - Use Thyra instead of Subdomain_Solver.hpp
-
-28.08.2018 Alexander Heinlein:
-    - Resolve the dependency on MueLu
     
 29.08.2018 Alexander Heinlein:
     - Standardize the names in the Thyra interface
 
-25.09.2018 Alexander Heinlein:
-    - Merge Thyra_FROSchXpetraFactory and Thyra_FROSchXpetraTwoLevelBlockPrec
+14.11.2018 Alexander Heinlein:
+    - Add tests Thyra_Xpetra_BlockLaplace and Thyra_Xpetra_StokesHDF5
+    - Integrate AlgebraicOverlappingPreconditioner, GDSWPreconditioner, OneLevelPreconditioner, and RGDSWPreconditioner into Thyra interface
+    - Add tests for AlgebraicOverlappingPreconditioner, GDSWPreconditioner, OneLevelPreconditioner, and RGDSWPreconditioner using the Thyra interface 
+    - Add test: SetupPreconditioners - Calls only the setup of each different preconditioner without the solution of the linear system
+
+20.11.2018 Alexander Heinlein:
+    - Allow different coarse spaces for the different blocks in TwoLevelBlockPreconditioner
+    - Add the possiblity to add coordinates in TwoLevelBlockPreconditioner
+

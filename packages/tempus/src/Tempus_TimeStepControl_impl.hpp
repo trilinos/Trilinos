@@ -512,7 +512,7 @@ TimeStepControl<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  const double stdMax =         std::numeric_limits<double>::max();
+  const double stdMax = double(1.0e+99);
   pl->set<double>("Initial Time"         , 0.0    , "Initial time");
   pl->set<double>("Final Time"           , stdMax , "Final time");
   pl->set<int>   ("Initial Time Index"   , 0      , "Initial time index");

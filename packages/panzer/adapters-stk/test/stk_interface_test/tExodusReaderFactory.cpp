@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
    std::vector<Teuchos::RCP<STK_ExodusReaderFactory> > facts;
    facts.push_back(Teuchos::rcp(new STK_ExodusReaderFactory("meshes/basic.gen")));
    facts.push_back(Teuchos::rcp(new STK_ExodusReaderFactory));
-   
+
    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
    pl->set("File Name","meshes/basic.gen");
    facts[1]->setParameterList(pl);
@@ -86,32 +86,32 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          // read from file and build mesh
          Teuchos::RCP<STK_Interface> mesh = facts[i]->buildUncommitedMesh(MPI_COMM_WORLD);
          facts[i]->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-      
+
          TEST_ASSERT(mesh!=Teuchos::null);
          TEST_ASSERT(mesh->getDimension()==2);
          TEST_ASSERT(mesh->isWritable());
          TEST_ASSERT(not mesh->isModifiable());
-      
+
          out << "Begin writing to meshes/outputcheck.gen" << std::endl;
          mesh->writeToExodus("meshes/outputcheck.gen");
          out << "Finished writing to meshes/outputcheck.gen" << std::endl;
-      
+
          // check element blocks
          std::vector<std::string> eBlocks;
          mesh->getElementBlockNames(eBlocks);
          TEST_EQUALITY((int) eBlocks.size(),2);
          out << "E-Blocks: ";
-         for(std::size_t i=0;i<eBlocks.size();i++)  
-            out << "\"" << eBlocks[i] << "\" ";
+         for(std::size_t j=0;j<eBlocks.size();++j)
+            out << "\"" << eBlocks[j] << "\" ";
          out << std::endl;
-      
+
          // check side sets
          std::vector<std::string> sidesets;
          mesh->getSidesetNames(sidesets);
          TEST_EQUALITY((int) sidesets.size(),7);
          out << "Sides: ";
-         for(std::size_t i=0;i<sidesets.size();i++)  
-            out << "\"" << sidesets[i] << "\" ";
+         for(std::size_t j=0;j<sidesets.size();++j)
+            out << "\"" << sidesets[j] << "\" ";
          out << std::endl;
 
          // check node sets
@@ -119,39 +119,39 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          mesh->getNodesetNames(nodesets);
          TEST_EQUALITY((int) nodesets.size(),2);
          out << "Nodesets: ";
-         for(std::size_t i=0;i<nodesets.size();i++)  
-            out << "\"" << nodesets[i] << "\" ";
+         for(std::size_t j=0;j<nodesets.size();++j)
+            out << "\"" << nodesets[j] << "\" ";
          out << std::endl;
-      
+
          TEST_EQUALITY(mesh->getSideRank(),mesh->getEdgeRank());
          TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),8);
          TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),22);
          TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),15);
       }
-   
-      // in an effort to be as cerebral as possible I read in the 
+
+      // in an effort to be as cerebral as possible I read in the
       // outputed mesh and then re-output it
       out << "\n***reading from meshes/outputcheck.gen ... writes to meshes/outputcheck2.gen" << std::endl;
       {
          // read from file and build mesh
          Teuchos::RCP<STK_Interface> mesh = facts[i]->buildMesh(MPI_COMM_WORLD);
-   
+
          // check element blocks
          std::vector<std::string> eBlocks;
          mesh->getElementBlockNames(eBlocks);
          TEST_EQUALITY((int) eBlocks.size(),2);
          out << "E-Blocks: ";
-         for(std::size_t i=0;i<eBlocks.size();i++)  
-            out << "\"" << eBlocks[i] << "\" ";
+         for(std::size_t j=0;j<eBlocks.size();++j)
+            out << "\"" << eBlocks[j] << "\" ";
          out << std::endl;
-   
+
          // check side sets
          std::vector<std::string> sidesets;
          mesh->getSidesetNames(sidesets);
          TEST_EQUALITY((int) sidesets.size(),7);
          out << "Sides: ";
-         for(std::size_t i=0;i<sidesets.size();i++)  
-            out << "\"" << sidesets[i] << "\" ";
+         for(std::size_t j=0;j<sidesets.size();++j)
+            out << "\"" << sidesets[j] << "\" ";
          out << std::endl;
 
          // check node sets
@@ -159,10 +159,10 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
          mesh->getNodesetNames(nodesets);
          TEST_EQUALITY((int) nodesets.size(),2);
          out << "Nodesets: ";
-         for(std::size_t i=0;i<nodesets.size();i++)  
-            out << "\"" << nodesets[i] << "\" ";
+         for(std::size_t j=0;j<nodesets.size();++j)
+            out << "\"" << nodesets[j] << "\" ";
          out << std::endl;
-   
+
          mesh->writeToExodus("meshes/outputcheck2.gen");
          TEST_EQUALITY(mesh->getSideRank(),mesh->getEdgeRank());
          TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),8);
@@ -182,7 +182,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
                                       {0.5, 0.5},
                                       {0.5, 0.0},
                                       {0.0, 1.0},
-                                      {0.5, 1.0}, 
+                                      {0.5, 1.0},
                                       {1.0, 0.5},
                                       {1.0, 0.0},
                                       {1.0, 1.0},
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
                                       {2.0, 0.5},
                                       {2.0, 0.0},
                                       {2.0, 1.0}};
-    
+
     STK_ExodusReaderFactory factory;
 
     Teuchos::RCP<Teuchos::ParameterList> inp_pl = Teuchos::rcp(new Teuchos::ParameterList);
@@ -227,7 +227,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, periodic_bc)
    // correct setting of parameter list
    {
       STK_ExodusReaderFactory factory;
-   
+
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
       pl->set("File Name","meshes/basic.gen");
       TEST_NOTHROW(factory.setParameterList(pl));
@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, periodic_bc)
       Teuchos::ParameterList & pbcs = pl->sublist("Periodic BCs");
       pbcs.set<int>("Count",1);
       pbcs.set("Periodic Condition 1","x-coord left;right");
-   
+
       TEST_NOTHROW(factory.setParameterList(pl));
 
       Teuchos::RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
@@ -258,7 +258,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, parameter_list_construction)
    // correct setting of parameter list
    {
       STK_ExodusReaderFactory factory;
-   
+
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
       pl->set("File Name","meshes/basic.gen");
       TEST_NOTHROW(factory.setParameterList(pl));
@@ -267,7 +267,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, parameter_list_construction)
    // first incorrect paramter list ... extra parameteres
    {
       STK_ExodusReaderFactory factory;
-   
+
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
       pl->set("File Name","meshes/basic.gen");
       pl->set("Foo","Bar");
@@ -277,7 +277,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, parameter_list_construction)
    // second incorrect paramter list ... no file name
    {
       STK_ExodusReaderFactory factory;
-   
+
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
       pl->set("No File Name","meshes/basic.gen");
       TEST_THROW(factory.setParameterList(pl),Teuchos::Exceptions::InvalidParameter);

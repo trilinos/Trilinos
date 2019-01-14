@@ -57,16 +57,17 @@ namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(SchwarzOperatorPtrVecPtr operators) :
-    SchwarzOperator<SC,LO,GO,NO> (operators.at(0)->getRangeMap()->getComm()),
+    SchwarzOperator<SC,LO,GO,NO> (operators[0]->getRangeMap()->getComm()),
 	OperatorVector_ (0),
 	EnableOperators_ (0)
     {
-        OperatorVector_.push_back(operators.at(0));
+        FROSCH_ASSERT(operators.size()>0,"operators.size()<=0");
+        OperatorVector_.push_back(operators[0]);
         for (unsigned i=1; i<operators.size(); i++) {
-            FROSCH_ASSERT(operators.at(i)->OperatorDomainMap().SameAs(OperatorVector_.at(0)->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
-            FROSCH_ASSERT(operators.at(i)->OperatorRangeMap().SameAs(OperatorVector_.at(0)->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
+            FROSCH_ASSERT(operators[i]->OperatorDomainMap().SameAs(OperatorVector_[0]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
+            FROSCH_ASSERT(operators[i]->OperatorRangeMap().SameAs(OperatorVector_[0]->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
             
-            OperatorVector_.push_back(operators.at(i));
+            OperatorVector_.push_back(operators[i]);
             EnableOperators_.push_back(true);
         }
     }
@@ -81,7 +82,7 @@ namespace FROSch {
     int SumOperator<SC,LO,GO,NO>::initialize()
     {
         if (this->Verbose_) {
-            std::cerr << "ERROR: Each of the Operators has to be initialized manually.";
+            FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be initialized manually.");
         }
         return 0;
     }
@@ -90,16 +91,16 @@ namespace FROSch {
     int SumOperator<SC,LO,GO,NO>::initialize(MapPtr repeatedMap)
     {
         if (this->Verbose_) {
-            std::cerr << "ERROR: Each of the Operators has to be initialized manually.";
+            FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be initialized manually.");
         }
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
     int SumOperator<SC,LO,GO,NO>::compute()
-    {
+    {        
         if (this->Verbose_) {
-            std::cerr << "ERROR: Each of the Operators has to be computed manually.";
+            FROSCH_ASSERT(false,"ERROR: Each of the Operators has to be computed manually.");
         }
         return 0;
     }
@@ -145,7 +146,7 @@ namespace FROSch {
     void SumOperator<SC,LO,GO,NO>::describe(Teuchos::FancyOStream &out,
                                             const Teuchos::EVerbosityLevel verbLevel) const
     {
-        FROSCH_ASSERT(0!=0,"describe() has be implemented properly...");
+        FROSCH_ASSERT(false,"describe() has be implemented properly...");
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -154,7 +155,7 @@ namespace FROSch {
         std::string labelString = "Sum operator: ";
         
         for (UN i=0; i<OperatorVector_.size(); i++) {
-            labelString += OperatorVector_.at(i)->description();
+            labelString += OperatorVector_[i]->description();
             if (i<OperatorVector_.size()-1) {
                 labelString += ",";
             }
@@ -175,8 +176,8 @@ namespace FROSch {
                 if (this->Verbose_) std::cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
                 ret -= 10;
             }
-            //FROSCH_ASSERT(op->OperatorDomainMap().SameAs(OperatorVector_.at(0)->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
-            //FROSCH_ASSERT(op->OperatorRangeMap().SameAs(OperatorVector_.at(0)->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
+            //FROSCH_ASSERT(op->OperatorDomainMap().SameAs(OperatorVector_[0]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
+            //FROSCH_ASSERT(op->OperatorRangeMap().SameAs(OperatorVector_[0]->OperatorRangeMap()),"The RangeMaps of the operators are not identical.");
         }
         OperatorVector_.push_back(op);
         EnableOperators_.push_back(true);

@@ -787,8 +787,8 @@ void createExodusFile(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& ph
         mesh->addCellField(fieldItr->first,pb->elementBlockID());
       else if(basis->getElementSpace()==panzer::PureBasis::HCURL ||
           basis->getElementSpace()==panzer::PureBasis::HDIV    ) {
-        for(int i=0;i<basis->dimension();i++)
-          mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+        for(int dim=0;dim<basis->dimension();++dim)
+          mesh->addCellField(fieldItr->first+dimenStr[dim],pb->elementBlockID());
       }
     }
 

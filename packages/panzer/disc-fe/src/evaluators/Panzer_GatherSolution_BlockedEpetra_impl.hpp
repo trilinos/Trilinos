@@ -501,7 +501,6 @@ evaluateFields(
 
   // For convenience, pull out some objects from the workset.
   vector<pair<int, GO>> GIDs;
-  vector<int>           LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numFields(gatherFields_.size()), numCells(localCellIds.size());

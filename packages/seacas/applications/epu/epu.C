@@ -1315,7 +1315,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
     // ========================================================================
     // Extracting sideset transient variable data
-    if (!interface.omit_nodesets()) {
+    if (!interface.omit_sidesets()) {
       if (debug_level & 1) {
         if (rank == 0) {
           std::cout << time_stamp(tsFormat) << "Sideset Variables...\n";
@@ -1823,9 +1823,6 @@ namespace {
         std::cout << "', Elements = " << std::setw(12) << glob_blocks[b].entity_count();
         std::cout << ", Nodes/element = " << glob_blocks[b].nodesPerElement;
         std::cout << ", Attributes = " << glob_blocks[b].attributeCount << '\n';
-      }
-
-      if (debug_level & 4) {
         std::cout << "B" << b << ":\t" << std::flush;
       }
 
@@ -2869,8 +2866,6 @@ namespace {
 
     if (debug_level & 16) {
       std::cout << "\nOutput SideSets:\n";
-    }
-    if (debug_level & 16) {
       for (auto &glob_sset : glob_ssets) {
         glob_sset.dump();
       }

@@ -1,0 +1,60 @@
+<ParameterList name="Thyra Example">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+        <ParameterList name="Belos">
+            <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+            <ParameterList name="Solver Types">
+                <ParameterList name="Block GMRES">
+                    <Parameter name="PreconditionerPosition" type="string" value="left"/>
+                    <Parameter name="Block Size" type="int" value="1"/>
+                    <Parameter name="Convergence Tolerance" type="double" value="1e-4"/>
+                    <Parameter name="Maximum Iterations" type="int" value="100"/>
+                    <Parameter name="Output Frequency" type="int" value="1"/>
+                    <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+    <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
+    <ParameterList name="Preconditioner Types">
+        <ParameterList name="FROSch">
+            <Parameter name="FROSch Preconditioner Type"                        type="string"   value="RGDSWPreconditioner"/>
+            
+            <ParameterList name="OneLevelOperator">
+                <ParameterList name="Solver">
+                    <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                </ParameterList>
+            </ParameterList>
+            
+            <ParameterList name="RGDSWOperator">
+                <ParameterList name="Blocks">
+                    <ParameterList name="1">
+                        <Parameter name="Use For Coarse Space"                  type="bool"     value="true"/>
+                        <Parameter name="Option"                                type="int"      value="1"/>
+                        <Parameter name="Rotations"                             type="bool"     value="true"/>
+                    </ParameterList>
+                </ParameterList>
+                
+                <ParameterList name="ExtensionSolver">
+                    <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                </ParameterList>
+                
+                <ParameterList name="Distribution">
+                    <Parameter name="Type"                                      type="string"   value="linear"/>
+                    <Parameter name="GatheringSteps"                            type="int"      value="1"/>
+                    <Parameter name="NumProcs"                                  type="int"      value="1"/>
+                    <Parameter name="Factor"                                    type="double"   value="1.0"/>
+                </ParameterList>
+                
+                <ParameterList name="CoarseSolver">
+                    <Parameter name="SolverType"                                type="string"   value="Amesos2"/>
+                    <Parameter name="Solver"                                    type="string"   value="Klu"/>
+                </ParameterList>
+                
+            </ParameterList>
+            
+        </ParameterList>
+    </ParameterList>
+</ParameterList>

@@ -930,12 +930,12 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns(
                                  " is not of DOFManager type!");
 
       RCP<const FieldPattern> geomPattern = dofManager->getGeometricFieldPattern();
-      RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > connManager = dofManager->getConnManager();
+      RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > testConnManager = dofManager->getConnManager();
 
       TEUCHOS_TEST_FOR_EXCEPTION(!refGeomPattern->equals(*geomPattern),std::runtime_error,
                                  "panzer::BlockedDOFManager::buildGlobalUnknowns: geometric pattern for UGI " << i <<
                                  " does not match the reference pattern (from UGI 0)");
-      TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=connManager,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(refConnManager!=testConnManager,std::runtime_error,
                                  "panzer::BlockedDOFManager::buildGlobalUnknowns: connection manager for UGI " << i <<
                                  " does not match the reference connection manager (from UGI 0)");
     }

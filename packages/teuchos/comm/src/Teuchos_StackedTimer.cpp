@@ -10,7 +10,7 @@ namespace Teuchos {
 
 
 StackedTimer::LevelTimer::LevelTimer() :
-    level_(std::numeric_limits<unsigned>::max()),name_("INVALID"),parent_(NULL)
+    level_(std::numeric_limits<unsigned>::max()),name_("INVALID"),parent_(nullptr)
 {}
 
 void error_out(const std::string& msg, const bool)
@@ -37,6 +37,22 @@ StackedTimer::LevelTimer::report(std::ostream &os) {
 
 }
 
+const BaseTimer*
+StackedTimer::LevelTimer::findBaseTimer(const std::string &name) const {
+  const BaseTimer* t = nullptr;
+  if (get_full_name() == name) {
+    return this;
+  }
+  else {
+    for (unsigned i=0;i<sub_timers_.size(); ++i){
+      t = sub_timers_[i].findBaseTimer(name);
+      if (t != nullptr)
+        return t;
+    }
+  }
+  return t;
+}
+  
 BaseTimer::TimeInfo
 StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;

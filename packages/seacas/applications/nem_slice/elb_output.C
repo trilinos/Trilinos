@@ -262,7 +262,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     }
   }
   else { /* Elemental load balance */
-    if (((problem->num_vertices) - (sphere->num)) > 0) {
+    if (problem->num_vertices > sphere->num) {
       /* need to check and make sure that there really are comm maps */
       for (int cnt = 0; cnt < machine->num_procs; cnt++) {
         if (!lb->bor_nodes[cnt].empty()) {

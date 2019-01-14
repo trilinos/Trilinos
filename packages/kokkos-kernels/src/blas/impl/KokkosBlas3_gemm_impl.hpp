@@ -447,9 +447,9 @@ struct GEMMImpl {
   void run(int team_size, int vector_length, int scr_level) {
     scratch_level = scr_level;
     int scratch_memory_size =
-      ViewTypeAScratch::required_allocation_size() +
-      ViewTypeBScratch::required_allocation_size() +
-      ViewTypeCScratch::required_allocation_size();
+      ViewTypeAScratch::shmem_size() +
+      ViewTypeBScratch::shmem_size() +
+      ViewTypeCScratch::shmem_size();
 
     Kokkos::TeamPolicy<ExecSpace,Kokkos::LaunchBounds<384,2>> policy(num_blocks_0*num_blocks_1,team_size,vector_length);
 

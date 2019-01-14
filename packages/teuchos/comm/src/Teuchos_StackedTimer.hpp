@@ -68,7 +68,7 @@ public:
   }
 
   /// Increment the total number of items updated between a start stop
-  unsigned long incrementCount(unsigned long count=1) {count_updates_ += count; return count_updates_;}
+  unsigned long long incrementUpdates(unsigned long long count=1) {count_updates_ += count; return count_updates_;}
 
   /// Get the total accumulated time since last reset or construction when the timer is running
   double accumulatedTime() const {return accumulation_;}
@@ -84,7 +84,7 @@ public:
    * differs from accumulatedTimePerTimerCall in that it is meant to be timer per
    * event other that start/stop, like mesh update
    * @return average time per iteration pair
-   */  double accumulatedTimePerUpdate()const {
+   */  double accumulatedTimePerUpdate() const {
     if (count_updates_ > 0) {
       return accumulation_/count_updates_;
     } else {
@@ -100,7 +100,7 @@ public:
    * a call to start and stop.  If it is running than it will not include the current time
    * @return average time per start/stop pair
    */
-  double accumulatedTimePerTimerCall()const {
+  double accumulatedTimePerTimerCall() const {
     if (count_started_> 0) {
       return accumulation_/count_started_;
     } else {
@@ -122,13 +122,26 @@ public:
   void reset() {
     if (running_)
        error_out("BaseTimer, cannot reset a running timer");
-    accumulation_=0.0;
+    accumulation_ = 0.0;
     count_started_ = count_updates_ = 0;
   }
 
-  unsigned long totalUpdates()const {return count_updates_;}
-
+  /// Returns true if the timer is currently accumulating time.
   bool running() const { return running_;}
+
+  /// Returns the number of calls to start().
+  unsigned long numCalls() const { return count_started_; }
+
+  /// Returns the number of updates added to this timer.
+  unsigned long long numUpdates() const { return count_updates_; }
+
+  /// Sets the number of calls to start() for this timer. This is only used for unit testing.
+  void overrideNumCallsForUnitTesting(const unsigned long num_calls)
+  { count_started_ = num_calls; }
+
+  /// Sets the number of counts for this timer. This is only used for unit testing.
+  void overrideNumUpdatesForUnitTesting(const unsigned long long num_updates)
+  { count_updates_ = num_updates; }
 
   struct TimeInfo {
     TimeInfo():time(0.0), count(0), updates(0), running(false){}
@@ -200,7 +213,7 @@ protected:
      */
     LevelTimer(int level,
         const char* name = "RootTimer",
-        LevelTimer *parent=NULL,
+        LevelTimer *parent=nullptr,
         bool start_timer=true) :
           BaseTimer(),
           level_(level),
@@ -254,9 +267,9 @@ protected:
      * Return the full name of the timer with each level split by :
      * @return The full name of the timer
      */
-    std::string get_full_name() {
+    std::string get_full_name() const {
       std::string parent_name("");
-      if ((parent_ != NULL))
+      if ((parent_ != nullptr))
         parent_name = parent_->get_full_name() + "@";
 
       std::string my_name(name_);
@@ -384,6 +397,13 @@ protected:
       */
      void report(std::ostream &os);
 
+    /**
+     * Return pointer to the BaseTimer corresponding to a given string
+     * @param name input string to search for
+     * @return pointer to BaseTimer (nullptr if none found)
+     */
+    const BaseTimer* findBaseTimer(const std::string &name) const;
+    
      /**
       * Return the time info for a given string
       * @param name input string to search for
@@ -407,7 +427,7 @@ public:
     * @param [in] start_top_timer Automatically start the top level timer. If set to false, the user will have to start it manually.
     */
   explicit StackedTimer(const char *name, const bool start_base_timer = true)
-    : timer_(0,name,NULL,false)
+    : timer_(0,name,nullptr,false)
   {
     top_ = &timer_;
     if (start_base_timer)
@@ -441,7 +461,7 @@ public:
    */
   void start(const std::string name,
              const bool push_kokkos_profiling_region = true) {
-    if (top_ == NULL)
+    if (top_ == nullptr)
       top_ = timer_.start(name.c_str());
     else
       top_ = top_->start(name.c_str());
@@ -474,8 +494,8 @@ public:
    * Increment the iteration count for the running timer
    *   @param [in] i amount to increment the count
    */
-  void incrementCount(int i) {
-    top_->incrementCount(i);
+  void incrementUpdates(const long long i = 1) {
+    top_->incrementUpdates(i);
   }
 
   /**
@@ -483,7 +503,7 @@ public:
    * @param [in] name Name of the timer to output
    * @return amount of time in seconds
    */
-  double accumulatedTime(const std::string &name=""){
+  double accumulatedTime(const std::string &name="") {
     if (top_) // Top is null for the head node when nothing is running
       return top_->accumulatedTime(name);
     else
@@ -512,6 +532,18 @@ public:
      else
        return timer_.accumulatedTimePerTimerCall(name);
    }
+  
+  /**
+   * Return pointer to the BaseTimer corresponding to a given string (full string name)
+   * @param name input string to search for
+   * @return BaseTimer
+   */
+  const BaseTimer* findBaseTimer(const std::string &name) const {
+    const BaseTimer* baseTimer = timer_.findBaseTimer(name);
+    TEUCHOS_TEST_FOR_EXCEPTION(baseTimer == nullptr, std::runtime_error,
+                               "StackedTimer::findBaseTimer() failed to find a timer named \"" << name << "\"!\n");
+    return baseTimer;
+  }
 
   /**
    * Return the time info for a given string (full string name)

@@ -90,13 +90,36 @@ namespace FROSch {
         if (!usePreconditionerOnly && mode == Teuchos::NO_TRANS) {
             this->K_->apply(x,*xTmp,mode,1.0,0.0);
         }
-        
-        MultiVectorPtr xOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+
+        MultiVectorPtr xOverlap;
+        MultiVectorPtr xOverlapTmp; // AH 11/28/2018: For Epetra, xOverlap will only have a view to the values of xOverlapTmp. Therefore, xOverlapTmp should not be deleted before xOverlap is used.
         MultiVectorPtr yOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_->getDomainMap(),x.getNumVectors());
+        
+        // AH 11/28/2018: replaceMap does not update the GlobalNumRows. Therefore, we have to create a new MultiVector on the serial Communicator. In Epetra, we can prevent to copy the MultiVector.
+        if (xTmp->getMap()->lib() == Xpetra::UseEpetra) {
+            xOverlapTmp = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+            
+            xOverlapTmp->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
+            
+            const Teuchos::RCP<const Xpetra::EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GO,NO> >(xOverlapTmp);
+            Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorXOverlapTmp = xEpetraMultiVectorXOverlapTmp->getEpetra_MultiVector();
 
-        xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
-
-        xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
+            const Teuchos::RCP<const Xpetra::EpetraMapT<GO,NO> >& xEpetraMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GO,NO> >(OverlappingMatrix_->getRangeMap());
+            Epetra_BlockMap epetraMap = xEpetraMap->getEpetra_BlockMap();
+            
+            double *A;
+            int MyLDA;
+            epetraMultiVectorXOverlapTmp->ExtractView(&A,&MyLDA);
+            
+            Teuchos::RCP<Epetra_MultiVector> epetraMultiVectorXOverlap(new Epetra_MultiVector(View,epetraMap,A,MyLDA,x.getNumVectors()));
+            xOverlap = Teuchos::RCP<Xpetra::EpetraMultiVectorT<GO,NO> >(new Xpetra::EpetraMultiVectorT<GO,NO>(epetraMultiVectorXOverlap));
+        } else {
+            xOverlap = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
+            
+            xOverlap->doImport(*xTmp,*Scatter_,Xpetra::INSERT);
+            
+            xOverlap->replaceMap(OverlappingMatrix_->getRangeMap());
+        }
         SubdomainSolver_->apply(*xOverlap,*yOverlap,mode,1.0,0.0);
         yOverlap->replaceMap(OverlappingMap_);
 
@@ -104,8 +127,8 @@ namespace FROSch {
         if (Combine_ == Restricted){
             GO globID = 0;
             LO localID = 0;
-            for (unsigned i=0; i<y.getNumVectors(); i++) {
-                for (unsigned j=0; j<y.getMap()->getNodeNumElements(); j++) {
+            for (UN i=0; i<y.getNumVectors(); i++) {
+                for (UN j=0; j<y.getMap()->getNodeNumElements(); j++) {
                     globID = y.getMap()->getGlobalElement(j);
                     localID = yOverlap->getMap()->getLocalElement(globID);
                     xTmp->getDataNonConst(i)[j] = yOverlap->getData(i)[localID];
@@ -117,9 +140,9 @@ namespace FROSch {
         }
         if (Combine_ == Averaging) {
             ConstSCVecPtr scaling = Multiplicity_->getData(0);
-            for (unsigned j=0; j<xTmp->getNumVectors(); j++) {
+            for (UN j=0; j<xTmp->getNumVectors(); j++) {
                 SCVecPtr values = xTmp->getDataNonConst(j);
-                for (unsigned i=0; i<values.size(); i++) {
+                for (UN i=0; i<values.size(); i++) {
                     values[i] = values[i] / scaling[i];
                 }
             }
