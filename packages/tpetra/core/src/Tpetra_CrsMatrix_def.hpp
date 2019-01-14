@@ -76,6 +76,7 @@
 #include <memory>
 #include <sstream>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 using Teuchos::rcpFromRef;
@@ -677,6 +678,41 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ~CrsMatrix ()
   {}
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix)
+  {
+    std::swap(matrix.importMV_, this->importMV_);                 // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(matrix.exportMV_, this->exportMV_);                 // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(matrix.staticGraph_, this->staticGraph_);           // Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(matrix.myGraph_, this->myGraph_);                   // Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+    std::swap(matrix.lclMatrix_, this->lclMatrix_);               // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
+    std::swap(matrix.k_values1D_, this->k_values1D_);             // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
+    std::swap(matrix.values2D_, this->values2D_);                 // Teuchos::ArrayRCP<Teuchos::Array<Kokkos::Details::ArithTraits<Scalar>::val_type>>
+    std::swap(matrix.storageStatus_, this->storageStatus_);       // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
+    std::swap(matrix.fillComplete_, this->fillComplete_);         // bool
+    std::swap(matrix.nonlocals_, this->nonlocals_);               // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
+    std::swap(matrix.frobNorm_, this->frobNorm_);                 // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
+
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  isIdenticalTo(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix) const
+  {
+    bool output = true;
+
+    // WCMCLEN SCAFFOLDING TODO: Implement this...
+
+
+    return output;
+  }
+
+
+
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::Comm<int> >

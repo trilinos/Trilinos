@@ -1021,6 +1021,24 @@ namespace Tpetra {
     //! Destructor.
     virtual ~CrsMatrix ();
 
+
+    /// \brief Swaps the data from *this with the data and maps from crsMatrix
+    ///
+    /// \param matrix [in/out] a crsMatrix
+    void swap(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix);
+
+
+    /// \brief True if and only if \c CrsMatrix is identical to this CrsMatrix
+    ///
+    /// This performs an _exact_ match check on the two matrices.
+    /// This is mostly used for testing the swap() command.
+    ///
+    /// \param matrix [in] a CrsMatrix to compare against this one.
+    ///
+    /// \return True if the other CrsMatrix is identical to this one.
+    bool isIdenticalTo(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & matrix) const;
+
+
     //@}
     //! @name Methods for inserting, modifying, or removing entries
     //@{
