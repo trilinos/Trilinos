@@ -29,5 +29,8 @@ set (TPL_Netcdf_LIBRARIES "-L${BOOST_ROOT}/lib;-L${NETCDF_ROOT}/lib;-L${NETCDF_R
 set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for CUDA PR testing")
 
+# Temporary options to clean up build
+set (Trilinos_ENABLE_SEACAS OFF CACHE BOOL "Temporary disable for CUDA PR testing")
+
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
