@@ -46,7 +46,6 @@
 #include <string>
 
 #include "Panzer_PointRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -134,7 +133,7 @@ DotProduct<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int p = 0; p < num_pts; ++p) {
       vec_a_dot_vec_b(cell,p) = ScalarT(0.0);
       for (int dim = 0; dim < num_dim; ++dim)

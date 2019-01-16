@@ -57,6 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -120,20 +121,9 @@ namespace panzer {
 
     out << "workset container setup [start]" << std::endl;
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    {
-      WorksetNeeds needs;
-      needs.addBasis(hdiv_basis_desc);
-      needs.addBasis(hcurl_basis_desc);
-      needs.addPoint(hdiv_basis_desc.getPointDescriptor());
-      wkstContainer->setNeeds(element_block,needs);
-    }
-    wkstContainer->setGlobalIndexer(dof_manager);
-    wkstContainer->setWorksetSize(workset_size);
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     out << "workset container setup [complete]" << std::endl;
 
@@ -142,8 +132,7 @@ namespace panzer {
     out << "getting worksets [start]" << std::endl;
 
     //  this must use this descriptor!
-    panzer::WorksetDescriptor workset_descriptor(element_block, panzer::WorksetSizeType::ALL_ELEMENTS, true,true);
-    std::vector<Workset> & worksets = *wkstContainer->getWorksets(workset_descriptor);
+    std::vector<Workset> & worksets = *wkstContainer->getWorksets(panzer::blockDescriptor(element_block,workset_size));
 
     out << "getting worksets [complete]" << std::endl;
 
@@ -151,8 +140,8 @@ namespace panzer {
     ///////////////////////////////////////////////////////////////////////
 
     const PointValues2<double> & point_values = worksets[0].getPointValues(hdiv_basis_desc.getPointDescriptor());
-    const BasisValues2<double> & hdiv_basis_values = worksets[0].getBasisValues(hdiv_basis_desc,hdiv_basis_desc.getPointDescriptor());
-    const BasisValues2<double> & hcurl_basis_values = worksets[0].getBasisValues(hcurl_basis_desc,hdiv_basis_desc.getPointDescriptor());
+    const BasisValues2<double> & hdiv_basis_values = worksets[0].getBasisPointValues(hdiv_basis_desc,hdiv_basis_desc.getPointDescriptor());
+    const BasisValues2<double> & hcurl_basis_values = worksets[0].getBasisPointValues(hcurl_basis_desc,hdiv_basis_desc.getPointDescriptor());
 
     auto hdiv_basis_vector = hdiv_basis_values.basis_vector;
     auto hcurl_curl_basis = hcurl_basis_values.curl_basis_vector;
@@ -262,24 +251,9 @@ namespace panzer {
 
     out << "workset container setup [start]" << std::endl;
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    {
-      WorksetNeeds needs;
-      needs.bases.push_back(Teuchos::rcp(new panzer::PureBasis(hdiv_basis_desc,mesh->getCellTopology(element_block),workset_size)));
-      needs.bases.push_back(Teuchos::rcp(new panzer::PureBasis(hcurl_basis_desc,mesh->getCellTopology(element_block),workset_size)));
-      needs.rep_field_name.push_back("B");
-      needs.rep_field_name.push_back("E");
-      needs.int_rules.push_back(Teuchos::rcp(new panzer::IntegrationRule(quad_desc,mesh->getCellTopology(element_block),workset_size)));
-      needs.cellData = CellData(workset_size,mesh->getCellTopology(element_block));
-
-      wkstContainer->setNeeds(element_block,needs);
-    }
-    wkstContainer->setGlobalIndexer(dof_manager);
-    wkstContainer->setWorksetSize(workset_size);
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     out << "workset container setup [complete]" << std::endl;
 
@@ -288,19 +262,14 @@ namespace panzer {
     out << "getting worksets [start]" << std::endl;
 
     //  this must use this descriptor!
-    // panzer::WorksetDescriptor workset_descriptor(element_block, panzer::WorksetSizeType::ALL_ELEMENTS, true,true);
-    panzer::WorksetDescriptor workset_descriptor(element_block);
-    std::vector<Workset> & worksets = *wkstContainer->getWorksets(workset_descriptor);
+    std::vector<Workset> & worksets = *wkstContainer->getWorksets(panzer::WorksetDescriptor(element_block, workset_size));
 
     out << "getting worksets [complete]" << std::endl;
 
     // get BasisValues2
     ///////////////////////////////////////////////////////////////////////
-    out <<  worksets[0].bases.size() << std::endl;
 
-    const BasisValues2<double> & hdiv_basis_values = *worksets[0].bases[0];
-    out << (*worksets[0].basis_names)[0]
-        << " " << (*worksets[0].basis_names)[1] << std::endl;
+    const BasisValues2<double> & hdiv_basis_values = worksets[0].getBasisIntegrationValues(hdiv_basis_desc, quad_desc);
 
     auto hdiv_weighted_basis_vector = hdiv_basis_values.weighted_basis_vector;
     auto hdiv_basis_vector = hdiv_basis_values.basis_vector;
@@ -308,7 +277,7 @@ namespace panzer {
     // check some sizing stuff
     ///////////////////////////////////////////////////////////////////////
 
-    TEST_EQUALITY(worksets[0].num_cells,2);
+    TEST_EQUALITY(worksets[0].numCells(),2);
     TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(0)),2);
     TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(1)),6);
     TEST_EQUALITY(Teuchos::as<int>(hdiv_weighted_basis_vector.extent(2)),8);

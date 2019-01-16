@@ -58,8 +58,8 @@ using Teuchos::rcp;
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -157,13 +157,13 @@ int main(int argc,char * argv[])
       // build physicsBlocks map
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-				 ipb,
-				 default_integration_order,
-				 workset_size,
-			         eqset_factory,
-				 gd,
-			         true,
-			         physicsBlocks);
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
+                                 eqset_factory,
+                                 gd,
+                                 true,
+                                 physicsBlocks);
    }
 
    // finish building mesh, set required field variables and mesh bulk data
@@ -191,28 +191,7 @@ int main(int argc,char * argv[])
    }
 
 
-   // build worksets
-   ////////////////////////////////////////////////////////
 
-   // build worksets
-   out << "BUILD WORKSETS" << std::endl;
-
-   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer);
-   wkstContainer->setFactory(wkstFactory);
-   for(size_t i=0;i<physicsBlocks.size();i++) 
-     wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-   wkstContainer->setWorksetSize(workset_size);
-
-   std::vector<std::string> elementBlockNames;
-   mesh->getElementBlockNames(elementBlockNames);
-   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
-   panzer::getVolumeWorksetsFromContainer(*wkstContainer,elementBlockNames,volume_worksets);
-
-   out << "block count = " << volume_worksets.size() << std::endl;
-   out << "workset count = " << volume_worksets["eblock-0_0"]->size() << std::endl;
    
    // build DOF Manager
    /////////////////////////////////////////////////////////////
@@ -231,6 +210,26 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
+
+   // build worksets
+   ////////////////////////////////////////////////////////
+
+   // build worksets
+   out << "BUILD WORKSETS" << std::endl;
+
+   auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+   wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+   auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+   std::vector<std::string> elementBlockNames;
+   mesh->getElementBlockNames(elementBlockNames);
+
+   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
+   for(const auto & element_block : elementBlockNames)
+     volume_worksets[element_block] = wkstContainer->getWorksets(panzer::blockDescriptor(element_block,workset_size));
+
+   out << "block count = " << volume_worksets.size() << std::endl;
+   out << "workset count = " << volume_worksets["eblock-0_0"]->size() << std::endl;
 
    // setup field manager build
    /////////////////////////////////////////////////////////////
@@ -252,7 +251,7 @@ int main(int argc,char * argv[])
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data,workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
    // setup assembly engine

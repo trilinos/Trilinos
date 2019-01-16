@@ -147,7 +147,7 @@ evaluateFields(
 { 
 
   // Loop over cells
-  Kokkos::parallel_for (workset.num_cells, (*this));
+  Kokkos::parallel_for (workset.numCells(), (*this));
 }
 
 //**********************************************************************

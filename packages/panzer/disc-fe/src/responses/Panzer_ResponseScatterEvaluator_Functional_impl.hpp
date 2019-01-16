@@ -136,7 +136,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_Functional<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for(index_t i=0;i<d.num_cells;i++) {
+  for(index_t i=0;i<d.numCells();i++) {
     responseObj_->value += cellIntegral_(i);
   }
 }
@@ -167,7 +167,7 @@ evaluateFields(panzer::Traits::EvalData d)
     local_dgdxs.push_back(local_dgdx);
   }
 
-  scatterObj_->scatterDerivative(cellIntegral_,d,this->wda,local_dgdxs);
+  scatterObj_->scatterDerivative(cellIntegral_,d,this->details_idx_,local_dgdxs);
 }
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
@@ -198,7 +198,7 @@ evaluateFields(panzer::Traits::EvalData d)
   }
 
   // TEUCHOS_ASSERT(false);
-  scatterObj_->scatterHessian(cellIntegral_,d,this->wda,local_dgdxs);
+  scatterObj_->scatterHessian(cellIntegral_,d,this->details_idx_,local_dgdxs);
 }
 #endif
 

@@ -146,8 +146,8 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
 
@@ -258,8 +258,8 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -386,8 +386,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();
@@ -409,9 +409,9 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::vector<int> cLIDs;
       for (int i(0); i < static_cast<int>(initial_cLIDs.extent(0)); ++i)
         cLIDs.push_back(initial_cLIDs(i));
-      if (Teuchos::nonnull(workset.other)) {
-        const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
-	auto other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
+      if (workset.size() == 2) {
+        const std::size_t other_cellLocalId = workset(1).getLocalCellIDs()[worksetCellIndex];
+        auto other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
         for (int i(0); i < static_cast<int>(other_cLIDs.extent(0)); ++i)
           cLIDs.push_back(other_cLIDs(i));
       }

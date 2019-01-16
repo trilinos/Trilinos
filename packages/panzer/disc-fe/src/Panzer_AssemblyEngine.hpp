@@ -111,11 +111,21 @@ namespace panzer {
       *                        keeping track of rows that have been modified.
       */
     void evaluateBCs(const panzer::BCType bc_type, 
-		     const panzer::AssemblyEngineInArgs& input_arguments,
+                     const panzer::AssemblyEngineInArgs& input_arguments,
                      const Teuchos::RCP<LinearObjContainer> preEval_loc=Teuchos::null);
 
   protected:
     
+    /**
+     * \brief Setup a workset with time/FAD information from the assembly input args
+     *
+     * \param[in] input_arguments Assembly arguments
+     * \param[in/out] Workset to adjust
+     */
+    void
+    setupWorkset(const panzer::AssemblyEngineInArgs& input_arguments,
+                 panzer::Workset & workset);
+
       Teuchos::RCP<panzer::FieldManagerBuilder> m_field_manager_builder;
 
       Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lin_obj_factory;

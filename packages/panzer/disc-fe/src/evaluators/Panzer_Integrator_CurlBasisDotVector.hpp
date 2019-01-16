@@ -289,12 +289,6 @@ namespace panzer
       const panzer::EvaluatorStyle evalStyle_;
 
       /**
-       *  \brief A flag indicating whether or not to use the descriptor
-       *         interface.
-       */
-      bool useDescriptors_;
-
-      /**
        *  \brief The `BasisDescriptor` for the basis to use.
        */
       panzer::BasisDescriptor bd_;
@@ -342,17 +336,6 @@ namespace panzer
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
     Kokkos::View<Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*> kokkosFieldMults_;
-
-      /**
-       *  \brief The name of the basis we're using.
-       */
-      std::string basisName_;
-
-      /**
-       *  \brief The index in the `Workset` bases for our particular
-       *         `BasisIRLayout` name.
-       */
-      std::size_t basisIndex_;
 
       /**
        *  \brief The spatial dimension of the vector-valued function we're

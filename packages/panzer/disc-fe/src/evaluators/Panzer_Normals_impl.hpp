@@ -45,7 +45,6 @@
 
 #include <algorithm>
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 
@@ -66,9 +65,10 @@ Normals(
   if(p.isParameter("Normalize")) // set default
      normalize = p.get<bool>("Normalize");
 
+  id_ =*quadRule;
+
   // grab information from quadrature rule
   Teuchos::RCP<PHX::DataLayout> vector_dl = quadRule->dl_vector;
-  quad_order = quadRule->cubature_degree;
 
   // build field, set as evaluated type
   normals = PHX::MDField<ScalarT,Cell,Point,Dim>(name, vector_dl);
@@ -88,8 +88,6 @@ postRegistrationSetup(
 {
   num_qp  = normals.extent(1);
   num_dim = normals.extent(2);
-  
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -101,15 +99,15 @@ evaluateFields(
 { 
   // ECC Fix: Get Physical Side Normals
 
-  if(workset.num_cells>0) {
+  if(workset.numCells()>0) {
     Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normals.get_view(),
-                                                                  this->wda(workset).int_rules[quad_index]->jac.get_view(),
-                                                                  side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
+                                                                  workset(this->details_idx_).getIntegrationValues(id_).jac.get_view(),
+                                                                  side_id, *workset(this->details_idx_).getIntegrationValues(id_).int_rule->topology);
       
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 
       // return normalized vectors
-      for(index_t c=0;c<workset.num_cells;c++) {
+      for(index_t c=0;c<workset.numCells();c++) {
         for(std::size_t q=0;q<num_qp;q++) {
           ScalarT norm = 0.0;
    

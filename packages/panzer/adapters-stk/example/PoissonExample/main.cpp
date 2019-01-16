@@ -51,7 +51,6 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
-#include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
@@ -63,6 +62,7 @@
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
@@ -229,17 +229,12 @@ int main(int argc,char * argv[])
          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
    // build worksets
-   ////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////
 
-   Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) 
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-    wkstContainer->setGlobalIndexer(dofManager);
+   // build WorksetContainer
+   auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+   wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+   auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
    // Setup response library for checking the error in this manufactered solution
    ////////////////////////////////////////////////////////////////////////
@@ -259,14 +254,14 @@ int main(int argc,char * argv[])
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_L2_ERROR";
 
-     errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
+     errorResponseLibrary->addResponse("L2 Error",eBlocks,builder,workset_size);
 
      builder.comm = MPI_COMM_WORLD;
      builder.cubatureDegree = integration_order;
      builder.requiresCellIntegral = true;
      builder.quadPointField = "TEMPERATURE_H1_ERROR";
 
-     errorResponseLibrary->addResponse("H1 Error",eBlocks,builder);
+     errorResponseLibrary->addResponse("H1 Error",eBlocks,builder,workset_size);
    }
 
 
@@ -302,7 +297,7 @@ int main(int argc,char * argv[])
    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
          Teuchos::rcp(new panzer::FieldManagerBuilder);
    fmb->setWorksetContainer(wkstContainer);
-   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data,workset_size);
    fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                              *linObjFactory,user_data);
 

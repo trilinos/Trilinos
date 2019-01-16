@@ -70,9 +70,6 @@ public:
   
   GatherBasisCoordinates(const panzer::PureBasis & basis);
   
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
-  
   void evaluateFields(typename TRAITS::EvalData d);
 
   static std::string fieldName(const std::string & basisName);
@@ -80,8 +77,9 @@ public:
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
+  BasisDescriptor bd_;
+
   std::string basisName_;
-  std::vector<std::string>::size_type basisIndex_; 
   PHX::MDField<ScalarT,Cell,BASIS,Dim> basisCoordinates_;
 
   GatherBasisCoordinates();

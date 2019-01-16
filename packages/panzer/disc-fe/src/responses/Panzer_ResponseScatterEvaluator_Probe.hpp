@@ -68,7 +68,7 @@ public:
     const size_t cell_index,
     const bool has_probe,
     panzer::Traits::EvalData workset,
-    WorksetDetailsAccessor& wda,
+    const unsigned int details_idx,
     Teuchos::ArrayRCP<double> & dgdx) const = 0;
 };
 
@@ -83,7 +83,7 @@ public:
      const size_t cell_index,
      const bool has_probe,
      panzer::Traits::EvalData workset,
-     WorksetDetailsAccessor& wda,
+     const unsigned int details_idx,
      Teuchos::ArrayRCP<double> & dgdx) const;
 
 private:
@@ -191,7 +191,7 @@ void ProbeScatter<LO,GO>::scatterDerivative(
   const size_t cell_index,
   const bool has_probe,
   panzer::Traits::EvalData workset,
-  WorksetDetailsAccessor& wda,
+  const unsigned int details_idx,
   Teuchos::ArrayRCP<double> & dgdx) const
 {
 

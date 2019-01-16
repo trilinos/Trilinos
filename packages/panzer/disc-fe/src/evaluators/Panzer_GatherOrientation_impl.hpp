@@ -141,8 +141,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<double> orientation;
  
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    // loop over the fields to be gathered
    for (std::size_t fieldIndex=0; fieldIndex<gatherFieldOrientations_.size();fieldIndex++) {

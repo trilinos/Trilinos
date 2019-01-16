@@ -134,23 +134,23 @@ computeBasisValues(typename Traits::EvalData d)
   typedef Intrepid2::FunctionSpaceTools<PHX::exec_space> FST;
 
   const int num_points = 1; // Always a single point in this evaluator!
-  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points);
-  Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", this->wda(d).cell_vertex_coordinates.extent_int(0), num_points, num_dim);
-  for (panzer::index_t cell(0); cell < d.num_cells; ++cell)
+  Kokkos::DynRankView<int,PHX::Device> inCell("inCell", d(this->details_idx_).getCellVertices().extent_int(0), num_points);
+  Kokkos::DynRankView<double,PHX::Device> physical_points_cell("physical_points_cell", d(this->details_idx_).getCellVertices().extent_int(0), num_points, num_dim);
+  for (panzer::index_t cell(0); cell < d.numCells(); ++cell)
     for (size_t dim=0; dim<num_dim; ++dim)
       physical_points_cell(cell,0,dim) = point_[dim];
 
   const double tol = 1.0e-12;
   CTD::checkPointwiseInclusion(inCell,
                                physical_points_cell,
-                               this->wda(d).cell_vertex_coordinates.get_view(),
+                               d(this->details_idx_).getCellVertices().get_view(),
                                *topology_,
                                tol);
 
   // Find which cell contains our point
   cellIndex_ = -1;
   bool haveProbe = false;
-  for (index_t cell=0; cell<static_cast<int>(d.num_cells); ++cell) {
+  for (index_t cell=0; cell<static_cast<int>(d.numCells()); ++cell) {
     // CTD::checkPointwiseInclusion(inCell,
     //                              physical_points_cell,
     //                              this->wda(d).cell_vertex_coordinates,
@@ -170,12 +170,12 @@ computeBasisValues(typename Traits::EvalData d)
   }
 
   // Map point to reference frame
-  const size_t num_vertex = this->wda(d).cell_vertex_coordinates.extent(1);
+  const size_t num_vertex = d(this->details_idx_).getCellVertices().extent(1);
   Kokkos::DynRankView<double,PHX::Device> cell_coords(
     "cell_coords", 1, num_vertex, num_dim); // Cell, Basis, Dim
   for (size_t i=0; i<num_vertex; ++i) {
     for (size_t j=0; j<num_dim; ++j) {
-      cell_coords(0,i,j) = this->wda(d).cell_vertex_coordinates(cellIndex_,i,j);
+      cell_coords(0,i,j) = d(this->details_idx_).getCellVertices()(cellIndex_,i,j);
     }
   }
   Kokkos::DynRankView<double,PHX::Device> physical_points(
@@ -240,7 +240,7 @@ computeBasisValues(typename Traits::EvalData d)
     // Compute element orientations
     std::vector<double> orientation;
     globalIndexer_->getElementOrientation(cellIndex_, orientation);
-    std::string blockId = this->wda(d).block_id;
+    const auto & blockId = d(this->details_idx_).getElementBlock();
     int fieldNum = globalIndexer_->getFieldNum(fieldName_);
     const std::vector<int> & elmtOffset =
       globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
@@ -305,7 +305,7 @@ evaluateFields(panzer::Traits::EvalData d)
   this->scatterObj_->scatterDerivative(this->responseObj_->value,
                                        this->cellIndex_,
                                        this->responseObj_->have_probe,
-                                       d,this->wda,
+                                       d,this->details_idx_,
                                        local_dgdx);
 }
 

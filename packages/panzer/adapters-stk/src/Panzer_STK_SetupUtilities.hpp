@@ -65,10 +65,10 @@ namespace panzer_stk {
   *
   * \returns vector of worksets for the corresponding element block.
   */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const std::string & eBlock,
-              const panzer::WorksetNeeds & needs);
+//Teuchos::RCP<std::vector<panzer::Workset> >
+//buildWorksets(const panzer_stk::STK_Interface & mesh,
+//              const std::string & eBlock,
+//              const panzer::WorksetNeeds & needs);
 
 /** Build volumetric worksets for a STK mesh with elements that touch a particular sideset.
   *
@@ -84,12 +84,12 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   *
   * \returns vector of worksets for the corresponding element block.
   */
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk::STK_Interface & mesh,
-              const panzer::WorksetNeeds & needs,
-              const std::string & sideset,
-              const std::string & eBlock,
-              bool useCascade=false);
+//Teuchos::RCP<std::vector<panzer::Workset> >
+//buildWorksets(const panzer_stk::STK_Interface & mesh,
+//              const panzer::WorksetNeeds & needs,
+//              const std::string & sideset,
+//              const std::string & eBlock,
+//              bool useCascade=false);
 
 /** Build side worksets with elements on both sides (this is for DG)
   *
@@ -103,19 +103,19 @@ buildWorksets(const panzer_stk::STK_Interface & mesh,
   *
   * \returns vector of worksets for the corresponding edge
   */
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::WorksetNeeds & needs_a,
-                const std::string & blockid_a,
-                const panzer::WorksetNeeds & needs_b,
-                const std::string & blockid_b,
-                const std::string & sideset);
+//Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+//buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+//                const panzer::WorksetNeeds & needs_a,
+//                const std::string & blockid_a,
+//                const panzer::WorksetNeeds & needs_b,
+//                const std::string & blockid_b,
+//                const std::string & sideset);
 
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::WorksetNeeds & needs_a,const std::string & eblock_a,
-                const panzer::WorksetNeeds & needs_b,const std::string & eblock_b,
-                const std::string & sideset);
+//Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+//buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+//                const panzer::WorksetNeeds & needs_a,const std::string & eblock_a,
+//                const panzer::WorksetNeeds & needs_b,const std::string & eblock_b,
+//                const std::string & sideset);
 
 /** Build boundary condition worksets for a STK mesh
   *
@@ -129,11 +129,11 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   * \note All elements for a bc that are associated with a particular
   *       side ID are grouped into a single workset
   */
-Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-buildBCWorksets(const panzer_stk::STK_Interface & mesh,
-                const panzer::WorksetNeeds & needs,
-                const std::string & eblockID,
-                const std::string & sidesetID);
+//Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+//buildBCWorksets(const panzer_stk::STK_Interface & mesh,
+//                const panzer::WorksetNeeds & needs,
+//                const std::string & eblockID,
+//                const std::string & sidesetID);
 
 // namespace may not be neccssary in the future, currently avoids
 // collisions with previously implemented code in tests

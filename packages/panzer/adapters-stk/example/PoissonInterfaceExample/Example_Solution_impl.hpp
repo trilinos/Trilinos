@@ -44,7 +44,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace Example {
 
@@ -52,10 +51,10 @@ template <typename EvalT,typename Traits>
 Solution<EvalT,Traits>::Solution(const std::string& name,
                                  const panzer::IntegrationRule& ir,
                                  const bool in_linear_Robin)
-  : linear_Robin(in_linear_Robin)
+  : linear_Robin(in_linear_Robin),
+    id_(ir)
 {
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
-  ir_degree = ir.cubature_degree;
 
   solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
@@ -66,30 +65,24 @@ Solution<EvalT,Traits>::Solution(const std::string& name,
 }
 
 template <typename EvalT,typename Traits>
-void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                   PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
-}
-
-template <typename EvalT,typename Traits>
 void Solution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   using panzer::index_t;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  const auto & ip_coordinates = workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates;
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int point = 0; point < solution.extent_int(1); ++point) {
-      const double& x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double& y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
+      const double& x = ip_coordinates(cell,point,0);
+      const double& y = ip_coordinates(cell,point,1);
 
       if (linear_Robin) {
-        if (this->wda(workset).int_rules[ir_index]->ip_coordinates.extent(2) == 2) {
+        if (ip_coordinates.extent(2) == 2) {
           solution(cell,point) = 0.5 - 0.8*x + 0.5*sin(2*M_PI*x)*cos(2*M_PI*y);
         } else {
-          const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
+          const double & z = ip_coordinates(cell,point,2);
           solution(cell,point) = 0.5 - 0.8*x + sin(2*M_PI*x)*cos(2*M_PI*y)*cos(2*M_PI*z)/3.0;
         }
       } else {
-        if (workset.block_id[7] == '0')
+        if (workset.getElementBlock()[7] == '0')
           solution(cell,point) =  0.5 - 0.4*x;
         else
           solution(cell,point) = 0.1 - 0.4*x;

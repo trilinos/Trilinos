@@ -46,7 +46,6 @@
 #include <string>
 
 #include "Panzer_PointRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -107,14 +106,14 @@ evaluateFields(
   typename Traits::EvalData workset)
 { 
   if(useScalarField) {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int p = 0; p < num_pts; ++p) {
         vec_a_cross_vec_b(cell,p) = vec_a(cell,p,0)*vec_b(cell,p,1)-vec_a(cell,p,1)*vec_b(cell,p,0);
       }
     }
   }
   else {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int p = 0; p < num_pts; ++p) {
         vec_a_cross_vec_b(cell,p,0) =   vec_a(cell,p,1)*vec_b(cell,p,2)-vec_a(cell,p,2)*vec_b(cell,p,1);
         vec_a_cross_vec_b(cell,p,1) = -(vec_a(cell,p,0)*vec_b(cell,p,2)-vec_a(cell,p,2)*vec_b(cell,p,0));

@@ -121,8 +121,7 @@ int main(int argc, char *argv[])
       clp.setOption("pause-to-attach","disable-pause-to-attach", &pauseToAttachOn, "Call pause to attach, default is off.");
       clp.setOption("flux-calc","disable-flux-calc", &fluxCalculation, "Enable the flux calculation.");
       
-      Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
-	clp.parse(argc,argv,&std::cerr);
+      auto parse_return = clp.parse(argc,argv,&std::cerr);
       
       TEUCHOS_TEST_FOR_EXCEPTION(parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL, 
 			 std::runtime_error, "Failed to parse command line!");
@@ -139,6 +138,9 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
     
+    // Not ideal, but we have to load this from somewhere
+    const int workset_size = input_params->sublist("Assembly").get<int>("Workset Size");
+
     *out << *input_params << std::endl;
 
     Teuchos::ParameterList solver_factories = input_params->sublist("Solver Factories");
@@ -226,24 +228,24 @@ int main(int argc, char *argv[])
            }
         }
 
-	// Rythmos
+        // Rythmos
         Teuchos::RCP<const panzer_stk::RythmosObserverFactory> rof;
-	{
-          rof = Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer(),useCoordinateUpdate));
-	  // me_factory.setRythmosObserverFactory(rof);
-	}
-	
-	// NOX
-	Teuchos::RCP<user_app::NOXObserverFactory> nof;
-	{
-          nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary));
-	  
-	  Teuchos::RCP<Teuchos::ParameterList> observers_to_build = 
-	    Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
-	  
-	  nof->setParameterList(observers_to_build);
-	  // me_factory.setNOXObserverFactory(nof);
-	}
+        {
+          rof = Teuchos::rcp(new user_app::RythmosObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer(),useCoordinateUpdate,workset_size));
+          // me_factory.setRythmosObserverFactory(rof);
+        }
+
+        // NOX
+        Teuchos::RCP<user_app::NOXObserverFactory> nof;
+        {
+          nof = Teuchos::rcp(new user_app::NOXObserverFactory(stkIOResponseLibrary,workset_size));
+
+          Teuchos::RCP<Teuchos::ParameterList> observers_to_build =
+              Teuchos::parameterList(solver_factories.sublist("NOX Observers"));
+
+          nof->setParameterList(observers_to_build);
+          // me_factory.setNOXObserverFactory(nof);
+        }
 
         // solver = me_factory.getResponseOnlyModelEvaluator();
         solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),rof.ptr());
@@ -261,7 +263,7 @@ int main(int argc, char *argv[])
     // 2. Build volume field managers
     {
       Teuchos::ParameterList user_data(input_params->sublist("User Data"));
-      user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
+      user_data.set<int>("Workset Size",workset_size);
     
       stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                         cm_factory,
@@ -285,14 +287,14 @@ int main(int argc, char *argv[])
         builder.cubatureDegree = 2;
   
         std::vector<panzer::WorksetDescriptor> sidesets;
-        sidesets.push_back(panzer::sidesetVolumeDescriptor("eblock-0_0","left"));
+        sidesets.push_back(panzer::sidesetDescriptor("eblock-0_0","left"));
   
         fluxResponseLibrary->addResponse("HO-Flux",sidesets,builder);
       }
   
       {
         Teuchos::ParameterList user_data(input_params->sublist("User Data"));
-        user_data.set<int>("Workset Size",input_params->sublist("Assembly").get<int>("Workset Size"));
+        user_data.set<int>("Workset Size",workset_size);
       
         fluxResponseLibrary->buildResponseEvaluators(physicsBlocks,
                                           *eqset_factory,

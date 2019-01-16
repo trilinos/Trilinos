@@ -74,7 +74,7 @@ namespace user_app {
 				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
 				  const int /* timeStepIter */)
     { TEUCHOS_ASSERT(m_workset_container!=Teuchos::null); 
-      m_workset_container->clear(); }
+      m_workset_container->clearWorksets(); }
     
   protected:
 

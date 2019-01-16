@@ -110,11 +110,11 @@ evaluateFields(typename Traits::EvalData workset)
    const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();
  
    // for convenience pull out some objects from workset
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
  
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+      std::size_t cellLocalId = localCellIds(worksetCellIndex);
       stk::mesh::Entity const* relations = mesh_->getBulkData()->begin_nodes(localElements[cellLocalId]);
 
       // loop over the fields to be gathered

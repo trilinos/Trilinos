@@ -88,7 +88,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
    {
      // build useful evaluator
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
-         = Teuchos::rcp(new ResponseScatterEvaluator_IPCoordinates<EvalT,panzer::Traits>(responseName,cubatureDegree_));
+         = Teuchos::rcp(new ResponseScatterEvaluator_IPCoordinates<EvalT,panzer::Traits>(responseName,id_));
 
      this->template registerEvaluator<EvalT>(fm, eval);
 

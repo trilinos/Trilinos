@@ -5,7 +5,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -15,13 +14,13 @@ template <typename EvalT,typename Traits>
 GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
                                            const panzer::IntegrationRule & ir,
                                            const panzer::FieldLayoutLibrary & fl,
-                                           const double & dt)
+                                           const double & dt):
+  id_(ir)
 {
   using Teuchos::RCP;
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
-  ir_degree = ir.cubature_degree;
-  ir_dim = ir.spatial_dimension;
+    ir_dim = ir.spatial_dimension;
 
   current = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
   this->addEvaluatedField(current);
@@ -40,28 +39,21 @@ GaussianPulse<EvalT,Traits>::GaussianPulse(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void GaussianPulse<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
-                                                        PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
 void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
 
-  double time = workset.time;
+  double time = workset.getTime();
 
   const ScalarT factor = std::exp(-(time-2.0*beta)*(time-2.0*beta)/beta/beta);
   const ScalarT scale = 1.0/alpha/alpha;
+  const auto & ip_coordinates = workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates;
   if (ir_dim == 3) {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int point = 0; point < current.extent_int(1); ++point) {
-        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
-        const ScalarT& z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
+        const ScalarT& x = ip_coordinates(cell,point,0);
+        const ScalarT& y = ip_coordinates(cell,point,1);
+        const ScalarT& z = ip_coordinates(cell,point,2);
         const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5) + (z-0.5)*(z-0.5);
         current(cell,point,0) = 0.0;
         current(cell,point,1) = 0.0;
@@ -69,10 +61,10 @@ void GaussianPulse<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
       }
     }
   } else {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int point = 0; point < current.extent_int(1); ++point) {
-        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        const ScalarT& x = ip_coordinates(cell,point,0);
+        const ScalarT& y = ip_coordinates(cell,point,1);
         const ScalarT  r2 = (x-0.5)*(x-0.5) + (y-0.5)*(y-0.5);
         current(cell,point,0) = 0.0;
         current(cell,point,1) = std::exp(-r2*scale)*factor;

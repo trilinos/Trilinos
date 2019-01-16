@@ -92,7 +92,7 @@ DirichletResidual<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  for (index_t i = 0; i < workset.num_cells; ++i)
+  for (index_t i = 0; i < workset.numCells(); ++i)
     for (std::size_t j = 0; j < cell_data_size; ++j)
       residual(i,j)=dof(i,j)-value(i,j);
 }

@@ -378,7 +378,7 @@ main(
     RCP<PME> physics = rcp(new PME(linObjFactory, lowsFactory, globalData,
       buildTransientSupport, 0.0));
     physics->setupModel(wkstContainer, physicsBlocks, bcs, *eqSetFactory,
-      bcFactory, cmFactory, cmFactory, closureModelsPl, userDataPl, false, "");
+      bcFactory, cmFactory, cmFactory, closureModelsPl, userDataPl, worksetSize, false, "");
 
     // Set up a response library to write to the mesh.
     RCP<ResponseLibrary<Traits>> stkIOResponseLibrary =
@@ -464,7 +464,8 @@ buildSTKIOResponseLibrary(
   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cmFactory,
   const Teuchos::RCP<panzer_stk::STK_Interface>&                mesh,
   const Teuchos::ParameterList&                                 closureModelPl,
-  const Teuchos::ParameterList&                                 userData)
+  const Teuchos::ParameterList&                                 userData,
+  const int workset_size)
 {
   using panzer::ClosureModelFactory_TemplateManager;
   using panzer::ResponseLibrary;
@@ -484,7 +485,7 @@ buildSTKIOResponseLibrary(
   mesh->getElementBlockNames(eBlocks);
   RespFactorySolnWriter_Builder builder;
   builder.mesh = mesh;
-  stkIOResponseLibrary->addResponse("Main Field Output", eBlocks, builder);
+  stkIOResponseLibrary->addResponse("Main Field Output", eBlocks, builder,workset_size);
 
   // Build the response Evaluators.
   map<string, vector<string>> nodalFields, cellFields;

@@ -105,7 +105,7 @@ evaluateFields(
   typename Traits::EvalData workset)
 { 
    double extra = 0.0;
-   if(this->wda(workset).block_id=="block_1")
+   if(workset(this->details_idx_).getElementBlock()=="block_1")
       extra = 44.3;
 
    for(int i=0;i<dogValues.extent_int(0);i++) {

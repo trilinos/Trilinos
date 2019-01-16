@@ -91,7 +91,7 @@ evaluateFields(
   typedef typename PHX::MDField<ScalarT,Cell,Point,Dim>::size_type size_type;
 
   // Loop over cells
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
 
     // Loop over points
     for (size_type pt = 0; pt < tensor_field.extent(1); ++pt) {

@@ -46,7 +46,6 @@
 #include <algorithm>
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_DOF_Functors.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
@@ -144,16 +143,16 @@ evaluateFields(typename TRAITS::EvalData workset)
     int spaceDim  = basisValues->basis_vector.extent(3);
     if(spaceDim==3) {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.numCells(),Kokkos::AUTO(),vector_size),functor);
     }
     else {
       dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.numCells(),Kokkos::AUTO(),vector_size),functor);
     }
   }
   else {
     dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
-    Kokkos::parallel_for(workset.num_cells,functor);
+    Kokkos::parallel_for(workset.numCells(),functor);
   }
 }
 
@@ -258,33 +257,33 @@ evaluateFields(typename TRAITS::EvalData workset)
       int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
-        Kokkos::parallel_for(workset.num_cells,functor);
+        Kokkos::parallel_for(workset.numCells(),functor);
       }
       else {
         dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,offsets_array,basisValues->basis_vector);
-        Kokkos::parallel_for(workset.num_cells,functor);
+        Kokkos::parallel_for(workset.numCells(),functor);
       }
     }
     else {
       int spaceDim  = basisValues->basis_vector.extent(3);
       if(spaceDim==3) {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.numCells(),Kokkos::AUTO(),vector_size),functor);
       }
       else {
         dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues->basis_vector);
-	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.num_cells,Kokkos::AUTO(),vector_size),functor);
+	Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::Device>(workset.numCells(),Kokkos::AUTO(),vector_size),functor);
       }
     }
   }
   else {
     if(accelerate_jacobian) {
       dof_functors::EvaluateDOFFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,offsets_array,basisValues->basis_scalar);
-      Kokkos::parallel_for(workset.num_cells,functor);
+      Kokkos::parallel_for(workset.numCells(),functor);
     }
     else {
       dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues->basis_scalar);
-      Kokkos::parallel_for(workset.num_cells,functor);
+      Kokkos::parallel_for(workset.numCells(),functor);
     }
   }
 }

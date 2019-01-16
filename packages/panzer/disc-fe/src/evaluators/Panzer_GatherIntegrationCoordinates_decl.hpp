@@ -70,9 +70,6 @@ public:
   
   GatherIntegrationCoordinates(const panzer::IntegrationRule & quad);
   
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm);
-  
   void evaluateFields(typename TRAITS::EvalData d);
 
   static std::string fieldName(int degree);
@@ -80,8 +77,7 @@ public:
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
-  int quadDegree_;
-  std::vector<int>::size_type quadIndex_; 
+  IntegrationDescriptor id_;
   PHX::MDField<ScalarT,Cell,Point,Dim> quadCoordinates_;
 
   GatherIntegrationCoordinates();

@@ -59,15 +59,18 @@
 
 namespace panzer_stk {
 
+namespace {
+
+
+
 Teuchos::RCP<panzer::LocalMeshInfo>
 buildLocalMeshInfo(const std::vector<int> & N,   // Cells per dimension
                    const std::vector<int> & B,   // Blocks per dimension
                    const std::vector<double> &L) // Domain length per block
 {
   Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(N,B,L);
-  Teuchos::RCP<panzer::LocalMeshInfo> mesh_info(new panzer::LocalMeshInfo);
-  generateLocalMeshInfo(*mesh,*mesh_info);
-  return mesh_info;
+  return generateLocalMeshInfo(*mesh);
+}
 }
 
 
@@ -82,7 +85,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
     panzer_stk::STK_Interface mesh;
     panzer::LocalMeshInfo mesh_info;
 
-    TEST_THROW((generateLocalMeshInfo(mesh, mesh_info)),std::logic_error);
+    TEST_THROW((generateLocalMeshInfo(mesh)),std::logic_error);
   }
 
   // 1D Mesh test
@@ -101,11 +104,10 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
       // Block should have some basic stuff working
       TEST_EQUALITY(block.num_owned_cells, 3);
-      TEST_EQUALITY(block.num_ghstd_cells, 1);
+      TEST_EQUALITY(block.num_ghost_cells, 1);
       TEST_EQUALITY(block.num_virtual_cells, 1);
     }
   }
-
 
   // 2D Mesh test
   {
@@ -116,7 +118,9 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
     // Make sure there are sidesets
     TEST_EQUALITY(mesh_info->sidesets.size(), 4*3);
-    TEST_EQUALITY(mesh_info->sidesets["eblock-0_0"].size(), (4+1) + (3+1));
+
+    // We have the boundary sidesets and internal sidesets = 2+2
+    TEST_EQUALITY(mesh_info->sidesets["eblock-0_0"].size(), 4);
 
     // Test block 0,0
     {
@@ -124,7 +128,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
       // Block should have some basic stuff working
       TEST_EQUALITY(block.num_owned_cells, 3*5);
-      TEST_EQUALITY(block.num_ghstd_cells, 5+3);
+      TEST_EQUALITY(block.num_ghost_cells, 5+3);
       TEST_EQUALITY(block.num_virtual_cells, 5+3);
     }
 
@@ -134,7 +138,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
       // Block should have some basic stuff working
       TEST_EQUALITY(block.num_owned_cells, 3*5);
-      TEST_EQUALITY(block.num_ghstd_cells, 2*5+2*3);
+      TEST_EQUALITY(block.num_ghost_cells, 2*5+2*3);
       TEST_EQUALITY(block.num_virtual_cells, 0);
     }
   }
@@ -146,12 +150,12 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
     // Make sure there are blocks
     TEST_EQUALITY(mesh_info->element_blocks.size(), 4*3*5);
 
-    // Make sure there are sidesets
-    TEST_EQUALITY(mesh_info->sidesets.size(), 4*3*5);
+    // Make sure there are sidesets -  since we don't have internal sidesets we remove the blocks that don't touch the boundary
+    TEST_EQUALITY(mesh_info->sidesets.size(), 4*3*5 - (4-2)*(3-2)*(5-2));
 
     // Note the naming scheme for 3D is different from 2D - there are no internal sidesets
     //TEST_EQUALITY(mesh_info->sidesets["eblock-0_0_0"].size(), (4+1) + (3+1) + (5+1));
-    TEST_EQUALITY(mesh_info->sidesets["eblock-0_0_0"].size(), 6);
+    TEST_EQUALITY(mesh_info->sidesets["eblock-0_0_0"].size(), 3);
 
     // Test block 0,0,0
     {
@@ -159,7 +163,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
       // Block should have some basic stuff working
       TEST_EQUALITY(block.num_owned_cells, 3*5*2);
-      TEST_EQUALITY(block.num_ghstd_cells, 3*5+2*3+2*5);
+      TEST_EQUALITY(block.num_ghost_cells, 3*5+2*3+2*5);
       TEST_EQUALITY(block.num_virtual_cells, 3*5+2*3+2*5);
     }
 
@@ -169,7 +173,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
 
       // Block should have some basic stuff working
       TEST_EQUALITY(block.num_owned_cells, 3*5*2);
-      TEST_EQUALITY(block.num_ghstd_cells, 2*3*5+2*2*3+2*2*5);
+      TEST_EQUALITY(block.num_ghost_cells, 2*3*5+2*2*3+2*2*5);
       TEST_EQUALITY(block.num_virtual_cells, 0);
     }
   }

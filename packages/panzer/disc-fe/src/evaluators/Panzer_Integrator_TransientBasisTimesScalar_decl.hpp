@@ -89,8 +89,8 @@ class Integrator_TransientBasisTimesScalar
 
   double multiplier;
 
-  std::string basis_name;
-  std::size_t basis_index;
+  BasisDescriptor bd_;
+  IntegrationDescriptor id_;
 
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> tmp;
 

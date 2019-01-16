@@ -9,6 +9,7 @@
 #include "Phalanx_FieldManager.hpp"
 
 #include "Panzer_Dimension.hpp"
+#include "Panzer_IntegrationDescriptor.hpp"
 #include "Panzer_FieldLibrary.hpp"
 
 #include <string>
@@ -31,16 +32,12 @@ class GaussianPulse : public panzer::EvaluatorWithBaseImpl<Traits>,
                       public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:
-    GaussianPulse(const std::string & name,
-                  const panzer::IntegrationRule & ir,
-                  const panzer::FieldLayoutLibrary & fl,
-                  const double & dt);
+  GaussianPulse(const std::string & name,
+                const panzer::IntegrationRule & ir,
+                const panzer::FieldLayoutLibrary & fl,
+                const double & dt);
 
-    void postRegistrationSetup(typename Traits::SetupData d,
-                               PHX::FieldManager<Traits>& fm);
-                                                                        
-    void evaluateFields(typename Traits::EvalData d);               
-
+  void evaluateFields(typename Traits::EvalData d);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
@@ -48,7 +45,8 @@ private:
   // Simulation source
   PHX::MDField<ScalarT,Cell,Point,Dim> current;
   PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
-  int ir_degree, ir_index, ir_dim;
+  panzer::IntegrationDescriptor id_;
+  int ir_dim;
   double alpha, beta;
 };
 

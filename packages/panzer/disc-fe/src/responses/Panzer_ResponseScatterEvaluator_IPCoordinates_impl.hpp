@@ -54,7 +54,6 @@
 
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 namespace panzer {
@@ -64,21 +63,21 @@ namespace panzer {
   */
 template<typename EvalT, typename Traits>
 ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
-ResponseScatterEvaluator_IPCoordinates(const std::string & name,
-                                       int ir_order)
-  : responseName_(name), ir_order_(ir_order)
+ResponseScatterEvaluator_IPCoordinates(const std::string & response_name,
+                                       const panzer::IntegrationDescriptor & description)
+  : responseName_(response_name), id_(description)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  std::string dummyName = ResponseBase::buildLookupName(name) + " dummy target";
+  std::string dummyName = ResponseBase::buildLookupName(responseName_) + " dummy target";
 
   // build dummy target tag
   RCP<PHX::DataLayout> dl_dummy = rcp(new PHX::MDALayout<panzer::Dummy>(0));
   scatterHolder_ = rcp(new PHX::Tag<ScalarT>(dummyName,dl_dummy));
   this->addEvaluatedField(*scatterHolder_);
 
-  std::string n = "IPCoordinates Response Scatter: " + name;
+  std::string n = "IPCoordinates Response Scatter: " + responseName_;
   this->setName(n);
 }
 
@@ -91,21 +90,12 @@ preEvaluate(typename Traits::PreEvalData d)
                                    d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
-
-template<typename EvalT, typename Traits>
-void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
-postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index_ = panzer::getIntegrationRuleIndex(ir_order_,(*sd.worksets_)[0], this->wda);
-}
-
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
   // Kokkos::DynRankView<double,PHX::Device>& workset_coords = (this->wda(workset).int_rules[ir_index_])->ip_coordinates;
-  IntegrationValues2<double> & iv = *this->wda(workset).int_rules[ir_index_];
+  const auto & iv = workset(this->details_idx_).getIntegrationValues(id_);
 
   if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.extent(2))) {
     tmpCoords_.resize(iv.ip_coordinates.extent(2));
@@ -117,7 +107,7 @@ evaluateFields(typename Traits::EvalData workset)
   // coordinates for a set of points, then all y coordinates and if
   // required all z coordinates.
   for (int dim = 0; dim < iv.ip_coordinates.extent_int(2); ++dim)
-    for (index_t cell = 0; cell < workset.num_cells; ++cell)
+    for (index_t cell = 0; cell < workset.numCells(); ++cell)
       for (int ip = 0; ip < iv.ip_coordinates.extent_int(1); ++ip)
         tmpCoords_[dim].push_back(iv.ip_coordinates(static_cast<int>(cell),ip,dim));
 }

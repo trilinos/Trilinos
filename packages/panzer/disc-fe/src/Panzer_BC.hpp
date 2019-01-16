@@ -55,6 +55,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -63,7 +64,6 @@ namespace Teuchos {
 namespace panzer {
 
   class BC;
-  class WorksetDescriptor;
 
   /** \brief Nonmember constructor to build BC objects from a ParameterList
       \relates panzer::BC
@@ -201,7 +201,8 @@ namespace panzer {
     }
   };
 
-  WorksetDescriptor bcDescriptor(const panzer::BC & bc);
+  WorksetDescriptor bcDescriptor(const panzer::BC & bc,
+                                 const int workset_size = panzer::WorksetSizeType::ALL_ELEMENTS);
 
 }
 

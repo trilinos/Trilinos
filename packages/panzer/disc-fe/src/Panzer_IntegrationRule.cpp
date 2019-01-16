@@ -94,6 +94,7 @@ IntegrationRule(const panzer::CellData& cell_data, const std::string & in_cv_typ
   } else {
     TEUCHOS_ASSERT(false);
   }
+
   setup_cv(cell_data,in_cv_type);
 }
 
@@ -102,7 +103,8 @@ IntegrationRule(const panzer::IntegrationDescriptor& description,
                 const Teuchos::RCP<const shards::CellTopology> & cell_topology,
                 const int num_cells,
                 const int num_faces)
-  : PointRule(), IntegrationDescriptor(description)
+  : PointRule(description.getPointDescriptor(), cell_topology, num_cells),
+    IntegrationDescriptor(description)
 {
 
   TEUCHOS_ASSERT(description.getType() != panzer::IntegrationDescriptor::NONE);
@@ -111,8 +113,8 @@ IntegrationRule(const panzer::IntegrationDescriptor& description,
   cv_type = "none";
 
   panzer::CellData cell_data;
-  if(isSide()){
-    cell_data = panzer::CellData(num_cells, getSide(), cell_topology);
+  if(description.getSide() >= 0){
+    cell_data = panzer::CellData(num_cells, description.getSide(), cell_topology);
   } else {
     cell_data = panzer::CellData(num_cells, cell_topology);
   }

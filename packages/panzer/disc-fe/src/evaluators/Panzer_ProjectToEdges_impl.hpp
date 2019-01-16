@@ -176,7 +176,7 @@ evaluateFields(typename Traits::EvalData workset)
     }
 
     // Loop over the edges of the workset cells.
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int p = 0; p < num_pts; ++p) {
         result(cell,p) = ScalarT(0.0);
         for (int dim = 0; dim < num_dim; ++dim)
@@ -189,7 +189,7 @@ evaluateFields(typename Traits::EvalData workset)
 
     TEUCHOS_ASSERT(false); // this doesn't work since we modified the way orientations are handled
 
-    PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
+    const auto & vertex_coords = workset.getCellVertices();
     int subcell_dim = 1;
 
     // to compute tangents at qps (copied from GatherTangents)
@@ -204,7 +204,7 @@ evaluateFields(typename Traits::EvalData workset)
     }
 
     // Loop over the faces of the workset cells
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
 
       // get nodal coordinates for this cell 
       Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);

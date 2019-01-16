@@ -109,12 +109,11 @@ namespace panzer {
           ebMultiplier = elementBlockMultipliers->find(block)->second;
 
         // Based on descriptor, currently assumes there should only be one workset
-        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-        const auto worksets = worksetContainer_->getWorksets(wd);
+        const auto& worksets = worksetContainer_->getWorksets(panzer::blockGhostedDescriptor(block));
 
         for (const auto& workset : *worksets) {
 
-          const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+          const auto& basisValues = workset.getBasisIntegrationValues(targetBasisDescriptor_,integrationDescriptor_);
 
           const auto unweightedBasis = basisValues.basis_scalar;
           const auto weightedBasis = basisValues.weighted_basis_scalar;
@@ -128,11 +127,11 @@ namespace panzer {
           PHX::Device().fence();
 
           // Local Ids
-          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numCells(),
                                                   targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
 
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
@@ -211,12 +210,11 @@ namespace panzer {
           ebMultiplier = elementBlockMultipliers->find(block)->second;
 
         // Based on descriptor, currently assumes there should only be one workset
-        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-        const auto& worksets = worksetContainer_->getWorksets(wd);
+        const auto& worksets = worksetContainer_->getWorksets(panzer::blockGhostedDescriptor(block));
 
         for (const auto& workset : *worksets) {
 
-          const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+          const auto& basisValues = workset.getBasisIntegrationValues(targetBasisDescriptor_,integrationDescriptor_);
 
           const auto unweightedBasis = basisValues.basis_vector;
           const auto weightedBasis = basisValues.weighted_basis_vector;
@@ -230,11 +228,11 @@ namespace panzer {
           PHX::Device().fence();
 
           // Local Ids
-          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numCells(),
                                                   targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
 
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
@@ -397,16 +395,15 @@ namespace panzer {
     // *******************
     for (const auto& block : elementBlockNames_) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto& worksets = worksetContainer_->getWorksets(wd);
+      const auto& worksets = worksetContainer_->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
 
         // Get target basis values: current implementation assumes target basis is HGrad
-        const auto& targetBasisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+        const auto& targetBasisValues = workset.getBasisIntegrationValues(targetBasisDescriptor_,integrationDescriptor_);
         const auto& targetWeightedBasis = targetBasisValues.weighted_basis_scalar.get_static_view();
 
         // Sources can be any basis
-        const auto& sourceBasisValues = workset.getBasisValues(sourceBasisDescriptor,integrationDescriptor_);
+        const auto& sourceBasisValues = workset.getBasisIntegrationValues(sourceBasisDescriptor,integrationDescriptor_);
         Kokkos::View<const double***,PHX::Device> sourceUnweightedScalarBasis;
         Kokkos::View<const double****,PHX::Device> sourceUnweightedVectorBasis;
         bool useRankThreeBasis = false; // default to gradient or vector basis
@@ -430,7 +427,7 @@ namespace panzer {
                                                       sourceGlobalIndexer.getElementBlockGIDCount(block));
         {
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,targetLocalIds);
           sourceGlobalIndexer.getElementLIDs(cellLocalIdsNoGhost,sourceLocalIds);
         }

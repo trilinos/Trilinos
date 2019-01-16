@@ -107,42 +107,41 @@ void panzer::GatherTangents<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
 
-  if(workset.num_cells<=0)
+  if(workset.numCells()<=0)
     return;
-  else {
-    const shards::CellTopology & parentCell = *basis->getCellTopology();
-    int cellDim = parentCell.getDimension();
-    int numEdges = gatherFieldTangents.extent(1);
 
-    auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
+  const shards::CellTopology & parentCell = *basis->getCellTopology();
+  int cellDim = parentCell.getDimension();
+  int numEdges = gatherFieldTangents.extent(1);
 
-    const WorksetDetails & details = workset;
+  auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
 
-    const auto worksetJacobians = pointValues.jac.get_view();
+  const auto & local_cell_ids = workset.getLocalCellIDs();
 
-    // Loop over workset faces and edge points
-    for(index_t c=0;c<workset.num_cells;c++) {
+  const auto worksetJacobians = pointValues.jac.get_view();
 
-      int edgeOrts[12] = {};
-      orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
+  // Loop over workset faces and edge points
+  for(index_t c=0;c<workset.numCells();c++) {
 
-      for(int pt = 0; pt < numEdges; pt++) {
-        auto phyEdgeTan = Kokkos::subview(gatherFieldTangents.get_static_view(), c, pt, Kokkos::ALL());
-        auto ortEdgeTan = Kokkos::subview(workspace, 1, Kokkos::ALL());
+    int edgeOrts[12] = {};
+    orientations->at(local_cell_ids(c)).getEdgeOrientation(edgeOrts, numEdges);
 
-        // Apply parent cell Jacobian to ref. edge tangent
-        Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
-                                                        pt,
-                                                        parentCell,
-                                                        edgeOrts[pt]);
-        
-        auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
-        Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
+    for(int pt = 0; pt < numEdges; pt++) {
+      auto phyEdgeTan = Kokkos::subview(gatherFieldTangents.get_static_view(), c, pt, Kokkos::ALL());
+      auto ortEdgeTan = Kokkos::subview(workspace, 1, Kokkos::ALL());
 
-      }// for pt
-    }// for pCell
+      // Apply parent cell Jacobian to ref. edge tangent
+      Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
+                                                      pt,
+                                                      parentCell,
+                                                      edgeOrts[pt]);
 
-  }
+      auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
+      Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
+
+    }// for pt
+  }// for pCell
+
 
 }
 

@@ -63,20 +63,22 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
 
   // Make sure passing the function an empty parent info throws an error
   {
-    Teuchos::RCP<panzer::LocalMeshInfoBase> mesh(new panzer::LocalMeshInfoBase);
-    std::vector<panzer::LocalOrdinal> local_cells = {0};
+    Teuchos::RCP<panzer::LocalMeshInfoBase> mesh(new panzer::LocalMeshInfoBase());
+    std::vector<size_t> local_cells = {0};
     panzer::LocalMeshInfoBase sub_mesh;
 
     TEST_THROW(partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh),std::logic_error);
+    TEST_THROW(partitioning_utilities::setupSubLocalMeshInfoWithConnectivity(*mesh,local_cells,sub_mesh),std::logic_error);
   }
 
   // Make sure passing the function an empty set of cells throws an error
   {
     Teuchos::RCP<panzer::LocalMeshInfoBase> mesh = generateLocalMeshInfoBase();
-    std::vector<panzer::LocalOrdinal> local_cells = {};
+    std::vector<size_t> local_cells = {};
     panzer::LocalMeshInfoBase sub_mesh;
 
     TEST_THROW(partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh),std::logic_error);
+    TEST_THROW(partitioning_utilities::setupSubLocalMeshInfoWithConnectivity(*mesh,local_cells,sub_mesh),std::logic_error);
   }
 
   // Make sure that we can grab a couple of the cells as a local mesh
@@ -84,13 +86,18 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
     Teuchos::RCP<panzer::LocalMeshInfoBase> mesh = generateLocalMeshInfoBase();
 
     // Skip cell 1 to make it a ghost cell
-    std::vector<panzer::LocalOrdinal> local_cells = {0,2};
-    panzer::LocalMeshInfoBase sub_mesh;
+    std::vector<size_t> local_cells = {0,2};
+    panzer::LocalMeshInfoBase sub_mesh, simple_sub_mesh;
 
-    partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh);
+    partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,simple_sub_mesh);
+    partitioning_utilities::setupSubLocalMeshInfoWithConnectivity(*mesh,local_cells,sub_mesh);
+
+    TEST_EQUALITY(simple_sub_mesh.num_owned_cells,2);
+    TEST_EQUALITY(simple_sub_mesh.num_ghost_cells,0);
+    TEST_EQUALITY(simple_sub_mesh.num_virtual_cells,0);
 
     TEST_EQUALITY(sub_mesh.num_owned_cells,2);
-    TEST_EQUALITY(sub_mesh.num_ghstd_cells,2);
+    TEST_EQUALITY(sub_mesh.num_ghost_cells,2);
     TEST_EQUALITY(sub_mesh.num_virtual_cells,1);
 
     // The following is just an analysis of the sub mesh

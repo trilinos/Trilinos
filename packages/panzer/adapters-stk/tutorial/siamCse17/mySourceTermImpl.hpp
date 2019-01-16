@@ -127,7 +127,7 @@ evaluateFields(
   const auto& coords = workset.int_rules[irIndex_]->ip_coordinates;
 
   // Loop over the cells in the workset.
-  parallel_for(workset.num_cells, [=] (const index_t cell)
+  parallel_for(workset.numCells(), [=] (const index_t cell)
   {
     // Loop over the integration points in the cell.
     for (int point(0); point < result_.extent_int(1); ++point)

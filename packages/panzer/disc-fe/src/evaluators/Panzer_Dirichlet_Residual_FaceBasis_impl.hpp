@@ -128,14 +128,14 @@ evaluateFields(
 
   // face only, subcellOrd does not include edge count
   const int subcellDim = 2;
-  const int subcellOrd = this->wda(workset).subcell_index;
+  const int subcellOrd = workset(this->details_idx_).getSubcellIndex();
 
   const int numFaces = parentCell.getSubcellCount(subcellDim);  
   const int numFaceDofs = dof.extent_int(1);
 
   TEUCHOS_ASSERT(cellDim == dof.extent_int(2));
 
-  if(workset.num_cells<=0)
+  if(workset.numCells()<=0)
     return;
   else {
     Intrepid2::CellTools<PHX::exec_space>::getPhysicalFaceNormals(faceNormal,
@@ -147,11 +147,11 @@ evaluateFields(
     TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Triangle<>::key ||
                    subcellTopo.getBaseKey() == shards::Quadrilateral<>::key);
 
-    const WorksetDetails & details = workset;
+    const Workset & details = workset;
 
     int faceOrts[6] = {};
-    for(index_t c=0;c<workset.num_cells;c++) {
-      const auto ort = orientations->at(details.cell_local_ids[c]);
+    for(index_t c=0;c<workset.numCells();c++) {
+      const auto ort = orientations->at(details.getLocalCellIDs()(c));
       ort.getFaceOrientation(faceOrts, numFaces); 
 
       // vertex count represent rotation count before it flips

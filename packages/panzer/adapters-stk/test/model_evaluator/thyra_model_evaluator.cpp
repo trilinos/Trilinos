@@ -60,7 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
@@ -80,6 +80,7 @@ using Teuchos::rcp;
 #include "Panzer_ParameterLibraryUtilities.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjFactory_Utilities.hpp"
 
@@ -110,6 +111,7 @@ namespace panzer {
     RCP<panzer::GlobalIndexer> param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
+    int workset_size;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -166,7 +168,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.cm_factory,
                      ap.closure_models,
-                     ap.user_data,false,"");
+                     ap.user_data,
+                     ap.workset_size,
+                     false,"");
 
       InArgs in_args = me->createInArgs();
       OutArgs out_args = me->createOutArgs();
@@ -233,7 +237,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.cm_factory,
                      ap.closure_models,
-                     ap.user_data,false,"");
+                     ap.user_data,
+                     ap.workset_size,
+                     false,"");
 
       TEST_EQUALITY(me->get_g_name(0), "TEMPERATURE");
       TEST_EQUALITY(me->get_g_names(0)[0], "TEMPERATURE");
@@ -296,7 +302,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.cm_factory,
                      ap.closure_models,
-                     ap.user_data,false,"");
+                     ap.user_data,
+                     ap.workset_size,
+                     false,"");
 
       Teuchos::Array<std::string> params;
       params.push_back("DUMMY_A");
@@ -419,7 +427,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.cm_factory,
                       ap.closure_models,
-                      ap.user_data,false,"");
+                      ap.user_data,
+                      ap.workset_size,
+                      false,"");
 
       RCP<Thyra::VectorBase<double> > x = Thyra::createMember(me->get_x_space());
       Thyra::put_scalar(1.0,x.ptr());
@@ -534,7 +544,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.cm_factory,
                       ap.closure_models,
-                      ap.user_data,true,"dfdp_tangent");
+                      ap.user_data,
+                      ap.workset_size,
+                      true,"dfdp_tangent");
 
       InArgs inArgs = me->createInArgs();
 
@@ -647,7 +659,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.cm_factory,
                       ap.closure_models,
-                      ap.user_data,false,"");
+                      ap.user_data,
+                      ap.workset_size,
+                      false,"");
     }
 
     // build inputs
@@ -798,7 +812,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // check that out args support DgDp
     {
@@ -923,7 +939,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // check that out args support DgDp
     {
@@ -1016,8 +1034,10 @@ namespace panzer {
                    *ap.bc_factory,
                    ap.cm_factory,
                    ap.cm_factory,
-                    ap.closure_models,
-                    ap.user_data,false,"");
+                   ap.closure_models,
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // setup some initial conditions
     RCP<Thyra::VectorBase<double> > x0     = Thyra::createMember(me->get_x_space());
@@ -1309,19 +1329,6 @@ namespace panzer {
                                  tangentParamNames);
     }
 
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<ap.physicsBlocks.size();i++)
-      wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-    ap.wkstContainer = wkstContainer;
-
     // build DOF Manager
     /////////////////////////////////////////////////////////////
 
@@ -1373,6 +1380,16 @@ namespace panzer {
       ap.param_lof = linObjFactory;
     }
 
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    // build WorksetContainer
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(ap.dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    ap.wkstContainer = wkstContainer;
+    ap.workset_size = workset_size;
+
     ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof));
 
     // setup field manager build
@@ -1402,7 +1419,7 @@ namespace panzer {
     ap.user_data = Teuchos::ParameterList("User Data");
 
     ap.fmb->setWorksetContainer(wkstContainer);
-    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*ap.lof,ap.user_data, workset_size);
     ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,*ap.bc_factory,
                                  closure_models,*ap.lof,ap.user_data);
   }

@@ -51,12 +51,14 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_PureBasis.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -66,6 +68,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_GatherFields.hpp"
 #include "Panzer_STK_ScatterFields.hpp"
 #include "Panzer_STK_ScatterCellAvgQuantity.hpp"
+#include "Panzer_STK_LocalMeshUtilities.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -131,11 +134,13 @@ namespace panzer {
   evaluateFields(
     typename Traits::EvalData workset)
   { 
-     std::size_t numcells = workset.num_cells;
+     std::size_t numcells = workset.numCells();
+
+     const auto & coords = workset(this->details_idx_).getCellVertices();
 
      for(std::size_t n=0;n<numcells;n++) {
         for(int v=0;v<nodes;v++) {
-           xcoord(n,v) = this->wda(workset).cell_vertex_coordinates(n,v,0);
+           xcoord(n,v) = coords(n,v,0);
         }
      }
   }
@@ -155,6 +160,9 @@ namespace panzer {
     });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,true);
+
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
 
     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -212,8 +220,7 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
 
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
-                                                                                            physics_block_one->getWorksetNeeds()); 
+    auto volume_worksets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physics_block_one->elementBlockID(), workset_size));
 
     panzer::Traits::SD sd;
     sd.worksets_ = volume_worksets;
@@ -334,9 +341,10 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
-    Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
-                                                                                            physics_block_one->getWorksetNeeds()); 
 
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
+    auto volume_worksets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physics_block_one->elementBlockID(), workset_size));
 
     panzer::Traits::SD sd;
     sd.worksets_ = volume_worksets;

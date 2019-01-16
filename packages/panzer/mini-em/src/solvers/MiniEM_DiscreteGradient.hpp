@@ -1,5 +1,5 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
-#include "Panzer_IntrepidOrientation.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Tpetra_Import.hpp"
@@ -100,7 +100,8 @@ void addDiscreteGradientToRequestHandler(
 
     RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
     shards::CellTopology cell_topology = field_pattern->getCellTopology();
-    std::vector<Intrepid2::Orientation> orientations = *panzer::buildIntrepidOrientation(blockedDOFMngr);
+    panzer::OrientationsInterface orientations_interface(blockedDOFMngr);
+    std::vector<Intrepid2::Orientation> orientations = *orientations_interface.getOrientations();
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
@@ -192,7 +193,8 @@ void addDiscreteGradientToRequestHandler(
 
     RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
     shards::CellTopology cell_topology = field_pattern->getCellTopology();
-    std::vector<Intrepid2::Orientation> orientations = *panzer::buildIntrepidOrientation(blockedDOFMngr);
+    panzer::OrientationsInterface orientations_interface(blockedDOFMngr);
+    std::vector<Intrepid2::Orientation> orientations = *orientations_interface.getOrientations();
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);

@@ -137,7 +137,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_ExtremeValue<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for(index_t i=0;i<d.num_cells;i++) {
+  for(index_t i=0;i<d.numCells();i++) {
     if(useMax_)
       responseObj_->value = (responseObj_->value < cellExtremeValue_(i)) ? cellExtremeValue_(i) : responseObj_->value;
     else
@@ -161,7 +161,7 @@ evaluateFields(panzer::Traits::EvalData d)
   dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
   TEUCHOS_ASSERT(!local_dgdx.is_null());
 
-  scatterObj_->scatterDerivative(cellExtremeValue_,d,this->wda,local_dgdx);
+  scatterObj_->scatterDerivative(cellExtremeValue_,d,this->details_idx_,local_dgdx);
 }
 
 }

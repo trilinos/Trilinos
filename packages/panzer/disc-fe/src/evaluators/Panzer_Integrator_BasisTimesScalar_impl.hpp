@@ -52,7 +52,6 @@
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace panzer
 {
@@ -75,7 +74,8 @@ namespace panzer
     :
     evalStyle_(evalStyle),
     multiplier_(multiplier),
-    basisName_(basis.name())
+    bd_(*basis.getBasis()),
+    id_(ir)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -175,15 +175,12 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& /* fm */)
   {
-    using panzer::getBasisIndex;
     using std::size_t;
 
     // Get the Kokkos::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
 
-    // Determine the index in the Workset bases for our particular basis name.
-    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -269,17 +266,17 @@ namespace panzer
     using Kokkos::RangePolicy;
 
     // Grab the basis information.
-    basis_ = this->wda(workset).bases[basisIndex_]->weighted_basis_scalar;
+    basis_ = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_).weighted_basis_scalar;
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells
     // in the Workset and execute operator()() above.
     if (fieldMults_.size() == 0)
-      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
+      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.numCells()), *this);
     else if (fieldMults_.size() == 1)
-      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
+      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.numCells()), *this);
     else
-      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
+      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.numCells()), *this);
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////

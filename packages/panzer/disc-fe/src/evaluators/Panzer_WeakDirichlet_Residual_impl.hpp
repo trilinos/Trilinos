@@ -47,7 +47,6 @@
 #include <string>
 #include <vector>
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -73,6 +72,8 @@ WeakDirichletResidual(
   const Teuchos::RCP<const panzer::IntegrationRule> ir = 
     p.get< Teuchos::RCP<const panzer::IntegrationRule> >("IR");
 
+  bd_ = *basis;
+  id_ = *ir;
 
   residual = PHX::MDField<ScalarT>(residual_name, basis->functional);
   normal_dot_flux_plus_pen = PHX::MDField<ScalarT>(normal_dot_flux_name, ir->dl_scalar);
@@ -90,8 +91,6 @@ WeakDirichletResidual(
   this->addDependentField(value);
   this->addDependentField(sigma);
  
-  basis_name = panzer::basisIRLayout(basis,*ir)->name();
-
   std::string n = "Weak Dirichlet Residual Evaluator";
   this->setName(n);
 }
@@ -110,7 +109,6 @@ postRegistrationSetup(
   TEUCHOS_ASSERT(flux.extent(1) == normal.extent(1));
   TEUCHOS_ASSERT(flux.extent(2) == normal.extent(2));
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -119,24 +117,24 @@ void
 WeakDirichletResidual<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
-{ 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  {
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux_plus_pen(cell,ip) = ScalarT(0.0);
       for (std::size_t dim = 0; dim < num_dim; ++dim) {
-	normal_dot_flux_plus_pen(cell,ip) += normal(cell,ip,dim) * flux(cell,ip,dim);
+        normal_dot_flux_plus_pen(cell,ip) += normal(cell,ip,dim) * flux(cell,ip,dim);
       }
       normal_dot_flux_plus_pen(cell,ip) += sigma(cell,ip) * (dof(cell,ip) - value(cell,ip)); 
     }
   }
 
-  if(workset.num_cells>0)
+  if(workset.numCells()>0)
     Intrepid2::FunctionSpaceTools<PHX::exec_space>::
-      integrate(residual.get_view(),
-                normal_dot_flux_plus_pen.get_view(), 
-                (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
-  
-}
+    integrate(residual.get_view(),
+              normal_dot_flux_plus_pen.get_view(),
+              workset(this->details_idx_).getBasisIntegrationValues(bd_, id_).weighted_basis_scalar.get_view());
+
+  }
 
 //**********************************************************************
 

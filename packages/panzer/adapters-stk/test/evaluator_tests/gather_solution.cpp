@@ -71,7 +71,13 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_Version.hpp"
+#include "Panzer_STK_LocalMeshUtilities.hpp"
+
 #include "Panzer_Workset.hpp"
+#include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_WorksetUtilities.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 // Teuchos
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -162,8 +168,10 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
+    auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID()));
+
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -467,10 +475,18 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.alpha = 0.0;
-    workset.beta = 2.0; // derivatives multiplied by 2
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    {
+      auto details = Teuchos::rcp(new WorksetFADDetails);
+      details->alpha = 0.0;
+      details->beta = 2.0;
+      workset.setDetails("FAD", details);
+    }
+    workset.setTime(0.);
+    {
+      auto details = Teuchos::rcp(new WorksetStepperDetails);
+      details->evaluate_transient_terms = false;
+      workset.setDetails("Stepper", details);
+    }
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);

@@ -285,7 +285,8 @@ int main(int argc, char *argv[])
                    cm_factory,
                    cm_factory,
                    closure_models_pl,
-                   user_data_pl,false,"");
+                   user_data_pl,
+                   workset_size,false,"");
 
     // setup a response library to write to the mesh
     /////////////////////////////////////////////////////////////
@@ -366,7 +367,8 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,
-                          const Teuchos::ParameterList & user_data)
+                          const Teuchos::ParameterList & user_data,
+                          const int workset_size)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -381,7 +383,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   panzer_stk::RespFactorySolnWriter_Builder builder;
   builder.mesh = mesh;
 
-  stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+  stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder,workset_size);
 
   std::map<std::string,std::vector<std::string> > nodalFields,cellFields;
 

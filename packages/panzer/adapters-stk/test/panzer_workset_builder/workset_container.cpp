@@ -57,6 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -86,15 +87,15 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
+    int myRank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
     // build DOF Manager (with a single HDiv basis)
     /////////////////////////////////////////////////////////////
  
-    // build the connection manager 
-    const RCP<panzer::ConnManager> 
-      conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
-
-    RCP<panzer::DOFManager> dof_manager
-        = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
+    // build the connection manager
+    const auto conn_manager = rcp(new panzer_stk::STKConnManager(mesh));
+    auto dof_manager = rcp(new panzer::DOFManager(conn_manager,MPI_COMM_WORLD));
 
     // build an intrepid basis and a related field pattern for seeding the DOFManager
     {
@@ -109,91 +110,100 @@ namespace panzer {
 
     // build WorksetContainer
     //////////////////////////////////////////////////////////////
-    
-    RCP<panzer_stk::WorksetFactory> wkstFactory 
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer);
 
-    // I'm surprised the needs are required
-    { 
-      BasisDescriptor basis_desc(1,"HGrad");
-      WorksetNeeds needs;
-      needs.cellData = CellData(workset_size,mesh->getCellTopology(element_block));
-      needs.addBasis(basis_desc);
-      wkstContainer->setNeeds(element_block,needs);
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    // Test Volume Worksets
+    //////////////////////////////////////////////////////////////
+
+    // Double check nothing is generated for a bad input
+    TEST_ASSERT(wkstContainer->getWorksets(WorksetDescriptor("element block",workset_size))->size() == 0)
+
+    // Check worksets
+    {
+      // Grab the worksets for the given element block
+      auto worksets_ptr = wkstContainer->getWorksets(WorksetDescriptor(element_block,workset_size));
+      const std::vector<Workset> & worksets = *worksets_ptr;
+
+      // Make sure we actually got something back
+      TEST_ASSERT(worksets.size()>0)
+
+      // Check for unique identifiers in worksets - no 0 identifiers allowed
+      std::set<std::size_t> identifiers;
+      for(const auto & wkst : worksets) {
+        TEST_ASSERT(wkst.getIdentifier() != 0u)
+        TEST_ASSERT(identifiers.find(wkst.getIdentifier()) == identifiers.end());
+        identifiers.insert(wkst.getIdentifier());
+      }
     }
 
-    wkstContainer->setFactory(wkstFactory);
-    wkstContainer->setGlobalIndexer(dof_manager);
-    wkstContainer->setWorksetSize(workset_size);
+    // Test Sideset (volume) Worksets
+    //////////////////////////////////////////////////////////////
 
-    // check volume worksets, both for deviation from 0 (required) and number
-    // of unique identifiers
+    // Double check nothing is generated for a bad input
+    TEST_ASSERT(wkstContainer->getWorksets(WorksetDescriptor("element block", "sideset"))->size() == 0)
+
+    // Check worksets
     {
-      std::vector<Workset> & worksets = *wkstContainer->getWorksets(blockDescriptor(element_block));
+      auto worksets_ptr = wkstContainer->getWorksets(WorksetDescriptor(element_block, sideset));
+      const std::vector<Workset> & worksets = *worksets_ptr;
 
+      // Make sure we actually got something back - but only for process 0 (process 1 should not touch the 'left' sideset)
+      if(myRank == 0){
+        TEST_ASSERT(worksets.size()>0)
+      }
+
+      // Check for unique identifiers in worksets - no 0 identifiers allowed
       std::set<std::size_t> identifiers;
-      for(auto wkst : worksets) {
-        // check a unique identifier 
-        TEST_ASSERT(wkst.getIdentifier()!=0u);
- 
+      for(const auto & wkst : worksets) {
+        TEST_ASSERT(wkst.getIdentifier() != 0u)
+        TEST_ASSERT(identifiers.find(wkst.getIdentifier()) == identifiers.end());
         identifiers.insert(wkst.getIdentifier());
       }
 
-      // check uniqueness of identifiers
-      TEST_EQUALITY(worksets.size(),identifiers.size());
     }
 
-    // check side set worksets, both for deviation from 0 (required) and number
-    // of unique identifiers
+    // Test Sideset (surface) Worksets
+    //////////////////////////////////////////////////////////////
+
+    // Double check nothing is generated for a bad input
+    TEST_ASSERT(wkstContainer->getWorksets(WorksetDescriptor("element block", "sideset", true))->size() == 0)
+
+    // Check worksets
     {
+      auto worksets_ptr = wkstContainer->getWorksets(WorksetDescriptor(element_block, sideset, true));
+      const std::vector<Workset> & worksets = *worksets_ptr;
 
-      Teuchos::RCP<std::map<unsigned,Workset> > rcp_worksets = wkstContainer->getSideWorksets(sidesetDescriptor(element_block,sideset));
+      // Make sure we actually got something back - but only for process 0 (process 1 should not touch the 'left' sideset)
+      if(myRank == 0){
+        TEST_ASSERT(worksets.size()>0)
+      }
 
-      // because this is a boundary workset, sometimes these things are not relevant
-      if(rcp_worksets!=Teuchos::null) {
-        std::map<unsigned,Workset> & worksets = *rcp_worksets;
-
-        TEST_ASSERT(worksets.size()>0);
-
-        std::set<std::size_t> identifiers;
-        for(auto wkst : worksets) {
-          out << "IS THIS ZERO ???? " << wkst.second.getIdentifier() << " " << wkst.first << std::endl; 
-
-          // check a unique identifier 
-          TEST_ASSERT(wkst.second.getIdentifier()!=0u);
- 
-          identifiers.insert(wkst.second.getIdentifier());
-        }
-
-        // check uniqueness of identifiers
-        TEST_EQUALITY(worksets.size(),identifiers.size());
+      // Check for unique identifiers in worksets - no 0 identifiers allowed
+      std::set<std::size_t> identifiers;
+      for(const auto & wkst : worksets) {
+        TEST_ASSERT(wkst.getIdentifier() != 0u)
+        TEST_ASSERT(identifiers.find(wkst.getIdentifier()) == identifiers.end());
+        identifiers.insert(wkst.getIdentifier());
       }
     }
 
-    // check side set worksets, both for deviation from 0 (required) and number
-    // of unique identifiers
-    {
-      Teuchos::RCP<std::map<unsigned,Workset> > rcp_worksets = wkstContainer->getSideWorksets(sidesetVolumeDescriptor(element_block,sideset));
+    // Test BC Sideset Worksets
+    //////////////////////////////////////////////////////////////
 
+    // Our mesh is too simple to test for it working, but we can test it not working just fine
 
-      if(rcp_worksets!=Teuchos::null) {
-        std::map<unsigned,Workset> & worksets = *rcp_worksets;
+    // If a block is found, but the sidesets are mismatched, throw error (sidesets must have same name - this is a current limitation in the mesh reader)
+    TEST_THROW(wkstContainer->getWorksets(WorksetDescriptor("element block", "other block", "sideset", "other set")), std::logic_error)
+    TEST_THROW(wkstContainer->getWorksets(WorksetDescriptor(element_block, "other block", "sideset", "other set")), std::logic_error)
 
-        TEST_ASSERT(worksets.size()>0);
+    // If the blocks are not joined then don't return any worksets
+    TEST_EQUALITY(wkstContainer->getWorksets(WorksetDescriptor(element_block, "other block", "sideset", "sideset"))->size(), 0)
+    TEST_EQUALITY(wkstContainer->getWorksets(WorksetDescriptor(element_block, "other block", sideset, sideset))->size(), 0)
+    TEST_EQUALITY(wkstContainer->getWorksets(WorksetDescriptor("other block", element_block, sideset, sideset))->size(), 0)
 
-        std::set<std::size_t> identifiers;
-        for(auto wkst : worksets) {
-          // check a unique identifier 
-          TEST_ASSERT(wkst.second.getIdentifier()!=0u);
- 
-          identifiers.insert(wkst.second.getIdentifier());
-        }
-
-        // check uniqueness of identifiers
-        TEST_EQUALITY(worksets.size(),identifiers.size());
-      }
-    }
+    //////////////////////////////////////////////////////////////
   }
 }

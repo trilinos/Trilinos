@@ -161,13 +161,9 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    // finish up the edges and faces
    if(buildSubcells_) {
       mesh.buildSubcells();
-
-      out << "CubeHexMesh: Building sub cells" << std::endl;
    }
    else {
       addSides(mesh);
-
-      out << "CubeHexMesh: NOT building sub cells" << std::endl;
    }
 
    mesh.buildLocalElementIDs();

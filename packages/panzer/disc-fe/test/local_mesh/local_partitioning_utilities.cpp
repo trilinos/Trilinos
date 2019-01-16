@@ -67,11 +67,11 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
   {
     panzer::LocalMeshInfo empty_mesh;
 
-    panzer::WorksetDescriptor description("block",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+
+    std::vector<panzer::LocalMeshPartition > partitions;
 
     // It should not return any partitions
-    generateLocalMeshPartitions(empty_mesh, description, partitions);
+    generateLocalMeshPartitions(empty_mesh, panzer::blockGhostedDescriptor("block"), partitions);
 
     // Nothing should have been found
     TEST_EQUALITY(partitions.size(), 0);
@@ -80,37 +80,20 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
   // Generate a local mesh info object
   Teuchos::RCP<panzer::LocalMeshInfo> mesh_info = generateLocalMeshInfo();
 
-  // Test bad descriptors
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::CLASSIC_MODE,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
     // It should throw an error
-    TEST_THROW(generateLocalMeshPartitions(*mesh_info, description, partitions), std::logic_error);
-  }
-  {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::NO_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
-
-    // It should throw an error
-    TEST_THROW(generateLocalMeshPartitions(*mesh_info, description, partitions), std::logic_error);
-  }
-  {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,false);
-    std::vector<panzer::LocalMeshPartition> partitions;
-
-    // It should throw an error
-    TEST_THROW(generateLocalMeshPartitions(*mesh_info, description, partitions), std::logic_error);
+    TEST_THROW(generateLocalMeshPartitions(*mesh_info, panzer::blockGhostedDescriptor("block0",panzer::WorksetSizeType::NO_ELEMENTS), partitions), std::logic_error);
   }
 
   // Test the partitions
 
   // Non-existant block partition
   {
-    panzer::WorksetDescriptor description("block32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
     std::vector<panzer::LocalMeshPartition> partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::blockGhostedDescriptor("block32"), partitions);
 
     // Nothing should have been found
     TEST_EQUALITY(partitions.size(), 0);
@@ -119,30 +102,27 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Non-existant sideset partition
   {
-    panzer::WorksetDescriptor description("block32","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
-
-    // Nothing should have been found
-    TEST_EQUALITY(partitions.size(), 0);
-
-  }
-  {
-    panzer::WorksetDescriptor description("block0","sideset32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
-
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::sidesetGhostedDescriptor("block32","sideset0"), partitions);
 
     // Nothing should have been found
     TEST_EQUALITY(partitions.size(), 0);
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset1",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::sidesetGhostedDescriptor("block0","sideset32"), partitions);
+
+    // Nothing should have been found
+    TEST_EQUALITY(partitions.size(), 0);
+
+  }
+  {
+    std::vector<panzer::LocalMeshPartition > partitions;
+
+    generateLocalMeshPartitions(*mesh_info, panzer::sidesetGhostedDescriptor("block0","sideset1"), partitions);
 
     // Nothing should have been found
     TEST_EQUALITY(partitions.size(), 0);
@@ -151,57 +131,68 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
 
   // Existing block partition
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::blockGhostedDescriptor("block1"), partitions);
 
     // Only one partition since we requested a full partition
     TEST_EQUALITY(partitions.size(), 1);
 
     const auto & partition = partitions[0];
     TEST_EQUALITY(partition.num_owned_cells,2);
-    TEST_EQUALITY(partition.num_ghstd_cells,1);
+    TEST_EQUALITY(partition.num_ghost_cells,1);
     TEST_EQUALITY(partition.num_virtual_cells,1);
+  }
+  {
+    std::vector<panzer::LocalMeshPartition > partitions;
+
+    // The partitions won't be contiguous, but we will still get partitions
+    generateLocalMeshPartitions(*mesh_info, panzer::blockDescriptor("block0"), partitions);
+
+    // We should have only one partition
+    TEST_EQUALITY(partitions.size(), 1);
+
+    // NOTE: since we haven't turned on partitioning, there are no ghost or virtual cells
+    const auto & partition = partitions[0];
+    TEST_EQUALITY(partition.num_owned_cells,2);
+    TEST_EQUALITY(partition.num_ghost_cells,0);
+    TEST_EQUALITY(partition.num_virtual_cells,0);
   }
 
   // Existing sideset partition
   {
-    panzer::WorksetDescriptor description("block0","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::sidesetGhostedDescriptor("block0","sideset0"), partitions);
 
     // Only one partition since we requested a full partition
     TEST_EQUALITY(partitions.size(), 1);
 
     const auto & partition = partitions[0];
     TEST_EQUALITY(partition.num_owned_cells,1);
-    TEST_EQUALITY(partition.num_ghstd_cells,0);
+    TEST_EQUALITY(partition.num_ghost_cells,0);
     TEST_EQUALITY(partition.num_virtual_cells,1);
   }
   {
-    panzer::WorksetDescriptor description("block1","sideset2",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::sidesetGhostedDescriptor("block1","sideset2"), partitions);
 
     // Only one partition since we requested a full partition
     TEST_EQUALITY(partitions.size(), 1);
 
     const auto & partition = partitions[0];
     TEST_EQUALITY(partition.num_owned_cells,1);
-    TEST_EQUALITY(partition.num_ghstd_cells,1);
+    TEST_EQUALITY(partition.num_ghost_cells,1);
     TEST_EQUALITY(partition.num_virtual_cells,0);
   }
 
   // Existing block double partition
   {
     // We want two partitions, each with a size of 1 cell
-    panzer::WorksetDescriptor description("block1",1,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::blockGhostedDescriptor("block1",1), partitions);
 
     // Two partitions
     TEST_EQUALITY(partitions.size(), 2);
@@ -211,7 +202,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
       TEST_EQUALITY(partition.num_owned_cells,1);
 
       // Either both extra cells are ghosts, or one is virtual and one is ghost
-      TEST_EQUALITY(partition.num_ghstd_cells+partition.num_virtual_cells,2);
+      TEST_EQUALITY(partition.num_ghost_cells+partition.num_virtual_cells,2);
     }
 
     {
@@ -219,17 +210,16 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
       TEST_EQUALITY(partition.num_owned_cells,1);
 
       // Either both extra cells are ghosts, or one is virtual and one is ghost
-      TEST_EQUALITY(partition.num_ghstd_cells+partition.num_virtual_cells,2);
+      TEST_EQUALITY(partition.num_ghost_cells+partition.num_virtual_cells,2);
     }
   }
 
   // Existing sideset double partition, but only one partition is available
   {
     // We want two partitions, each with a size of 1 cell
-    panzer::WorksetDescriptor description("block1","sideset1",1,true);
-    std::vector<panzer::LocalMeshPartition> partitions;
+    std::vector<panzer::LocalMeshPartition > partitions;
 
-    generateLocalMeshPartitions(*mesh_info, description, partitions);
+    generateLocalMeshPartitions(*mesh_info, panzer::sidesetGhostedDescriptor("block1","sideset1",1), partitions);
 
     // Only one partition should have been built
     TEST_EQUALITY(partitions.size(), 1);
@@ -237,7 +227,7 @@ TEUCHOS_UNIT_TEST(localMeshPartitioningUtilities, basic)
     {
       const auto & partition = partitions[0];
       TEST_EQUALITY(partition.num_owned_cells,1);
-      TEST_EQUALITY(partition.num_ghstd_cells,0);
+      TEST_EQUALITY(partition.num_ghost_cells,0);
       TEST_EQUALITY(partition.num_virtual_cells,1);
     }
   }

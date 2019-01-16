@@ -97,8 +97,7 @@ Sum(
   }
   */
  
-  std::string n = "Sum Evaluator";
-  this->setName(n);
+  this->setName("Sum Evaluator: " + sum_name);
 }
 
 //**********************************************************************

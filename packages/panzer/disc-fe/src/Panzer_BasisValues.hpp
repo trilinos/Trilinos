@@ -40,28 +40,17 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_IntrepidOrientation_hpp__
-#define __Panzer_IntrepidOrientation_hpp__
+#ifndef PANZER_BASIS_VALUES_HPP
+#define PANZER_BASIS_VALUES_HPP
 
-#include "Intrepid2_Orientation.hpp"
-
-#include "PanzerDiscFE_config.hpp"
-#include "Panzer_ConnManager.hpp"
-#include "Panzer_NodalFieldPattern.hpp"
-#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_BasisValues2.hpp"
 
 namespace panzer {
 
-  void
-  buildIntrepidOrientation(std::vector<Intrepid2::Orientation> & orientation,  
-                           panzer::ConnManager & connMgr);
+// FIXME: Until we construct this class, we will fake it with the existing BasisValues2 class
+template<typename Scalar>
+using BasisValues = BasisValues2<Scalar>;
 
-  /** Build an orientation container from a global indexer and a field.
-   * Underneath this does several dynamic casts to determine the type of GlobalIndexer
-   * object that has been passed in.
-   */
-  Teuchos::RCP<std::vector<Intrepid2::Orientation> > 
-  buildIntrepidOrientation(const Teuchos::RCP<const panzer::GlobalIndexer> globalIndexer);
-}
+} // namespace panzer
 
 #endif

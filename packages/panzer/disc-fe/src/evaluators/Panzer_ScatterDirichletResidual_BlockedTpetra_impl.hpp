@@ -167,7 +167,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
-  const std::string blockId = this->wda(workset_0).block_id;
+  const auto & blockId = workset_0(this->details_idx_).getElementBlock();
 
   fieldIds_.resize(scatterFields_.size());
   fieldOffsets_.resize(scatterFields_.size());
@@ -253,7 +253,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Thyra::VectorBase;
    using Thyra::ProductVectorBase;
 
-   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    RCP<ProductVectorBase<double> > thyraScatterTarget = (!scatterIC_) ?
      rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true) :
@@ -286,7 +286,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      if (!scatterIC_) {
 
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numCells()), KOKKOS_LAMBDA (const int& cell) {
          for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
            const int lid = worksetLIDs(cell,fieldOffsets(basis));
            if (lid < 0) // not on this processor!
@@ -305,7 +305,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
      } else {
 
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numCells()), KOKKOS_LAMBDA (const int& cell) {
          for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
            const int lid = worksetLIDs(cell,fieldOffsets(basis));
            if (lid < 0) // not on this processor!
@@ -382,7 +382,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
-  const std::string blockId = this->wda(workset_0).block_id;
+  const auto & blockId = workset_0(this->details_idx_).getElementBlock();
 
   fieldIds_.resize(scatterFields_.size());
   fieldOffsets_.resize(scatterFields_.size());
@@ -483,7 +483,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   using Thyra::ProductVectorBase;
   using Thyra::BlockedLinearOpBase;
 
-  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  const auto& localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
   const int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
   const RCP<const ContainerType> blockedContainer = blockedContainer_;
@@ -584,7 +584,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& applyBC = applyBC_[fieldIndex].get_static_view();
     const bool checkApplyBC = checkApplyBC_;
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numCells()), KOKKOS_LAMBDA (const int& cell) {
       LO cLIDs[maxDerivativeArraySize_];
       typename Sacado::ScalarType<ScalarT>::type vals[maxDerivativeArraySize_];
 

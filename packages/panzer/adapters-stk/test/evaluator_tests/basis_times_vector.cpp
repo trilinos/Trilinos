@@ -58,6 +58,8 @@ using Teuchos::rcp;
 #include "Panzer_Workset.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -146,19 +148,13 @@ namespace panzer {
     dofManager->buildGlobalUnknowns();
 
     // build worksets
-    std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
-    physicsBlocks.push_back(physicsBlock); // pushing back singular
 
-    panzer::WorksetContainer wkstContainer; // (Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)),physicsBlocks,workset_size);
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
-    wkstContainer.setFactory(Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)));
-    for(size_t i=0;i<physicsBlocks.size();i++) 
-      wkstContainer.setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer.setGlobalIndexer(dofManager);
-    wkstContainer.setWorksetSize(workset_size);
-
-    const panzer::WorksetDescriptor wd = panzer::blockDescriptor(eBlockID);
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer.getWorksets(wd);
+    const panzer::WorksetDescriptor wd(eBlockID, workset_size);
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer->getWorksets(wd);
     TEST_EQUALITY(work_sets->size(),1);
 
     // setup field manager, add evaluator under test
@@ -211,10 +207,18 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.alpha = 0.0;
-    workset.beta = 0.0;
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    {
+      auto details = Teuchos::rcp(new WorksetFADDetails);
+      details->alpha = 0.0;
+      details->beta = 0.0;
+      workset.setDetails("FAD", details);
+    }
+    workset.setTime(0.);
+    {
+      auto details = Teuchos::rcp(new WorksetStepperDetails);
+      details->evaluate_transient_terms = false;
+      workset.setDetails("Stepper", details);
+    }
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 

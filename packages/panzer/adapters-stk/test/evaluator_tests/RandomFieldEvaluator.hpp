@@ -47,13 +47,14 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 template <typename ScalarT>
 class PointEvaluation {
 public:
    virtual void evaluateContainer(const Kokkos::DynRankView<double,PHX::Device> & points,
                                   PHX::MDField<ScalarT> & field) const = 0;
+
+   virtual ~PointEvaluation() = default;
 };
 
 template<typename EvalT, typename Traits>

@@ -81,6 +81,12 @@ class PointValues_Evaluator
  
   PHX::MDField<double,NODE,Dim> refPointArray;
 
+  /// Description of basis
+  BasisDescriptor bd_;
+
+  /// Description of points
+  PointDescriptor pd_;
+
   bool useBasisValuesRefArray; // if true then basis is non-null
   Teuchos::RCP<const panzer::PureBasis> basis;
   std::size_t basis_index;

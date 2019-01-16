@@ -47,7 +47,6 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_Evaluator_Macros.hpp"
 
 template <typename ScalarT>
@@ -56,6 +55,8 @@ public:
    // virtual void evaluateContainer(const Kokkos::DynRankView<double,PHX::Device> & points,
    virtual void evaluateContainer(const PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & points,
                                   PHX::MDField<ScalarT> & field) const = 0;
+
+   virtual ~PointEvaluation() = default;
 };
 
 template<typename EvalT, typename Traits>
@@ -64,31 +65,27 @@ class PointEvaluator
   public panzer::EvaluatorWithBaseImpl<Traits>,
   public PHX::EvaluatorDerived<EvalT, Traits>
 {
-  public:
+public:
 
-    PointEvaluator(
-      const Teuchos::ParameterList& p);
+  PointEvaluator(const Teuchos::ParameterList& p);
 
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
+  void
+  evaluateFields(typename Traits::EvalData d);
 
-    void
-    evaluateFields(
-      typename Traits::EvalData d);
+private:
 
-  private:
-
-    using ScalarT = typename EvalT::ScalarT;
+  using ScalarT = typename EvalT::ScalarT;
 
   PHX::MDField<ScalarT> scalar;
   PHX::MDField<ScalarT> vectorField;
 
   bool isVector;
   int quad_order;
-  int quad_index;
   Teuchos::RCP<const PointEvaluation<ScalarT> > function;
+
+  /// Description of integrator
+  panzer::IntegrationDescriptor id_;
+
 }; // end of class PointEvaluator
 
 
@@ -102,6 +99,9 @@ PointEvaluator(
   const std::string name = p.get<std::string>("Name");
   Teuchos::RCP<panzer::IntegrationRule> ir
      = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
+
+  id_ = *ir;
+
   isVector = p.get<bool>("Is Vector");
   function = p.get<Teuchos::RCP<const PointEvaluation<ScalarT> > >("Point Evaluator");
 
@@ -126,24 +126,14 @@ PointEvaluator(
 template<typename EvalT, typename Traits>
 void
 PointEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& /* fm */)
-{
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-PointEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 {
-   if(isVector)
-      function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);
-   else 
-      function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);
+  // TODO: These appear to be the same call...
+  if(isVector)
+    function->evaluateContainer(workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates,vectorField);
+  else
+    function->evaluateContainer(workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates,vectorField);
 }
 
 //**********************************************************************

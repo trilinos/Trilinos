@@ -178,10 +178,18 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.alpha = 0.0;
-    workset.beta = 0.0;
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    {
+      auto details = Teuchos::rcp(new WorksetFADDetails);
+      details->alpha = 0.0;
+      details->beta = 0.0;
+      workset.setDetails("FAD", details);
+    }
+    workset.setTime(0.);
+    {
+      auto details = Teuchos::rcp(new WorksetStepperDetails);
+      details->evaluate_transient_terms = false;
+      workset.setDetails("Stepper", details);
+    }
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 

@@ -150,8 +150,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const std::string & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)

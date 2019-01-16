@@ -57,7 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
@@ -72,6 +72,7 @@ using Teuchos::rcp;
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Epetra_MpiComm.h"
 
@@ -103,7 +104,7 @@ namespace panzer {
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+//    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb =
       Teuchos::parameterList("Physics Blocks");
@@ -132,25 +133,14 @@ namespace panzer {
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-				 ipb,
-				 default_integration_order,
-				 workset_size,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
                                  eqset_factory,
-				 gd,
-		   	         false,
+                                 gd,
+                                 false,
                                  physicsBlocks);
     }
-
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++)
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
 
    // build DOF Manager
    /////////////////////////////////////////////////////////////
@@ -168,6 +158,12 @@ namespace panzer {
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
     // setup field manager build
     /////////////////////////////////////////////////////////////
 
@@ -183,7 +179,7 @@ namespace panzer {
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data, workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
@@ -400,25 +396,14 @@ namespace panzer {
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-				 ipb,
-				 default_integration_order,
-				 workset_size,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
                                  eqset_factory,
-				 gd,
-		   	         false,
+                                 gd,
+                                 false,
                                  physicsBlocks);
     }
-
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++)
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
 
    // build DOF Manager
    /////////////////////////////////////////////////////////////
@@ -436,6 +421,12 @@ namespace panzer {
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
     // setup field manager build
     /////////////////////////////////////////////////////////////
 
@@ -450,7 +441,7 @@ namespace panzer {
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data, workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;

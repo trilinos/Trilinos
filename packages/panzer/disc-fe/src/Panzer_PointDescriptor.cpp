@@ -50,23 +50,54 @@ namespace panzer
 {
 
 PointDescriptor::
-PointDescriptor(const std::string & type,const Teuchos::RCP<PointGenerator> & generator)
+PointDescriptor()
+{
+  setup("void", Teuchos::null);
+}
+
+PointDescriptor::
+PointDescriptor(const std::string & type,
+                const Teuchos::RCP<PointGenerator> & generator)
 {
   setup(type,generator);
 }
 
 void
 PointDescriptor::
-setup(const std::string & type,const Teuchos::RCP<PointGenerator> & generator)
+setup(const std::string & type,
+      const Teuchos::RCP<PointGenerator> & generator)
 {
   _type = type;
   _generator = generator;
 
   // sanity check
-  TEUCHOS_ASSERT(_generator!=Teuchos::null);
+//  TEUCHOS_ASSERT(_generator!=Teuchos::null);
 
   _key = std::hash<PointDescriptor>()(*this);
 }
+
+bool
+PointDescriptor::
+setGenerator(const Teuchos::RCP<PointGenerator> & generator)
+{
+  _generator = generator;
+}
+
+bool
+PointDescriptor::
+hasGenerator() const
+{
+  return not _generator.is_null();
+}
+
+const PointGenerator &
+PointDescriptor::
+getGenerator() const
+{
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(_generator.is_null(), "PointDescriptor::getGenerator : Generator not set");
+  return *_generator;
+}
+
 
 }
 

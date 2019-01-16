@@ -40,7 +40,7 @@ void LinearFunction<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupD
 template <typename EvalT,typename Traits>
 void LinearFunction<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
-  for (panzer::index_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (panzer::index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int point = 0; point < result.extent_int(1); ++point) {
 
       const double& x = workset.int_rules[ir_index_]->ip_coordinates(cell,point,0);

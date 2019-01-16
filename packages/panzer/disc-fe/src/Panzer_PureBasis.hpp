@@ -51,14 +51,17 @@
 #include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_Basis.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
+#include "Panzer_BasisDescriptor.hpp"
 
 namespace panzer {
 
   class CellData;
-  class BasisDescriptor;
 
   //! Description and data layouts associated with a particular basis
-  class PureBasis { 
+  class
+  PureBasis:
+    public BasisDescriptor
+  {
 
   public:
     typedef enum { HGRAD=0, HCURL=1, HDIV=2, HVOL=3, CONST=4 } EElementSpace;

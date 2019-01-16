@@ -79,7 +79,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
   //std::cout << "Parameter::evalauteFields() ParamValue = " << param->getValue() << std::endl;
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
 	 pt < target_field.extent(1); ++pt) {
       target_field(cell,pt) = param->getValue();

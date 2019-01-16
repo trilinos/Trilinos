@@ -47,7 +47,6 @@
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {
@@ -55,8 +54,7 @@ namespace panzer {
 //**********************************************************************
 template<typename EvalT, typename Traits>
 CellExtreme<EvalT, Traits>::
-CellExtreme(
-  const Teuchos::ParameterList& p) : quad_index(0)
+CellExtreme(const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
@@ -67,7 +65,8 @@ CellExtreme(
     use_max = p.get<bool>("Use Max");
 
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
-  quad_order = ir->cubature_degree;
+//  quad_order = ir->cubature_degree;
+  id_ = *ir;
 
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   extreme = PHX::MDField<ScalarT>( p.get<std::string>("Extreme Name"), dl_cell);
@@ -78,23 +77,17 @@ CellExtreme(
     
   multiplier = 1.0;
   if(p.isType<double>("Multiplier"))
-     multiplier = p.get<double>("Multiplier");
+    multiplier = p.get<double>("Multiplier");
 
   if (p.isType<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers")) {
-    const std::vector<std::string>& field_multiplier_names = 
-      *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
+    const auto & field_multiplier_names = *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    for (std::vector<std::string>::const_iterator name = 
-	   field_multiplier_names.begin(); 
-	 name != field_multiplier_names.end(); ++name) {
-      PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      field_multipliers.push_back(tmp_field);
-    }
+    for (const auto & name : field_multiplier_names)
+      field_multipliers.push_back(PHX::MDField<const ScalarT,Cell,IP>(name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar));
   }
 
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->addDependentField(*field);
+  for (const auto & field : field_multipliers)
+    this->addDependentField(field);
 
   std::string n = "CellExtreme: " + extreme.fieldTag().name();
   this->setName(n);
@@ -104,28 +97,16 @@ CellExtreme(
 template<typename EvalT, typename Traits>
 void
 CellExtreme<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& /* fm */)
-{
-  num_qp = scalar.extent(1);
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-CellExtreme<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  const size_t num_qp = scalar.extent(1);
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       ScalarT current= multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field)
-        current *= (*field)(cell,qp);  
+      for (const auto & field : field_multipliers)
+        current *= field(cell,qp);
 
       // take first quad point value
       if(qp==0)

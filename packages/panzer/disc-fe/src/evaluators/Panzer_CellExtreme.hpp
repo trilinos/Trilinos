@@ -48,6 +48,7 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Kokkos_DynRankView.hpp"
+#include "Panzer_IntegrationDescriptor.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -79,11 +80,6 @@ class CellExtreme
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -98,9 +94,7 @@ class CellExtreme
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
   double multiplier;
 
-  std::size_t num_qp;
-  std::size_t quad_index;
-  int quad_order;
+  IntegrationDescriptor id_;
  
   bool use_max; // true ... if false then this is a "min"
 

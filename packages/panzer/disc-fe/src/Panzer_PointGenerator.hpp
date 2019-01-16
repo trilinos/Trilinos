@@ -46,6 +46,11 @@
 
 #include "Kokkos_DynRankView.hpp"
 
+namespace shards
+{
+class CellTopology;
+}
+
 namespace panzer {
 
 /** A class that uses run time polymorphism
@@ -56,6 +61,9 @@ class PointGenerator {
 public:
   //! Get the points for a particular topology
   virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const = 0;
+
+  //! Check if 'getPoints' can be called
+  virtual bool hasPoints(const shards::CellTopology & topo) const = 0;
 
   //! Get the points for a particular topology
   virtual int numPoints(const shards::CellTopology & topo) const = 0;

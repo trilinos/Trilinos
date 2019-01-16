@@ -61,8 +61,8 @@ template <typename EvalT>
 class ResponseEvaluatorFactory_IPCoordinates : public ResponseEvaluatorFactory<EvalT> {
 public:
 
-   ResponseEvaluatorFactory_IPCoordinates(int cubatureDegree)
-     : cubatureDegree_(cubatureDegree) {}
+   ResponseEvaluatorFactory_IPCoordinates(const IntegrationDescriptor & description)
+     : id_(description) {}
 
    virtual ~ResponseEvaluatorFactory_IPCoordinates() {}
  
@@ -105,18 +105,19 @@ public:
 
 protected:
    //! Accessor method for Cubature degree (can be used by sub classes)
-   int getCubatureDegree() const { return cubatureDegree_; }
+   const IntegrationDescriptor &
+   getIntegrationDescriptor() const { return id_; }
 
 private:
-   int cubatureDegree_;
+   IntegrationDescriptor id_;
 };
 
 struct ResponseEvaluatorFactory_IPCoordinates_Builder {
-  int cubatureDegree;
+  IntegrationDescriptor id;
 
   template <typename T>
   Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-  { return Teuchos::rcp(new ResponseEvaluatorFactory_IPCoordinates<T>(cubatureDegree)); }
+  { return Teuchos::rcp(new ResponseEvaluatorFactory_IPCoordinates<T>(id)); }
 };
 
 }

@@ -58,7 +58,6 @@
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 
 namespace panzer
@@ -82,8 +81,9 @@ namespace panzer
     :
     evalStyle_(evalStyle),
     multiplier_(multiplier),
-    basisName_(basis.name()),
-    use_shared_memory(false)
+    use_shared_memory(false),
+    bd_(*basis.getBasis()),
+    id_(ir)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -187,7 +187,6 @@ namespace panzer
     PHX::FieldManager<Traits>& /* fm */)
   {
     using Kokkos::createDynRankView;
-    using panzer::getBasisIndex;
     using PHX::Device;
 
     // Get the Kokkos::Views of the field multipliers.
@@ -195,8 +194,6 @@ namespace panzer
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
     Device().fence();
 
-    // Determine the index in the Workset bases for our particular basis name.
-    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -388,7 +385,7 @@ namespace panzer
     using Kokkos::TeamPolicy;
 
     // Grab the basis information.
-    basis_ = this->wda(workset).bases[basisIndex_]->weighted_div_basis;
+    basis_ = workset(this->details_idx_).getBasisIntegrationValues(bd_, id_).weighted_div_basis;
 
     use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
 
@@ -405,13 +402,13 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.numCells()).set_scratch_size(0,Kokkos::PerTeam(bytes));
 	parallel_for(policy, *this, this->getName());
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.numCells()).set_scratch_size(0,Kokkos::PerTeam(bytes));
 	parallel_for(policy, *this, this->getName());
       } else {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.numCells()).set_scratch_size(0,Kokkos::PerTeam(bytes));
 	parallel_for(policy, *this, this->getName());
       }
     }
@@ -420,13 +417,13 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.numCells());
 	parallel_for(policy, *this, this->getName());
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.numCells());
 	parallel_for(policy, *this, this->getName());
       } else {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.numCells());
 	parallel_for(policy, *this, this->getName());
       }
     }

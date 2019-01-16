@@ -87,12 +87,13 @@ class Normals
     evaluateFields(
       typename Traits::EvalData d);
 
-  private:
+private:
 
     using ScalarT = typename EvalT::ScalarT;
 
   int side_id;
-  int quad_order, quad_index;
+
+  IntegrationDescriptor id_;
 
   std::size_t num_qp, num_dim;
 

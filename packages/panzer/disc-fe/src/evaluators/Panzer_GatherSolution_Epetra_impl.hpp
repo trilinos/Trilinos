@@ -98,6 +98,9 @@ GatherSolution_Epetra(
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
   globalDataKey_                   = input.getGlobalDataKey();
 
+  // Just to make sure things are lined up properly
+  TEUCHOS_ASSERT(names.size() == indexerNames_.size());
+
   // Allocate the fields.
   int numFields(names.size());
   gatherFields_.resize(numFields);
@@ -247,8 +250,8 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockID = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
 
   // NOTE:  A reordering of these loops will likely improve performance.  The
@@ -268,7 +271,7 @@ evaluateFields(
         MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
         int fieldNum(fieldIds_[fieldInd]);
         const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
+          globalIndexer_->getGIDFieldOffsets(blockID, fieldNum);
         int numBases(elmtOffset.size());
 
         // Loop over the basis functions and fill the fields.
@@ -294,7 +297,7 @@ evaluateFields(
         MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
         int fieldNum(fieldIds_[fieldInd]);
         const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
+          globalIndexer_->getGIDFieldOffsets(blockID, fieldNum);
         int numBases(elmtOffset.size());
 
         // Loop over the basis functions and fill the fields.
@@ -488,8 +491,8 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
 
   // NOTE:  A reordering of these loops will likely improve performance.  The
@@ -744,8 +747,8 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numFields(gatherFields_.size()), numCells(localCellIds.size());
 
   // Set a sensitivity seed value.
@@ -753,11 +756,11 @@ evaluateFields(
   if (applySensitivities_)
   {
     if ((useTimeDerivativeSolutionVector_) and (gatherSeedIndex_ < 0))
-      seedValue = workset.alpha;
+      seedValue = workset.template getDetails<WorksetFADDetails>("FAD").alpha;
     else if (gatherSeedIndex_ < 0)
-      seedValue = workset.beta;
+      seedValue = workset.template getDetails<WorksetFADDetails>("FAD").beta;
     else if (not useTimeDerivativeSolutionVector_)
-      seedValue = workset.gather_seeds[gatherSeedIndex_];
+      seedValue = workset.template getDetails<WorksetFADDetails>("FAD").gather_seeds[gatherSeedIndex_];
     else
       TEUCHOS_ASSERT(false)
   } // end if (applySensitivities_)
@@ -772,10 +775,10 @@ evaluateFields(
   // offset for the other element block must be shifted by the derivative side
   // of my element block.
   int dos(0);
-  if (this->wda.getDetailsIndex() == 1)
+  if (this->details_idx_ == 1)
   {
     // Get the DOF count for my element block.
-    dos = globalIndexer_->getElementBlockGIDCount(workset.details(0).block_id);
+    dos = globalIndexer_->getElementBlockGIDCount(workset(0).getElementBlock());
   } // end if (this->wda.getDetailsIndex() == 1)
 
   // NOTE:  A reordering of these loops will likely improve performance.  The
@@ -859,6 +862,7 @@ evaluateFields(
       } // end loop over localCellIds
     } // end loop over the fields to be gathered
   } // end if (applySensitivities_)
+
 } // end of evaluateFields() (Jacobian Specialization)
 
 #endif // __Panzer_GatherSolution_Epetra_impl_hpp__

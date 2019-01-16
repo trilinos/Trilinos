@@ -65,6 +65,7 @@
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupLOWSFactory.hpp"
@@ -92,7 +93,8 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,
-                          const Teuchos::ParameterList & user_data);
+                          const Teuchos::ParameterList & user_data,
+                          const int workset_size);
 
 void writeToExodus(double time_stamp,
                    const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
@@ -238,18 +240,6 @@ int main(int argc, char *argv[])
       mesh->setupExodusFile("output.exo");
     }
 
-    // build worksets
-    //////////////////////////////////////////////////////////////
-
-    // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer             // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++)
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -266,6 +256,14 @@ int main(int argc, char *argv[])
       dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
       linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
     }
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+
+    // build WorksetContainer
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     // build linear solver
     /////////////////////////////////////////////////////////////
@@ -288,14 +286,15 @@ int main(int argc, char *argv[])
                    cm_factory,
                    cm_factory,
                    closure_models_pl,
-                   user_data_pl,false,"");
+                   user_data_pl,
+                   workset_size,false,"");
 
     // setup a response library to write to the mesh
     /////////////////////////////////////////////////////////////
 
     RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
         = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
-                                    closure_models_pl,user_data_pl);
+                                    closure_models_pl,user_data_pl,workset_size);
 
 
     // setup the nonlinear solver
@@ -365,7 +364,8 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,
-                          const Teuchos::ParameterList & user_data)
+                          const Teuchos::ParameterList & user_data,
+                          const int workset_size)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -380,7 +380,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   panzer_stk::RespFactorySolnWriter_Builder builder;
   builder.mesh = mesh;
 
-  stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+  stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder,workset_size);
 
   std::map<std::string,std::vector<std::string> > nodalFields,cellFields;
 

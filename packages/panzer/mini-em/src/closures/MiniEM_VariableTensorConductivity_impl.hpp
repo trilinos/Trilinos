@@ -5,7 +5,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -27,12 +26,12 @@ VariableTensorConductivity<EvalT,Traits>::VariableTensorConductivity(const std::
                                                                      const double & betax2_,
                                                                      const double & betay2_,
                                                                      const double & betaz2_,
-                                                                     const std::string& DoF_)
+                                                                     const std::string& DoF_):
+  id_(ir)
 {
   using Teuchos::RCP;
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_tensor;
-  ir_degree = ir.cubature_degree;
   ir_dim = ir.spatial_dimension;
 
   conductivity = PHX::MDField<ScalarT,Cell,Point,Dim,Dim>(name, data_layout);
@@ -64,14 +63,6 @@ VariableTensorConductivity<EvalT,Traits>::VariableTensorConductivity(const std::
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void VariableTensorConductivity<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
-                                                                     PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
 void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   using panzer::index_t;
@@ -90,13 +81,15 @@ void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::E
   const double zl1 = 0.2;
   const double zr1 = 0.8;
 
+  const auto & ip_coordinates = workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates;
+
   if (ir_dim == 3) {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
 
-        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
-        const ScalarT& z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
+        const ScalarT& x = ip_coordinates(cell,point,0);
+        const ScalarT& y = ip_coordinates(cell,point,1);
+        const ScalarT& z = ip_coordinates(cell,point,2);
 
         if ((xl0<=x) && (x<=xr0) &&
             (yl0<=y) && (y<=yr0) &&
@@ -148,11 +141,11 @@ void VariableTensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::E
       }
     }
   } else {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
 
-        const ScalarT& x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-        const ScalarT& y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+        const ScalarT& x = ip_coordinates(cell,point,0);
+        const ScalarT& y = ip_coordinates(cell,point,1);
 
         if ((xl0<=x) && (x<=xr0) &&
             (yl0<=y) && (y<=yr0)) {

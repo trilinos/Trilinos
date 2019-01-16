@@ -62,23 +62,25 @@ namespace user_app {
   public:
     RythmosObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary,
                            const Teuchos::RCP<panzer::WorksetContainer> wkstContainer,
-                           bool useCoordinateUpdate)
+                           bool useCoordinateUpdate,
+                           const int workset_size)
        : stkIOResponseLibrary_(stkIOResponseLibrary)
        , wkstContainer_(wkstContainer)
-       , useCoordinateUpdate_(useCoordinateUpdate) 
+       , useCoordinateUpdate_(useCoordinateUpdate)
+       , workset_size_(workset_size)
     {}
 
     bool useNOXObserver() const { return false; }
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     buildRythmosObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			 const Teuchos::RCP<const panzer::GlobalIndexer> & dof_manager,
-			 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const
+                         const Teuchos::RCP<const panzer::GlobalIndexer> & dof_manager,
+                         const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
       // all done?
       if(!useCoordinateUpdate_) {
         Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> exodus_observer 
-            = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
+            = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_,workset_size_));
 
         return exodus_observer;
       }
@@ -89,7 +91,7 @@ namespace user_app {
 
       {
         Teuchos::RCP<user_app::RythmosObserver_WriteToExodus> observer 
-            = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
+            = Teuchos::rcp(new user_app::RythmosObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_,workset_size_));
         composite_observer->addObserver(observer);
       }
 
@@ -110,6 +112,9 @@ namespace user_app {
 
     //! Use the coordinate update observer?
     bool useCoordinateUpdate_;
+
+    // TODO: Response library requires this, at the moment
+    int workset_size_;
   };
 
 }

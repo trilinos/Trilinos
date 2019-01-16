@@ -56,11 +56,22 @@ class EvaluatorWithBaseImpl :
     public panzer::DomainEvaluator {
 
 public:
+
+  /// Default constructor
+  EvaluatorWithBaseImpl():
+    details_idx_(0)
+  {
+
+  }
+
+  /// Default destructor
+  virtual ~EvaluatorWithBaseImpl() = default;
+
   //! An evaluator builder sets the details index.
-  void setDetailsIndex(const int di) { wda.setDetailsIndex(di); }
+  void setDetailsIndex(const unsigned int di) { details_idx_ = di; }
   
 protected:
-  WorksetDetailsAccessor wda;
+  unsigned int details_idx_;
 };
 
 }

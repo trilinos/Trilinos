@@ -57,7 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
@@ -67,6 +67,7 @@ using Teuchos::rcp;
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -123,6 +124,10 @@ namespace panzer_stk {
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     Teuchos::ParameterList closure_models("Closure Models");
     Teuchos::ParameterList user_data("User Data");
+    const int workset_size = 3;
+
+    // Volume integrator would cause problems if the workset was constructed for side assembly
+    panzer::IntegrationDescriptor id(1,panzer::IntegrationDescriptor::VOLUME);
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh();
 
@@ -132,9 +137,8 @@ namespace panzer_stk {
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
 
     {
-      RCP<std::vector<panzer::Workset> > worksets
-        = wkstFactory->getWorksets(panzer::blockDescriptor("eblock-1_0"),
-                                   physics_blocks[0]->getWorksetNeeds());
+      // assume workset size is 3
+      auto worksets = wkstFactory->getWorksets(panzer::blockDescriptor("eblock-1_0",workset_size));
 
       TEST_ASSERT(worksets!=Teuchos::null);
       TEST_EQUALITY(worksets->size(),std::size_t(1.0+(16.0/tcomm->getSize())/3.0)); // elements in block by number of processors
@@ -142,44 +146,41 @@ namespace panzer_stk {
     }
 
     {
-      RCP<std::vector<panzer::Workset> > worksets
-         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),
-                                    physics_blocks[0]->getWorksetNeeds());
-
+      auto worksets = wkstFactory->getWorksets(panzer::sidesetCascadeDescriptor("eblock-0_0","left",workset_size));
 
       if(tcomm->getRank()==0) {
         TEST_ASSERT(worksets!=Teuchos::null);
         TEST_EQUALITY(worksets->size(),6);
 
-        TEST_EQUALITY((*worksets)[0].num_cells,3);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[0].subcell_index,0);
-        TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[0].numCells(),3);
+        TEST_EQUALITY((*worksets)[0].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[0].getSubcellIndex(),0);
+        TEST_NOTHROW((*worksets)[0].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[1].num_cells,1);
-        TEST_EQUALITY((*worksets)[1].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[1].subcell_index,0);
-        TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[1].numCells(),1);
+        TEST_EQUALITY((*worksets)[1].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[1].getSubcellIndex(),0);
+        TEST_NOTHROW((*worksets)[1].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[2].num_cells,3);
-        TEST_EQUALITY((*worksets)[2].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[2].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[2].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[2].numCells(),3);
+        TEST_EQUALITY((*worksets)[2].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[2].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[2].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[3].num_cells,1);
-        TEST_EQUALITY((*worksets)[3].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[3].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[3].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[3].numCells(),1);
+        TEST_EQUALITY((*worksets)[3].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[3].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[3].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[4].num_cells,3);
-        TEST_EQUALITY((*worksets)[4].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[4].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[4].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[4].numCells(),3);
+        TEST_EQUALITY((*worksets)[4].getSubcellDimension(),1);
+        TEST_EQUALITY((*worksets)[4].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[4].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[5].num_cells,1);
-        TEST_EQUALITY((*worksets)[5].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[5].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[5].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[5].numCells(),1);
+        TEST_EQUALITY((*worksets)[5].getSubcellDimension(),1);
+        TEST_EQUALITY((*worksets)[5].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[5].getIntegrationValues(id));
       }
       else {
         TEST_ASSERT(worksets!=Teuchos::null);
@@ -202,18 +203,20 @@ namespace panzer_stk {
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
     Teuchos::ParameterList closure_models("Closure Models");
     Teuchos::ParameterList user_data("User Data");
+    const int workset_size = 3;
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(true);
 
     RCP<panzer::WorksetFactoryBase> wkstFactory
        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
 
+    // Volume integrator would cause problems if the workset was constructed for side assembly
+    panzer::IntegrationDescriptor id(1,panzer::IntegrationDescriptor::VOLUME);
+
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
 
     {
-      RCP<std::vector<panzer::Workset> > worksets
-         = wkstFactory->getWorksets(panzer::sidesetVolumeDescriptor("eblock-0_0","left"),
-                                    physics_blocks[0]->getWorksetNeeds());
+      auto worksets = wkstFactory->getWorksets(panzer::sidesetCascadeDescriptor("eblock-0_0","left", workset_size));
 
 
       if(tcomm->getRank()==0) {
@@ -221,44 +224,39 @@ namespace panzer_stk {
         TEST_EQUALITY(worksets->size(),3);
 
 
-        TEST_EQUALITY((*worksets)[0].num_cells,2);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[0].subcell_index,0);
-        TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[0].numCells(),2);
+        TEST_EQUALITY((*worksets)[0].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[0].getSubcellIndex(),0);
+        TEST_NOTHROW((*worksets)[0].getIntegrationValues(id));
 
-        panzer::Workset & current = (*worksets)[0];
-        for(panzer::index_t i=0;i<current.num_cells;i++) {
-          out << "Cell ID =  " << current.cell_local_ids[i] << std::endl;
-        }
+        TEST_EQUALITY((*worksets)[1].numCells(),2);
+        TEST_EQUALITY((*worksets)[1].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[1].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[1].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[1].num_cells,2);
-        TEST_EQUALITY((*worksets)[1].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[1].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
-
-        TEST_EQUALITY((*worksets)[2].num_cells,2);
-        TEST_EQUALITY((*worksets)[2].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[2].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[2].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[2].numCells(),2);
+        TEST_EQUALITY((*worksets)[2].getSubcellDimension(),1);
+        TEST_EQUALITY((*worksets)[2].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[2].getIntegrationValues(id));
       }
       else {
         TEST_ASSERT(worksets!=Teuchos::null);
         TEST_EQUALITY(worksets->size(),3);
 
-        TEST_EQUALITY((*worksets)[0].num_cells,2);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[0].subcell_index,0);
-        TEST_ASSERT(!(*worksets)[0].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[0].numCells(),2);
+        TEST_EQUALITY((*worksets)[0].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[0].getSubcellIndex(),0);
+        TEST_NOTHROW((*worksets)[0].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[1].num_cells,2);
-        TEST_EQUALITY((*worksets)[1].subcell_dim,0);
-        TEST_EQUALITY((*worksets)[1].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[1].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[1].numCells(),2);
+        TEST_EQUALITY((*worksets)[1].getSubcellDimension(),0);
+        TEST_EQUALITY((*worksets)[1].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[1].getIntegrationValues(id));
 
-        TEST_EQUALITY((*worksets)[2].num_cells,2);
-        TEST_EQUALITY((*worksets)[2].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[2].subcell_index,3);
-        TEST_ASSERT(!(*worksets)[2].int_rules[0]->int_rule->isSide());
+        TEST_EQUALITY((*worksets)[2].numCells(),2);
+        TEST_EQUALITY((*worksets)[2].getSubcellDimension(),1);
+        TEST_EQUALITY((*worksets)[2].getSubcellIndex(),3);
+        TEST_NOTHROW((*worksets)[2].getIntegrationValues(id));
       }
 
     }
@@ -284,9 +282,9 @@ namespace panzer_stk {
 
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
-    std::vector<panzer::WorksetDescriptor> blocks;
-    blocks.push_back(panzer::WorksetDescriptor("eblock-1_0","right",true));
-    rLibrary->addResponse("FIELD_A",blocks,builder);
+    std::vector<panzer::WorksetDescriptor> sidesets;
+    sidesets.push_back(panzer::sidesetCascadeDescriptor("eblock-1_0","right"));
+    rLibrary->addResponse("FIELD_A",sidesets,builder);
 
     Teuchos::RCP<panzer::ResponseBase> aResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
 
@@ -321,9 +319,9 @@ namespace panzer_stk {
     TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
 
     rLibrary->buildResponseEvaluators(physics_blocks,
-  				      cm_factory,
+                                      cm_factory,
                                       closure_models,
-  				      user_data,true);
+                                      user_data,true);
 
     TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
 
@@ -473,29 +471,29 @@ namespace panzer_stk {
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     {
-       testInitialzation(ipb, bcs);
+      testInitialzation(ipb, bcs);
 
-       std::map<std::string,std::string> block_ids_to_physics_ids;
-       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
 
-       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
-       block_ids_to_cell_topo["eblock-0_0"] = mesh.getCellTopology("eblock-0_0");
-       block_ids_to_cell_topo["eblock-1_0"] = mesh.getCellTopology("eblock-1_0");
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh.getCellTopology("eblock-0_0");
+      block_ids_to_cell_topo["eblock-1_0"] = mesh.getCellTopology("eblock-1_0");
 
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
 
-       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
-                                  block_ids_to_cell_topo,
-				  ipb,
-				  default_integration_order,
-				  workset_size,
-                                  eqset_factory,
-				  gd,
-		    	          false,
-                                  physics_blocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
+                                 eqset_factory,
+                                 gd,
+                                 false,
+                                 physics_blocks);
     }
   }
 
@@ -520,15 +518,15 @@ namespace panzer_stk {
     /////////////////////////////////////////////
     RCP<panzer_stk::STK_Interface> mesh;
     {
-       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-       pl->set("X Procs",1);
-       pl->set("Y Procs",2);
-       pl->set("X Blocks",2);
-       pl->set("Y Blocks",1);
-       pl->set("X Elements",4);
-       pl->set("Y Elements",4);
-       mesh_factory.setParameterList(pl);
-       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+      pl->set("X Procs",1);
+      pl->set("Y Procs",2);
+      pl->set("X Blocks",2);
+      pl->set("Y Blocks",1);
+      pl->set("X Elements",4);
+      pl->set("Y Elements",4);
+      mesh_factory.setParameterList(pl);
+      mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
 
     // setup physic blocks
@@ -536,46 +534,30 @@ namespace panzer_stk {
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     {
-       testInitialzation(ipb, bcs);
+      testInitialzation(ipb, bcs);
 
-       std::map<std::string,std::string> block_ids_to_physics_ids;
-       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
 
-       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
-       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
 
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
 
-       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
-                                  block_ids_to_cell_topo,
-				  ipb,
-				  default_integration_order,
-				  workset_size,
-                                  eqset_factory,
-				  gd,
-		    	          false,
-                                  physics_blocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
+                                 eqset_factory,
+                                 gd,
+                                 false,
+                                 physics_blocks);
     }
-
-    // setup worksets
-    /////////////////////////////////////////////
-
-     std::vector<std::string> validEBlocks;
-     mesh->getElementBlockNames(validEBlocks);
-
-    // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++)
-      wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
 
     // setup DOF manager
     /////////////////////////////////////////////
@@ -592,6 +574,18 @@ namespace panzer_stk {
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tcomm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
+
+
+    // setup worksets
+    /////////////////////////////////////////////
+
+     std::vector<std::string> validEBlocks;
+     mesh->getElementBlockNames(validEBlocks);
+
+    // build WorksetContainer
+     auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+     wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+     auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     // setup field manager builder
     /////////////////////////////////////////////

@@ -5,7 +5,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace user_app {
 
@@ -16,7 +15,7 @@ LinearFunction<EvalT,Traits>::LinearFunction(const std::string & name,
                                              const panzer::IntegrationRule & ir)
   : acoeff_(acoeff) 
   , bcoeff_(bcoeff) 
-  , ir_degree_(ir.cubature_degree)
+  , id_(ir)
 {
   using Teuchos::RCP;
 
@@ -30,21 +29,14 @@ LinearFunction<EvalT,Traits>::LinearFunction(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void LinearFunction<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                          PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index_ = panzer::getIntegrationRuleIndex(ir_degree_,(*sd.worksets_)[0]);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
 void LinearFunction<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
-  for (panzer::index_t cell = 0; cell < workset.num_cells; ++cell) {
+{
+  const auto & ip_coordinates = workset.getIntegrationValues(id_).ip_coordinates;
+  for (panzer::index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int point = 0; point < result.extent_int(1); ++point) {
 
-      const double& x = workset.int_rules[ir_index_]->ip_coordinates(cell,point,0);
-      const double& y = workset.int_rules[ir_index_]->ip_coordinates(cell,point,1);
+      const double& x = ip_coordinates(cell,point,0);
+      const double& y = ip_coordinates(cell,point,1);
 
       result(cell,point) = acoeff_*x + acoeff_*y + bcoeff_;
     }

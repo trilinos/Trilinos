@@ -57,7 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
@@ -67,6 +67,7 @@ using Teuchos::rcp;
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -141,6 +142,7 @@ namespace panzer {
     ///////////////////////////////////////////////////
 
     out << "Adding responses" << std::endl;
+    const int workset_size = 20;
 
     std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
@@ -149,10 +151,10 @@ namespace panzer {
 
     RespFactoryFunc_Builder builder;
     builder.comm = MPI_COMM_WORLD;
-    std::vector<std::string> blocks(1);
-    blocks[0] = "eblock-0_0";
+    std::vector<panzer::WorksetDescriptor> blocks(1);
+    blocks[0] = panzer::blockDescriptor("eblock-0_0", workset_size);
     rLibrary->addResponse("FIELD_A",blocks,builder);
-    blocks[0] = "eblock-1_0";
+    blocks[0] = panzer::blockDescriptor("eblock-1_0", workset_size);
     rLibrary->addResponse("FIELD_B",blocks,builder);
 
     Teuchos::RCP<ResponseBase> tResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
@@ -245,6 +247,7 @@ namespace panzer {
     ///////////////////////////////////////////////////
 
     out << "Adding responses" << std::endl;
+    const int workset_size = 20;
 
     std::pair< RCP<ResponseLibrary<Traits> >, RCP<panzer::LinearObjFactory<panzer::Traits> > > data
           = buildResponseLibrary(physics_blocks,cm_factory,closure_models,user_data);
@@ -257,16 +260,20 @@ namespace panzer {
     builder.comm = MPI_COMM_WORLD;
     builder.linearObjFactory = lof;
     builder.globalIndexer = globalIndexer;
-    std::vector<std::string> blocks(1);
-    blocks[0] = "eblock-0_0";
+    std::vector<panzer::WorksetDescriptor> blocks(1);
+    blocks[0] = panzer::blockDescriptor("eblock-0_0", workset_size);
     rLibrary->addResponse("FIELD_A",blocks,builder);
 
     builder.linearObjFactory = Teuchos::null;
     builder.globalIndexer = Teuchos::null;
-    std::vector<std::pair<std::string,std::string> > sidesets;
-    sidesets.push_back(std::make_pair("bottom","eblock-0_0")); // 0.5
-    sidesets.push_back(std::make_pair("top","eblock-0_0"));    // 0.5
-    sidesets.push_back(std::make_pair("right","eblock-1_0"));    // 1.0
+    std::vector<panzer::WorksetDescriptor> sidesets;
+    sidesets.push_back(panzer::sidesetDescriptor("eblock-0_0", "bottom")); // 0.5
+    sidesets.push_back(panzer::sidesetDescriptor("eblock-0_0", "top"));    // 0.5
+    sidesets.push_back(panzer::sidesetDescriptor("eblock-1_0", "right"));  // 1.0
+//    std::vector<std::pair<std::string,std::string> > sidesets;
+//    sidesets.push_back(std::make_pair("bottom","eblock-0_0")); // 0.5
+//    sidesets.push_back(std::make_pair("top","eblock-0_0"));    // 0.5
+//    sidesets.push_back(std::make_pair("right","eblock-1_0"));    // 1.0
     rLibrary->addResponse("FIELD_B",sidesets,builder);
 
     Teuchos::RCP<ResponseBase> blkResp = rLibrary->getResponse<panzer::Traits::Residual>("FIELD_A");
@@ -293,9 +300,9 @@ namespace panzer {
     }
 
     rLibrary->buildResponseEvaluators(physics_blocks,
-  				      cm_factory,
+                                      cm_factory,
                                       closure_models,
-  				      user_data,true);
+                                      user_data,true);
 
     TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
 
@@ -432,29 +439,30 @@ namespace panzer {
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
     {
-       testInitialzation(ipb, bcs);
+      testInitialzation(ipb, bcs);
 
-       std::map<std::string,std::string> block_ids_to_physics_ids;
-       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
 
-       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
-       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
 
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
 
-       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
-                                  block_ids_to_cell_topo,
-				  ipb,
-				  default_integration_order,
-				  workset_size,
-                                  eqset_factory,
-				  gd,
-		    	          false,
-                                  physics_blocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
+                                 eqset_factory,
+                                 gd,
+                                 false,
+                                 physics_blocks);
+
     }
 
     // setup worksets
@@ -462,16 +470,6 @@ namespace panzer {
 
      std::vector<std::string> validEBlocks;
      mesh->getElementBlockNames(validEBlocks);
-
-    // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++)
-      wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
 
     // setup DOF manager
     /////////////////////////////////////////////
@@ -489,6 +487,12 @@ namespace panzer {
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     // setup field manager builder
     /////////////////////////////////////////////

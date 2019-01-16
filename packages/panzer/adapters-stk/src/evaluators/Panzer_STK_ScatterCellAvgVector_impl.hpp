@@ -119,8 +119,9 @@ evaluateFields(
   panzer::MDFieldArrayFactory af("",true);
 
   // for convenience pull out some objects from workset
-  const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
-  std::string blockId = this->wda(workset).block_id;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
+
   std::string d_mod[3] = {"X","Y","Z"};
    
   // loop over the number of vector fields requested for exodus output

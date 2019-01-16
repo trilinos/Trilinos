@@ -40,49 +40,43 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_SetupPartitionedWorksetUtilities.hpp"
+#ifndef PANZER_ORIENTATIONS_INTERFACE_HPP
+#define PANZER_ORIENTATIONS_INTERFACE_HPP
 
-#include "Panzer_LocalPartitioningUtilities.hpp"
-#include "Panzer_Workset.hpp"
-#include "Panzer_WorksetNeeds.hpp"
-#include "Panzer_WorksetDescriptor.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Intrepid2_Orientation.hpp"
 
-namespace panzer
+namespace panzer {
+
+class GlobalIndexer;
+
+class OrientationsInterface
 {
+public:
 
-namespace
-{
-  void
-  convertMeshPartitionToWorkset(const panzer::LocalMeshPartition & partition,
-                                const panzer::WorksetNeeds & needs,
-                                panzer::Workset & workset)
-  {
-    workset.setup(partition, needs);
-    workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
-    workset.subcell_dim = -1;
-  } 
+  /// Block default constructor
+  OrientationsInterface() = delete;
+
+  /**
+   * \brief Build the orientations from a global indexer
+   *
+   * \param[in] indexer Indexer containing connectivity information
+   */
+  OrientationsInterface(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer);
+  
+  /**
+   * Get the orientations associated with this interface
+   */
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> >
+  getOrientations() const;
+
+protected:
+
+  /// Orientations
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation>> orientations_;
+
+};
+
 }
 
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildPartitionedWorksets(const panzer::LocalMeshInfo & mesh_info,
-                         const panzer::WorksetDescriptor & description,
-                         const panzer::WorksetNeeds & needs)
-{
-  Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
-
-  // Make sure it makes sense to partition
-  TEUCHOS_ASSERT(description.requiresPartitioning());
-
-  // Each partition represents a chunk of the mesh
-  std::vector<panzer::LocalMeshPartition> partitions;
-  panzer::generateLocalMeshPartitions(mesh_info, description, partitions);
-
-  for(const auto & partition : partitions){
-    worksets->push_back(panzer::Workset());
-    convertMeshPartitionToWorkset(partition, needs, worksets->back());
-  }
-
-  return worksets;
-}
-
-}
+#endif

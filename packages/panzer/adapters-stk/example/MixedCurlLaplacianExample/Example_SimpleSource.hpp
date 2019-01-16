@@ -51,6 +51,7 @@
 #include "Phalanx_FieldManager.hpp"
 
 #include "Panzer_Dimension.hpp"
+#include "Panzer_IntegrationDescriptor.hpp"
 #include "Panzer_FieldLibrary.hpp"
 
 #include <string>
@@ -67,24 +68,20 @@ namespace Example {
   */
 template<typename EvalT, typename Traits>
 class SimpleSource : public panzer::EvaluatorWithBaseImpl<Traits>,
-                        public PHX::EvaluatorDerived<EvalT, Traits>  {
+                     public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:
-    SimpleSource(const std::string & name,
-                       const panzer::IntegrationRule & ir);
-                                                                        
-    void postRegistrationSetup(typename Traits::SetupData d,           
-                               PHX::FieldManager<Traits>& fm);        
-                                                                     
-    void evaluateFields(typename Traits::EvalData d);               
+  SimpleSource(const std::string & name,
+               const panzer::IntegrationRule & ir);
 
+  void evaluateFields(typename Traits::EvalData d);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
   // Simulation source
   PHX::MDField<ScalarT,Cell,Point,Dim> source;
-  int ir_degree, ir_index;
+  panzer::IntegrationDescriptor id_;
 };
 
 }

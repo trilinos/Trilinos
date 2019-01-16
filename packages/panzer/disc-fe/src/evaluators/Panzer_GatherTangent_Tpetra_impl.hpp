@@ -151,8 +151,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
   // for convenience pull out some objects from workset
-  std::string blockId = this->wda(workset).block_id;
-  const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
   Teuchos::RCP<typename LOC::VectorType> x;
   if (useTimeDerivativeSolutionVector_)

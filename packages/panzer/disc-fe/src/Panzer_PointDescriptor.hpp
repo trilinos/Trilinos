@@ -60,8 +60,8 @@ class PointDescriptor
 {
 public:
 
-  /// Default constructor, no version
-  PointDescriptor() = delete;
+  /// Default constructor
+  PointDescriptor();
  
   /** \brief Constructor for the point descriptor. 
     *
@@ -69,17 +69,29 @@ public:
     *                 used to generate unique hashes
     * \param[in] generator PointGenerator object for the points.
     */
-  PointDescriptor(const std::string & type,const Teuchos::RCP<PointGenerator> & generator);
+  PointDescriptor(const std::string & type,const Teuchos::RCP<PointGenerator> & generator = Teuchos::null);
 
   /// Destructor
   virtual ~PointDescriptor() = default;
+
+  /** Set the point generator
+   *
+   * \return True if generator is set
+   */
+  bool setGenerator(const Teuchos::RCP<PointGenerator> & generator);
+
+  /** Check if descriptor has a generator
+   *
+   * \return True if generator is set
+   */
+  bool hasGenerator() const;
 
   /** Build a generator class that generates any reference points on 
     * a specified topology.
     *
     * \param[in] The cell topology to build the coordinates on
     */
-  const PointGenerator & getGenerator() const { return *_generator; }
+  const PointGenerator & getGenerator() const;
 
   /** \brief Get unique string associated with the type of point
    *         descriptor. This will be used generate a hash

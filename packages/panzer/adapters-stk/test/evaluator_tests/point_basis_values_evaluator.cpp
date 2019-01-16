@@ -55,7 +55,6 @@ using Teuchos::rcp;
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PointValues_Evaluator.hpp"
 #include "Panzer_BasisValues_Evaluator.hpp"
 #include "Panzer_DOF.hpp"
@@ -65,6 +64,9 @@ using Teuchos::rcp;
 #include "Panzer_BasisValues2.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Panzer_PhysicsBlock.hpp"
+#include "Panzer_WorksetUtilities.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -73,6 +75,8 @@ using Teuchos::rcp;
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
+#include "Panzer_OrientationsInterface.hpp"
+#include "Panzer_STK_LocalMeshUtilities.hpp"
 
 #include "RandomFieldEvaluator.hpp"
 
@@ -106,7 +110,7 @@ namespace panzer {
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(2,2);
 
     // build input physics block
-    Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"Q1");
+    Teuchos::RCP<panzer::PureBasis> basis_q1 = buildBasis(workset_size,"HGrad");
     panzer::CellData cell_data(workset_size, mesh->getCellTopology("eblock-0_0"));
 
     const int integration_order = 1;
@@ -120,13 +124,16 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cell_data,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds());
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
+    auto work_sets = panzer::buildWorksets(mesh_info, panzer::blockDescriptor(physicsBlock->elementBlockID(), workset_size));
+
     TEST_EQUALITY(work_sets->size(),1);
 
     int num_points = 3;
     RCP<const panzer::PointRule> point_rule = rcp(new panzer::PointRule("RandomPoints",num_points, cell_data));
-    RCP<const panzer::PointRule> point_rule_basis = rcp(new panzer::PointRule("BasisPoints",basis_q1->cardinality(), cell_data));
+    RCP<const panzer::PointRule> point_rule_basis = rcp(new panzer::PointRule(basis_q1->getPointDescriptor(), cell_data.getCellTopology(), cell_data.numCells()));
+    //RCP<const panzer::PointRule> point_rule_basis = rcp(new panzer::PointRule("BasisPoints",basis_q1->cardinality(), cell_data));
 
     Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray
       = Teuchos::rcp(new Kokkos::DynRankView<double,PHX::Device>("userArray",num_points,2));
@@ -176,11 +183,10 @@ namespace panzer {
     // run tests
     /////////////////////////////////////////////////////////////
 
-    panzer::Workset & workset = (*work_sets)[0];
-    workset.alpha = 0.0;
-    workset.beta = 0.0;
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    TEUCHOS_ASSERT(work_sets->size() > 0);
+    auto & workset = (*work_sets)[0];
+    workset.setDetails("FAD",Teuchos::rcp(new WorksetFADDetails));
+    workset.setDetails("Stepper", Teuchos::rcp(new WorksetStepperDetails));
 
     std::vector<PHX::index_size_type> derivative_dimensions;
     derivative_dimensions.push_back(8);
@@ -215,16 +221,19 @@ namespace panzer {
     for(int c=0;c<basis_q1->numCells();c++) {
        double dx = 0.5;
        double dy = 0.5;
+//       TEUCHOS_ASSERT(false);
+       const auto cell_vertices = workset.getCellVertices();
+       const auto basis_ref_coordinates = workset.getBasisValues(*basis_q1).basis_coordinates_ref;
        for(int p=0;p<num_points;p++) {
-          double x = dx*(point_coordinates(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0);
-          double y = dy*(point_coordinates(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
+          double x = dx*(point_coordinates(p,0)+1.0)/2.0 + cell_vertices(c,0,0);
+          double y = dy*(point_coordinates(p,1)+1.0)/2.0 + cell_vertices(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords(c,p,1),y,1e-10);
        }
 
        for(int p=0;p<basis_q1->cardinality();p++) {
-          double x = dx*(workset.bases[1]->basis_coordinates_ref(p,0)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,0);
-          double y = dy*(workset.bases[1]->basis_coordinates_ref(p,1)+1.0)/2.0 + workset.cell_vertex_coordinates(c,0,1);
+          double x = dx*(basis_ref_coordinates(p,0)+1.0)/2.0 + workset.getCellVertices()(c,0,0);
+          double y = dy*(basis_ref_coordinates(p,1)+1.0)/2.0 + workset.getCellVertices()(c,0,1);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,0),x,1e-10);
           TEST_FLOATING_EQUALITY(point_coords_basis(c,p,1),y,1e-10);
        }
@@ -273,15 +282,17 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds());
-    panzer::Workset & workset = (*work_sets)[0];
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
+    auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID(), workset_size));
+
     TEST_EQUALITY(work_sets->size(),1);
+    panzer::Workset & workset = (*work_sets)[0];
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
     panzer::IntegrationValues2<double> int_values("",true);
     int_values.setupArrays(point_rule);
-    int_values.evaluateValues(workset.cell_vertex_coordinates);
+    int_values.evaluateValues(workset.getCellVertices());
 
     // Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
     auto userArray = int_values.cub_points;
@@ -321,10 +332,8 @@ namespace panzer {
     // run tests
     /////////////////////////////////////////////////////////////
 
-    workset.alpha = 0.0;
-    workset.beta = 0.0;
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    workset.setDetails("FAD",Teuchos::rcp(new WorksetFADDetails));
+    workset.setDetails("Stepper", Teuchos::rcp(new WorksetStepperDetails));
 
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
@@ -333,15 +342,12 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Jacobian>(basis);
     out << basis << std::endl;
 
-    WorksetDetailsAccessor wda;
-    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset, wda);
-    Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
-    TEST_ASSERT(bases!=Teuchos::null);
+    const auto & basis1 = workset.getBasisPointValues(*basis_q1,*point_rule);
     // TEST_EQUALITY(bases->basis.size(),basis.size());
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        for(unsigned int k=0;k<bases->basis_scalar.extent(2);k++) {
-          TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis(i,j,k),1e-10);
+        for(unsigned int k=0;k<basis1.basis_scalar.extent(2);k++) {
+          TEST_FLOATING_EQUALITY(basis1.basis_scalar(i,j,k),basis(i,j,k),1e-10);
         }
       }
     }
@@ -371,9 +377,6 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,integration_order,cellData,eqset_factory,gd,false));
 
-    std::map<std::string,WorksetNeeds> needs;
-    needs[physicsBlock->elementBlockID()] = physicsBlock->getWorksetNeeds();
-
     // build DOF Manager (with a single HDiv basis)
     /////////////////////////////////////////////////////////////
 
@@ -397,22 +400,19 @@ namespace panzer {
     dof_manager->buildGlobalUnknowns();
 
     /////////////////////////////////////////////////////////////
+    
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer(wkstFactory,needs));
-    wkstContainer->setGlobalIndexer(dof_manager);
-    wkstContainer->setWorksetSize(workset_size);
-
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer->getWorksets(blockDescriptor(physicsBlock->elementBlockID()));
-    panzer::Workset & workset = (*work_sets)[0];
-    TEST_EQUALITY(work_sets->size(),1);
+    auto worksets = wkstContainer->getWorksets(WorksetDescriptor(physicsBlock->elementBlockID(), workset_size));
+    TEST_EQUALITY(worksets->size(),1);
+    panzer::Workset & workset = (*worksets)[0];
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
     panzer::IntegrationValues2<double> int_values("",true);
     int_values.setupArrays(point_rule);
-    int_values.evaluateValues(workset.cell_vertex_coordinates);
+    int_values.evaluateValues(workset.getCellVertices());
 
     // Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
     auto userArray = int_values.cub_points;
@@ -458,17 +458,15 @@ namespace panzer {
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
     panzer::Traits::SD sd;
-    sd.orientations_ = wkstContainer->getOrientations();
+    sd.orientations_ = wkstFactory->getOrientationsInterface()->getOrientations();
     fm.postRegistrationSetup(sd);
     fm.print(out);
 
     // run tests
     /////////////////////////////////////////////////////////////
 
-    workset.alpha = 0.0;
-    workset.beta = 0.0;
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    workset.setDetails("FAD",Teuchos::rcp(new WorksetFADDetails));
+    workset.setDetails("Stepper", Teuchos::rcp(new WorksetStepperDetails));
 
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
@@ -484,18 +482,15 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Residual::ScalarT,Cell,BASIS,IP>(curl_basis);
     fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim>(jac_inv);
 
-    WorksetDetailsAccessor wda;
-    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset, wda);
-    Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
-    TEST_ASSERT(bases!=Teuchos::null);
-    TEST_EQUALITY(bases->basis_vector.size(),basis.size());
-    TEST_EQUALITY(bases->curl_basis_scalar.size(),curl_basis.size());
+    const auto & bases = workset.getBasisIntegrationValues(*basis_edge, *point_rule);
+    TEST_EQUALITY(bases.basis_vector.size(),basis.size());
+    TEST_EQUALITY(bases.curl_basis_scalar.size(),curl_basis.size());
 
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
-          for(unsigned int d=0;d<bases->basis_vector.extent(3);d++) {
-            TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis(i,j,k,d),1e-10);
+        for(unsigned int k=0;k<bases.curl_basis_scalar.extent(2);k++) {
+          for(unsigned int d=0;d<bases.basis_vector.extent(3);d++) {
+            TEST_FLOATING_EQUALITY(bases.basis_vector(i,j,k,d),basis(i,j,k,d),1e-10);
           }
         }
       }
@@ -503,8 +498,8 @@ namespace panzer {
 
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
-        for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
-          TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis(i,j,k),1e-10);
+        for(unsigned int k=0;k<bases.curl_basis_scalar.extent(2);k++) {
+          TEST_FLOATING_EQUALITY(bases.curl_basis_scalar(i,j,k),curl_basis(i,j,k),1e-10);
         }
       }
     }
@@ -536,9 +531,6 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock =
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    std::map<std::string,WorksetNeeds> needs;
-    needs[physicsBlock->elementBlockID()] = physicsBlock->getWorksetNeeds();
-
     // build DOF Manager (with a single HDiv basis)
     /////////////////////////////////////////////////////////////
 
@@ -568,16 +560,11 @@ namespace panzer {
 
     /////////////////////////////////////////////////////////////
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer(wkstFactory,needs));
-    wkstContainer->setGlobalIndexer(dof_manager);
-    wkstContainer->setWorksetSize(workset_size);
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
-    // Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-    //                                                                                         physicsBlock->getWorksetNeeds());
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer->getWorksets(blockDescriptor(physicsBlock->elementBlockID()));
+    auto work_sets = wkstContainer->getWorksets(WorksetDescriptor(physicsBlock->elementBlockID(), workset_size));
     panzer::Workset & workset = (*work_sets)[0];
 
     TEST_EQUALITY(work_sets->size(),1);
@@ -585,7 +572,7 @@ namespace panzer {
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
     panzer::IntegrationValues2<double> int_values("",true);
     int_values.setupArrays(point_rule);
-    int_values.evaluateValues(workset.cell_vertex_coordinates);
+    int_values.evaluateValues(workset.getCellVertices());
 
     // Teuchos::RCP<Kokkos::DynRankView<double,PHX::Device> > userArray = Teuchos::rcpFromRef(int_values.cub_points);
     auto userArray = int_values.cub_points;
@@ -638,7 +625,7 @@ namespace panzer {
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
     panzer::Traits::SD sd;
-    sd.orientations_ = wkstContainer->getOrientations();
+    sd.orientations_ = wkstFactory->getOrientationsInterface()->getOrientations();
     sd.worksets_ = work_sets;
     fm.postRegistrationSetup(sd);
     fm.print(out);
@@ -646,10 +633,8 @@ namespace panzer {
     // run tests
     /////////////////////////////////////////////////////////////
 
-    workset.alpha = 0.0;
-    workset.beta = 0.0;
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    workset.setDetails("FAD",Teuchos::rcp(new WorksetFADDetails));
+    workset.setDetails("Stepper", Teuchos::rcp(new WorksetStepperDetails));
 
     panzer::Traits::PED ped;
     fm.preEvaluate<panzer::Traits::Jacobian>(ped);
@@ -686,9 +671,9 @@ namespace panzer {
      Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
-     const panzer::CellData cell_data(workset_size, topo);
+     IntegrationDescriptor id(cubature_degree, IntegrationDescriptor::VOLUME);
 
-     return Teuchos::rcp(new panzer::IntegrationRule(cubature_degree, cell_data));
+     return Teuchos::rcp(new panzer::IntegrationRule(id, topo, workset_size));
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY)

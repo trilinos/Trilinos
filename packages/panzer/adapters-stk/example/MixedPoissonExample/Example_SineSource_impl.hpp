@@ -47,7 +47,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 
 namespace Example {
@@ -55,12 +54,12 @@ namespace Example {
 //**********************************************************************
 template <typename EvalT,typename Traits>
 SineSource<EvalT,Traits>::SineSource(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
+                                         const panzer::IntegrationRule & ir):
+  id_(ir)
 {
   using Teuchos::RCP;
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
-  ir_degree = ir.cubature_degree;
 
   source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
@@ -68,14 +67,6 @@ SineSource<EvalT,Traits>::SineSource(const std::string & name,
 
   std::string n = "Sine Source";
   this->setName(n);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
-void SineSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,
-                                                       PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -107,9 +98,9 @@ template <typename EvalT,typename Traits>
 void SineSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   Example::SineSourceFunctor<ScalarT> ssf(source.get_static_view(),
-					  this->wda(workset).int_rules[ir_index]->ip_coordinates.get_static_view());
+					  workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates.get_static_view());
 
-  auto policy = panzer::HP::inst().teamPolicy<ScalarT>(workset.num_cells);
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT>(workset.numCells());
 
   Kokkos::parallel_for(policy,ssf,"MixedPoisson SineSource");
 }

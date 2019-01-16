@@ -96,8 +96,9 @@ class Integrator_Scalar
 
   std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
 
+  IntegrationDescriptor id_;
+
   std::size_t num_qp;
-  std::size_t quad_index;
   int quad_order;
 
   double multiplier;

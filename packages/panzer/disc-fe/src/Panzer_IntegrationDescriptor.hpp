@@ -48,6 +48,8 @@
 
 namespace panzer {
 
+class PointDescriptor;
+
 class IntegrationDescriptor
 {
 public:
@@ -105,6 +107,12 @@ public:
    * \return Unique basis key
    */
   std::size_t getKey() const {return _key;}
+
+  /** \brief Build a point descriptor that builds reference points for
+   *  the volume integration.
+   *
+   */
+  PointDescriptor getPointDescriptor() const;
 
 protected:
 

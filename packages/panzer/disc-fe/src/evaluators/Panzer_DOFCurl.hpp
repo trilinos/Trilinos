@@ -118,7 +118,6 @@ private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
 
-  bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
 
@@ -130,8 +129,6 @@ private:
   Kokkos::View<const int*,PHX::Device> offsets_array;
   std::vector<int> offsets;
 
-  std::string basis_name;
-  std::size_t basis_index;
   int basis_dimension;
 
   bool accelerate_jacobian;

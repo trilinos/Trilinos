@@ -58,12 +58,21 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_descriptor, construction)
   {
-    TEST_THROW(PointDescriptor("none",Teuchos::null),std::logic_error);
+    {
+      PointDescriptor pd("None");
+      TEST_ASSERT(not pd.hasGenerator());
+    }
+    {
+      PointDescriptor pd("none",Teuchos::null);
+      TEST_ASSERT(not pd.hasGenerator());
+    }
 
     BasisDescriptor desc_a(4,"HDiv");
     BasisDescriptor desc_b(2,"HGrad");
     PointDescriptor pd_a = desc_a.getPointDescriptor();
+    TEST_ASSERT(pd_a.hasGenerator());
     PointDescriptor pd_b = desc_b.getPointDescriptor();
+    TEST_ASSERT(pd_a.hasGenerator());
 
     TEST_ASSERT(pd_a.getType()!=pd_b.getType());
     TEST_ASSERT(pd_a.getKey()!=pd_b.getKey());

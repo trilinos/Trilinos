@@ -52,7 +52,6 @@
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace panzer
 {
@@ -72,8 +71,10 @@ namespace panzer
     const std::string&              tensorName)
     :
     evalStyle_(evalStyle),
-    useDescriptors_(false),
-    basisName_(basis.name())
+    bd_(*basis.getBasis()),
+    id_(ir),
+    numDim_(0),
+    numQP_(0)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -144,9 +145,10 @@ namespace panzer
     const PHX::FieldTag&                                  tensorTag)
     :
     evalStyle_(evalStyle),
-    useDescriptors_(true),
     bd_(bd),
-    id_(id)
+    id_(id),
+    numDim_(0),
+    numQP_(0)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -231,7 +233,6 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& /* fm */)
   {
-    using panzer::getBasisIndex;
     using std::size_t;
 
     // Get the Kokkos::View of the tensor.
@@ -242,9 +243,6 @@ namespace panzer
     numQP_  = vector_.extent(1);
     numDim_ = vector_.extent(2);
 
-    // Determine the index in the Workset bases for our particular basis name.
-    if (not useDescriptors_)
-      basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -299,12 +297,10 @@ namespace panzer
     using Kokkos::RangePolicy;
 
     // Grab the basis information.
-    const panzer::BasisValues2<double>& bv = useDescriptors_ ?
-      this->wda(workset).getBasisValues(bd_,id_) :
-      *this->wda(workset).bases[basisIndex_];
+    const auto & bv = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_);
     basis_ = bv.weighted_basis_vector;
 
-    parallel_for(RangePolicy<>(0, workset.num_cells), *this);
+    parallel_for(RangePolicy<>(0, workset.numCells()), *this);
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////

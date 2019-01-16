@@ -64,6 +64,7 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -143,26 +144,16 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hgradBD);
-  worksetNeeds.addBasis(hcurlBD);
-  worksetNeeds.addBasis(hdivBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
-  std::vector<std::string> eBlockNames;
-  mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
-
   // Build Connection Manager
   using LO = int;
   using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
+
+  // Get element block names
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
 
   // Set up bases for projections
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
@@ -238,8 +229,13 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
   // Build projection factory
   timer->start("projectionFactory.setup()");
+
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
+
+  auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+  wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(sourceGlobalIndexer)));
+  auto worksetContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
@@ -315,14 +311,13 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
     sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
     for (const auto& block : elementBlockNames) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto worksets = worksetContainer->getWorksets(wd);
+      const auto worksets = worksetContainer->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
 
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 sourceGlobalIndexer->getElementBlockGIDCount(block));
         // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
         sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
@@ -344,7 +339,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
         const auto offsetsE = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,E_Index);
         const auto offsetsB = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,B_Index);
-        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& basisValues = workset.getBasisIntegrationValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.basis_coordinates;
         const auto& x = sourceValues->getLocalView<PHX::Device>();
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
@@ -485,12 +480,11 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
     sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
     for (const auto& block : elementBlockNames) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto worksets = worksetContainer->getWorksets(wd);
+      const auto worksets = worksetContainer->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
@@ -510,7 +504,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         timer->stop("Create isOwned view");
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
-        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& basisValues = workset.getBasisIntegrationValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.basis_coordinates;
         const int numBasis = static_cast<int>(offsets.size());
 
@@ -594,12 +588,11 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
     sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
     for (const auto& block : elementBlockNames) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto worksets = worksetContainer->getWorksets(wd);
+      const auto worksets = worksetContainer->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
@@ -619,7 +612,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         timer->stop("Create isOwned view");
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
-        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& basisValues = workset.getBasisIntegrationValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.basis_coordinates;
         const int numBasis = static_cast<int>(offsets.size());
 
@@ -707,18 +700,8 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hcurlBD);
-  worksetNeeds.addBasis(hdivBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
   std::vector<std::string> eBlockNames;
   mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
 
   // Build Connection Manager
   using LO = int;
@@ -744,10 +727,16 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   sourceGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build sourceGlobalIndexer");
 
+  timer->start("Build Workset Container");
+  auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+  wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(sourceGlobalIndexer)));
+  auto worksetContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+  timer->stop("Build Workset Container");
+
   // Build projection factory
   timer->start("projectionFactory.setup()");
+
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hcurlBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
@@ -861,24 +850,15 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hgradBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
-  std::vector<std::string> eBlockNames;
-  mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
-
   // Build Connection Manager
   using LO = int;
   using GO = panzer::GlobalOrdinal;
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
+
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
 
   // Set up bases for projections
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
@@ -903,10 +883,18 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
+  // Build workset container
+  timer->start("Build Workset Container");
+  auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+  wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(sourceGlobalIndexer)));
+  auto worksetContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+  timer->stop("Build Workset Container");
+
   // Build projection factory
   timer->start("projectionFactory.setup()");
+
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
@@ -958,14 +946,13 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
     sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
     for (const auto& block : elementBlockNames) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto worksets = worksetContainer->getWorksets(wd);
+      const auto worksets = worksetContainer->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
 
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 sourceGlobalIndexer->getElementBlockGIDCount(block));
         // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
         sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
@@ -985,7 +972,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         timer->stop("Create isOwned view");
 
         const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
-        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& basisValues = workset.getBasisIntegrationValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.basis_coordinates;
         const auto& x = sourceValues->getLocalView<PHX::Device>();
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
@@ -1083,12 +1070,11 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
     sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
     for (const auto& block : elementBlockNames) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto worksets = worksetContainer->getWorksets(wd);
+      const auto worksets = worksetContainer->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
@@ -1108,7 +1094,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         timer->stop("Create isOwned view");
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
-        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& basisValues = workset.getBasisIntegrationValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.basis_coordinates;
         const int numBasis = static_cast<int>(offsets.size());
 
@@ -1175,12 +1161,11 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
     sourceGlobalIndexer->getElementBlockIds(elementBlockNames);
     for (const auto& block : elementBlockNames) {
 
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto worksets = worksetContainer->getWorksets(wd);
+      const auto worksets = worksetContainer->getWorksets(panzer::blockGhostedDescriptor(block));
       for (const auto& workset : *worksets) {
         Kokkos::View<LO**,PHX::Device> localIds("projection unit test: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                 targetGlobalIndexer->getElementBlockGIDCount(block));
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
         // Create vector to store if LID is owned
@@ -1200,7 +1185,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         timer->stop("Create isOwned view");
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
-        const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
+        const auto& basisValues = workset.getBasisIntegrationValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.basis_coordinates;
         const int numBasis = static_cast<int>(offsets.size());
 
@@ -1277,17 +1262,8 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hgradBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
   std::vector<std::string> eBlockNames;
   mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
 
   // Build Connection Manager
   timer->start("ConnManager ctor");
@@ -1310,6 +1286,11 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   sourceGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build sourceGlobalIndexer");
 
+  // setup worksets
+  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+  worksetFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(sourceGlobalIndexer)));
+  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory));
+
   // Build Target DOF Manager (Separate scalar fields on hgrad)
   timer->start("Build targetGlobalIndexer");
   RCP<panzer::DOFManager> targetGlobalIndexer = rcp(new panzer::DOFManager(connManager,*comm->getRawMpiComm()));
@@ -1320,7 +1301,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   // Build projection factory
   timer->start("projectionFactory.setup()");
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 

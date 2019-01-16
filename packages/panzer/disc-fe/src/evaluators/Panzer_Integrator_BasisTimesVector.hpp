@@ -373,17 +373,6 @@ namespace panzer
       int numDim_;
 
       /**
-       *  \brief The name of the basis we're using.
-       */
-      std::string basisName_;
-
-      /**
-       *  \brief The index in the `Workset` bases for our particular
-       *         `BasisIRLayout` name.
-       */
-      std::size_t basisIndex_;
-
-      /**
        *  \brief The vector basis information necessary for integration.
        */
       PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,

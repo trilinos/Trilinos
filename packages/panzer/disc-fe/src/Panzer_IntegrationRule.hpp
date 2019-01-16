@@ -70,7 +70,10 @@ namespace panzer {
       \param[in] cubature_degree Order of the cubature integration.
       \param[in] cell_data Description of the cell.
    */
-  class IntegrationRule : public PointRule, public IntegrationDescriptor {
+  class IntegrationRule :
+      public PointRule,
+      public IntegrationDescriptor
+  {
   public:
     
     //! if side = -1 then we use the cell volume integration rule.
@@ -90,6 +93,10 @@ namespace panzer {
 
     // TODO: Move to protected
     void setup_cv(const panzer::CellData& cell_data, std::string cv_type);
+
+    int
+    getType() const
+    {return IntegrationDescriptor::_integration_type;}
   
     //! Returns the order of integration (cubature degree in intrepid lingo)
     // Use getOrder() from base class

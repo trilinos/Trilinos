@@ -112,7 +112,7 @@ void panzer::GatherNormals<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
 
-  if(workset.num_cells<=0)
+  if(workset.numCells()<=0)
     return;
 
   const shards::CellTopology & parentCell = *basis->getCellTopology();
@@ -123,13 +123,13 @@ evaluateFields(typename Traits::EvalData workset)
   auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", 2, cellDim);
   auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"phy_edges", 2, cellDim);
 
-  const WorksetDetails & details = workset;
+  const auto & local_cell_ids = workset.getLocalCellIDs();
   const auto worksetJacobians = pointValues.jac.get_view();
 
   // Loop over workset faces and edge points
-  for(index_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.numCells();c++) {
     int faceOrts[6] = {};
-    orientations->at(details.cell_local_ids[c]).getFaceOrientation(faceOrts, numFaces);
+    orientations->at(local_cell_ids(c)).getFaceOrientation(faceOrts, numFaces);
 
     for(int pt = 0; pt < numFaces; pt++) {
       auto ortEdgeTan_U = Kokkos::subview(refEdges, 0, Kokkos::ALL());

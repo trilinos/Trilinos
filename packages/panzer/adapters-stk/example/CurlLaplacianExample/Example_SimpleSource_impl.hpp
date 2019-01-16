@@ -47,19 +47,18 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace Example {
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
 SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
+                                         const panzer::IntegrationRule & ir):
+  id_(ir)
 {
   using Teuchos::RCP;
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
-  ir_degree = ir.cubature_degree;
 
   source = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
 
@@ -69,24 +68,18 @@ SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
   this->setName(n);
 }
 
-//**********************************************************************
-template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
-}
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  const auto & ip_coordinates = workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates;
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int point = 0; point < source.extent_int(1); ++point) {
 
-      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
+      const double & x = ip_coordinates(cell,point,0);
+      const double & y = ip_coordinates(cell,point,1);
 
       source(cell,point,0) = 2.0+y-y*y + cos(2.0*M_PI*x)*sin(2.0*M_PI*y);
       source(cell,point,1) = 2.0+x-x*x + sin(2.0*M_PI*x)*cos(2.0*M_PI*y);

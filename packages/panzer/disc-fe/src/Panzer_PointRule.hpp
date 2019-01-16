@@ -58,7 +58,9 @@ namespace panzer {
   /** Base class useful for constructing data layouts
     * for points on a reference cell.
     */
-  class PointRule {
+  class PointRule :
+    public PointDescriptor
+  {
   public:
     
     /** if side = -1 then we use the cell as an reference frame

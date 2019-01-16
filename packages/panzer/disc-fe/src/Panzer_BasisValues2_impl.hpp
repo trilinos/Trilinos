@@ -79,7 +79,25 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
                bool use_vertex_coordinates,
                const int in_num_cells)
 {
+
   MDFieldArrayFactory af("",ddims_,true);
+
+  // TODO: Doing this causes a lot of diffs in EMPIRE. - we will save this for another merge
+//  // We need to expand the cub points to a full array covering all cells
+//   TODO: Reference values aren't always something we can have - it is heavily used in testing so it will remain
+//   If we have different cub_points per cell, this call will evaluate incorrect data
+//  evaluateReferenceValues(cub_points, compute_derivatives, use_vertex_coordinates);
+//  const int num_cells = (in_num_cells >= 0) ? in_num_cells : basis_layout->numCells();
+//  auto full_cub_points = af.buildStaticArray<Scalar,Cell,IP,Dim>("cell_cub_points",num_cells,cub_points.extent(0),cub_points.extent(1));
+//  for(int i=0; i<full_cub_points.extent_int(0); ++i)
+//    for(int j=0; j<full_cub_points.extent_int(1); ++j)
+//      for(int k=0; k<full_cub_points.extent_int(2); ++k)
+//        full_cub_points(i,j,k) = cub_points(j,k);
+//
+//  // Call the other method
+//  this->evaluateValues(full_cub_points, jac, jac_det, jac_inv,
+//                       weighted_measure, vertex_coordinates,
+//                       use_vertex_coordinates, in_num_cells);
 
   int num_dim   = basis_layout->dimension();
 
@@ -333,10 +351,8 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true,"panzer::BasisValues2::evaluateValues : Element space not recognized.");
   }
 
-  if(use_vertex_coordinates) {
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(elmtspace == PureBasis::CONST,"panzer::BasisValues2::evaluateValues : Const basis cannot have basis coordinates.");
+  if(use_vertex_coordinates and (elmtspace != PureBasis::CONST))
     evaluateBasisCoordinates(vertex_coordinates);
-  }
 
 }
 
@@ -386,10 +402,6 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
 
     intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
 
-    if(compute_derivatives){
-      Kokkos::deep_copy(cell_grad_basis_ref.get_view(),0.0);
-    }
-
     // =============================================
     // Transform reference values to physical values
 
@@ -398,16 +410,12 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
       for(int p=0;p<num_points;++p)
         basis_scalar(cell,b,p)=cell_basis_scalar(0,b,p);
 
-    if(compute_derivatives){
-        fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
-        for(int b=0;b<num_basis;++b)
-          for(int p=0;p<num_points;++p)
-            for(int d=0;d<num_dim;++d)
-              grad_basis(cell,b,p,d)=cell_grad_basis(0,b,p,d);
-    }
     // =============================================
   }
 
+  // Gradients don't exist for the 'Const' basis
+  Kokkos::deep_copy(grad_basis.get_static_view(),0.);
+  Kokkos::deep_copy(weighted_grad_basis.get_static_view(),0.);
 
   if(build_weighted){
     const std::pair<int,int> cell_range(0,num_cells);
@@ -415,13 +423,7 @@ evaluateValues_Const(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),cell_range,Kokkos::ALL());
     auto s_basis_scalar = Kokkos::subview(basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     fst::multiplyMeasure(s_weighted_basis_scalar,s_weighted_measure,s_basis_scalar);
-    if(compute_derivatives){
-      auto s_weighted_grad_basis = Kokkos::subview(weighted_grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-      auto s_grad_basis = Kokkos::subview(grad_basis.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-      fst::multiplyMeasure(s_weighted_grad_basis,s_weighted_measure,s_grad_basis);
-    }
   }
-
 
 }
 
@@ -518,6 +520,8 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
   auto cell_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("cell_basis_ref_scalar",num_basis,num_points);
   auto cell_grad_basis_ref = af.buildStaticArray<Scalar,BASIS,IP,Dim>("cell_grad_basis_ref",num_basis,num_points,num_dim);
 
+  const double tolerance = 100 * std::numeric_limits<Scalar>::epsilon();
+
   for(int cell=0;cell<num_cells;++cell){
 
     // =============================================
@@ -548,6 +552,16 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
       for(int p=0;p<num_points;++p)
         basis_scalar(cell,b,p)=cell_basis_scalar(0,b,p);
 
+    // DEBUG - to be consistent with the old method, we have to truncate small errors from the basis - not sure where they come from
+//    double bmax = 0.;
+//    for(int b=0;b<num_basis;++b)
+//      for(int p=0;p<num_points;++p)
+//        bmax = std::max(bmax, std::fabs(basis_scalar(cell,b,p)));
+//
+//    for(int b=0;b<num_basis;++b)
+//      for(int p=0;p<num_points;++p)
+//        basis_scalar(cell,b,p) *= (std::fabs(basis_scalar(cell,b,p)) < bmax * tolerance) ? 0. : 1.;
+
     if(compute_derivatives){
         fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
         for(int b=0;b<num_basis;++b)
@@ -570,22 +584,20 @@ evaluateValues_HGrad(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
       fst::multiplyMeasure(s_weighted_grad_basis,s_weighted_measure,s_grad_basis);
     }
   }
-
 }
 
 
 template <typename Scalar>
 void panzer::BasisValues2<Scalar>::
 evaluateValues_HCurl(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
-               const PHX::MDField<Scalar,Cell,IP> & jac_det,
-               const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
+                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
+                     const PHX::MDField<Scalar,Cell,IP> & jac_det,
+                     const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac_inv,
                      const PHX::MDField<Scalar,Cell,IP> & weighted_measure,
                      const int in_num_cells)
 {
 
   TEUCHOS_ASSERT(getElementSpace() == PureBasis::HCURL);
-
 
   typedef Intrepid2::FunctionSpaceTools<PHX::Device::execution_space> fst;
   MDFieldArrayFactory af("",ddims_,true);

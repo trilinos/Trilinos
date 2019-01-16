@@ -44,7 +44,6 @@
 #define PANZER_DOF_POINT_FIELD_DECL_HPP
 
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
@@ -99,7 +98,7 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
     for (int j = 0; j < coordinates.extent_int(1); ++j)
       intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(coordinates(i,j));
 
-  if(workset.num_cells>0) {
+  if(workset.numCells()>0) {
     // evaluate at reference points
     intrepidBasis->getValues(basisRef, intrpCoords, Intrepid2::OPERATOR_VALUE);
 

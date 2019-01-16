@@ -74,11 +74,33 @@ namespace panzer {
 
     BasisValues2(const std::string & pre="",bool allocArrays=false,bool buildWeighted=false) 
         : build_weighted(buildWeighted), alloc_arrays(allocArrays), prefix(pre)
-        , ddims_(1,0), references_evaluated(false) {}
+        , ddims_(1,0), references_evaluated(false), compute_derivatives(false) {}
  
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& basis,
                      bool computeDerivatives=true);
+
+    // TODO: These calls will all be broken down into fewer calls
+
+    // Construction:
+    // BasisValues2(const std::string & pre="");
+
+    // Initialization:
+    // void setCellVertices(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates);
+    // void setWeightedMeasure(const PHX::MDField<Scalar,Cell,IP> & weighted_measure);
+    // void setExtendedDimensions(const std::vector<PHX::index_size_type> & ddims);
+    // void setOrientations(const std::vector<OrientationsInterface> & orientations);
+    // void setReferencePoints(const PHX::MDField<Scalar,Cell,IP,Dim,void,void,void,void,void,void> & reference_points,
+    //                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jacobian,
+    //                         const PHX::MDField<Scalar,Cell,IP,void,void,void,void,void,void> & jacobian_determinant,
+    //                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim,void,void,void,void> & jacobian_inverse);
+
+    // Query:
+    // PureBasis::EElementSpace getElementSpace() const;
+
+    // Everything else is lazy evaluation of the various arrays
+
+    // TODO: We also need to fix the array evaluation calls to directly use the Intrepid interface instead of unwrapping into cells
 
     void evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
                         const PHX::MDField<Scalar,Cell,IP,Dim,Dim> & jac,
@@ -131,12 +153,16 @@ namespace panzer {
     void setExtendedDimensions(const std::vector<PHX::index_size_type> & ddims)
     { ddims_ = ddims; }
 
+    // Evaluates basis_coordinates_ref and basis_coordinates
+    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                                  const int in_num_cells = -1);
+
     PureBasis::EElementSpace getElementSpace() const;
 
-    Array_BasisIP     basis_ref_scalar;           // <BASIS,IP> 
+    Array_BasisIP     basis_ref_scalar;           // <BASIS,IP>
     Array_CellBasisIP basis_scalar;               // <Cell,BASIS,IP> 
 
-    Array_BasisIPDim     basis_ref_vector;           // <BASIS,IP,Dim> 
+    Array_BasisIPDim     basis_ref_vector;           // <BASIS,IP,Dim>
     Array_CellBasisIPDim basis_vector;               // <Cell,BASIS,IP,Dim>
 
     Array_BasisIPDim     grad_basis_ref;             // <BASIS,IP,Dim>
@@ -148,7 +174,7 @@ namespace panzer {
     Array_BasisIPDim     curl_basis_ref_vector;      // <BASIS,IP,Dim> - 3D!
     Array_CellBasisIPDim curl_basis_vector;          // <Cell,BASIS,IP,Dim> - 3D!
 
-    Array_BasisIP     div_basis_ref;           // <BASIS,IP> 
+    Array_BasisIP     div_basis_ref;           // <BASIS,IP>
     Array_CellBasisIP div_basis;               // <Cell,BASIS,IP> 
 
     Array_CellBasisIP weighted_basis_scalar;                  // <Cell,BASIS,IP> 
@@ -215,9 +241,6 @@ namespace panzer {
                              const int in_num_cells);
  
   private:
-
-    void evaluateBasisCoordinates(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
-                                  const int in_num_cells = -1);
 
     /** Evaluate the reference values for the basis functions needed
       *

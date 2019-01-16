@@ -48,7 +48,7 @@
 
 #include "Panzer_GlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_BasisValues.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -64,7 +64,8 @@ fieldName(const std::string & basisName)
 
 template<typename EvalT,typename TRAITS>
 panzer::GatherBasisCoordinates<EvalT, TRAITS>::
-GatherBasisCoordinates(const panzer::PureBasis & basis)
+GatherBasisCoordinates(const panzer::PureBasis & basis):
+  bd_(basis)
 { 
   basisName_ = basis.name();
 
@@ -76,27 +77,17 @@ GatherBasisCoordinates(const panzer::PureBasis & basis)
 }
 
 // **********************************************************************
-template<typename EvalT,typename TRAITS>
-void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd, 
-		      PHX::FieldManager<TRAITS>& /* fm */)
-{
-  basisIndex_ = panzer::getPureBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
-}
-
-// **********************************************************************
 template<typename EvalT,typename TRAITS> 
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-  // const Kokkos::DynRankView<double,PHX::Device> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
-  const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basisIndex_];
+{
+  const auto & basis_coordinates = workset(this->details_idx_).getBasisValues(bd_).basis_coordinates;
 
-  // just copy the array
-  for(int i=0;i<bv->basis_coordinates.extent_int(0);i++)
-    for(int j=0;j<bv->basis_coordinates.extent_int(1);j++)
-      for(int k=0;k<bv->basis_coordinates.extent_int(2);k++)
-          basisCoordinates_(i,j,k)= bv->basis_coordinates(i,j,k);
+  // just copy the array - Kokkos::deep_copy?
+  for(int i=0;i<basis_coordinates.extent_int(0);i++)
+    for(int j=0;j<basis_coordinates.extent_int(1);j++)
+      for(int k=0;k<basis_coordinates.extent_int(2);k++)
+          basisCoordinates_(i,j,k)= basis_coordinates(i,j,k);
 }
 
 #endif

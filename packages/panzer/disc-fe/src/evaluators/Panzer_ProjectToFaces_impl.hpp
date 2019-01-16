@@ -53,7 +53,6 @@
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
@@ -176,7 +175,7 @@ evaluateFields(typename Traits::EvalData workset)
     }
     
     // Loop over the faces of the workset cells.
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int p = 0; p < num_pts; ++p) {
         result(cell,p) = ScalarT(0.0);
         for (int dim = 0; dim < num_dim; ++dim)
@@ -186,7 +185,7 @@ evaluateFields(typename Traits::EvalData workset)
     }
 
   } else {
-    PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
+    const auto & vertex_coords = workset.getCellVertices();
     int subcell_dim = 2;
 
     int cellDim = parentCell.getDimension();
@@ -196,10 +195,10 @@ evaluateFields(typename Traits::EvalData workset)
     auto refEdges = Kokkos::createDynRankView(result.get_static_view(),"ref_edges", 2, cellDim);
     auto phyEdges = Kokkos::createDynRankView(result.get_static_view(),"phy_edges", 2, cellDim);
 
-    const WorksetDetails & details = workset;
+    const Workset & details = workset;
 
     // Loop over the faces of the workset cells
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
 
       // get nodal coordinates for this cell 
       Kokkos::DynRankView<double,PHX::Device> physicalNodes("physicalNodes",1,vertex_coords.extent(1),num_dim);
@@ -210,7 +209,7 @@ evaluateFields(typename Traits::EvalData workset)
       }
 
       int faceOrts[6] = {};
-      orientations->at(details.cell_local_ids[cell]).getFaceOrientation(faceOrts, numFaces);
+      orientations->at(details.getLocalCellIDs()(cell)).getFaceOrientation(faceOrts, numFaces);
 
       // loop over faces
       for (int p = 0; p < num_pts; ++p){

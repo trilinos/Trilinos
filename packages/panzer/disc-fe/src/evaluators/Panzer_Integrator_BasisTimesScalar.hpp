@@ -301,16 +301,11 @@ namespace panzer
        */
       int numQP_;
 
-      /**
-       *  \brief The name of the basis we're using.
-       */
-      std::string basisName_;
+      /// Description of basis
+      BasisDescriptor bd_;
 
-      /**
-       *  \brief The index in the `Workset` bases for our particular
-       *         `BasisIRLayout` name.
-       */
-      std::size_t basisIndex_;
+      /// Description of integrator
+      IntegrationDescriptor id_;
 
       /**
        *  \brief The scalar basis information necessary for integration.

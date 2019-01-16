@@ -115,7 +115,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 {
   fieldIds_.resize(scatterFields_.size());
   const Workset & workset_0 = (*d.worksets_)[0];
-  std::string blockId = this->wda(workset_0).block_id;
+  const auto & blockId = workset_0(this->details_idx_).getElementBlock();
 
 
   // load required field numbers for fast use
@@ -239,8 +239,8 @@ void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>
 evaluateFields(typename TRAITS::EvalData workset)
 {
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -323,7 +323,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   fieldIds_.resize(scatterFields_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  std::string blockId = this->wda(workset_0).block_id;
+  const auto & blockId = workset_0(this->details_idx_).getElementBlock();
 
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
@@ -425,7 +425,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
-
     // loop over the basis functions (currently they are nodes)
     for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
        int offset = offsets(basis);
@@ -447,11 +446,11 @@ evaluateFields(typename TRAITS::EvalData workset)
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // for convenience pull out some objects from workset
-  std::string blockId = this->wda(workset).block_id;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
 
   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
 
-  globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
+  globalIndexer_->getElementLIDs(workset(this->details_idx_).getLocalCellIDs(),scratch_lids_);
 
   ScatterResidual_Residual_Functor<ScalarT,LO,GO,NodeT> functor;
   functor.r_data = r->template getLocalView<PHX::Device>();
@@ -461,8 +460,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
     functor.offsets = scratch_offsets_[fieldIndex];
     functor.field = scatterFields_[fieldIndex];
-
-    Kokkos::parallel_for(workset.num_cells,functor);
+    Kokkos::parallel_for(workset.numCells(),functor);
   }
 }
 
@@ -476,12 +474,12 @@ evaluateFields(typename TRAITS::EvalData workset)
    typedef typename LOC::CrsMatrixType::local_matrix_type LocalMatrixT;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
+   std::string blockId = workset(this->details_idx_).getElementBlock();
 
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
-   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
+   globalIndexer_->getElementLIDs(workset(this->details_idx_).getLocalCellIDs(),scratch_lids_);
 
    ScatterResidual_Jacobian_Functor<ScalarT,LO,GO,NodeT,LocalMatrixT> functor;
    functor.fillResidual = (r!=Teuchos::null);
@@ -494,8 +492,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
      functor.offsets = scratch_offsets_[fieldIndex];
      functor.field = scatterFields_[fieldIndex];
-
-     Kokkos::parallel_for(workset.num_cells,functor);
+     Kokkos::parallel_for(workset.numCells(),functor);
    }
 }
 

@@ -47,7 +47,6 @@
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {
@@ -56,13 +55,15 @@ namespace panzer {
 template<typename EvalT, typename Traits>
 CellAverage<EvalT, Traits>::
 CellAverage(
-  const Teuchos::ParameterList& p) : quad_index(0)
+  const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
 
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
-  quad_order = ir->cubature_degree;
+//  quad_order = ir->cubature_degree;
+  id_ = *ir;
+  num_qp = 0;
 
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   average = PHX::MDField<ScalarT,Cell>( p.get<std::string>("Average Name"), dl_cell);
@@ -104,7 +105,7 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>& /* fm */)
 {
   num_qp = scalar.extent(1);
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
+//  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -114,7 +115,9 @@ CellAverage<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+
+  // TODO: Is there a test for this call? It really doesn't look like a proper quadrature integration
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     
     // start with no average
     average(cell) = 0.0;
@@ -122,9 +125,8 @@ evaluateFields(
     // loop over quadrture points, compute simple average
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       ScalarT current= multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field)
-        current *= (*field)(cell,qp);  
+      for (const auto & field :field_multipliers)
+        current *= field(cell,qp);
 
       // take first quad point value
       average(cell) += current/num_qp;

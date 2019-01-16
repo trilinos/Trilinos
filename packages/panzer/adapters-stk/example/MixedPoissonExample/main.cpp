@@ -53,7 +53,6 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
-#include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
@@ -80,6 +79,7 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Epetra_MpiComm.h"
 
@@ -319,17 +319,12 @@ int main(int argc,char * argv[])
      }
 
      // build worksets
-     ////////////////////////////////////////////////////////
+     //////////////////////////////////////////////////////////////
 
-     Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-     wkstContainer->setFactory(wkstFactory);
-     for(size_t i=0;i<physicsBlocks.size();i++)
-       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-     wkstContainer->setWorksetSize(workset_size);
-     wkstContainer->setGlobalIndexer(dofManager);
+     // build WorksetContainer
+     auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+     wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+     auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
      // Setup STK response library for writing out the solution fields
      ////////////////////////////////////////////////////////////////////////
@@ -343,7 +338,7 @@ int main(int argc,char * argv[])
 
         panzer_stk::RespFactorySolnWriter_Builder builder;
         builder.mesh = mesh;
-        stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+        stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder,workset_size);
      }
 
      // Setup response library for checking the error in this manufactered solution
@@ -364,7 +359,7 @@ int main(int argc,char * argv[])
        builder.requiresCellIntegral = true;
        builder.quadPointField = "PHI_ERROR";
 
-       errorResponseLibrary->addResponse("PHI L2 Error",eBlocks,builder);
+       errorResponseLibrary->addResponse("PHI L2 Error",eBlocks,builder,workset_size);
      }
 
      // setup closure model
@@ -396,7 +391,7 @@ int main(int argc,char * argv[])
      Teuchos::RCP<panzer::FieldManagerBuilder> fmb =
            Teuchos::rcp(new panzer::FieldManagerBuilder);
      fmb->setWorksetContainer(wkstContainer);
-     fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+     fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data,workset_size);
      fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                                *linObjFactory,user_data);
 

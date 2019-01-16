@@ -54,7 +54,7 @@ using Teuchos::rcp;
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"

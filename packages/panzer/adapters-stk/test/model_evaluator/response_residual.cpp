@@ -57,7 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
@@ -80,6 +80,7 @@ using Teuchos::rcp;
 #include "Panzer_Response_Residual.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -110,6 +111,7 @@ namespace panzer {
     RCP<panzer::GlobalIndexer> param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
+    int workset_size;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -135,6 +137,8 @@ namespace panzer {
 
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
+
+    const int workset_size = 100;
 
     bool parameter_on = false;
     bool distr_param_on = true;
@@ -214,7 +218,7 @@ namespace panzer {
       TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
 
       rLibrary->buildResidualResponseEvaluators(ap.physicsBlocks,*ap.eqset_factory,ap.bcs,bc_factory,
-                                                ap.cm_factory,ap.closure_models,ap.user_data);
+                                                ap.cm_factory,ap.closure_models,ap.user_data, workset_size);
 
       TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
     }
@@ -324,6 +328,8 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
 
+    const int workset_size = 100;
+
     bool parameter_on = false;
     bool distr_param_on = true;
     AssemblyPieces ap;
@@ -369,7 +375,7 @@ namespace panzer {
       TEST_ASSERT(!rLibrary->responseEvaluatorsBuilt());
 
       rLibrary->buildResidualResponseEvaluators(ap.physicsBlocks,*ap.eqset_factory,ap.bcs,bc_factory,
-                                                ap.cm_factory,ap.closure_models,ap.user_data);
+                                                ap.cm_factory,ap.closure_models,ap.user_data,workset_size);
 
       TEST_ASSERT(rLibrary->responseEvaluatorsBuilt());
     }
@@ -542,7 +548,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     RCP<Thyra::LinearOpBase<double> > DfDp = me->create_DfDp_op(pIndex);
 
@@ -691,7 +699,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     RCP<Thyra::LinearOpBase<double> > DfDp = me->create_DfDp_op(pIndex);
 
@@ -961,27 +971,14 @@ namespace panzer {
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-				 ipb,
-				 default_integration_order,
-				 workset_size,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
                                  ap.eqset_factory,
-				 ap.gd,
-			         build_transient_support,
+                                 ap.gd,
+                                 build_transient_support,
                                  ap.physicsBlocks);
     }
-
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<ap.physicsBlocks.size();i++)
-      wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-    ap.wkstContainer = wkstContainer;
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -1034,7 +1031,18 @@ namespace panzer {
       ap.param_lof = linObjFactory;
     }
 
-    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof));
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    // build WorksetContainer
+
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(ap.dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    ap.wkstContainer = wkstContainer;
+    ap.workset_size = workset_size;
+
+    ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof)); 
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -1079,7 +1087,7 @@ namespace panzer {
     ap.user_data = Teuchos::ParameterList("User Data");
 
     ap.fmb->setWorksetContainer(wkstContainer);
-    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,ap.closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,ap.closure_models,*ap.lof,ap.user_data, workset_size);
     ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,bc_factory,ap.closure_models,
                                  *ap.lof,ap.user_data);
   }

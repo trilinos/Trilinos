@@ -328,16 +328,14 @@ panzer::operator<<(std::ostream & os, const panzer::BC& bc)
 //=======================================================================
 
 panzer::WorksetDescriptor 
-panzer::bcDescriptor(const panzer::BC & bc)
+panzer::bcDescriptor(const panzer::BC & bc,
+                     const int workset_size)
 {
+  // Note: These worksets are assumed to span all cells
   if(bc.bcType()==BCT_Interface) {
-    WorksetDescriptor desc(bc.elementBlockID(),bc.elementBlockID2(),bc.sidesetID(),bc.sidesetID());
- 
-    return desc;
-  }
-  else {
-    WorksetDescriptor desc(bc.elementBlockID(),bc.sidesetID());
-
-    return desc;
+    // Inter-block against sideset with side assembly (builds separate workset for each inter-side combination)
+    return panzer::sidesetInterfaceSideAssembledDescriptor(bc.elementBlockID(),bc.elementBlockID2(),bc.sidesetID());
+  } else {
+    return panzer::sidesetDescriptor(bc.elementBlockID(), bc.sidesetID(), workset_size);
   }
 }

@@ -52,7 +52,6 @@
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace panzer
 {
@@ -74,9 +73,9 @@ namespace panzer
       std::vector<std::string>() */)
     :
     evalStyle_(evalStyle),
-    useDescriptors_(false),
     multiplier_(multiplier),
-    basisName_(basis.name())
+    bd_(*basis.getBasis()),
+    id_(ir)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -257,7 +256,6 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& /* fm */)
   {
-    using panzer::getBasisIndex;
     using std::size_t;
 
     // Get the Kokkos::Views of the field multipliers.
@@ -269,9 +267,6 @@ namespace panzer
     numQP_  = vector_.extent(1);
     numDim_ = vector_.extent(2);
 
-    // Determine the index in the Workset bases for our particular basis name.
-    if (not useDescriptors_)
-      basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -368,20 +363,18 @@ namespace panzer
     using Kokkos::RangePolicy;
 
     // Grab the basis information.
-    const panzer::BasisValues2<double>& bv = useDescriptors_ ?
-      this->wda(workset).getBasisValues(bd_,id_) :
-      *this->wda(workset).bases[basisIndex_];
+    const panzer::BasisValues2<double>& bv = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_);
     basis_ = bv.weighted_basis_vector;
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells
     // in the Workset and execute operator()() above.
     if (fieldMults_.size() == 0)
-      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.num_cells), *this);
+      parallel_for(RangePolicy<FieldMultTag<0>>(0, workset.numCells()), *this);
     else if (fieldMults_.size() == 1)
-      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.num_cells), *this);
+      parallel_for(RangePolicy<FieldMultTag<1>>(0, workset.numCells()), *this);
     else
-      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.num_cells), *this);
+      parallel_for(RangePolicy<FieldMultTag<-1>>(0, workset.numCells()), *this);
   } // end of evaluateFields()
 
   /////////////////////////////////////////////////////////////////////////////

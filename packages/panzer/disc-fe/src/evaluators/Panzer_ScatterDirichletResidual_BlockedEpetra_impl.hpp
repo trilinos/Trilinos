@@ -207,8 +207,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Thyra::ProductVectorBase;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -421,8 +421,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Thyra::ProductVectorBase;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -618,8 +618,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Thyra::SpmdVectorBase;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    int numFieldBlocks = Teuchos::as<int>(colIndexers_.size());
 

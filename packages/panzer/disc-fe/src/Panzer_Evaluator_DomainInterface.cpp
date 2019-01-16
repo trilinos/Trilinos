@@ -32,7 +32,7 @@ namespace panzer {
   int DomainEvaluator::cellEndIndex(const panzer::Workset & workset) const
   {
     if (domain_ == ALL)
-      return workset.num_cells;
+      return workset.numCells();
     else if (domain_ == OWNED)
       return workset.numOwnedCells();
     else if (domain_ == GHOST)
@@ -40,7 +40,7 @@ namespace panzer {
     else if (domain_ == REAL)
       return workset.numOwnedCells() + workset.numGhostCells();
     else if (domain_ == VIRTUAL)
-      return workset.num_cells;
+      return workset.numCells();
     else {
       TEUCHOS_ASSERT(false);
     }

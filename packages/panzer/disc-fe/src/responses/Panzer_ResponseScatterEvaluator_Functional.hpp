@@ -66,13 +66,13 @@ public:
 
   virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                                  panzer::Traits::EvalData workset, 
-                                 WorksetDetailsAccessor& wda,
+                                 const unsigned int workset_idx,
                                  const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const = 0;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
   virtual void scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
                               panzer::Traits::EvalData workset, 
-                              WorksetDetailsAccessor& wda,
+                              const unsigned int details_idx,
                               const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const = 0;
 #endif
 };
@@ -91,13 +91,13 @@ public:
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                          panzer::Traits::EvalData workset, 
-                         WorksetDetailsAccessor& wda,
+                         const unsigned int details_idx,
                          const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
    void scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
                        panzer::Traits::EvalData workset, 
-                       WorksetDetailsAccessor& wda,
+                       const unsigned int details_idx,
                        const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const;
 #endif
 
@@ -138,13 +138,13 @@ private:
 template <typename LO,typename GO>
 void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                                                 panzer::Traits::EvalData workset, 
-                                                WorksetDetailsAccessor& wda,
+                                                const unsigned int details_idx,
                                                 const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const 
 {
   Kokkos::View<const LO*, PHX::Device> LIDs;
  
   // for convenience pull out some objects from workset
-  std::string blockId = wda(workset).block_id;
+  const std::string & blockId = workset(details_idx).getElementBlock();
 
   std::vector<int> blockOffsets;
   computeBlockOffsets(blockId,ugis_,blockOffsets);
@@ -152,7 +152,7 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer
   TEUCHOS_ASSERT(dgdx.size()==ugis_.size());
 
   // scatter operation for each cell in workset
-  const std::vector<std::size_t> & localCellIds = wda(workset).cell_local_ids;
+  const auto & localCellIds = workset(details_idx).getLocalCellIDs();
   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
     std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
@@ -175,13 +175,13 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer
 template <typename LO,typename GO>
 void FunctionalScatter<LO,GO>::scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
                                                 panzer::Traits::EvalData workset, 
-                                                WorksetDetailsAccessor& wda,
+                                                const unsigned int details_idx,
                                                 const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const 
 {
   Kokkos::View<const LO*, PHX::Device> LIDs;
  
   // for convenience pull out some objects from workset
-  std::string blockId = wda(workset).block_id;
+  const std::string & blockId = workset(details_idx).getElementBlock();
 
   std::vector<int> blockOffsets;
   computeBlockOffsets(blockId,ugis_,blockOffsets);
@@ -189,7 +189,7 @@ void FunctionalScatter<LO,GO>::scatterHessian(const PHX::MDField<const panzer::T
   TEUCHOS_ASSERT(d2gdx2.size()==ugis_.size());
 
   // scatter operation for each cell in workset
-  const std::vector<std::size_t> & localCellIds = wda(workset).cell_local_ids;
+  const auto & localCellIds = workset(details_idx).getLocalCellIDs();
   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
     std::size_t cellLocalId = localCellIds[worksetCellIndex];
 

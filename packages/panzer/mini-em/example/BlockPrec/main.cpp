@@ -75,7 +75,8 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
     const Teuchos::RCP<panzer::GlobalIndexer> & globalIndexer,
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
-    const Teuchos::ParameterList & closure_model_pl);
+    const Teuchos::ParameterList & closure_model_pl,
+    const int workset_size);
 
 template <class Scalar>
 void writeToExodus(double time_stamp,
@@ -441,22 +442,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // fields to be setup)
     createExodusFile(physicsBlocks, mesh_factory, mesh, exodus_output);
 
-    // build worksets
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer);
-    Teuchos::RCP<panzer::WorksetContainer> auxWkstContainer  // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    auxWkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++) {
-        wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-        auxWkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),auxPhysicsBlocks[i]->getWorksetNeeds());
-    }
-    wkstContainer->setWorksetSize(workset_size);
-    auxWkstContainer->setWorksetSize(workset_size);
-
     // build DOF Managers and linear object factories
 
     // build the connection manager
@@ -476,9 +461,17 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager,true)));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > auxLinObjFactory = Teuchos::rcp(new blockedLinObjFactory(comm,rcp_dynamic_cast<panzer::BlockedDOFManager>(auxDofManager,true)));
 
-    // Assign the dof managers to worksets
-    wkstContainer->setGlobalIndexer(dofManager);
-    auxWkstContainer->setGlobalIndexer(auxDofManager);
+    // build worksets
+    //////////////////////////////////////////////////////////////
+
+    // build WorksetContainer
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    auto AuxWkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    AuxWkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(auxDofManager)));
+    auto auxWkstContainer = Teuchos::rcp(new panzer::WorksetContainer(AuxWkstFactory));
 
     // setup closure model
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -560,7 +553,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                           cm_factory,
                           cm_factory,
                           closure_models,
-                          user_data,false,"");
+                          user_data,
+                          workset_size,false,"");
 
       // add auxiliary data to model evaluator
       for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
@@ -576,7 +570,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                              cm_factory,
                              cm_factory,
                              closure_models,
-                             user_data,false,"");
+                             user_data,
+                             workset_size,false,"");
 
       // evaluate the auxiliary model to obtain auxiliary operators
       for(panzer::GlobalEvaluationDataContainer::const_iterator itr=auxGlobalData->begin();itr!=auxGlobalData->end();++itr)
@@ -592,7 +587,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // setup a response library to write to the mesh
     RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary
       = buildSTKIOResponseLibrary(physicsBlocks,linObjFactory,wkstContainer,dofManager,cm_factory,mesh,
-                                  closure_models);
+                                  closure_models,workset_size);
 
 
 
@@ -830,7 +825,8 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
     const Teuchos::RCP<panzer::GlobalIndexer> & globalIndexer,
     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
     const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
-    const Teuchos::ParameterList & closure_model_pl) {
+    const Teuchos::ParameterList & closure_model_pl,
+    const int workset_size) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -844,7 +840,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   panzer_stk::RespFactorySolnWriter_Builder builder;
   builder.mesh = mesh;
 
-  stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+  stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder,workset_size);
 
   std::vector<std::string> block_names;
   mesh->getElementBlockNames(block_names);

@@ -5,7 +5,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -51,7 +50,7 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
   using panzer::index_t;
 
   if (ir_dim == 3) {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
@@ -70,7 +69,7 @@ void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData 
       }
     }
   } else {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       for (int point = 0; point < conductivity.extent_int(1); ++point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);

@@ -68,16 +68,19 @@ namespace user_app {
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary_;
 
     mutable Teuchos::RCP<Teuchos::ParameterList> valid_params_;
+    int workset_size_;
 
   public:
 
-    NOXObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary)
-       : stkIOResponseLibrary_(stkIOResponseLibrary) {}
+    NOXObserverFactory(const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & stkIOResponseLibrary,
+                       const int workset_size)
+       : stkIOResponseLibrary_(stkIOResponseLibrary)
+       , workset_size_(workset_size){}
     
     Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-		     const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
-		     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const
+                     const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
+                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -89,17 +92,17 @@ namespace user_app {
 
       // Exodus writer to output solution
       if (this->getParameterList()->get<std::string>("Write Solution to Exodus File") == "ON") {
-	Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer = 
-	  Teuchos::rcp(new user_app::NOXObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_));
-	observer->pushBack(solution_writer);
+        Teuchos::RCP<NOX::Abstract::PrePostOperator> solution_writer =
+            Teuchos::rcp(new user_app::NOXObserver_WriteToExodus(mesh,dof_manager,lof,stkIOResponseLibrary_,workset_size_));
+        observer->pushBack(solution_writer);
       }
 
       
       // Neumann BC unit test
       if (this->getParameterList()->get<std::string>("Neumann BC Analytic System Test") == "ON") {
-	Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo = 
-	  Teuchos::rcp(new user_app::NOXObserver_NeumannBCAnalyticSystemTest);
-	observer->pushBack(ppo);
+        Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
+            Teuchos::rcp(new user_app::NOXObserver_NeumannBCAnalyticSystemTest);
+        observer->pushBack(ppo);
       }
 
       return observer;
@@ -120,28 +123,28 @@ namespace user_app {
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
     {
       if (valid_params_.is_null()) {
-	
-	valid_params_ = Teuchos::rcp(new Teuchos::ParameterList);
 
-	Teuchos::setStringToIntegralParameter<int>(
-          "Write Solution to Exodus File",
-          "ON",
-          "Enables or disables writing of solution to Exodus file at end of NOX solve",
-          Teuchos::tuple<std::string>("ON","OFF"),
-          valid_params_.get()
-          );
-	Teuchos::setStringToIntegralParameter<int>(
-          "Neumann BC Analytic System Test",
-          "OFF",
-          "Checks solution values for Neumann BC Analytic System Test",
-          Teuchos::tuple<std::string>("ON","OFF"),
-          valid_params_.get()
-          );
+        valid_params_ = Teuchos::rcp(new Teuchos::ParameterList);
+
+        Teuchos::setStringToIntegralParameter<int>(
+            "Write Solution to Exodus File",
+            "ON",
+            "Enables or disables writing of solution to Exodus file at end of NOX solve",
+            Teuchos::tuple<std::string>("ON","OFF"),
+            valid_params_.get()
+        );
+        Teuchos::setStringToIntegralParameter<int>(
+            "Neumann BC Analytic System Test",
+            "OFF",
+            "Checks solution values for Neumann BC Analytic System Test",
+            Teuchos::tuple<std::string>("ON","OFF"),
+            valid_params_.get()
+        );
 
       }
       return valid_params_;
     }
- 
+
     //@}
 
   };

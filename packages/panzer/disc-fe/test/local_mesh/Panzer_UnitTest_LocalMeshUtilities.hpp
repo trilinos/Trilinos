@@ -99,7 +99,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     mesh.num_owned_cells = 4;
-    mesh.num_ghstd_cells = 0;
+    mesh.num_ghost_cells = 0;
     mesh.num_virtual_cells = 2;
 
     // Set vertices
@@ -166,7 +166,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     block.num_owned_cells = 2;
-    block.num_ghstd_cells = 1;
+    block.num_ghost_cells = 1;
     block.num_virtual_cells = 1;
 
     // Set vertices
@@ -224,7 +224,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     block.num_owned_cells = 2;
-    block.num_ghstd_cells = 1;
+    block.num_ghost_cells = 1;
     block.num_virtual_cells = 1;
 
     // Set vertices
@@ -281,7 +281,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     sideset.num_owned_cells = 1;
-    sideset.num_ghstd_cells = 0;
+    sideset.num_ghost_cells = 0;
     sideset.num_virtual_cells = 1;
 
     // Set vertices
@@ -328,7 +328,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     sideset.num_owned_cells = 1;
-    sideset.num_ghstd_cells = 0;
+    sideset.num_ghost_cells = 0;
     sideset.num_virtual_cells = 1;
 
     // Set vertices
@@ -375,7 +375,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     sideset.num_owned_cells = 1;
-    sideset.num_ghstd_cells = 1;
+    sideset.num_ghost_cells = 1;
     sideset.num_virtual_cells = 0;
 
     // Set vertices
@@ -420,7 +420,7 @@ generateLocalMeshInfo()
 
     // Set some numbers
     sideset.num_owned_cells = 1;
-    sideset.num_ghstd_cells = 1;
+    sideset.num_ghost_cells = 1;
     sideset.num_virtual_cells = 0;
 
     // Set vertices
@@ -471,7 +471,7 @@ generateLocalMeshInfoBase()
 
   // Set some numbers
   block.num_owned_cells = 3;
-  block.num_ghstd_cells = 1;
+  block.num_ghost_cells = 1;
   block.num_virtual_cells = 1;
 
   // Set vertices

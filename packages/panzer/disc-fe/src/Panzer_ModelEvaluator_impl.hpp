@@ -389,7 +389,9 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
            const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
            const Teuchos::ParameterList& closure_models,
            const Teuchos::ParameterList& user_data,
-           bool writeGraph,const std::string & graphPrefix,
+           const int workset_size,
+           bool writeGraph,
+           const std::string & graphPrefix,
            const Teuchos::ParameterList& me_params)
 {
   // First: build residual assembly engine
@@ -401,7 +403,7 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     fmb->setWorksetContainer(wc);
-    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data,workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,*lof_,user_data);
 
     // Print Phalanx DAGs
@@ -420,8 +422,8 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
   responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
   buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
-  buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
-  buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
+  buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,workset_size,writeGraph,graphPrefix+"Response_DfDp_");
+  buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,workset_size,writeGraph,graphPrefix+"Response_DgDp_");
 
   do_fd_dfdp_ = false;
   fd_perturb_size_ = 1.0e-7;
@@ -485,6 +487,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
 
   // this member is handled in the individual functions
   ae_inargs.apply_dirichlet_beta = false;
+  ae_inargs.dirichlet_beta = 0.;
 
   // Set input parameters
   int num_param_vecs = parameters_.size();
@@ -2234,6 +2237,7 @@ buildDistroParamDfDp_RL(
        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
        const Teuchos::ParameterList& closure_models,
        const Teuchos::ParameterList& user_data,
+       const int workset_size,
        const bool write_graphviz_file,
        const std::string& graphviz_file_prefix)
 {
@@ -2266,7 +2270,7 @@ buildDistroParamDfDp_RL(
         = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getRangeGlobalIndexer(),
                                                    param_lof,true));
     rLibrary->buildResidualResponseEvaluators(physicsBlocks,eqset_factory,bcs,bc_factory,
-                                              cm_factory,closure_models,user_data,
+                                              cm_factory,closure_models,user_data,workset_size,
                                               write_graphviz_file,graphviz_file_prefix);
 
     // make sure parameter response library is correct
@@ -2285,6 +2289,7 @@ buildDistroParamDgDp_RL(
        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
        const Teuchos::ParameterList& closure_models,
        const Teuchos::ParameterList& user_data,
+       const int workset_size,
        const bool write_graphviz_file,
        const std::string& graphviz_file_prefix)
 {

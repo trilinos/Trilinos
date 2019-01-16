@@ -56,7 +56,8 @@
 
 #include "Panzer_Traits.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetFactoryBase.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_Shards_Utilities.hpp"
 #include "Panzer_BCStrategy_Factory.hpp"
@@ -66,8 +67,23 @@
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 //#include "EpetraExt_BlockMapOut.h"
+
+int panzer::getWorksetBCID(const panzer::Workset & workset)
+{
+  if(workset.size() == 1){
+    return workset.getSubcellIndex();
+  } else {
+    // Hopefully worksets will never have more than 100 sides...
+    const int workset_side_stride = 100;
+    int id = 0;
+    for(int i=workset.size()-1; i >= 0; --i)
+      id = id*workset_side_stride + workset(i).getSubcellIndex();
+    return id;
+  }
+}
 
 //=======================================================================
 //=======================================================================
@@ -77,15 +93,14 @@ void panzer::FieldManagerBuilder::print(std::ostream& os) const
 }
 
 //=======================================================================
-void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
-                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-                                            const std::vector<WorksetDescriptor> & wkstDesc,
-					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-					    const Teuchos::ParameterList& closure_models,
-                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
-					    const Teuchos::ParameterList& user_data,
-                                            const GenericEvaluatorFactory & gEvalFact,
-                                            bool closureModelByEBlock)
+void panzer::FieldManagerBuilder::setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                                           const std::vector<WorksetDescriptor> & wkstDesc,
+                                                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                                                           const Teuchos::ParameterList& closure_models,
+                                                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+                                                           const Teuchos::ParameterList& user_data,
+                                                           const GenericEvaluatorFactory & gEvalFact,
+                                                           bool closureModelByEBlock)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -106,7 +121,8 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 
     Traits::SD setupData;
     setupData.worksets_ = getWorksetContainer()->getWorksets(wd);
-    setupData.orientations_ = getWorksetContainer()->getOrientations();
+    if(not getWorksetContainer()->getFactory()->getOrientationsInterface().is_null())
+      setupData.orientations_ = getWorksetContainer()->getFactory()->getOrientationsInterface()->getOrientations();
     if(setupData.worksets_->size()==0)
       continue;
 
@@ -146,16 +162,16 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 }
 
 //=======================================================================
-void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
-                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-					    const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
-					    const Teuchos::ParameterList& closure_models,
-                                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
-					    const Teuchos::ParameterList& user_data)
+void panzer::FieldManagerBuilder::setupVolumeFieldManagers(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
+                                                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
+                                                           const Teuchos::ParameterList& closure_models,
+                                                           const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
+                                                           const Teuchos::ParameterList& user_data,
+                                                           const int workset_size)
 {
    std::vector<WorksetDescriptor> wkstDesc;
    for(std::size_t i=0;i<physicsBlocks.size();i++)
-     wkstDesc.push_back(blockDescriptor(physicsBlocks[i]->elementBlockID()));
+     wkstDesc.push_back(panzer::blockDescriptor(physicsBlocks[i]->elementBlockID(), workset_size));
 
    EmptyEvaluatorFactory eef;
    setupVolumeFieldManagers(physicsBlocks,wkstDesc,cm_factory,closure_models,lo_factory,user_data,eef);
@@ -195,24 +211,42 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
   // ***************************
   // BCs
   // ***************************
-  std::vector<panzer::BC>::const_iterator bc;
-  for (bc=bcs.begin(); bc != bcs.end(); ++bc) {
+  for (auto bc=bcs.begin(); bc != bcs.end(); ++bc) {
     WorksetDescriptor wd = panzer::bcDescriptor(*bc);
-    const Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-      currentWkst = getWorksetContainer()->getSideWorksets(wd);
-    if (currentWkst.is_null()) continue;
+
+    // For backward compatability reasons, even though this is a bc descriptor,
+    // The field manager builder doesn't support 'cascade' worksets, and we must fudge things a bit
+//    if(! wd.connectsElementBlocks()){
+//      wd.setCascade(false);
+//    }
+    // Also, we can only have a single element per 'side'
+    // TODO: This has the potential to break all the statically sized arrays
+    wd.setWorksetSize(WorksetSizeType::ALL_ELEMENTS);
+
+    const auto worksets = getWorksetContainer()->getWorksets(wd);
+    if (worksets.is_null()) continue;
+    if (worksets->size() == 0) continue;
 
     BCType bc_type = bc->bcType();
 
     if (bc_type == BCT_Interface) {
-      // Loop over local face indices and setup each field manager
-      for (std::map<unsigned,panzer::Workset>::const_iterator wkst = currentWkst->begin();
-           wkst != currentWkst->end(); ++wkst) {
-        // Build one FieldManager for each local side workset for each bc
-        std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers =
-          bc_field_managers_[*bc];
 
-        PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
+      // To create a unique field manager per workset interface combination, we have to add an offset
+      const int interface_subcell_index_stride = 1000;
+
+      // Loop over local face indices and setup each field manager
+      for(const auto & workset : *worksets){
+//      for(std::map<unsigned,panzer::Workset>::const_iterator wkst = currentWkst->begin();
+//           wkst != currentWkst->end(); ++wkst) {
+        // Build one FieldManager for each local side workset for each bc
+        auto & field_managers = bc_field_managers_[*bc];
+
+        // If workset was not setup properly, then this will be -1
+        TEUCHOS_ASSERT(workset.getSubcellIndex() >= 0);
+        TEUCHOS_ASSERT(workset.size() == 2);
+
+        // We use this ID function so that we can find the workset in an external assembly engine
+        auto & fm = field_managers[getWorksetBCID(workset)];
 
         int gid_count = 0;
         for (int block_id_index = 0; block_id_index < 2; ++block_id_index) {
@@ -228,9 +262,12 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           const Teuchos::RCP<const panzer::PhysicsBlock> volume_pb = physicsBlocks_map.find(element_block_id)->second;
           const Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
 
+          // Make sure workset is properly setup
+          TEUCHOS_ASSERT(workset(block_id_index).getSubcellIndex() >= 0);
+
           // register evaluators from strategy
-          const panzer::CellData side_cell_data(wkst->second.num_cells,
-                                                wkst->second.details(block_id_index).subcell_index,
+          const panzer::CellData side_cell_data(workset.numCells(),
+                                                workset(block_id_index).getSubcellIndex(),
                                                 volume_cell_topology);
 
           // Copy the physics block for side integrations
@@ -271,18 +308,16 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 
         // Set up the field manager
         Traits::SD setupData;
-        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
-        worksets->push_back(wkst->second);
-        setupData.worksets_ = worksets;
-        setupData.orientations_ = getWorksetContainer()->getOrientations();
+        setupData.worksets_ = Teuchos::rcp(new std::vector<panzer::Workset>{workset});
+        if(not getWorksetContainer()->getFactory()->getOrientationsInterface().is_null())
+          setupData.orientations_ = getWorksetContainer()->getFactory()->getOrientationsInterface()->getOrientations();
 
         fm.postRegistrationSetup(setupData);
       }
     } else {
       const std::string element_block_id = bc->elementBlockID();
 
-      std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator volume_pb_itr
-	= physicsBlocks_map.find(element_block_id);
+      const auto volume_pb_itr = physicsBlocks_map.find(element_block_id);
 
       TEUCHOS_TEST_FOR_EXCEPTION(volume_pb_itr==physicsBlocks_map.end(),std::logic_error,
 				 "panzer::FMB::setupBCFieldManagers: Cannot find physics block corresponding to element block \"" << element_block_id << "\"");
@@ -291,46 +326,46 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
       Teuchos::RCP<const shards::CellTopology> volume_cell_topology = volume_pb->cellData().getCellTopology();
 
       // Build one FieldManager for each local side workset for each dirichlet bc
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers =
-        bc_field_managers_[*bc];
+      auto & field_managers = bc_field_managers_[*bc];
 
       // Loop over local face indices and setup each field manager
-      for (std::map<unsigned,panzer::Workset>::const_iterator wkst =
-	     currentWkst->begin(); wkst != currentWkst->end();
-	   ++wkst) {
+      for (const auto & workset : *worksets){
 
-        PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
+        // Make sure worksets are setup properly
+        TEUCHOS_ASSERT(workset.getSubcellIndex() >= 0);
+        TEUCHOS_ASSERT(workset.size() == 1);
+
+        PHX::FieldManager<panzer::Traits>& fm = field_managers[workset.getSubcellIndex()];
 
         // register evaluators from strategy
-        const panzer::CellData side_cell_data(wkst->second.num_cells,
-	                                      wkst->first,volume_cell_topology);
+        const panzer::CellData side_cell_data(workset.numCells(),
+                                              workset.getSubcellIndex(),
+                                              volume_cell_topology);
 
-	// Copy the physics block for side integrations
-	Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);
+        // Copy the physics block for side integrations
+        Teuchos::RCP<panzer::PhysicsBlock> side_pb = volume_pb->copyWithCellData(side_cell_data);
 
-	Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcstm =
-	  bc_factory.buildBCStrategy(*bc,side_pb->globalData());
+        Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcstm =
+            bc_factory.buildBCStrategy(*bc,side_pb->globalData());
 
-	// Iterate over evaluation types
-	for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
-	       bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type) {
-	  bcs_type->setup(*side_pb,user_data);
-	  bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
-	  bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
-	  if(!physicsBlockScatterDisabled())
-	    bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
-	}
+        // Iterate over evaluation types
+        for (panzer::BCStrategy_TemplateManager<panzer::Traits>::iterator
+            bcs_type = bcstm->begin(); bcs_type != bcstm->end(); ++bcs_type) {
+          bcs_type->setup(*side_pb,user_data);
+          bcs_type->buildAndRegisterEvaluators(fm,*side_pb,cm_factory,closure_models,user_data);
+          bcs_type->buildAndRegisterGatherAndOrientationEvaluators(fm,*side_pb,lo_factory,user_data);
+          if(!physicsBlockScatterDisabled())
+            bcs_type->buildAndRegisterScatterEvaluators(fm,*side_pb,lo_factory,user_data);
+        }
 
-	// Setup the fieldmanager
-	Traits::SD setupData;
-	Teuchos::RCP<std::vector<panzer::Workset> > worksets =
-	  Teuchos::rcp(new(std::vector<panzer::Workset>));
-	worksets->push_back(wkst->second);
-	setupData.worksets_ = worksets;
-        setupData.orientations_ = getWorksetContainer()->getOrientations();
+        // Setup the fieldmanager
+        Traits::SD setupData;
+        setupData.worksets_ = Teuchos::rcp(new std::vector<panzer::Workset>{workset});
+        if(not getWorksetContainer()->getFactory()->getOrientationsInterface().is_null())
+          setupData.orientations_ = getWorksetContainer()->getFactory()->getOrientationsInterface()->getOrientations();
 
-	// setup derivative information
-	setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,user_data,fm);
+        // setup derivative information
+        setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,user_data,fm);
 
         fm.postRegistrationSetup(setupData);
       }
@@ -374,13 +409,13 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
     BCType bc_type = bc.bcType();
     std::string type;
     if (bc_type == BCT_Dirichlet)
-	type = "_Dirichlet_";
+      type = "_Dirichlet_";
     else if (bc_type == BCT_Neumann)
-        type = "_Neumann_";
+      type = "_Neumann_";
     else if (bc_type == BCT_Interface)
-        type = "_Interface_";
+      type = "_Interface_";
     else
-        TEUCHOS_ASSERT(false);
+      TEUCHOS_ASSERT(false);
 
     std::string blockId = bc.elementBlockID();
     std::string sideId = bc.sidesetID();
@@ -433,13 +468,13 @@ writeBCTextDependencyFiles(std::string filename_prefix) const
     BCType bc_type = bc.bcType();
     std::string type;
     if (bc_type == BCT_Dirichlet)
-	type = "_Dirichlet_";
+      type = "_Dirichlet_";
     else if (bc_type == BCT_Neumann)
-        type = "_Neumann_";
+      type = "_Neumann_";
     else if (bc_type == BCT_Interface)
-        type = "_Interface_";
+      type = "_Interface_";
     else
-        TEUCHOS_ASSERT(false);
+      TEUCHOS_ASSERT(false);
 
     std::string blockId = bc.elementBlockID();
     std::string sideId = bc.sidesetID();

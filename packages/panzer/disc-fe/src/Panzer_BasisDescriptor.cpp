@@ -66,7 +66,7 @@ public:
  
   virtual ~BasisCoordsGenerator() = default;
 
-  virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const
+  virtual Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const override
   {
     Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
         intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);
@@ -78,7 +78,9 @@ public:
     return view;
   }
 
-  virtual int numPoints(const shards::CellTopology & topo) const
+  virtual bool hasPoints(const shards::CellTopology & topo) const override {return true;}
+
+  virtual int numPoints(const shards::CellTopology & topo) const override
   {
     Teuchos::RCP<Intrepid2::Basis<PHX::Device::execution_space,double,double> > 
         intrepid_basis = createIntrepid2Basis<PHX::Device::execution_space,double,double>(_basis_type,_basis_order,topo);

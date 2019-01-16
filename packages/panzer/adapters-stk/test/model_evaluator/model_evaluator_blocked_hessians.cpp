@@ -59,7 +59,6 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
@@ -109,6 +108,7 @@ namespace panzer {
     Teuchos::RCP<panzer::GlobalIndexer> param_dofManager;
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer;
     Teuchos::ParameterList user_data;
+    int workset_size;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     Teuchos::RCP<panzer::EquationSetFactory> eqset_factory;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -190,7 +190,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // test value
     {
@@ -320,7 +322,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // test value
     {
@@ -445,7 +449,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // test value
     {
@@ -572,7 +578,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // test value
     {
@@ -683,7 +691,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
 
@@ -786,7 +796,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
 
@@ -889,7 +901,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
 
@@ -992,7 +1006,9 @@ namespace panzer {
                    ap.cm_factory,
                    ap.cm_factory,
                    ap.closure_models,
-                   ap.user_data,false,"");
+                   ap.user_data,
+                   ap.workset_size,
+                   false,"");
 
     // panzer::printMeshTopology(out,*ap.dofManager);
 
@@ -1194,28 +1210,15 @@ namespace panzer {
       bool build_transient_support = true;
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
-				 ipb,
-				 default_integration_order,
-				 workset_size,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
                                  ap.eqset_factory,
-				 ap.gd,
-			         build_transient_support,
+                                 ap.gd,
+                                 build_transient_support,
                                  ap.physicsBlocks,
                                  tangentParamNames);
     }
-
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<ap.physicsBlocks.size();i++)
-      wkstContainer->setNeeds(ap.physicsBlocks[i]->elementBlockID(),ap.physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-    ap.wkstContainer = wkstContainer;
 
     // build DOF Manager
     /////////////////////////////////////////////////////////////
@@ -1262,6 +1265,16 @@ namespace panzer {
       ap.param_lof = linObjFactory;
     }
 
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    // build WorksetContainer
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    ap.wkstContainer = wkstContainer;
+    ap.workset_size = workset_size;
+
     ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,ap.lof));
 
     // setup field manager build
@@ -1292,7 +1305,7 @@ namespace panzer {
     ap.user_data = Teuchos::ParameterList("User Data");
 
     ap.fmb->setWorksetContainer(wkstContainer);
-    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*ap.lof,ap.user_data);
+    ap.fmb->setupVolumeFieldManagers(ap.physicsBlocks,ap.cm_factory,closure_models,*ap.lof,ap.user_data, ap.workset_size);
     ap.fmb->setupBCFieldManagers(bcs,ap.physicsBlocks,*ap.eqset_factory,ap.cm_factory,*ap.bc_factory,
                                  closure_models,*ap.lof,ap.user_data);
   }

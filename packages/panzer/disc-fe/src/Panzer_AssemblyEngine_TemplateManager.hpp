@@ -53,19 +53,18 @@
 
 namespace panzer {
 
-  template<typename Traits>
-  class AssemblyEngine_TemplateManager : 
-    public PHX::TemplateManager<typename Traits::EvalTypes,
-				panzer::Base,
-                                panzer::AssemblyEngine<_> > {
+template<typename Traits>
+class AssemblyEngine_TemplateManager :
+    public PHX::TemplateManager<typename Traits::EvalTypes, panzer::Base, panzer::AssemblyEngine<_> >
+{
 
-  public:
+public:
 
-    AssemblyEngine_TemplateManager() {}
+  AssemblyEngine_TemplateManager() {}
 
-    ~AssemblyEngine_TemplateManager() {}
+  ~AssemblyEngine_TemplateManager() {}
 
-  };
+};
 
 } 
 

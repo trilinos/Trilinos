@@ -48,6 +48,7 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Kokkos_DynRankView.hpp"
+#include "Panzer_IntegrationDescriptor.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -98,8 +99,7 @@ class CellAverage
   double multiplier;
 
   std::size_t num_qp;
-  std::size_t quad_index;
-  int quad_order;
+  IntegrationDescriptor id_;
  
 public:
   // for testing purposes

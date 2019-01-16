@@ -64,6 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_SubcellConnectivity.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 
 #include "Panzer_STK_Interface.hpp"
@@ -130,20 +131,13 @@ namespace panzer {
 
     panzer::IntegrationDescriptor sid(3, panzer::IntegrationDescriptor::SURFACE);
     panzer::BasisDescriptor bd(2, "HGrad");
-    std::map<std::string, panzer::WorksetNeeds> wkstRequirements;
-    wkstRequirements[element_block].addIntegrator(sid);
-    wkstRequirements[element_block].addBasis(bd);
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer(wkstFactory,wkstRequirements));
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
-    wkstContainer->setGlobalIndexer(dof_manager);
-
-    panzer::WorksetDescriptor workset_descriptor(element_block, panzer::WorksetSizeType::ALL_ELEMENTS, true,false);
-
-    auto worksets = wkstContainer->getWorksets(workset_descriptor);
+    // Note, surface integrators only work with 'ghosted' descriptors - ghosted implies connectivity
+    auto worksets = wkstContainer->getWorksets(panzer::blockGhostedDescriptor(element_block));
 
     TEST_ASSERT(worksets->size()==1);
 
@@ -152,8 +146,7 @@ namespace panzer {
     auto normals = workset.getIntegrationValues(sid).surface_normals;
     auto ip_coordinates = workset.getIntegrationValues(sid).ip_coordinates;
 
-    const panzer::SubcellConnectivity & face_connectivity = workset.getFaceConnectivity();
-
+    const panzer::SubcellConnectivity & face_connectivity = workset.getSubcellConnectivity(workset.numDimensions()-1);
 
     const int num_points = normals.extent(1);
     const int num_faces = face_connectivity.numSubcells();

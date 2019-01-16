@@ -50,12 +50,48 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_PointGenerator.hpp"
 
+namespace panzer {
+namespace {
+
+class SimplePointGenerator :
+    public PointGenerator {
+public:
+
+  SimplePointGenerator() = delete;
+  SimplePointGenerator(const SimplePointGenerator &) = delete;
+
+  SimplePointGenerator(const int num_points): num_points_(num_points) {}
+  virtual ~SimplePointGenerator() = default;
+
+  Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const override
+  {
+    throw std::logic_error("SimplePointGenerator::getPoints : A SimplePointGenerator cannot generate points - only returns number of points.");
+  }
+
+  virtual bool hasPoints(const shards::CellTopology & topo) const {return false;}
+
+  int numPoints(const shards::CellTopology & topo) const override
+  {
+    return num_points_;
+  }
+
+protected:
+
+  int num_points_;
+
+};
+
+} // end namespace <anonymous>
+}
+
 panzer::PointRule::
 PointRule(const std::string & ptName,
           int np,
           const panzer::CellData& cell_data) :
+  PointDescriptor(ptName),
   side(-1)
 {
+  this->setGenerator(Teuchos::rcp(new SimplePointGenerator(np)));
   setup(ptName,np,cell_data);
 }
 
@@ -65,8 +101,10 @@ PointRule(const std::string & point_rule_name,
           const int num_points_per_cell,
           const int num_faces,
           const int num_points_per_face,
-          const Teuchos::RCP<const shards::CellTopology> & cell_topology)
+          const Teuchos::RCP<const shards::CellTopology> & cell_topology) :
+  PointDescriptor(point_rule_name)
 {
+  this->setGenerator(Teuchos::rcp(new SimplePointGenerator(num_points_per_cell)));
   setup(point_rule_name, num_cells, num_points_per_cell, num_faces, num_points_per_face, cell_topology);
 }
 
@@ -75,9 +113,13 @@ PointRule(const std::string & point_rule_name,
 panzer::PointRule::
 PointRule(const panzer::PointDescriptor& description,
           const Teuchos::RCP<const shards::CellTopology> & cell_topology,
-          const int num_cells)
+          const int num_cells):
+  PointDescriptor(description)
 {
-  int num_points_per_cell = description.getGenerator().numPoints(*cell_topology);
+  int num_points_per_cell = 1;
+  // There are only a couple of cases where we won't have a generator
+  if(description.hasGenerator())
+    num_points_per_cell = description.getGenerator().numPoints(*cell_topology);
   setup(description.getType(), num_cells, num_points_per_cell, 0, 0, cell_topology);
 }
 

@@ -56,7 +56,6 @@
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 // Phalanx
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -81,9 +80,9 @@ namespace panzer
       std::vector<std::string>() */)
     :
     evalStyle_(evalStyle),
-    useDescriptors_(false),
     multiplier_(multiplier),
-    basisName_(basis.name())
+    bd_(*basis.getBasis()),
+    id_(ir)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -213,7 +212,6 @@ namespace panzer
       std::vector<PHX::FieldTag>() */)
     :
     evalStyle_(evalStyle),
-    useDescriptors_(true),
     bd_(bd),
     id_(id),
     multiplier_(multiplier),
@@ -286,18 +284,12 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& fm)
   {
-    using panzer::getBasisIndex;
     using PHX::MDField;
     using std::vector;
 
     // Get the Kokkos::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-
-    // Determine the index in the Workset bases for our particular basis
-    // name.
-    if (not useDescriptors_)
-      basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
 
     // Set up the field that will be used to build of the result of this
     // integration.
@@ -696,9 +688,7 @@ namespace panzer
     using std::vector;
 
     // Grab the basis information.
-    const BasisValues2<double>& bv = useDescriptors_ ?
-      this->wda(workset).getBasisValues(bd_, id_) :
-      *this->wda(workset).bases[basisIndex_];
+    const auto & bv = workset(this->details_idx_).getBasisIntegrationValues(bd_, id_);
 
     // If we're dealing with a two- or three-dimensional problem...
     if (spaceDim_ == 2)
@@ -716,7 +706,7 @@ namespace panzer
       // Multiply the integrand by the scalar multiplier out in front of the
       // integral.
       parallel_for(RangePolicy<Device, ScalarMultiplierTag>(0,
-        workset.num_cells), preMultiply);
+        workset.numCells()), preMultiply);
 
       // Multiply the integrand by any field multipliers out in front of the
       // integral.
@@ -724,7 +714,7 @@ namespace panzer
       {
         preMultiply.fieldMult = field;
         parallel_for(RangePolicy<Device, FieldMultiplierTag>(0,
-          workset.num_cells), preMultiply);
+          workset.numCells()), preMultiply);
       } // end loop over the field multipliers
 
       // Create an object to do the actual integration and then do it.
@@ -733,7 +723,7 @@ namespace panzer
       integrate.field             = field_;
       integrate.weightedCurlBasis = bv.weighted_curl_basis_scalar;
       integrate.evalStyle         = evalStyle_;
-      parallel_for(workset.num_cells, integrate);
+      parallel_for(workset.numCells(), integrate);
     }
     else // if (spaceDim_ == 3)
     {
@@ -750,7 +740,7 @@ namespace panzer
       // Multiply the integrand by the scalar multiplier out in front of the
       // integral.
       parallel_for(RangePolicy<Device, ScalarMultiplierTag>(0,
-        workset.num_cells), preMultiply);
+        workset.numCells()), preMultiply);
 
       // Multiply the integrand by any field multipliers out in front of the
       // integral.
@@ -758,7 +748,7 @@ namespace panzer
       {
         preMultiply.fieldMult = field;
         parallel_for(RangePolicy<Device, FieldMultiplierTag>(0,
-          workset.num_cells), preMultiply);
+          workset.numCells()), preMultiply);
       } // end loop over the field multipliers
 
       // Create an object to do the actual integration and then do it.
@@ -767,7 +757,7 @@ namespace panzer
       integrate.field             = field_;
       integrate.weightedCurlBasis = bv.weighted_curl_basis_vector;
       integrate.evalStyle         = evalStyle_;
-      parallel_for(workset.num_cells, integrate);
+      parallel_for(workset.numCells(), integrate);
     } // end if spaceDim_ is 2 or 3
   } // end of evaluateFields()
 

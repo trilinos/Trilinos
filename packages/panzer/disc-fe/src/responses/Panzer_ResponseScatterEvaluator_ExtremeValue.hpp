@@ -65,7 +65,7 @@ public:
 
   virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
                                  panzer::Traits::EvalData workset, 
-                                 WorksetDetailsAccessor& wda,
+                                 const unsigned int details_idx,
                                  Teuchos::ArrayRCP<double> & dgdx) const = 0;
 };
  
@@ -77,7 +77,7 @@ public:
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
                          panzer::Traits::EvalData workset, 
-                         WorksetDetailsAccessor& wda,
+                         const unsigned int details_idx,
                          Teuchos::ArrayRCP<double> & dgdx) const;
 private:
  
@@ -120,7 +120,7 @@ template <typename LO,typename GO>
 void ExtremeValueScatter<LO,GO>::scatterDerivative(
                                         const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & /* cellExtremeValue */,
                                         panzer::Traits::EvalData /* workset */, 
-                                        WorksetDetailsAccessor& /* wda */,
+                                        const unsigned int /* details_idx */,
                                         Teuchos::ArrayRCP<double> & /* dgdx */) const
 {
   TEUCHOS_ASSERT(false);

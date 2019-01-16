@@ -66,6 +66,7 @@ template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
 evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
 {
+
   typedef LinearObjContainer LOC;
 
   // make sure this container gets a dirichlet adjustment
@@ -101,6 +102,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
   // sure all neumann are done before dirichlet.
 
   if ( flags.getValue() & EvaluationFlags::BoundaryFill) {
+
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("panzer::AssemblyEngine::evaluate_neumannbcs("+PHX::print<EvalT>()+")",eval_neumannbcs);
       this->evaluateNeumannBCs(in);
@@ -172,6 +174,7 @@ template <typename EvalT>
 void panzer::AssemblyEngine<EvalT>::
 evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 {
+
   const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > > &
     volume_field_managers = m_field_manager_builder->getVolumeFieldManagers();
   const std::vector<WorksetDescriptor> & wkstDesc = m_field_manager_builder->getVolumeWorksetDescriptors();
@@ -187,6 +190,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
 
   // Loop over volume field managers
   for (std::size_t block = 0; block < volume_field_managers.size(); ++block) {
+
     const WorksetDescriptor & wd = wkstDesc[block];
     Teuchos::RCP< PHX::FieldManager<panzer::Traits> > fm = volume_field_managers[block];
     std::vector<panzer::Workset>& w = *wkstContainer->getWorksets(wd);
@@ -196,16 +200,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
     // Loop over worksets in this element block
     for (std::size_t i = 0; i < w.size(); ++i) {
       panzer::Workset& workset = w[i];
-
-      workset.alpha = in.alpha;
-      workset.beta = in.beta;
-      workset.time = in.time;
-      workset.step_size = in.step_size;
-      workset.stage_number = in.stage_number;
-      workset.gather_seeds = in.gather_seeds;
-      workset.evaluate_transient_terms = in.evaluate_transient_terms;
-
-
+      setupWorkset(in,workset);
       fm->template evaluateFields<EvalT>(workset);
     }
 
@@ -347,10 +342,11 @@ evaluateBCs(const panzer::BCType bc_type,
         bcfm_it->second;
    
       panzer::WorksetDescriptor desc = panzer::bcDescriptor(bc);
-      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(desc);
-      TEUCHOS_TEST_FOR_EXCEPTION(bc_wkst_ptr == Teuchos::null, std::logic_error,
-                         "Failed to find corresponding bc workset!");
-      const std::map<unsigned,panzer::Workset>& bc_wkst = *bc_wkst_ptr;
+//      Teuchos::RCP<const std::map<unsigned,panzer::Workset> > bc_wkst_ptr = wkstContainer->getSideWorksets(desc);
+      const auto worksets_ptr = wkstContainer->getWorksets(desc);
+      TEUCHOS_TEST_FOR_EXCEPTION(worksets_ptr.is_null(), std::logic_error, "Failed to find corresponding bc workset!");
+//      const std::map<unsigned,panzer::Workset>& bc_wkst = *bc_wkst_ptr;
+      auto & worksets = *worksets_ptr;
 
       // Only process bcs of the appropriate type (neumann or dirichlet)
       if (bc.bcType() == bc_type) {
@@ -365,39 +361,89 @@ evaluateBCs(const panzer::BCType bc_type,
           PANZER_FUNC_TIME_MONITOR_DIFF(timerSideName.str(),Side);
 
           // extract field manager for this side  
-          unsigned local_side_index = side->first;
-          PHX::FieldManager<panzer::Traits>& local_side_fm = 
-            const_cast<PHX::FieldManager<panzer::Traits>& >(side->second);
-          
-          // extract workset for this side: only one workset per face
-          std::map<unsigned,panzer::Workset>::const_iterator wkst_it = 
-            bc_wkst.find(local_side_index);
-          
-          TEUCHOS_TEST_FOR_EXCEPTION(wkst_it == bc_wkst.end(), std::logic_error,
-                             "Failed to find corresponding bc workset side!");
-          
-          panzer::Workset& workset = 
-            const_cast<panzer::Workset&>(wkst_it->second); 
+          const unsigned workset_id = side->first;
+          auto & workset_fm = const_cast<PHX::FieldManager<panzer::Traits>& >(side->second);
 
-          // run prevaluate
-          local_side_fm.template preEvaluate<EvalT>(ped);
+          // Find workset with given local_side_index - this throws an error if multiple worksets are found with the same subcell index
+          unsigned int workset_idx;
+          {
+            unsigned int count = 0;
+            for(unsigned int i=0; i<worksets.size(); ++i){
+              if(getWorksetBCID(worksets[i]) == workset_id){
+                workset_idx = i;
+                ++count;
+              }
+            }
+            if(count != 1){
+              std::stringstream ss;
+              for(unsigned int i=0; i<worksets.size(); ++i){
+                ss << getWorksetBCID(worksets[i]);
+                if(i != worksets.size() -1)
+                  ss << ", ";
+              }
+              TEUCHOS_TEST_FOR_EXCEPT_MSG(count != 1, "AssemblyEngine::evaluateBCs : Expected 1 workset for WorksetBCID '"<<workset_id<<"', found "<<count<<" instead. Options were " << ss.str());
+            }
 
-          // build and evaluate fields for the workset: only one workset per face
-          workset.alpha = in.alpha;
-          workset.beta = betaValue;
-          workset.time = in.time;
-          workset.gather_seeds = in.gather_seeds;
-          workset.evaluate_transient_terms = in.evaluate_transient_terms;
+          }
           
-          local_side_fm.template evaluateFields<EvalT>(workset);
+          {
+            auto & workset = worksets[workset_idx];
+            setupWorkset(in,workset);
 
-          // run postevaluate for consistency
-          local_side_fm.template postEvaluate<EvalT>(NULL);
+            // For special cases we need to overwrite what is done in setupWorkset
+            workset.template getDetails<WorksetFADDetails>("FAD").beta = betaValue;
+
+            // run prevaluate
+            workset_fm.template preEvaluate<EvalT>(ped);
+
+            // run evaluate
+            workset_fm.template evaluateFields<EvalT>(workset);
+
+            // run postevaluate for consistency
+            workset_fm.template postEvaluate<EvalT>(NULL);
+          }
           
         }
       }
     } 
   }
+
+}
+
+//===========================================================================
+//===========================================================================
+
+template <typename EvalT>
+void
+panzer::AssemblyEngine<EvalT>::
+setupWorkset(const panzer::AssemblyEngineInArgs& in,
+             panzer::Workset & workset)
+{
+
+  // Setup time information
+  workset.setTime(in.time);
+  workset.setTimeStepSize(in.step_size);
+
+  // Make sure our assembly-specific objects exist
+  if(not workset.hasDetails("FAD"))
+    workset.setDetails("FAD",Teuchos::rcp(new WorksetFADDetails));
+  if(not workset.hasDetails("Stepper"))
+    workset.setDetails("Stepper",Teuchos::rcp(new WorksetStepperDetails));
+
+  // Setup the FAD details based on the assembly requirements
+  auto & fad = workset.template getDetails<WorksetFADDetails>("FAD");
+  fad.alpha = in.alpha;
+  fad.beta = in.beta;
+  fad.gather_seeds = in.gather_seeds;
+
+  // Special case - here we need to overwrite the existing beta
+//  if(in.apply_dirichlet_beta)
+//    fad.beta = in.dirichlet_beta;
+
+  // There is some additional stepper information required by the assembly system
+  auto & stepper = workset.template getDetails<WorksetStepperDetails>("Stepper");
+  stepper.evaluate_transient_terms = in.evaluate_transient_terms;
+  stepper.stage_number = in.stage_number;
 
 }
 

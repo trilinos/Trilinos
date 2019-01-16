@@ -60,6 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
@@ -94,7 +95,7 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
-    // build DOF Manager (with a single HDiv basis)
+    // build DOF Manager (with a single HGrad basis) - not sure if this is needed for this test
     /////////////////////////////////////////////////////////////
 
     // build the connection manager
@@ -119,19 +120,12 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
 
     panzer::IntegrationDescriptor sid(2*2, panzer::IntegrationDescriptor::SURFACE);
-    std::map<std::string, panzer::WorksetNeeds> wkstRequirements;
-    wkstRequirements[element_block].addIntegrator(sid);
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory
-       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer(wkstFactory,wkstRequirements));
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dof_manager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
-    wkstContainer->setGlobalIndexer(dof_manager);
-
-    panzer::WorksetDescriptor workset_descriptor(element_block, panzer::WorksetSizeType::ALL_ELEMENTS, true,false);
-
-    auto worksets = wkstContainer->getWorksets(workset_descriptor);
+    auto worksets = wkstContainer->getWorksets(panzer::blockGhostedDescriptor(element_block));
 
     TEST_ASSERT(worksets->size()==1);
 

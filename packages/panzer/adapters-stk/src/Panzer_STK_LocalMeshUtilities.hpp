@@ -52,15 +52,15 @@ namespace panzer_stk
 {
   class STK_Interface;
 
-  /** Create a structure containing information about the local portion of a given element block
-   *
-   * \param[in] mesh Reference to STK mesh interface
-   *
-   * \returns Structure containing local mesh information
-   */
-  void
-  generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh,
-                        panzer::LocalMeshInfo & mesh_info);
+/** Create a structure containing information about the local portion of a given element block
+  *
+  * \param[in] mesh Reference to STK mesh interface
+  *
+  * \returns Structure containing local mesh information
+  */
+Teuchos::RCP<panzer::LocalMeshInfo>
+generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh);
+
 }
 
 #endif

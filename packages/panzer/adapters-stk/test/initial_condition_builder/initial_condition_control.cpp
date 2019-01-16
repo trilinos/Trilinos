@@ -58,6 +58,7 @@ using Teuchos::rcp;
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Version.hpp"
@@ -153,10 +154,9 @@ namespace panzer {
     needs["eblock-1_0"].bases          = { const_basis,    hgrad_basis};
     needs["eblock-1_0"].rep_field_name = {   densDesc.fieldName, condDesc.fieldName};
 
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-        = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer              // attach it to a workset container (uses lazy evaluation)
-        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,needs));
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     // setup field manager builder
     /////////////////////////////////////////////

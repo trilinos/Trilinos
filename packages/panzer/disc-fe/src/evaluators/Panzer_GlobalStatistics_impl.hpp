@@ -46,7 +46,6 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_String_Utilities.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_IosAllSaver.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -74,6 +73,8 @@ GlobalStatistics(
   panzer::StringTokenizer(names, names_string);
 
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
+
+  id_ = *ir;
 
   field_values.clear();
   for (typename std::vector<std::string>::const_iterator name = names.begin(); name != names.end(); ++name)
@@ -114,7 +115,6 @@ postRegistrationSetup(
   typename Traits::SetupData sd,
   PHX::FieldManager<Traits>& /* fm */)
 {
-  ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0], this->wda);
   for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.extent(0); ++cell)
     for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.extent(1); ++ip)
       ones(cell,ip) = 1.0;
@@ -127,14 +127,14 @@ GlobalStatistics<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  if (workset.num_cells == 0)
+  if (workset.numCells() == 0)
     return;
 
   Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(volumes.get_view(),
                                                                          ones.get_view(), 
-                                                                         (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
+                                                                         workset(this->details_idx_).getIntegrationValues(id_).weighted_measure.get_view());
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell)
+  for (index_t cell = 0; cell < workset.numCells(); ++cell)
     total_volume += volumes(cell);
 
   typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::size_type field_index = 0;
@@ -143,9 +143,9 @@ evaluateFields(
     
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(tmp.get_view(),
                                                                            field->get_view(), 
-                                                                           (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
+                                                                           workset(this->details_idx_).getIntegrationValues(id_).weighted_measure.get_view());
     
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (index_t cell = 0; cell < workset.numCells(); ++cell) {
       averages[field_index] += tmp(cell);
 
       for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < (field->extent(1)); ++ip) {

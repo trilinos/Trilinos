@@ -61,6 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_Workset.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_GatherIntegrationCoordinates.hpp"
@@ -99,27 +100,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   //////////////////////////////////////////////////////////
   // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
+  Teuchos::RCP<shards::CellTopology> topo =
+     Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
+  {
+    panzer::WorksetOptions options;
+    options.side_assembly_ = true;
+    panzer::LocalMeshPartition partition;
+    partition.element_block_name = "eblock-0_0";
+    partition.cell_topology = topo;
+    partition.num_owned_cells = numCells;
+    partition.subcell_dimension = dim-1;
+    partition.subcell_index = 1;
+    auto & local_cells = partition.local_cells = Kokkos::View<int*,PHX::Device>("ids",numCells);
 
-  MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+    auto & coords = partition.cell_vertices = Kokkos::View<double***,PHX::Device>("vertices",numCells, numVerts, dim);
 
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+    coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+    coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+    coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+
+    coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+    coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+    coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+    coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+
+    local_cells(0) = 0;
+    local_cells(1) = 1;
+
+    workset->setup(partition, options);
+  }
+  const auto & coords = workset->getCellVertices();
 
   // build topology, basis, integration rule, and basis layout
   int quadOrder = 5;
-  Teuchos::RCP<shards::CellTopology> topo
-    = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
   panzer::CellData cellData(2,1,topo);
   RCP<PureBasis> basis = rcp(new PureBasis("Q1",1,2,topo));
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
@@ -127,7 +143,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
 
   RCP<IntegrationValues2<double> > quadValues = rcp(new IntegrationValues2<double>("",true));
   quadValues->setupArrays(quadRule);
-  quadValues->evaluateValues(coords);
+  quadValues->evaluateValues(workset->getCellVertices());
 
   RCP<BasisValues2<double> > basisValues = rcp(new BasisValues2<double>("",true));
   basisValues->setupArrays(basisLayout);
@@ -136,23 +152,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
                               quadValues->jac_det,
                               quadValues->jac_inv,
                               quadValues->weighted_measure,
-                              coords);
-                              // quadValues->node_coordinates);
-
-  // setup generic workset stuff
-  workset->cell_local_ids.push_back(0); workset->cell_local_ids.push_back(1);
-  workset->num_cells = numCells;
-  workset->block_id = "eblock-0_0";
-
-  // setup integration rule
-  workset->ir_degrees = Teuchos::rcp(new std::vector<int>);
-  workset->ir_degrees->push_back(quadRule->cubature_degree);
-  workset->int_rules.push_back(quadValues);
-
-  // setup basis functions
-  workset->basis_names = Teuchos::rcp(new std::vector<std::string>);
-  workset->basis_names->push_back(basis->name());
-  workset->bases.push_back(basisValues);
+                              workset->getCellVertices());
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
@@ -237,28 +237,43 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   //////////////////////////////////////////////////////////
   // typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
+  Teuchos::RCP<shards::CellTopology> topo =
+     Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
+  {
+    panzer::WorksetOptions options;
+    options.side_assembly_ = true;
+    panzer::LocalMeshPartition partition;
+    partition.element_block_name = "eblock-0_0";
+    partition.cell_topology = topo;
+    partition.num_owned_cells = numCells;
+    partition.subcell_dimension = dim-1;
+    partition.subcell_index = 1;
+    auto & local_cells = partition.local_cells = Kokkos::View<int*,PHX::Device>("ids",numCells);
 
-  // FieldArray & coords = workset->cell_vertex_coordinates;
-  // coords.resize(numCells,numVerts,dim);
+    auto & coords = partition.cell_vertices = Kokkos::View<double***,PHX::Device>("vertices",numCells, numVerts, dim);
 
-  MDFieldArrayFactory af("",true);
-  workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
-  Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+    coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+    coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+    coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+    coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
 
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+    coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+    coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+    coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+
+    local_cells(0) = 0;
+    local_cells(1) = 1;
+
+    workset->setup(partition, options);
+  }
+
+  const auto & coords = workset->getCellVertices();
 
   // build topology, basis, integration rule, and basis layout
   int quadOrder = 5;
-  Teuchos::RCP<shards::CellTopology> topo
-    = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
   panzer::CellData cellData(2,1,topo);
   RCP<PureBasis> basis = rcp(new PureBasis("Q1",1,2,topo));
   Teuchos::RCP<panzer::IntegrationRule> quadRule = Teuchos::rcp(new panzer::IntegrationRule(quadOrder,cellData));
@@ -276,22 +291,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
                               quadValues->jac_inv,
                               quadValues->weighted_measure,
                               coords);
-                              // quadValues->node_coordinates);
-
-  // setup generic workset stuff
-  workset->cell_local_ids.push_back(0); workset->cell_local_ids.push_back(1);
-  workset->num_cells = numCells;
-  workset->block_id = "eblock-0_0";
-
-  // setup integration rule
-  workset->ir_degrees = Teuchos::rcp(new std::vector<int>);
-  workset->ir_degrees->push_back(quadRule->cubature_degree);
-  workset->int_rules.push_back(quadValues);
-
-  // setup basis functions
-  workset->basis_names = Teuchos::rcp(new std::vector<std::string>);
-  workset->basis_names->push_back(basis->name());
-  workset->bases.push_back(basisValues);
 
   Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
@@ -353,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   for(int cell=0;cell<fmCoords.extent_int(0);++cell)
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
       for(int d=0;d<fmCoords.extent_int(2);++d)
-	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,d)),quadValues->ip_coordinates(cell,pt,d));
+        TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,d)),quadValues->ip_coordinates(cell,pt,d));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

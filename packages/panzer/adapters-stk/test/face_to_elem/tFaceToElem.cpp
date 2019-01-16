@@ -55,11 +55,15 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_Relations.hpp"
+#include "Panzer_WorksetUtilities.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_STK_SquareTriMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
+#include "Panzer_STK_LocalMeshUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
 
 #include <Shards_BasicTopologies.hpp>
@@ -223,14 +227,12 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_build_workset)
   RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
   mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
-  const Teuchos::RCP<panzer::ConnManager>
-      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-
-  FaceToElems rel(conn_manager);
+  auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+  auto & mesh_info = *mesh_info_rcp;
 
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
-  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                          physicsBlock->getWorksetNeeds());                    
+  auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID()));
+
 }
 
 TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
@@ -249,9 +251,11 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tet_normals)
 
   FaceToElems rel(conn_manager);
 
+  auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+  auto & mesh_info = *mesh_info_rcp;
+
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
-  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                          physicsBlock->getWorksetNeeds());                    
+  auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID()));
 
   rel.setNormals(work_sets);
 
@@ -294,9 +298,11 @@ TEUCHOS_UNIT_TEST(tFullRelations, test_tri_normals)
 
   FaceToElems rel(conn_manager);
 
+  auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+  auto & mesh_info = *mesh_info_rcp;
+
   Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = createPhysicsBlock(mesh);
-  Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                          physicsBlock->getWorksetNeeds());                    
+  auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID()));
 
   rel.setNormals(work_sets);
   std::vector<double> norm;

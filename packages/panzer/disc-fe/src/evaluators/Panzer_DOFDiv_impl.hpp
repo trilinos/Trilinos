@@ -45,7 +45,6 @@
 
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 
 namespace panzer {
@@ -151,13 +150,14 @@ public:
 template<typename EvalT, typename TRAITS>
 DOFDiv<EvalT, TRAITS>::
 DOFDiv(const Teuchos::ParameterList & p) :
-  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"),
-	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional)
 {
   Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+
+  bd_ = *basis;
+  id_ = *(p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR"));
 
   // Verify that this basis supports the div operation
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsDiv(),std::logic_error,
@@ -184,8 +184,7 @@ DOFDiv(const PHX::FieldTag & input,
        const PHX::FieldTag & output,
        const panzer::BasisDescriptor & bd,
        const panzer::IntegrationDescriptor & id)
-  : use_descriptors_(true)
-  , bd_(bd)
+  : bd_(bd)
   , id_(id)
   , dof_value(input)
 {
@@ -205,26 +204,15 @@ DOFDiv(const PHX::FieldTag & input,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 void DOFDiv<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
-                      PHX::FieldManager<TRAITS>& /* fm */)
-{
-  if(not use_descriptors_)
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
-}
-
-//**********************************************************************
-template<typename EvalT, typename TRAITS>
-void DOFDiv<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-  if (workset.num_cells == 0)
+  if (workset.numCells() == 0)
     return;
 
-  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
-                                                                      : *this->wda(workset).bases[basis_index];
+  const auto & basisValues = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_);
 
   const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
-  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
+  auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.numCells());
   auto f = EvaluateDOFDiv_withSens<ScalarT,typename panzer::BasisValues2<double>::Array_CellBasisIP>(dof_div,dof_value,basisValues.div_basis,use_shared_memory);
   Kokkos::parallel_for(policy,f,this->getName());
 }
@@ -239,13 +227,14 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS>
 DOFDiv<panzer::Traits::Jacobian, TRAITS>::
 DOFDiv(const Teuchos::ParameterList & p) :
-  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"),
-	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional)
 {
   Teuchos::RCP<const PureBasis> basis
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+
+  bd_ = *basis;
+  id_ = *(p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR"));
 
   // do you specialize because you know where the basis functions are and can
   // skip a large number of AD calculations?
@@ -282,8 +271,7 @@ DOFDiv(const PHX::FieldTag & input,
        const PHX::FieldTag & output,
        const panzer::BasisDescriptor & bd,
        const panzer::IntegrationDescriptor & id)
-  : use_descriptors_(true)
-  , bd_(bd)
+  : bd_(bd)
   , id_(id)
   , dof_value(input)
 {
@@ -302,32 +290,18 @@ DOFDiv(const PHX::FieldTag & input,
   this->setName(n);
 }
 
-//**********************************************************************
-template<typename TRAITS>
-void DOFDiv<panzer::Traits::Jacobian, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
-                      PHX::FieldManager<TRAITS>& fm)
-{
-  this->utils.setFieldData(dof_value,fm);
-  this->utils.setFieldData(dof_div,fm);
-
-  if(not use_descriptors_)
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
-}
-
 template<typename TRAITS>
 void DOFDiv<panzer::Traits::Jacobian,TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-  if (workset.num_cells == 0)
+  if (workset.numCells() == 0)
     return;
 
-  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
-                                                                      : *this->wda(workset).bases[basis_index];
+  const auto & basisValues = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_);
 
   if(!accelerate_jacobian) {
     const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
-    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
+    auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.numCells());
     auto f = EvaluateDOFDiv_withSens<ScalarT,typename panzer::BasisValues2<double>::Array_CellBasisIP>(dof_div,dof_value,basisValues.div_basis,use_shared_memory);
     Kokkos::parallel_for(policy,f,this->getName());
     return;

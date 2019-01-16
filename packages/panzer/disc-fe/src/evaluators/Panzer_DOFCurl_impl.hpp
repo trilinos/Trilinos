@@ -45,7 +45,6 @@
 
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
@@ -316,14 +315,19 @@ void evaluateCurl_fastSens_scalar(int numCells,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 DOFCurl<EvalT, TRAITS>::
-DOFCurl(const Teuchos::ParameterList & p) :
-  use_descriptors_(false),
-  dof_value( p.get<std::string>("Name"), 
-	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+DOFCurl(const Teuchos::ParameterList & p)
 {
-  Teuchos::RCP<const PureBasis> basis 
-     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+
+  auto birl = p.get< Teuchos::RCP<BasisIRLayout> >("Basis");
+  auto basis = birl->getBasis();
+  auto ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
+  const auto & output_name = p.get<std::string>("Name");
+  const auto & curl_name = p.get<std::string>("Curl Name");
+
+  bd_ = *basis;
+  id_ = *ir;
+
+  TEUCHOS_ASSERT(bd_.getType()=="HCurl");
 
   // Verify that this basis supports the curl operation
   TEUCHOS_TEST_FOR_EXCEPTION(!basis->supportsCurl(),std::logic_error,
@@ -334,23 +338,21 @@ DOFCurl(const Teuchos::ParameterList & p) :
   // build dof_curl
   basis_dimension = basis->dimension();
   if(basis_dimension==2) {
-     dof_curl_scalar = PHX::MDField<ScalarT,Cell,Point>(p.get<std::string>("Curl Name"), 
-      	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
+     dof_curl_scalar = PHX::MDField<ScalarT,Cell,Point>(curl_name, ir->dl_scalar);
      this->addEvaluatedField(dof_curl_scalar);
-  }
-  else if(basis_dimension==3) {
-     dof_curl_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(p.get<std::string>("Curl Name"), 
-      	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
+  } else if(basis_dimension==3) {
+     dof_curl_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(curl_name, ir->dl_vector );
      this->addEvaluatedField(dof_curl_vector);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions");
   }
-  else
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // add to evaluation graph
+  dof_value = PHX::MDField<const ScalarT,Cell,Point>(output_name, birl->functional);
   this->addDependentField(dof_value);
   
-  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " ()";
-  this->setName(n);
+  const std::string dof_name = basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name();
+  this->setName("DOFCurl: " + dof_name + " ()");
 }
 
 //**********************************************************************
@@ -361,8 +363,7 @@ DOFCurl(const PHX::FieldTag & input,
         const panzer::BasisDescriptor & bd,
         const panzer::IntegrationDescriptor & id,
         int basis_dim)
-  : use_descriptors_(true)
-  , bd_(bd) 
+  : bd_(bd)
   , id_(id) 
   , dof_value(input)
 {
@@ -374,19 +375,18 @@ DOFCurl(const PHX::FieldTag & input,
   if(basis_dimension==2) {
      dof_curl_scalar = output;
      this->addEvaluatedField(dof_curl_scalar);
-  }
-  else if(basis_dimension==3) {
+  } else if(basis_dimension==3) {
      dof_curl_vector = output;
      this->addEvaluatedField(dof_curl_vector);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions");
   }
-  else
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // add to evaluation graph
   this->addDependentField(dof_value);
-  
-  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " ()";
-  this->setName(n);
+
+  const std::string dof_name = basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name();
+  this->setName("DOFCurl: " + dof_name + " ()");
 }
 
 //**********************************************************************
@@ -401,8 +401,6 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_curl_scalar,fm);
 
-  if(not use_descriptors_)
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -410,16 +408,15 @@ template<typename EvalT, typename TRAITS>
 void DOFCurl<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
-                                                                      : *this->wda(workset).bases[basis_index];
+  const auto & basisValues = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_);
 
   if(basis_dimension==3) {
     EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
-    Kokkos::parallel_for(workset.num_cells,functor);
+    Kokkos::parallel_for(workset.numCells(),functor);
   }
   else {
     EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
-    Kokkos::parallel_for(workset.num_cells,functor);
+    Kokkos::parallel_for(workset.numCells(),functor);
   }
 }
 
@@ -432,14 +429,18 @@ evaluateFields(typename TRAITS::EvalData workset)
 //**********************************************************************
 template<typename TRAITS>                   
 DOFCurl<typename TRAITS::Jacobian, TRAITS>::
-DOFCurl(const Teuchos::ParameterList & p) :
-  use_descriptors_(false),
-  dof_value( p.get<std::string>("Name"), 
-	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
+DOFCurl(const Teuchos::ParameterList & p)
 {
-  Teuchos::RCP<const PureBasis> basis 
-     = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
+  auto birl = p.get< Teuchos::RCP<BasisIRLayout> >("Basis");
+  auto basis = birl->getBasis();
+  auto ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
+  const auto & output_name = p.get<std::string>("Name");
+  const auto & curl_name = p.get<std::string>("Curl Name");
+
+  bd_ = *basis;
+  id_ = *ir;
+
+  TEUCHOS_ASSERT(bd_.getType()=="HCurl");
 
   // do you specialize because you know where the basis functions are and can
   // skip a large number of AD calculations?
@@ -467,23 +468,21 @@ DOFCurl(const Teuchos::ParameterList & p) :
   // build dof_curl
   basis_dimension = basis->dimension();
   if(basis_dimension==2) {
-     dof_curl_scalar = PHX::MDField<ScalarT,Cell,Point>(p.get<std::string>("Curl Name"), 
-      	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar );
+     dof_curl_scalar = PHX::MDField<ScalarT,Cell,Point>(curl_name, ir->dl_scalar );
      this->addEvaluatedField(dof_curl_scalar);
-  }
-  else if(basis_dimension==3) {
-     dof_curl_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(p.get<std::string>("Curl Name"), 
-      	                              p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_vector );
+  } else if(basis_dimension==3) {
+     dof_curl_vector = PHX::MDField<ScalarT,Cell,Point,Dim>(curl_name, ir->dl_vector );
      this->addEvaluatedField(dof_curl_vector);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions");
   }
-  else
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // add to evaluation graph
+  dof_value = PHX::MDField<const ScalarT,Cell,Point>(output_name, birl->functional);
   this->addDependentField(dof_value);
-  
-  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " (Jacobian)";
-  this->setName(n);
+
+  const std::string dof_name = basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name();
+  this->setName("DOFCurl: " + dof_name + " ()");
 }
 
 //**********************************************************************
@@ -494,8 +493,7 @@ DOFCurl(const PHX::FieldTag & input,
         const panzer::BasisDescriptor & bd,
         const panzer::IntegrationDescriptor & id,
         int basis_dim)
-  : use_descriptors_(true)
-  , bd_(bd) 
+  : bd_(bd)
   , id_(id) 
   , dof_value(input)
 {
@@ -509,19 +507,18 @@ DOFCurl(const PHX::FieldTag & input,
   if(basis_dimension==2) {
      dof_curl_scalar = output;
      this->addEvaluatedField(dof_curl_scalar);
-  }
-  else if(basis_dimension==3) {
+  } else if(basis_dimension==3) {
      dof_curl_vector = output;
      this->addEvaluatedField(dof_curl_vector);
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions");
   }
-  else
-  { TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFCurl only works for 2D and 3D basis functions"); } 
 
   // add to evaluation graph
   this->addDependentField(dof_value);
-  
-  std::string n = "DOFCurl: " + (basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name())+ " (Jacobian)";
-  this->setName(n);
+
+  const std::string dof_name = basis_dimension==2 ? dof_curl_scalar.fieldTag().name() : dof_curl_vector.fieldTag().name();
+  this->setName("DOFCurl: " + dof_name + " ()");
 }
 
 //**********************************************************************
@@ -536,25 +533,22 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_curl_scalar,fm);
 
-  if(not use_descriptors_) 
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 template<typename TRAITS>                   
 void DOFCurl<typename TRAITS::Jacobian,TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
-                                                                      : *this->wda(workset).bases[basis_index];
+  const auto & basisValues = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_);
 
   if(!accelerate_jacobian) {
     if(basis_dimension==3) {
       EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
-      Kokkos::parallel_for(workset.num_cells,functor);
+      Kokkos::parallel_for(workset.numCells(),functor);
     }
     else {
       EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
-      Kokkos::parallel_for(workset.num_cells,functor);
+      Kokkos::parallel_for(workset.numCells(),functor);
     }
 
     return;
@@ -563,11 +557,11 @@ evaluateFields(typename TRAITS::EvalData workset)
 
     if(basis_dimension==3) {
       EvaluateCurlFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,offsets_array,basisValues.curl_basis_vector);
-      Kokkos::parallel_for(workset.num_cells,functor);
+      Kokkos::parallel_for(workset.numCells(),functor);
     }
     else {
       EvaluateCurlFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,offsets_array,basisValues.curl_basis_scalar);
-      Kokkos::parallel_for(workset.num_cells,functor);
+      Kokkos::parallel_for(workset.numCells(),functor);
     }
   }
 }

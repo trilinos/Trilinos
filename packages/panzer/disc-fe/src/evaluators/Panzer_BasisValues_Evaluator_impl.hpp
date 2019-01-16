@@ -45,7 +45,6 @@
 
 #include <algorithm>
 #include "Panzer_PointRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace panzer {
 
@@ -227,17 +226,17 @@ evaluateFields(
                               pointValues.jac,
                               pointValues.jac_det,
                               pointValues.jac_inv,
-                              (int) workset.num_cells);
+                              (int) workset.numCells());
 
   // this can be over-ridden in basisValues e.g., DG element setting
   if(basis->requiresOrientations()) {
-    const WorksetDetails & details = workset;
+    const Workset & details = workset;
     
     std::vector<Intrepid2::Orientation> ortPerWorkset;
-    for (index_t c=0;c<workset.num_cells;++c)
-      ortPerWorkset.push_back((*orientations)[details.cell_local_ids[c]]);
+    for (index_t c=0;c<workset.numCells();++c)
+      ortPerWorkset.push_back((*orientations)[details.getLocalCellIDs()(c)]);
     
-    basisValues->applyOrientations(ortPerWorkset, (int) workset.num_cells);
+    basisValues->applyOrientations(ortPerWorkset, (int) workset.numCells());
   }
 }
 

@@ -86,8 +86,8 @@ class InterfaceResidual
   PHX::MDField<const ScalarT> flux;
   PHX::MDField<const ScalarT> normal;
 
-  std::string basis_name;
-  std::size_t basis_index;
+  BasisDescriptor bd_;
+  IntegrationDescriptor id_;
   std::size_t num_ip;
   std::size_t num_dim;
 

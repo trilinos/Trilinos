@@ -127,7 +127,7 @@ DirichletResidual_EdgeBasis<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  const int numCells = workset.num_cells;
+  const int numCells = workset.numCells();
   if(numCells <= 0)
     return;
   else {
@@ -135,8 +135,8 @@ evaluateFields(
 
     // dofs are already oriented but tangent directions are not oriented
 
-    const int subcellDim = workset.subcell_dim;
-    const int subcellOrd = this->wda(workset).subcell_index;
+    const int subcellDim = workset.getSubcellDimension();
+    const int subcellOrd = workset(this->details_idx_).getSubcellIndex();
     
     const auto cellTopo = *basis->getCellTopology();
     const auto worksetJacobians = pointValues.jac.get_view();
@@ -144,7 +144,7 @@ evaluateFields(
     const int cellDim = cellTopo.getDimension();
 
     auto intrepid_basis = basis->getIntrepid2Basis();
-    const WorksetDetails & details = workset;
+    const auto & cell_local_ids = workset.getLocalCellIDs();
 
     const bool is_normalize = true;
     auto work = Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim);
@@ -159,8 +159,8 @@ evaluateFields(
         const int ndofsEdge = intrepid_basis->getDofCount(1, subcellOrd);
         const int numEdges = cellTopo.getEdgeCount();
         /* */ int edgeOrts[4] = {};
-        for(index_t c=0;c<workset.num_cells;c++) {
-          orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
+        for(index_t c=0;c<workset.numCells();c++) {
+          orientations->at(cell_local_ids(c)).getEdgeOrientation(edgeOrts, numEdges);
           
           Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
                                                           subcellOrd,
@@ -192,12 +192,12 @@ evaluateFields(
         const int numEdgesOfFace= cellTopo.getEdgeCount(2, subcellOrd);
 
         int edgeOrts[12] = {};
-        for(index_t c=0;c<workset.num_cells;c++) {
+        for(index_t c=0;c<workset.numCells();c++) {
           for (int i=0;i<numEdgesOfFace;++i) {
 
             const int edgeOrd = Intrepid2::Orientation::getEdgeOrdinalOfFace(i, subcellOrd, cellTopo);
             const int b = edgeOrd;
-            orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
+            orientations->at(cell_local_ids(c)).getEdgeOrientation(edgeOrts, numEdges);
             
             Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
                                                             edgeOrd,
@@ -225,8 +225,8 @@ evaluateFields(
         auto ortFaceTanV = Kokkos::subview(work, 3, Kokkos::ALL());
         
         int faceOrts[6] = {};
-        for(index_t c=0;c<workset.num_cells;c++) {
-          orientations->at(details.cell_local_ids[c]).getFaceOrientation(faceOrts, numFaces);
+        for(index_t c=0;c<workset.numCells();c++) {
+          orientations->at(cell_local_ids(c)).getFaceOrientation(faceOrts, numFaces);
           Intrepid2::Orientation::getReferenceFaceTangents(ortFaceTanU,
                                                            ortFaceTanV,
                                                            subcellOrd,

@@ -55,7 +55,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -63,6 +63,7 @@ using Teuchos::rcp;
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalData.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -111,41 +112,30 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     {
-       testInitialzation(ipb, bcs);
+      testInitialzation(ipb, bcs);
 
-       std::map<std::string,std::string> block_ids_to_physics_ids;
-       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
-       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
+      std::map<std::string,std::string> block_ids_to_physics_ids;
+      block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+      block_ids_to_physics_ids["eblock-1_0"] = "test physics";
 
-       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
-       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
+      std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
+      block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
+      block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
 
-       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       int default_integration_order = 1;
 
-       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
-                                  block_ids_to_cell_topo,
-				  ipb,
-				  default_integration_order,
-				  workset_size,
-                                  eqset_factory,
-				  gd,
-			          false,
-                                  physics_blocks);
+      panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
+                                 block_ids_to_cell_topo,
+                                 ipb,
+                                 default_integration_order,
+                                 workset_size,
+                                 eqset_factory,
+                                 gd,
+                                 false,
+                                 physics_blocks);
     }
-
-    // setup worksets
-    /////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physics_blocks.size();i++)
-      wkstContainer->setNeeds(physics_blocks[i]->elementBlockID(),physics_blocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
 
     // setup DOF manager
     /////////////////////////////////////////////
@@ -160,6 +150,12 @@ namespace panzer {
     // and linear object factory
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(tComm.getConst(),dofManager);
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     // setup field manager builder
     /////////////////////////////////////////////
@@ -176,7 +172,7 @@ namespace panzer {
     Teuchos::ParameterList user_data("User Data");
 
     fmb.setWorksetContainer(wkstContainer);
-    fmb.setupVolumeFieldManagers(physics_blocks,cm_factory,closure_models,elof,user_data);
+    fmb.setupVolumeFieldManagers(physics_blocks,cm_factory,closure_models,elof,user_data, workset_size);
     fmb.setupBCFieldManagers(bcs,physics_blocks,*eqset_factory,cm_factory,bc_factory,closure_models,elof, user_data);
 
     // run tests
@@ -193,11 +189,11 @@ namespace panzer {
 
     Teuchos::RCP<std::vector<panzer::Workset> > fmb_vol_worksets;
 
-    panzer::WorksetDescriptor wd = blockDescriptor("eblock-0_0");
+    panzer::WorksetDescriptor wd("eblock-0_0", workset_size);
     fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
 
-    wd = blockDescriptor("eblock-1_0");
+    wd = WorksetDescriptor("eblock-1_0", workset_size);
     fmb_vol_worksets = wkstContainer->getWorksets(wd);
     TEST_ASSERT(fmb_vol_worksets!=Teuchos::null);
 
@@ -205,9 +201,10 @@ namespace panzer {
     const std::map<panzer::BC,
       std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
       panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
-
-    std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >, panzer::LessBC> fmb_bc_worksets;
-    panzer::getSideWorksetsFromContainer(*wkstContainer,bcs,fmb_bc_worksets);
+      
+    std::map<panzer::BC,Teuchos::RCP<std::vector<panzer::Workset> >, panzer::LessBC> fmb_bc_worksets;
+    for(const auto & bc : bcs)
+      fmb_bc_worksets[bc] = wkstContainer->getWorksets(panzer::sidesetDescriptor(bc.elementBlockID(),bc.sidesetID(),workset_size));
 
     TEST_EQUALITY(fmb_bc_fm.size(), 3);
     TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());

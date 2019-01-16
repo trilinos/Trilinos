@@ -203,8 +203,8 @@ evaluateFields(
     return;
 
   // For convenience, pull out some objects from the workset.
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
 
   // NOTE:  A reordering of these loops will likely improve performance.  The

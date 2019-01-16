@@ -44,7 +44,6 @@
 #define PANZER_DOF_BASIS_TO_BASIS_IMPL_HPP
 
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Intrepid2_Basis.hpp"
@@ -103,7 +102,7 @@ void DOF_BasisToBasis<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData 
   // Zero out arrays (intrepid does a sum!)
   dof_target_coeff.deep_copy(ScalarT(0.0));
 
-  if(workset.num_cells>0) {
+  if(workset.numCells()>0) {
 
     // evaluate function at specified points
     Intrepid2::FunctionSpaceTools<PHX::exec_space>::evaluate(dof_target_coeff.get_view(),

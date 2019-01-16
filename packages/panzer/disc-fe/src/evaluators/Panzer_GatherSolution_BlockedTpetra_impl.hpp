@@ -53,6 +53,7 @@
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Panzer_Workset.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -148,7 +149,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  const std::string blockId = this->wda(workset_0).block_id;
+  const std::string blockId = workset_0(this->details_idx_).getElementBlock();
 
   fieldIds_.resize(gatherFields_.size());
   fieldOffsets_.resize(gatherFields_.size());
@@ -203,7 +204,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   using Thyra::VectorBase;
   using Thyra::ProductVectorBase;
   
-  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  const auto& localCellIds = workset(this->details_idx_).getLocalCellIDs();
   
   RCP<ProductVectorBase<ScalarT>> thyraBlockSolution;
   if (useTimeDerivativeSolutionVector_)
@@ -228,7 +229,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto& worksetLIDs = worksetLIDs_;
     const auto& fieldValues = gatherFields_[fieldIndex];
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numCells()), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int lid = worksetLIDs(cell,fieldOffsets(basis));
         fieldValues(cell,basis) = kokkosSolution(lid,0);        
@@ -346,8 +347,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   std::string blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)
@@ -455,7 +456,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  const std::string blockId = this->wda(workset_0).block_id;
+  const std::string blockId = workset_0(this->details_idx_).getElementBlock();
 
   fieldIds_.resize(gatherFields_.size());
   fieldOffsets_.resize(gatherFields_.size());
@@ -521,17 +522,17 @@ evaluateFields(typename TRAITS::EvalData workset)
   using Thyra::VectorBase;
   using Thyra::ProductVectorBase;
 
-  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  const auto& localCellIds = workset(this->details_idx_).getLocalCellIDs();
   
   RealType seedValue = RealType(0.0);
   RCP<ProductVectorBase<double>> blockedSolution;
   if (useTimeDerivativeSolutionVector_) {
     blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
-    seedValue = workset.alpha;
+    seedValue = workset.template getDetails<WorksetFADDetails>("FAD").alpha;
   }
   else {
     blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
-    seedValue = workset.beta;
+    seedValue = workset.template getDetails<WorksetFADDetails>("FAD").beta;
   }
 
   // turn off sensitivies: this may be faster if we don't expand the term
@@ -564,7 +565,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const int blockStart = blockOffsets(blockRowIndex);
     const int numDerivatives = blockOffsets(numFieldBlocks);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.numCells()), KOKKOS_LAMBDA (const int& cell) {
       for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
         fieldValues(cell,basis) = ScalarT(numDerivatives,kokkosSolution(rowLID,0));

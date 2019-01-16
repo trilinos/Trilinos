@@ -78,11 +78,11 @@ CoordinatesEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData d)
 { 
-  PHX::MDField<double,Cell,NODE,Dim> coords = this->wda(d).cell_vertex_coordinates;
+  const auto & coords = d(this->details_idx_).getCellVertices();
   // const Kokkos::DynRankView<double,PHX::Device> & coords = this->wda(d).cell_vertex_coordinates;
 
   // copy coordinates directly into the field
-  for(index_t i=0;i<d.num_cells;i++)
+  for(index_t i=0;i<d.numCells();i++)
     for(int j=0;j<coords.extent_int(1);j++)
       coordinate(i,j) = coords(i,j,dimension);       
 }

@@ -58,7 +58,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
@@ -72,6 +72,7 @@ using Teuchos::rcp;
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_WorksetContainer.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "user_app_RythmosObserver_Epetra.hpp"
 #include "user_app_EquationSetFactory.hpp"
@@ -179,17 +180,6 @@ namespace panzer {
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++)
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-
     // build DOF Manager
     /////////////////////////////////////////////////////////////
 
@@ -204,8 +194,14 @@ namespace panzer {
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
-      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
+      Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
 
     // setup field manager build
     /////////////////////////////////////////////////////////////
@@ -226,7 +222,7 @@ namespace panzer {
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data, workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     // Print Phalanx DAGs
@@ -460,19 +456,8 @@ namespace panzer {
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
-   mesh->setupExodusFile("transient.exo");
-
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++)
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-
+   mesh->setupExodusFile("transient.exo"); 
+   
     // build DOF Manager
     /////////////////////////////////////////////////////////////
 
@@ -486,6 +471,12 @@ namespace panzer {
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
           = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary =
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
@@ -510,7 +501,7 @@ namespace panzer {
     Teuchos::ParameterList user_data("User Data");
 
     fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,*cm_factory,closure_models,*linObjFactory, user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,*cm_factory,closure_models,*linObjFactory, user_data, workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,*cm_factory,bc_factory,closure_models,*linObjFactory,user_data);
 
     // Print Phalanx DAGs

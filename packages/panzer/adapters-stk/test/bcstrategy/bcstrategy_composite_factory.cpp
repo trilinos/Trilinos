@@ -57,7 +57,7 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_AssemblyEngine.hpp"

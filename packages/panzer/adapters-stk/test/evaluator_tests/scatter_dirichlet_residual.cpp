@@ -55,12 +55,16 @@ using Teuchos::rcp;
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_PureBasis.hpp"
+#include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_GatherSolution_BlockedEpetra.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Panzer_WorksetUtilities.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -68,6 +72,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
+#include "Panzer_STK_LocalMeshUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -126,8 +131,10 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
+    auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID()));
+
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -281,10 +288,21 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.alpha = 0.0;
-    workset.beta = 2.0; // derivatives multiplied by 2
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    workset.setTime(0.0);
+
+    auto fad_details = Teuchos::rcp(new WorksetFADDetails);
+    fad_details->alpha = 0.;
+    fad_details->beta = 2.;
+    workset.setDetails("FAD", fad_details);
+
+    auto stepper_details = Teuchos::rcp(new WorksetStepperDetails);
+    stepper_details->evaluate_transient_terms = false;
+    workset.setDetails("Stepper", stepper_details);
+
+//    workset.alpha = 0.0;
+//    workset.beta = 2.0; // derivatives multiplied by 2
+//    workset.time = 0.0;
+//    workset.evaluate_transient_terms = false;
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 
@@ -310,7 +328,7 @@ namespace panzer {
        else
        {  TEST_EQUALITY(data[i],target); dd_count++; }
     }
-    TEST_EQUALITY(dd_count,2*workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+    TEST_EQUALITY(dd_count,2*workset.numCells()); // there are 2 nodes on the side and the sides are not shared
 
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(dd_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(dd_data));
@@ -325,7 +343,7 @@ namespace panzer {
        else
        {  TEST_EQUALITY(data[i],target); dd_count++; }
     }
-    TEST_EQUALITY(dd_count,workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+    TEST_EQUALITY(dd_count,workset.numCells()); // there are 2 nodes on the side and the sides are not shared
 
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(dd_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(dd_data));
@@ -340,7 +358,7 @@ namespace panzer {
        else
        {  TEST_EQUALITY(data[i],target); dd_count++; }
     }
-    TEST_EQUALITY(dd_count,2*workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+    TEST_EQUALITY(dd_count,2*workset.numCells()); // there are 2 nodes on the side and the sides are not shared
 
   }
 
@@ -377,8 +395,10 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+    auto mesh_info_rcp = panzer_stk::generateLocalMeshInfo(*mesh);
+    auto & mesh_info = *mesh_info_rcp;
+    auto work_sets = panzer::buildWorksets(mesh_info, WorksetDescriptor(physicsBlock->elementBlockID()));
+
     TEST_EQUALITY(work_sets->size(),1);
 
     // build connection manager and field manager
@@ -538,10 +558,21 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     panzer::Workset & workset = (*work_sets)[0];
-    workset.alpha = 0.0;
-    workset.beta = 2.0; // derivatives multiplied by 2
-    workset.time = 0.0;
-    workset.evaluate_transient_terms = false;
+    workset.setTime(0.0);
+
+    auto fad_details = Teuchos::rcp(new WorksetFADDetails);
+    fad_details->alpha = 0.;
+    fad_details->beta = 2.;
+    workset.setDetails("FAD", fad_details);
+
+    auto stepper_details = Teuchos::rcp(new WorksetStepperDetails);
+    stepper_details->evaluate_transient_terms = false;
+    workset.setDetails("Stepper", stepper_details);
+
+//    workset.alpha = 0.0;
+//    workset.beta = 2.0; // derivatives multiplied by 2
+//    workset.time = 0.0;
+//    workset.evaluate_transient_terms = false;
 
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
@@ -567,7 +598,7 @@ namespace panzer {
        else
        {  TEST_EQUALITY(data[i],target); dd_count++; }
     }
-    TEST_EQUALITY(dd_count,2*workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+    TEST_EQUALITY(dd_count,2*workset.numCells()); // there are 2 nodes on the side and the sides are not shared
 
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(data));
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(dd_vec->getVectorBlock(1))->getLocalData(Teuchos::ptrFromRef(dd_data));
@@ -582,7 +613,7 @@ namespace panzer {
        else
        {  TEST_EQUALITY(data[i],target); dd_count++; }
     }
-    TEST_EQUALITY(dd_count,workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+    TEST_EQUALITY(dd_count,workset.numCells()); // there are 2 nodes on the side and the sides are not shared
 
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(f_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(data));
     Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorBase<double> >(dd_vec->getVectorBlock(2))->getLocalData(Teuchos::ptrFromRef(dd_data));
@@ -597,7 +628,7 @@ namespace panzer {
        else
        {  TEST_EQUALITY(data[i],target); dd_count++; }
     }
-    TEST_EQUALITY(dd_count,2*workset.num_cells); // there are 2 nodes on the side and the sides are not shared
+    TEST_EQUALITY(dd_count,2*workset.numCells()); // there are 2 nodes on the side and the sides are not shared
 
   }
 

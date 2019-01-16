@@ -275,12 +275,6 @@ namespace panzer
       const panzer::EvaluatorStyle evalStyle_;
 
       /**
-       *  \brief A flag indicating whether or not to use the descriptor
-       *         interface.
-       */
-      bool useDescriptors_;
-
-      /**
        *  \brief The `BasisDescriptor` for the basis to use.
        */
       BasisDescriptor bd_;
@@ -325,17 +319,6 @@ namespace panzer
        *  \brief The dimensionality of our vector-valued fields.
        */
       int numDim_;
-
-      /**
-       *  \brief The name of the basis we're using.
-       */
-      std::string basisName_;
-
-      /**
-       *  \brief The index in the `Workset` bases for our particular
-       *         `BasisIRLayout` name.
-       */
-      std::size_t basisIndex_;
 
       /**
        *  \brief The vector basis information necessary for integration.

@@ -6,8 +6,6 @@
 namespace Teuchos
 {
 class ParameterList;
-template<typename T>
-class Comm;
 }
 
 namespace panzer_stk
@@ -17,16 +15,14 @@ class STK_Interface;
 
 /**\brief Generalized mesh interface
  *
- * Generates a mesh given a comm and a parameter list
+ * Generates a mesh
  *
- * \param[in] comm Communicator for domain
  * \param[in] parameter_list The mesh description should be in this
  *
  * \return A mesh
  */
 Teuchos::RCP<panzer_stk::STK_Interface>
-generateMesh(Teuchos::RCP<const Teuchos::Comm<int> > comm,
-              const Teuchos::ParameterList & parameter_list);
+generateMesh(const Teuchos::ParameterList & parameter_list);
 
 }
 

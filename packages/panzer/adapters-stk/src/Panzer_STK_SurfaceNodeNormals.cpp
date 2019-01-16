@@ -46,7 +46,7 @@
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_WorksetContainer.hpp"
-#include "Panzer_Workset_Builder.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_CellData.hpp"

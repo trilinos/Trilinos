@@ -45,9 +45,139 @@
 #include "Panzer_HashUtils.hpp"
 
 #include "Teuchos_Assert.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Shards_CellTopology.hpp"
+#include "Panzer_PointDescriptor.hpp"
+#include "Panzer_PointGenerator.hpp"   // includes Kokkos::DynRankView
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_ArrayTools.hpp"
+#include "Intrepid2_CubatureControlVolume.hpp"
+#include "Intrepid2_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_CubatureControlVolumeBoundary.hpp"
+
 
 namespace panzer
 {
+
+// Anonymous namespace that holds the coordinate generator,
+// this hides any details about the generator from an external
+// user and hopefully hides Kokkos from any file that doesn't need it.
+namespace {
+
+/** A generator that builds integration points
+ *
+ * \note: This is largely untested, we don't explicitly use this for anything other than volume points
+ *
+ * \note: The order of side points with be wrong w.r.t. workset points due to the need to align points on surfaces/sides
+ *
+  */
+class IntegrationCoordsGenerator :
+    public PointGenerator {
+public:
+
+  IntegrationCoordsGenerator() = delete;
+  IntegrationCoordsGenerator(const IntegrationCoordsGenerator &) = delete;
+
+  IntegrationCoordsGenerator(const int type,
+                             const int order,
+                             const int side = -1)
+    : type_(type), order_(order), side_(side) {}
+
+  virtual ~IntegrationCoordsGenerator() = default;
+
+  Kokkos::DynRankView<double> getPoints(const shards::CellTopology & topo) const override
+  {
+
+    auto intrepid_cubature = getIntrepidCubature(type_, order_, topo, side_);
+
+    const int num_points = intrepid_cubature->getNumPoints();
+
+    Kokkos::DynRankView<double> points("cubature_ref_coords",num_points,topo.getDimension());
+
+    // HACK: Need to implement this, but it isn't clear how (need to sort points per face based on physics position which can't be done without vertices)
+    if(type_ == IntegrationDescriptor::SURFACE)
+      return points;
+
+    Kokkos::DynRankView<double> weights("cubature_weights",num_points);
+
+    intrepid_cubature->getCubature(points, weights);
+
+    return points;
+  }
+
+  virtual bool hasPoints(const shards::CellTopology & topo) const {return type_ != IntegrationDescriptor::SURFACE;}
+
+  int numPoints(const shards::CellTopology & topo) const override
+  {
+    if(type_ == IntegrationDescriptor::SURFACE)
+      return 0;
+    return getIntrepidCubature(type_, order_, topo, side_)->getNumPoints();
+  }
+
+protected:
+
+  Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>>
+  getIntrepidCubature(const int type,
+                      const int order,
+                      const shards::CellTopology & topo,
+                      const int side = -1) const
+  {
+    typedef panzer::IntegrationDescriptor ID;
+
+    if(type == ID::CV_SIDE){
+      return Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<PHX::Device::execution_space,double,double>(topo));
+    } else if(type == ID::CV_VOLUME){
+      return Teuchos::rcp(new Intrepid2::CubatureControlVolume<PHX::Device::execution_space,double,double>(topo));
+    } else if(type == ID::CV_BOUNDARY){
+      TEUCHOS_ASSERT(side >= 0);
+      return Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<PHX::Device::execution_space,double,double>(topo,side));
+    } else {
+
+      // Surface integration is not easily supported by Intrepid2
+      // TODO: This can still be done, we just need to do it
+      TEUCHOS_ASSERT(type != ID::SURFACE);
+
+      Intrepid2::DefaultCubatureFactory cubature_factory;
+
+      if(side >= 0){
+        const auto side_topology = getSideTopology(topo,side);
+        // Special case of side integration
+        return cubature_factory.create<PHX::Device::execution_space,double,double>(*side_topology,order);
+
+      }
+      return cubature_factory.create<PHX::Device::execution_space,double,double>(topo,order);
+    }
+  }
+
+  Teuchos::RCP<shards::CellTopology>
+  getSideTopology(const shards::CellTopology & topo,
+                  const int side) const
+  {
+    TEUCHOS_ASSERT(side >= 0);
+
+    Teuchos::RCP<shards::CellTopology> sideTopo;
+    const int spatial_dimension = topo.getDimension();
+
+    if(spatial_dimension == 1)
+      return Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData<shards::Node>()));;
+
+    TEUCHOS_TEST_FOR_EXCEPTION( (side >= static_cast<int>(topo.getSideCount())),
+                                std::runtime_error, "Error - local side "
+                                << side << " is not in range (0->" << topo.getSideCount()-1
+                                << ") of topologic entity!");
+
+    return Teuchos::rcp(new shards::CellTopology(topo.getCellTopologyData(spatial_dimension-1,side)));
+  }
+
+  int type_;
+  int order_;
+  int side_;
+
+};
+
+} // end namespace <anonymous>
 
 IntegrationDescriptor::IntegrationDescriptor()
 {
@@ -72,6 +202,29 @@ IntegrationDescriptor::setup(const int cubature_order, const int integration_typ
     TEUCHOS_ASSERT(side == -1);
   }
   _key = std::hash<IntegrationDescriptor>()(*this);
+}
+
+
+PointDescriptor
+IntegrationDescriptor::getPointDescriptor() const
+{
+  std::stringstream ss;
+  ss << "Integration Points: Order " << _cubature_order << ", Type ";
+  if(_integration_type == VOLUME)
+    ss << "Volume";
+  else if(_integration_type == SURFACE)
+    ss << "Surface";
+  else if(_integration_type == SIDE)
+    ss << "Side " << _side;
+  else if(_integration_type == CV_VOLUME)
+    ss << "Control Volume";
+  else if(_integration_type == CV_BOUNDARY)
+    ss << "Control Volume Boundary";
+  else if(_integration_type == CV_SIDE)
+    ss << "Control Volume Side";
+
+  return PointDescriptor(ss.str(), Teuchos::rcp(new IntegrationCoordsGenerator(_integration_type, _cubature_order, _side)));
+
 }
 
 }

@@ -76,6 +76,8 @@ namespace partitioning_utilities
 
 /** Create a LocalMeshInfoBase from a parent LocalMeshInfoBase given a set of cell indexes
  *
+ * \note This will not generate connectivities - for that use setupSubLocalMeshInfoWithConnectivity
+ *
  * \param[in] parent_info Reference to fully constructed LocalMeshInfoBase
  * \param[in] owned_parent_cells Vector of indexes (in parent's indexing scheme) for child to own
  * \param[out] child_info Child which will be generated
@@ -83,8 +85,20 @@ namespace partitioning_utilities
  */
 void
 setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
-                      const std::vector<panzer::LocalOrdinal> & owned_parent_cells,
+                      const std::vector<size_t> & owned_parent_cells,
                       panzer::LocalMeshInfoBase & child_info);
+
+/** Create a LocalMeshInfoBase from a parent LocalMeshInfoBase given a set of cell indexes
+ *
+ * \param[in] parent_info Reference to fully constructed LocalMeshInfoBase
+ * \param[in] owned_parent_cells Vector of indexes (in parent's indexing scheme) for child to own
+ * \param[out] child_info Child which will be generated
+ *
+ */
+void
+setupSubLocalMeshInfoWithConnectivity(const panzer::LocalMeshInfoBase & parent_info,
+                                      const std::vector<size_t> & owned_parent_cells,
+                                      panzer::LocalMeshInfoBase & sub_info);
 }
 
 }

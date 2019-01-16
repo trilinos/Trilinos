@@ -47,19 +47,18 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 namespace Example {
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
 SineSolution<EvalT,Traits>::SineSolution(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
+                                         const panzer::IntegrationRule & ir):
+  id_(ir)
 {
   using Teuchos::RCP;
 
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
-  ir_degree = ir.cubature_degree;
 
   solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
@@ -71,23 +70,16 @@ SineSolution<EvalT,Traits>::SineSolution(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SineSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& /* fm */)
-{
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
-}
-
-//**********************************************************************
-template <typename EvalT,typename Traits>
 void SineSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  const auto & ip_coordinates = workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates;
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int point = 0; point < solution.extent_int(1); ++point) {
 
-      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
-      const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
+      const double & x = ip_coordinates(cell,point,0);
+      const double & y = ip_coordinates(cell,point,1);
+      const double & z = ip_coordinates(cell,point,2);
 
       solution(cell,point) = std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
     }

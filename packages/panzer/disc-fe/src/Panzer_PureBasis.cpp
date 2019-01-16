@@ -54,6 +54,7 @@ PureBasis(const std::string & basis_type,
 	  const int basis_order,
 	  const int num_cells,
 	  const Teuchos::RCP<const shards::CellTopology> & cell_topology) :
+  BasisDescriptor(basis_order, basis_type),
   topology_(cell_topology),
   num_cells_(num_cells)
 {
@@ -64,6 +65,7 @@ panzer::PureBasis::
 PureBasis(const std::string & in_basis_type,
           const int in_basis_order,
           const CellData & in_cell_data) :
+  BasisDescriptor(in_basis_order, in_basis_type),
   topology_(in_cell_data.getCellTopology()),
   num_cells_(in_cell_data.numCells())
 {
@@ -74,6 +76,7 @@ panzer::PureBasis::
 PureBasis(const panzer::BasisDescriptor & description,
           const Teuchos::RCP<const shards::CellTopology> & cell_topology,
           const int num_cells):
+  BasisDescriptor(description),
   topology_(cell_topology),
   num_cells_(num_cells)
 {

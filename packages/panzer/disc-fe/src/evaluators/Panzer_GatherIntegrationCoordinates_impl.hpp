@@ -47,7 +47,6 @@
 #include "Phalanx_DataLayout.hpp"
 
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -63,39 +62,29 @@ fieldName(int degree)
 
 template<typename EvalT,typename TRAITS>
 panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
-GatherIntegrationCoordinates(const panzer::IntegrationRule & quad)
+GatherIntegrationCoordinates(const panzer::IntegrationRule & quad):
+  id_(quad)
 { 
-  quadDegree_ = quad.cubature_degree;
 
-  quadCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(quadDegree_),quad.dl_vector);
+  quadCoordinates_ = PHX::MDField<ScalarT,Cell,Point,Dim>(fieldName(quad.cubature_degree),quad.dl_vector);
 
   this->addEvaluatedField(quadCoordinates_);
 
-  this->setName("Gather "+fieldName(quadDegree_));
-}
-
-// **********************************************************************
-template<typename EvalT,typename TRAITS>
-void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd, 
-		      PHX::FieldManager<TRAITS>& /* fm */)
-{
-  quadIndex_ = panzer::getIntegrationRuleIndex(quadDegree_, (*sd.worksets_)[0], this->wda);
+  this->setName("Gather "+fieldName(quad.cubature_degree));
 }
 
 // **********************************************************************
 template<typename EvalT,typename TRAITS> 
 void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-  // const Kokkos::DynRankView<double,PHX::Device> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;  
-  const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quadIndex_];
+{
+  const auto & coords = workset(this->details_idx_).getIntegrationValues(id_).ip_coordinates;
 
-  // just copy the array
-  for(int i=0;i<iv.ip_coordinates.extent_int(0);i++)
-    for(int j=0;j<iv.ip_coordinates.extent_int(1);j++)
-      for(int k=0;k<iv.ip_coordinates.extent_int(2);k++)
-	quadCoordinates_(i,j,k) = iv.ip_coordinates(i,j,k);
+  // just copy the array - Kokkos::deep_copy?
+  for(int i=0;i<coords.extent_int(0);i++)
+    for(int j=0;j<coords.extent_int(1);j++)
+      for(int k=0;k<coords.extent_int(2);k++)
+        quadCoordinates_(i,j,k) = coords(i,j,k);
 }
 
 // **********************************************************************

@@ -48,39 +48,98 @@
 #include <map>
 
 #include "Panzer_Workset.hpp"
-#include "Panzer_WorksetDescriptor.hpp"
-#include "Panzer_WorksetNeeds.hpp"
+//#include "Panzer_WorksetDescriptor.hpp"
+//#include "Panzer_WorksetNeeds.hpp"
 
-namespace panzer {
+namespace panzer
+{
+
+class WorksetDescriptor;
+class WorksetNeeds;
+class UniqueGlobalIndexerBase;
+class OrientationsInterface;
 
 /** Pure virtual base class used to construct 
   * worksets on volumes and side sets.
   */
-class WorksetFactoryBase {
+class
+WorksetFactoryBase
+{
 public:
-   virtual ~WorksetFactoryBase() {}
 
-   /** Build sets of boundary condition worksets for an interface case.
-     */
-   virtual
-   Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-   getSideWorksets(const panzer::WorksetDescriptor & desc,
-                   const panzer::WorksetNeeds & needs_a,
-                   const panzer::WorksetNeeds & needs_b) const = 0;
+  /// Default constructor
+  WorksetFactoryBase() = default;
 
-   /** Build sets of boundary condition worksets
-     */
-   virtual
-   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-   getSideWorksets(const panzer::WorksetDescriptor & desc,
-		   const panzer::WorksetNeeds & needs) const = 0;
+  /// Default destructor
+  virtual ~WorksetFactoryBase() = default;
 
-   /** Build workssets specified by the workset descriptor.
-     */
-   virtual
-   Teuchos::RCP<std::vector<panzer::Workset> >
-   getWorksets(const WorksetDescriptor & worksetDesc,
-               const panzer::WorksetNeeds & needs) const = 0;
+  /**
+   * \brief Get worksets associated with a given description
+   *
+   * \note This will allocate data for workset geometry and topology.
+   *
+   * \throws If description is invalid
+   *
+   * \param[in] description Description of worksets to get
+   *
+   * \return Shared pointer to list of worksets associated with description
+   */
+  virtual
+  Teuchos::RCP<std::vector<panzer::Workset> >
+  getWorksets(const WorksetDescriptor & description) const = 0;
+
+  /**
+   * \brief Used to apply orientations to any bases added to the worksets
+   *
+   * \param[in] orientations Orientations object used to apply orientations to worksets
+   */
+  void
+  setOrientationsInterface(const Teuchos::RCP<const panzer::OrientationsInterface> & orientations)
+  {orientations_ = orientations;}
+
+  /**
+   * \brief Get the orientations associated with the worksets
+   *
+   * \throws If Global Indexer has not been set
+   *
+   * \return Orientations information
+   */
+  Teuchos::RCP<const OrientationsInterface>
+  getOrientationsInterface() const
+  {return orientations_;}
+
+  // ========================================================================================
+  // To be removed
+
+//  /** Build sets of boundary condition worksets for an interface case.
+//   */
+//  virtual
+//  Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+//  getSideWorksets(const panzer::WorksetDescriptor & desc,
+//                  const panzer::WorksetNeeds & needs_a,
+//                  const panzer::WorksetNeeds & needs_b) const = 0;
+//
+//  /** Build sets of boundary condition worksets
+//   */
+//  virtual
+//  Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+//  getSideWorksets(const panzer::WorksetDescriptor & desc,
+//                  const panzer::WorksetNeeds & needs) const = 0;
+//
+//  /** Build workssets specified by the workset descriptor.
+//   */
+//  virtual
+//  Teuchos::RCP<std::vector<panzer::Workset> >
+//  getWorksets(const WorksetDescriptor & worksetDesc,
+//              const panzer::WorksetNeeds & needs) const = 0;
+
+  // ========================================================================================
+
+protected:
+
+  /// Indexer used for applying orientations
+  Teuchos::RCP<const panzer::OrientationsInterface> orientations_;
+
 };
 
 }

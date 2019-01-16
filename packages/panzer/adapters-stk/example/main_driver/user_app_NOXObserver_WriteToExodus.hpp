@@ -71,9 +71,10 @@ namespace user_app {
   public:
     
     NOXObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-			       const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
-			       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
-                               const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
+                              const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
+                              const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
+                              const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library,
+                              const int workset_size) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof),
@@ -87,7 +88,7 @@ namespace user_app {
 
       panzer_stk::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
-      m_response_library->addResponse("Main Field Output",eBlocks,builder);
+      m_response_library->addResponse("Main Field Output",eBlocks,builder,workset_size);
     }
       
     void runPreIterate(const NOX::Solver::Generic& /* solver */)

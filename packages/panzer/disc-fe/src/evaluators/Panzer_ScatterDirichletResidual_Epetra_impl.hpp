@@ -175,8 +175,8 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, TRAITS,LO
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    Teuchos::RCP<Epetra_Vector> r = (!scatterIC_) ? 
@@ -372,8 +372,8 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    Teuchos::RCP<Epetra_Vector> r = (!scatterIC_) ? 
@@ -579,8 +579,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
  
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    TEUCHOS_ASSERT(epetraContainer!=Teuchos::null);

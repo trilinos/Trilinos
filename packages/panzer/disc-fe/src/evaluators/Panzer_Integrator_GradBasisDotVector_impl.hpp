@@ -52,7 +52,6 @@
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 
 namespace panzer
@@ -76,8 +75,7 @@ namespace panzer
     const Teuchos::RCP<PHX::DataLayout>& vecDL       /* = Teuchos::null */)
     :
     evalStyle_(evalStyle),
-    multiplier_(multiplier),
-    basisName_(basis.name())
+    multiplier_(multiplier)
   {
     using Kokkos::View;
     using panzer::BASIS;
@@ -90,6 +88,9 @@ namespace panzer
     using std::logic_error;
     using std::string;
     using Teuchos::RCP;
+
+    bd_ = *basis.getBasis();
+    id_ = ir;
 
     // Ensure the input makes sense.
     TEUCHOS_TEST_FOR_EXCEPTION(resName == "", invalid_argument, "Error:  "   \
@@ -189,7 +190,6 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& /* fm */)
   {
-    using panzer::getBasisIndex;
     using std::size_t;
     using PHX::Device;
 
@@ -198,8 +198,6 @@ namespace panzer
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
     Device().fence();
 
-    // Determine the index in the Workset bases for our particular basis name.
-    basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -414,7 +412,7 @@ namespace panzer
     using Kokkos::TeamPolicy;
 
     // Grab the basis information.
-    basis_ = this->wda(workset).bases[basisIndex_]->weighted_grad_basis;
+    basis_ = workset(this->details_idx_).getBasisIntegrationValues(bd_,id_).weighted_grad_basis;
 
     bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
     if (use_shared_memory) {
@@ -430,13 +428,13 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<0>,PHX::Device>(workset.numCells()).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(policy, *this, this->getName());
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<1>,PHX::Device>(workset.numCells()).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(policy, *this, this->getName());
       } else {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.num_cells).set_scratch_size(0,Kokkos::PerTeam(bytes));
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,SharedFieldMultTag<-1>,PHX::Device>(workset.numCells()).set_scratch_size(0,Kokkos::PerTeam(bytes));
         parallel_for(policy, *this, this->getName());
       }
     }
@@ -445,13 +443,13 @@ namespace panzer
       // number of field multipliers.  The parallel_fors will loop over the cells
       // in the Workset and execute operator()() above.
       if (fieldMults_.size() == 0) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<0>,PHX::Device>(workset.numCells());
         parallel_for(policy, *this, this->getName());
       } else if (fieldMults_.size() == 1) {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<1>,PHX::Device>(workset.numCells());
         parallel_for(policy, *this, this->getName());
       } else {
-	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.num_cells);
+	auto policy = panzer::HP::inst().teamPolicy<ScalarT,FieldMultTag<-1>,PHX::Device>(workset.numCells());
         parallel_for(policy, *this, this->getName());
       }
     }

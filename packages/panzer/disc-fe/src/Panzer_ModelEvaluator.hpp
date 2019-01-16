@@ -148,7 +148,9 @@ public:
                   const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& bc_cm_factory,
                   const Teuchos::ParameterList& closure_models,
                   const Teuchos::ParameterList& user_data,
-                  bool writeGraph=false,const std::string & graphPrefix="",
+                  const int workset_size,
+                  bool writeGraph=false,
+                  const std::string & graphPrefix="",
                   const Teuchos::ParameterList& me_params = Teuchos::ParameterList());
 
   /** Add a simple (i.e. nondistributed) parameter to the model evaluator.
@@ -311,6 +313,7 @@ public:
        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
        const Teuchos::ParameterList& closure_models,
        const Teuchos::ParameterList& user_data,
+       const int workset_size,
        const bool write_graphviz_file=false,
        const std::string& graphviz_file_prefix="");
 
@@ -329,6 +332,7 @@ public:
        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
        const Teuchos::ParameterList& closure_models,
        const Teuchos::ParameterList& user_data,
+       const int workset_size,
        const bool write_graphviz_file=false,
        const std::string& graphviz_file_prefix="");
 

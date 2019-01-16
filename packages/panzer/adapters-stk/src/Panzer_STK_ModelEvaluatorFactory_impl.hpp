@@ -74,6 +74,8 @@
 #include "Panzer_GlobalIndexer_Utilities.hpp"
 #include "Panzer_ExplicitModelEvaluator.hpp"
 #include "Panzer_ParameterLibraryUtilities.hpp"
+#include "Panzer_OrientationsInterface.hpp"
+#include "Panzer_WorksetDescriptor.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -562,23 +564,23 @@ namespace panzer_stk {
     for(std::size_t i=0;i<physicsBlocks.size();i++)
       needs[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i]->getWorksetNeeds();
 
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,needs));
+    wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(globalIndexer)));
 
-    wkstContainer->setWorksetSize(workset_size);
-    wkstContainer->setGlobalIndexer(globalIndexer); // set the global indexer so the orientations are evaluated
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+//    wkstContainer->setWorksetSize(workset_size);
+//    wkstContainer->setGlobalIndexer(globalIndexer); // set the global indexer so the orientations are evaluated
 
     m_wkstContainer = wkstContainer;
 
     // find max number of worksets
     std::size_t max_wksets = 0;
-    for(std::size_t pb=0;pb<physicsBlocks.size();pb++) {
-      const panzer::WorksetDescriptor wd = panzer::blockDescriptor(physicsBlocks[pb]->elementBlockID());
-      Teuchos::RCP< std::vector<panzer::Workset> >works = wkstContainer->getWorksets(wd);
-      max_wksets = std::max(max_wksets,works->size());
-    }
+    for(std::size_t pb=0;pb<physicsBlocks.size();pb++)
+      max_wksets = std::max(max_wksets,wkstContainer->getWorksets(panzer::WorksetDescriptor(physicsBlocks[pb]->elementBlockID(), workset_size))->size());
+
     user_data_params.set<std::size_t>("Max Worksets",max_wksets);
-    wkstContainer->clear(); 
+    wkstContainer->clearWorksets();
 
     // Setup lagrangian type coordinates
     /////////////////////////////////////////////////////////////
@@ -590,7 +592,7 @@ namespace panzer_stk {
       if(physicsBlocks[pb]->getCoordinateDOFs().size()>0) {
          mesh->setUseFieldCoordinates(true);
          useDynamicCoordinates_ = true;
-         wkstContainer->clear(); // this serves to refresh the worksets
+         wkstContainer->clearWorksets(); // this serves to refresh the worksets
                                  // and put in new coordinates
          break;
       }
@@ -666,7 +668,7 @@ namespace panzer_stk {
       std::string fm_file_prefix = p.sublist("Options").get("Field Manager File Prefix","Panzer_AssemblyGraph");
 
       fmb = buildFieldManagerBuilder(wkstContainer,physicsBlocks,bcs,*eqset_factory,bc_factory,cm_factory,
-                                     user_cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params,
+                                     user_cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params,workset_size,
                                      write_dot_files,dot_file_prefix,
 				     write_fm_files,fm_file_prefix);
     }
@@ -1272,12 +1274,15 @@ namespace panzer_stk {
                            const Teuchos::ParameterList& closure_models,
                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                            const Teuchos::ParameterList& user_data,
-                           bool writeGraph,const std::string & graphPrefix,
-			   bool write_field_managers,const std::string & field_manager_prefix) const
+                           const int workset_size,
+                           bool writeGraph,
+                           const std::string & graphPrefix,
+                           bool write_field_managers,
+                           const std::string & field_manager_prefix) const
   {
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     fmb->setWorksetContainer(wc);
-    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,lo_factory,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,lo_factory,user_data, workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,lo_factory,user_data);
 
     // Print Phalanx DAGs
@@ -1311,10 +1316,12 @@ namespace panzer_stk {
 
     const Teuchos::ParameterList& p = *this->getParameterList();
 
+    const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
+    std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
+
     // build PhysicsBlocks
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
-      const Teuchos::ParameterList & assembly_params = p.sublist("Assembly");
 
       // setup physical mappings and boundary conditions
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -1328,14 +1335,12 @@ namespace panzer_stk {
          TEUCHOS_ASSERT(block_ids_to_cell_topo[itr->first]!=Teuchos::null);
       }
 
-      std::size_t workset_size = Teuchos::as<std::size_t>(assembly_params.get<int>("Workset Size"));
-
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
                                  block_ids_to_cell_topo,
                                  physics_block_plist,
                                  assembly_params.get<int>("Default Integration Order"),
                                  workset_size,
-                                   eqset_factory,
+                                 eqset_factory,
                                  m_global_data,
                                  is_transient,
                                  physicsBlocks);
@@ -1370,6 +1375,7 @@ namespace panzer_stk {
                                      p.sublist("Closure Models"),
                                      *m_lin_obj_factory,
                                      user_data_params,
+                                     workset_size,
                                      write_dot_files,prefix,
 				     write_dot_files,prefix);
     }
@@ -1507,9 +1513,14 @@ namespace panzer_stk {
      std::vector<std::string> eBlocks;
      mesh->getElementBlockNames(eBlocks);
 
+     // Note this sets workset size to all
+     std::vector<panzer::WorksetDescriptor> workset_descriptors;
+     for(const auto & block : eBlocks)
+       workset_descriptors.push_back(panzer::blockDescriptor(block));
+
      panzer_stk::RespFactorySolnWriter_Builder builder;
      builder.mesh = mesh;
-     stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+     stkIOResponseLibrary->addResponse("Main Field Output",workset_descriptors,builder);
 
      return stkIOResponseLibrary;
   }
@@ -1520,10 +1531,10 @@ namespace panzer_stk {
                                     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                                     const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                                     const Teuchos::ParameterList & closure_models,
-                                    int workset_size, Teuchos::ParameterList & user_data) const
+                                    const int workset_size, Teuchos::ParameterList & user_data) const
   {
      user_data.set<int>("Workset Size",workset_size);
-     rl.buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data);
+     rl.buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data, workset_size);
   }
 
   template<typename ScalarT>

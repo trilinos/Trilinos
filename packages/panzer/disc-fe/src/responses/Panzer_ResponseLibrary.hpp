@@ -151,11 +151,13 @@ public:
      * \param[in] responseName Name of the response to be added.
      * \param[in] blocks Element blocks to evaluate the response over
      * \param[in] builder Builder that builds the correct response object.
+     * \param[in] workset_size Size of worksets to generate
      */
    template <typename ResponseEvaluatorFactory_BuilderT>
    void addResponse(const std::string & responseName,
                     const std::vector<std::string> & blocks,
-                    const ResponseEvaluatorFactory_BuilderT & builder); 
+                    const ResponseEvaluatorFactory_BuilderT & builder,
+                    const int workset_size);
 
    /** Add a surface response using the response factory builder.
      *
@@ -163,11 +165,13 @@ public:
      * \param[in] sideset_blocks Side set and element blocks to evaluate the response over
      *                           (sideset name is first followed by element block id)
      * \param[in] builder Builder that builds the correct response object.
+     * \param[in] workset_size Size of worksets to generate
      */
    template <typename ResponseEvaluatorFactory_BuilderT>
    void addResponse(const std::string & responseName,
                     const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
-                    const ResponseEvaluatorFactory_BuilderT & builder); 
+                    const ResponseEvaluatorFactory_BuilderT & builder,
+                    const int workset_size);
 
    /** Add a response specified by a list of WorksetDescriptor objects. The specifics of the
      * response are specified by the response factory builder.
@@ -236,6 +240,7 @@ public:
          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
+         const int workset_size,
          const bool write_graphviz_file=false,
          const std::string& graphviz_file_prefix="");
 

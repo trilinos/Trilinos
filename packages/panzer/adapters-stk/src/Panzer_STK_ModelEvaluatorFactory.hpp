@@ -148,8 +148,8 @@ namespace panzer_stk {
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                     const Teuchos::RCP<panzer::GlobalData>& global_data,
                                     const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver = Teuchos::null,
-                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
-                    const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
+                                    const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory=Teuchos::null,
+                                    const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory=Teuchos::null);
 
     //@}
 
@@ -287,8 +287,11 @@ namespace panzer_stk {
                              const Teuchos::ParameterList& closure_models,
                              const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                              const Teuchos::ParameterList& user_data,
-                             bool writeGraph,const std::string & graphPrefix,
-			     bool write_field_managers,const std::string & field_manager_prefix) const;
+                             const int workset_size,
+                             bool writeGraph,
+                             const std::string & graphPrefix,
+                             bool write_field_managers,
+                             const std::string & field_manager_prefix) const;
 
     /**
       */

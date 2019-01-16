@@ -44,7 +44,6 @@
 #define __Panzer_SubcellSum_impl_hpp__
 
 #include "Panzer_PureBasis.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -94,11 +93,11 @@ evaluateFields(
   // simply saving the indices and only updating if the subcell dimension
   // and index changes)
   if(evaluateOnClosure_)
-    fieldPattern_->getSubcellClosureIndices(workset.subcell_dim,this->wda(workset).subcell_index,indices);
+    fieldPattern_->getSubcellClosureIndices(workset.getSubcellDimension(),workset(this->details_idx_).getSubcellIndex(),indices);
   else
-    indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,this->wda(workset).subcell_index);
+    indices = fieldPattern_->getSubcellIndices(workset.getSubcellDimension(),workset(this->details_idx_).getSubcellIndex());
 
-  for(index_t c=0;c<workset.num_cells;c++) {
+  for(index_t c=0;c<workset.numCells();c++) {
     outField(c) = 0.0; // initialize field 
 
     // sum over all relevant indices for this subcell

@@ -5,7 +5,6 @@
 
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 namespace mini_em {
@@ -43,7 +42,7 @@ void Conductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
 {
   using panzer::index_t;
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (int point = 0; point < conductivity.extent_int(1); ++point) {
       // const ScalarT& x = coords(cell,point,0);
       // const ScalarT& y = coords(cell,point,1);

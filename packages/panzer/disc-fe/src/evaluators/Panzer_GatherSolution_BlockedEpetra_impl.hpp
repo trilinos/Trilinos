@@ -251,8 +251,8 @@ evaluateFields(
   using Thyra::VectorBase;
 
   // For convenience, pull out some objects from the workset.
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numFields(gatherFields_.size()), numCells(localCellIds.size());
 
   if (x_.is_null())
@@ -501,8 +501,8 @@ evaluateFields(
 
   // For convenience, pull out some objects from the workset.
   vector<pair<int, GO>> GIDs;
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numFields(gatherFields_.size()), numCells(localCellIds.size());
 
   if (x_.is_null())
@@ -770,18 +770,18 @@ evaluateFields(
   using Thyra::VectorBase;
 
   // For convenience, pull out some objects from the workset.
-  string blockId(this->wda(workset).block_id);
-  const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
+  const auto & blockId = workset(this->details_idx_).getElementBlock();
+  const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
   int numFields(gatherFields_.size()), numCells(localCellIds.size());
   double seedValue(0);
   if (applySensitivities_)
   {
     if ((useTimeDerivativeSolutionVector_) and (gatherSeedIndex_ < 0))
-      seedValue = workset.alpha;
+      seedValue = workset.template getDetails<WorksetFADDetails>("FAD").alpha;
     else if (gatherSeedIndex_ < 0)
-      seedValue = workset.beta;
+      seedValue = workset.template getDetails<WorksetFADDetails>("FAD").beta;
     else if (not useTimeDerivativeSolutionVector_)
-      seedValue = workset.gather_seeds[gatherSeedIndex_];
+      seedValue = workset.template getDetails<WorksetFADDetails>("FAD").gather_seeds[gatherSeedIndex_];
     else
       TEUCHOS_ASSERT(false);
   } // end if (applySensitivities_)

@@ -128,7 +128,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   fieldIds_.resize(gatherFields_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  std::string blockId = this->wda(workset_0).block_id;
+  const auto & blockId = workset_0(this->details_idx_).getElementBlock();
   scratch_offsets_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
@@ -173,8 +173,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const std::string & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<typename LOC::VectorType> x;
    if (useTimeDerivativeSolutionVector_)
@@ -184,7 +184,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    auto x_data = x->template getLocalView<PHX::Device>();
 
-   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
+   globalIndexer_->getElementLIDs(workset(this->details_idx_).getLocalCellIDs(),scratch_lids_);
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -312,8 +312,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
+   const auto & localCellIds = workset(this->details_idx_).getLocalCellIDs();
 
    Teuchos::RCP<typename LOC::VectorType> x;
    if (useTimeDerivativeSolutionVector_)
@@ -445,7 +445,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   fieldIds_.resize(gatherFields_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  std::string blockId = this->wda(workset_0).block_id;
+  const auto & blockId = workset_0(this->details_idx_).getElementBlock();
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
@@ -547,17 +547,17 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>
 evaluateFields(typename TRAITS::EvalData workset)
 {
    // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
+   const auto & blockId = workset(this->details_idx_).getElementBlock();
 
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
-     seed_value = workset.alpha;
+     seed_value = workset.template getDetails<WorksetFADDetails>("FAD").alpha;
    }
    else if (gatherSeedIndex_<0) {
-     seed_value = workset.beta;
+     seed_value = workset.template getDetails<WorksetFADDetails>("FAD").beta;
    }
    else if(!useTimeDerivativeSolutionVector_) {
-     seed_value = workset.gather_seeds[gatherSeedIndex_];
+     seed_value = workset.template getDetails<WorksetFADDetails>("FAD").gather_seeds[gatherSeedIndex_];
    }
    else {
      TEUCHOS_ASSERT(false);
@@ -574,7 +574,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    if(seed_value==0.0)
      use_seed = false;
 
-   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
+   globalIndexer_->getElementLIDs(workset(this->details_idx_).getLocalCellIDs(),scratch_lids_);
 
    // now setup the fuctor_data, and run the parallel_for loop
    //////////////////////////////////////////////////////////////////////////////////
@@ -592,9 +592,9 @@ evaluateFields(typename TRAITS::EvalData workset)
      functor_data.field   = gatherFields_[fieldIndex];
 
      if(use_seed)
-       Kokkos::parallel_for(workset.num_cells,*this);
+       Kokkos::parallel_for(workset.numCells(),*this);
      else
-       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoSeed>(0,workset.num_cells),*this);
+       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoSeed>(0,workset.numCells()),*this);
    }
 }
 

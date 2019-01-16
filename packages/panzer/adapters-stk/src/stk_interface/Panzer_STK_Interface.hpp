@@ -56,6 +56,9 @@
 
 #include "Kokkos_Core.hpp"
 
+#include "Kokkos_View.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
+
 #include <Shards_CellTopology.hpp>
 #include <Shards_CellTopologyData.h>
 
@@ -644,6 +647,9 @@ public:
    template <typename ArrayT>
    void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
                              const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
+   template <typename ArrayT>
+   void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
+                             const Kokkos::View<const int*,PHX::Device> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Reads a particular field into an array. Notice this is setup to work with
      * the worksets associated with Panzer.
@@ -680,6 +686,9 @@ public:
    template <typename ArrayT>
    void setCellFieldData(const std::string & fieldName,const std::string & blockId,
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
+   template <typename ArrayT>
+   void setCellFieldData(const std::string & fieldName,const std::string & blockId,
+                         const Kokkos::View<const int*,PHX::Device> & localElementIds,const ArrayT & solutionValues,double scaleValue=1.0);
 
    /** Get vertices associated with a number of elements of the same geometry.
      *
@@ -984,6 +993,9 @@ protected:
    template <typename ArrayT>
    void setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+   template <typename ArrayT>
+   void setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
+                         const Kokkos::View<const int*,PHX::Device> & localElementIds,const ArrayT & dispValues);
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
@@ -1140,9 +1152,71 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
    }
 }
 
+
+template <typename ArrayT>
+void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
+                                         const Kokkos::View<const int*,PHX::Device> & localElementIds,const ArrayT & solutionValues,double scaleValue)
+{
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+   int field_axis = -1;
+   if(isMeshCoordField(blockId,fieldName,field_axis)) {
+     setDispFieldData(fieldName,blockId,field_axis,localElementIds,solutionValues);
+     return;
+   }
+
+   SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
+
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity element = elements[localId];
+
+      // loop over nodes set solution values
+      const size_t num_nodes = bulkData_->num_nodes(element);
+      stk::mesh::Entity const* nodes = bulkData_->begin_nodes(element);
+      for(std::size_t i=0; i<num_nodes; ++i) {
+        stk::mesh::Entity node = nodes[i];
+
+        double * solnData = stk::mesh::field_data(*field,node);
+        // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+        solnData[0] = scaleValue*solutionValues(cell,i);
+      }
+   }
+}
+
 template <typename ArrayT>
 void STK_Interface::setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
                                      const std::vector<std::size_t> & localElementIds,const ArrayT & dispValues)
+{
+   TEUCHOS_ASSERT(axis>=0); // sanity check
+
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+   SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
+   const VectorFieldType & coord_field = this->getCoordinatesField();
+
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity element = elements[localId];
+
+      // loop over nodes set solution values
+      const size_t num_nodes = bulkData_->num_nodes(element);
+      stk::mesh::Entity const* nodes = bulkData_->begin_nodes(element);
+      for(std::size_t i=0; i<num_nodes; ++i) {
+        stk::mesh::Entity node = nodes[i];
+
+        double * solnData = stk::mesh::field_data(*field,node);
+        double * coordData = stk::mesh::field_data(coord_field,node);
+        // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+        solnData[0] = dispValues(cell,i)-coordData[axis];
+      }
+   }
+}
+
+
+template <typename ArrayT>
+void STK_Interface::setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
+                                     const Kokkos::View<const int*,PHX::Device> & localElementIds,const ArrayT & dispValues)
 {
    TEUCHOS_ASSERT(axis>=0); // sanity check
 
@@ -1202,6 +1276,24 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 template <typename ArrayT>
 void STK_Interface::setCellFieldData(const std::string & fieldName,const std::string & blockId,
                                      const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
+{
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+
+   SolutionFieldType * field = this->getCellField(fieldName,blockId);
+
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity element = elements[localId];
+
+      double * solnData = stk::mesh::field_data(*field,element);
+      TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+      solnData[0] = scaleValue*solutionValues(cell,0);
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::setCellFieldData(const std::string & fieldName,const std::string & blockId,
+                                     const Kokkos::View<const int*,PHX::Device> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 

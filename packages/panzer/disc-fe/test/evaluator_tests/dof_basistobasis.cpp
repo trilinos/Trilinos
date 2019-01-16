@@ -61,6 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_Traits.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_LocalMeshInfo.hpp"
 
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOF_BasisToBasis.hpp"
@@ -76,7 +77,7 @@ using Teuchos::rcp;
 
 // for making explicit instantiated tests easier 
 #define UNIT_TEST_GROUP(TYPE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,value,TYPE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_basistobasis,value,TYPE)
   //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,gradient,TYPE)
 
 namespace panzer {
@@ -143,7 +144,7 @@ evaluateFields(
 
 //**********************************************************************
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_basistobasis,value,EvalType)
 {
 
   using Teuchos::RCP;
@@ -189,9 +190,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
     Teuchos::RCP<PHX::FieldTag> ft = e->evaluatedFields()[0];
     fm->requireField<EvalType>(*ft);
   }
-
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
-  workset->num_cells = numCells;
+  {
+    int numVerts = 4, dim = 2;
+    WorksetOptions options;
+    panzer::LocalMeshPartition partition;
+    partition.cell_topology = topo;
+    partition.num_owned_cells = numCells;
+    partition.subcell_dimension = dim-1;
+    partition.subcell_index = 1;
+    auto & local_cells = partition.local_cells = Kokkos::View<int*,PHX::Device>("ids",numCells);
+
+    auto & coords = partition.cell_vertices = Kokkos::View<double***,PHX::Device>("vertices",numCells, numVerts, dim);
+
+    coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+    coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+    coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+    coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+
+    coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+    coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+    coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+    coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+
+    local_cells(0) = 0;
+    local_cells(1) = 1;
+
+    workset->setup(partition, options);
+  }
 
   panzer::Traits::SD setupData;
   {

@@ -45,7 +45,6 @@
 
 #include <algorithm>
 #include "Panzer_PointRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 
 namespace panzer {
@@ -115,6 +114,12 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
     TEUCHOS_ASSERT(false);
   }
 
+  if(pointRule != Teuchos::null)
+    pd_ = *pointRule;
+
+  if(pureBasis != Teuchos::null)
+    bd_ = *pureBasis;
+
   // copy user array data
   if(userArray!=Teuchos::null) {
     TEUCHOS_ASSERT(userArray->rank()==2);
@@ -160,7 +165,6 @@ postRegistrationSetup(
   this->utils.setFieldData(pointValues.point_coords,fm);
 
   if(useBasisValuesRefArray) {
-    basis_index = panzer::getPureBasisIndex(basis->name(), (*sd.worksets_)[0], this->wda);
 
     // basis better have coordinates if you want to use them! Assertion to protect
     // a silent failure.
@@ -176,18 +180,21 @@ evaluateFields(
   typename Traits::EvalData workset)
 { 
   if(useBasisValuesRefArray) {
-    panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
+    const auto & refBasisArray = workset(this->details_idx_).getBasisValues(bd_).basis_coordinates_ref;
 
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,
-                               basisValues.basis_coordinates_ref,
-                               workset.num_cells);
+    pointValues.evaluateValues(workset(this->details_idx_).getCellVertices(),
+                               refBasisArray,
+                               workset.numCells());
   }
   else {
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray,
-                               workset.num_cells);
+    pointValues.evaluateValues(workset(this->details_idx_).getCellVertices(),
+                               refPointArray,
+                               workset.numCells());
+
   }
+
 }
 
 //**********************************************************************

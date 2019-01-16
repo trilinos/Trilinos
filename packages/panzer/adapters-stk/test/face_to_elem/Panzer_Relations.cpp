@@ -198,8 +198,8 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
 
   for (int nwkst=0; nwkst<num_worksets; ++nwkst){
     panzer::Workset &workset = (*worksets)[nwkst];
-    auto coords = workset.cell_vertex_coordinates;
-    int num_cells = workset.num_cells;
+    const auto & coords = workset.getCellVertices();
+    const int num_cells = workset.numCells();
     // Compute the rough cell face centroid
     for (int c=0; c<num_cells; ++c) {
       for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface) {
@@ -208,7 +208,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
           for (int idim=0;idim<dimension_; ++idim)
             center[idim] += coords(c,face_to_node[nface][nnode], idim);
         for (int idim=0;idim<dimension_; ++idim)
-          face_centroid_(workset.cell_local_ids[c], nface, idim) =  center[idim]/face_to_node[nface].size();
+          face_centroid_(workset.getLocalCellIDs()(c), nface, idim) =  center[idim]/face_to_node[nface].size();
 
       }
     }
@@ -219,7 +219,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
       std::vector<double> center(3,0.);
       for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface)
         for (int idim=0;idim<dimension_; ++idim)
-          center[idim] += face_centroid_(workset.cell_local_ids[c], nface, idim)/face_to_node.size();
+          center[idim] += face_centroid_(workset.getLocalCellIDs()(c), nface, idim)/face_to_node.size();
 
       for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface) {
         std::vector<double> normal(3,0);
@@ -227,12 +227,12 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
         // Create centroid to node edges.
         for (int nnode=0; nnode < static_cast<int>(face_to_node[nface].size()); ++nnode) {
           for (int idim=0;idim<dimension_; ++idim)
-            edges(nnode,idim) = coords(c,face_to_node[nface][nnode], idim) - face_centroid_(workset.cell_local_ids[c], nface, idim);
+            edges(nnode,idim) = coords(c,face_to_node[nface][nnode], idim) - face_centroid_(workset.getLocalCellIDs()(c), nface, idim);
         }
 
         std::vector<double> approx_normal(3);
         for (int idim=0;idim<dimension_; ++idim)
-          approx_normal[idim] = center[idim]-face_centroid_(workset.cell_local_ids[c], nface, idim);
+          approx_normal[idim] = center[idim]-face_centroid_(workset.getLocalCellIDs()(c), nface, idim);
 
         if ( dimension_ == 1) {
           normal[0] = 1;
@@ -254,7 +254,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
         if ( sign < 0 )
           normal_norm *= -1;
         for (int idim=0;idim<dimension_; ++idim)
-          face_normal_(workset.cell_local_ids[c], nface, idim) = normal[idim]/normal_norm;
+          face_normal_(workset.getLocalCellIDs()(c), nface, idim) = normal[idim]/normal_norm;
 
       }
     }

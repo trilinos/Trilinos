@@ -45,7 +45,6 @@
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
-#include "Panzer_Workset_Utilities.hpp"
 #include "Kokkos_ViewFactory.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -54,14 +53,15 @@ namespace panzer {
 //**********************************************************************
 template<typename EvalT, typename Traits>
 Integrator_Scalar<EvalT, Traits>::
-Integrator_Scalar(
-  const Teuchos::ParameterList& p) : quad_index(0)
+Integrator_Scalar(const Teuchos::ParameterList& p)
 {
   Teuchos::RCP<Teuchos::ParameterList> valid_params = this->getValidParameters();
   p.validateParameters(*valid_params);
 
   Teuchos::RCP<panzer::IntegrationRule> ir = p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
   quad_order = ir->cubature_degree;
+
+  id_ = *ir;
 
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->extent(0)));
   integral = PHX::MDField<ScalarT>( p.get<std::string>("Integral Name"), dl_cell);
@@ -104,7 +104,6 @@ postRegistrationSetup(
 {
   num_qp = scalar.extent(1);
   tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.extent(0), num_qp);
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -115,11 +114,11 @@ evaluateFields(
   typename Traits::EvalData workset)
 { 
 /*
-  for (index_t cell = 0; cell < workset.num_cells; ++cell)
+  for (index_t cell = 0; cell < workset.numCells(); ++cell)
     integral(cell) = 0.0;
 */
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
+  for (index_t cell = 0; cell < workset.numCells(); ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
       tmp(cell,qp) = multiplier * scalar(cell,qp);
       for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
@@ -133,7 +132,7 @@ evaluateFields(
   // element. You can't grab refrerences to memory anymore with
   // kokkos.  When Intrepid2 is fixed, we can switch this back.
   /*
-  if(workset.num_cells>0)
+  if(workset.numCells()>0)
     Intrepid2::FunctionSpaceTools::
       integrate<ScalarT>(integral, tmp, 
 			 (this->wda(workset).int_rules[quad_index])->weighted_measure, 
@@ -145,11 +144,11 @@ evaluateFields(
   // since we need to change the Worksets.
 
   // const Kokkos::DynRankView<double,PHX::Device>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
-  const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
+  const auto & iv = workset(this->details_idx_).getIntegrationValues(id_);;
 
   int numPoints       = tmp.extent(1);
  
-  for(index_t cl = 0; cl < workset.num_cells; cl++) {
+  for(index_t cl = 0; cl < workset.numCells(); cl++) {
     integral(cl) = tmp(cl, 0)*iv.weighted_measure(cl, 0);
     for(int qp = 1; qp < numPoints; qp++)
       // integral(cl) += tmp(cl, qp)*rightFields(cl, qp);

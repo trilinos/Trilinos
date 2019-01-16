@@ -117,12 +117,9 @@ TEUCHOS_UNIT_TEST(domain_interface, base)
   worksetNeeds.addBasis(basisDescriptor);
   worksetNeeds.addIntegrator(integrationDescriptor);
 
-  WorksetDescriptor worksetDescriptor("eblock-0_0", WorksetSizeType::ALL_ELEMENTS,true,false);
-
   WorksetFactory worksetFactory(mesh);
 
-  auto worksets = worksetFactory.getWorksets(worksetDescriptor,
-                                             worksetNeeds);
+  auto worksets = worksetFactory.getWorksets(panzer::blockGhostedDescriptor("eblock-0_0"));
 
   TEST_EQUALITY(worksets->size(),1);
 

@@ -55,7 +55,7 @@
 #include "Panzer_IntegrationDescriptor.hpp"
 
 #include "Panzer_LocalMeshInfo.hpp"
-#include "Panzer_SetupPartitionedWorksetUtilities.hpp"
+#include "Panzer_WorksetUtilities.hpp"
 
 #include "Panzer_UnitTest_LocalMeshUtilities.hpp"
 
@@ -76,113 +76,63 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
   {
     panzer::LocalMeshInfo empty_mesh;
 
-    panzer::WorksetDescriptor description("block",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(empty_mesh, description, needs);
+    auto worksets = buildWorksets(empty_mesh, panzer::blockGhostedDescriptor("block"));
 
-    TEST_INEQUALITY(worksets,Teuchos::null);
-
+    TEST_ASSERT(not worksets.is_null());
     TEST_EQUALITY(worksets->size(),0);
 
   }
 
   // Generate a local mesh info object
+
   Teuchos::RCP<panzer::LocalMeshInfo> mesh_info = generateLocalMeshInfo();
-
-  // Test bad descriptors
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::CLASSIC_MODE,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
+    // Should get a single workset
+    auto worksets = buildWorksets(*mesh_info, panzer::blockDescriptor("block0"));
 
-    // Should throw an error
-    TEST_THROW(buildPartitionedWorksets(*mesh_info, description, needs),std::logic_error);
-
-  }
-  {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::NO_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
-    // It shouldn't return any worksets
-    TEST_THROW(buildPartitionedWorksets(*mesh_info, description, needs),std::logic_error);
-  }
-  {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,false);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
-    // This should trow an error since the description doesn't allow partitioning
-    TEST_THROW(buildPartitionedWorksets(*mesh_info, description, needs),std::logic_error);
+    TEST_ASSERT(not worksets.is_null());
+    TEST_EQUALITY(worksets->size(), 1);
   }
 
   // Test the worksets
 
   // Non-existant block
   {
-    panzer::WorksetDescriptor description("block32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::blockGhostedDescriptor("block32"));
 
-    TEST_INEQUALITY(worksets,Teuchos::null);
-
-    // Nothing should have been found
+    TEST_ASSERT(not worksets.is_null());
     TEST_EQUALITY(worksets->size(), 0);
 
   }
 
   // Non-existant sideset
   {
-    panzer::WorksetDescriptor description("block32","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::sidesetGhostedDescriptor("block32","sideset0"));
 
-    TEST_INEQUALITY(worksets,Teuchos::null);
+    TEST_ASSERT(not worksets.is_null());
 
     // Nothing should have been found
     TEST_EQUALITY(worksets->size(), 0);
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset32",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::sidesetGhostedDescriptor("block0","sideset32"));
 
-    TEST_INEQUALITY(worksets,Teuchos::null);
+    TEST_ASSERT(not worksets.is_null());
 
     // Nothing should have been found
     TEST_EQUALITY(worksets->size(), 0);
 
   }
   {
-    panzer::WorksetDescriptor description("block0","sideset1",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::sidesetGhostedDescriptor("block0","sideset1"));
 
-    TEST_INEQUALITY(worksets,Teuchos::null);
+    TEST_ASSERT(not worksets.is_null());
 
     // Nothing should have been found
     TEST_EQUALITY(worksets->size(), 0);
@@ -190,15 +140,11 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 
   // Existing block partition
   {
-    panzer::WorksetDescriptor description("block0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
 
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::blockGhostedDescriptor("block0"));
 
-    TEST_INEQUALITY(worksets,Teuchos::null);
+    TEST_ASSERT(not worksets.is_null());
 
     // Only one partition since we requested a full partition
     TEST_EQUALITY(worksets->size(), 1);
@@ -209,15 +155,27 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
     TEST_EQUALITY(workset.numVirtualCells(),1);
   }
 
+  // Existing block, but don't partition
+  {
+    // Should only get a single workset with all elements
+    auto worksets = buildWorksets(*mesh_info, panzer::blockDescriptor("block0"));
+
+    // Should have found something
+    TEST_ASSERT(not worksets.is_null());
+    TEST_EQUALITY(worksets->size(), 1);
+
+    // No partition means no ghost or virtual cells
+    const auto & workset = (*worksets)[0];
+    TEST_EQUALITY(workset.numOwnedCells(),2);
+    TEST_EQUALITY(workset.numGhostCells(),0);
+    TEST_EQUALITY(workset.numVirtualCells(),0);
+  }
+
   // Existing sideset partition
   {
-    panzer::WorksetDescriptor description("block0","sideset0",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
 
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::sidesetGhostedDescriptor("block0","sideset0"));
 
     TEST_INEQUALITY(worksets,Teuchos::null);
 
@@ -230,13 +188,8 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
     TEST_EQUALITY(workset.numVirtualCells(),1);
   }
   {
-    panzer::WorksetDescriptor description("block1","sideset2",panzer::WorksetSizeType::ALL_ELEMENTS,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
     // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::sidesetGhostedDescriptor("block1","sideset2"));
 
     TEST_INEQUALITY(worksets,Teuchos::null);
 
@@ -252,13 +205,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
   // Existing block double partition
   {
     // We want two partitions, each with a size of 1 cell
-    panzer::WorksetDescriptor description("block1",1,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
-    // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::blockGhostedDescriptor("block1",1));
 
     TEST_INEQUALITY(worksets,Teuchos::null);
 
@@ -285,13 +232,7 @@ TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
   // Existing sideset double partition, but only one partition is available
   {
     // We want two partitions, each with a size of 1 cell
-    panzer::WorksetDescriptor description("block1","sideset1",1,true);
-    panzer::WorksetNeeds needs;
-    needs.addBasis(basis);
-    needs.addIntegrator(integrator);
-
-    // It shouldn't return any worksets
-    auto worksets = buildPartitionedWorksets(*mesh_info, description, needs);
+    auto worksets = buildWorksets(*mesh_info, panzer::sidesetGhostedDescriptor("block1","sideset1",1));
 
     TEST_INEQUALITY(worksets,Teuchos::null);
 

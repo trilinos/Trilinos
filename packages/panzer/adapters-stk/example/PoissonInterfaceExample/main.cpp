@@ -52,7 +52,6 @@
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_GlobalData.hpp"
-#include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_InArgs.hpp"
@@ -68,6 +67,7 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
@@ -569,23 +569,6 @@ int main (int argc, char* argv[])
       mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD);
     }
 
-    // build worksets
-    ////////////////////////////////////////////////////////
-
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer);
-    wkstContainer->setFactory(wkstFactory);
-    for(size_t i=0;i<physicsBlocks.size();i++)
-      wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
-    wkstContainer->setWorksetSize(workset_size);
-
-    std::vector<std::string> elementBlockNames;
-    mesh->getElementBlockNames(elementBlockNames);
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
-    panzer::getVolumeWorksetsFromContainer(*wkstContainer,elementBlockNames,volume_worksets);
-
     // build DOF Manager and linear object factory
     /////////////////////////////////////////////////////////////
 
@@ -603,6 +586,22 @@ int main (int argc, char* argv[])
       if (has_interface_condition)
         checkInterfaceConnections(conn_manager, dofManager->getComm());
     }
+
+
+    // build worksets
+    //////////////////////////////////////////////////////////////
+
+    // build WorksetContainer
+    auto wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+//    wkstFactory->setOrientationsInterface(Teuchos::rcp(new panzer::OrientationsInterface(dofManager)));
+    auto wkstContainer = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory));
+
+    std::vector<std::string> elementBlockNames;
+    mesh->getElementBlockNames(elementBlockNames);
+
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > volume_worksets;
+    for(const auto & element_block : elementBlockNames)
+      volume_worksets[element_block] = wkstContainer->getWorksets(panzer::blockDescriptor(element_block,workset_size));
 
     // construct some linear algebra object, build object to pass to evaluators
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
@@ -638,7 +637,7 @@ int main (int argc, char* argv[])
         builder.cubatureDegree = po.integration_order;
         builder.requiresCellIntegral = true;
         builder.quadPointField = names[i] + "_ERROR";
-        errorResponseLibrary->addResponse(names[i] + " L2 Error", eblocks[i], builder);
+        errorResponseLibrary->addResponse(names[i] + " L2 Error", eblocks[i], builder,workset_size);
       }
     }
 
@@ -677,7 +676,7 @@ int main (int argc, char* argv[])
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb =
       Teuchos::rcp(new panzer::FieldManagerBuilder);
     fmb->setWorksetContainer(wkstContainer);
-    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+    fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data,workset_size);
     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
                               *linObjFactory,user_data);
     fmb->writeVolumeGraphvizDependencyFiles("volume", physicsBlocks);

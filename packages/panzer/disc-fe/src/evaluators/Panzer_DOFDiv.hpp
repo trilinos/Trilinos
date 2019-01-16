@@ -69,24 +69,18 @@ public:
          const panzer::BasisDescriptor & bd,
          const panzer::IntegrationDescriptor & id);
 
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
-
   void evaluateFields(typename TRAITS::EvalData d);
 
 private:
 
   typedef typename EvalT::ScalarT ScalarT;
 
-  bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
 
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,IP> dof_div;
 
-  std::string basis_name;
-  std::size_t basis_index;
 };
 
 // Specitialization for the Jacobian
@@ -103,24 +97,17 @@ public:
          const panzer::BasisDescriptor & bd,
          const panzer::IntegrationDescriptor & id);
 
-  void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& fm);
-
   void evaluateFields(typename TRAITS::EvalData d);
 
 private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
 
-  bool use_descriptors_;
   panzer::BasisDescriptor bd_;
   panzer::IntegrationDescriptor id_;
 
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,IP> dof_div;
-
-  std::string basis_name;
-  std::size_t basis_index;
 
   bool accelerate_jacobian;
   std::vector<int> offsets;

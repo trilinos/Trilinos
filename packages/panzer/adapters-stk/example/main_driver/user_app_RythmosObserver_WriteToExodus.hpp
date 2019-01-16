@@ -63,13 +63,15 @@ namespace user_app {
   public:
     
     RythmosObserver_WriteToExodus(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
-				   const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
-				   const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
-                                   const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library) :
+                                  const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,
+                                  const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
+                                  const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & response_library,
+                                  const int workset_size) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof),
-      m_response_library(response_library)
+      m_response_library(response_library),
+      m_workset_size(workset_size)
     { 
       // get all element blocks and add them to the list
       std::vector<std::string> eBlocks;
@@ -77,13 +79,13 @@ namespace user_app {
 
       panzer_stk::RespFactorySolnWriter_Builder builder;
       builder.mesh = mesh;
-      m_response_library->addResponse("Main Field Output",eBlocks,builder);
+      m_response_library->addResponse("Main Field Output",eBlocks,builder,m_workset_size);
     }
     
     Teuchos::RCP<Rythmos::IntegrationObserverBase<double> >
     cloneIntegrationObserver() const
     {
-      return Teuchos::rcp(new RythmosObserver_WriteToExodus(m_mesh, m_dof_manager, m_lof,m_response_library));
+      return Teuchos::rcp(new RythmosObserver_WriteToExodus(m_mesh, m_dof_manager, m_lof,m_response_library,m_workset_size));
     }
 
     void resetIntegrationObserver(const Rythmos::TimeRange<double>& /* integrationTimeDomain */)
@@ -125,6 +127,7 @@ namespace user_app {
     Teuchos::RCP<const panzer::GlobalIndexer> m_dof_manager;
     Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
+    int m_workset_size;
   };
 
 }

@@ -49,6 +49,7 @@
 #include "Panzer_EquationSet_Factory_Defines.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 
 namespace panzer {
 
@@ -90,7 +91,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     Traits::SD setupData;
     const WorksetDescriptor wd = blockDescriptor(blockId);
     setupData.worksets_ = wkstContainer.getWorksets(wd);
-    setupData.orientations_ = wkstContainer.getOrientations();
+    setupData.orientations_ = wkstContainer.getFactory()->getOrientationsInterface()->getOrientations();
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
@@ -142,7 +143,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     Traits::SD setupData;
     const WorksetDescriptor wd = blockDescriptor(blockId);
     setupData.worksets_ = wkstContainer.getWorksets(wd);
-    setupData.orientations_ = wkstContainer.getOrientations();
+    setupData.orientations_ = wkstContainer.getFactory()->getOrientationsInterface()->getOrientations();
 
     fm->postRegistrationSetup(setupData);
     phx_ic_field_managers[blockId] = fm;
@@ -192,7 +193,7 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
       panzer::Workset& workset = w[i];
       
       // Need to figure out how to get restart time from Rythmos.
-      workset.time = time_stamp;
+      workset.setTime(time_stamp);
       
       fm->evaluateFields<panzer::Traits::Residual>(workset);
     }

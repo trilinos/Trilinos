@@ -145,24 +145,30 @@ namespace panzer_tmp {
 
   public:
 
-    // ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
-    //                      const std::string & respName, const std::vector<std::string> & eBlocks)
-    //   : respFact_(respFact), respName_(respName)
-    // {
-    //   for(std::size_t i=0;i<eBlocks.size();i++)
-    //     wkstDesc_.push_back(blockDescriptor(eBlocks[i]));
-    // }
+//    ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
+//                         const std::string & respName,
+//                         const std::vector<std::string> & eBlocks,
+//                         const int workset_size)
+//      : respFact_(respFact), respName_(respName)
+//    {
+//      for(std::size_t i=0;i<eBlocks.size();i++)
+//        wkstDesc_.push_back(blockDescriptor(eBlocks[i], workset_size));
+//    }
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
-                         const std::string & respName, const std::vector<std::pair<std::string,std::string> > & sidesets)
+                         const std::string & respName,
+                         const std::vector<std::pair<std::string,std::string> > & sidesets,
+                         const int workset_size)
       : respFact_(respFact), respName_(respName)
     {
+      // 'sidesets' is <Sideset, Block>
       for(std::size_t i=0;i<sidesets.size();i++)
-        wkstDesc_.push_back(sidesetDescriptor(sidesets[i].first,sidesets[i].second));
+        wkstDesc_.push_back(sidesetDescriptor(sidesets[i].second,sidesets[i].first, workset_size));
     }
 
     ResponseBase_Builder(const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & respFact,
-                         const std::string & respName, const std::vector<WorksetDescriptor> & wkstDesc)
+                         const std::string & respName,
+                         const std::vector<WorksetDescriptor> & wkstDesc)
       : respFact_(respFact), respName_(respName), wkstDesc_(wkstDesc)
     { }
 
@@ -205,7 +211,8 @@ template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
 addResponse(const std::string & responseName,
             const std::vector<std::string> & blocks,
-            const ResponseEvaluatorFactory_BuilderT & builder) 
+            const ResponseEvaluatorFactory_BuilderT & builder,
+            const int workset_size)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -231,7 +238,8 @@ template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
 addResponse(const std::string & responseName,
             const std::vector<std::pair<std::string,std::string> > & sideset_blocks,
-            const ResponseEvaluatorFactory_BuilderT & builder) 
+            const ResponseEvaluatorFactory_BuilderT & builder,
+            const int workset_size)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -246,7 +254,7 @@ addResponse(const std::string & responseName,
    modelFact_tm->buildObjects(builder);
 
    // build a response object for each evaluation type
-   panzer_tmp::ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,sideset_blocks);
+   panzer_tmp::ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,sideset_blocks,workset_size);
    responseObjects_[responseName].buildObjects(respData_builder);
 
    // associate response objects with all element blocks required
@@ -276,7 +284,7 @@ template <typename ResponseEvaluatorFactory_BuilderT>
 void ResponseLibrary<TraitsT>::
 addResponse(const std::string & responseName,
             const std::vector<WorksetDescriptor> & wkst_desc,
-            const ResponseEvaluatorFactory_BuilderT & builder) 
+            const ResponseEvaluatorFactory_BuilderT & builder)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -285,18 +293,20 @@ addResponse(const std::string & responseName,
                              "panzer::ResponseLibrary::addResponse: Method can't be called when the "
                              "response library is a \"residualType\"!");
 
-  if(wkst_desc[0].useSideset() && !wkst_desc[0].sideAssembly()) {
+  if((wkst_desc[0].useSideset() && (!wkst_desc[0].sideAssembly())) && (!wkst_desc[0].buildCascade())) {
     // this is a simple side integration, use the "other" addResponse method
 
+    int workset_size = WorksetSizeType::ALL_ELEMENTS;
     std::vector<std::pair<std::string,std::string> > sideset_blocks;
     for(std::size_t i=0;i<wkst_desc.size();i++) {
       std::string sideset = wkst_desc[i].getSideset();
       std::string blockId = wkst_desc[i].getElementBlock();
+      workset_size = std::max(workset_size, wkst_desc[i].getWorksetSize());
       sideset_blocks.push_back(std::make_pair(sideset,blockId));
     }
 
     // add in the response (as a side set)
-    addResponse(responseName,sideset_blocks,builder);
+    addResponse(responseName,sideset_blocks,builder,workset_size);
 
     return;
   }
@@ -520,6 +530,7 @@ buildResidualResponseEvaluators(
          const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
          const Teuchos::ParameterList& closure_models,
          const Teuchos::ParameterList& user_data,
+         const int workset_size,
          const bool write_graphviz_file,
          const std::string& graphviz_file_prefix)
 {
@@ -533,7 +544,7 @@ buildResidualResponseEvaluators(
    fmb2_ = Teuchos::rcp(new FieldManagerBuilder(disableScatter_,disableGather_)); 
 
    fmb2_->setWorksetContainer(wkstContainer_);
-   fmb2_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data);
+   fmb2_->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory_,user_data, workset_size);
    fmb2_->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,cm_factory,bc_factory,closure_models,*linObjFactory_,user_data);
 
    // Print Phalanx DAGs
