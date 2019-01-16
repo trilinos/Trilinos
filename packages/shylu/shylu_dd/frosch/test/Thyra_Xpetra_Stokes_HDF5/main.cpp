@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
     MPI_Comm_split(MPI_COMM_WORLD,color,CommWorld->getRank(),&COMM);
     RCP<Epetra_MpiComm> EpetraComm(new Epetra_MpiComm(COMM));
     
+#ifdef HAVE_EPETRAEXT_HDF5
     if (color==0) {
         
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
@@ -289,6 +290,7 @@ int main(int argc, char *argv[])
         
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;        
     }
+#endif
     
     return(EXIT_SUCCESS);
     
