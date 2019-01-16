@@ -63,13 +63,25 @@ using Teuchos::tuple;
 using std::endl;
 typedef Tpetra::global_size_t GST;
 
+template<class RP, class CI>
+void print_graph(int rank, const char *prefix, RP rowptr, CI colind) {
+  printf("[%d] %s entries = ",rank,prefix);
+  for(size_t i=0; i<rowptr.extent(0)-1; i++) {
+    printf("( ");
+    for(size_t j=rowptr[i]; j<rowptr[i+1]; j++)
+      printf("%2d ",colind[j]);
+    printf(") ");
+    printf("\n");
+  }
+}
+
 template<class LO, class GO, class Node>
 bool compare_final_graph_structure(Teuchos::FancyOStream &out,Tpetra::CrsGraph<LO,GO,Node> & g1, Tpetra::CrsGraph<LO,GO,Node> & g2) {
   using std::endl;
   if (!g1.isFillComplete() || !g2.isFillComplete()) {out<<"Compare: FillComplete failed"<<endl;return false;}
   if (!g1.getRangeMap()->isSameAs(*g2.getRangeMap())) {out<<"Compare: RangeMap failed"<<endl;return false;}
   if (!g1.getRowMap()->isSameAs(*g2.getRowMap())) {out<<"Compare: RowMap failed"<<endl;return false;}
-  if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;return false;}
+  if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;g1.describe(out);g2.describe(out);return false;}
   if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
 
   auto rowptr1 = g1.getLocalGraph().row_map;
@@ -79,7 +91,12 @@ bool compare_final_graph_structure(Teuchos::FancyOStream &out,Tpetra::CrsGraph<L
   auto colind2 = g2.getLocalGraph().entries;
 
   if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
-  if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed"<<endl;return false;}      
+  if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed: "<<colind1.extent(0)<<" vs "<<colind2.extent(0)<<endl;
+    int rank = g1.getRowMap()->getComm()->getRank();
+    print_graph(rank,"G1",rowptr1,colind1);
+    print_graph(rank,"G2",rowptr2,colind2);
+    return false;
+}      
 
   bool success=true;
   TEST_COMPARE_ARRAYS(rowptr1,rowptr2);
