@@ -474,20 +474,20 @@ namespace Tpetra {
            "Export/Import object's source Map.");
       }
       else if (restrictedMode && revOp == DoForward) {
-        const bool tgtMapLocallyFittedMyMap =
-          transfer.getTargetMap ()->isLocallyFitted (*this->getMap ());          
+        const bool myMapLocallyFittedTransferTgtMap =
+          this->getMap ()->isLocallyFitted (* (transfer.getTargetMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! tgtMapLocallyFittedMyMap, std::invalid_argument,
+          (! myMapLocallyFittedTransferTgtMap , std::invalid_argument,
            "Tpetra::DistObject::" << modeString << ": For forward-mode "
            "communication using restricted mode, Export/Import object's target Map "
            " must be the same Tpetra::Map::isLocallyFitted to target DistObject's Map");
       }
       else { // if (restrictedMode && revOp == DoReverse) {
-        const bool srcMapLocallyFittedMyMap =
-          transfer.getSourceMap ()->isLocallyFitted (*this->getMap ());          
+        const bool myMapLocallyFittedTransferSrcMap =
+          this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));   
         TEUCHOS_TEST_FOR_EXCEPTION
-          (! srcMapLocallyFittedMyMap, std::invalid_argument,
-           "Tpetra::DistObject::" << modeString << ": For rererse-mode "
+          (! myMapLocallyFittedTransferSrcMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For reverse-mode "
            "communication using restricted mode, Export/Import object's source Map "
            " must be the same Tpetra::Map::isLocallyFitted to target DistObject's Map");
       }
