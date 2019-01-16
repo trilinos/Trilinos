@@ -45,6 +45,9 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Kokkos_Core.hpp" // DEBUG
 
+#define USE_UNALIASED_MEMORY
+
+
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -85,7 +88,6 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
 
     // NOTE: You cannot use aliased memory for the matrix if you don't use aliased memory for the graph (because the ownedplusshared graph, if it 
     // is unaliased, will be missing off-rank entries
-#define USE_UNALIASED_MEMORY
 #ifdef  USE_UNALIASED_MEMORY
     inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph));
 #else

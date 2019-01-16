@@ -45,7 +45,7 @@
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 
-//#define USE_UNALIASED_MEMORY
+#define USE_UNALIASED_MEMORY
 
 
 
