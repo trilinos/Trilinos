@@ -55,14 +55,15 @@
 #include <Xpetra_EpetraCrsMatrix.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_UseDefaultTypes.hpp>
 
 #include "FROSch_Tools_def.hpp"
 
-typedef unsigned UN;
-typedef double SC;
-typedef int LO;
-typedef int GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+typedef unsigned      UN;
+typedef Scalar        SC;
+typedef LocalOrdinal  LO;
+typedef GlobalOrdinal GO;
+typedef Node          NO;
 
 using namespace std;
 using namespace Teuchos;
