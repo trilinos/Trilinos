@@ -231,6 +231,12 @@ protected:
    */
   void initializeDefaultBase();
 
+  /** \brief Sets the the DefaultBase to an uninitialized state, forcing lazy initialization when needed.
+   *
+   *  This is used when a derived class changes state and requires lazy initialization.
+   */
+  void resetDefaultBase();
+
   //@}
 
 private:
@@ -860,6 +866,11 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
 
 }
 
+template<class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::resetDefaultBase()
+{
+  isInitialized_ = false;
+}
 
 // Private functions with default implementaton to be overridden by subclasses
 
