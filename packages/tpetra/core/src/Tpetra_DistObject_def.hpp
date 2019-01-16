@@ -250,7 +250,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doImport (const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-            CombineMode CM)
+            CombineMode CM, bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doImport (forward mode)";
@@ -278,7 +278,7 @@ namespace Tpetra {
       os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoForward, CM);
+    this->doTransfer (source, importer, modeString, DoForward, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
@@ -292,7 +292,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doExport (const SrcDistObject& source,
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-            CombineMode CM)
+            CombineMode CM, bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doExport (forward mode)";
@@ -320,7 +320,7 @@ namespace Tpetra {
       os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoForward, CM);
+    this->doTransfer (source, exporter, modeString, DoForward, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
@@ -334,7 +334,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doImport (const SrcDistObject& source,
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-            CombineMode CM)
+            CombineMode CM, bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doImport (reverse mode)";
@@ -362,7 +362,7 @@ namespace Tpetra {
       os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoReverse, CM);
+    this->doTransfer (source, exporter, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
@@ -376,7 +376,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doExport (const SrcDistObject& source,
             const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
-            CombineMode CM)
+            CombineMode CM, bool restrictedMode)
   {
     using std::endl;
     const char modeString[] = "doExport (reverse mode)";
@@ -404,7 +404,7 @@ namespace Tpetra {
       os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoReverse, CM);
+    this->doTransfer (source, importer, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
@@ -434,18 +434,26 @@ namespace Tpetra {
               const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
               const char modeString[],
               const ReverseOption revOp,
-              const CombineMode CM)
+              const CombineMode CM,
+              bool restrictedMode)
   {
     using Tpetra::Details::getDualViewCopyFromArrayView;
     using std::endl;
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
+    // "Restricted Mode" does two things:
+    // 1) Skips copyAndPermute
+    // 2) Allows the "target" map of the transfer to be a subset of the map of this, in a "locallyFitted" sense.
+    //
+    // This cannot be used if #2 is not true, OR there are permutes.
+    // Source maps still need to match
+
     // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
     // checks.  These may communicate more.
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
-      if (revOp == DoForward) {
+      if (!restrictedMode && revOp == DoForward) {
         const bool myMapSameAsTransferTgtMap =
           this->getMap ()->isSameAs (* (transfer.getTargetMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -455,15 +463,33 @@ namespace Tpetra {
            "(in the sense of Tpetra::Map::isSameAs) as the input "
            "Export/Import object's target Map.");
       }
-      else { // revOp == DoReverse
+      else if (!restrictedMode && revOp == DoReverse) {
         const bool myMapSameAsTransferSrcMap =
           this->getMap ()->isSameAs (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
           (! myMapSameAsTransferSrcMap, std::invalid_argument,
            "Tpetra::DistObject::" << modeString << ": For reverse-mode "
            "communication, the target DistObject's Map must be the same "
-           "(in the sense of Tpetra::Map::isSameAs) as the input "
+         "(in the sense of Tpetra::Map::isSameAs) as the input "
            "Export/Import object's source Map.");
+      }
+      else if (restrictedMode && revOp == DoForward) {
+        const bool tgtMapLocallyFittedMyMap =
+          transfer.getTargetMap ()->isLocallyFitted (*this->getMap ());          
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! tgtMapLocallyFittedMyMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For forward-mode "
+           "communication using restricted mode, Export/Import object's target Map "
+           " must be the same Tpetra::Map::isLocallyFitted to target DistObject's Map");
+      }
+      else { // if (restrictedMode && revOp == DoReverse) {
+        const bool srcMapLocallyFittedMyMap =
+          transfer.getSourceMap ()->isLocallyFitted (*this->getMap ());          
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! srcMapLocallyFittedMyMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For rererse-mode "
+           "communication using restricted mode, Export/Import object's source Map "
+           " must be the same Tpetra::Map::isLocallyFitted to target DistObject's Map");
       }
 
       // SrcDistObject need not even _have_ Maps.  However, if the
@@ -528,6 +554,15 @@ namespace Tpetra {
       transfer.getRemoteLIDs () : transfer.getExportLIDs ();
     Distributor& distor = transfer.getDistributor ();
 
+    if (debug) {
+      if (restrictedMode && (permuteToLIDs_.size() != 0 || permuteFromLIDs_.size() !=0)) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (1, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": transfer object "
+           "cannot have permutes in restricted mode ");
+      }
+    }
+    
     if (this->useNewInterface ()) {
       using ::Tpetra::Details::Behavior;
       // Do we need all communication buffers to live on host?
@@ -566,7 +601,7 @@ namespace Tpetra {
                                               "exportLIDs",
                                               commOnHost);
       doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
-                     remoteLIDs, exportLIDs, distor, revOp, commOnHost);
+                     remoteLIDs, exportLIDs, distor, revOp, commOnHost, restrictedMode);
     }
     else {
       if (verbose) {
@@ -575,7 +610,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
       doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
-                     remoteLIDs_, exportLIDs_, distor, revOp);
+                     remoteLIDs_, exportLIDs_, distor, revOp, restrictedMode);
     }
 
     if (verbose) {
@@ -687,7 +722,8 @@ namespace Tpetra {
               const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs,
               const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
               Distributor &distor,
-              ReverseOption revOp)
+              ReverseOption revOp,
+              const bool restrictedMode)
   {
     using Tpetra::Details::getArrayViewFromDualView;
     using Tpetra::Details::reallocDualViewIfNeeded;
@@ -751,7 +787,7 @@ namespace Tpetra {
     // transfers the necessary data.
     this->createViewsNonConst (rwo);
 
-    if (numSameIDs + permuteToLIDs.size()) {
+    if (!restrictedMode && numSameIDs + permuteToLIDs.size()) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
@@ -1068,7 +1104,8 @@ namespace Tpetra {
                    device_type>& exportLIDs,
                  Distributor& distor,
                  const ReverseOption revOp,
-                 const bool commOnHost)
+                 const bool commOnHost,
+                 const bool restrictedMode)
   {
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::getArrayViewFromDualView;
@@ -1148,7 +1185,7 @@ namespace Tpetra {
     // that if CM == INSERT || CM == REPLACE, the target object could
     // be write only.  We don't optimize for that here.
 
-    if (numSameIDs + permuteToLIDs.extent (0) != 0) {
+    if (!restrictedMode && numSameIDs + permuteToLIDs.extent (0) != 0) {
       // There is at least one GID to copy or permute.
       if (verbose) {
         std::ostringstream os;

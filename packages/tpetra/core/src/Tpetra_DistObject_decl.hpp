@@ -415,7 +415,7 @@ namespace Tpetra {
     void
     doImport (const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     /// \brief Export data into this object using an Export object
     ///   ("forward mode").
@@ -438,7 +438,7 @@ namespace Tpetra {
     void
     doExport (const SrcDistObject& source,
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     /// \brief Import data into this object using an Export object
     ///   ("reverse mode").
@@ -462,7 +462,7 @@ namespace Tpetra {
     void
     doImport (const SrcDistObject& source,
               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     /// \brief Export data into this object using an Import object
     ///   ("reverse mode").
@@ -486,7 +486,7 @@ namespace Tpetra {
     void
     doExport (const SrcDistObject& source,
               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-              CombineMode CM);
+              CombineMode CM, bool restrictedMode = false);
 
     //@}
     //! @name Attribute accessor methods
@@ -647,7 +647,8 @@ namespace Tpetra {
                 const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
                 const char modeString[],
                 const ReverseOption revOp,
-                const CombineMode CM);
+                const CombineMode CM,
+                const bool restrictedMode);
 
     /// \brief Reallocate numExportPacketsPerLID_ and/or
     ///   numImportPacketsPerLID_, if necessary.
@@ -676,7 +677,8 @@ namespace Tpetra {
                    const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
                    const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
                    Distributor &distor,
-                   ReverseOption revOp);
+                   ReverseOption revOp,
+                   const bool restrictedMode);
 
     /// \typedef buffer_memory_space
     /// \brief Kokkos memory space for communication buffers.
@@ -723,7 +725,8 @@ namespace Tpetra {
                      device_type>& exportLIDs,
                    Distributor& distor,
                    const ReverseOption revOp,
-                   const bool commOnHost);
+                   const bool commOnHost,
+                   const bool restrictedMode);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
