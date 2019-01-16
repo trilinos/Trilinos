@@ -149,6 +149,14 @@ namespace MueLu {
     // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)
     // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
     {
+      if (comm->getSize() == 1) {
+        GetOStream(Statistics1) << "Repartitioning?  NO:" <<
+            "\n  comm size = 1" << std::endl;
+
+        Set(currentLevel, "number of partitions", -1);
+        return;
+      }
+
       int numActiveProcesses = 0;
       MueLu_sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
