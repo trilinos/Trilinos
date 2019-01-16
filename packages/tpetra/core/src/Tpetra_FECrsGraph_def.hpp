@@ -45,6 +45,8 @@
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 
+//#define USE_UNALIASED_MEMORY
+
 
 
 namespace Tpetra {
@@ -96,6 +98,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedPlusSharedRowMap.is_null (), std::runtime_error, "ownedPlusSharedRowMap is null.");
+
  activeCrsGraph_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
  // NOTE: We're forcing the CrsGraph to be in global index mode 
@@ -107,13 +110,20 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    // Make an importer if we need to, check map compatability if we don't
    if(importer_.is_null()) {
        importer_ = Teuchos::rcp(new import_type(ownedRowMap,ownedPlusSharedRowMap));
-   } else {
+   } 
+   else {
      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!ownedRowMap->isSameAs(*importer_->getSourceMap()), std::runtime_error, "ownedRowMap does not match importer source map.");
      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!ownedPlusSharedRowMap->isSameAs(*importer_->getTargetMap()), std::runtime_error, "ownedPlusSharedRowMap does not match importer target map.");
    }
+
+   // Make sure the ownedPlusSharedRowMap has at least as many entries at the ownedRowMap (due to our superset requriement)
+   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( importer_->getNumSameIDs() != importer_->getSourceMap()->getNodeNumElements(),
+                                          std::runtime_error,"ownedRowMap contains entries which are not in the ownedPlusSharedRowMap.");   
  
+   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowMap->getNodeNumElements() > ownedPlusSharedRowMap->getNodeNumElements(),
+                                          std::runtime_error,"ownedRowMap more entries than the ownedPlusSharedRowMap.");   
+
    // Build the inactive graph
-#define USE_UNALIASED_MEMORY
 #ifdef  USE_UNALIASED_MEMORY
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
    
@@ -127,13 +137,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    switchActiveCrsGraph();
 
 #else
-   // All the constructor really does it set (not allocate) this guy: k_numAllocPerRow_, allocateIndices() does the rest.
-   // Ergo, it is safe to call the constructor w/ ne as the arg, BUT we'll need to duplicate a chunk of the allocateIndices()
-   // functionality here in order to make sure everything else aliases.
-   // FIXME: This code needs to be implemeneted.
+   // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
-   #error "Tpetra::FECrsGraph does not have aliased memory implemented yet"
-
 #endif
  }
 
@@ -152,10 +157,25 @@ operator=(const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>& rhs)
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-    // As per Fuller, this will import into the static graph.
-    // NOTE: If the globalIndices were aliased, this would cause a problem (if the owned matrix was too small),
-    // so we're not going to worry about that for now.  We might want to fix this later.
+#ifdef USE_UNALIASED_MEMORY
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
+#else
+    // Do a self-export in "restricted mode"
+    this->doExport(*this,*importer_,CM,true);
+
+    // Time to alias all of the memory!
+    local_graph_type ownedGraph = this->getLocalGraph();
+    size_t numOwnedRows = inactiveCrsGraph_->getRowMap()->getNodeNumElements();
+
+    // FIXME: This uses UVM. Can we get away from this?
+    size_t numOwnedNonZeros = ownedGraph.row_map[numOwnedRows+1];
+
+    typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(ownedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
+    typename local_graph_type::entries_type ownedColumnIndices = Kokkos::subview(ownedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
+
+    inactiveCrsGraph_->setAllIndices(ownedRowPointers,ownedColumnIndices);
+    //    inactiveCrsGraph_->checkInternalState ();
+#endif
   }
 }//end doOverlapToLocal
 

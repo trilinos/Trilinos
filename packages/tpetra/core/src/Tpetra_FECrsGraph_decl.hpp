@@ -348,6 +348,9 @@ namespace Tpetra {
     /// Precondition: Must be FE_ACTIVE_OWNED mode
     void doOwnedToOwnedPlusShared(const CombineMode CM=Tpetra::ADD);
 
+
+
+  public:  // HAQ
     //! Switches which CrsGraph is active (without migrating data)
     void switchActiveCrsGraph();
     //@}
