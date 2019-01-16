@@ -210,7 +210,12 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     inactiveCrsGraph_->rangeMap_ = rangeMap_;
     inactiveCrsGraph_->makeColMap(remotePIDs);
 
+    // These need to be set so sort & merge will actually happen when fillComplete is triggered
+    inactiveCrsGraph_->indicesAreSorted_ = this->indicesAreSorted_;
+    inactiveCrsGraph_->noRedundancies_   = this->noRedundancies_ ;
+
     //Now make the col map for the ownedPlusShared guy
+#warning "Tpetra::FECrsGraph's implementation is not complete with USE_UNALIASED_MEMORY unset"
 
 #endif
   }
@@ -277,8 +282,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
     // fillComplete the owned graph
-    if(domainMap_.is_null()) inactiveCrsGraph_->fillComplete();
-    else inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
+    inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
 
     // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
     crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
