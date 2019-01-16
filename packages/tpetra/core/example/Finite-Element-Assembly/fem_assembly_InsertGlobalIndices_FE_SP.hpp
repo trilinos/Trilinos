@@ -185,8 +185,26 @@ int executeInsertGlobalIndicesFESP_(const comm_ptr_t& comm, const struct CmdLine
   }
 
 
-  // HAQ for now
-  //  return 0;
+#if 0
+  {
+    // DEBUGGING
+    int rank = row_map->getComm()->getRank();
+    {
+      char fname[80]; sprintf(fname,"owned_graph.%d.dat",rank);
+      std::ofstream ofs(fname);
+      fe_graph->describe(*Teuchos::fancyOStream(Teuchos::rcp(&ofs,false)),Teuchos::VERB_EXTREME);
+    }
+
+    fe_graph->switchActiveCrsGraph();
+    {
+      char fname[80]; sprintf(fname,"ownedPlusShared_graph.%d.dat",rank);
+      std::ofstream ofs(fname);
+      fe_graph->describe(*Teuchos::fancyOStream(Teuchos::rcp(&ofs,false)),Teuchos::VERB_EXTREME);
+    }
+    fe_graph->switchActiveCrsGraph();
+    
+  }
+#endif
 
   // Print out verbose information about the fe_graph.
   if(opts.verbose) fe_graph->describe(out, Teuchos::VERB_EXTREME);
