@@ -580,7 +580,7 @@ private:
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
     int migration_type; // when doing the migration, 0 will aim for perfect load-imbalance, 
     			//1 - will aim for minimized number of messages with possibly bad load-imbalance
-    mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
+    double minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     int num_threads; //num threads
 
     mj_part_t total_num_cut ; //how many cuts will be totally
@@ -1312,7 +1312,7 @@ public:
                 bool distribute_points_on_cut_lines_,
                 int max_concurrent_part_calculation_,
                 int check_migrate_avoid_migration_option_,
-                mj_scalar_t minimum_migration_imbalance_, int migration_type_ = 0);
+                double minimum_migration_imbalance_, int migration_type_ = 0);
     /*! \brief Function call, if the part boxes are intended to be kept.
      *
      */
@@ -5914,7 +5914,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_partitioning_paramet
                 bool distribute_points_on_cut_lines_,
                 int max_concurrent_part_calculation_,
                 int check_migrate_avoid_migration_option_,
-                mj_scalar_t minimum_migration_imbalance_,
+                double minimum_migration_imbalance_,
 		int migration_type_ ){
         this->distribute_points_on_cut_lines = distribute_points_on_cut_lines_;
         this->max_concurrent_part_calculation = max_concurrent_part_calculation_;
@@ -6542,7 +6542,7 @@ private:
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
     int migration_type; // when doing the migration, 0 will aim for perfect load-imbalance, 
  			//1 for minimized messages
-    mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
+    double minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     bool mj_keep_part_boxes; //if the boxes need to be kept.
 
     int num_threads;
