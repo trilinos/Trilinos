@@ -62,11 +62,11 @@
 
 #include <FROSch_Tools_decl.hpp>
 
-typedef unsigned      UN;
-typedef Scalar        SC;
-typedef LocalOrdinal  LO;
-typedef GlobalOrdinal GO;
-typedef Node          NO;
+typedef unsigned                                UN;
+typedef Scalar                                  SC;
+typedef LocalOrdinal                            LO;
+typedef GlobalOrdinal                           GO;
+typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
 
 int main(int argc, char *argv[])
 {

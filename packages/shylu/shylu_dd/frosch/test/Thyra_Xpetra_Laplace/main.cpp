@@ -91,12 +91,11 @@
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-
-typedef unsigned      UN;
-typedef Scalar        SC;
-typedef LocalOrdinal  LO;
-typedef GlobalOrdinal GO;
-typedef Node          NO;
+typedef unsigned                                UN;
+typedef Scalar                                  SC;
+typedef LocalOrdinal                            LO;
+typedef GlobalOrdinal                           GO;
+typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
 
 using namespace std;
 using namespace Teuchos;
