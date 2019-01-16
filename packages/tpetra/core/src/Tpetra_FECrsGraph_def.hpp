@@ -154,23 +154,22 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
 #else
     // Do a self-export in "restricted mode"
+#if 0
     int rank = this->getRowMap()->getComm()->getRank();
-
     printf("[%d] preimport colind  = ",rank);
     for(size_t i=0; i <  this->k_gblInds1D_.extent(0); i++) 
       printf("%2d ",  (int)this->k_gblInds1D_[i]);
     printf("\n");
-
+#endif
 
     this->doExport(*this,*importer_,CM,true);
 
+#if 0
     printf("[%d] postimport colind = ",rank);
     for(size_t i=0; i <  this->k_gblInds1D_.extent(0); i++) 
       printf("%2d ",  (int)this->k_gblInds1D_[i]);
     printf("\n");
-
-
-
+#endif
     // Time to alias all of the memory!
     local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
     size_t numOwnedRows = inactiveCrsGraph_->getRowMap()->getNodeNumElements();
@@ -179,23 +178,31 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     size_t numOwnedNonZeros = this->k_rowPtrs_[numOwnedRows];
 
     typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(this->k_rowPtrs_,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
+    // FIXME: Should this guy be copied instead?
+    typename crs_graph_type::num_row_entries_type ownedRowEntries   = Kokkos::subview(this->k_numRowEntries_,Kokkos::pair<size_t,size_t>(0,numOwnedRows));
+
     typename crs_graph_type::t_GlobalOrdinal_1D ownedGlobalColumnIndices = Kokkos::subview(this->k_gblInds1D_,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
+
     inactiveCrsGraph_->k_rowPtrs_ = ownedRowPointers;
+    inactiveCrsGraph_->k_numRowEntries_ = ownedRowEntries;
     inactiveCrsGraph_->k_gblInds1D_ = ownedGlobalColumnIndices;
-    printf("[%d] this->k_rowPtrs_[%d] = %d \n",rank,(int)numOwnedRows,(int)this->k_rowPtrs_[numOwnedRows]);
+#if 0
+    //    printf("[%d] this->k_rowPtrs_[%d] = %d \n",rank,(int)numOwnedRows,(int)this->k_rowPtrs_[numOwnedRows]);
+    //    printf("[%d] this->k_numRowEntries_.extent(0) = %d\n",rank,(int)this->k_numRowEntries_.extent(0));
+ 
 
-
-    printf("[%d] inactiveCrsGraph_->k_rowPtrs_[%d] = %d k_gblInds1D_.extent(0) = %d\n",rank,(int)inactiveCrsGraph_->k_rowPtrs_.extent(0)-1,(int)inactiveCrsGraph_->k_rowPtrs_[inactiveCrsGraph_->k_rowPtrs_.extent(0)-1], (int)inactiveCrsGraph_->k_gblInds1D_.extent(0));
+    //    printf("[%d] inactiveCrsGraph_->k_rowPtrs_[%d] = %d k_gblInds1D_.extent(0) = %d\n",rank,(int)inactiveCrsGraph_->k_rowPtrs_.extent(0)-1,(int)inactiveCrsGraph_->k_rowPtrs_[inactiveCrsGraph_->k_rowPtrs_.extent(0)-1], (int)inactiveCrsGraph_->k_gblInds1D_.extent(0));
 
     printf("[%d] owned colind      = ",rank);
     for(size_t i=0; i <  inactiveCrsGraph_->k_gblInds1D_.extent(0); i++) 
       printf("%2d ", (int)inactiveCrsGraph_->k_gblInds1D_[i]);
     printf("\n");
       
-    printf("[%d] domainMap         =",rank);
+    printf("[%d] domainMap         = ",rank);
     for(size_t i=0; i < domainMap_->getNodeNumElements(); i++) 
       printf("%2d ",(int) domainMap_->getGlobalElement(i));
     printf("\n");
+#endif
 
     // Make the column for the owned guy
     Teuchos::Array<int> remotePIDs (0);
