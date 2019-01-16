@@ -45,7 +45,7 @@
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 
-//#define USE_UNALIASED_MEMORY
+#define USE_UNALIASED_MEMORY
 
 
 
@@ -124,7 +124,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
                                           std::runtime_error,"ownedRowMap more entries than the ownedPlusSharedRowMap.");   
 
    // Build the inactive graph
-#ifdef  USE_UNALIASED_MEMORY
+#ifdef USE_UNALIASED_MEMORY
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
    
    // FIXME: For starters, we're not going to alias anything.  This will likely cause a memory high water mark issue.
@@ -139,6 +139,11 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 #else
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
+
+   // FIXME:  I shouldn't need this
+   switchActiveCrsGraph();
+   this->allocateIndices(GlobalIndices);
+   switchActiveCrsGraph();
 #endif
  }
 
@@ -163,15 +168,19 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // Do a self-export in "restricted mode"
     this->doExport(*this,*importer_,CM,true);
 
+    // FIXME: This ain't right
+    crs_graph_type::fillComplete(this->getRowMap(),this->getRowMap());
+
     // Time to alias all of the memory!
-    local_graph_type ownedGraph = this->getLocalGraph();
+    local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
     size_t numOwnedRows = inactiveCrsGraph_->getRowMap()->getNodeNumElements();
 
     // FIXME: This uses UVM. Can we get away from this?
-    size_t numOwnedNonZeros = ownedGraph.row_map[numOwnedRows+1];
+    printf("[%d] numOwnedRows = %d ownedPlusSharedGraph.row_map.exent() = %d\n",this->getComm()->getRank(), (int)numOwnedRows,(int)ownedPlusSharedGraph.row_map.extent(0));
+    size_t numOwnedNonZeros = ownedPlusSharedGraph.row_map[numOwnedRows+1];
 
-    typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(ownedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
-    typename local_graph_type::entries_type ownedColumnIndices = Kokkos::subview(ownedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
+    typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(ownedPlusSharedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
+    typename local_graph_type::entries_type ownedColumnIndices = Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
 
     inactiveCrsGraph_->setAllIndices(ownedRowPointers,ownedColumnIndices);
     //    inactiveCrsGraph_->checkInternalState ();
@@ -234,6 +243,12 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
   else {
     // The hard case: Two graphs   
 
+    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
+    // FIXME: This makes an importer.  DO NOT WANT
+#ifdef USE_UNALIASED_MEMORY
+    crs_graph_type::fillComplete(this->getRowMap(),this->getRowMap());
+#endif
+
     // Migrate data to the owned graph
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
@@ -241,8 +256,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
     if(domainMap_.is_null()) inactiveCrsGraph_->fillComplete();
     else inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
 
-    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
-    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
 
     // Load up the owned graph
     switchActiveCrsGraph();
