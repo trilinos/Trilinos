@@ -51,8 +51,10 @@
 // Xpetra include
 #include <Xpetra_Parameters.hpp>
 
-
-
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
+#include <BelosOperatorT.hpp>
+#include <BelosXpetraAdapter.hpp>
+#include <BelosSolverFactory.hpp>
 
 typedef unsigned UN;
 typedef double SC;

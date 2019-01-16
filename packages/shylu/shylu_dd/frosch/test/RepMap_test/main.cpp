@@ -1,3 +1,4 @@
+
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
 
@@ -28,34 +29,17 @@
 #include <FROSch_GDSWPreconditioner_def.hpp>
 #include <FROSch_RGDSWPreconditioner_def.hpp>
 
-// Thyra includes
-#include <Thyra_LinearOpWithSolveBase.hpp>
-#include <Thyra_VectorBase.hpp>
-#include <Thyra_SolveSupportTypes.hpp>
-#include <Thyra_BelosLinearOpWithSolveFactory.hpp>
-#include <Thyra_LinearOpWithSolveBase.hpp>
-#include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
-#include <Thyra_TpetraLinearOp.hpp>
-#include <Thyra_TpetraMultiVector.hpp>
-#include <Thyra_TpetraVector.hpp>
-#include <Thyra_TpetraThyraWrappers.hpp>
-#include <Thyra_VectorBase.hpp>
-#include <Thyra_VectorStdOps.hpp>
-#include <Thyra_EpetraLinearOp.hpp>
-#include <Thyra_VectorSpaceBase_def.hpp>
-#include <Thyra_VectorSpaceBase_decl.hpp>
-#include <Thyra_BelosLinearOpWithSolve_def.hpp>
-#include <Thyra_BelosLinearOpWithSolveFactory_def.hpp>
 
-// Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include "Stratimikos_FROSchXpetra.hpp"
-
-// Xpetra include
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
 #include "FROSch_Tools_def.hpp"
+#include <BelosOperatorT.hpp>
+#include <BelosXpetraAdapter.hpp>
+#include <BelosSolverFactory.hpp>
+//#include <BelosPseudoBlockGmresSolMgr.hpp>
+
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
 
 typedef unsigned UN;
 typedef unsigned UN;
@@ -72,6 +56,49 @@ using namespace Xpetra;
 using namespace FROSch;
 using namespace Belos;
 
+void compute_loc_matrix( double *x_triangle, double *y_triangle,
+                        Epetra_SerialDenseMatrix & Ke )
+{
+    int    ii, jj;
+    double det_J;
+    double xa, ya, xb, yb, xc, yc;
+    xa = x_triangle[0];
+    xb = x_triangle[1];
+    xc = x_triangle[2];
+    ya = y_triangle[0];
+    yb = y_triangle[1];
+    yc = y_triangle[2];
+    Ke(0,0) = (yc-yb)*(yc-yb) + (xc-xb)*(xc-xb);
+    Ke(0,1) = (yc-yb)*(ya-yc) + (xc-xb)*(xa-xc);
+    Ke(0,2) = (yb-ya)*(yc-yb) + (xb-xa)*(xc-xb);
+    Ke(1,0) = (yc-yb)*(ya-yc) + (xc-xb)*(xa-xc);
+    Ke(1,1) = (yc-ya)*(yc-ya) + (xc-xa)*(xc-xa);
+    Ke(1,2) = (ya-yc)*(yb-ya) + (xa-xc)*(xb-xa);
+    Ke(2,0) = (yb-ya)*(yc-yb) + (xb-xa)*(xc-xb);
+    Ke(2,1) = (ya-yc)*(yb-ya) + (xa-xc)*(xb-xa);
+    Ke(2,2) = (yb-ya)*(yb-ya) + (xb-xa)*(xb-xa);
+    det_J = (xb-xa)*(yc-ya)-(xc-xa)*(yb-ya);
+    det_J = 2*det_J;
+    if( det_J<0 ) det_J *=-1;
+    for (ii = 0; ii < 3; ii++) {
+        for (jj = 0; jj < 3; jj++) {
+            Ke(ii,jj) = Ke(ii,jj) / det_J;
+        }
+    }
+    return;
+} /* compute_loc_matrix */
+
+int find( Teuchos::Array<GO> &list, const int length, const int index)
+{
+    int pos=-1;
+    for( int i=0 ; i<length ; ++i )
+        if( list[i] == index ) {
+            pos = i;
+            break;
+        }
+    return pos;
+} // find
+
 int main(int argc, char *argv[])
 {
     MPI_Init(&argc,&argv);
@@ -81,24 +108,23 @@ int main(int argc, char *argv[])
         int NumMyExternalElements = 0;                             // nodes used by this proc, but not hosted
         int NumMyTotalElements = 0;
         int FE_NumMyElements = 0;                                    // TRIANGLES assigned to this processor
-        Teuchos::Array<GO> MyGlobalElements(8);           // nodes assigned to this processor
+        Teuchos::Array<GO> MyGlobalElements(10);           // nodes assigned to this processor
         Teuchos::Array<GO> FEelements(8);                     // elements assigned to this proc
         Epetra_IntSerialDenseMatrix E;                             // store the element graph connectivity
-        Epetra_IntSerialDenseMatrix ElementNodeList;
         Teuchos::Array<Teuchos::Array<GO> > NodesInElement(8);
         
-        Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
+        
         Teuchos::RCP<const Teuchos::Comm<int> > TeuchosComm = Teuchos::rcp(new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
         
-        
+        //Output Help
         Teuchos::RCP<Teuchos::FancyOStream> fancy = fancyOStream(Teuchos::rcpFromRef(std::cout));
-        
+        Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
         
         int MyPID=TeuchosComm->getRank();
         
+        
         switch (MyPID){
-                case 0:
+            case 0:
                 NumMyElements = 6;
                 NumMyExternalElements = 4;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -145,7 +171,7 @@ int main(int argc, char *argv[])
                 NodesInElement.at(7).at(0) = 3 ; NodesInElement.at(7).at(1) = 4; NodesInElement.at(7).at(2) = 9;
                 break;
                 
-                case 1:
+            case 1:
                 NumMyElements = 6;
                 NumMyExternalElements = 4;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -191,7 +217,7 @@ int main(int argc, char *argv[])
                                                                                                          
                                                                                                          2) = 14;
                 break;
-                case 2:
+            case 2:
                 NumMyElements = 6;
                 NumMyExternalElements = 4;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -235,7 +261,7 @@ int main(int argc, char *argv[])
                 NodesInElement.at(6).at(0) = 13 ; NodesInElement.at(6).at(1) = 18; NodesInElement.at(6).at(2) = 19;
                 NodesInElement.at(7).at(0) = 13 ; NodesInElement.at(7).at(1) = 14; NodesInElement.at(7).at(2) = 19;
                 break;
-                case 3:
+            case 3:
                 NumMyElements = 7;
                 NumMyExternalElements = 3;
                 NumMyTotalElements = NumMyElements + NumMyExternalElements;
@@ -286,17 +312,171 @@ int main(int argc, char *argv[])
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0) cout<<"Set Up Map finished\n";
         
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > EMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,25,NumMyElements,0,TeuchosComm);
+        //EMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        
+        Teuchos::RCP<Xpetra::Map<LO,GO,NO> > REMap = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,MyGlobalElements(),0,TeuchosComm);
+        
+        //REMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        
+        
+        
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<" Matrix Initial Map build\n";
+        
+        //Coordinates
+        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > Coord = Xpetra::MultiVectorFactory<SC,LO,LO,NO>::Build(REMap,2);
+       
+        for(int i = 0;i<NumMyTotalElements;i++){
+                Coord->replaceLocalValue(i,0,(MyGlobalElements[i]%5)*0.25);
+                Coord->replaceLocalValue(i,1,(MyGlobalElements[i]/5)*0.25);
+        }
+        
+        
+        // - - - - - - - - - - - - //
+        
+        // M A T R I X   S E T U P //
+        // - - - - - - - - - - - - //
+        // build the CRS matrix corresponding to the grid
+        // some vectors are allocated
+        
+        const int MaxNnzRow2 = 8;
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > A = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(EMap,MaxNnzRow2);
+        
+        int i, j, k, Element;
+        int GlobalRow;
+        int MyRow;
+        int GlobalCol;
+        
+        Epetra_IntSerialDenseMatrix Struct; // temp to create the matrix connectivity
+        Struct.Shape(NumMyElements,MaxNnzRow2);
+        for( i=0 ; i<NumMyElements ; ++i )
+            for( j=0 ; j<MaxNnzRow2 ; ++j )
+                Struct(i,j) = -1;
+        // cycle over all the finite elements
+        for( Element=0 ; Element<FE_NumMyElements ; ++Element ) {
+            // cycle over each row
+            for( i=0 ; i<3 ; ++i ) {
+                // get the global and local number of this row
+                GlobalRow = NodesInElement.at(Element).at(i);
+                MyRow =EMap->getLocalElement(GlobalRow);
+                if( MyRow != -1 ) { // only rows stored on this proc
+                    // cycle over the columns
+                    for( j=0 ; j<3 ; ++j ) {
+                        // get the global number only of this column
+                        GlobalCol = NodesInElement.at(Element).at(j);
+                        // look if GlobalCol was already put in Struct
+                        for( k=0 ; k<MaxNnzRow2 ; ++k ) {
+                            if( Struct(MyRow,k) == GlobalCol ||
+                               Struct(MyRow,k) == -1 ) break;
+                        }
+                        if( Struct(MyRow,k) == -1 ) { // new entry
+                            
+                            Struct(MyRow,k) = GlobalCol;
+                        } else if( Struct(MyRow,k) != GlobalCol ) {
+                            // maybe not enough space has beenn allocated
+                            cerr << "ERROR: not enough space for element "
+                            << GlobalRow << "," << GlobalCol << endl;
+                            return( 0 );
+                        }
+                    }
+                }
+            }
+        }//Loop over Elements
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"Set Up Matrix \n";
+        Teuchos::Array<GO> Indices(MaxNnzRow2);
+        Teuchos::Array<SC> Values(MaxNnzRow2);
+        for( i=0 ; i<MaxNnzRow2; ++i ) Values[i] = 0.0;
+        // now use Struct to fill build the matrix structure
+        for( int Row=0 ; Row<NumMyElements ; ++Row ) {
+            int Length = 0;
+            for( int j=0 ; j<MaxNnzRow2 ; ++j ) {
+                if( Struct(Row,j) == -1 ) break;
+                Indices[Length] = Struct(Row,j);
+                Length++;
+            }
+            GlobalRow = MyGlobalElements[Row];
+            A->insertGlobalValues(GlobalRow,Indices,Values);
+        }//end Row
+        
+        // replace global numbering with local one in T
+        for( int Element=0 ; Element<FE_NumMyElements ; ++Element ) {
+            for( int i=0 ; i<3 ; ++i ) {
+                int global = NodesInElement.at(Element).at(i);
+                //int local = find(MyGlobalElements,NumMyTotalElements,global);
+                if( global == -1 ) {
+                    cerr << "ERROR\n";
+                    return( EXIT_FAILURE );
+                }
+                //NodesInElement.at(Element).at(i) = local;
+            }
+        }//End Replace
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"Before fill \n";
+
+        // - - - - - - - - - - - - - - //
+        // M A T R I X   F I L L - I N //
+        // - - - - - - - - - - - - - - //
+        
+        
+        // room for the local matrix
+        Epetra_SerialDenseMatrix Ke;
+        Ke.Shape(3,3);
+        Teuchos::ArrayRCP< const SC > XCoord = Coord->getData(0);
+        Teuchos::ArrayRCP< const SC > YCoord = Coord->getData(1);
+        
+        Teuchos::Array<GO> Column(3);
+        Teuchos::Array<SC> Val(3);
+        
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"Loop over Elements\n";
+        // now fill the matrix
+        for(  int Element=0 ; Element<FE_NumMyElements ; ++Element ) {
+            // variables used inside
+            double x_triangle[3];
+            double y_triangle[3];
+            // get the spatial coordinate of each local node
+            for( int i=0 ; i<3 ; ++i ) {
+                MyRow = REMap->getLocalElement(NodesInElement.at(Element).at(i));
+                y_triangle[i] =XCoord[MyRow];
+                x_triangle[i] =YCoord[MyRow];
+               
+            }
+            // compute the local matrix for Element
+            compute_loc_matrix( x_triangle, y_triangle,Ke );
+            
+            
+            // insert it in the global one
+            // cycle over each row
+            for( int i=0 ; i<3 ; ++i ) {
+                // get the global and local number of this row
+                MyRow =REMap->getLocalElement(NodesInElement.at(Element).at(i));
+                if( MyRow < NumMyElements) {
+                    GlobalRow = MyGlobalElements[MyRow];
+                    for( int j=0 ; j<3 ; ++j ) {
+                        // get global column number
+                        GlobalCol = NodesInElement.at(Element).at(j);
+                        Column[j]  = GlobalCol;
+                        Val[j] = Ke(i,j);
+                    }
+                    A->insertGlobalValues(GlobalRow,Column,Val);
+                }
+            }
+        }//End ELement for Loop
+        A->fillComplete();
+        //A->describe(*fancy,Teuchos::VERB_EXTREME);
+        //-----------------------------------------------------
+        //Start Redistribution of Matrix
+        //-----------------------------------------------------
+        //Graph Map
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > Mapg = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra,-1,FEelements(),0,TeuchosComm);
         
         Teuchos::RCP<Xpetra::TpetraMap<LO,GO,NO> > MapT = Teuchos::rcp(new Xpetra::TpetraMap<LO,GO,NO>  (32,FEelements(),0,TeuchosComm));
         
-        Epetra_Map EMap(-1,NumMyElements,MyGlobalElements,0,Comm);
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0) cout<<" Map build\n";
-        
         
         switch( MyPID ) {
-                case 0:
+            case 0:
                 E.Shape(FE_NumMyElements,4);
                 //graph connectivity
                 E(0,0) = 1; E(0,1) = 9;   E(0,2) = 0;  E(0,3) = 0;
@@ -308,7 +488,7 @@ int main(int argc, char *argv[])
                 E(6,0) = 5; E(6,1) = 7;   E(6,2) = 15; E(6,3) = 6;
                 E(7,0) = 6; E(7,1) = 7;   E(7,2) = 7;  E(7,3) = 7;
                 break;
-                case 1:
+            case 1:
                 E.Shape(FE_NumMyElements,4);
                 
                 
@@ -322,7 +502,7 @@ int main(int argc, char *argv[])
                 E(6,0) = 13;  E(6,1) = 15;  E(6,2) = 23;   E(6,3) = 14;
                 E(7,0) = 6;   E(7,1) = 14;  E(7,2) = 15;   E(7,3) = 15;
                 break;
-                case 2:
+            case 2:
                 E.Shape(FE_NumMyElements,4);
                 
                 //graph connectivity
@@ -335,7 +515,7 @@ int main(int argc, char *argv[])
                 E(6,0) = 21; E(6,1) = 23; E(6,2) = 31;   E(6,3) = 22;
                 E(7,0) = 14; E(7,1) = 22; E(7,2) = 23;   E(7,3) = 23;
                 break;
-                case 3:
+            case 3:
                 E.Shape(FE_NumMyElements,4);
                 //graph connectivity
                 E(0,0) = 25; E(0,1) = 24; E(0,2) = 24;   E(0,3) = 24;
@@ -356,7 +536,6 @@ int main(int argc, char *argv[])
         const int MaxNnzRow = 8;
         const int MaxNnzRowg = 4 ;
         
-        int Element, MyRow, GlobalRow, GlobalCol;
         Teuchos::ArrayView<int> array;
         Teuchos::Array<int> v(1);
         v[0] = 1.0;
@@ -364,17 +543,9 @@ int main(int argc, char *argv[])
         Teuchos::Array<int> indi(3);
         int numGentry = 4;
         
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0) cout<<"329\n";
         
         for(  int Element=0 ; Element<FE_NumMyElements ; Element++ )
-        {
-            // variables used inside
-            int GlobalRow;
-            int MyRow;
-            int GlobalCol;
-            int count;
-            Teuchos::Array<int> indices(4);
+        {   Teuchos::Array<int> indices(4);
             // get the global and local number of this row
             MyRow = Element;
             GlobalRow = MyRow+MyPID*8;
@@ -392,13 +563,6 @@ int main(int argc, char *argv[])
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0) cout<<"Xgraph\n";
         
-        
-        
-        
-        Teuchos::RCP<const Xpetra::Map<LO, GO, NO> > map = Xpetra::MapFactory<LO, GO, NO>::createUniformContigMap(Xpetra::UseTpetra,Mapg->getGlobalNumElements(), TeuchosComm);
-        
-        
-        //Node ElementList in B---------------------------------------------------------------------
         Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > B = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (Mapg, 3));
         
         const size_t numMyElements = MapT->getNodeNumElements ();
@@ -423,204 +587,60 @@ int main(int argc, char *argv[])
             B->insertGlobalValues (myGlobalElements[i],cols, vals);
         }
         B->fillComplete();
-        //B->describe(*fancy,Teuchos::VERB_EXTREME);
+        
         string xmlFile = "xpetra_ParameterList.xml";
         Teuchos::RCP<Teuchos::ParameterList> parameterList = Teuchos::getParametersFromXmlFile(xmlFile);
         
+        string xmlFile2 = "GDSW.xml";
+        Teuchos::RCP<Teuchos::ParameterList> parameterListF = Teuchos::getParametersFromXmlFile(xmlFile2);
+        
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = FROSch::BuildRepMap_Zoltan<SC,LO,GO,NO>(Xgraph,B,parameterList,TeuchosComm);
-        //RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
         const Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > cRep = RepeatedMap;
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > UniqueMap = FROSch::BuildUniqueMap(cRep);
         
-        //All Maps Build
+       
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0) cout<<"All Maps\n";
         
-        //Coordinates
-        Epetra_Vector CoordX_noExt(EMap);
-        Epetra_Vector CoordY_noExt(EMap);
-
-        for(int i = 0;i<NumMyElements;i++){
-            CoordX_noExt[i] = (MyGlobalElements[i]%5)*0.25;
-            CoordY_noExt[i] = (MyGlobalElements[0]%5)*0.25;
-            
-        }
+      
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(EMap,UniqueMap);
         
-        Epetra_Map TargetMap(-1,NumMyTotalElements,
-                             MyGlobalElements, 0, Comm);
+       Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpA = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,MaxNnzRow2);
         
-        Epetra_Import Importer(TargetMap,Map);
-        Epetra_Vector CoordX(TargetMap);
-        Epetra_Vector CoordY(TargetMap);
-        CoordX.Import(CoordX_noExt,Importer,Insert);
-        CoordY.Import(CoordY_noExt,Importer,Insert);
         
-        // NOTE: better to construct CoordX and CoordY as MultiVector
-        // - - - - - - - - - - - - //
-        // M A T R I X   S E T U P //
-        // - - - - - - - - - - - - //
-        // build the CRS matrix corresponding to the grid
-        // some vectors are allocated
-        const int MaxNnzRow2 = 8;
-        Epetra_CrsMatrix A(Copy,Map,MaxNnzRow2);
-        int i, j, k;
-        Epetra_IntSerialDenseMatrix Struct; // temp to create the matrix connectivity
-        Struct.Shape(NumMyElements,MaxNnzRow2);
-        for( i=0 ; i<NumMyElements ; ++i )
-            for( j=0 ; j<MaxNnzRow2 ; ++j )
-                Struct(i,j) = -1;
-        // cycle over all the finite elements
-        for( Element=0 ; Element<FE_NumMyElements ; ++Element ) {
-            // cycle over each row
-            for( i=0 ; i<3 ; ++i ) {
-                // get the global and local number of this row
-                GlobalRow = NodesInElement.at(Element).at(i);
-                MyRow = A.LRID(GlobalRow);
-                if( MyRow != -1 ) { // only rows stored on this proc
-                    // cycle over the columns
-                    for( j=0 ; j<3 ; ++j ) {
-                        // get the global number only of this column
-                        GlobalCol = NodesInElement.at(Element).at(j);
-                        // look if GlobalCol was already put in Struct
-                        for( k=0 ; k<MaxNnzRow2 ; ++k ) {
-                            if( Struct(MyRow,k) == GlobalCol ||
-                               Struct(MyRow,k) == -1 ) break;
-                        }
-                        if( Struct(MyRow,k) == -1 ) { // new entry
-                            Struct(MyRow,k) = GlobalCol;
-                        } else if( Struct(MyRow,k) != GlobalCol ) {
-                            // maybe not enough space has beenn allocated
-                            cerr << "ERROR: not enough space for element "
-                            << GlobalRow << "," << GlobalCol << endl;
-                            return( 0 );
-                        }
-                    }
-                }
-            }
-        }//Loop over Elements
+        tmpA->doImport(*A,*scatter,Xpetra::INSERT);
+        tmpA->fillComplete();
         
-        int * Indices = new int [MaxNnzRow2];
-        double * Values  = new double [MaxNnzRow2];
-        for( i=0 ; i<MaxNnzRow2; ++i ) Values[i] = 0.0;
-        // now use Struct to fill build the matrix structure
-        for( int Row=0 ; Row<NumMyElements ; ++Row ) {
-            int Length = 0;
-            for( int j=0 ; j<MaxNnzRow2 ; ++j ) {
-                if( Struct(Row,j) == -1 ) break;
-                Indices[Length] = Struct(Row,j);
-                Length++;
-            }
-            GlobalRow = MyGlobalElements[Row];
-            A.InsertGlobalValues(GlobalRow, Length, Values, Indices);
-        }//end Row
+        Teuchos::RCP<Xpetra::MultiVector<SC,LO,GO,NO> > tmpCoord =Xpetra::MultiVectorFactory <SC,LO,GO,NO>::Build(UniqueMap,2);
         
-        // replace global numbering with local one in T
-        for( int Element=0 ; Element<FE_NumMyElements ; ++Element ) {
-            for( int i=0 ; i<3 ; ++i ) {
-                int global = NodesInElement.at(Element).at(i);
-                int local = find(MyGlobalElements,NumMyTotalElements,
-                                 global);
-                if( global == -1 ) {
-                    cerr << "ERROR\n";
-                    return( EXIT_FAILURE );
-                }
-                NodesInElement.at(Element).at(i) = local;
-            }
-        }//End Replace
-        // - - - - - - - - - - - - - - //
-        // M A T R I X   F I L L - I N //
-        // - - - - - - - - - - - - - - //
-        // room for the local matrix
-        Epetra_SerialDenseMatrix Ke;
-        Ke.Shape(3,3);
-        // now fill the matrix
-        for(  int Element=0 ; Element<FE_NumMyElements ; ++Element ) {
-            // variables used inside
-            int GlobalRow;
-            int MyRow;
-            int GlobalCol;
-            double x_triangle[3];
-            double y_triangle[3];
-            // get the spatial coordinate of each local node
-            for( int i=0 ; i<3 ; ++i ) {
-                MyRow = NodesInElement.at(Element).at(i) ;
-                y_triangle[i] = CoordX[MyRow];
-                x_triangle[i] = CoordY[MyRow];
-            }
-            // compute the local matrix for Element
-            compute_loc_matrix( x_triangle, y_triangle,Ke );
-            // insert it in the global one
-            // cycle over each row
-            for( int i=0 ; i<3 ; ++i ) {
-                // get the global and local number of this row
-                MyRow = NodesInElement.at(Element).at(i);
-                if( MyRow < NumMyElements ) {
-                    for( int j=0 ; j<3 ; ++j ) {
-                        // get global column number
-                        GlobalRow = MyGlobalElements[MyRow];
-                        GlobalCol = MyGlobalElements[NodesInElement.at(Element).at(j)];
-                        A.SumIntoGlobalValues(GlobalRow,1,&(Ke(i,j)),&GlobalCol);
-                    }
-                }
-            }
-        }//End ELement for Loop
-        A.FillComplete();
-        Epetra_Vector x(EMap), b(EMap);
-        x.Random(); b.PutScalar(0.0);
-        // Solution can be obtained using Aztecoo
-        // free memory before leaving
-        delete[] Indices;
-        delete[] Values;
+        tmpCoord->doImport(*Coord,*scatter,Xpetra::INSERT);
+        
+        
+        
+        
+        int DOFOrdering = 0;
+        DofOrdering Ord;
+        
+        RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+        RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
+        
+        xSolution->putScalar(0.0);
+        xRightHandSide->putScalar(1.0);
+        
+        RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TwoLevelPrec(new TwoLevelPreconditioner<SC,LO,GO,NO>(tmpA,sublist(parameterList,"TwoLevelPreconditioner")));
+        
+        TwoLevelPrec->initialize(2,1,RepeatedMap,1,Ord,tmpCoord);
+        TwoLevelPrec->compute();
+        
+        
+        
+        
+        
+        
+        
+        
         
     }
-    
     MPI_Finalize();
-    
-    return(EXIT_SUCCESS);
-
-}//main
-
-int find( const int list[], const int length, const int index)
-{
-    int pos=-1;
-    for( int i=0 ; i<length ; ++i )
-        if( list[i] == index ) {
-            pos = i;
-            break;
-        }
-    return pos;
-} /* find */
-
-void compute_loc_matrix( double *x_triangle, double *y_triangle,
-                        Epetra_SerialDenseMatrix & Ke )
-{
-    int    ii, jj;
-    double det_J;
-    double xa, ya, xb, yb, xc, yc;
-    xa = x_triangle[0];
-    xb = x_triangle[1];
-    xc = x_triangle[2];
-    ya = y_triangle[0];
-    yb = y_triangle[1];
-    yc = y_triangle[2];
-    Ke(0,0) = (yc-yb)*(yc-yb) + (xc-xb)*(xc-xb);
-    Ke(0,1) = (yc-yb)*(ya-yc) + (xc-xb)*(xa-xc);
-    Ke(0,2) = (yb-ya)*(yc-yb) + (xb-xa)*(xc-xb);
-    Ke(1,0) = (yc-yb)*(ya-yc) + (xc-xb)*(xa-xc);
-    Ke(1,1) = (yc-ya)*(yc-ya) + (xc-xa)*(xc-xa);
-    Ke(1,2) = (ya-yc)*(yb-ya) + (xa-xc)*(xb-xa);
-    Ke(2,0) = (yb-ya)*(yc-yb) + (xb-xa)*(xc-xb);
-    Ke(2,1) = (ya-yc)*(yb-ya) + (xa-xc)*(xb-xa);
-    Ke(2,2) = (yb-ya)*(yb-ya) + (xb-xa)*(xb-xa);
-    det_J = (xb-xa)*(yc-ya)-(xc-xa)*(yb-ya);
-    det_J = 2*det_J;
-    if( det_J<0 ) det_J *=-1;
-    for (ii = 0; ii < 3; ii++) {
-        for (jj = 0; jj < 3; jj++) {
-            Ke(ii,jj) = Ke(ii,jj) / det_J;
-        }
-    }
-    return;
-} /* compute_loc_matrix */
-
-
-
-
+}

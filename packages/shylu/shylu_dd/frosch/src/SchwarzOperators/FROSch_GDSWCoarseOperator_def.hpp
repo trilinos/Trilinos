@@ -514,7 +514,7 @@ namespace FROSch {
                     faces: rotations            --- " << useFaceRotations << "\n\
                     --------------------------------------------\n";
                 }
-                
+
                 GOVec2D shortSubs,straightSubs,edgesSubs,facesSubs,entriesGraph;
                 entriesGraph.resize(this->K_->getMap()->getComm()->getSize());
                 

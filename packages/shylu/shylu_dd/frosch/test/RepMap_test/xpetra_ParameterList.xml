@@ -18,6 +18,7 @@
   <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
   <ParameterList name="Preconditioner Types">
       <ParameterList name="FROSch">
+           <Parameter name="FROSch Preconditioner Type"                        type="string"   value="GDSWPreconditioner"/>
           <Parameter name="Dimension"                                         type="int"      value="2"/>
           <Parameter name="DofsPerNode"                                       type="int"      value="1"/>
           <Parameter name="DofOrdering"                                       type="string"   value="NodeWise"/>
