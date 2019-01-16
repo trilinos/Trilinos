@@ -131,7 +131,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 #else
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
-   inactiveCrsGraph_->allocateIndices(GlobalIndices);
+   //   inactiveCrsGraph_->allocateIndices(GlobalIndices);
 #endif
  }
 
@@ -241,10 +241,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
 
     // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
     // FIXME: This makes an importer.  DO NOT WANT
-#ifdef USE_UNALIASED_MEMORY
-    crs_graph_type::fillComplete(this->getRowMap(),this->getRowMap());
-#endif
-
     // Migrate data to the owned graph
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
@@ -252,6 +248,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
     if(domainMap_.is_null()) inactiveCrsGraph_->fillComplete();
     else inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
 
+    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
+    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
 
     // Load up the owned graph
     switchActiveCrsGraph();

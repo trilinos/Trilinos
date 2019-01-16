@@ -43,7 +43,7 @@
 #define TPETRA_FECRSMATRIX_DEF_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-
+#include "Kokkos_Core.hpp" // DEBUG
 
 namespace Tpetra {
 
@@ -71,6 +71,8 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
      ( *graph->activeCrsGraph_!= fe_crs_graph_type::FE_ACTIVE_OWNED,std::runtime_error,
       "Input graph must be in FE_ACTIVE_OWNED mode when this constructor is called.");
 
+
+
   activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
   // Make an "inactive" matrix, if we need to
@@ -80,12 +82,25 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
     values_type myvals = this->getLocalMatrix().values;
 
     // Remember: The Graph is in OWNED mode
+
+    // NOTE: You cannot use aliased memory for the matrix if you don't use aliased memory for the graph (because the ownedplusshared graph, if it 
+    // is unaliased, will be missing off-rank entries
 #define USE_UNALIASED_MEMORY
 #ifdef  USE_UNALIASED_MEMORY
     inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph));
 #else
-    size_t numOwnedVals = graph->getLocalGraph().entries.extent(0);
-    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
+    size_t numOwnedVals = graph->getLocalGraph().entries.extent(0); // OwnedVals
+    size_t numOwnedPlusSharedVals = graph->inactiveCrsGraph_->getLocalGraph().entries.extent(0); // OwnedVals
+    //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
+    printf("numOwnedVals = %d numOwnedPlusSharedValues = %d bigmatrix.size = %d\n",(int)numOwnedVals, (int)numOwnedPlusSharedVals,(int) myvals.extent(0));
+
+    // DEBUG as per Tim - What if we use a copy
+    auto myview = Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals));
+    typename local_matrix_type::values_type myvals_copy("Copy",numOwnedVals);
+    Kokkos::deep_copy(myvals_copy,myview);
+  
+    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,myvals_copy));
+
 #endif
   }
 }
