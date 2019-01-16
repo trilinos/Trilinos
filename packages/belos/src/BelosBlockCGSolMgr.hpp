@@ -370,6 +370,7 @@ namespace Belos {
     static constexpr int verbosity_default_ = Belos::Errors;
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
+    static constexpr const char * resNorm_default_ = "TwoNorm";
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "DGKS";
@@ -686,6 +687,13 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
       if (! convTest_.is_null ()) {
         try {
+          NormType normType = Belos::TwoNorm;
+          if (params->isParameter("Residual Norm")) {
+            if (params->isType<std::string> ("Residual Norm")) {
+              normType = convertStringToNormType(params->get<std::string> ("Residual Norm"));
+            }
+          }
+          convTest_->defineResForm(StatusTestResNorm_t::Implicit, normType);
           convTest_->defineScaleForm (resScaleType, Belos::TwoNorm);
         }
         catch (std::exception& e) {
@@ -704,7 +712,16 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   if (convTest_.is_null () || newResTest) {
+
+    NormType normType = Belos::TwoNorm;
+    if (params->isParameter("Residual Norm")) {
+      if (params->isType<std::string> ("Residual Norm")) {
+        normType = convertStringToNormType(params->get<std::string> ("Residual Norm"));
+      }
+    }
+
     convTest_ = rcp (new StatusTestResNorm_t (convtol_, 1, showMaxResNormOnly_));
+    convTest_->defineResForm(StatusTestResNorm_t::Implicit, normType);
     convTest_->defineScaleForm (convertStringToScaleType (resScale_), Belos::TwoNorm);
   }
 
@@ -807,6 +824,7 @@ BlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
     pl->set("Orthogonalization Constant",static_cast<MagnitudeType>(DefaultSolverParameters::orthoKappa),
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
+    pl->set("Residual Norm",static_cast<const char *>(resNorm_default_));
     validPL = pl;
   }
   return validPL;
@@ -890,7 +908,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     if (useSingleReduction_) {
       block_cg_iter =
         rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
-                                                    outputTest_, plist));
+                                                    outputTest_, convTest_, plist));
     }
     else {
       block_cg_iter =

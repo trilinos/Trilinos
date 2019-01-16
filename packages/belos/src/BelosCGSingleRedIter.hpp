@@ -53,6 +53,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
+#include "BelosStatusTestGenResNorm.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
@@ -96,9 +97,10 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
    * to a parameter list of options for the linear solver.
    */
   CGSingleRedIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
-		  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-		  Teuchos::ParameterList &params );
+                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                   const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > &convTester,
+                   Teuchos::ParameterList &params );
 
   //! Destructor.
   virtual ~CGSingleRedIter() {};
@@ -176,7 +178,13 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A std::vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return R_; }
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const {
+    if (convTest_->getResNormType() == Belos::PreconditionerNorm) {
+      (*norms)[0] = std::sqrt(rHz_);
+      return Teuchos::null;
+    } else
+      return R_;
+  }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -234,6 +242,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> >       convTest_;
 
   //  
   // Current solver state
@@ -250,6 +259,8 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   // Current number of iterations performed.
   int iter_;
+
+  ScalarType rHz_;
   
   // 
   // State Storage
@@ -281,10 +292,12 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
   CGSingleRedIter<ScalarType,MV,OP>::CGSingleRedIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 						     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
 						     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                     const Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > &convTester,
 						     Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
     stest_(tester),
+    convTest_(convTester),
     initialized_(false),
     stateStorageInitialized_(false),
     iter_(0)
@@ -412,7 +425,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> sHz( 2, 1 );
-    ScalarType rHz, rHz_old, alpha, beta, delta;
+    ScalarType rHz_old, alpha, beta, delta;
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -427,12 +440,12 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     // Compute first <s,z> a.k.a. <r,z> and <Az,z> combined
     MVT::MvTransMv( one, *S_, *Z_, sHz );
-    rHz = sHz(0,0);
+    rHz_ = sHz(0,0);
     delta = sHz(1,0);
     if ((Teuchos::ScalarTraits<ScalarType>::magnitude(delta) < Teuchos::ScalarTraits<ScalarType>::eps()) &&
         (stest_->checkStatus(this) == Passed))
       return;
-    alpha = rHz / delta;   
+    alpha = rHz_ / delta;
 
     // Check that alpha is a positive number!
     TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
@@ -446,7 +459,6 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Update the solution vector x := x + alpha * P_
       //
       MVT::MvAddMv( one, *cur_soln_vec, alpha, *P_, *cur_soln_vec );
-      lp_->updateSolution();
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
@@ -484,12 +496,12 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       MVT::MvTransMv( one, *S_, *Z_, sHz );
       //
       // Update scalars.
-      rHz_old = rHz;
-      rHz = sHz(0,0);
+      rHz_old = rHz_;
+      rHz_ = sHz(0,0);
       delta = sHz(1,0);
       //
-      beta = rHz / rHz_old;
-      alpha = rHz / (delta - (beta*rHz / alpha));
+      beta = rHz_ / rHz_old;
+      alpha = rHz_ / (delta - (beta*rHz_ / alpha));
       //
       // Check that alpha is a positive number!
       TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha) <= zero, CGIterateFailure,
@@ -505,7 +517,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP> {
       //
       MVT::MvAddMv( one, *AZ_, beta, *AP_, *AP_ );
       // 
-    } // end while (sTest_->checkStatus(this) != Passed)
+    } // end while (1)
   }
 
 } // end Belos namespace
