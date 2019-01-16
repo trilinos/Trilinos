@@ -12,7 +12,14 @@ SHELL=/bin/bash
 
 # nightly tests
 
-0  22 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log 
+0  22 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
+
+0  11 * * * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
+
+#05  13 29 10 * cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
+
+
+#25  11 22 6 5 cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; eval `python ./setSshEnv.py`; cd /home/nightlyTesting/trilinos; git pull > /dev/null 2>&1; cd /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman; ./cron_driver.sh &> /home/nightlyTesting/cron_driver.log; cd /home/nightlyTesting; /home/nightlyTesting/trilinos/cmake/ctest/drivers/rocketman/sendTestSummary.sh cron_driver.log
 
 #
 @reboot /home/jhu/bin/send-reboot-email.sh

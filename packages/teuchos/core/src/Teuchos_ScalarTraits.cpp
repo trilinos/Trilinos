@@ -105,7 +105,7 @@ bool Teuchos::operator&&(const qd_real &a, const qd_real &b) {
 #ifndef __sun
 // This is an intentional computation of NaN.
 namespace Teuchos {
-  const float  flt_nan = std::numeric_limits<float>::signaling_NaN();
-  const double dbl_nan = std::numeric_limits<double>::signaling_NaN();
+  const float  flt_nan = std::numeric_limits<float>::quiet_NaN();
+  const double dbl_nan = std::numeric_limits<double>::quiet_NaN();
 }
 #endif

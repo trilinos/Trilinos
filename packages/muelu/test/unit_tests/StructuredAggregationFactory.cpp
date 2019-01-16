@@ -128,6 +128,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -232,6 +233,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -336,6 +338,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -442,6 +445,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -548,6 +552,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -655,6 +660,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: number of spatial dimensions",
@@ -767,6 +773,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: coupling",
@@ -881,6 +888,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: coupling",
@@ -996,6 +1004,7 @@ namespace MueLuTests {
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
     StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
     StructuredAggFact->SetParameter("aggregation: mesh layout",
                                     Teuchos::ParameterEntry(meshLayout));
     StructuredAggFact->SetParameter("aggregation: coupling",
@@ -1126,6 +1135,7 @@ namespace MueLuTests {
     // Set interfactory dependencies
     CDropfact->SetFactory("UnAmalgamationInfo", AmalgFact);
     Aggfact->SetFactory("Graph", CDropfact);
+    Aggfact->SetFactory("DofsPerNode", CDropfact);
     coarseMapFact->SetFactory("Aggregates", Aggfact);
     Pfact->SetFactory("Aggregates", Aggfact);
     Pfact->SetFactory("CoarseMap", coarseMapFact);

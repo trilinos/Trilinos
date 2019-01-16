@@ -309,7 +309,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef Teuchos::Array<int>::size_type size_type;
     typedef ImportExportData<LocalOrdinal,GlobalOrdinal,Node> data_type;
-    const int myRank = source->getComm ()->getRank ();
+
     // Read "Debug" parameter from the input ParameterList.
     bool debug = tpetraImportDebugDefault;
     if (! plist.is_null ()) {
@@ -345,7 +345,7 @@ namespace Tpetra {
           tRemoteGIDs.size() == tRemoteLIDs.size()),
         std::runtime_error,
         "Import::Import createExpert version: Size miss match on userRemotePIDs, remoteGIDs and remoteLIDs Array's to sort3. This will produce produce an error, aborting ");
-    
+
     sort3 (tRemotePIDs.begin (),
            tRemotePIDs.end (),
            tRemoteGIDs.begin (),

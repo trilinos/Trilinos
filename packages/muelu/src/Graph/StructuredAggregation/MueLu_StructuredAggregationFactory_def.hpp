@@ -97,7 +97,6 @@ namespace MueLu {
 
     validParamList->set<RCP<const FactoryBase> >("aggregation: mesh data",  Teuchos::null,
                                                  "Mesh ordering associated data");
-
     validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
                                                  "Graph of the matrix after amalgamation but without dropping.");
     validParamList->set<RCP<const FactoryBase> >("numDimensions",           Teuchos::null,
@@ -106,6 +105,8 @@ namespace MueLu {
                                                  "Global number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
     validParamList->set<RCP<const FactoryBase> >("lNodesPerDim",            Teuchos::null,
                                                  "Local number of nodes per spatial dimension provided by CoordinatesTransferFactory.");
+    validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
+                                                 "Generating factory for variable \'DofsPerNode\', usually the same as the \'Graph\' factory");
 
     return validParamList;
   } // GetValidParameterList
@@ -114,6 +115,7 @@ namespace MueLu {
   void StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "Graph");
+    Input(currentLevel, "DofsPerNode");
 
     ParameterList pL = GetParameterList();
     std::string coupling = pL.get<std::string>("aggregation: coupling");
@@ -175,10 +177,11 @@ namespace MueLu {
 
     // General problem informations are gathered from data stored in the problem matix.
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
-    RCP<const Map> fineMap      = graph->GetDomainMap();
-    const int myRank            = fineMap->getComm()->getRank();
-    const int numRanks          = fineMap->getComm()->getSize();
-    const GO  minGlobalIndex    = fineMap->getMinGlobalIndex();
+    RCP<const Map> fineMap     = graph->GetDomainMap();
+    const int myRank           = fineMap->getComm()->getRank();
+    const int numRanks         = fineMap->getComm()->getSize();
+    const GO  minGlobalIndex   = fineMap->getMinGlobalIndex();
+    const LO  dofsPerNode      = Get<LO>(currentLevel, "DofsPerNode");
 
     // Since we want to operate on nodes and not dof, we need to modify the rowMap in order to
     // obtain a nodeMap.
@@ -332,8 +335,8 @@ namespace MueLu {
     } else {
       // Create Coarse Data
       RCP<CrsGraph> myGraph;
-      myStructuredAlgorithm->BuildGraph(*graph, geoData, myGraph, coarseCoordinatesFineMap,
-                                        coarseCoordinatesMap);
+      myStructuredAlgorithm->BuildGraph(*graph, geoData, dofsPerNode, myGraph,
+                                        coarseCoordinatesFineMap, coarseCoordinatesMap);
       Set(currentLevel, "prolongatorGraph", myGraph);
     }
 
