@@ -6,11 +6,62 @@
 #
 ################################################################################
 
-if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
-  export ATDM_CONFIG_COMPILER=GNU
+#
+# Deal with compiler versions
+#
+
+if [[ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ]] ; then
+  export ATDM_CONFIG_COMPILER=GNU-7.2.0
+elif [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "GNU" ]] ; then
+    export ATDM_CONFIG_COMPILER=GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.4.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=GNU-7.4.0
+  else
+    echo
+    echo "***"
+    echo "*** ERROR: GNU COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
+    echo "*** Only GNU compilers supported on this system are:"
+    echo "***   gnu (defaults to gnu-7.2.0)"
+    echo "***   gnu-7.2.0 (default)"
+    echo "***   gnu-7.4.0"
+    echo "***"
+    return
+  fi
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0  # The default CUDA version currently
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-9.2_GNU-7.2.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0_GNU-7.4.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.0_GNU-7.4.0
+  else
+    echo
+    echo "***"
+    echo "*** ERROR: CUDA COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
+    echo "*** Only CUDA compilers supported on this system are:"
+    echo "***   cuda (defaults to cuda-9.2-gnu-7.2.0)"
+    echo "***   cuda-9.2 (defaults to cuda-9.2-gnu-7.2.0)"
+    echo "***   cuda-9.2-gnu-7.2.0 (default)"
+    echo "***   cuda-10.0 (defaults to cuda-10.0-gnu-7.7.0)"
+    echo "***   cuda-10.0-gnu-7.4.0"
+    echo "***"
+    return
+  fi
 fi
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
+
+#
+# Deal with KOKKOS_ARCH
+#
+
+if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power8
     export ATDM_CONFIG_QUEUE=rhel7F
@@ -21,8 +72,9 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ]; then
     echo
     echo "***"
     echo "*** ERROR: KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a valid option"
-    echo "*** for the compiler GNU.  Replace '$ATDM_CONFIG_KOKKOS_ARCH' in the"
-    echo "*** job name with 'Power8'"
+    echo "*** for the compiler $ATDM_CONFIG_COMPILER."
+    echo "**  Replace '$ATDM_CONFIG_KOKKOS_ARCH' in '${ATDM_CONFIG_BUILD_NAME}'"
+    echo "*** with 'Power8'!"
     echo "***"
     return
   fi
@@ -46,8 +98,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
     echo
     echo "***"
     echo "*** ERROR: KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH is not a valid option"
-    echo "*** for the CUDA compiler.  Replace '$ATDM_CONFIG_KOKKOS_ARCH' in the"
-    echo "*** job name with one of the following options:"
+    echo "*** for the compiler $ATDM_CONFIG_COMPILER."
+    echo "**  Replace '$ATDM_CONFIG_KOKKOS_ARCH' in '${ATDM_CONFIG_BUILD_NAME}'"
+    echo "*** with one of the following options:"
     echo "***"
     echo "***   'Kepler35' Power8 with Kepler K-40 GPU"
     echo "***   'Kepler37' Power8 with Kepler K-80 GPU (Default)"
@@ -64,12 +117,20 @@ fi
 
 echo "Using white/ride compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUILD_TYPE code with Kokkos node type $ATDM_CONFIG_NODE_TYPE and KOKKOS_ARCH=$ATDM_CONFIG_KOKKOS_ARCH"
 
+#
+# Finish clearing the current env
+#
+
+module purge
+
+#
+# Deal with build, test and OpenMP runtime options
+#
+
 export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=64
 # NOTE: Above settings are used for running on a single rhel7F (Firestone,
 # Dual-Socket POWER8, 8 cores per socket, K80 GPUs) node.
-
-module purge
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
@@ -78,7 +139,7 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=32
 fi
 
-if [ "$ATDM_CONFIG_COMPILER" == "GNU" ] ; then
+if [ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ] ; then
 
   # Load the modules and set up env
   module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
@@ -89,20 +150,20 @@ if [ "$ATDM_CONFIG_COMPILER" == "GNU" ] ; then
   export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
   export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-9.2  # The default CUDA version currently
-  fi
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
-    module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
-    module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
-  else
-    echo
-    echo "***"
-    echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not a supported version of CUDA on this system!"
-    echo "***"
-    return
-  fi
+elif [ "$ATDM_CONFIG_COMPILER" == "GNU-7.4.0" ] ; then
+
+  # Load the modules and set up env
+  module load devpack/20181218/openmpi/3.1.3/gcc/7.4.0/cuda/10.0.130
+  export OMPI_CXX=`which g++`
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2_GNU-7.2.0" ]] ; then
+
+  module load devpack/20180521/openmpi/2.1.2/gcc/7.2.0/cuda/9.2.88
+  module swap openblas/0.2.20/gcc/7.2.0 netlib/3.8.0/gcc/7.2.0
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
@@ -116,9 +177,26 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
   export CUDA_LAUNCH_BLOCKING=1
   export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
-  # Avoids timeouts due to not running on separate GPUs (see #2446)
-#else
-  # The else check for unsupported comiler is handled above when setting KOKKOS_ARCH
+  # ABove avoids timeouts due to not running on separate GPUs (see #2446)
+
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.0_GNU-7.4.0" ]] ; then
+
+  module load devpack/20181218/openmpi/3.1.3/gcc/7.4.0/cuda/10.0.130
+  export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
+  if [ ! -x "$OMPI_CXX" ]; then
+      echo "No nvcc_wrapper found"
+      return
+  fi
+  export OMPI_CC=`which gcc`
+  export OMPI_FC=`which gfortran`
+  export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
+  export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
+  export ATDM_CONFIG_USE_CUDA=ON
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+  export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=8
+  # ABove avoids timeouts due to not running on separate GPUs (see #2446)
+
 fi
 
 export ATDM_CONFIG_USE_HWLOC=OFF

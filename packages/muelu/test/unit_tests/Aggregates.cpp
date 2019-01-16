@@ -163,8 +163,9 @@ class AggregateGenerator {
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
       level.Set("A", A);
-      level.Set("gNodesPerDim", gNodesPerDir);
-      level.Set("lNodesPerDim", lNodesPerDir);
+      level.Set("numDimensions", numDimensions);
+      level.Set("gNodesPerDim",  gNodesPerDir);
+      level.Set("lNodesPerDim",  lNodesPerDir);
       level.Set("aggregation: mesh data", meshData);
 
       // Setup aggregation factory (use default factory for graph)

@@ -90,6 +90,9 @@
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
 #endif
+#ifdef HAVE_MUELU_EPETRA
+#include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
+#endif
 #endif
 
 
@@ -143,6 +146,11 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
     Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
     Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
+#if defined(HAVE_MUELU_BELOS)
+    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
+    mlop = Teuchos::rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
+#endif
+
     mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
   }
 };
@@ -460,6 +468,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 	} else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
+          if(!coordinates.is_null()) {
+            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(coordinates);
+            if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
+            if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
+            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);            
+          }
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
 #endif
         }

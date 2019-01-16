@@ -61,6 +61,7 @@
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Describable.hpp"
@@ -81,6 +82,16 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
+    template<class LO, class GO, class NT>
+    void
+    unpackCrsGraphAndCombine(
+        CrsGraph<LO, GO, NT>& graph,
+        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        const Teuchos::ArrayView<const LO>& importLIDs,
+        size_t constantNumPackets,
+        Distributor & distor,
+        CombineMode combineMode);
   } // namespace Details
 
   namespace { // (anonymous)
@@ -590,8 +601,31 @@ namespace Tpetra {
       return copier_type::clone (*this, node2, params);
     }
 
+
     //! Destructor.
     virtual ~CrsGraph () = default;
+
+
+    /// \brief Swaps the data from *this with the data and maps from graph
+    ///
+    /// \param graph [in/out] a crsGraph
+    void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
+
+
+    /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
+    ///
+    /// This performs _exact_ matches on objects with in the graphs. That is,
+    /// internal data structures such as arrays must match exactly in both
+    /// content and order. This is not performing any sort of isomorphic
+    /// search.
+    ///
+    /// \param graph [in] a crsGraph to compare against this one.
+    ///
+    /// \return True if the other CrsGraph's data structure is identical to this
+    ///         CrsGraph.
+    ///
+    bool isIdenticalTo(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
+
 
     //@}
     //! @name Implementation of Teuchos::ParameterListAcceptor
@@ -868,23 +902,23 @@ namespace Tpetra {
     /** Returns the number of entries in the domain map of the matrix.
         Undefined if isFillActive().
     */
-    global_size_t getGlobalNumCols() const override;
+    global_size_t getGlobalNumCols () const override;
 
     //! Returns the number of graph rows owned on the calling node.
-    size_t getNodeNumRows() const override;
+    size_t getNodeNumRows () const override;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    size_t getNodeNumCols() const override;
+    size_t getNodeNumCols () const override;
 
     //! Returns the index base for global indices for this graph.
-    GlobalOrdinal getIndexBase() const override;
+    GlobalOrdinal getIndexBase () const override;
 
     //! Returns the global number of entries in the graph.
-    /** Undefined if isFillActive().
+    /** Undefined if isFillActive ().
      */
-    global_size_t getGlobalNumEntries() const override;
+    global_size_t getGlobalNumEntries () const override;
 
     /// \brief The local number of entries in the graph.
     ///
@@ -1082,16 +1116,16 @@ namespace Tpetra {
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    bool isLocallyIndexed() const override;
+    bool isLocallyIndexed () const override;
 
     //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    bool isGloballyIndexed() const override;
+    bool isGloballyIndexed () const override;
 
     //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
-    bool isFillComplete() const override;
+    bool isFillComplete () const override;
 
     //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
-    bool isFillActive() const;
+    bool isFillActive () const;
 
     /// \brief Whether graph indices in all rows are known to be sorted.
     ///
@@ -1100,7 +1134,7 @@ namespace Tpetra {
     /// resumeFill(), but any changes to the graph may result in the
     /// sorting status becoming unknown (and therefore, presumed
     /// unsorted).
-    bool isSorted() const;
+    bool isSorted () const;
 
     //! \brief Returns \c true if storage has been optimized.
     /**
@@ -1109,10 +1143,10 @@ namespace Tpetra {
        during a mat-vec, requires minimal memory traffic. One limitation of
        optimized storage is that no new indices can be added to the graph.
     */
-    bool isStorageOptimized() const;
+    bool isStorageOptimized () const;
 
     //! Returns \c true if the graph was allocated with static data structures.
-    ProfileType getProfileType() const;
+    ProfileType getProfileType () const;
 
     /// \brief Get a copy of the given row, using global indices.
     ///
@@ -1195,6 +1229,19 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
 
+    void
+    applyCrsPadding (const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
+
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
+    computeCrsPadding (const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& source,
+                       size_t numSameIDs,
+                       const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                       const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
+    computeCrsPadding (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                       const Teuchos::ArrayView<size_t> &numPacketsPerLID);
+
     virtual void
     packAndPrepare (const SrcDistObject& source,
                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
@@ -1210,6 +1257,13 @@ namespace Tpetra {
           size_t& constantNumPackets,
           Distributor& distor) const override;
 
+    void
+    packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<GlobalOrdinal>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor) const;
+
     virtual void
     unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
                       const Teuchos::ArrayView<const GlobalOrdinal>& imports,
@@ -1217,6 +1271,7 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor& distor,
                       CombineMode CM) override;
+
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -1341,7 +1396,7 @@ namespace Tpetra {
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
      */
-    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
+    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices () const;
 
     /// \brief Replace the graph's current column Map with the given Map.
     ///
@@ -1518,6 +1573,17 @@ namespace Tpetra {
                                                                  typename CrsGraphType::global_ordinal_type,
                                                                  typename CrsGraphType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    template<class LO, class GO, class NT>
+    friend void
+    ::Tpetra::Details::unpackCrsGraphAndCombine(
+        CrsGraph<LO, GO, NT>& graph,
+        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        const Teuchos::ArrayView<const LO>& importLIDs,
+        size_t constantNumPackets,
+        Distributor & distor,
+        CombineMode combineMode);
 
   public:
     /// \brief Import from <tt>this</tt> to the given destination
@@ -2309,8 +2375,10 @@ namespace Tpetra {
     //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
+    typedef typename std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_type;
+
     //! Nonlocal data given to insertGlobalIndices.
-    std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
+    nonlocals_type nonlocals_;
 
     /// \brief Whether to require makeColMap() (and therefore
     ///   fillComplete()) to order column Map GIDs associated with

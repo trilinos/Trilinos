@@ -213,7 +213,7 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
 
    // Solver for S_E
    {
-     Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Solver S_E"));
+     Teuchos::TimeMonitor tm1(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Solver S_E"));
      if(!use_refmaxwell) // Augmentation based solver
        {
          // Get auxiliary operators for gradient and nodal mass matrix

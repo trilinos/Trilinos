@@ -199,21 +199,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   out << "Building second graph" << endl;
   RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getNodeNumEntries()));
 
-#ifdef KOKKOS_ENABLE_SERIAL
-  const bool atomic_updates = ! std::is_same<execution_space, Kokkos::Serial>::value;
-#else
-  const bool atomic_updates = true;
-#endif // KOKKOS_ENABLE_SERIAL
-
-  out << "Calling unpackCrsGraphAndCombine with "
-      << "CombineMode=Tpetra::REPLACE" << endl;
+  out << "Calling unpackCrsGraphAndCombine" << endl;
 
   {
     int local_op_ok;
     std::ostringstream msg;
     try {
       unpackCrsGraphAndCombine<LO,GO,NT>(*B, exports, numPacketsPerLID(),
-          exportLIDs(), constantNumPackets, distor, Tpetra::REPLACE, atomic_updates);
+          exportLIDs(), constantNumPackets, distor, Tpetra::REPLACE);
       local_op_ok = 0;
     } catch (std::exception& e) {
       // This method should throw because it is not finished!

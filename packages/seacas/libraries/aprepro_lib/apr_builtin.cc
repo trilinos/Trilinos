@@ -682,14 +682,8 @@ namespace SEAMS {
     }
     else {
       std::ostream *output = new std::ofstream(filename);
-      if (output != nullptr) {
-        aprepro->outputStream.push(output);
-
-        aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
-      }
-      else {
-        aprepro->error("Could not open output file '" + std::string(filename) + "'.\n", false);
-      }
+      aprepro->outputStream.push(output);
+      aprepro->info("Output now redirected to file'" + std::string(filename) + "'.\n");
     }
     return (nullptr);
   }
@@ -709,15 +703,9 @@ namespace SEAMS {
     }
     else {
       auto output = new std::ofstream(filename, std::ios_base::app); // Append
-      if (output != nullptr) {
-        aprepro->outputStream.push(output);
+      aprepro->outputStream.push(output);
 
-        aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
-      }
-      else {
-        aprepro->error(
-            "Could not open output file '" + std::string(filename) + "' for appending.\n", false);
-      }
+      aprepro->info("Output now redirected to file '" + std::string(filename) + "'\n");
     }
     return (nullptr);
   }

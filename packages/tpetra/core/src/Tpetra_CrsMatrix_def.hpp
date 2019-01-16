@@ -90,8 +90,8 @@ namespace { // (anonymous)
                     const ::Teuchos::EReductionType op,
                     const Teuchos::Comm<int>& comm)
   {
-    Kokkos::View<const int*, Kokkos::HostSpace> localView (&localValue);
-    Kokkos::View<int*, Kokkos::HostSpace> globalView (&globalValue);
+    Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > localView (&localValue,1);
+    Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > globalView (&globalValue, 1);
     return ::Tpetra::Details::iallreduce (localView, globalView, op, comm);
   }
 
@@ -357,7 +357,6 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    typedef typename local_matrix_type::values_type values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>,local_matrix_type::values_type,[, "
       "RCP<ParameterList>]): ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -378,7 +377,6 @@ namespace Tpetra {
 
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
     auto lclGraph = graph->getLocalGraph ();
-    const size_t numEnt = lclGraph.entries.extent (0);
     this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
                                           numCols, values, lclGraph);
     // FIXME (22 Jun 2016) I would very much like to get rid of
@@ -6545,6 +6543,7 @@ namespace Tpetra {
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
     typedef typename device_type::memory_space dev_mem_space;
+
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
@@ -8226,7 +8225,7 @@ namespace Tpetra {
     bool reverseMode = false; // Are we in reverse mode?
     bool restrictComm = false; // Do we need to restrict the communicator?
 
-   int mm_optimization_core_count=3000; // ~3000 for serrano
+   int mm_optimization_core_count=::Tpetra::Details::Behavior::TAFC_OptimizationCoreCount();
    RCP<ParameterList> matrixparams; // parameters for the destination matrix
    if (! params.is_null ()) {
       matrixparams = sublist (params, "CrsMatrix");

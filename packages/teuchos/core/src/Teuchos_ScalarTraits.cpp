@@ -41,6 +41,7 @@
 
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Assert.hpp"
+#include <limits>
 
 // Define this to throw exceptions when any Teuchos::ScalarTraits function
 // encounters a NaN or an Inf.
@@ -81,21 +82,6 @@ operator>> (std::istream& in, __float128& x)
 } // namespace std
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
-namespace {
-
-// These functions exist to trick the compiler into not returning a warning
-// message for 0.0/0.0 or refusing to compile the code.  If a compiler gets
-// too smart, we can put these definitions into a different *.cpp file such
-// that most compilers would not be able to know at compile-time if a NaN or
-// an Inf was being created.
-
-float returnFloatZero() { return 0.0; }
-
-double returnDoubleZero() { return 0.0; }
-
-} // namespace
-
-
 void Teuchos::throwScalarTraitsNanInfError( const std::string &errMsg )
 {
 #ifdef TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
@@ -119,7 +105,7 @@ bool Teuchos::operator&&(const qd_real &a, const qd_real &b) {
 #ifndef __sun
 // This is an intentional computation of NaN.
 namespace Teuchos {
-const float  flt_nan = +returnFloatZero()/returnFloatZero();
-const double dbl_nan = +returnDoubleZero()/returnDoubleZero();
+  const float  flt_nan = std::numeric_limits<float>::quiet_NaN();
+  const double dbl_nan = std::numeric_limits<double>::quiet_NaN();
 }
 #endif

@@ -109,7 +109,7 @@ namespace MueLu {
 
     const std::string prefix = "MueLu::SaPFactory(" + levelIDs + "): ";
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+    typedef typename Teuchos::ScalarTraits<SC>::coordinateType Coordinate;
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -160,7 +160,7 @@ namespace MueLu {
         lambdaMax = A->GetMaxEigenvalueEstimate();
         if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
           GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
-          Magnitude stopTol = 1e-4;
+          Coordinate stopTol = 1e-4;
           lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
