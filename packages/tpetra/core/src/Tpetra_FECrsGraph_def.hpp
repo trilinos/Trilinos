@@ -45,7 +45,7 @@
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 
-#define USE_UNALIASED_MEMORY
+//#define USE_UNALIASED_MEMORY
 
 
 
@@ -62,8 +62,8 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
            const Teuchos::RCP<Teuchos::ParameterList>& params): 
   crs_graph_type(ownedPlusSharedRowMap, maxNumEntriesPerRow, StaticProfile, params),
   importer_(ownedPlusSharedToOwnedimporter),
-  domainMap_(domainMap),
-  rangeMap_(rangeMap)
+  domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
+  rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 {  
   setup(ownedRowMap,ownedPlusSharedRowMap,params,maxNumEntriesPerRow);
 }
@@ -80,8 +80,8 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
   crs_graph_type( ownedPlusSharedRowMap, numEntPerRow, StaticProfile, params),
   importer_(ownedPlusSharedToOwnedimporter),
-  domainMap_(domainMap),
-  rangeMap_(rangeMap)
+  domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
+  rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 
 {  
   // Only pass in numEntries for "owned rows"
@@ -131,7 +131,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 #else
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
-   //   inactiveCrsGraph_->allocateIndices(GlobalIndices);
+   inactiveCrsGraph_->allocateIndices(GlobalIndices); // FIXME: We don't actually need to allocate these arrays
 #endif
  }
 
@@ -154,29 +154,54 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
 #else
     // Do a self-export in "restricted mode"
+    int rank = this->getRowMap()->getComm()->getRank();
+
+    printf("[%d] preimport colind  = ",rank);
+    for(size_t i=0; i <  this->k_gblInds1D_.extent(0); i++) 
+      printf("%2d ",  (int)this->k_gblInds1D_[i]);
+    printf("\n");
+
+
     this->doExport(*this,*importer_,CM,true);
+
+    printf("[%d] postimport colind = ",rank);
+    for(size_t i=0; i <  this->k_gblInds1D_.extent(0); i++) 
+      printf("%2d ",  (int)this->k_gblInds1D_[i]);
+    printf("\n");
+
+
 
     // Time to alias all of the memory!
     local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
     size_t numOwnedRows = inactiveCrsGraph_->getRowMap()->getNodeNumElements();
-    // FIXME: This uses UVM. Can we get away from this?
-    printf("CMS: row_map.extent() = %d\n",this->k_rowPtrs_.extent(0));
-    size_t numOwnedNonZeros = this->k_rowPtrs_[numOwnedRows+1];
 
-  typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(this->k_rowPtrs_,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
+    // FIXME: This uses UVM.
+    size_t numOwnedNonZeros = this->k_rowPtrs_[numOwnedRows];
+
+    typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(this->k_rowPtrs_,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
     typename crs_graph_type::t_GlobalOrdinal_1D ownedGlobalColumnIndices = Kokkos::subview(this->k_gblInds1D_,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
-    inactiveCrsGraph_->getLocalGraph().row_map = ownedRowPointers;
+    inactiveCrsGraph_->k_rowPtrs_ = ownedRowPointers;
     inactiveCrsGraph_->k_gblInds1D_ = ownedGlobalColumnIndices;
+    printf("[%d] this->k_rowPtrs_[%d] = %d \n",rank,(int)numOwnedRows,(int)this->k_rowPtrs_[numOwnedRows]);
+
+
+    printf("[%d] inactiveCrsGraph_->k_rowPtrs_[%d] = %d k_gblInds1D_.extent(0) = %d\n",rank,(int)inactiveCrsGraph_->k_rowPtrs_.extent(0)-1,(int)inactiveCrsGraph_->k_rowPtrs_[inactiveCrsGraph_->k_rowPtrs_.extent(0)-1], (int)inactiveCrsGraph_->k_gblInds1D_.extent(0));
+
+    printf("[%d] owned colind      = ",rank);
+    for(size_t i=0; i <  inactiveCrsGraph_->k_gblInds1D_.extent(0); i++) 
+      printf("%2d ", (int)inactiveCrsGraph_->k_gblInds1D_[i]);
+    printf("\n");
+      
+    printf("[%d] domainMap         =",rank);
+    for(size_t i=0; i < domainMap_->getNodeNumElements(); i++) 
+      printf("%2d ",(int) domainMap_->getGlobalElement(i));
+    printf("\n");
 
     // Make the column for the owned guy
     Teuchos::Array<int> remotePIDs (0);
     inactiveCrsGraph_->domainMap_ = domainMap_;
     inactiveCrsGraph_->rangeMap_ = rangeMap_;
     inactiveCrsGraph_->makeColMap(remotePIDs);
-    //    Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap;
-    //    Teuchos::Array<int>& remotePIDs;
-    //    Details::makeColMap(colMap,remotePIDs,domainMap_,inactiveCrsGraph_);
-    //    inactiveGraph_->setColMap(colMap);
 
     //Now make the col map for the ownedPlusShared guy
 
