@@ -56,7 +56,9 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
             const Teuchos::RCP<Teuchos::ParameterList>& params) : 
   // We want the OWNED_PLUS_SHARED graph here
   // NOTE: The casts below are terrible, but necesssary
-  crs_matrix_type( graph->inactiveCrsGraph_.is_null() ? Teuchos::rcp_const_cast<crs_graph_type>(Teuchos::rcp_dynamic_cast<const crs_graph_type>(graph)) : graph->inactiveCrsGraph_,params)
+  crs_matrix_type( graph->inactiveCrsGraph_.is_null() ? Teuchos::rcp_const_cast<crs_graph_type>(Teuchos::rcp_dynamic_cast<const crs_graph_type>(graph)) : graph->inactiveCrsGraph_,params),
+  feGraph_(graph)
+
 {
   const char tfecfFuncName[] = "FECrsMatrix(RCP<const FECrsGraph>[, RCP<ParameterList>]): ";
   typedef typename local_matrix_type::values_type values_type;
@@ -73,8 +75,6 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
      ( *graph->activeCrsGraph_!= fe_crs_graph_type::FE_ACTIVE_OWNED,std::runtime_error,
       "Input graph must be in FE_ACTIVE_OWNED mode when this constructor is called.");
-
-
 
   activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
 
@@ -108,10 +108,10 @@ operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-    inactiveCrsMatrix_->doExport(*this,*this->getGraph()->getImporter(),CM);
+    inactiveCrsMatrix_->doExport(*this,*feGraph_->importer_,CM);
     inactiveCrsMatrix_->fillComplete();
   }
-  this->fillComplete();
+  crs_matrix_type::fillComplete();
 }//end doOverlapToLocal
 
 

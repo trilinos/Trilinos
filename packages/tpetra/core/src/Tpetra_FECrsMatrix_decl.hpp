@@ -242,6 +242,8 @@ public:
       FE_ACTIVE_OWNED_PLUS_SHARED
     };
 
+    // The FECrsGraph from construction time
+    Teuchos::RCP<const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node> > feGraph_;
 
     // This is whichever multivector isn't currently active
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsMatrix_;
