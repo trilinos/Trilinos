@@ -43,7 +43,6 @@
 #define TPETRA_FECRSMATRIX_DEF_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Kokkos_Core.hpp" // DEBUG
 
 //#define USE_UNALIASED_MEMORY
 

@@ -44,6 +44,7 @@
 
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 
 //#define USE_UNALIASED_MEMORY
 
@@ -131,9 +132,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 #else
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
-#ifdef OLD_STUFF
-   inactiveCrsGraph_->allocateIndices(GlobalIndices); // FIXME: We don't actually need to allocate these arrays
-#endif
 #endif
  }
 
@@ -151,6 +149,7 @@ operator=(const FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>& rhs)
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
+  const char tfecfFuncName[] = "FECrsGraph::doOwnedPlusSharedToOwned(CombineMode): ";
   if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
 #ifdef USE_UNALIASED_MEMORY
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
@@ -161,22 +160,41 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
     crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
 #else
-
-#if 0
-    int rank = this->getRowMap()->getComm()->getRank();
-#endif
     Teuchos::RCP<const map_type> ownedRowMap = inactiveCrsGraph_->getRowMap();
 
     // Do a self-export in "restricted mode"
     this->doExport(*this,*importer_,CM,true);
 
-    // Under the "if you own an element, you own a node" assumption, we can start by making a columnmap for ownedPlusShared
-    // Make the column for the owned guy
+    // Under the "if you own an element, you own at least one of its nodes" assumption, 
+    // we can start by making a columnmap for ownedPlusShared
     Teuchos::Array<int> remotePIDs (0);
     this->makeColMap(remotePIDs);
-
+    
     // Now run CrsGraph's fillComplete to get the final importer
     crs_graph_type::fillComplete(domainMap_,this->getRowMap());
+
+    // In debug mode, we check to make sure the "if you own an element, you own at least one of its nodes"
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      Teuchos::RCP<const map_type> colmap = this->getColMap();
+      Teuchos::Array<bool> flag(colmap->getNodeNumElements(),false);
+      Teuchos::Array<LocalOrdinal> indices(this->getNodeMaxNumRowEntries());
+      for(size_t i=0; i<ownedRowMap->getNodeNumElements(); i++)  {
+        size_t NumEntries=0;
+        this->getLocalRowCopy(i,indices,NumEntries);
+        for(size_t j=0; j<NumEntries; j++) 
+          flag[indices[j]] = true;
+      }
+      
+      bool lclSuccess = true;
+      for(size_t i=0; i<(size_t)flag.size(); i++)
+        if(!flag[i]) {lclSuccess=false; break;}
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclSuccess ==false,
+         std::invalid_argument, "if you own an element (in the finite element sense) you "
+         "must also own one of the attached nodes.  This assumption has been violated in "
+         "your matrix fill.");
+    }
 
     // Time to build an owned localGraph via subviews
     local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
