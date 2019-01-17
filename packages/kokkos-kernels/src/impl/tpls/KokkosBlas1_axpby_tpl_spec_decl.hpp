@@ -44,18 +44,20 @@
 #ifndef KOKKOSBLAS1_AXPBY_TPL_SPEC_DECL_HPP_
 #define KOKKOSBLAS1_AXPBY_TPL_SPEC_DECL_HPP_
 
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-extern "C" void daxpy_( const int* N, const double* alpha,
+
+#include "KokkosKernels_FortranMangling.h"
+
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(daxpy,DAXPY)( const int* N, const double* alpha,
                                       const double* x, const int* x_inc,
                                       double* y, const int* y_inc);
-extern "C" void saxpy_( const int* N, const float* alpha,
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(saxpy,SAXPY)( const int* N, const float* alpha,
                                       const float* x, const int* x_inc,
                                       float* y, const int* y_inc);
-extern "C" void zaxpy_( const int* N, const std::complex<double>* alpha,
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(zaxpy,zaxpy)( const int* N, const std::complex<double>* alpha,
                                       const std::complex<double>* x, const int* x_inc,
                                       std::complex<double>* y, const int* y_inc);
-extern "C" void caxpy_( const int* N, const std::complex<float>* alpha,
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(caxpy,CAXPY)( const int* N, const std::complex<float>* alpha,
                                       const std::complex<float>* x, const int* x_inc,
                                       std::complex<float>* y, const int* y_inc);
 
@@ -65,9 +67,9 @@ namespace Impl {
 namespace {
   template<class AV, class XMV, class BV, class YMV>
   inline void axpby_print_specialization() {
-      #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION 
-        printf("KokkosBlas1::axpby<> TPL Blas specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XMV).name(),typeid(BV).name(),typeid(YMV).name()); 
-      #endif 
+      #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
+        printf("KokkosBlas1::axpby<> TPL Blas specialization for < %s , %s , %s , %s >\n",typeid(AV).name(),typeid(XMV).name(),typeid(BV).name(),typeid(YMV).name());
+      #endif
   }
 }
 
@@ -94,7 +96,7 @@ struct Axpby< \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
       int one = 1; \
-      daxpy_(&N,&alpha,X.data(),&one,Y.data(),&one); \
+      KOKKOSKERNELS_FORTRAN_GLOBAL(daxpy,DAXPY)(&N,&alpha,X.data(),&one,Y.data(),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
   } \
@@ -124,7 +126,7 @@ struct Axpby< \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
       int one = 1; \
-      saxpy_(&N,&alpha,X.data(),&one,Y.data(),&one); \
+      KOKKOSKERNELS_FORTRAN_GLOBAL(saxpy,SAXPY)(&N,&alpha,X.data(),&one,Y.data(),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
   } \
@@ -153,7 +155,7 @@ struct Axpby< \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
       int one = 1; \
-      zaxpy_(&N,reinterpret_cast<const std::complex<double>* >(&alpha), \
+      KOKKOSKERNELS_FORTRAN_GLOBAL(zaxpy,ZAXPY)(&N,reinterpret_cast<const std::complex<double>* >(&alpha), \
                 reinterpret_cast<const std::complex<double>* >(X.data()),&one, \
                 reinterpret_cast<std::complex<double>* >(Y.data()),&one); \
     } else \
@@ -184,7 +186,7 @@ struct Axpby< \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
       int one = 1; \
-      caxpy_(&N,reinterpret_cast<const std::complex<float>* >(&alpha), \
+      KOKKOSKERNELS_FORTRAN_GLOBAL(caxpy,CAXPY)(&N,reinterpret_cast<const std::complex<float>* >(&alpha), \
                 reinterpret_cast<const std::complex<float>* >(X.data()),&one, \
                 reinterpret_cast<std::complex<float>* >(Y.data()),&one); \
     } else \
