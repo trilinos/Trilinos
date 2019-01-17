@@ -45,7 +45,7 @@
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 
-#define USE_UNALIASED_MEMORY
+//#define USE_UNALIASED_MEMORY
 
 
 
@@ -131,7 +131,9 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
 #else
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
+#ifdef OLD_STUFF
    inactiveCrsGraph_->allocateIndices(GlobalIndices); // FIXME: We don't actually need to allocate these arrays
+#endif
 #endif
  }
 
@@ -152,30 +154,54 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
   if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
 #ifdef USE_UNALIASED_MEMORY
     inactiveCrsGraph_->doExport(*this,*importer_,CM);
+    
+    // fillComplete the owned graph
+    inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
+
+    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
+    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
 #else
-    // Do a self-export in "restricted mode"
+
 #if 0
     int rank = this->getRowMap()->getComm()->getRank();
-    printf("[%d] preimport colind  = ",rank);
-    for(size_t i=0; i <  this->k_gblInds1D_.extent(0); i++) 
-      printf("%2d ",  (int)this->k_gblInds1D_[i]);
-    printf("\n");
 #endif
+    // FIXME: This is a kludge
+    Teuchos::RCP<const map_type> ownedRowMap = inactiveCrsGraph_->getRowMap();
 
+    // Do a self-export in "restricted mode"
     this->doExport(*this,*importer_,CM,true);
 
-#if 0
-    printf("[%d] postimport colind = ",rank);
-    for(size_t i=0; i <  this->k_gblInds1D_.extent(0); i++) 
-      printf("%2d ",  (int)this->k_gblInds1D_[i]);
-    printf("\n");
-#endif
-    // Time to alias all of the memory!
-    local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
-    size_t numOwnedRows = inactiveCrsGraph_->getRowMap()->getNodeNumElements();
+    // Under the "if you own an element, you own a node" assumption, we can start by making a columnmap for ownedPlusShared
+    // Make the column for the owned guy
+    Teuchos::Array<int> remotePIDs (0);
+    this->makeColMap(remotePIDs);
+    
+    // Now run fillComplete to get the final importer
+    this->fillComplete(domainMap_,rangeMap_);
 
+    // Time to build an owned localGraph via subviews
+    local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
+    size_t numOwnedRows = ownedRowMap->getNodeNumElements();
     // FIXME: This uses UVM.
-    size_t numOwnedNonZeros = this->k_rowPtrs_[numOwnedRows];
+    size_t numOwnedNonZeros = ownedPlusSharedGraph.row_map[numOwnedRows];
+
+    // For somewhat inexplicable reasons, the entries array comes first in the Kokkos::StaticCrsGraph constructor
+    //    local_graph_type ownedGraph(Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros)),
+    //                                Kokkos::subview(ownedPlusSharedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1)));
+
+    // Build the inactive guy
+    // FIME: Shouldn't have to do this in the constructor as well
+    //    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedGraph,ownedRowMap,this->getColmap(),domainMap_,rangeMap_));
+    // NOTE: We can't use the local_graph_type constructor, because it does not allow us to provide an importer
+    inactiveCrsGraph_->replaceColMap(this->getColMap());
+    inactiveCrsGraph_->setAllIndices(Kokkos::subview(ownedPlusSharedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1)),
+                                     Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros)));
+    // FIXME: We do NOT want the exporter from this.  Right now I assume range == row, but this needs to be relaxed
+    inactiveCrsGraph_->expertStaticFillComplete(domainMap_,rangeMap_,this->getImporter(),Teuchos::null);
+
+
+#if OLD_STUFF
+
 
     typename local_graph_type::row_map_type ownedRowPointers   = Kokkos::subview(this->k_rowPtrs_,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
     // FIXME: Should this guy be copied instead?
@@ -202,7 +228,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     for(size_t i=0; i < domainMap_->getNodeNumElements(); i++) 
       printf("%2d ",(int) domainMap_->getGlobalElement(i));
     printf("\n");
-#endif
 
     // Make the column for the owned guy
     Teuchos::Array<int> remotePIDs (0);
@@ -213,8 +238,37 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // These need to be set so sort & merge will actually happen when fillComplete is triggered
     inactiveCrsGraph_->indicesAreSorted_ = this->indicesAreSorted_;
     inactiveCrsGraph_->noRedundancies_   = this->noRedundancies_ ;
+#endif
+
+#if 0
+    //    printf("[%d] ownedcolumnMap  = ",rank);
+    //    for(size_t i=0; i < inactiveCrsGraph_->getColMap()->getNodeNumElements(); i++) 
+    //          printf("%2d ",(int) inactiveCrsGraph_->getColMap()->getGlobalElement(i));
+    //        printf("\n");
+#endif
 
     //Now make the col map for the ownedPlusShared guy
+    // If every element I own is connected to at least one node I own, then these maps should be the same.
+    // FIXME: Visual inspection says we're OK, but Tpetra whiffs later.  Maybe aliasing?
+    this->colMap_ = inactiveCrsGraph_->getColMap();
+
+    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
+    // We have to do this guy first, because we're about to invalidate all of the global-id data
+    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
+
+
+    // Invalidate the stuff that needs to go
+    inactiveCrsGraph->k_numRowEntries_ = crs_graph_type::row_entries_type ();
+
+    // Generate a bunch of subviews and move over all of the local data
+    // FIXME: Finish code
+
+    // fillComplete the owned graph        
+    inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
+
+
+    #endif
+    //    generateOwnedPlusSharedColMap();
 #warning "Tpetra::FECrsGraph's implementation is not complete with USE_UNALIASED_MEMORY unset"
 
 #endif
@@ -270,8 +324,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
   if(inactiveCrsGraph_.is_null()) {
     // The easy case: One graph
     switchActiveCrsGraph();
-    if(domainMap_.is_null()) crs_graph_type::fillComplete();
-    else crs_graph_type::fillComplete(domainMap_,rangeMap_);
+   crs_graph_type::fillComplete(domainMap_,rangeMap_);
   }
   else {
     // The hard case: Two graphs   
@@ -281,11 +334,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
     // Migrate data to the owned graph
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
-    // fillComplete the owned graph
-    inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
-
-    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
-    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
+#ifdef USE_UNALIASED_MEMORY
+#endif
 
     // Load up the owned graph
     switchActiveCrsGraph();
@@ -303,6 +353,70 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::beginFill() {
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ == FE_ACTIVE_OWNED,std::runtime_error, "can only be called once.");
 
 }
+
+
+#if 0
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::generateOwnedPlusSharedColMap() {
+  const char tfecfFuncName[] = "FECrsGraph::generateOwnedPlusSharedColMap(): ";  
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(inactiveCrsGraph_ || !inactiveCrsGrap_->hasColMap(),std::runtime_error,"Needs an owned column map.");
+  typedef LocalOrdinal LO;
+
+  // Since we have an owned colmap we can use that to generate an ownedPlusShared one
+  const map_type & ownedColMap = *inactiveCrsGraph_->getColMap();
+  
+  // Now we get some repurposed innards of Details::makeColMap()
+  // NOTE: Someone should Kokkos this some day
+  std::vector<bool> GIDisLocal (domMap->getNodeNumElements (), false);
+  std::set<GO> RemoteGIDSet;
+  // This preserves the not-sorted Epetra order of GIDs.
+  // We only use this if sortEachProcsGids is false.
+  std::vector<GO> RemoteGIDUnorderedVector;
+  
+  const map_type & rowMap = *this->getRowMap();
+  const LO lclNumRows = rowMap.getNodeNumElements ();
+  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+    const GO gblRow = rowMap.getGlobalElement (lclRow);
+    Teuchos::ArrayView<const GO> rowGids;
+    this->getGlobalRowView (gblRow, rowGids);
+    
+    const LO numEnt = static_cast<LO> (rowGids.size ());
+    if (numEnt != 0) {
+      for (LO k = 0; k < numEnt; ++k) {
+        const GO gid = rowGids[k];
+        const LO lid = ownedColMap->getLocalElement (gid);
+        if (lid != LINV) {
+          const bool alreadyFound = GIDisLocal[lid];
+          if (! alreadyFound) {
+            GIDisLocal[lid] = true;
+            ++numLocalColGIDs;
+          }
+        }
+        else {
+          const bool notAlreadyFound = RemoteGIDSet.insert (gid).second;
+          if (notAlreadyFound) { // gid did not exist in the set before
+            if (! sortEachProcsGids) {
+              // The user doesn't want to sort remote GIDs (for each
+              // remote process); they want us to keep remote GIDs
+              // in their original order.  We do this by stuffing
+              // each remote GID into an array as we encounter it
+              // for the first time.  The std::set helpfully tracks
+              // first encounters.
+              RemoteGIDUnorderedVector.push_back (gid);
+            }
+            ++numRemoteColGIDs;
+          }
+        }
+      } // for each entry k in row r
+    } // if row r contains > 0 entries
+  } // for each locally owned row r
+  
+
+  // Now we have the lists of Remote GIDs that aren't in the local column map
+}
+#endif
+
+
 
 
 
