@@ -103,7 +103,7 @@ int main(int narg, char *arg[])
   params.set("error_check_level", "debug_mode_assertions");
 
   params.set("algorithm", "multijagged");
-  params.set("num_global_parts", nprocs);
+  params.set("num_global_parts", nprocs+1);
 
   ///////////////////////////////////////////////////////////////////////
   // Test one:  No weights
