@@ -58,7 +58,8 @@ namespace FROSch {
     class NO = typename Xpetra::Operator<SC,LO,GO>::node_type>
     class EntitySet;
     
-    enum EntityType {VertexType,ShortEdgeType,StraightEdgeType,EdgeType,FaceType,SurfaceType,VolumeType,AncestorType,OffspringType};
+    enum EntityType {DefaultType,VertexType,EdgeType,FaceType,InteriorType,InterfaceType};
+    enum EntityFlag {DefaultFlag,StraightFlag,ShortFlag,NodeFlag};
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -110,7 +111,8 @@ namespace FROSch {
         InterfaceEntity(EntityType type,
                         UN dofsPerNode,
                         UN multiplicity,
-                        GO *subdomains);
+                        GO *subdomains,
+                        EntityFlag flag = DefaultFlag);
         
         ~InterfaceEntity();
         
@@ -139,11 +141,13 @@ namespace FROSch {
         
         int setLocalID(LO localID);
         
-        int setAncestorID(LO AncestorID);
+        int setCoarseNodeID(LO coarseNodeID);
         
         int setUniqueIDToFirstGlobalID();
         
         int resetEntityType(EntityType type);
+        
+        int resetEntityFlag(EntityFlag flag);
         
         int findAncestors(EntitySetPtr entitySet);
         
@@ -157,6 +161,8 @@ namespace FROSch {
         
         EntityType getEntityType() const;
         
+        EntityFlag getEntityFlag() const;
+        
         UN getDofsPerNode() const;
         
         UN getMultiplicity() const;
@@ -165,7 +171,7 @@ namespace FROSch {
         
         LO getLocalID() const;
         
-        LO getAncestorID() const;
+        LO getCoarseNodeID() const;
         
         const Node<SC,LO,GO>& getNode(UN iDNode) const;
         
@@ -191,6 +197,8 @@ namespace FROSch {
         
         EntityType Type_;
         
+        EntityFlag Flag_;
+        
         NodeVec NodeVector_;
         
         GOVec SubdomainsVector_;
@@ -202,7 +210,7 @@ namespace FROSch {
         UN Multiplicity_;
         GO UniqueID_;
         LO LocalID_;
-        LO AncestorID_;
+        LO CoarseNodeID_;
     };
     
     template <class SC,class LO,class GO,class NO>

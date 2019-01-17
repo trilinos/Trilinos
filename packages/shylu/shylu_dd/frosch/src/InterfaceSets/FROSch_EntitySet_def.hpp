@@ -75,11 +75,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::addEntity(InterfaceEntityPtr entity)
     {
-        if ((Type_==AncestorType)||(Type_==OffspringType)||((entity->getEntityType()==ShortEdgeType)&&(Type_==EdgeType))||((entity->getEntityType()==StraightEdgeType)&&(Type_==EdgeType))) {
-            
-        } else {
-            FROSCH_ASSERT(entity->getEntityType()==Type_,"Entity to add is of wrong type.");
-        }
+        FROSCH_ASSERT(Type_==DefaultType||entity->getEntityType()==Type_,"Entity to add is of wrong type.");
         EntityVector_.push_back(entity);
         EntityMapIsUpToDate_ = false;
         return 0;
@@ -144,7 +140,8 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(CrsMatrixPtr matrix, int pID)
+    int EntitySet<SC,LO,GO,NO>::divideUnconnectedEntities(CrsMatrixPtr matrix,
+                                                          int pID)
     {
         UN before = getNumEntities();
         UN i=0;
@@ -160,46 +157,32 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr EntitySet<SC,LO,GO,NO>::sortOutVertices()
+    int EntitySet<SC,LO,GO,NO>::flagNodes()
     {
-        UN before = getNumEntities();
-        Teuchos::RCP<InterfaceEntityPtrVec> vertices(new InterfaceEntityPtrVec(0));
         for (UN i=0; i<getNumEntities(); i++) {
             if (EntityVector_[i]->getNumNodes()==1) {
-                EntityVector_[i]->resetEntityType(VertexType);
-                vertices->push_back(EntityVector_[i]);
-                EntityVector_.erase(EntityVector_.begin()+i);
-                i--;
+                EntityVector_[i]->resetEntityType(NodeFlag);
             }
         }
-        if (getNumEntities()-before>0) EntityMapIsUpToDate_ = false;
-        return arcp(vertices);
+        return 0;
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr EntitySet<SC,LO,GO,NO>::sortOutShortEdges()
+    int EntitySet<SC,LO,GO,NO>::flagShortEntities()
     {
-        UN before = getNumEntities();
-        Teuchos::RCP<InterfaceEntityPtrVec> shortEdges(new InterfaceEntityPtrVec(0));
         for (UN i=0; i<getNumEntities(); i++) {
             if (EntityVector_[i]->getNumNodes()==2) {
-                EntityVector_[i]->resetEntityType(ShortEdgeType);
-                shortEdges->push_back(EntityVector_[i]);
-                EntityVector_.erase(EntityVector_.begin()+i);
-                i--;
+                EntityVector_[i]->resetEntityFlag(ShortFlag);
             }
         }
-        if (getNumEntities()-before>0) EntityMapIsUpToDate_ = false;
-        return arcp(shortEdges);
+        return 0;
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr EntitySet<SC,LO,GO,NO>::sortOutStraightEdges(UN dimension,
-                                                                                                           MultiVectorPtr &nodeList)
+    int EntitySet<SC,LO,GO,NO>::flagStraightEntities(UN dimension,
+                                                     MultiVectorPtr &nodeList)
     {
         FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
-        UN before = getNumEntities();
-        Teuchos::RCP<InterfaceEntityPtrVec> straightEdges(new InterfaceEntityPtrVec(0));
         
         bool straight;
         LO length,j;
@@ -236,15 +219,27 @@ namespace FROSch {
                     j++;
                 }
                 if (straight) {
-                    EntityVector_[i]->resetEntityType(StraightEdgeType);
-                    straightEdges->push_back(EntityVector_[i]);
-                    EntityVector_.erase(EntityVector_.begin()+i);
-                    i--;
+                    EntityVector_[i]->resetEntityType(StraightFlag);
                 }
             }
         }
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr EntitySet<SC,LO,GO,NO>::sortOutEntities(EntityFlag flag)
+    {
+        UN before = getNumEntities();
+        Teuchos::RCP<InterfaceEntityPtrVec> removedEntities(new InterfaceEntityPtrVec(0));
+        for (UN i=0; i<getNumEntities(); i++) {
+            if (EntityVector_[i]->getEntityFlag()==flag) {
+                removedEntities->push_back(EntityVector_[i]);
+                EntityVector_.erase(EntityVector_.begin()+i);
+                i--;
+            }
+        }
         if (getNumEntities()-before>0) EntityMapIsUpToDate_ = false;
-        return arcp(straightEdges);
+        return arcp(removedEntities);
     }
     
     template<class SC,class LO,class GO,class NO>
@@ -430,9 +425,8 @@ namespace FROSch {
                                                                                          UN iD) const
     {
         FROSCH_ASSERT(iD<getNumEntities(),"iD>=getNumEntities().");
-        FROSCH_ASSERT( (Type_==StraightEdgeType || Type_==ShortEdgeType) ,"Direction is defined only for StraightEdges or ShortEdges!");
         
-        if (Type_==StraightEdgeType) {
+        if (EntityVector_[iD]->getEntityFlag()==StraightFlag) {
             
             LO length = EntityVector_[iD]->getNumNodes();
             LO j=2;
@@ -469,7 +463,7 @@ namespace FROSch {
             
             return dir1;
             
-        } else if (Type_==ShortEdgeType) {
+        } else if (EntityVector_[iD]->getEntityFlag()==ShortFlag) {
             
             int length = EntityVector_[iD]->getNumNodes();
             

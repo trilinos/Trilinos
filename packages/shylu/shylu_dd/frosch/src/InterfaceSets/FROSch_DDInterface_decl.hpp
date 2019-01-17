@@ -82,6 +82,8 @@ namespace FROSch {
         
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         typedef const EntitySetPtr EntitySetConstPtr;
+        typedef Teuchos::ArrayRCP<EntitySetPtr> EntitySetPtrVecPtr;
+        typedef const EntitySetPtrVecPtr EntitySetPtrConstVecPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
         typedef Teuchos::ArrayRCP<InterfaceEntityPtr> InterfaceEntityPtrVecPtr;
@@ -117,7 +119,7 @@ namespace FROSch {
         
         int sortEntities(MultiVectorPtr nodeList);
         
-        int buildAncestorGraph();
+        int buildEntityHierarchy();
         
         UN getDimension() const;
         
@@ -139,11 +141,9 @@ namespace FROSch {
         
         EntitySetConstPtr & getInterior() const;
         
-        EntitySetConstPtr & getAncestorVertices() const;
+        EntitySetConstPtr & getCoarseNodes() const;
         
-        EntitySetConstPtr & getAncestorEdges() const;
-        
-        EntitySetConstPtr & getAncestorFaces() const;
+        EntitySetPtrConstVecPtr & getEntityVector() const;
         
         ConstMapPtr getNodesMap() const;
         
@@ -174,9 +174,8 @@ namespace FROSch {
         EntitySetPtr Faces_;
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
-        EntitySetPtr AncestorVertices_;
-        EntitySetPtr AncestorEdges_;
-        EntitySetPtr AncestorFaces_;
+        EntitySetPtr CoarseNodes_;
+        EntitySetPtrVecPtr EntityVector_;
         
         MapPtr NodesMap_;
         MapPtr UniqueNodesMap_;

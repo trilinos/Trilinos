@@ -55,15 +55,12 @@ namespace FROSch {
     DofsPerNode_ (dofsPerNode),
     NumMyNodes_ (localToGlobalMap->getNodeNumElements()),
     Vertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
-    ShortEdges_ (new EntitySet<SC,LO,GO,NO>(ShortEdgeType)),
-    StraightEdges_ (new EntitySet<SC,LO,GO,NO>(StraightEdgeType)),
     Edges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
     Faces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
-    Interface_ (new EntitySet<SC,LO,GO,NO>(SurfaceType)),
-    Interior_ (new EntitySet<SC,LO,GO,NO>(VolumeType)),
-    AncestorVertices_ (new EntitySet<SC,LO,GO,NO>(VertexType)),
-    AncestorEdges_ (new EntitySet<SC,LO,GO,NO>(EdgeType)),
-    AncestorFaces_ (new EntitySet<SC,LO,GO,NO>(FaceType)),
+    Interface_ (new EntitySet<SC,LO,GO,NO>(InterfaceType)),
+    Interior_ (new EntitySet<SC,LO,GO,NO>(InteriorType)),
+    CoarseNodes_ (new EntitySet<SC,LO,GO,NO>(DefaultType)),
+    EntityVector_ (),
     NodesMap_ (localToGlobalMap),
     UniqueNodesMap_ ()
     {
@@ -327,25 +324,25 @@ namespace FROSch {
     int DDInterface<SC,LO,GO,NO>::sortEntities()
     {
         // Edges_
-        InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutVertices();
+        InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutNodes();
         for (UN i=0; i<extractedVertices.size(); i++) {
             Vertices_->addEntity(extractedVertices[i]);
         }
         
-        InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEdges();
+        InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEntities();
         for (UN i=0; i<extractedShortEdges.size(); i++) {
             ShortEdges_->addEntity(extractedShortEdges[i]);
         }
         
         // Faces_
-        extractedVertices = Faces_->sortOutVertices();
+        extractedVertices = Faces_->sortOutNodes();
         for (UN i=0; i<extractedVertices.size(); i++) {
             Vertices_->addEntity(extractedVertices[i]);
         }
         
-        extractedShortEdges = Faces_->sortOutShortEdges();
+        InterfaceEntityPtrVecPtr extractedShortFaces = Faces_->sortOutShortEntities();
         for (UN i=0; i<extractedShortEdges.size(); i++) {
-            ShortEdges_->addEntity(extractedShortEdges[i]);
+            ShortFaces_->addEntity(extractedShortFaces[i]);
         }
         
         return 0;
@@ -358,106 +355,56 @@ namespace FROSch {
             this->sortEntities();
         } else {
             // Edges_
-            InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutVertices();
+            InterfaceEntityPtrVecPtr extractedVertices = Edges_->sortOutNodes();
             for (UN i=0; i<extractedVertices.size(); i++) {
                 Vertices_->addEntity(extractedVertices[i]);
             }
             
-            InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEdges();
+            InterfaceEntityPtrVecPtr extractedShortEdges = Edges_->sortOutShortEntities();
             for (UN i=0; i<extractedShortEdges.size(); i++) {
                 ShortEdges_->addEntity(extractedShortEdges[i]);
             }
             
-            InterfaceEntityPtrVecPtr extractedStraightEdges = Edges_->sortOutStraightEdges(Dimension_,nodeList);
+            InterfaceEntityPtrVecPtr extractedStraightEdges = Edges_->sortOutStraightEntities(Dimension_,nodeList);
             for (UN i=0; i<extractedStraightEdges.size(); i++) {
                 StraightEdges_->addEntity(extractedStraightEdges[i]);
             }
             
             // Faces_
-            extractedVertices = Faces_->sortOutVertices();
+            extractedVertices = Faces_->sortOutNodes();
             for (UN i=0; i<extractedVertices.size(); i++) {
                 Vertices_->addEntity(extractedVertices[i]);
             }
             
-            extractedShortEdges = Faces_->sortOutShortEdges();
-            for (UN i=0; i<extractedShortEdges.size(); i++) {
-                ShortEdges_->addEntity(extractedShortEdges[i]);
+            InterfaceEntityPtrVecPtr extractedShortFaces = Faces_->sortOutShortEntities();
+            for (UN i=0; i<extractedShortFaces.size(); i++) {
+                ShortFaces_->addEntity(extractedShortFaces[i]);
             }
             
-            extractedStraightEdges = Faces_->sortOutStraightEdges(Dimension_,nodeList);
-            for (UN i=0; i<extractedStraightEdges.size(); i++) {
-                StraightEdges_->addEntity(extractedStraightEdges[i]);
+            InterfaceEntityPtrVecPtr extractedStraightFaces = Faces_->sortOutStraightEntities(Dimension_,nodeList);
+            for (UN i=0; i<extractedStraightFaces.size(); i++) {
+                StraightFaces_->addEntity(extractedStraightFaces[i]);
             }
         }
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int DDInterface<SC,LO,GO,NO>::buildAncestorGraph()
+    int DDInterface<SC,LO,GO,NO>::buildEntityHierarchy()
     {
-        if (Faces_->getNumEntities()>0) {
-            if (ShortEdges_->getNumEntities()>0) {
-                Faces_->findAncestors(ShortEdges_);
-            }
-            if (StraightEdges_->getNumEntities()>0) {
-                Faces_->findAncestors(StraightEdges_);
-            }
-            if (Edges_->getNumEntities()>0) {
-                Faces_->findAncestors(Edges_);
+        for (UN i=0; i<EntityVector.size(); i++) {
+            for (UN j=i+1; j<EntityVector.size(); j++) {
+                EntityVector[i]->findAncestors(EntityVector[j]);
             }
         }
-        if (Vertices_->getNumEntities()>0) {
-            if (ShortEdges_->getNumEntities()>0) {
-                ShortEdges_->findAncestors(Vertices_);
-            }
-            if (StraightEdges_->getNumEntities()>0) {
-                StraightEdges_->findAncestors(Vertices_);
-            }
-            if (Edges_->getNumEntities()>0) {
-                Edges_->findAncestors(Vertices_);
-            }
-        }
-        //
-        AncestorVertices_ = Vertices_;
-        for (UN i=0; i<AncestorVertices_->getNumEntities(); i++) {
-            AncestorVertices_->getEntity(i)->setAncestorID(i);
-        }
-        //
+        
         UN itmp = 0;
-        EntitySetPtr tmpVertices;
-        for (UN i=0; i<ShortEdges_->getNumEntities(); i++) {
-            tmpVertices = ShortEdges_->getEntity(i)->getAncestors();
-            if (tmpVertices->getNumEntities() == 0) {
-                AncestorEdges_->addEntity(ShortEdges_->getEntity(i));
-                ShortEdges_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
-            }
-        }
-        for (UN i=0; i<StraightEdges_->getNumEntities(); i++) {
-            tmpVertices = StraightEdges_->getEntity(i)->getAncestors();
-            if (tmpVertices->getNumEntities() == 0) {
-                AncestorEdges_->addEntity(StraightEdges_->getEntity(i));
-                StraightEdges_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
-            }
-        }
-        for (UN i=0; i<Edges_->getNumEntities(); i++) {
-            tmpVertices = Edges_->getEntity(i)->getAncestors();
-            if (tmpVertices->getNumEntities() == 0) {
-                AncestorEdges_->addEntity(Edges_->getEntity(i));
-                Edges_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
-            }
-        }
-        //
-        itmp = 0;
-        EntitySetPtr tmpEdges;
-        for (UN i=0; i<Faces_->getNumEntities(); i++) {
-            tmpEdges = Faces_->getEntity(i)->getAncestors();
-            if (tmpEdges->getNumEntities() == 0) {
-                AncestorFaces_->addEntity(Faces_->getEntity(i));
-                Faces_->getEntity(i)->setAncestorID(itmp);
-                itmp++;
+        for (UN i=0; i<EntityVector.size(); i++) {
+            for (UN j=0; j<EntityVector[i]->getNumEntities(); j++) {
+                tmpAncestors = EntityVector[i]->getEntity(j)->getAncestors();
+                if (tmpAncestors->getNumEntities() == 0) {
+                    CoarseNodes_->addEntity(EntityVector[i]->getEntity(j));
+                }
             }
         }
         return 0;
@@ -524,21 +471,15 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorVertices() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getCoarseNodes() const
     {
-        return AncestorVertices_;
+        return CoarseNodes_;
     }
     
     template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorEdges() const
+    typename DDInterface<SC,LO,GO,NO>::EntitySetPtrConstVecPtr & DDInterface<SC,LO,GO,NO>::getEntityVector() const
     {
-        return AncestorEdges_;
-    }
-    
-    template <class SC,class LO,class GO,class NO>
-    typename DDInterface<SC,LO,GO,NO>::EntitySetConstPtr & DDInterface<SC,LO,GO,NO>::getAncestorFaces() const
-    {
-        return AncestorFaces_;
+        return EntityVector_;
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -746,11 +687,17 @@ namespace FROSch {
                                                           GOVecVec &componentsSubdomainsUnique)
     {
         // Hier herausfinden, ob Ecke, Kante oder Fläche
-        LOVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
+        UNVecPtr componentsMultiplicity(componentsSubdomainsUnique.size());
         GOVecVecPtr components(componentsSubdomainsUnique.size());
         GOVecVecPtr componentsGamma(componentsSubdomainsUnique.size());
+        UN maxMultiplicity = 0;
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
             componentsMultiplicity[i] = componentsSubdomainsUnique[i].size();
+            maxMultiplicity = std::max(maxMultiplicity,componentsMultiplicity[i]);
+        }
+        EntityVector_ = EntitySetPtrVecPtr(maxMultiplicity);
+        for (UN i=0; i<maxMultiplicity; i++) {
+            EntityVector_[i].reset(new EntitySet<SC,LO,GO,NO>(DefaultType));
         }
         
         typename GOVecVec::iterator classIterator;
@@ -762,8 +709,8 @@ namespace FROSch {
         
         LO tmp1 = 0;
         GO *tmp2 = NULL;
-        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > volume(new InterfaceEntity<SC,LO,GO,NO>(VolumeType,DofsPerNode_,tmp1,tmp2));
-        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > surface(new InterfaceEntity<SC,LO,GO,NO>(SurfaceType,DofsPerNode_,tmp1,tmp2));
+        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interior(new InterfaceEntity<SC,LO,GO,NO>(InteriorType,DofsPerNode_,tmp1,tmp2));
+        Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > interface(new InterfaceEntity<SC,LO,GO,NO>(InterfaceType,DofsPerNode_,tmp1,tmp2));
         for (LO i=0; i<NumMyNodes_; i++) {
             if (componentsMultiplicity[localComponentIndices[i]] == 1) {
                 LO nodeIDI = volume->getNumNodes();
@@ -777,12 +724,11 @@ namespace FROSch {
                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
                     dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
                 }
-                volume->addNode(nodeIDI,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsI,dofsLocal,dofsGlobal);
-            }
-            else {
+                interior->addNode(nodeIDI,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsI,dofsLocal,dofsGlobal);
+            } else {
                 LO nodeIDGamma = surface->getNumNodes();
                 LO nodeIDLocal = i;
-                GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << nodeIDGlobal << std::endl;
+                GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
                 LOVecPtr dofsGamma(DofsPerNode_);
                 LOVecPtr dofsLocal(DofsPerNode_);
                 GOVecPtr dofsGlobal(DofsPerNode_);
@@ -791,14 +737,14 @@ namespace FROSch {
                     dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
                     dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
                 }
-                surface->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
+                interface->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
 
                 components[localComponentIndices[i]].push_back(i);
                 componentsGamma[localComponentIndices[i]].push_back(surface->getNumNodes()-1);
             }
         }
-        Interior_->addEntity(volume);
-        Interface_->addEntity(surface);
+        Interior_->addEntity(interior);
+        Interface_->addEntity(interface);
         
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
             Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
@@ -808,113 +754,24 @@ namespace FROSch {
             LOVecPtr dofsGamma(DofsPerNode_);
             LOVecPtr dofsLocal(DofsPerNode_);
             GOVecPtr dofsGlobal(DofsPerNode_);
-            switch (componentsMultiplicity[i]) {
-                case 1:
-                    break;
-                    
-                case 2:
-                    switch (components[i].size()) {
-                            
-                        case 0:
-                            
-                            break;
-                            
-                        case 1:
-                            
-                            nodeIDGamma = componentsGamma[i][0];
-                            nodeIDLocal = components[i][0];
-                            nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
-                            for (UN k=0; k<DofsPerNode_; k++) {
-                                dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                            }
-                            
-                            tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            tmpEntity->resetEntityType(VertexType);
-                            Vertices_->addEntity(tmpEntity);
-                            
-                            break;
-                            
-                        default:
-                            
-                            sortunique(components[i]);
-                            
-                            //
-                            for (UN j=0; j<components[i].size(); j++) {
-                                nodeIDGamma = componentsGamma[i][j];
-                                nodeIDLocal = components[i][j];
-                                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);  //cout << "face " << nodeIDGlobal << std::endl;
-                                for (UN k=0; k<DofsPerNode_; k++) {
-                                    dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                    dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                    dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                                }
-                                
-                                tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            }
-                            tmpEntity->resetEntityType(FaceType);
-                            Faces_->addEntity(tmpEntity);
-                            
-                            break;
-                    }
-                    break;
-                    
-                default:
-                    
-                    switch (components[i].size()) {
-                            
-                        case 0:
-                            
-                            break;
-                            
-                        case 1:
-                            
-                            nodeIDGamma = componentsGamma[i][0];
-                            nodeIDLocal = components[i][0];
-                            nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "vertex " << nodeIDGlobal << std::endl;
-                            for (UN k=0; k<DofsPerNode_; k++) {
-                                dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                            }
-                            
-                            tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            tmpEntity->resetEntityType(VertexType);
-                            Vertices_->addEntity(tmpEntity);
-                            
-                            break;
-                            
-                        default:
-                            
-                            sortunique(components[i]);
-                            
-                            for (UN j=0; j<components[i].size(); j++) {
-                                nodeIDGamma = componentsGamma[i][j];
-                                nodeIDLocal = components[i][j];
-                                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal); //cout << "edge " << nodeIDGlobal << std::endl;
-                                for (UN k=0; k<DofsPerNode_; k++) {
-                                    dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
-                                    dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
-                                    dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
-                                }
-                                
-                                tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
-                            }
-                            tmpEntity->resetEntityType(EdgeType);
-                            Edges_->addEntity(tmpEntity);
-                            
-                            break;
-                    }
-                    break;
+            
+            sortunique(components[i]);
+            
+            //
+            for (UN j=0; j<components[i].size(); j++) {
+                nodeIDGamma = componentsGamma[i][j];
+                nodeIDLocal = components[i][j];
+                nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
+                for (UN k=0; k<DofsPerNode_; k++) {
+                    dofsGamma[k] = DofsPerNode_*nodeIDGamma+k;
+                    dofsLocal[k] = DofsPerNode_*nodeIDLocal+k;
+                    dofsGlobal[k] = DofsPerNode_*nodeIDGlobal+k;
+                }
+                
+                tmpEntity->addNode(nodeIDGamma,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsGamma,dofsLocal,dofsGlobal);
             }
-        }
-        
-        // If Dimension_ == 2, then the faces are indeed edges and there are no faces
-        if (Dimension_ == 2) {
-            Edges_ = Faces_;
-            Edges_->resetEntityType(EdgeType);
-            Faces_.reset(new EntitySet<SC,LO,GO,NO>(FaceType));
+            tmpEntity->resetEntityType(DefaultType);
+            EntityVector_[componentsMultiplicity[i]]->addEntity(tmpEntity);
         }
 
         return 0;

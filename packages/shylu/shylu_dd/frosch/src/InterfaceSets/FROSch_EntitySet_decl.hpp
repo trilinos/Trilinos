@@ -93,12 +93,14 @@ namespace FROSch {
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix, int pID);
         
-        InterfaceEntityPtrVecPtr sortOutVertices();
+        int flagNodes();
         
-        InterfaceEntityPtrVecPtr sortOutShortEdges();
+        int flagShortEntities();
         
-        InterfaceEntityPtrVecPtr sortOutStraightEdges(UN dimension,
-                                                      MultiVectorPtr &nodeList);
+        int flagStraightEntities(UN dimension,
+                                 MultiVectorPtr &nodeList);
+        
+        InterfaceEntityPtrVecPtr sortOutEntities(EntityFlag flag);
         
         int removeEntity(UN iD);
         
