@@ -268,7 +268,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
     // The hard case: Two graphs   
 
     // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
-    // FIXME: This makes an importer.  DO NOT WANT
     // Migrate data to the owned graph
     doOwnedPlusSharedToOwned(Tpetra::ADD);
 
