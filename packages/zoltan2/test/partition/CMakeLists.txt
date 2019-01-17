@@ -21,15 +21,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 # MultiJagged Tests
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    mj_int_coordinates
-    SOURCES mj_int_coordinates.cpp
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-
-# MultiJagged Tests
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
     mjTest
     SOURCES MultiJaggedTest.cpp
     NUM_MPI_PROCS 4
