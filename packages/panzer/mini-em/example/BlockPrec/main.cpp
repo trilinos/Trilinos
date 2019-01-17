@@ -694,6 +694,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
   // Output timer data
   if (use_stacked_timer) {
+    stacked_timer->stop("Mini-EM");
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);

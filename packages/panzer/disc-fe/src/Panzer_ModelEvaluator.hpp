@@ -264,6 +264,7 @@ public:
   { responseLibrary_->buildResponseEvaluators(physicsBlocks,eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
     require_in_args_refresh_ = true;
     require_out_args_refresh_ = true;
+    this->resetDefaultBase();
 
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
@@ -286,6 +287,7 @@ public:
   { responseLibrary_->buildResponseEvaluators(physicsBlocks,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
     require_in_args_refresh_ = true;
     require_out_args_refresh_ = true;
+    this->resetDefaultBase();
 
     typedef Thyra::ModelEvaluatorBase MEB;
     MEB::OutArgsSetup<Scalar> outArgs;
@@ -777,6 +779,7 @@ addResponse(const std::string & responseName,
 
    require_in_args_refresh_ = true;
    require_out_args_refresh_ = true;
+   this->resetDefaultBase();
 
    return responses_.size()-1;
 }
