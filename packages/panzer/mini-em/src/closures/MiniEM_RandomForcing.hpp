@@ -31,7 +31,9 @@ public:
     RandomForcing(const std::string & name,
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
-                  const unsigned int & seed);
+                  const unsigned int & seed,
+                  const double & rangeMin,
+                  const double & rangeMax);
 
     void evaluateFields(typename Traits::EvalData d);
 
@@ -43,6 +45,7 @@ private:
   PHX::MDField<ScalarT,Cell,Point,Dim> current;
   PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
   int ir_degree, ir_index, ir_dim;
+  double rangeShift_, rangeMult_;
 };
 
 }

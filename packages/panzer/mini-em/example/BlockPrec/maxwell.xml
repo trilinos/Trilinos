@@ -111,7 +111,10 @@
     <!-- Note: 1/dt is added at runtime -->
     <ParameterList name="electromagnetics">
       <ParameterList name="CURRENT">
-        <Parameter name="Type" type="string" value="GAUSSIAN PULSE"/>
+        <Parameter name="Type" type="string" value="RANDOM"/>
+        <Parameter name="seed" type="unsigned int" value="0"/>
+        <Parameter name="range min" type="double" value="0"/>
+        <Parameter name="range max" type="double" value="1"/>
       </ParameterList>
       <!-- Permittivity -->
       <ParameterList name="epsilon">
