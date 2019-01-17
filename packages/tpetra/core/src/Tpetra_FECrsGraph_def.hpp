@@ -185,17 +185,12 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     size_t numOwnedNonZeros = ownedPlusSharedGraph.row_map[numOwnedRows];
 
     // Build the inactive guy
-    // FIME: Shouldn't have to do this in the constructor as well
-    //    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedGraph,ownedRowMap,this->getColmap(),domainMap_,rangeMap_));
     // NOTE: We can't use the local_graph_type constructor, because it does not allow us to provide an importer
     inactiveCrsGraph_->replaceColMap(this->getColMap());
     inactiveCrsGraph_->setAllIndices(Kokkos::subview(ownedPlusSharedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1)),
                                      Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros)));
-    // FIXME: We do NOT want the exporter from this.  Right now I assume range == row, but this needs to be relaxed
+    // This will generate an exporter if we need one.
     inactiveCrsGraph_->expertStaticFillComplete(domainMap_,rangeMap_,this->getImporter(),Teuchos::null);
-
-#warning "Tpetra::FECrsGraph's implementation is not complete with USE_UNALIASED_MEMORY unset"
-
 #endif
   }
 }//end doOverlapToLocal
