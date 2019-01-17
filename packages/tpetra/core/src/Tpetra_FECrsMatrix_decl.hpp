@@ -203,23 +203,10 @@ public:
     void globalAssemble () {endFill();}
 
     //! Migrates data to the owned mode
-    void endFill() {
-      if(*activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-        doOwnedPlusSharedToOwned(Tpetra::ADD);
-        switchActiveCrsMatrix();
-      }
-      else
-        throw std::runtime_error("FECrsMatrix: Local CrsMatrix already active.  Cannot endFill()");
-    }
+    void endFill();
 
     //! Activates the owned+shared mode for assembly
-    void beginFill()  {
-      // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
-      // like one should expect to do in a rational universe, should not cause an error.
-      if(*activeCrsMatrix_ == FE_ACTIVE_OWNED) {
-        switchActiveCrsMatrix();
-      }
-    }
+    void beginFill();
 
   protected:
     /// \brief Migrate data from the owned+shared to the owned matrix

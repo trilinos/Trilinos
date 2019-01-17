@@ -109,7 +109,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
     inactiveCrsMatrix_->doExport(*this,*this->getGraph()->getImporter(),CM);
+    inactiveCrsMatrix_->fillComplete();
   }
+  this->fillComplete();
 }//end doOverlapToLocal
 
 
@@ -130,6 +132,29 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsMatr
   this->swap(*inactiveCrsMatrix_);
 
 }//end switchActiveCrsMatrix
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endFill() {
+  if(*activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+    doOwnedPlusSharedToOwned(Tpetra::ADD);
+    switchActiveCrsMatrix();
+  }
+  else
+    throw std::runtime_error("FECrsMatrix: Local CrsMatrix already active.  Cannot endFill()");
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginFill()  {
+  // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
+  // like one should expect to do in a rational universe, should not cause an error.
+  if(*activeCrsMatrix_ == FE_ACTIVE_OWNED) {
+        switchActiveCrsMatrix();
+  }
+  this->resumeFill();
+}
+
+
 
 
 }  // end namespace Tpetra
