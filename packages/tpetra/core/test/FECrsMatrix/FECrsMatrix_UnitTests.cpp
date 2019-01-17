@@ -68,12 +68,9 @@ using Teuchos::CONJ_TRANS;
 using std::endl;
 typedef Tpetra::global_size_t GST;
 
-template<class Scalar, class LO, class GO, class Node>
-bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g1, Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g2) {
+template<class Scalar, class LO, class GO, class Node, class TOLERANCE >
+bool compare_final_matrix_structure_impl(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g1, Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g2, TOLERANCE tol) {
   using std::endl;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-  double errorTolSlack = 1.0e+2;
-  const Mag tol = errorTolSlack * Teuchos::ScalarTraits<Scalar>::eps();
  
   if (!g1.isFillComplete() || !g2.isFillComplete()) {out<<"Compare: FillComplete failed"<<endl;return false;}
   if (!g1.getRangeMap()->isSameAs(*g2.getRangeMap())) {out<<"Compare: RangeMap failed"<<endl;return false;}
@@ -81,14 +78,14 @@ bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix
   if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;return false;}
   if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
 
-  auto rowptr1 = g1.getLocalMatrix().row_map;
-  auto rowptr2 = g2.getLocalMatrix().row_map;
+  auto rowptr1 = g1.getLocalMatrix().graph.row_map;
+  auto rowptr2 = g2.getLocalMatrix().graph.row_map;
 
-  auto colind1 = g1.getLocalMatrix().entries;
-  auto colind2 = g2.getLocalMatrix().entries;
+  auto colind1 = g1.getLocalMatrix().graph.entries;
+  auto colind2 = g2.getLocalMatrix().graph.entries;
 
-  auto values1 = g1.getLocalMatrix().val;
-  auto values2 = g2.getLocalMatrix().val;
+  auto values1 = g1.getLocalMatrix().values;
+  auto values2 = g2.getLocalMatrix().values;
 
   if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
   if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed"<<endl;return false;}      
@@ -106,6 +103,33 @@ bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix
 
   return true;
 }
+
+
+template<class Scalar, class LO, class GO, class Node>
+struct compare {
+  static bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g1, Tpetra::CrsMatrix<Scalar,LO,GO,Node> & g2){ 
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    double errorTolSlack = 1.0e+2;
+    const Mag tol = errorTolSlack * Teuchos::ScalarTraits<Scalar>::eps();
+    return compare_final_matrix_structure_impl(out,g1,g2,tol);
+  }
+};
+
+
+template<class LO, class GO, class Node>
+struct compare<int,LO,GO,Node> {
+  static bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<int,LO,GO,Node> & g1, Tpetra::CrsMatrix<int,LO,GO,Node> & g2) {
+    return compare_final_matrix_structure_impl(out,g1,g2,0);
+  }
+};
+
+template<class LO, class GO, class Node>
+struct compare<long long,LO,GO,Node> {
+  static bool compare_final_matrix_structure(Teuchos::FancyOStream &out,Tpetra::CrsMatrix<long long,LO,GO,Node> & g1, Tpetra::CrsMatrix<long long,LO,GO,Node> & g2) {
+    return compare_final_matrix_structure_impl(out,g1,g2,0);
+  }
+};
+
 
 template<class LO, class GO, class Node>
 class GraphPack {
@@ -223,7 +247,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
 
-#ifdef CRSGRAPH_ACTUALLY_WORKS
   // Make the matrix two ways
   FEMAT mat1(graph); // Here we use graph as a FECrsGraph
   CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
@@ -240,13 +263,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
   }
   mat1.endFill();
   mat2.fillComplete();
-#endif
 
-#ifdef CRSGRAPH_ACTUALLY_WORKS
-  success = compare_final_matrix_structure(out,mat1,mat2);
-#else
-  success = true;
-#endif
+  success = compare<Scalar,LO,GO,Node>::compare_final_matrix_structure(out,mat1,mat2);
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
