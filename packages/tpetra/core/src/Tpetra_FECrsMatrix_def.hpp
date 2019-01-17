@@ -45,7 +45,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Kokkos_Core.hpp" // DEBUG
 
-#define USE_UNALIASED_MEMORY
+//#define USE_UNALIASED_MEMORY
 
 
 namespace Tpetra {
@@ -93,15 +93,14 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
 #else
     size_t numOwnedVals = graph->getLocalGraph().entries.extent(0); // OwnedVals
     size_t numOwnedPlusSharedVals = graph->inactiveCrsGraph_->getLocalGraph().entries.extent(0); // OwnedVals
-    //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
-    printf("numOwnedVals = %d numOwnedPlusSharedValues = %d bigmatrix.size = %d\n",(int)numOwnedVals, (int)numOwnedPlusSharedVals,(int) myvals.extent(0));
+    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
+    //    printf("numOwnedVals = %d numOwnedPlusSharedValues = %d bigmatrix.size = %d\n",(int)numOwnedVals, (int)numOwnedPlusSharedVals,(int) myvals.extent(0));
 
     // DEBUG as per Tim - What if we use a copy
-    auto myview = Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals));
-    typename local_matrix_type::values_type myvals_copy("Copy",numOwnedVals);
-    Kokkos::deep_copy(myvals_copy,myview);
-  
-    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,myvals_copy));
+    //auto myview = Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals));
+    //typename local_matrix_type::values_type myvals_copy("Copy",numOwnedVals);
+    //Kokkos::deep_copy(myvals_copy,myview);
+    //    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,myview));
 
 #endif
   }
