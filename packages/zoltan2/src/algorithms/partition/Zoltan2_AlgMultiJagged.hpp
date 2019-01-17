@@ -99,9 +99,9 @@
 #define ZOLTAN2_ABS(x) ((x) >= 0 ? (x) : -(x))
 //imbalance calculation. Wreal / Wexpected - 1
 #define imbalanceOf(Wachieved, totalW, expectedRatio) \
-        (Wachieved) / ((totalW) * (expectedRatio)) - 1
+        double(Wachieved) / double((totalW) * (expectedRatio)) - 1
 #define imbalanceOf2(Wachieved, wExpected) \
-        (Wachieved) / (wExpected) - 1
+        double(Wachieved) / double(wExpected) - 1
 
 
 #define ZOLTAN2_ALGMULTIJAGGED_SWAP(a,b,temp) temp=(a);(a)=(b);(b)=temp;
@@ -817,7 +817,7 @@ private:
      */
     void mj_1D_part(
         mj_scalar_t *mj_current_dim_coords,
-        mj_scalar_t imbalanceTolerance,
+        double imbalanceTolerance,
         mj_part_t current_work_part,
         mj_part_t current_concurrent_num_parts,
         mj_scalar_t *current_cut_coordinates,
@@ -905,7 +905,7 @@ private:
         const mj_scalar_t &max_coordinate,
         const mj_scalar_t &min_coordinate,
         const mj_scalar_t &global_total_weight,
-        const mj_scalar_t &used_imbalance_tolerance,
+        const double &used_imbalance_tolerance,
         mj_scalar_t * current_global_part_weights,
         const mj_scalar_t * current_local_part_weights,
         const mj_scalar_t *current_part_target_weights,
@@ -1737,7 +1737,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
                 }
 
                 //used imbalance, it is always 0, as it is difficult to estimate a range.
-                mj_scalar_t used_imbalance = 0;
+                double used_imbalance = 0;
 
 
                 // Determine cut lines for k parts here.
@@ -2814,7 +2814,7 @@ template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
           typename mj_part_t>
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
     mj_scalar_t *mj_current_dim_coords,
-    mj_scalar_t used_imbalance_tolerance,
+    double used_imbalance_tolerance,
     mj_part_t current_work_part,
     mj_part_t current_concurrent_num_parts,
     mj_scalar_t *current_cut_coordinates,
@@ -3713,7 +3713,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                 const mj_scalar_t &max_coordinate,
                 const mj_scalar_t &min_coordinate,
                 const mj_scalar_t &global_total_weight,
-                const mj_scalar_t &used_imbalance_tolerance,
+                const double &used_imbalance_tolerance,
                 mj_scalar_t * current_global_part_weights,
                 const mj_scalar_t * current_local_part_weights,
                 const mj_scalar_t *current_part_target_weights,
@@ -3735,7 +3735,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
         //expected weight for part.
         mj_scalar_t expected_weight_in_part = 0;
         //imbalance for the left and right side of the cut.
-        mj_scalar_t imbalance_on_left = 0, imbalance_on_right = 0;
+        double imbalance_on_left = 0, imbalance_on_right = 0;
 
 
 #ifdef HAVE_ZOLTAN2_OMP
@@ -6293,7 +6293,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
 
                 //used imbalance, it is always 0, as it is difficult to
                 //estimate a range.
-                mj_scalar_t used_imbalance = 0;
+                double used_imbalance = 0;
 
 
                 // Determine cut lines for all concurrent parts parts here.
