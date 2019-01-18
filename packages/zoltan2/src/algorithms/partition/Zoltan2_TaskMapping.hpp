@@ -425,7 +425,7 @@ void getCoarsenedPartGraph(
       part_begins[ap] = i;
     }
 
-    std::vector<use_this_gno_t> part_neighbors(np);
+    std::vector<part_t> part_neighbors(np);
     std::vector<t_scalar_t> part_neighbor_weights(np, 0);
     std::vector<t_scalar_t> part_neighbor_weights_ordered(np);
 
@@ -455,7 +455,7 @@ void getCoarsenedPartGraph(
 
       //now get the part list.
       for (t_lno_t j = 0; j < num_neighbor_parts; ++j){
-        use_this_gno_t neighbor_part = part_neighbors[j];
+        part_t neighbor_part = part_neighbors[j];
         part_neighbor_weights_ordered[j] = part_neighbor_weights[neighbor_part];
         part_neighbor_weights[neighbor_part] = 0;
       }
@@ -475,9 +475,9 @@ void getCoarsenedPartGraph(
   }
   envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Coarsen");
 
-  std::vector<use_this_gno_t> part_indices(np);
+  std::vector<part_t> part_indices(np);
 
-  for (use_this_gno_t i = 0; i < np; ++i) part_indices[i] = i;
+  for (part_t i = 0; i < np; ++i) part_indices[i] = i;
 
   envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE directory update");
   directory.update(part_data.size(), &part_data[0], NULL, &user_data[0],
