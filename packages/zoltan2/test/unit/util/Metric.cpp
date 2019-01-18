@@ -97,7 +97,7 @@ template<class idInput_t> void runTestSuite(RCP<const Comm<int> > comm) {
   doTest<idInput_t>(comm, 10, 2, -1, false);
 }
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
   Tpetra::ScopeGuard tscope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
@@ -183,7 +183,7 @@ void evaluate_adapter_results<graph_idInput_t>(RCP<const Comm<int> > comm,
   int fail = 0;
   int rank = comm->getRank();
 
-  int total_edge_cut;
+  int total_edge_cut = -1;
   try{
     // TODO: the unweighted getTotalEdgeCut is an integer
     // maybe the API should be changed for this and other similar cases
@@ -197,7 +197,7 @@ void evaluate_adapter_results<graph_idInput_t>(RCP<const Comm<int> > comm,
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getTotalEdgeCut", 1);
 
-  int max_edge_cut;
+  int max_edge_cut = -1;
   try{
     max_edge_cut = static_cast<int>(metricObject->getMaxEdgeCut());
     if(rank == 0){
@@ -209,7 +209,7 @@ void evaluate_adapter_results<graph_idInput_t>(RCP<const Comm<int> > comm,
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getMaxEdgeCut", 1);
 
-  int total_messages;
+  int total_messages = -1;
   try{
     total_messages = static_cast<int>(metricObject->getTotalMessages());
     if(rank == 0){
@@ -221,7 +221,7 @@ void evaluate_adapter_results<graph_idInput_t>(RCP<const Comm<int> > comm,
   }
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getTotalMessages", 1);
 
-  int max_messages;
+  int max_messages = -1;
   try{
     max_messages = static_cast<int>(metricObject->getMaxMessages());
     if(rank == 0){
