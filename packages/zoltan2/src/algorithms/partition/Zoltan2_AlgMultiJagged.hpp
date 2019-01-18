@@ -6626,7 +6626,7 @@ public:
                         minimum_migration_imbalance(0.30),
                         mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),mj_premigration_option(0), min_coord_per_rank_for_premigration(32000),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
-    {std::cout << "KDDKDD adapter_scalar_t " << typeid(adapter_scalar_t).name() << " mj_scalar_t " << typeid(mj_scalar_t).name() << std::endl;}
+    {}
 
     ~Zoltan2_AlgMJ(){
       if (coordinate_ArrayRCP_holder != NULL){
