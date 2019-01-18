@@ -49,7 +49,7 @@
 namespace Teuchos {
 
 RCP<ParameterEntryValidator> BoolValidatorXMLConverter::convertXML(
-  const XMLObject& xmlObj,
+  const XMLObject& /* xmlObj */,
   const IDtoValidatorMap& /*validatorIDsMap*/) const
 {
   return boolParameterEntryValidator();
@@ -57,8 +57,8 @@ RCP<ParameterEntryValidator> BoolValidatorXMLConverter::convertXML(
 
 
 void BoolValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator,
-  XMLObject& xmlObj,
+  const RCP<const ParameterEntryValidator> /* validator */,
+  XMLObject& /* xmlObj */,
   const ValidatortoIDMap& /*validatorIDsMap*/) const
 {
   //RCP<const AnyNumberParameterEntryValidator> castedValidator =
