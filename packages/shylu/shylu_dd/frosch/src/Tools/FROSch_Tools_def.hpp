@@ -204,6 +204,11 @@ namespace FROSch {
         if(MyPID == 0)std::cout<<"ParameterList done\n";
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+       /* if(MyPID == 0)std::cout<<"--------Node ElementList------------\n";
+        B->describe(*fancy,Teuchos::VERB_EXTREME);
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"-------------------------------------\n";*/
         
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0)std::cout<<"Build Zoltan 2 Problem\n";
@@ -225,15 +230,21 @@ namespace FROSch {
         
         //------------------------------Build NodeRepMap-----------------------------
         
-        //TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        //if(MyPID == 0)std::cout<<"NodeElementList\n";
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"NodeElementList\n";
  
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"Importer\n";
+        //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
         
-        Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
+        Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),10));
+        BB->doImport(*B,*scatter,Xpetra::INSERT);
+        BB->fillComplete();
         
-        //TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        //if(MyPID == 0)std::cout<<"Importer\n";
+        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
+        if(MyPID == 0)std::cout<<"Importer2\n";
+        
         
         //--------------------Get Repeated Nodes Map------------------------
         //All Elemnts and neighboring on Proc
@@ -282,7 +293,8 @@ namespace FROSch {
         
         Teuchos::RCP<Xpetra::Map<LO,GO,NO> > RepeatedMap = Xpetra::MapFactory<LO,GO,NO>::Build(ReGraph->getColMap()->lib(),-1,repeatedIndices(),0,ReGraph->getColMap()->getComm());
         
-        //RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
+        
+        RepeatedMap->describe(*fancy,Teuchos::VERB_EXTREME);
         
         return RepeatedMap;
         

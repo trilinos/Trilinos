@@ -329,11 +329,11 @@ namespace FROSch {
         }
         
         DDInterface_->sortEntities(nodeList);
-        
         EntitySetPtr vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         
         interface = DDInterface_->getInterface();
         interior = DDInterface_->getInterior();
+
         
         // Check for interface
         if (interface->getNumEntities()==0) {
@@ -349,9 +349,8 @@ namespace FROSch {
                     this->IDofs_[blockId][this->DofsPerNode_[blockId]*i+k] = interior->getEntity(0)->getLocalDofID(i,k);
                 }
             }
-            
+
             this->InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>());
-            
             if (useForCoarseSpace && (useVertexTranslations||useShortEdgeTranslations||useShortEdgeRotations||useStraightEdgeTranslations||useStraightEdgeRotations||useEdgeTranslations||useEdgeRotations||useFaceTranslations||useFaceRotations)) {
                 
                 ////////////////////////////////
@@ -371,19 +370,21 @@ namespace FROSch {
                 if (useShortEdgeTranslations || useShortEdgeRotations) {
                     shortEdges = DDInterface_->getShortEdges();
                     shortEdges->buildEntityMap(nodesMap);
-                    
                     if (useShortEdgeTranslations) {
                         MultiVectorPtrVecPtr translations = this->computeTranslations(blockId,shortEdges);
                         for (UN i=0; i<translations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdges->getEntityMap(),translations[i]);
                         }
                     }
+
                     if (useShortEdgeRotations) {
                         MultiVectorPtrVecPtr rotations = this->computeRotations(blockId,dimension,nodeList,shortEdges);
                         for (UN i=0; i<rotations.size(); i++) {
                             this->InterfaceCoarseSpaces_[blockId]->addSubspace(shortEdges->getEntityMap(),rotations[i]);
                         }
                     }
+                   
+
                 }
                 // StraightEdges
                 if (useStraightEdgeTranslations || useStraightEdgeRotations) {
@@ -403,6 +404,7 @@ namespace FROSch {
                         }
                     }
                 }
+
                 // Edges
                 if (useEdgeTranslations || useEdgeRotations) {
                     edges = DDInterface_->getEdges();
@@ -421,6 +423,7 @@ namespace FROSch {
                         }
                     }
                 }
+
                 // Faces
                 if (useFaceTranslations || useFaceRotations) {
                     faces = DDInterface_->getFaces();
@@ -439,6 +442,7 @@ namespace FROSch {
                         }
                     }
                 }
+
                 
                 this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
                 
@@ -537,19 +541,43 @@ namespace FROSch {
                 Teuchos::Array<GO> entries;
                 std::map<GO,int> rep;
                 
+                
                 if(dimension == 2){
                     InterfaceEntityPtrVec EdgeEntityVec = edges->getEntityVector();
                     GO SizeEdge = EdgeEntityVec.size();
-                    edgesSubs.resize(SizeEdge);
-                    for(GO i = 0;i<SizeEdge;i++){
-                        edgesSubs[i] = EdgeEntityVec[i]->getSubdomainsVector();
-                        for(int j = 0;j<edgesSubs[i].size();j++) rep.insert(std::pair<GO,int>(edgesSubs.at(i).at(j),edges->getEntityMap()->getComm()->getRank()));
+                    if(SizeEdge>0){
+                        edgesSubs.resize(SizeEdge);
+                        for(GO i = 0;i<SizeEdge;i++){
+                            edgesSubs[i] = EdgeEntityVec[i]->getSubdomainsVector();
+                            for(int j = 0;j<edgesSubs[i].size();j++) rep.insert(std::pair<GO,int>(edgesSubs.at(i).at(j),edges->getEntityMap()->getComm()->getRank()));
+                        }
+                        for (auto& x: rep) {
+                            entries.push_back(x.first);
+                        }
                     }
-                    for (auto& x: rep) {
-                        entries.push_back(x.first);
+                    
+                    InterfaceEntityPtrVec SEdgeEntityVec = shortEdges->getEntityVector();
+                    GO SizeSEdge = SEdgeEntityVec.size();
+                    if(SizeSEdge>0){
+                        shortSubs.resize(SizeSEdge);
+                        for(GO i = 0;i<SizeSEdge;i++){
+                            shortSubs[i] = SEdgeEntityVec[i]->getSubdomainsVector();
+                        for(int j = 0;j<shortSubs[i].size();j++) rep.insert(std::pair<GO,int>(shortSubs.at(i).at(j),shortEdges->getEntityMap()->getComm()->getRank()));
+                        }
+                        for (auto& x: rep) {
+                            entries.push_back(x.first);
+                        }
+                    }
+                    if(SizeSEdge==0 && SizeEdge == 0){
+                        GO a  =shortEdges->getEntityMap()->getComm()->getRank();
+                        rep.insert(std::pair<GO,int>(a,shortEdges->getEntityMap()->getComm()->getRank()));
+                        for (auto& x: rep) {
+                            entries.push_back(x.first);
+                        }
+                        
                     }
                 }else if (dimension == 3){
-                    //std::cout<<edges->getEntityMap()->getComm()->getRank()<<" "<<entries;
+                    
                     // std::cout<<std::endl;
                     InterfaceEntityPtrVec FaceEntityVec = faces->getEntityVector();
                     GO SizeFace = FaceEntityVec.size();
@@ -575,7 +603,6 @@ namespace FROSch {
                     col_vec.at(i) =i;
                 }
                 Teuchos::ArrayView<GO> cols(col_vec);
-                
                 this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
                 this->GraphEntriesList_->insertGlobalValues(edges->getEntityMap()->getComm()->getRank(),cols,entries());
                 this->GraphEntriesList_->fillComplete();
@@ -591,5 +618,6 @@ namespace FROSch {
         return 0;
     }    
 }
+
 
 #endif
