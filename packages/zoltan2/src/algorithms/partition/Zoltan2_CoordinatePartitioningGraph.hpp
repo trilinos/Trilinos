@@ -116,8 +116,8 @@ public:
             maxHashIndices = new part_t [dim];
             gridIndices = new std::vector <part_t> ();
             for (int i = 0; i < dim; ++i){
-                lmins[i] = coord_t(lmi[i]);
-                lmaxs[i] = coord_t(lma[i]);
+                lmins[i] = static_cast<coord_t>(lmi[i]);
+                lmaxs[i] = static_cast<coord_t>(lma[i]);
             }
         }
 
@@ -212,8 +212,8 @@ public:
           if (pointdim != this->dim) 
             throw std::logic_error("dim of point must match dim of box");
           for (int i = 0; i < pointdim; i++) {
-            if (coord_t(point[i]) < this->lmins[i]) return false;
-            if (coord_t(point[i]) > this->lmaxs[i]) return false;
+            if (static_cast<coord_t>(point[i]) < this->lmins[i]) return false;
+            if (static_cast<coord_t>(point[i]) > this->lmaxs[i]) return false;
           }
           return true;
         }
@@ -228,14 +228,14 @@ public:
           // Check for at least partial overlap
           bool found = true;
           for (int i = 0; i < cdim; i++) {
-            if (!((coord_t(lower[i]) >= this->lmins[i] && 
-                   coord_t(lower[i]) <= this->lmaxs[i]) 
+            if (!((static_cast<coord_t>(lower[i]) >= this->lmins[i] && 
+                   static_cast<coord_t>(lower[i]) <= this->lmaxs[i]) 
                    // lower i-coordinate in the box
-               || (coord_t(upper[i]) >= this->lmins[i] && 
-                   coord_t(upper[i]) <= this->lmaxs[i]) 
+               || (static_cast<coord_t>(upper[i]) >= this->lmins[i] && 
+                   static_cast<coord_t>(upper[i]) <= this->lmaxs[i]) 
                    // upper i-coordinate in the box
-               || (coord_t(lower[i]) <  this->lmins[i] && 
-                   coord_t(upper[i]) >  this->lmaxs[i]))) {
+               || (static_cast<coord_t>(lower[i]) <  this->lmins[i] && 
+                   static_cast<coord_t>(upper[i]) >  this->lmaxs[i]))) {
                    // i-coordinates straddle the box
               found = false;
               break;
@@ -372,10 +372,10 @@ public:
         template <typename scalar_t>
         void updateMinMax (scalar_t newBoundary, int isMax, int dimInd){
             if (isMax){
-                lmaxs[dimInd] = coord_t(newBoundary);
+                lmaxs[dimInd] = static_cast<coord_t>(newBoundary);
             }
             else {
-                lmins[dimInd] = coord_t(newBoundary);
+                lmins[dimInd] = static_cast<coord_t>(newBoundary);
             }
         }
 

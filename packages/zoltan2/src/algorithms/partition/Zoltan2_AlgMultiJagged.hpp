@@ -99,9 +99,9 @@
 #define ZOLTAN2_ABS(x) ((x) >= 0 ? (x) : -(x))
 //imbalance calculation. Wreal / Wexpected - 1
 #define imbalanceOf(Wachieved, totalW, expectedRatio) \
-        double(Wachieved) / double((totalW) * (expectedRatio)) - 1
+        (Wachieved) / ((totalW) * (expectedRatio)) - 1
 #define imbalanceOf2(Wachieved, wExpected) \
-        double(Wachieved) / double(wExpected) - 1
+        (Wachieved) / (wExpected) - 1
 
 
 #define ZOLTAN2_ALGMULTIJAGGED_SWAP(a,b,temp) temp=(a);(a)=(b);(b)=temp;
@@ -6626,7 +6626,8 @@ public:
                         minimum_migration_imbalance(0.30),
                         mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),mj_premigration_option(0), min_coord_per_rank_for_premigration(32000),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
-    {}
+    {std::cout << "KDDKDD adapter_scalar_t " << typeid(adapter_scalar_t).name() << " mj_scalar_t " << typeid(mj_scalar_t).name() << std::endl;}
+
     ~Zoltan2_AlgMJ(){
       if (coordinate_ArrayRCP_holder != NULL){
         delete [] this->coordinate_ArrayRCP_holder;
