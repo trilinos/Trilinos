@@ -58,8 +58,10 @@
 #include "BelosRCGSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
 
+#ifdef HAVE_BELOS_TPETRA
 # include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
+#endif
 
 namespace Belos {
 namespace Details {
@@ -89,12 +91,12 @@ void registerSolverFactory() {
 
 // Epetra = on, Tpetra = on
 #if defined(HAVE_BELOS_EPETRA) && defined(HAVE_BELOS_TPETRA)
-  #define BELOS_XPETRA_CALL(INSTMACRO) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-  #define BELOS_XPETRA_CALL(INSTMACRO) INSTMACRO(double, int, int, EpetraNode)
-# endif
-
+  #define BELOS_XPETRA_CALL(INSTMACRO) INSTMACRO(double, int, int, EpetraNode) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
+# else
+  #define BELOS_XPETRA_CALL(INSTMACRO) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
+#endif
 #endif
 
 // Epetra = off, Tpetra = on

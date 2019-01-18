@@ -162,7 +162,8 @@ advanceTime(const Scalar timeFinal)
     assign(dgdp_.ptr(), Scalar(0.0));
 
   // Add in initial condition term = (dx/dp^T(0))*(df/dx_dot^T(0))*y(0)
-  if (ic_depends_on_p_) {
+  // If dxdp_init_ is null, assume it is zero
+  if (ic_depends_on_p_ && dxdp_init_ != Teuchos::null) {
     RCP<const SolutionState<Scalar> > adjoint_state =
       adjoint_solution_history->getCurrentState();
     RCP<const VectorBase<Scalar> > adjoint_x =

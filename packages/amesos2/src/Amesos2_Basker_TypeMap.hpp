@@ -67,7 +67,6 @@
 #include "Amesos2_TypeMap.hpp"
 
 
-
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 /* ==================== Conversion ==================== */

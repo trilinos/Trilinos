@@ -51,6 +51,7 @@ using namespace KokkosBatched;
 int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv); 
 
+#if !defined(__CUDA_ARCH__)
   typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
   const bool detail = false;
 
@@ -78,11 +79,11 @@ int main (int argc, char *argv[]) {
       Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>( 3,  4,  2, 25, 2);
       Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>(44, 63, 15,  4, 1);
       Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>( 2,  2, 15,  3, 3);
-      Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>( 1,  1,  2, 63, 8);
       
-      for (int nrhs=1;nrhs<=33;++nrhs)
+      for (int nrhs=1;nrhs<=33;++nrhs) 
         Test::run<HostSpaceType,VectorType,VectorLength,RangeTagOper>(2, 2, 15, 3, nrhs);
     }
+
     std::cout << " Unit Test::Range::Vector :: End\n";
   }
   
@@ -105,6 +106,7 @@ int main (int argc, char *argv[]) {
   } 
   std::cout << " Perf Test::Vector End\n";
 
+#endif
   Kokkos::finalize();
 
   return 0;

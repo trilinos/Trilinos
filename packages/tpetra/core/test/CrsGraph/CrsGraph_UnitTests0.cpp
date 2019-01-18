@@ -64,7 +64,6 @@ namespace {
     return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);
   }
 
-  using Tpetra::TestingUtilities::getDefaultComm;
   using Tpetra::DynamicProfile;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
@@ -138,7 +137,7 @@ namespace {
     using Teuchos::REDUCE_MIN;
     using map_type = Tpetra::Map<LO, GO, Node>;
     using graph_type = Tpetra::CrsGraph<LO, GO, Node>;
-    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
 
@@ -213,7 +212,7 @@ namespace {
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
@@ -247,7 +246,7 @@ namespace {
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     // create a Map with numLocal entries per node
     const int numLocal = 10;
     const GO indexBase = 0;
@@ -348,7 +347,7 @@ namespace {
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
@@ -396,7 +395,7 @@ namespace {
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
     const int numProcs = comm->getSize();
     if (numProcs < 2) return;
@@ -503,7 +502,7 @@ namespace {
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank();
     // create a Map, one row per processor
     const size_t numLocal = 1;
@@ -538,7 +537,7 @@ namespace {
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int numProcs = size(*comm);
     const int myRank = comm->getRank();
     // create the empty graph
@@ -758,7 +757,7 @@ namespace {
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     int numProcs = size(*comm);
     // create a Map
     const size_t numLocal = 10;
@@ -830,7 +829,7 @@ namespace {
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int numProcs = comm->getSize();
     // create a Map, three rows per processor
     const size_t numLocal = 3;
@@ -911,7 +910,7 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     // Get a communicator and Kokkos Node instance
-    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
 
@@ -1082,7 +1081,7 @@ namespace {
                 TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
 
                 out << "On Proc 0:" << endl;
-                Teuchos::OSTab tab2 (out);
+                Teuchos::OSTab tab5 (out);
                 out << "numinds: " << numinds << endl
                     << "inds(0,numinds): " << inds (0, numinds) << endl
                     << "numunique: " << numunique << endl
@@ -1127,7 +1126,7 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const int myRank = comm->getRank ();
     const int numProcs = comm->getSize ();
     out << "Number of processes: " << numProcs << endl;
@@ -1140,8 +1139,7 @@ namespace {
     RCP<const Map1> map1 = rcp (new Map1 (numGlobal,0,comm));
     out << "Creating CrsGraph" << endl;
     RCP<Graph1>       A1 = createCrsGraph(map1,3);
-    out << "Creating target Node" << endl;
-    RCP<N2> n2 = Tpetra::TestingUtilities::getNode<N2> ();
+    RCP<N2> n2; // this can be null; we keep it to help type deduction
 
     // empty source, not filled
 

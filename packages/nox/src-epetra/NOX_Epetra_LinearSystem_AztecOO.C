@@ -880,7 +880,7 @@ bool NOX::Epetra::LinearSystemAztecOO::checkPreconditionerValidity()
 //***********************************************************************
 bool NOX::Epetra::LinearSystemAztecOO::
 createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
-             bool recomputeGraph) const
+             bool /* recomputeGraph */) const
 {
   double startTime = timer.WallTime();
 
@@ -1016,6 +1016,7 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
 
   //check to see if it is a VBR matrix
   if (precType == EpetraVbrMatrix) {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
     Epetra_VbrMatrix* vbr = 0;
 
@@ -1044,6 +1045,10 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     err = ifpackPreconditionerPtr->Factor();
     if (err != 0)
       precError(err, "createIfpackPreconditioner()", "Ifpack", "Factor");
+#else
+    throwError("createIfpackPreconditioner",
+        "Epetra_VbrMatrix is not supported for long long ordinal type.");
+#endif
 
   }
 
@@ -1361,10 +1366,12 @@ NOX::Epetra::LinearSystemAztecOO::getOperatorType(const Epetra_Operator& Op)
   if (testOperator != 0)
     return EpetraCrsMatrix;
 
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   // Is it an Epetra_VbrMatrix ?
   testOperator = dynamic_cast<const Epetra_VbrMatrix*>(&Op);
   if (testOperator != 0)
     return EpetraVbrMatrix;
+#endif
 
   // Is it an Epetra_RowMatrix ?
   testOperator = dynamic_cast<const Epetra_RowMatrix*>(&Op);

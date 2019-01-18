@@ -27,27 +27,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND floatAndDoubleEnabled)
     STANDARD_PASS_OUTPUT
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_double_double
-    SOURCES MultiPrecExample_double_double
-    ARGS "--matrix-file=bcsstk14.hb --param-file=double_double.xml"
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_double
-    SOURCES MultiPrecExample_double
-    ARGS "--matrix-file=bcsstk14.hb --param-file=double.xml"
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_double_float
-    SOURCES MultiPrecExample_double_float
-    ARGS "--matrix-file=bcsstk14.hb --param-file=double_float.xml"
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-  )
-
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecInputMatrix
       SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
       SOURCE_FILES bcsstk14.hb
@@ -64,8 +43,7 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND floatAndDoubleEnabled)
       EXEDEPS IRTR_double
       )
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MultiPrecInputStack
-      SOURCE_FILES double.xml double_float.xml double_double.xml qd.xml qd_dd.xml qd_dd_double.xml
-                   irtr_double.xml irtr_qd.xml 
+      SOURCE_FILES irtr_double.xml irtr_qd.xml 
                    run_all_irtr.csh
       EXEDEPS IRTR_double
       )
@@ -73,20 +51,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND floatAndDoubleEnabled)
   # This enable requires the QD TPL for Scalar = qd_real.  qd_real
   # must also be in the list of ETI Scalar types, if ETI is enabled.
   IF (Tpetra_ENABLE_QD AND (NOT TpetraCore_ENABLE_EXPLICIT_INSTANTIATION OR Tpetra_INST_QD_REAL))
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd
-      SOURCES MultiPrecExample_qd
-      ARGS "--matrix-file=bcsstk14.hb --param-file=qd.xml"
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-    )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd
-      SOURCES MultiPrecExample_qd_dd
-      ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd.xml"
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-    )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(IRTR_qd
       SOURCES IRTR_qd
@@ -98,13 +62,6 @@ IF (${PROJECT_NAME}_ENABLE_CXX11 AND floatAndDoubleEnabled)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(IRTR_qd_double
       SOURCES IRTR_qd_double
       ARGS "--matrix-file=bcsstk14.hb --param-file=irtr_qd.xml"
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-    )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(MultiPrecExample_qd_dd_double
-      SOURCES MultiPrecExample_qd_dd_double
-      ARGS "--matrix-file=bcsstk14.hb --param-file=qd_dd_double.xml"
       COMM serial mpi
       STANDARD_PASS_OUTPUT
     )

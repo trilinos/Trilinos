@@ -45,6 +45,7 @@
 #include <TpetraCore_ETIHelperMacros.h>
 #include <Tpetra_Details_FixedHashTable.hpp>
 #include <Kokkos_Core.hpp>
+#include "Teuchos_OrdinalTraits.hpp"
 #include <cstdlib> // atexit
 
 namespace { // (anonymous)

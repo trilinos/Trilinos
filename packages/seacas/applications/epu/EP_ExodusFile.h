@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010 National Technology & Engineering Solutions
+ * Copyright(C) 2010-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,14 +47,17 @@ namespace Excn {
     explicit ExodusFile(int processor);
     ~ExodusFile();
 
-    static bool initialize(const SystemInterface &si, int start_part, int part_count);
+    static bool initialize(const SystemInterface &si, int start_part, int part_count, int cycle,
+                           bool joining_subcycle);
     static bool create_output(const SystemInterface &si, int cycle);
     static void close_all();
 
-    static int output();
-    static int io_word_size() { return ioWordSize_; }
-    operator int() const;
-    static int max_name_length() { return maximumNameLength_; }
+    static int    output();
+    static int    io_word_size() { return ioWordSize_; }
+                  operator int() const;
+    static int    max_name_length() { return maximumNameLength_; }
+    static size_t get_free_descriptor_count();
+    static void   unlink_temporary_files();
 
   private:
     int                             myProcessor_;

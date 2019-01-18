@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,7 +49,7 @@ void make_subgraph(struct vtx_data **graph,      /* graph data structure */
                    int *             loc2glob,   /* mapping from subgraph to graph numbering */
                    int *             degree,     /* degrees of vertices in graph */
                    int               using_ewgts /* are edge weights being used? */
-                   )
+)
 {
   struct vtx_data *subgptr = NULL; /* loops through subgraph */
   float *          fptr    = NULL; /* loops through edge weights */
@@ -113,7 +113,7 @@ void remake_graph(struct vtx_data **subgraph,   /* subgraph data structure */
                   int *             loc2glob,   /* mapping from subgraph to graph numbering */
                   int *             degree,     /* degrees of vertices in graph */
                   int               using_ewgts /* are edge weights being used? */
-                  )
+)
 {
   struct vtx_data *subgptr; /* loops through subgraph */
   float *          fptr;    /* loops through edge weights */

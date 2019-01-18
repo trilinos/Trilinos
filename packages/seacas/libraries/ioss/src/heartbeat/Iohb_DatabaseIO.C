@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -165,11 +165,7 @@ namespace Iohb {
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
-      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), timeLastFlush_(0),
-        flushInterval_(10), logStream(nullptr), layout_(nullptr), legend_(nullptr),
-        tsFormat("[%H:%M:%S]"), separator_(", "), precision_(5), fieldWidth_(0), showLabels(false),
-        showLegend(true), appendOutput(false), addTimeField(false), initialized_(false),
-        streamNeedsDelete(false), fileFormat(DEFAULT)
+      : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {
     timeLastFlush_ = time(nullptr);
     dbState        = Ioss::STATE_UNKNOWN;
@@ -184,7 +180,7 @@ namespace Iohb {
     }
   }
 
-  void DatabaseIO::initialize(const Ioss::Region * /*region*/) const
+  void DatabaseIO::initialize() const
   {
     if (!initialized_) {
       assert(layout_ == nullptr);
@@ -290,10 +286,10 @@ namespace Iohb {
 
   bool DatabaseIO::end__(Ioss::State /* state */) { return true; }
 
-  bool DatabaseIO::begin_state__(Ioss::Region *region, int /* state */, double time)
+  bool DatabaseIO::begin_state__(int /* state */, double time)
   {
     // If this is the first time, open the output stream and see if user wants a legend
-    initialize(region);
+    initialize();
 
     layout_ = new Layout(showLabels, precision_, separator_, fieldWidth_);
     if (tsFormat != "") {
@@ -309,9 +305,14 @@ namespace Iohb {
     return true;
   }
 
-  void DatabaseIO::flush_database__() const { logStream->flush(); }
+  void DatabaseIO::flush_database__() const
+  {
+    if (myProcessor == 0) {
+      logStream->flush();
+    }
+  }
 
-  bool DatabaseIO::end_state__(Ioss::Region * /* region */, int /* state */, double /* time */)
+  bool DatabaseIO::end_state__(int /* state */, double /* time */)
   {
     if (legend_ != nullptr) {
       if (fileFormat == SPYHIS) {
@@ -423,7 +424,7 @@ namespace Iohb {
   int64_t DatabaseIO::put_field_internal(const Ioss::Region *region, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    initialize(region);
+    initialize();
     Ioss::Field::RoleType role       = field.get_role();
     int64_t               num_to_get = field.verify(data_size);
 

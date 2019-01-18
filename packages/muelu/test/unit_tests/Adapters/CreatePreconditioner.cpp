@@ -93,6 +93,8 @@ namespace MueLuTests {
 
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -106,8 +108,8 @@ namespace MueLuTests {
       typedef Tpetra::CrsMatrix<SC,LO,GO,NO> tpetra_crsmatrix_type;
       typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
       typedef Tpetra::MultiVector<SC,LO,GO,NO> tpetra_multivector_type;
-      typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
-      typedef Tpetra::MultiVector<double,LO,GO,NO> dtpetra_multivector_type;
+      typedef Xpetra::MultiVector<real_type,LO,GO,NO> dMultiVector;
+      typedef Tpetra::MultiVector<real_type,LO,GO,NO> dtpetra_multivector_type;
 
       // Matrix
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
@@ -128,12 +130,14 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", nx);
-      RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", Op->getRowMap(), galeriList);
+      RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
       RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
       nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
       RCP<tpetra_crsmatrix_type> tpA = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
+      out << "========== Create Preconditioner from xmlFile ==========" << std::endl;
+      out << "xmlFileName: " << xmlFileName << std::endl;
       RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName);
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
@@ -147,9 +151,10 @@ namespace MueLuTests {
 
       xmlFileName = "testWithRebalance.xml";
 
-      RCP<dtpetra_multivector_type> tpcoordinates = MueLu::Utilities<double,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
+      RCP<dtpetra_multivector_type> tpcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
       RCP<tpetra_multivector_type>  tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
+      out << "========== Create Preconditioner from xmlFile and coordinates ==========" << std::endl;
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates);
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -163,6 +168,7 @@ namespace MueLuTests {
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
+      out << "========== Create Preconditioner from xmlFile, coordinates and nullspace ==========" << std::endl;
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates, tpnullspace);
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -177,6 +183,7 @@ namespace MueLuTests {
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
       //Test interface with no ParameterList or XML filename provided.
+      out << "========== Create Preconditioner from coordinates and nullspace ==========" << std::endl;
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), tpcoordinates, tpnullspace);
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -197,7 +204,6 @@ namespace MueLuTests {
 
     } else if (lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
-      typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
 
       // Matrix
       RCP<Matrix>     Op  = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(nx * comm->getSize(), lib);
@@ -218,7 +224,7 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", nx);
-      RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", Op->getRowMap(), galeriList);
+      RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
       RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
       nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
@@ -232,7 +238,7 @@ namespace MueLuTests {
 
       xmlFileName = "testWithRebalance.xml";
 
-      RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<double,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
+      RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
       RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
       eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
@@ -271,7 +277,9 @@ namespace MueLuTests {
 
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
-    typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> dMultiVector;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -304,7 +312,7 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", nx);
-      RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", Op->getRowMap(), galeriList);
+      RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", Op->getRowMap(), galeriList);
       RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
       nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
@@ -323,7 +331,7 @@ namespace MueLuTests {
 
       mylist.set("xml parameter file","testWithRebalance.xml");
 
-      RCP<Tpetra::MultiVector<double,LO,GO,NO> > tpcoordinates = MueLu::Utilities<double,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
+      RCP<Tpetra::MultiVector<real_type,LO,GO,NO> > tpcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
       tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), mylist, tpcoordinates);
@@ -378,7 +386,7 @@ namespace MueLuTests {
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", nx);
-      RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", Op->getRowMap(), galeriList);
+      RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,dMultiVector>("1D", Op->getRowMap(), galeriList);
       RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
       nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
 
@@ -392,7 +400,7 @@ namespace MueLuTests {
 
       mylist.set("xml parameter file","testWithRebalance.xml");
 
-      RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<double,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
+      RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
       RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
       eH = MueLu::CreateEpetraPreconditioner(epA, mylist, epcoordinates);
@@ -431,7 +439,8 @@ namespace MueLuTests {
 
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
-    typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> dMultiVector;
 
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 
@@ -445,6 +454,8 @@ namespace MueLuTests {
       if (k == 0) xmlFileName = "testPDE.xml";
       if (k == 1) xmlFileName = "testPDE1.xml";
 
+      int numPDEs=3;
+
       if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
         typedef Tpetra::Operator<SC,LO,GO,NO> tpetra_operator_type;
@@ -454,11 +465,22 @@ namespace MueLuTests {
         RCP<const Map > map = Op->getRowMap();
 
         Teuchos::ParameterList clist;
-        clist.set("nx", (nx * comm->getSize())/3);
-        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/3), Teuchos::as<int>(0), comm);
-        RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", cmap, clist);
-        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
-        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+        clist.set("nx", (nx * comm->getSize())/numPDEs);
+        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/numPDEs), Teuchos::as<int>(0), comm);
+        RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,dMultiVector>("1D", cmap, clist);
+        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), numPDEs);
+        if (numPDEs == 1) {
+          nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+        } else {
+          for (int i = 0; i < numPDEs; i++) {
+            Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+            for (int j = 0; j < nsData.size(); j++) {
+              GlobalOrdinal GID = Op->getDomainMap()->getGlobalElement(j) - Op->getDomainMap()->getIndexBase();
+              if ((GID-i) % numPDEs == 0)
+                nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+            }
+          }
+        }
 
         // Normalized RHS
         RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
@@ -473,7 +495,7 @@ namespace MueLuTests {
         X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
         RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> >   tpA           = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
-        RCP<Tpetra::MultiVector<double,LO,GO,NO> > tpcoordinates = MueLu::Utilities<double,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
+        RCP<Tpetra::MultiVector<real_type,LO,GO,NO> > tpcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
         RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(RCP<tpetra_operator_type>(tpA), xmlFileName, tpcoordinates);
@@ -510,11 +532,22 @@ namespace MueLuTests {
         RCP<const Map > map = Op->getRowMap();
 
         Teuchos::ParameterList clist;
-        clist.set("nx", (nx * comm->getSize())/3);
-        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/3), Teuchos::as<int>(0), comm);
-        RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,dMultiVector>("1D", cmap, clist);
-        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), 1);
-        nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+        clist.set("nx", (nx * comm->getSize())/numPDEs);
+        RCP<const Map>   cmap        = MapFactory::Build(lib, Teuchos::as<size_t>((nx * comm->getSize())/numPDEs), Teuchos::as<int>(0), comm);
+        RCP<dMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,dMultiVector>("1D", cmap, clist);
+        RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(Op->getDomainMap(), numPDEs);
+        if (numPDEs == 1) {
+          nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
+        } else {
+          for (int i = 0; i < numPDEs; i++) {
+            Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+            for (int j = 0; j < nsData.size(); j++) {
+              GlobalOrdinal GID = Op->getDomainMap()->getGlobalElement(j) - Op->getDomainMap()->getIndexBase();
+              if ((GID-i) % numPDEs == 0)
+                nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+            }
+          }
+        }
 
         // Normalized RHS
         RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
@@ -529,7 +562,7 @@ namespace MueLuTests {
         X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
         RCP<Epetra_CrsMatrix>   epA           = MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstEpetraCrs(Op);
-        RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<double,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
+        RCP<Epetra_MultiVector> epcoordinates = MueLu::Utilities<real_type,LO,GO,NO>::MV2NonConstEpetraMV(coordinates);
         RCP<Epetra_MultiVector> epnullspace   = Utils::MV2NonConstEpetraMV(nullspace);
 
         RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(epA, xmlFileName, epcoordinates);
@@ -564,7 +597,8 @@ namespace MueLuTests {
 
     using Teuchos::RCP;
     typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
-    typedef Xpetra::MultiVector<double,LO,GO,NO> dMultiVector;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType real_type;
+    typedef Xpetra::MultiVector<real_type,LO,GO,NO> dMultiVector;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();

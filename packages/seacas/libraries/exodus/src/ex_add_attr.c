@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,7 +58,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   int         numattrdim;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   if (num_attr_per_entry <= 0) {
     EX_FUNC_LEAVE(EX_NOERR);
@@ -78,13 +78,13 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "Warning: no attributes found for NULL %s %" PRId64 " in file id %d",
                    ex_name_of_object(obj_type), obj_id, exoid);
-          ex_err("ex_add_attr", errmsg, EX_NULLENTITY);
+          ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
           EX_FUNC_LEAVE(EX_WARN); /* no attributes for this object */
         }
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Warning: failed to locate %s id %" PRId64 " in id array in file id %d",
                  ex_name_of_object(obj_type), obj_id, exoid);
-        ex_err("ex_add_attr", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_WARN);
       }
     }
@@ -148,7 +148,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad block type (%d) specified for file id %d",
              obj_type, exoid);
-    ex_err("ex_put_attr_param", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -156,7 +156,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   /* put netcdf file into define mode  */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -164,12 +164,12 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to define number of attributes in %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret; /* exit define mode and return */
   }
 
   ex_get_dimension(exoid, dnumobjent, ex_name_of_object(obj_type), &num_obj, &numobjentdim,
-                   "ex_add_attr");
+                   __func__);
   dims[0] = numobjentdim;
   dims[1] = numattrdim;
 
@@ -177,7 +177,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR:  failed to define attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret; /* exit define mode and return */
   }
   ex_compress_variable(exoid, varid, 2);
@@ -185,7 +185,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   /* inquire previously defined dimensions  */
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -197,7 +197,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to define %s attribute name array in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret; /* exit define mode and return */
   }
 
@@ -206,7 +206,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete %s definition in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -235,7 +235,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
 error_ret:
   if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err("ex_add_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
   }
   EX_FUNC_LEAVE(EX_FATAL);
 }

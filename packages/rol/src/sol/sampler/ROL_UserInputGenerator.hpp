@@ -55,11 +55,14 @@ namespace ROL {
 template<class Real> 
 class UserInputGenerator : public SampleGenerator<Real> {
 private:
+  int nSamp_;
+
   void sample(const std::string &file_pt,
               const std::string &file_wt,
               const int n,
               const int dim,
               const ROL::Ptr<BatchManager<Real> > &bman) {
+    nSamp_ = n;
     // Read in full point data and weight data
     std::fstream input_pt;
     input_pt.open(file_pt.c_str(),std::ios::in);
@@ -145,6 +148,10 @@ public:
   }
 
   void refine(void) {}
+
+  int numGlobalSamples(void) const {
+    return nSamp_;
+  }
 };
 
 }

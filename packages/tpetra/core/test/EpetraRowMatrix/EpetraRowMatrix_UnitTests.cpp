@@ -52,7 +52,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -83,7 +83,7 @@ namespace {
   {
     Teuchos::RCP<const Teuchos::Comm<int> > ret;
     if (testMpi) {
-      ret = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+      ret = Tpetra::getDefaultComm();
     }
     else {
       ret = Teuchos::rcp(new Teuchos::SerialComm<int>());

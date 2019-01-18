@@ -99,8 +99,9 @@ template<class idInput_t> void runTestSuite(RCP<const Comm<int> > comm) {
 
 int main(int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   int rank = comm->getRank();
 
   // do some tests with BasicIdentifierAdapter
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
 
   comm->barrier();
   if (rank==0)
-    cout << "PASS" << endl;
+    std::cout << "PASS" << std::endl;
 }
 
 // to validate the results, we call evaluate_adapter_results which is

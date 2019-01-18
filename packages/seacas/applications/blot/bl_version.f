@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -37,8 +37,8 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       CHARACTER*(MXQARC) QAINFO(6)
 
       QAINFO(1) = 'blot                            '
-      QAINFO(2) = '2016/08/22                      '
-      QAINFO(3) = ' 3.12                           '
+      QAINFO(2) = '2018/09/17                      '
+      QAINFO(3) = ' 3.13                           '
       QAINFO(4) = '                                '
 
       RETURN

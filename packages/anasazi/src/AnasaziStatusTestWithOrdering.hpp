@@ -52,7 +52,6 @@
 
 #include "AnasaziStatusTest.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK.hpp"
 
   /*! 
     \class Anasazi::StatusTestWithOrdering 

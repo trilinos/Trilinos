@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -48,7 +48,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
 #include <exodusII.h>
 #endif
 
@@ -78,10 +78,6 @@
 #include <cassert>
 
 #include "info_interface.h"
-
-#ifndef NO_XDMF_SUPPORT
-#include <xdmf/Ioxf_Initializer.h>
-#endif
 
 #define OUTPUT std::cout
 

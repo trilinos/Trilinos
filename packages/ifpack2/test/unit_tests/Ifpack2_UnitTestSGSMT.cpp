@@ -73,8 +73,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SGS_MT, JacobiComparison, Scalar, LO, GO)
   out << "Test multiple threaded SGS sweeps compared w.r.t. Jacobi" << endl;
   Teuchos::OSTab tab1 (out);
 
-  RCP<const Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
 
   Tpetra::MatrixMarket::Reader<crs_matrix_type> crs_reader;
   std::string file_name = "sherman1.mtx";

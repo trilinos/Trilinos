@@ -77,7 +77,7 @@ namespace LOCA {
        * \returns ReturnType code indicating success or failure
        */
       virtual void
-      saveSolution(const NOX::Abstract::Vector& x, double p) {}
+      saveSolution(const NOX::Abstract::Vector& /* x */, double /* p */) {}
 
       //! Perform any preprocessing before a continuation step starts.
       /*!
@@ -86,7 +86,7 @@ namespace LOCA {
        */
       virtual void
       preProcessContinuationStep(
-                LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+                LOCA::Abstract::Iterator::StepStatus /* stepStatus */) {}
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
@@ -95,7 +95,7 @@ namespace LOCA {
        */
       virtual void
       postProcessContinuationStep(
-                LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+                LOCA::Abstract::Iterator::StepStatus /* stepStatus */) {}
 
       //! Projects solution to a few scalars for multiparameter continuation
       /*!
@@ -105,8 +105,8 @@ namespace LOCA {
        * The array \c px will be preallocated to the proper length
        * given by projectToDrawDimension().
        */
-      virtual void projectToDraw(const NOX::Abstract::Vector& x,
-                 double *px) const {}
+      virtual void projectToDraw(const NOX::Abstract::Vector& /* x */,
+                 double */* px */) const {}
 
       //! Returns the dimension of the project to draw array
       virtual int projectToDrawDimension() const { return 0; }

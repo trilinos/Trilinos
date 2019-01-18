@@ -1,5 +1,5 @@
-#ifndef BASKER_TRILINOS_DECL_HPP
-#define BASKER_TRILINOS_DECL_HPP
+#ifndef SHYLUBASKER_TRILINOS_DECL_HPP
+#define SHYLUBASKER_TRILINOS_DECL_HPP
 
 #include "shylubasker_decl.hpp"
 
@@ -8,7 +8,7 @@ namespace BaskerNS {
   template <class Int, class Entry, class Exe_Space>
   class BaskerTrilinosInterface : public BaskerNS::Basker<Int, Entry, Exe_Space>
   {
-    friend class Basker<Int,Entry,Exe_Space>;
+    friend class BaskerNS::Basker<Int,Entry,Exe_Space>;
 
     // Member type for copying ptr values of type non-matching with indices ptr to force matching types
     Int* matching_type_col_ptr;
@@ -16,7 +16,7 @@ namespace BaskerNS {
   public:
 
     BASKER_INLINE
-    BaskerTrilinosInterface() 
+    BaskerTrilinosInterface() : BaskerNS::Basker<Int, Entry, Exe_Space>()
     { matching_type_col_ptr = nullptr; }
 
     // No polymorphic behavior so a virtual destructor is not necessary
@@ -45,7 +45,7 @@ namespace BaskerNS {
 
 
       int return_value = 
-        Basker<Int, Entry, Exe_Space>::Symbolic
+        BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
         (
          nrow,
          ncol,
@@ -69,7 +69,7 @@ namespace BaskerNS {
       // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
 
       int return_value = 
-        Basker<Int, Entry, Exe_Space>::Symbolic
+        BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
         (
          nrow,
          ncol,
@@ -100,7 +100,7 @@ namespace BaskerNS {
       }
 
       int return_value = 
-        Basker<Int,Entry,Exe_Space>::Factor
+        BaskerNS::Basker<Int,Entry,Exe_Space>::Factor
         (
          nrow, 
          ncol,
@@ -122,7 +122,7 @@ namespace BaskerNS {
     {
 
       int return_value = 
-        Basker<Int,Entry,Exe_Space>::Factor
+        BaskerNS::Basker<Int,Entry,Exe_Space>::Factor
         (
          nrow, 
          ncol,

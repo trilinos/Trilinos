@@ -37,7 +37,7 @@
 #include <stk_topology/topology.hpp>
 #include <vector>
 #include <stk_balance/internal/GeometricVertices.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 typedef Zoltan2::BasicUserTypes<double, BalanceLocalNumber, BalanceGlobalNumber> learning_data_t;
 

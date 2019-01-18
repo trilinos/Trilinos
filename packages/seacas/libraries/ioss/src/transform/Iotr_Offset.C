@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -53,7 +53,7 @@ namespace Iotr {
     return new Offset();
   }
 
-  Offset::Offset() : intOffset(0), realOffset(0.0) {}
+  Offset::Offset() {}
 
   void Offset::set_property(const std::string & /*name*/, int value) { intOffset = value; }
 

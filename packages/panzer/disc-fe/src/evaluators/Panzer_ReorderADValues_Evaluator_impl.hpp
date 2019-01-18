@@ -107,20 +107,6 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 // **********************************************************************
 template<typename EvalT,typename TRAITS>
 void panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
-		      PHX::FieldManager<TRAITS>& fm)
-{
-  // load required field numbers for fast use
-  for(std::size_t fd=0;fd<inFields_.size();++fd) {
-    // fill field data object
-    this->utils.setFieldData(inFields_[fd],fm);
-    this->utils.setFieldData(outFields_[fd],fm);
-  }
-}
-
-// **********************************************************************
-template<typename EvalT,typename TRAITS>
-void panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData /* workset */)
 {
   // just copy fields if there is no AD data
@@ -208,20 +194,6 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
                     indexerDest);
 
   this->setName("Reorder AD Values");
-}
-
-// **********************************************************************
-template<typename TRAITS>
-void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
-		      PHX::FieldManager<TRAITS>& fm)
-{
-  // load required field numbers for fast use
-  for(std::size_t fd=0;fd<inFields_.size();++fd) {
-    // fill field data object
-    this->utils.setFieldData(inFields_[fd],fm);
-    this->utils.setFieldData(outFields_[fd],fm);
-  }
 }
 
 // **********************************************************************

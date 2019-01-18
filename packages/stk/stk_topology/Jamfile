@@ -52,24 +52,57 @@ project votd
   : build-dir $(stk_topology-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_topology_utest
+  stk_topology_doc_test
+  ;
+
 #
 # SECTION 2: Development install
 #
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_topology_utest
-    stk_topology_doc_test
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
 
-#
+
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                          install-user-include install-user-lib ;
+                         install-user-bin install-user-include install-user-lib ;
+
+explicit install-user-bin ;
+install install-user-bin
+  :
+  $(installed-end-user-files)
+  [ if-defined-val $(install-developer-files-arg) :
+    # Executables listed here are only installed if the
+    # --install-developer-files option is passed to bjam.
+    $(installed-developer-files)
+  ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
+
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -128,11 +161,7 @@ exe stk_topology_utest
       glob $(stk_topology-root)/../stk_unit_tests/stk_topology/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_topology
-    /sierra/seacas//ioinit
-    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_topology-root)/../stk_unit_tests/stk_topology
   ;
@@ -143,11 +172,7 @@ exe stk_topology_doc_test
       glob $(stk_topology-root)/../stk_doc_tests/stk_topology/*.cpp 
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_topology
-    /sierra/seacas//ioinit
-    /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_use_case
-    /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_topology-root)/../stk_doc_tests/stk_topology
   ;

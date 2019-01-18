@@ -46,6 +46,7 @@
 #include "Stokhos_MemoryTraits.hpp"
 
 #include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_Cuda.hpp"
 
 #include "Sacado_Traits.hpp"
 #include "Stokhos_KokkosTraits.hpp"

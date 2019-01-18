@@ -360,11 +360,11 @@ int main(int argc, char* argv[])
       PtrVector p_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(p_data));
       ROL::Ptr<ROL::PinTVector<RealT>> p_pint = ROL::makePtr<ROL::PinTVector<RealT>>(pintComm,p_vec,3*numRanks,stencil);
 
-      TEUCHOS_ASSERT( ROL::is_nullPtr(p_pint->getVectorPtr(-1)) ); // this comes from the stencil
-      TEUCHOS_ASSERT( ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
-      TEUCHOS_ASSERT( ROL::is_nullPtr(p_pint->getVectorPtr( 1)) );
-      TEUCHOS_ASSERT( ROL::is_nullPtr(p_pint->getVectorPtr( 2)) );
-      TEUCHOS_ASSERT( ROL::is_nullPtr(p_pint->getVectorPtr( 3)) ); // this comes from the stencil
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr(-1)) ); // this comes from the stencil
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 0)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 1)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 2)) );
+      TEUCHOS_ASSERT( !ROL::is_nullPtr(p_pint->getVectorPtr( 3)) ); // this comes from the stencil
 
       p_pint->getRemoteBufferPtr(-1)->scale((myRank)*100-5); // this vector is being sent to left
       p_pint->getRemoteBufferPtr( 3)->scale((myRank)*100+5); // this vector is being sent to right

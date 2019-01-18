@@ -69,6 +69,13 @@ called=$_
 #[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
 #echo "\$BASH_SOURCE ${BASH_SOURCE[@]}"
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
+
+# Try a different approach if the above failed
+# (happens if we are not in bash).
+if [ "$_SCRIPT_DIR" = "" ] ; then
+    _SCRIPT_DIR=$(cd -P -- "$(dirname -- "$0")" && printf '%s\n' "$(pwd -P)/$(basename -- "$0")")
+    _SCRIPT_DIR=`echo $_SCRIPT_DIR | sed "s/\(.*\)\/.*\.sh/\1/g"`
+fi
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
 
 if [ "$4" != "" ] ; then
@@ -83,19 +90,19 @@ source $_SCRIPT_DIR/std/sems/get_default_modules.sh
 #
 
 sems_compiler_and_version_load=$1
-if [ "$sems_compiler_and_version_load" == "" ] || [ "$sems_compiler_and_version_load" == "default" ] ; then
+if [ "$sems_compiler_and_version_load" = "" ] || [ "$sems_compiler_and_version_load" = "default" ] ; then
   sems_compiler_and_version_load=$sems_compiler_and_version_default
 fi
 #echo "sems_compiler_and_version_load = $sems_compiler_and_version_load"
 
 sems_mpi_and_version_load=$2
-if [ "$sems_mpi_and_version_load" == "" ] || [ "$sems_mpi_and_version_load" == "default" ] ; then
+if [ "$sems_mpi_and_version_load" = "" ] || [ "$sems_mpi_and_version_load" = "default" ] ; then
   sems_mpi_and_version_load=$sems_mpi_and_version_default
 fi
 #echo "sems_mpi_and_version_load = $sems_mpi_and_version_load"
 
 sems_cmake_and_version_load=$3
-if [ "$sems_cmake_and_version_load" == "" ] || [ "$sems_cmake_and_version_load" == "default" ] ; then
+if [ "$sems_cmake_and_version_load" = "" ] || [ "$sems_cmake_and_version_load" = "default" ] ; then
   sems_cmake_and_version_load=$sems_cmake_and_version_default
 fi
 #echo "sems_cmake_and_version_load = $sems_cmake_and_version_load"
@@ -123,9 +130,9 @@ module load atdm-ninja_fortran/1.7.2
 # until this is fixed, the workaround is below.
 # Please see https://github.com/trilinos/Trilinos/issues/2142
 # for updates regarding the right solution.
-if [[ $sems_compiler_and_version_load == "sems-intel/17.0.1" ]]; then
+if [[ $sems_compiler_and_version_load = "sems-intel/17.0.1" ]]; then
   module load sems-gcc/4.9.3
-elif [[ $sems_compiler_and_version_load == "sems-intel/"* ]]; then
+elif [[ $sems_compiler_and_version_load = "sems-intel/"* ]]; then
   module load sems-gcc/4.8.4
 fi
 

@@ -97,7 +97,7 @@
 
 //Tpetra includes
 #include "Tpetra_Map.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -112,7 +112,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -157,8 +156,7 @@ typedef Intrepid::FunctionSpaceTools                            IntrepidFSTools;
 typedef Intrepid::RealSpaceTools<double>                        IntrepidRSTools;
 typedef Intrepid::CellTools<double>                             IntrepidCTools;
 //Tpetra typedefs
-typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+typedef Tpetra::Map<>::node_type                                Node;
 typedef double                                                  ST;
 typedef int                                                     Ordinal;
 typedef Tpetra::Map<Ordinal,Ordinal,Node>                       Map;
@@ -273,21 +271,14 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 int main(int argc, char *argv[]) {
 
   int error = 0;
-  int numProcs=1;
-  int rank=0;
 
   Teuchos::FancyOStream fos(Teuchos::rcpFromRef(cout));
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  rank=mpiSession.getRank();
-  numProcs=mpiSession.getNProc();
+  Tpetra::ScopeGuard mpiSession(&argc, &argv);
+  RCP<const Teuchos::Comm<int> > CommT = Tpetra::getDefaultComm();
+  const int rank = CommT->getRank();
+  const int numProcs = CommT->getSize();
 
-
-//Get the default communicator and node for Tpetra
-//rewrite using with IFDEF for MPI/no MPI??
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > CommT = platform.getComm();
-  RCP<Node> node = platform.getNode();
   int MyPID = CommT->getRank();
 
 
@@ -503,7 +494,7 @@ int main(int argc, char *argv[]) {
     double time = 0.0;
     if(inputMeshList.isParameter("time"))
       time = inputMeshList.get("time",time);
-              
+
     // Get sigma value for each block of elements from parameter list
     std::vector<double>  sigma(numElemBlk);
     std::vector<PG_RuntimeCompiler::Function> sigmaRTC(numElemBlk);
@@ -516,18 +507,18 @@ int main(int argc, char *argv[]) {
       if(inputMeshList.isParameter(sigmaBlock.str()))
        sigma[b] = inputMeshList.get(sigmaBlock.str(),1.0);
       else if(inputMeshList.isParameter(mysigmaRTC.str())) {
-	std::string mystr;
-	mystr = inputMeshList.get(mysigmaRTC.str(),mystr);
-	if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
-	if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
-	if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}
-	if(!sigmaRTC[b].addVar("double","time")) {printf("ERROR: sigmaRTC.addVar(time) failed\n");exit(-1);}
-	if(!sigmaRTC[b].addVar("double","sigma")) {printf("ERROR: sigmaRTC.addVar(sigma) failed\n");exit(-1);}
-	if(!sigmaRTC[b].addBody(mystr)) {printf("ERROR: sigmaRTC[%d].addBody failed\n",b);exit(-1);}
-	useSigmaRTC[b]=true;
+        std::string mystr;
+        mystr = inputMeshList.get(mysigmaRTC.str(),mystr);
+        if(!sigmaRTC[b].addVar("double","x")) {printf("ERROR: sigmaRTC.addVar(x) failed\n");exit(-1);}
+        if(!sigmaRTC[b].addVar("double","y")) {printf("ERROR: sigmaRTC.addVar(y) failed\n");exit(-1);}
+        if(!sigmaRTC[b].addVar("double","z")) {printf("ERROR: sigmaRTC.addVar(z) failed\n");exit(-1);}
+        if(!sigmaRTC[b].addVar("double","time")) {printf("ERROR: sigmaRTC.addVar(time) failed\n");exit(-1);}
+        if(!sigmaRTC[b].addVar("double","sigma")) {printf("ERROR: sigmaRTC.addVar(sigma) failed\n");exit(-1);}
+        if(!sigmaRTC[b].addBody(mystr)) {printf("ERROR: sigmaRTC[%d].addBody failed\n",b);exit(-1);}
+        useSigmaRTC[b]=true;
       }
       else
-	sigma[b]=1.0;
+        sigma[b]=1.0;
     }
 
     // Get node-element connectivity and set element mu/sigma value
@@ -535,22 +526,22 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> sigmaVal(numElems);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
-	std::vector<double> centercoord(3,0);
-	for (int j=0; j<numNodesPerElem; j++) {
+        std::vector<double> centercoord(3,0);
+        for (int j=0; j<numNodesPerElem; j++) {
           centercoord[0] += nodeCoord(elemToNode(telct,j),0) / numNodesPerElem;
-	  centercoord[1] += nodeCoord(elemToNode(telct,j),1) / numNodesPerElem;
-	  centercoord[2] += nodeCoord(elemToNode(telct,j),2) / numNodesPerElem;
+          centercoord[1] += nodeCoord(elemToNode(telct,j),1) / numNodesPerElem;
+          centercoord[2] += nodeCoord(elemToNode(telct,j),2) / numNodesPerElem;
         }
-	if(useSigmaRTC[b]) {
-	  sigmaRTC[b].varAddrFill(0,&centercoord[0]);
-	  sigmaRTC[b].varAddrFill(1,&centercoord[1]);
-	  sigmaRTC[b].varAddrFill(2,&centercoord[2]);
-	  sigmaRTC[b].varAddrFill(3,&time);
-	  sigmaRTC[b].varAddrFill(4,&sigmaVal(telct));
-	  sigmaRTC[b].execute();
-	}
-	else
-	  sigmaVal(telct) = sigma[b];
+        if(useSigmaRTC[b]) {
+          sigmaRTC[b].varAddrFill(0,&centercoord[0]);
+          sigmaRTC[b].varAddrFill(1,&centercoord[1]);
+          sigmaRTC[b].varAddrFill(2,&centercoord[2]);
+          sigmaRTC[b].varAddrFill(3,&time);
+          sigmaRTC[b].varAddrFill(4,&sigmaVal(telct));
+          sigmaRTC[b].execute();
+        }
+        else
+          sigmaVal(telct) = sigma[b];
         telct ++;
       }
     }
@@ -812,7 +803,7 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
           // Compute cell ordinal relative to the current workset
-	  //          int worksetCellOrdinal = cell - worksetBegin;
+          //          int worksetCellOrdinal = cell - worksetBegin;
 
           // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
@@ -1081,11 +1072,11 @@ int main(int argc, char *argv[]) {
         weightedMeasureSigma(cellCounter,nPt) = worksetCubWeights(cellCounter,nPt) * sigmaVal(cell);
       }
       cellCounter++;
-    }    
+    }
 
     // Multiply transformed (workset) gradients with weighted measure
     // multiply by weighted measure - Det(DF)*w = J*w * sigma
-    IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,          
+    IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,
                                              weightedMeasureSigma, worksetHGBGrads);
 
 

@@ -46,12 +46,11 @@
 
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
-#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -70,7 +69,6 @@ namespace {
   using Tpetra::MatrixMarket::Reader;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsMatrixMultiplyOp;
-  using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using Tpetra::RowMatrixTransposer;
@@ -767,7 +765,7 @@ mult_test_results jacobi_reuse_test(
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, GO, NT)  {
-  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;

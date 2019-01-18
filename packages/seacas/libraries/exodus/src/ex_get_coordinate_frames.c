@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,41 +33,41 @@
  *
  */
 /*****************************************************************************
-*
-* exgfrm - ex_get_coordinate_frames: read coordinate frames
-*
-* entry conditions -
-*   input parameters:
-*       int         exoid               exodus file id
-*
-* NOTE:
-*    cf_ids, pt_coordinates and tags may all be NULL, otherwise, they
-*    must have sufficient memory to store the output data. Two calls
-*    to this routine are anticipated (one to get nframes, the second
-*    to fill the data. i.e.
-*      ex_get_coordinate_frames(exoid,&nframes,0,0,0);
-*        ... allocate memory ...
-*      ex_get_coordinate_frames(exoid,&nframe,id,coords,tags);
-*
-*
-* output conditions -
-*       int*         nframes             number of coordinate frames in model
-*       const int*   cf_ids             coordinate ids
-*                                       dimension int[nframes]
-*       const void*  pt_coordinates     pointer to coordinates. 9 values per
-*                                       coordinate frame
-*                                       dimension float[9*nframes]
-*       const char*  tags               character tag for each frame.
-*                                        'r' - rectangular
-*                                        'c' - cylindrical
-*                                        's' - spherical
-*                                        dimension char[nframes]
-*
-* returns -
-*      EX_NOERR         for no error
-*      EX_FATAL         for fatal errors
-*
-*****************************************************************************/
+ *
+ * exgfrm - ex_get_coordinate_frames: read coordinate frames
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int         exoid               exodus file id
+ *
+ * NOTE:
+ *    cf_ids, pt_coordinates and tags may all be NULL, otherwise, they
+ *    must have sufficient memory to store the output data. Two calls
+ *    to this routine are anticipated (one to get nframes, the second
+ *    to fill the data. i.e.
+ *      ex_get_coordinate_frames(exoid,&nframes,0,0,0);
+ *        ... allocate memory ...
+ *      ex_get_coordinate_frames(exoid,&nframe,id,coords,tags);
+ *
+ *
+ * output conditions -
+ *       int*         nframes             number of coordinate frames in model
+ *       const int*   cf_ids             coordinate ids
+ *                                       dimension int[nframes]
+ *       const void*  pt_coordinates     pointer to coordinates. 9 values per
+ *                                       coordinate frame
+ *                                       dimension float[9*nframes]
+ *       const char*  tags               character tag for each frame.
+ *                                        'r' - rectangular
+ *                                        'c' - cylindrical
+ *                                        's' - spherical
+ *                                        dimension char[nframes]
+ *
+ * returns -
+ *      EX_NOERR         for no error
+ *      EX_FATAL         for fatal errors
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
@@ -76,9 +76,6 @@
 #include <stddef.h>       // for size_t
 #include <stdio.h>
 
-/* -------------------- local defines --------------------------- */
-#define PROCNAME "ex_get_coordinate_frames"
-/* -------------------- end of local defines -------------------- */
 /*!
  * Coordinate frames are stored in the database as a series of three
  * points (defined in the basic cartesian coordinate system). The
@@ -140,7 +137,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   size_t count = 0; /* number vars to put in varput   */
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* get the dimensions */
   assert(nframes != NULL);
@@ -161,7 +158,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
     if ((status = nc_inq_varid(exoid, VAR_FRAME_IDS, &varids)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate ids from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -175,7 +172,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to read coordinate frame ids from file id %d",
                exoid);
-      ex_err(PROCNAME, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -185,7 +182,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
         (nc_get_vara_text(exoid, varids, &start, &count, tags) != NC_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -194,7 +191,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
     if ((status = nc_inq_varid(exoid, VAR_FRAME_COORDS, &varids)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -208,7 +205,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
-      ex_err(PROCNAME, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }

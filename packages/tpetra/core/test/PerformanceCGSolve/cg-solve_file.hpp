@@ -45,7 +45,7 @@
 #define CG_SOLVE_FILE_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -260,7 +260,6 @@ run (int argc, char *argv[])
   typedef typename Tpetra::Map<>::local_ordinal_type    LO;
   typedef typename Tpetra::Map<>::global_ordinal_type   GO;
 
-  typedef Tpetra::MpiPlatform<Node>                     Platform;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node>          crs_matrix_type;
   typedef Tpetra::Vector<Scalar,LO,GO,Node>             vec_type;
   typedef Tpetra::Map<LO,GO,Node>                       map_type;
@@ -312,21 +311,19 @@ run (int argc, char *argv[])
   (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
 #endif // HAVE_MPI
 
-  int device = myRank % numgpus;
-  if(device>=skipgpu) device++;
-  int verboseint = verbose?1:0;
-  Teuchos::ParameterList params;
-  params.set("Num Threads",numthreads,"Number of Threads per Threadteam");
-  params.set("Num Teams",numteams,"Number of Threadteams");
-  params.set("Verbose",verboseint,"Verbose output");
-  params.set("Device",device,"Device Number");
+  Kokkos::InitArguments kokkosArgs;
+  kokkosArgs.num_threads = numthreads;
+  kokkosArgs.num_numa = numteams; // ???
+  kokkosArgs.device_id = myRank & numgpus;
+  kokkosArgs.skip_device = skipgpu;
+  kokkosArgs.disable_warnings = ! verbose;
+
+  Kokkos::initialize (kokkosArgs);
 
   //
   // Get the communicator and node
   //
-  RCP<Node> node (new Node (params));
-  Platform platform (node);
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
   //
   // Say hello, print some communicator info
@@ -343,10 +340,10 @@ run (int argc, char *argv[])
   //
   RCP<crs_matrix_type> A;
   if (! filename.empty ()) {
-    A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm, node);
+    A = Tpetra::MatrixMarket::Reader<crs_matrix_type>::readSparseFile (filename, comm);
   }
   else {
-    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, node);
+    A = Tpetra::Utils::MatrixGenerator<crs_matrix_type>::generate_miniFE_matrix (nsize, comm, Teuchos::null);
   }
 
   if (printMatrix) {

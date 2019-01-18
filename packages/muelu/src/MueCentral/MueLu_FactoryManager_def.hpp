@@ -46,8 +46,6 @@
 #ifndef MUELU_FACTORYMANAGER_DEF_HPP
 #define MUELU_FACTORYMANAGER_DEF_HPP
 
-#include "MueLu_FactoryManager_decl.hpp"
-
 #include <Teuchos_ParameterList.hpp>
 
 // Headers for factories used by default:
@@ -55,6 +53,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
+#include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 // #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -70,16 +69,20 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
+#include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
+
+#include "MueLu_FactoryManager_decl.hpp"
 
 
 namespace MueLu {
@@ -89,8 +92,8 @@ namespace MueLu {
   SetAndReturnDefaultFactory(varName, rcp(new oldFactory()));
 #else
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory)   \
-  (!useKokkos) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
-                 SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
+  (!useKokkos_) ? SetAndReturnDefaultFactory(varName, rcp(new oldFactory())) : \
+                  SetAndReturnDefaultFactory(varName, rcp(new newFactory()));
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -127,13 +130,6 @@ namespace MueLu {
       return defaultFactoryTable_.find(varName)->second;
 
     } else {
-      bool useKokkos;
-#if defined(HAVE_MUELU_KOKKOS_REFACTOR) && defined(HAVE_MUELU_KOKKOS_REFACTOR_USE_BY_DEFAULT)
-      useKokkos = true;
-#else
-      useKokkos = false;
-#endif
-
       // No factory was created for this name, but we may know which one to create
       if (varName == "A")                               return SetAndReturnDefaultFactory(varName, rcp(new RAPFactory()));
       if (varName == "RAP Pattern")                     return GetFactory("A");
@@ -143,7 +139,7 @@ namespace MueLu {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-        if (useKokkos)
+        if (useKokkos_)
           factory = rcp(new SaPFactory_kokkos());
         else
 #endif
@@ -155,7 +151,7 @@ namespace MueLu {
         // GetFactory("Ptent"): we need to use the same factory instance for both "P" and "Nullspace"
         RCP<Factory> factory;
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-        if (useKokkos)
+        if (useKokkos_)
           factory = rcp(new NullspaceFactory_kokkos());
         else
 #endif
@@ -163,6 +159,7 @@ namespace MueLu {
         factory->SetFactory("Nullspace", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, factory);
       }
+      if (varName == "Coordinates")                     return GetFactory("Ptent");
 
       if (varName == "R")                               return SetAndReturnDefaultFactory(varName, rcp(new TransPFactory()));
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
@@ -197,6 +194,7 @@ namespace MueLu {
       // Non-Galerkin
       if (varName == "K")                               return GetFactory("A");
       if (varName == "M")                               return GetFactory("A");
+      if (varName == "Mdiag")                           return GetFactory("A");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");
@@ -267,6 +265,9 @@ namespace MueLu {
         it->second->ResetDebugData();
   }
 #endif
+
+
+#undef MUELU_KOKKOS_FACTORY
 
 } // namespace MueLu
 

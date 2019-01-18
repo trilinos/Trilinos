@@ -348,6 +348,9 @@ public:
     */
   const PinTCommunicators & communicators() const { return *communicators_; }
 
+  /** What is the communicators object used to build this vector?
+    */
+  Ptr<const PinTCommunicators> communicatorsPtr() const { return communicators_; }
 
   /** \brief Determine if an index is valid including the stencil.
 
@@ -394,7 +397,7 @@ public:
   Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
   {
     assert(isValidIndex(i));
-    assert(i<0 and i>=numOwnedSteps());
+    assert(i<0 or i>=numOwnedSteps());
 
     int leftCount = leftVectors_.size();
     int rightCount = rightVectors_.size();
@@ -476,7 +479,7 @@ public:
       \note This method is not const because it does change the behavior
             of the vector.
   */
-  void boundaryExchangeSumInto()
+  void boundaryExchangeSumInto(ESendRecv   send_recv=SEND_AND_RECV)
   {
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
@@ -486,6 +489,18 @@ public:
 
     bool sendToLeft   = stepStart_ > 0;
     bool recvFromLeft = stepStart_ > 0;
+
+    // this allows finer granularity of control of send recieve
+    // and will permit some blocking communication
+    if(send_recv==SEND_ONLY) {
+     recvFromRight = false;
+     recvFromLeft = false;
+    }
+    if(send_recv==RECV_ONLY) {
+     sendToRight = false;
+     sendToLeft = false;
+    }
+    // do nothing if(send_recv==SEND_AND_RECV) 
 
     // send from left to right
     for(std::size_t i=0;i<stencil_.size();i++) {

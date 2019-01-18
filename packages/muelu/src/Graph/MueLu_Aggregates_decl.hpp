@@ -57,6 +57,7 @@
 
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
+#include "MueLu_IndexManager.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                  /* any aggregate.                          */
@@ -130,6 +131,18 @@ namespace MueLu {
         This has to be done by the aggregation routines.
     */
     void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+
+        This has to be done by the aggregation factory.
+    */
+    RCP<IndexManager>& GetIndexManager() { return geoData_; }
+
+    /*! @brief Get the index manager used by structured aggregation algorithms.
+
+        This has to be done by the aggregation factory.
+    */
+    void SetIndexManager(RCP<IndexManager> & geoData) { geoData_ = geoData; }
 
     //! @brief Record whether aggregates include DOFs from other processes.
     void AggregatesCrossProcessors(const bool &flag) {aggregatesIncludeGhosts_ = flag;};
@@ -209,6 +222,11 @@ namespace MueLu {
      * id given by procWinner[k]
      */
     RCP<LOVector> procWinner_;
+
+    /*! geoData stores an index manager object that is used to perform structured aggreation
+     *  on a problem.
+     */
+    RCP<IndexManager> geoData_;
 
     Teuchos::ArrayRCP<bool> isRoot_;//< IsRoot[i] indicates whether vertex i is a root node.
 

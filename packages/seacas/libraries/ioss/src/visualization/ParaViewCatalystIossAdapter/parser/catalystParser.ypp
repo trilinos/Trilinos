@@ -1,34 +1,36 @@
-# Copyright(C) 1999-2010 National Technology & Engineering Solutions
-# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
-# NTESS, the U.S. Government retains certain rights in this software.
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-# 
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-# 
-#     * Redistributions in binary form must reproduce the above
-#       copyright notice, this list of conditions and the following
-#       disclaimer in the documentation and/or other materials provided
-#       with the distribution.
-# 
-#     * Neither the name of NTESS nor the names of its
-#       contributors may be used to endorse or promote products derived
-#       from this software without specific prior written permission.
-# 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+/*
+* Copyright(C) 1999-2017 National Technology & Engineering Solutions
+* of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+* NTESS, the U.S. Government retains certain rights in this software.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are
+* met:
+*
+*     * Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*
+*     * Redistributions in binary form must reproduce the above
+*       copyright notice, this list of conditions and the following
+*       disclaimer in the documentation and/or other materials provided
+*       with the distribution.
+*
+*     * Neither the name of NTESS nor the names of its
+*       contributors may be used to endorse or promote products derived
+*       from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 %{
 #include <stdio.h>
@@ -87,11 +89,15 @@ namespace
     CatalystParserInterface::id_range* eIDs;
     std::string sep;
   };
+
+  parse_data& c(void* pd) {
+    return *(static_cast<parse_data*>(pd));
+  }
 }
 
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
 typedef void*                 yyscan_t;
-int yyparse(yyscan_t scanner, parse_data& pd);
+int yyparse(yyscan_t scanner, void* pd);
 
 #include "catalystParser.tab.hpp"
 
@@ -111,7 +117,7 @@ extern "C"
 }
 
 
-void yyerror (YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd, char const *msg);
+void yyerror (YYLTYPE * llocp, yyscan_t yyscanner, void* pd, char const *msg);
 bool check_variable_name(YYLTYPE * llocp,
                          yyscan_t yyscanner,
                          parse_data& pd,
@@ -191,7 +197,7 @@ bool check_cycles(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
        has_cycle(pd, itr, "operation group list"))
       {
       std::string s = "Error: operation (" + itr.key().asString() + ") contains an operation cycle"; 
-      yyerror(llocp, yyscanner, pd, s.c_str());
+      yyerror(llocp, yyscanner, &pd, s.c_str());
       return false;
       }
     }
@@ -202,7 +208,7 @@ bool check_cycles(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
     if(has_cycle(pd, itr, "operation"))
       {
       std::string s = "Error: imageset (" + itr.key().asString() + ") contains an operation cycle"; 
-      yyerror(llocp, yyscanner, pd, s.c_str());
+      yyerror(llocp, yyscanner, &pd, s.c_str());
       return false;
       }
     }
@@ -213,7 +219,7 @@ bool check_cycles(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
     if(has_cycle(pd, itr, "operation"))
       {
       std::string s = "Error: scatter plot (" + itr.key().asString() + ") contains an operation cycle"; 
-      yyerror(llocp, yyscanner, pd, s.c_str());
+      yyerror(llocp, yyscanner, &pd, s.c_str());
       return false;
       }
     }
@@ -224,7 +230,7 @@ bool check_cycles(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
     if(has_cycle(pd, itr, "operation"))
       {
       std::string s = "Error: plot over time (" + itr.key().asString() + ") contains an operation cycle"; 
-      yyerror(llocp, yyscanner, pd, s.c_str());
+      yyerror(llocp, yyscanner, &pd, s.c_str());
       return false;
       }
     }
@@ -250,7 +256,7 @@ bool check_names(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
         {
         std::string s = "Error: imageset (" + itr.key().asString() + ") references camera (" 
                                             + n + ") which does not exist";
-        yyerror(llocp, yyscanner, pd, s.c_str());
+        yyerror(llocp, yyscanner, &pd, s.c_str());
         return false;
         }
       }
@@ -262,7 +268,7 @@ bool check_names(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
         {
         std::string s = "Error: imageset (" + itr.key().asString() + ") references representation (" 
                                             + n + ") which does not exist";
-        yyerror(llocp, yyscanner, pd, s.c_str());
+        yyerror(llocp, yyscanner, &pd, s.c_str());
         return false;
         }
       }
@@ -274,7 +280,7 @@ bool check_names(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
         {
         std::string s = "Error: imageset (" + itr.key().asString() + ") references operation (" 
                                             + n + ") which does not exist";
-        yyerror(llocp, yyscanner, pd, s.c_str());
+        yyerror(llocp, yyscanner, &pd, s.c_str());
         return false;
         }
       }
@@ -311,7 +317,7 @@ bool check_names(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
       {
       std::string s = "Error: operation (" + itr.key().asString() + ") references operation (" 
                                            + n + ") which does not exist";
-      yyerror(llocp, yyscanner, pd, s.c_str());
+      yyerror(llocp, yyscanner, &pd, s.c_str());
       return false;
       }
     }
@@ -328,7 +334,7 @@ bool check_names(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
         {
         std::string s = "Error: scatter plot (" + itr.key().asString() + ") references operation (" 
                                                 + n + ") which does not exist";
-        yyerror(llocp, yyscanner, pd, s.c_str());
+        yyerror(llocp, yyscanner, &pd, s.c_str());
         return false;
         }
       }
@@ -346,7 +352,7 @@ bool check_names(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd)
         {
         std::string s = "Error: plot over time (" + itr.key().asString() + ") references operation (" 
                                                   + n + ") which does not exist";
-        yyerror(llocp, yyscanner, pd, s.c_str());
+        yyerror(llocp, yyscanner, &pd, s.c_str());
         return false;
         }
       }
@@ -378,7 +384,7 @@ bool check_color_name(YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd, const
     {
     return true;
     }
-  yyerror(llocp, yyscanner, pd, ("Error: invalid preset color name " + cn).c_str());
+  yyerror(llocp, yyscanner, &pd, ("Error: invalid preset color name " + cn).c_str());
   return false;
 }
 
@@ -396,7 +402,7 @@ bool check_plot_axes(YYLTYPE * llocp,
       std::string s = "Plot block contains '" + axis + " axis range' and additional commands\n"
                       "to specify the axis. '" + axis + " axis range' must be used\n"
                       "without other axis commands\n";
-      yyerror(llocp, yyscanner, pd, s.c_str());
+      yyerror(llocp, yyscanner, &pd, s.c_str());
       return false;
     }
 
@@ -406,7 +412,7 @@ bool check_plot_axes(YYLTYPE * llocp,
     std::string s = "Plot block contains '" + axis + " axis use current data range' and\n"
                     "'" + axis + " axis use cumulative data range'.  Can only specify one\n"
                     "of these commands.\n";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
 
@@ -416,7 +422,7 @@ bool check_plot_axes(YYLTYPE * llocp,
     if(c[axis + " axis minimum range"][1] > 
        c[axis + " axis maximum range"][0] )
       {
-      yyerror(llocp, yyscanner, pd, ("Error: plot block contains invalid minimum and maximum " + axis + " axis ranges").c_str());
+      yyerror(llocp, yyscanner, &pd, ("Error: plot block contains invalid minimum and maximum " + axis + " axis ranges").c_str());
       return false;
       }
     }
@@ -451,19 +457,19 @@ bool check_calculator_block(YYLTYPE * llocp,
 {
   if(!c.isMember("function"))
     {
-    yyerror(llocp, yyscanner, pd, "Error: calculator block does not contain a 'function' statement");
+    yyerror(llocp, yyscanner, &pd, "Error: calculator block does not contain a 'function' statement");
     return false;
     }
 
   if(!c.isMember("output variable name"))
     {
-    yyerror(llocp, yyscanner, pd, "Error: calculator block does not contain a 'output variable name' statement");
+    yyerror(llocp, yyscanner, &pd, "Error: calculator block does not contain a 'output variable name' statement");
     return false;
     }
 
   if(!c.isMember("element or node data"))
     {
-    yyerror(llocp, yyscanner, pd, "Error: calculator block does not contain a 'element or node data' statement");
+    yyerror(llocp, yyscanner, &pd, "Error: calculator block does not contain a 'element or node data' statement");
     return false;
     }
 
@@ -472,7 +478,7 @@ bool check_calculator_block(YYLTYPE * llocp,
     (*pd.nv)[c["output variable name"].asString()] = CatalystParserInterface::ALLTYPE;
     if(!check_calculator_function_variable_names(llocp, yyscanner, pd, c, *pd.nv))
       {
-      yyerror(llocp, yyscanner, pd, "Error: calculator function contains unknown variable name.");
+      yyerror(llocp, yyscanner, &pd, "Error: calculator function contains unknown variable name.");
       return false;
       }
     }
@@ -481,7 +487,7 @@ bool check_calculator_block(YYLTYPE * llocp,
     (*pd.ev)[c["output variable name"].asString()] =  CatalystParserInterface::ALLTYPE;
     if(!check_calculator_function_variable_names(llocp, yyscanner, pd, c, *pd.ev))
       {
-      yyerror(llocp, yyscanner, pd, "Error: calculator function contains unknown variable name.");
+      yyerror(llocp, yyscanner, &pd, "Error: calculator function contains unknown variable name.");
       return false;
       }
     }
@@ -503,13 +509,13 @@ bool check_plot_over_time_block(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: plot over time block contains multiple 'variable ...' commands, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: plot over time block contains multiple 'variable ...' commands, only one allowed");
     return false;
     }
 
   if(!count)
     {
-    yyerror(llocp, yyscanner, pd, "Error: plot over time block contains variable to plot, at least one variable required");
+    yyerror(llocp, yyscanner, &pd, "Error: plot over time block contains variable to plot, at least one variable required");
     return false;
     }
 
@@ -542,28 +548,28 @@ bool check_scatter_plot_block(YYLTYPE * llocp,
     {
     std::string s =  "Scatter Plot block contains the 'all variables' command with \n"
                       "other '<x|y> axis variable ...' commands. Only one allowed.";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
   else if(x_axis_variable_count > 1) 
     {
     std::string s = "Scatter Plot block contains more than one 'x axis variable ...' \n"
                     "command. Only one allowed.";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
   else if(y_axis_variable_count > 1) 
     {
     std::string s = "Scatter Plot block contains more than one 'y axis variable ...' \n"
                     "command. Only one allowed.";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
 
   if(all_variables_count == 0 && 
      y_axis_variable_count == 0) 
     {
-    yyerror(llocp, yyscanner, pd, "Scatter Plot block contains no y data to plot.");
+    yyerror(llocp, yyscanner, &pd, "Scatter Plot block contains no y data to plot.");
     return false;
     }
 
@@ -585,7 +591,7 @@ bool check_contour(YYLTYPE * llocp,
 
   if(!count)
     {
-    yyerror(llocp, yyscanner, pd, "Error: contour operation contains no 'contour value ...' commands, one required");
+    yyerror(llocp, yyscanner, &pd, "Error: contour operation contains no 'contour value ...' commands, one required");
     return false;
     }
   
@@ -597,13 +603,13 @@ bool check_contour(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: contour operation contains multiple 'variable ...' commands, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: contour operation contains multiple 'variable ...' commands, only one allowed");
     return false;
     }
 
   if(!count)
     {
-    yyerror(llocp, yyscanner, pd, "Error: contour operation contains no 'variable ...' commands, one is required");
+    yyerror(llocp, yyscanner, &pd, "Error: contour operation contains no 'variable ...' commands, one is required");
     return false;
     }
 
@@ -622,13 +628,13 @@ bool check_threshold(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: threshold operation contains multiple 'keep ...' commands, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: threshold operation contains multiple 'keep ...' commands, only one allowed");
     return false;
     }
 
   if(!count)
     {
-    yyerror(llocp, yyscanner, pd, "Error: threshold operation contains no 'keep ...' commands, one is required");
+    yyerror(llocp, yyscanner, &pd, "Error: threshold operation contains no 'keep ...' commands, one is required");
     return false;
     }
   
@@ -640,13 +646,13 @@ bool check_threshold(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: threshold operation contains multiple 'variable ...' commands, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: threshold operation contains multiple 'variable ...' commands, only one allowed");
     return false;
     }
 
   if(!count)
     {
-    yyerror(llocp, yyscanner, pd, "Error: threshold operation contains no 'variable ...' commands, one is required");
+    yyerror(llocp, yyscanner, &pd, "Error: threshold operation contains no 'variable ...' commands, one is required");
     return false;
     }
 
@@ -666,7 +672,7 @@ bool check_box_clip(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: box clip operation contains multiple 'center at ...' commands, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: box clip operation contains multiple 'center at ...' commands, only one allowed");
     return false;
     }
   
@@ -676,7 +682,7 @@ bool check_box_clip(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: box clip operation contains both 'absolute extents' and 'relative extents' commands, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: box clip operation contains both 'absolute extents' and 'relative extents' commands, only one allowed");
     return false;
     }
 
@@ -697,9 +703,9 @@ bool check_clip_or_slice(YYLTYPE * llocp,
   if(count > 1)
     {
     if(pd.cb == TOKCLIP)
-      yyerror(llocp, yyscanner, pd, "Error: clip operation contains multiple '... point on plane' commands, only one allowed");
+      yyerror(llocp, yyscanner, &pd, "Error: clip operation contains multiple '... point on plane' commands, only one allowed");
     else if(pd.cb == TOKSLICE)
-      yyerror(llocp, yyscanner, pd, "Error: slice operation contains multiple '... point on plane' commands, only one allowed");
+      yyerror(llocp, yyscanner, &pd, "Error: slice operation contains multiple '... point on plane' commands, only one allowed");
     return false;
     }
   return true;
@@ -713,7 +719,7 @@ bool check_camera(YYLTYPE * llocp,
   if(c.isMember("look at relative distance") && 
      c.isMember("look at absolute distance"))
     {
-    yyerror(llocp, yyscanner, pd, "Error: camera block contains both 'look at relative distance' and 'look at absolute distance'");
+    yyerror(llocp, yyscanner, &pd, "Error: camera block contains both 'look at relative distance' and 'look at absolute distance'");
     return false;
     }
 
@@ -725,7 +731,7 @@ bool check_camera(YYLTYPE * llocp,
 
   if(look_at_count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: camera block contains multiple 'look at .. ' operations, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: camera block contains multiple 'look at .. ' operations, only one allowed");
     return false;
     }
 
@@ -743,7 +749,7 @@ bool check_camera(YYLTYPE * llocp,
 
   if(camera_at_count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: camera block contains multiple 'camera at ... ' operations, only one allowed");
+    yyerror(llocp, yyscanner, &pd, "Error: camera block contains multiple 'camera at ... ' operations, only one allowed");
     return false;
     }
 
@@ -760,7 +766,7 @@ bool check_camera(YYLTYPE * llocp,
     std::string s = "Block contains an invalid camera specification. \n"
                     "Cameras may not have a 'camera at ...' command and \n"
                     "a 'look at ...' command and a 'look direction' command";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
 
@@ -771,7 +777,7 @@ bool check_camera(YYLTYPE * llocp,
     std::string s = "Block contains an invalid camera specification. \n"
                     "Cameras may not have a 'camera at ...' command and \n"
                     "a 'look at ...' command and a 'look at relative|absolute distance' command";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
 
@@ -782,7 +788,7 @@ bool check_camera(YYLTYPE * llocp,
     std::string s = "Block contains an invalid camera specification. \n"
                     "Cameras may not have a 'camera at ...' command and \n"
                     "a 'look direction' command and a 'look at relative|absolute distance' command";
-    yyerror(llocp, yyscanner, pd, s.c_str());
+    yyerror(llocp, yyscanner, &pd, s.c_str());
     return false;
     }
 
@@ -832,7 +838,7 @@ bool check_imageset(YYLTYPE * llocp,
      r.isMember("show z axis tic mark labels") ||
      r.isMember("show orientation axes") ))
     {
-    yyerror(llocp, yyscanner, pd, "Error: imageset block contains both representation shortcuts and a representation block reference");
+    yyerror(llocp, yyscanner, &pd, "Error: imageset block contains both representation shortcuts and a representation block reference");
     return false;
     }
 
@@ -846,7 +852,7 @@ bool check_imageset(YYLTYPE * llocp,
      r.isMember("up vector") || 
      r.isMember("camera fov") ))
     {
-    yyerror(llocp, yyscanner, pd, "Error: imageset block contains both camera shortcuts and a camera block reference");
+    yyerror(llocp, yyscanner, &pd, "Error: imageset block contains both camera shortcuts and a camera block reference");
     return false;
     }
 
@@ -868,21 +874,21 @@ bool check_representation(YYLTYPE * llocp,
 
   if(count > 1)
     {
-    yyerror(llocp, yyscanner, pd, "Error: representation block contains multiple color by operations");
+    yyerror(llocp, yyscanner, &pd, "Error: representation block contains multiple color by operations");
     return false;
     }
 
   if(r["show bounding box"].asBool() && 
      r["show surfaces"].asBool())
     {
-    yyerror(llocp, yyscanner, pd, "Error: representation block contains both 'show bounding box = true' and 'show surfaces = true'");
+    yyerror(llocp, yyscanner, &pd, "Error: representation block contains both 'show bounding box = true' and 'show surfaces = true'");
     return false;
     }
 
   if(r["show bounding box"].asBool() && 
      r["show edges"].asBool())
     {
-    yyerror(llocp, yyscanner, pd, "Error: representation block contains both 'show bounding box = true' and 'show edges = true'");
+    yyerror(llocp, yyscanner, &pd, "Error: representation block contains both 'show bounding box = true' and 'show edges = true'");
     return false;
     }
 
@@ -892,14 +898,14 @@ bool check_representation(YYLTYPE * llocp,
      r.isMember("color legend minimum range") ||
      r.isMember("color legend maximum range") ))
     {
-    yyerror(llocp, yyscanner, pd, "Error: representation block contains color legend range and additional color legend commands");
+    yyerror(llocp, yyscanner, &pd, "Error: representation block contains color legend range and additional color legend commands");
     return false;
     }
 
   if(r.isMember("color legend use cumulative data range") &&
      r.isMember("color legend use current data range") )
     {
-    yyerror(llocp, yyscanner, pd, "Error: representation block contains both color legend cumulative and current data range commands");
+    yyerror(llocp, yyscanner, &pd, "Error: representation block contains both color legend cumulative and current data range commands");
     return false;
     }
 
@@ -909,7 +915,7 @@ bool check_representation(YYLTYPE * llocp,
     if(r["color legend minimum range"][1] > 
        r["color legend maximum range"][0] )
       {
-      yyerror(llocp, yyscanner, pd, "Error: representation block contains invalid minimum and maximum color legend ranges");
+      yyerror(llocp, yyscanner, &pd, "Error: representation block contains invalid minimum and maximum color legend ranges");
       return false;
       }
     }
@@ -928,7 +934,7 @@ bool check_nodeID(YYLTYPE * llocp,
       {
       std::stringstream ss;
       ss << id;
-      yyerror(llocp, yyscanner, pd, ("Error: node id out of range " + ss.str()).c_str());
+      yyerror(llocp, yyscanner, &pd, ("Error: node id out of range " + ss.str()).c_str());
       return false;
       }
     }
@@ -946,7 +952,7 @@ bool check_elementID(YYLTYPE * llocp,
       {
       std::stringstream ss;
       ss << id;
-      yyerror(llocp, yyscanner, pd, ("Error: element id out of range " + ss.str()).c_str());
+      yyerror(llocp, yyscanner, &pd, ("Error: element id out of range " + ss.str()).c_str());
       return false;
       }
     }
@@ -1008,7 +1014,7 @@ bool check_variable_name(YYLTYPE * llocp,
         !is_global_var &&
         !is_element_var )
       {
-      yyerror(llocp, yyscanner, pd, ("Error: variable name not found: " + name).c_str());
+      yyerror(llocp, yyscanner, &pd, ("Error: variable name not found: " + name).c_str());
       return false;
       }
 
@@ -1048,7 +1054,7 @@ bool check_variable_name(YYLTYPE * llocp,
         t = "vector";
       else if(vt == CatalystParserInterface::TENSOR)
         t = "tensor";
-      yyerror(llocp, yyscanner, pd, ("Error: variable is not " + t + " type: " + name).c_str());
+      yyerror(llocp, yyscanner, &pd, ("Error: variable is not " + t + " type: " + name).c_str());
       return false;
       }
 
@@ -1071,7 +1077,7 @@ bool check_vector_component(YYLTYPE * llocp,
       return check_variable_name(llocp, yyscanner, pd, name.substr(0,name.size() - offset), CatalystParserInterface::VECTOR);
     }
 
-  yyerror(llocp, yyscanner, pd, ("Error: invalid vector name component (must be x, y, or z) " + name).c_str());
+  yyerror(llocp, yyscanner, &pd, ("Error: invalid vector name component (must be x, y, or z) " + name).c_str());
   return false;
 }
 
@@ -1093,7 +1099,7 @@ bool check_tensor_component(YYLTYPE * llocp,
       return check_variable_name(llocp, yyscanner, pd, name.substr(0,name.size() - offset), CatalystParserInterface::TENSOR);
     }
 
-  yyerror(llocp, yyscanner, pd, ("Error: invalid tensor name component (must be xx, yy, zz, zx, zy, xy, or yz) " + name).c_str());
+  yyerror(llocp, yyscanner, &pd, ("Error: invalid tensor name component (must be xx, yy, zz, zx, zy, xy, or yz) " + name).c_str());
   return false;
 }
 
@@ -1109,7 +1115,7 @@ bool check_catalyst_shortcuts(YYLTYPE * llocp,
       pd.root["scatter plot blocks"].size() ||
       pd.root["plot over time blocks"].size()) )
     {
-    yyerror(llocp, yyscanner, pd, "Error: catalyst block shortcuts used with declared blocks.");
+    yyerror(llocp, yyscanner, &pd, "Error: catalyst block shortcuts used with declared blocks.");
     return false;
     }
 
@@ -1129,7 +1135,7 @@ bool initialize_block(YYLTYPE * llocp,
 {
   if(pd.ims_shortcut.size())
     {
-    yyerror(llocp, yyscanner, pd, "Error: catalyst block shortcuts used with declared blocks.");
+    yyerror(llocp, yyscanner, &pd, "Error: catalyst block shortcuts used with declared blocks.");
     return false;
     }
 
@@ -1251,7 +1257,7 @@ bool initialize_block(YYLTYPE * llocp,
     }
   else
     {
-    yyerror(llocp, yyscanner, pd, ("Error: duplicate block name " + pd.cbn).c_str());
+    yyerror(llocp, yyscanner, &pd, ("Error: duplicate block name " + pd.cbn).c_str());
     return false;
     }
 
@@ -1392,7 +1398,7 @@ bool check_two_argument_command(YYLTYPE * llocp,
 {
   if(value < 0 || value > 1)
     {
-    yyerror(llocp, yyscanner, pd, ("Error: " + command + " <size> must be between 0 and 1, inclusive").c_str());
+    yyerror(llocp, yyscanner, &pd, ("Error: " + command + " <size> must be between 0 and 1, inclusive").c_str());
     return false;
     }
 
@@ -1633,7 +1639,7 @@ void initialize_json(parse_data& pd)
   pd.root["onoff criteria blocks"] = Json::Value(Json::objectValue);
 }
 
-void yyerror (YYLTYPE * llocp, yyscan_t yyscanner, parse_data& pd, char const *msg)
+void yyerror (YYLTYPE * llocp, yyscan_t yyscanner, void* pd, char const *msg)
 {
   fflush(stdout);
   printf("%s, line = %d, column = %d\n", msg, llocp->first_line, llocp->first_column);
@@ -1653,7 +1659,7 @@ int parseFile(parse_data& pd,
   yyscan_t myscanner;
   catalystlex_init(&myscanner);
   catalystset_in(fh, myscanner);
-  int ret = yyparse(myscanner, pd);
+  int ret = yyparse(myscanner, &pd);
   catalystlex_destroy(myscanner);
 
   Json::FastWriter fastWriter;
@@ -1681,7 +1687,7 @@ int parseString(parse_data& pd,
   yyscan_t myscanner;
   catalystlex_init(&myscanner);
   YY_BUFFER_STATE buffer = catalyst_scan_string(s.c_str(), myscanner);
-  int ret = yyparse(myscanner, pd);
+  int ret = yyparse(myscanner, &pd);
   catalyst_delete_buffer(buffer, myscanner);
   catalystlex_destroy(myscanner);
   Json::FastWriter fastWriter;
@@ -2067,7 +2073,7 @@ int parseCatalystString(const std::string& s,
 %lex-param {yyscan_t scanner}
 
 %parse-param {yyscan_t scanner}
-%parse-param {parse_data& pd}
+%parse-param {void* pd}
 
 %type <string> element_or_node_data_flag
 %type <string> operation_data_type
@@ -2091,11 +2097,11 @@ commands
       :
       | start_catalyst_block statements catalyst_end 
       { 
-      if(!check_catalyst_shortcuts(&yylloc, scanner, pd)) 
+      if(!check_catalyst_shortcuts(&yylloc, scanner, c(pd))) 
         YYABORT; 
-      if(!check_names(&yylloc, scanner, pd))
+      if(!check_names(&yylloc, scanner, c(pd)))
         YYABORT; 
-      if(!check_cycles(&yylloc, scanner, pd))
+      if(!check_cycles(&yylloc, scanner, c(pd)))
         YYABORT; 
       }
       ;
@@ -2106,7 +2112,7 @@ catalyst_end
       ;
 
 start_catalyst_block
-      : TOKBEGIN TOKCATALYST { initialize_json(pd); pd.cb = TOKCATALYST; }
+      : TOKBEGIN TOKCATALYST { initialize_json(c(pd)); c(pd).cb = TOKCATALYST; }
       ;
 
 statements
@@ -2205,9 +2211,9 @@ statement
 representation_block
       : start_representation_block representation_statements representation_end
       { 
-      if(!check_representation(&yylloc, scanner, pd, pd.root["representation blocks"][pd.cbn]))
+      if(!check_representation(&yylloc, scanner, c(pd), c(pd).root["representation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST; 
+      c(pd).cb = TOKCATALYST; 
       }
       ;
 
@@ -2219,10 +2225,10 @@ representation_end
 start_representation_block
       : TOKBEGIN TOKREPRESENTATION TOKIDENTIFIER 
       { 
-      pd.cb = TOKREPRESENTATION; 
-      pd.cbn = $3; 
-      pd.count = 1;
-      if(!initialize_block(&yylloc, scanner, pd)) 
+      c(pd).cb = TOKREPRESENTATION; 
+      c(pd).cbn = $3; 
+      c(pd).count = 1;
+      if(!initialize_block(&yylloc, scanner, c(pd))) 
         YYABORT;
       }
       ;
@@ -2281,50 +2287,50 @@ boolean
       ;
 
 show_surfaces
-      : TOKSHOWSURFACES TOKEQUAL boolean { boolean_command(pd, "show surfaces", $3 == 1); }
+      : TOKSHOWSURFACES TOKEQUAL boolean { boolean_command(c(pd), "show surfaces", $3 == 1); }
       ;
 
 show_edges
-      : TOKSHOWEDGES TOKEQUAL boolean { boolean_command(pd, "show edges", $3 == 1); }
+      : TOKSHOWEDGES TOKEQUAL boolean { boolean_command(c(pd), "show edges", $3 == 1); }
       ;
 
 show_bouding_box
-      : TOKSHOWBOUNDINGBOX TOKEQUAL boolean { boolean_command(pd, "show bounding box", $3 == 1); }
+      : TOKSHOWBOUNDINGBOX TOKEQUAL boolean { boolean_command(c(pd), "show bounding box", $3 == 1); }
       ;
 
 color_by_scalar
       : TOKCOLORBYSCALAR TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::SCALAR)) 
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::SCALAR)) 
         YYABORT;
-      identifier_command(pd, "color by scalar", $3); 
+      identifier_command(c(pd), "color by scalar", $3); 
       }
       ;
 
 color_by_vector_magnitude
       : TOKCOLORBYVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
       {
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::VECTOR)) 
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::VECTOR)) 
         YYABORT;
-      identifier_command(pd, "color by vector magnitude", $3); 
+      identifier_command(c(pd), "color by vector magnitude", $3); 
       }
       ;
 
 color_by_vector_component
       : TOKCOLORBYVECTORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_vector_component(&yylloc, scanner, pd, $3)) 
+      if(!check_vector_component(&yylloc, scanner, c(pd), $3)) 
         YYABORT;
-      identifier_command(pd, "color by vector component", $3); 
+      identifier_command(c(pd), "color by vector component", $3); 
       }
       ;
 
 color_by_tensor_component
       : TOKCOLORBYTENSORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_tensor_component(&yylloc, scanner, pd, $3)) 
+      if(!check_tensor_component(&yylloc, scanner, c(pd), $3)) 
         YYABORT;
-      identifier_command(pd, "color by tensor component", $3); 
+      identifier_command(c(pd), "color by tensor component", $3); 
       }
       ;
 
@@ -2338,20 +2344,20 @@ color_by_solid_color
         yyerror(&yylloc, scanner, pd, "Error: color by solid color arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "color by solid color", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "color by solid color", c(pd).d); 
       } 
       ;
 
 color_by_blockid
-      : TOKCOLORBYBLOCKID { no_argument_command(pd, "color by blockid"); }
+      : TOKCOLORBYBLOCKID { no_argument_command(c(pd), "color by blockid"); }
       ;
 
 show_color_legend
-      : TOKSHOWCOLORLEGEND TOKEQUAL boolean { boolean_command(pd, "show color legend", $3 == 1); }
+      : TOKSHOWCOLORLEGEND TOKEQUAL boolean { boolean_command(c(pd), "show color legend", $3 == 1); }
       ;
 
 color_legend_range
@@ -2362,19 +2368,19 @@ color_legend_range
         yyerror(&yylloc, scanner, pd, "Error: color legend range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "color legend range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "color legend range", c(pd).d);
       }
       ;
 
 color_legend_use_current_data_range
-      : TOKCOLORLEGENDUSECURRENTDATARANGE { no_argument_command(pd, "color legend use current data range"); }
+      : TOKCOLORLEGENDUSECURRENTDATARANGE { no_argument_command(c(pd), "color legend use current data range"); }
       ;
 
 color_legend_use_cumulative_data_range
-      : TOKCOLORLEGENDUSECUMULATIVEDATARANGE { no_argument_command(pd, "color legend use cumulative data range"); }
+      : TOKCOLORLEGENDUSECUMULATIVEDATARANGE { no_argument_command(c(pd), "color legend use cumulative data range"); }
       ;
 
 color_legend_minimum_range
@@ -2385,10 +2391,10 @@ color_legend_minimum_range
         yyerror(&yylloc, scanner, pd, "Error: color legend minimum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "color legend minimum range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "color legend minimum range", c(pd).d);
       }
       ;
 
@@ -2397,13 +2403,13 @@ color_legend_maximum_range
       {
       if($3 > $4)
         {
-        yyerror(&yylloc, scanner, pd, "Error: color legend maxiumum range argument <min> must be less than argument <max>.");
+        yyerror(&yylloc, scanner, pd, "Error: color legend maximum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "color legend maximum range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "color legend maximum range", c(pd).d);
       }
       ;
 
@@ -2420,46 +2426,46 @@ position
 
 color_legend_position
       : TOKCOLORLEGENDPOSITION TOKEQUAL position TOKVALUE 
-        { if(!check_two_argument_command(&yylloc, scanner, pd, "color legend position", $3, $4)) YYABORT; }
+        { if(!check_two_argument_command(&yylloc, scanner, c(pd), "color legend position", $3, $4)) YYABORT; }
       ;
 
 preset_color_scale
       : TOKPRESETCOLORSCALE TOKEQUAL TOKIDENTIFIER
       { 
       std::string cn($3);
-      if(!check_color_name(&yylloc, scanner, pd, cn)) 
+      if(!check_color_name(&yylloc, scanner, c(pd), cn)) 
         YYABORT;
-      identifier_command(pd, "preset color scale", $3); 
+      identifier_command(c(pd), "preset color scale", $3); 
       }
       ;
 
 invert_color_scale
-      : TOKINVERTCOLORSCALE TOKEQUAL boolean { boolean_command(pd, "invert color scale", $3 == 1); }
+      : TOKINVERTCOLORSCALE TOKEQUAL boolean { boolean_command(c(pd), "invert color scale", $3 == 1); }
       ;
 
 show_time_annotation
-      : TOKSHOWTIMEANNOTATION TOKEQUAL boolean { boolean_command(pd, "show time annotation", $3 == 1); }
+      : TOKSHOWTIMEANNOTATION TOKEQUAL boolean { boolean_command(c(pd), "show time annotation", $3 == 1); }
       ;
 
 time_annotation_position
       : TOKTIMEANNOTATIONPOSITION TOKEQUAL position TOKVALUE
-        { if(!check_two_argument_command(&yylloc, scanner, pd, "time annotation position", $3, $4)) YYABORT; }
+        { if(!check_two_argument_command(&yylloc, scanner, c(pd), "time annotation position", $3, $4)) YYABORT; }
       ;
 
 show_axes
-      : TOKSHOWAXES TOKEQUAL boolean { boolean_command(pd, "show axes", $3 == 1); }
+      : TOKSHOWAXES TOKEQUAL boolean { boolean_command(c(pd), "show axes", $3 == 1); }
       ;
 
 show_x_axis_label
-      : TOKSHOWXAXISLABEL TOKEQUAL boolean { boolean_command(pd, "show x axis label", $3 == 1); }
+      : TOKSHOWXAXISLABEL TOKEQUAL boolean { boolean_command(c(pd), "show x axis label", $3 == 1); }
       ;
 
 show_y_axis_label
-      : TOKSHOWYAXISLABEL TOKEQUAL boolean { boolean_command(pd, "show y axis label", $3 == 1); }
+      : TOKSHOWYAXISLABEL TOKEQUAL boolean { boolean_command(c(pd), "show y axis label", $3 == 1); }
       ;
 
 show_z_axis_label
-      : TOKSHOWZAXISLABEL TOKEQUAL boolean { boolean_command(pd, "show z axis label", $3 == 1); }
+      : TOKSHOWZAXISLABEL TOKEQUAL boolean { boolean_command(c(pd), "show z axis label", $3 == 1); }
       ;
 
 x_axis_label_name
@@ -2467,7 +2473,7 @@ x_axis_label_name
       { 
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "x axis label name", s); 
+      identifier_command(c(pd), "x axis label name", s); 
       }
       ;
 
@@ -2476,7 +2482,7 @@ y_axis_label_name
       {
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "y axis label name", s);
+      identifier_command(c(pd), "y axis label name", s);
       }
       ;
 
@@ -2485,48 +2491,48 @@ z_axis_label_name
       {
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "z axis label name", s);
+      identifier_command(c(pd), "z axis label name", s);
       }
       ;
 
 show_x_axis_tic_marks
-      : TOKSHOWXAXISTICMARKS TOKEQUAL boolean { boolean_command(pd, "show x axis tic marks", $3 == 1); }
+      : TOKSHOWXAXISTICMARKS TOKEQUAL boolean { boolean_command(c(pd), "show x axis tic marks", $3 == 1); }
       ;
 
 show_y_axis_tic_marks
-      : TOKSHOWYAXISTICMARKS TOKEQUAL boolean { boolean_command(pd, "show y axis tic marks", $3 == 1); }
+      : TOKSHOWYAXISTICMARKS TOKEQUAL boolean { boolean_command(c(pd), "show y axis tic marks", $3 == 1); }
       ;
 
 show_z_axis_tic_marks
-      : TOKSHOWZAXISTICMARKS TOKEQUAL boolean { boolean_command(pd, "show z axis tic marks", $3 == 1); }
+      : TOKSHOWZAXISTICMARKS TOKEQUAL boolean { boolean_command(c(pd), "show z axis tic marks", $3 == 1); }
       ;
 
 show_x_axis_minor_tic_marks
-      : TOKSHOWXAXISMINORTICMARKS TOKEQUAL boolean { boolean_command(pd, "show x axis minor tic marks", $3 == 1); }
+      : TOKSHOWXAXISMINORTICMARKS TOKEQUAL boolean { boolean_command(c(pd), "show x axis minor tic marks", $3 == 1); }
       ;
 
 show_y_axis_minor_tic_marks
-      : TOKSHOWYAXISMINORTICMARKS TOKEQUAL boolean { boolean_command(pd, "show y axis minor tic marks", $3 == 1); }
+      : TOKSHOWYAXISMINORTICMARKS TOKEQUAL boolean { boolean_command(c(pd), "show y axis minor tic marks", $3 == 1); }
       ;
 
 show_z_axis_minor_tic_marks
-      : TOKSHOWZAXISMINORTICMARKS TOKEQUAL boolean { boolean_command(pd, "show z axis minor tic marks", $3 == 1); }
+      : TOKSHOWZAXISMINORTICMARKS TOKEQUAL boolean { boolean_command(c(pd), "show z axis minor tic marks", $3 == 1); }
       ;
 
 show_x_axis_tic_mark_labels
-      : TOKSHOWXAXISTICMARKLABELS TOKEQUAL boolean { boolean_command(pd, "show x axis tic mark labels", $3 == 1); }
+      : TOKSHOWXAXISTICMARKLABELS TOKEQUAL boolean { boolean_command(c(pd), "show x axis tic mark labels", $3 == 1); }
       ;
 
 show_y_axis_tic_mark_labels
-      : TOKSHOWYAXISTICMARKLABELS TOKEQUAL boolean { boolean_command(pd, "show y axis tic mark labels", $3 == 1); }
+      : TOKSHOWYAXISTICMARKLABELS TOKEQUAL boolean { boolean_command(c(pd), "show y axis tic mark labels", $3 == 1); }
       ;
 
 show_z_axis_tic_mark_labels
-      : TOKSHOWZAXISTICMARKLABELS TOKEQUAL boolean { boolean_command(pd, "show z axis tic mark labels", $3 == 1); }
+      : TOKSHOWZAXISTICMARKLABELS TOKEQUAL boolean { boolean_command(c(pd), "show z axis tic mark labels", $3 == 1); }
       ;
 
 show_orientation_axes
-      : TOKSHOWORIENTATIONAXES TOKEQUAL boolean { boolean_command(pd, "show orientation axes", $3 == 1); }
+      : TOKSHOWORIENTATIONAXES TOKEQUAL boolean { boolean_command(c(pd), "show orientation axes", $3 == 1); }
       ;
 
 image_name_addon
@@ -2534,7 +2540,7 @@ image_name_addon
       {
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "image name addon", s);
+      identifier_command(c(pd), "image name addon", s);
       }
       ;
 
@@ -2546,10 +2552,10 @@ color_legend_subrange
         yyerror(&yylloc, scanner, pd, "Error: color legend subrange argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "color legend subrange", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "color legend subrange", c(pd).d);
       }
 
 highlight_subrange
@@ -2567,16 +2573,16 @@ highlight_subrange
         yyerror(&yylloc, scanner, pd, "Error: highlight subrange <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      pd.d.push_back($7);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      c(pd).d.push_back($7);
       std::ostringstream convert;
-      convert << pd.count;
-      float_vector_command(pd, "highlight subrange " + convert.str(), pd.d);
-      pd.count++;
+      convert << c(pd).count;
+      float_vector_command(c(pd), "highlight subrange " + convert.str(), c(pd).d);
+      c(pd).count++;
       }
       ;
 
@@ -2587,9 +2593,9 @@ highlight_subrange
 multicamera8_block
       : start_multicamera8_block multicamera8_statements multicamera8_end
       {
-      if(!check_camera(&yylloc, scanner, pd, pd.root["camera blocks"][pd.cbn]))
+      if(!check_camera(&yylloc, scanner, c(pd), c(pd).root["camera blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
  
@@ -2601,9 +2607,9 @@ multicamera8_end
 start_multicamera8_block
       : TOKBEGIN TOKMULTICAMERA8 TOKIDENTIFIER
       {
-      pd.cb = TOKMULTICAMERA8;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKMULTICAMERA8;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -2628,22 +2634,22 @@ multicamera8_statement
 look_at_absolute_point
       : TOKLOOKATABSOLUTEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "look at absolute point", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "look at absolute point", c(pd).d);
       }
       ;
 
 look_at_relative_point
       : TOKLOOKATRELATIVEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "look at relative point", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "look at relative point", c(pd).d);
       }
       ;
 
@@ -2656,8 +2662,8 @@ look_at_element
         yyerror(&yylloc, scanner, pd, "Error: look at element <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_elementID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "look at element", (int) $3);
+      check_elementID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "look at element", (int) $3);
       }
       ;
 
@@ -2670,8 +2676,8 @@ look_at_node
         yyerror(&yylloc, scanner, pd, "Error: look at node <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "look at node", (int) $3);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "look at node", (int) $3);
       }
       ;
 
@@ -2683,7 +2689,7 @@ look_at_absolute_distance
         yyerror(&yylloc, scanner, pd, "Error: look at absolute distance <value> must be greater than 0");
         YYABORT;
         }
-      double_command(pd, "look at absolute distance", $3);
+      double_command(c(pd), "look at absolute distance", $3);
       }
       ;
 
@@ -2695,7 +2701,7 @@ look_at_relative_distance
         yyerror(&yylloc, scanner, pd, "Error: look at relative distance <value> must be greater than 0");
         YYABORT;
         }
-      double_command(pd, "look at relative distance", $3);
+      double_command(c(pd), "look at relative distance", $3);
       }
       ;
 
@@ -2707,11 +2713,11 @@ up_vector
         yyerror(&yylloc, scanner, pd, "Error: up vector cannot be all zeros");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "up vector", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "up vector", c(pd).d);
       }
       ;
 
@@ -2723,7 +2729,7 @@ camera_fov
         yyerror(&yylloc, scanner, pd, "Error: camera fov <value> must be greater than 0 and less than or equal 180");
         YYABORT;
         }
-      double_command(pd, "camera fov", $3);
+      double_command(c(pd), "camera fov", $3);
       }
       ;
 
@@ -2734,9 +2740,9 @@ camera_fov
 camera_block
       : start_camera_block camera_statements camera_end
       {
-      if(!check_camera(&yylloc, scanner, pd, pd.root["camera blocks"][pd.cbn]))
+      if(!check_camera(&yylloc, scanner, c(pd), c(pd).root["camera blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -2748,9 +2754,9 @@ camera_end
 start_camera_block
       : TOKBEGIN TOKCAMERA TOKIDENTIFIER
       {
-      pd.cb = TOKCAMERA;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKCAMERA;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -2789,33 +2795,33 @@ look_direction
         yyerror(&yylloc, scanner, pd, "Error: look direction vector cannot be all zeros");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "look direction", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "look direction", c(pd).d);
       }
       ;
 
 camera_at_absolute_point
       : TOKCAMERAATABSOLUTEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "camera at absolute point", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "camera at absolute point", c(pd).d);
       }
       ;
 
 camera_at_relative_point
       : TOKCAMERAATRELATIVEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "camera at relative point", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "camera at relative point", c(pd).d);
       }
       ;
 
@@ -2828,8 +2834,8 @@ camera_at_element
         yyerror(&yylloc, scanner, pd, "Error: camera at element <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_elementID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "camera at element", (int) $3);
+      check_elementID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "camera at element", (int) $3);
       }
       ;
 
@@ -2842,8 +2848,8 @@ camera_at_node
         yyerror(&yylloc, scanner, pd, "Error: camera at node <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "camera at node", (int) $3);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "camera at node", (int) $3);
       }
       ;
 
@@ -2856,8 +2862,8 @@ camera_at_element_displaced
         yyerror(&yylloc, scanner, pd, "Error: camera at element displaced <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_elementID(&yylloc, scanner, pd, (int) $3);
-      four_argument_command(pd, "camera at element displaced", (int) $3, $4, $5, $6);
+      check_elementID(&yylloc, scanner, c(pd), (int) $3);
+      four_argument_command(c(pd), "camera at element displaced", (int) $3, $4, $5, $6);
       }
       ;
 
@@ -2870,22 +2876,22 @@ camera_at_node_displaced
         yyerror(&yylloc, scanner, pd, "Error: camera at node displaced <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      four_argument_command(pd, "camera at node displaced", (int) $3, $4, $5, $6);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      four_argument_command(c(pd), "camera at node displaced", (int) $3, $4, $5, $6);
       }
       ;
 
 camera_at_data_point
       : TOKCAMERAATDATAPOINT TOKEQUAL min_max_center variable_type TOKIDENTIFIER TOKIDENTIFIER
       {
-      data_point_command(pd, "camera at data point", $3, $4, $5, $6);
+      data_point_command(c(pd), "camera at data point", $3, $4, $5, $6);
       }
       ;
 
 camera_at_data_point_displaced
       : TOKCAMERAATDATAPOINTDISPLACED TOKEQUAL min_max_center variable_type TOKIDENTIFIER TOKIDENTIFIER TOKVALUE TOKVALUE TOKVALUE
       {
-      data_point_command(pd, "camera at data point displaced", $3, $4, $5, $6, $7, $8, $9);
+      data_point_command(c(pd), "camera at data point displaced", $3, $4, $5, $6, $7, $8, $9);
       }
       ;
 
@@ -2897,12 +2903,12 @@ imageset_block
       : start_imageset_block imageset_statements imageset_end
       {
       bool ret = true;
-      ret = ret && check_imageset(&yylloc, scanner, pd, pd.root["imageset blocks"][pd.cbn]);
-      ret = ret && check_representation(&yylloc, scanner, pd, pd.root["imageset blocks"][pd.cbn]);
-      ret = ret && check_camera(&yylloc, scanner, pd, pd.root["imageset blocks"][pd.cbn]);
+      ret = ret && check_imageset(&yylloc, scanner, c(pd), c(pd).root["imageset blocks"][c(pd).cbn]);
+      ret = ret && check_representation(&yylloc, scanner, c(pd), c(pd).root["imageset blocks"][c(pd).cbn]);
+      ret = ret && check_camera(&yylloc, scanner, c(pd), c(pd).root["imageset blocks"][c(pd).cbn]);
       if(!ret)
          YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -2914,9 +2920,9 @@ imageset_end
 start_imageset_block
       : TOKBEGIN TOKIMAGESET TOKIDENTIFIER
       {
-      pd.cb = TOKIMAGESET;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKIMAGESET;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -3007,49 +3013,49 @@ imageset_statement
 camera
       : TOKCAMERA TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "camera", $3); 
+      identifier_command(c(pd), "camera", $3); 
       }
       ;
 
 representation
       : TOKREPRESENTATION TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "representation", $3); 
+      identifier_command(c(pd), "representation", $3); 
       }
       ;
 
 representation2
       : TOKREPRESENTATION2 TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "representation2", $3); 
+      identifier_command(c(pd), "representation2", $3); 
       }
       ;
 
 representation3
       : TOKREPRESENTATION3 TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "representation3", $3); 
+      identifier_command(c(pd), "representation3", $3); 
       }
       ;
 
 operation
       : TOKOPERATION TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "operation", $3); 
+      identifier_command(c(pd), "operation", $3); 
       }
       ;
 
 operation2
       : TOKOPERATION2 TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "operation2", $3); 
+      identifier_command(c(pd), "operation2", $3); 
       }
       ;
 
 operation3
       : TOKOPERATION3 TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "operation3", $3); 
+      identifier_command(c(pd), "operation3", $3); 
       }
       ;
 
@@ -3058,7 +3064,7 @@ image_basename
       { 
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "image basename", s); 
+      identifier_command(c(pd), "image basename", s); 
       }
       ;
 
@@ -3067,13 +3073,13 @@ image_basedirectory
       { 
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "image basedirectory", s); 
+      identifier_command(c(pd), "image basedirectory", s); 
       }
       ;
 
 image_format
-      : TOKIMAGEFORMAT TOKEQUAL TOKJPG { identifier_command(pd, "image format", "jpg"); }
-      | TOKIMAGEFORMAT TOKEQUAL TOKPNG { identifier_command(pd, "image format", "png"); }
+      : TOKIMAGEFORMAT TOKEQUAL TOKJPG { identifier_command(c(pd), "image format", "jpg"); }
+      | TOKIMAGEFORMAT TOKEQUAL TOKPNG { identifier_command(c(pd), "image format", "png"); }
       ;
 
 image_digit_count
@@ -3085,7 +3091,7 @@ image_digit_count
         yyerror(&yylloc, scanner, pd, "Error: image digit count <count> must be an integer greater than or equal to 0");
         YYABORT;
         }
-      integer_command(pd, "image digit count", (int) $3);
+      integer_command(c(pd), "image digit count", (int) $3);
       }
       ;
 
@@ -3102,10 +3108,10 @@ image_size
         yyerror(&yylloc, scanner, pd, "Error: image size <width> <height> must be integers greater than or equal to 1, and less than or equal to 4096");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "image size", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "image size", c(pd).d);
       }
       ;
 
@@ -3119,11 +3125,11 @@ background_color
         yyerror(&yylloc, scanner, pd, "Error: background color <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "background color", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "background color", c(pd).d); 
       } 
       ;
 
@@ -3137,11 +3143,11 @@ surface_color
         yyerror(&yylloc, scanner, pd, "Error: surface color <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "surface color", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "surface color", c(pd).d); 
       } 
       ;
 
@@ -3155,11 +3161,11 @@ edge_color
         yyerror(&yylloc, scanner, pd, "Error: edge color <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "edge color", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "edge color", c(pd).d); 
       } 
       ;
 
@@ -3173,11 +3179,11 @@ text_color
         yyerror(&yylloc, scanner, pd, "Error: text color <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "text color", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "text color", c(pd).d); 
       } 
       ;
 
@@ -3191,27 +3197,27 @@ axes_color
         yyerror(&yylloc, scanner, pd, "Error: axes color <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "axes color", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "axes color", c(pd).d); 
       } 
       ;
 
 threshold_shortcut
       : TOKTHRESHOLD TOKEQUAL operation_data_type TOKIDENTIFIER TOKKEEPBETWEEN TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($6);
-      pd.d.push_back($7);
-      threshold_or_contour_shortcut_command(pd, "threshold", $3, $4, $5, pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($6);
+      c(pd).d.push_back($7);
+      threshold_or_contour_shortcut_command(c(pd), "threshold", $3, $4, $5, c(pd).d);
       }
       | TOKTHRESHOLD TOKEQUAL operation_data_type TOKIDENTIFIER threshold_value TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($6);
-      threshold_or_contour_shortcut_command(pd, "threshold", $3, $4, $5, pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($6);
+      threshold_or_contour_shortcut_command(c(pd), "threshold", $3, $4, $5, c(pd).d);
       }
       ;
 
@@ -3240,15 +3246,15 @@ contour_shortcut
         yyerror(&yylloc, scanner, pd, "Error: contour shortcut contains 'value sequence' with a negative or zero step");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($6);
-      pd.d.push_back($7);
-      pd.d.push_back($8);
-      threshold_or_contour_shortcut_command(pd, "contour", $3, $4, $5, pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($6);
+      c(pd).d.push_back($7);
+      c(pd).d.push_back($8);
+      threshold_or_contour_shortcut_command(c(pd), "contour", $3, $4, $5, c(pd).d);
       }
-      | TOKCONTOUR TOKEQUAL operation_data_type TOKIDENTIFIER TOKVALUELIST { pd.d.clear(); } contour_value_list
+      | TOKCONTOUR TOKEQUAL operation_data_type TOKIDENTIFIER TOKVALUELIST { c(pd).d.clear(); } contour_value_list
       {
-      threshold_or_contour_shortcut_command(pd, "contour", $3, $4, $5, pd.d);
+      threshold_or_contour_shortcut_command(c(pd), "contour", $3, $4, $5, c(pd).d);
       }
       ;
 
@@ -3258,7 +3264,7 @@ contour_value_list
       ;
 
 contour_value_member
-      : TOKVALUE { pd.d.push_back($1); }
+      : TOKVALUE { c(pd).d.push_back($1); }
       ;
 
 clip_shortcut
@@ -3269,14 +3275,14 @@ clip_shortcut
         yyerror(&yylloc, scanner, pd, "Error: clip shortcut vector cannot be all zeros");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      pd.d.push_back($8);
-      pd.d.push_back($9);
-      pd.d.push_back($10);
-      clip_or_boxclip_or_slice_shortcut_command(pd, "clip", "", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      c(pd).d.push_back($8);
+      c(pd).d.push_back($9);
+      c(pd).d.push_back($10);
+      clip_or_boxclip_or_slice_shortcut_command(c(pd), "clip", "", c(pd).d);
       }
       ;
 
@@ -3288,14 +3294,14 @@ box_clip_shortcut
         yyerror(&yylloc, scanner, pd, "Error: box clip shortcut extents cannot be all zeros");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      pd.d.push_back($8);
-      pd.d.push_back($9);
-      pd.d.push_back($10);
-      clip_or_boxclip_or_slice_shortcut_command(pd, "boxclip", $11, pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      c(pd).d.push_back($8);
+      c(pd).d.push_back($9);
+      c(pd).d.push_back($10);
+      clip_or_boxclip_or_slice_shortcut_command(c(pd), "boxclip", $11, c(pd).d);
       }
       ;
 
@@ -3312,21 +3318,21 @@ slice_shortcut
         yyerror(&yylloc, scanner, pd, "Error: slice shortcut vector cannot be all zeros");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      pd.d.push_back($8);
-      pd.d.push_back($9);
-      pd.d.push_back($10);
-      clip_or_boxclip_or_slice_shortcut_command(pd, "slice", "", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      c(pd).d.push_back($8);
+      c(pd).d.push_back($9);
+      c(pd).d.push_back($10);
+      clip_or_boxclip_or_slice_shortcut_command(c(pd), "slice", "", c(pd).d);
       }
       ;
 
 on_off_criteria
-      : TOKONOFFCRITERIA TOKEQUAL { pd.s.clear(); } identifier_list
+      : TOKONOFFCRITERIA TOKEQUAL { c(pd).s.clear(); } identifier_list
       {
-      string_vector_command(pd, "onoff criteria", pd.s);
+      string_vector_command(c(pd), "onoff criteria", c(pd).s);
       }
       ;
 
@@ -3336,13 +3342,13 @@ identifier_list
       ;
 
 identifier_list_member
-      : TOKIDENTIFIER { pd.s.push_back($1); }
+      : TOKIDENTIFIER { c(pd).s.push_back($1); }
       ;
 
 markers
-      : TOKMARKERS TOKEQUAL { pd.s.clear(); } identifier_list
+      : TOKMARKERS TOKEQUAL { c(pd).s.clear(); } identifier_list
       {
-      string_vector_command(pd, "markers", pd.s);
+      string_vector_command(c(pd), "markers", c(pd).s);
       }
       ;
 
@@ -3353,9 +3359,9 @@ markers
 clip_block
       : start_clip_block clip_statements clip_end
       {
-      if(!check_clip_or_slice(&yylloc, scanner, pd, pd.root["operation blocks"][pd.cbn]))
+      if(!check_clip_or_slice(&yylloc, scanner, c(pd), c(pd).root["operation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -3367,9 +3373,9 @@ clip_end
 start_clip_block
       : TOKBEGIN TOKCLIP TOKIDENTIFIER
       {
-      pd.cb = TOKCLIP;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKCLIP;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -3396,13 +3402,13 @@ input
       : TOKINPUT TOKEQUAL TOKIDENTIFIER
       {
       std::string s($3);
-      if(s == pd.cbn)
+      if(s == c(pd).cbn)
         {
         yyerror(&yylloc, scanner, pd, "Error: operation <input> cannot match operation name");
         YYABORT;
         }
       
-      identifier_command(pd, "input", $3);
+      identifier_command(c(pd), "input", $3);
       }
       ;
 
@@ -3415,42 +3421,42 @@ point_location
 absolute_point_on_plane
       : TOKABSOLUTEPOINTONPLANE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "absolute point on plane", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "absolute point on plane", c(pd).d); 
       }
       | TOKABSOLUTEPOINTONPLANE point_location TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
       std::string ct($2);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::toupper);
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      float_vector_command(pd, "absolute point on plane " + ct, pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      float_vector_command(c(pd), "absolute point on plane " + ct, c(pd).d); 
       }
       ;
 
 relative_point_on_plane
       : TOKRELATIVEPOINTONPLANE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "relative point on plane", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "relative point on plane", c(pd).d);
       }
       | TOKRELATIVEPOINTONPLANE point_location TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
       std::string ct($2);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::toupper);
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      float_vector_command(pd, "relative point on plane " + ct, pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      float_vector_command(c(pd), "relative point on plane " + ct, c(pd).d); 
       }
       ;
 
@@ -3463,8 +3469,8 @@ node_on_plane
         yyerror(&yylloc, scanner, pd, "Error: node on plane <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "node on plane", (int) $3);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "node on plane", (int) $3);
       }
       | TOKNODEONPLANE point_location TOKEQUAL TOKVALUE
       {
@@ -3474,10 +3480,10 @@ node_on_plane
         yyerror(&yylloc, scanner, pd, "Error: node on plane <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $4);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $4);
       std::string ct($2);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::toupper);
-      integer_command(pd, "node on plane  " + ct, (int) $4);
+      integer_command(c(pd), "node on plane  " + ct, (int) $4);
       }
       ;
 
@@ -3490,8 +3496,8 @@ element_on_plane
         yyerror(&yylloc, scanner, pd, "Error: element on plane <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_elementID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "element on plane", (int) $3);
+      check_elementID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "element on plane", (int) $3);
       }
       | TOKELEMENTONPLANE point_location TOKEQUAL TOKVALUE
       {
@@ -3501,10 +3507,10 @@ element_on_plane
         yyerror(&yylloc, scanner, pd, "Error: element on plane <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_elementID(&yylloc, scanner, pd, (int) $4);
+      check_elementID(&yylloc, scanner, c(pd), (int) $4);
       std::string ct($2);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::toupper);
-      integer_command(pd, "element on plane " + ct, (int) $4);
+      integer_command(c(pd), "element on plane " + ct, (int) $4);
       }
       ;
 
@@ -3516,11 +3522,11 @@ plane_normal
         yyerror(&yylloc, scanner, pd, "Error: plane normal cannot be all zeros");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "plane normal", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "plane normal", c(pd).d);
       }
 
 cut_type
@@ -3528,7 +3534,7 @@ cut_type
       { 
       std::string ct($3);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::tolower);
-      identifier_command(pd, "cut type", ct); 
+      identifier_command(c(pd), "cut type", ct); 
       }
       ;
 
@@ -3542,7 +3548,7 @@ side_to_keep
       { 
       std::string ct($3);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::tolower);
-      identifier_command(pd, "side to keep", ct); 
+      identifier_command(c(pd), "side to keep", ct); 
       }
       ;
 
@@ -3554,19 +3560,19 @@ side_type
 data_point_on_plane
       : TOKDATAPOINTONPLANE TOKEQUAL min_max_center variable_type TOKIDENTIFIER TOKIDENTIFIER
       {
-      data_point_command(pd, "data point on plane", $3, $4, $5, $6);
+      data_point_command(c(pd), "data point on plane", $3, $4, $5, $6);
       }
       | TOKDATAPOINTONPLANE point_location TOKEQUAL min_max_center variable_type TOKIDENTIFIER TOKIDENTIFIER
       {
       std::string ct($2);
       std::transform(ct.begin(), ct.end(), ct.begin(), ::toupper);
-      data_point_command(pd, "data point on plane " + ct, $4, $5, $6, $7);
+      data_point_command(c(pd), "data point on plane " + ct, $4, $5, $6, $7);
       }
       ;
 
 plane_specification
-      : TOKPLANESPECIFICATION TOKEQUAL TOKTHREEPOINTS { identifier_command(pd, "plane specification", "three points"); }
-      | TOKPLANESPECIFICATION TOKEQUAL TOKPOINTANDNORMAL { identifier_command(pd, "plane specification", "point and normal"); }
+      : TOKPLANESPECIFICATION TOKEQUAL TOKTHREEPOINTS { identifier_command(c(pd), "plane specification", "three points"); }
+      | TOKPLANESPECIFICATION TOKEQUAL TOKPOINTANDNORMAL { identifier_command(c(pd), "plane specification", "point and normal"); }
       ;
 
 
@@ -3577,9 +3583,9 @@ plane_specification
 slice_block
       : start_slice_block slice_statements slice_end
       {
-      if(!check_clip_or_slice(&yylloc, scanner, pd, pd.root["operation blocks"][pd.cbn]))
+      if(!check_clip_or_slice(&yylloc, scanner, c(pd), c(pd).root["operation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -3591,9 +3597,9 @@ slice_end
 start_slice_block
       : TOKBEGIN TOKSLICE TOKIDENTIFIER
       {
-      pd.cb = TOKSLICE;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKSLICE;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -3622,9 +3628,9 @@ slice_statement
 box_clip_block
       : start_box_clip_block box_clip_statements box_clip_end
       {
-      if(!check_box_clip(&yylloc, scanner, pd, pd.root["operation blocks"][pd.cbn]))
+      if(!check_box_clip(&yylloc, scanner, c(pd), c(pd).root["operation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -3636,9 +3642,9 @@ box_clip_end
 start_box_clip_block
       : TOKBEGIN TOKBOXCLIP TOKIDENTIFIER
       {
-      pd.cb = TOKBOXCLIP;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKBOXCLIP;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -3665,22 +3671,22 @@ box_clip_statement
 center_at_absolute_point
       : TOKCENTERATABSOLUTEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "center at absolute point", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "center at absolute point", c(pd).d); 
       }
       ;
 
 center_at_relative_point
       : TOKCENTERATRELATIVEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "center at relative point", pd.d); 
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "center at relative point", c(pd).d); 
       }
       ;
 
@@ -3693,8 +3699,8 @@ center_at_node
         yyerror(&yylloc, scanner, pd, "Error: center at node <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "center at node", (int) $3);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "center at node", (int) $3);
       }
       ;
 
@@ -3707,8 +3713,8 @@ center_at_element
         yyerror(&yylloc, scanner, pd, "Error: center at element <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_elementID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "center at element", (int) $3);
+      check_elementID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "center at element", (int) $3);
       }
       ;
 
@@ -3720,11 +3726,11 @@ absolute_extents
         yyerror(&yylloc, scanner, pd, "Error: absolute extents cannot be less than zero");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "absolute extents", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "absolute extents", c(pd).d);
       }
 
 relative_extents
@@ -3735,31 +3741,31 @@ relative_extents
         yyerror(&yylloc, scanner, pd, "Error: relative extents cannot be less than zero");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "relative extents", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "relative extents", c(pd).d);
       }
 
 rotations
       : TOKROTATIONS TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "rotations", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "rotations", c(pd).d);
       }
 
 keep_inside_box
-      : TOKKEEPINSIDEBOX TOKEQUAL boolean { boolean_command(pd, "keep inside box", $3 == 1); }
+      : TOKKEEPINSIDEBOX TOKEQUAL boolean { boolean_command(c(pd), "keep inside box", $3 == 1); }
       ;
 
 center_at_data_point
       : TOKCENTERATDATAPOINT TOKEQUAL min_max_center variable_type TOKIDENTIFIER TOKIDENTIFIER
       {
-      data_point_command(pd, "center at data point", $3, $4, $5, $6);
+      data_point_command(c(pd), "center at data point", $3, $4, $5, $6);
       }
       ;
 
@@ -3770,9 +3776,9 @@ center_at_data_point
 threshold_block
       : start_threshold_block threshold_statements threshold_end
       {
-      if(!check_threshold(&yylloc, scanner, pd, pd.root["operation blocks"][pd.cbn]))
+      if(!check_threshold(&yylloc, scanner, c(pd), c(pd).root["operation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -3784,9 +3790,9 @@ threshold_end
 start_threshold_block
       : TOKBEGIN TOKTHRESHOLD TOKIDENTIFIER
       {
-      pd.cb = TOKTHRESHOLD;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKTHRESHOLD;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -3810,36 +3816,36 @@ threshold_statement
 variable_scalar
       : TOKVARIABLESCALAR TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::SCALAR)) 
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::SCALAR)) 
         YYABORT;
-      identifier_command(pd, "variable scalar", $3); 
+      identifier_command(c(pd), "variable scalar", $3); 
       }
       ;
 
 variable_vector_magnitude
       : TOKVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::VECTOR)) 
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::VECTOR)) 
         YYABORT;
-      identifier_command(pd, "variable vector magnitude", $3); 
+      identifier_command(c(pd), "variable vector magnitude", $3); 
       }
       ;
 
 variable_vector_component
       : TOKVARIABLEVECTORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_vector_component(&yylloc, scanner, pd, $3)) 
+      if(!check_vector_component(&yylloc, scanner, c(pd), $3)) 
         YYABORT;
-      identifier_command(pd, "variable vector component", $3); 
+      identifier_command(c(pd), "variable vector component", $3); 
       }
       ;
 
 variable_tensor_component
       : TOKVARIABLETENSORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_tensor_component(&yylloc, scanner, pd, $3)) 
+      if(!check_tensor_component(&yylloc, scanner, c(pd), $3)) 
         YYABORT;
-      identifier_command(pd, "variable tensor component", $3); 
+      identifier_command(c(pd), "variable tensor component", $3); 
       }
       ;
 
@@ -3851,24 +3857,24 @@ keep_between
         yyerror(&yylloc, scanner, pd, "Error: keep between argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "keep between", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "keep between", c(pd).d);
       }
       ;
 
 keep_above
       : TOKKEEPABOVE TOKEQUAL TOKVALUE
       {
-      double_command(pd, "keep above", $3);
+      double_command(c(pd), "keep above", $3);
       }
       ;
 
 keep_below
       : TOKKEEPBELOW TOKEQUAL TOKVALUE
       {
-      double_command(pd, "keep below", $3);
+      double_command(c(pd), "keep below", $3);
       }
       ;
 
@@ -3880,9 +3886,9 @@ keep_below
 contour_block
       : start_contour_block contour_statements contour_end
       {
-      if(!check_contour(&yylloc, scanner, pd, pd.root["operation blocks"][pd.cbn]))
+      if(!check_contour(&yylloc, scanner, c(pd), c(pd).root["operation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -3894,9 +3900,9 @@ contour_end
 start_contour_block
       : TOKBEGIN TOKCONTOUR TOKIDENTIFIER
       {
-      pd.cb = TOKCONTOUR;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKCONTOUR;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -3917,9 +3923,9 @@ contour_statement
       ;
 
 contour_value
-      : TOKCONTOURVALUE TOKEQUAL { pd.d.clear(); } contour_value_list
+      : TOKCONTOURVALUE TOKEQUAL { c(pd).d.clear(); } contour_value_list
       {
-      float_vector_command(pd, "contour value", pd.d);
+      float_vector_command(c(pd), "contour value", c(pd).d);
       }
       ;
 
@@ -3936,11 +3942,11 @@ contour_value_sequence
         yyerror(&yylloc, scanner, pd, "Error: contour value sequence has a negative or zero step");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "contour value sequence", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "contour value sequence", c(pd).d);
       }
       ;
 
@@ -3951,9 +3957,9 @@ contour_value_sequence
 scatter_plot_block
       : start_scatter_plot_block scatter_plot_statements scatter_plot_end
       {
-      if(!check_scatter_plot_block(&yylloc, scanner, pd, pd.root["scatter plot blocks"][pd.cbn]))
+      if(!check_scatter_plot_block(&yylloc, scanner, c(pd), c(pd).root["scatter plot blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -3965,9 +3971,9 @@ scatter_plot_end
 start_scatter_plot_block
       : TOKBEGIN TOKSCATTERPLOT TOKIDENTIFIER
       {
-      pd.cb = TOKSCATTERPLOT;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKSCATTERPLOT;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4006,78 +4012,78 @@ scatter_plot_statement
       ;
 
 all_variables
-      : TOKALLVARIABLES { no_argument_command(pd, "all variables"); }
+      : TOKALLVARIABLES { no_argument_command(c(pd), "all variables"); }
       ;
 
 x_axis_variable_scalar
       : TOKXAXISVARIABLESCALAR TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::SCALAR)) 
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::SCALAR)) 
         YYABORT;
-      identifier_command(pd, "x axis variable scalar", $3); 
+      identifier_command(c(pd), "x axis variable scalar", $3); 
       }
       ;
 
 y_axis_variable_scalar
       : TOKYAXISVARIABLESCALAR TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::SCALAR))
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::SCALAR))
         YYABORT;
-      identifier_command(pd, "y axis variable scalar", $3); 
+      identifier_command(c(pd), "y axis variable scalar", $3); 
       }
       ;
 
 x_axis_variable_vector_magnitude
       : TOKXAXISVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::VECTOR))
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::VECTOR))
         YYABORT;
-      identifier_command(pd, "x axis variable vector magnitude", $3); 
+      identifier_command(c(pd), "x axis variable vector magnitude", $3); 
       }
       ;
 
 y_axis_variable_vector_magnitude
       : TOKYAXISVARIABLEVECTORMAGNITUDE TOKEQUAL TOKIDENTIFIER 
       { 
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::VECTOR))
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::VECTOR))
         YYABORT;
-      identifier_command(pd, "y axis variable vector magnitude", $3); 
+      identifier_command(c(pd), "y axis variable vector magnitude", $3); 
       }
       ;
 
 x_axis_variable_vector_component
       : TOKXAXISVARIABLEVECTORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_vector_component(&yylloc, scanner, pd, $3)) 
+      if(!check_vector_component(&yylloc, scanner, c(pd), $3)) 
         YYABORT;
-      identifier_command(pd, "x axis variable vector component", $3); 
+      identifier_command(c(pd), "x axis variable vector component", $3); 
       }
       ;
 
 y_axis_variable_vector_component
       : TOKYAXISVARIABLEVECTORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_vector_component(&yylloc, scanner, pd, $3))
+      if(!check_vector_component(&yylloc, scanner, c(pd), $3))
         YYABORT;
-      identifier_command(pd, "y axis variable vector component", $3); 
+      identifier_command(c(pd), "y axis variable vector component", $3); 
       }
       ;
 
 x_axis_variable_tensor_component
       : TOKXAXISVARIABLETENSORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_tensor_component(&yylloc, scanner, pd, $3))
+      if(!check_tensor_component(&yylloc, scanner, c(pd), $3))
         YYABORT;
-      identifier_command(pd, "x axis variable tensor component", $3); 
+      identifier_command(c(pd), "x axis variable tensor component", $3); 
       }
       ;
 
 y_axis_variable_tensor_component
       : TOKYAXISVARIABLETENSORCOMPONENT TOKEQUAL TOKIDENTIFIER
       { 
-      if(!check_tensor_component(&yylloc, scanner, pd, $3))
+      if(!check_tensor_component(&yylloc, scanner, c(pd), $3))
         YYABORT;
-      identifier_command(pd, "y axis variable tensor component", $3); 
+      identifier_command(c(pd), "y axis variable tensor component", $3); 
       }
       ;
 
@@ -4089,10 +4095,10 @@ x_axis_range
         yyerror(&yylloc, scanner, pd, "Error: x axis range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "x axis range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "x axis range", c(pd).d);
       }
       ;
 
@@ -4104,27 +4110,27 @@ y_axis_range
         yyerror(&yylloc, scanner, pd, "Error: y axis range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "y axis range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "y axis range", c(pd).d);
       }
       ;
 
 x_axis_use_current_data_range
-      : TOKXAXISUSECURRENTDATARANGE { no_argument_command(pd, "x axis use current data range"); }
+      : TOKXAXISUSECURRENTDATARANGE { no_argument_command(c(pd), "x axis use current data range"); }
       ;
 
 y_axis_use_current_data_range
-      : TOKYAXISUSECURRENTDATARANGE { no_argument_command(pd, "y axis use current data range"); }
+      : TOKYAXISUSECURRENTDATARANGE { no_argument_command(c(pd), "y axis use current data range"); }
       ;
 
 x_axis_use_cumulative_data_range
-      : TOKXAXISUSECUMULATIVEDATARANGE { no_argument_command(pd, "x axis use cumulative data range"); }
+      : TOKXAXISUSECUMULATIVEDATARANGE { no_argument_command(c(pd), "x axis use cumulative data range"); }
       ;
 
 y_axis_use_cumulative_data_range
-      : TOKYAXISUSECUMULATIVEDATARANGE { no_argument_command(pd, "y axis use cumulative data range"); }
+      : TOKYAXISUSECUMULATIVEDATARANGE { no_argument_command(c(pd), "y axis use cumulative data range"); }
       ;
 
 
@@ -4136,10 +4142,10 @@ x_axis_minimum_range
         yyerror(&yylloc, scanner, pd, "Error: x axis minimum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "x axis minimum range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "x axis minimum range", c(pd).d);
       }
       ;
 
@@ -4151,10 +4157,10 @@ y_axis_minimum_range
         yyerror(&yylloc, scanner, pd, "Error: y axis minimum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "y axis minimum range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "y axis minimum range", c(pd).d);
       }
       ;
 
@@ -4166,10 +4172,10 @@ x_axis_maximum_range
         yyerror(&yylloc, scanner, pd, "Error: x axis maximum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "x axis maximum range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "x axis maximum range", c(pd).d);
       }
       ;
 
@@ -4181,10 +4187,10 @@ y_axis_maximum_range
         yyerror(&yylloc, scanner, pd, "Error: y axis maximum range argument <min> must be less than argument <max>.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      float_vector_command(pd, "y axis maximum range", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      float_vector_command(c(pd), "y axis maximum range", c(pd).d);
       }
       ;
 
@@ -4193,7 +4199,7 @@ plot_base_name
       { 
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "plot basename", s); 
+      identifier_command(c(pd), "plot basename", s); 
       }
       ;
 
@@ -4202,7 +4208,7 @@ plot_base_directory
       { 
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "plot basedirectory", s); 
+      identifier_command(c(pd), "plot basedirectory", s); 
       }
       ;
 
@@ -4214,9 +4220,9 @@ plot_base_directory
 plot_over_time_block
       : start_plot_over_time_block plot_over_time_statements plot_over_time_end
       {
-      if(!check_plot_over_time_block(&yylloc, scanner, pd, pd.root["plot over time blocks"][pd.cbn]))
+      if(!check_plot_over_time_block(&yylloc, scanner, c(pd), c(pd).root["plot over time blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4228,9 +4234,9 @@ plot_over_time_end
 start_plot_over_time_block
       : TOKBEGIN TOKPLOTOVERTIME TOKIDENTIFIER
       {
-      pd.cb = TOKPLOTOVERTIME;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKPLOTOVERTIME;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4264,21 +4270,21 @@ plot_over_time_statement
       ;
 
 plot_minimum
-      : TOKPLOTMINIMUM TOKEQUAL boolean { boolean_command(pd, "plot minimum", $3 == 1); }
+      : TOKPLOTMINIMUM TOKEQUAL boolean { boolean_command(c(pd), "plot minimum", $3 == 1); }
       ;
 
 plot_maximum
-      : TOKPLOTMAXIMUM TOKEQUAL boolean { boolean_command(pd, "plot maximum", $3 == 1); }
+      : TOKPLOTMAXIMUM TOKEQUAL boolean { boolean_command(c(pd), "plot maximum", $3 == 1); }
       ;
 
 plot_mean
-      : TOKPLOTMEAN TOKEQUAL boolean { boolean_command(pd, "plot mean", $3 == 1); }
+      : TOKPLOTMEAN TOKEQUAL boolean { boolean_command(c(pd), "plot mean", $3 == 1); }
       ;
  
 plot_id
-      : TOKPLOTID TOKEQUAL { pd.d.clear(); } plot_value_list
+      : TOKPLOTID TOKEQUAL { c(pd).d.clear(); } plot_value_list
       {
-      float_vector_command(pd, "plot id", pd.d);
+      float_vector_command(c(pd), "plot id", c(pd).d);
       }
       ;
 
@@ -4296,7 +4302,7 @@ plot_value_member
         yyerror(&yylloc, scanner, pd, "Error: plot id <id> must be an integer greater than 0");
         YYABORT;
         }
-      pd.d.push_back($1);
+      c(pd).d.push_back($1);
       }
       ;
 
@@ -4307,8 +4313,8 @@ plot_value_member
 group_block
       : start_group_block group_statement group_end
       {
-      string_vector_command(pd, "operation group list", pd.s);
-      pd.cb = TOKCATALYST;
+      string_vector_command(c(pd), "operation group list", c(pd).s);
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4320,15 +4326,15 @@ group_end
 start_group_block
       : TOKBEGIN TOKGROUP TOKIDENTIFIER
       {
-      pd.cb = TOKGROUP;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKGROUP;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
 
 group_statement
-      : TOKOPERATIONGROUPLIST TOKEQUAL { pd.s.clear(); } group_id_list
+      : TOKOPERATIONGROUPLIST TOKEQUAL { c(pd).s.clear(); } group_id_list
       ;
 
 group_id_list
@@ -4337,7 +4343,7 @@ group_id_list
       ;
 
 group_id_member
-      : TOKIDENTIFIER { pd.s.push_back($1); }
+      : TOKIDENTIFIER { c(pd).s.push_back($1); }
       ;
 
 /* END GROUP BLOCK */
@@ -4348,7 +4354,7 @@ extract_block
       : start_extract_block exclude_block_statement end_extract_block
       | start_extract_block include_block_statement end_extract_block
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4360,9 +4366,9 @@ end_extract_block
 start_extract_block
       : TOKBEGIN TOKEXTRACTBLOCK TOKIDENTIFIER
       {
-      pd.cb = TOKEXTRACTBLOCK;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKEXTRACTBLOCK;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4380,16 +4386,16 @@ include_block_statement
       ;
 
 exclude_block
-      : TOKEXCLUDEBLOCKS TOKEQUAL { pd.s.clear(); } group_id_list
+      : TOKEXCLUDEBLOCKS TOKEQUAL { c(pd).s.clear(); } group_id_list
       {
-      string_vector_command(pd, "exclude blocks", pd.s);
+      string_vector_command(c(pd), "exclude blocks", c(pd).s);
       }
       ;
 
 include_block
-      : TOKINCLUDEBLOCKS TOKEQUAL { pd.s.clear(); } group_id_list
+      : TOKINCLUDEBLOCKS TOKEQUAL { c(pd).s.clear(); } group_id_list
       {
-      string_vector_command(pd, "include blocks", pd.s);
+      string_vector_command(c(pd), "include blocks", c(pd).s);
       }
       ;
 
@@ -4400,7 +4406,7 @@ include_block
 transform_block
       : start_transform_block transform_block_statements end_transform_block
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4412,9 +4418,9 @@ end_transform_block
 start_transform_block
       : TOKBEGIN TOKTRANSFORM TOKIDENTIFIER
       {
-      pd.cb = TOKTRANSFORM;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKTRANSFORM;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4434,33 +4440,33 @@ transform_block_statement
 rotate
       : TOKROTATE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "rotate", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "rotate", c(pd).d);
       }
       ;
 
 scale
       : TOKSCALE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "scale", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "scale", c(pd).d);
       }
       ;
 
 translate
       : TOKTRANSLATE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "translate", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "translate", c(pd).d);
       }
       ;
 
@@ -4471,7 +4477,7 @@ translate
 warp_by_vector
       : start_warp_by_vector warp_by_vector_statements end_warp_by_vector
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4483,9 +4489,9 @@ end_warp_by_vector
 start_warp_by_vector
       : TOKBEGIN TOKWARPBYVECTOR TOKIDENTIFIER
       {
-      pd.cb = TOKWARPBYVECTOR;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKWARPBYVECTOR;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4504,16 +4510,16 @@ warp_by_vector_statement
 warp_scale
       : TOKSCALE TOKEQUAL TOKVALUE
       {
-      double_command(pd, "scale", $3);
+      double_command(c(pd), "scale", $3);
       }
       ;
 
 warp_variable_vector
       : TOKVARIABLEVECTOR TOKEQUAL TOKIDENTIFIER
       {
-      if(!check_variable_name(&yylloc, scanner, pd, $3, CatalystParserInterface::VECTOR))
+      if(!check_variable_name(&yylloc, scanner, c(pd), $3, CatalystParserInterface::VECTOR))
         YYABORT;
-      identifier_command(pd, "variable vector", $3);
+      identifier_command(c(pd), "variable vector", $3);
       }
       ;
 
@@ -4524,9 +4530,9 @@ warp_variable_vector
 calculator
       : start_calculator calculator_statements end_calculator
       {
-      if(!check_calculator_block(&yylloc, scanner, pd, pd.root["operation blocks"][pd.cbn]))
+      if(!check_calculator_block(&yylloc, scanner, c(pd), c(pd).root["operation blocks"][c(pd).cbn]))
         YYABORT;
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4538,9 +4544,9 @@ end_calculator
 start_calculator
       : TOKBEGIN TOKCALCULATOR TOKIDENTIFIER
       {
-      pd.cb = TOKCALCULATOR;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKCALCULATOR;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4566,17 +4572,17 @@ output_variable_name
         yyerror(&yylloc, scanner, pd, "Error: calculator output variable name must begin with sctlyst");
         YYABORT;
         }*/
-      identifier_command(pd, "output variable name", $3);
+      identifier_command(c(pd), "output variable name", $3);
       }
       ;
 
 function
-      : TOKFUNCTION TOKEQUAL { pd.s.clear(); } TOKSTRING
+      : TOKFUNCTION TOKEQUAL { c(pd).s.clear(); } TOKSTRING
       {
       std::string s($4);
       remove_quotes(s);
-      pd.s.push_back(s);
-      string_vector_command(pd, "function", pd.s);
+      c(pd).s.push_back(s);
+      string_vector_command(c(pd), "function", c(pd).s);
       }
       ;
 
@@ -4590,7 +4596,7 @@ element_or_node_data
       {
       std::string s($3);
       remove_quotes(s);
-      identifier_command(pd, "element or node data", $3);
+      identifier_command(c(pd), "element or node data", $3);
       }
       ;
 
@@ -4601,7 +4607,7 @@ element_or_node_data
 experimental_operation
       : start_experimental_operation experimental_operation_statements end_experimental_operation
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4613,9 +4619,9 @@ end_experimental_operation
 start_experimental_operation
       : TOKBEGIN TOKEXPERIMENTALOPERATION TOKIDENTIFIER
       {
-      pd.cb = TOKEXPERIMENTALOPERATION;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKEXPERIMENTALOPERATION;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4637,25 +4643,25 @@ experimental_operation_statement
 type
       : TOKTYPE TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "type", $3);
+      identifier_command(c(pd), "type", $3);
       }
       ;
 
 scalar_opparam
       : TOKSCALAROPPARAM TOKEQUAL TOKIDENTIFIER TOKVALUE
       {
-      double_command(pd, $3, $4);
+      double_command(c(pd), $3, $4);
       }
       ;
 
 vector_opparam
       : TOKVECTOROPPARAM TOKEQUAL TOKIDENTIFIER TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      float_vector_command(pd, $3, pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      float_vector_command(c(pd), $3, c(pd).d);
       }
       ;
 
@@ -4669,7 +4675,7 @@ integer_opparam
         }
       std::string s($3);
       remove_quotes(s);
-      integer_command(pd, $3, (int) $4);
+      integer_command(c(pd), $3, (int) $4);
       }
       ;
 
@@ -4678,7 +4684,7 @@ string_opparam
       {
       std::string s($4);
       remove_quotes(s);
-      identifier_command(pd, $3, s);
+      identifier_command(c(pd), $3, s);
       }
       ;
 
@@ -4689,7 +4695,7 @@ string_opparam
 visual_marker_block
       : start_visual_marker_block visual_marker_block_statements end_visual_marker_block
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4701,9 +4707,9 @@ end_visual_marker_block
 start_visual_marker_block
       : TOKBEGIN TOKVISUALMARKER TOKIDENTIFIER
       {
-      pd.cb = TOKVISUALMARKER;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKVISUALMARKER;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4736,7 +4742,7 @@ visual_marker_block_statement
 shape
       : TOKSHAPE TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "shape", $3);
+      identifier_command(c(pd), "shape", $3);
       }
       ;
 
@@ -4750,44 +4756,44 @@ color
         yyerror(&yylloc, scanner, pd, "Error: color <color> arguments must be between 0 and 1, inclusive.");
         YYABORT;
         }
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "color", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "color", c(pd).d);
       }
       ;
 
 absolute_size
       : TOKABSOLUTESIZE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "absolute size", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "absolute size", c(pd).d);
       }
       ;
 
 relative_size
       : TOKRELATIVESIZE TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "relative size", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "relative size", c(pd).d);
       }
       ;
 
 orientation
       : TOKORIENTATION TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "orientation", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "orientation", c(pd).d);
       }
       ;
 
@@ -4800,29 +4806,29 @@ resolution
         yyerror(&yylloc, scanner, pd, "Error: resolution must be an integer greater than or equal to 4");
         YYABORT;
         }
-      integer_command(pd, "resolution", (int) $3);
+      integer_command(c(pd), "resolution", (int) $3);
       }
       ;
 
 marker_at_relative_point
       : TOKMARKERATRELATIVEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "marker at relative point", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "marker at relative point", c(pd).d);
       }
       ;
 
 marker_at_absolute_point
       : TOKMARKERATABSOLUTEPOINT TOKEQUAL TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($3);
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      float_vector_command(pd, "marker at absolute point", pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($3);
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      float_vector_command(c(pd), "marker at absolute point", c(pd).d);
       }
       ;
 
@@ -4835,8 +4841,8 @@ marker_at_element
         yyerror(&yylloc, scanner, pd, "Error: marker at element <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "marker at element", (int) $3);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "marker at element", (int) $3);
       }
       ;
 
@@ -4849,8 +4855,8 @@ marker_at_node
         yyerror(&yylloc, scanner, pd, "Error: marker at node <id> must be an integer greater than 0");
         YYABORT;
         }
-      check_nodeID(&yylloc, scanner, pd, (int) $3);
-      integer_command(pd, "marker at node", (int) $3);
+      check_nodeID(&yylloc, scanner, c(pd), (int) $3);
+      integer_command(c(pd), "marker at node", (int) $3);
       }
       ;
 
@@ -4871,25 +4877,25 @@ variable_type
 marker_at_data_point
       : TOKMARKERATDATAPOINT TOKEQUAL min_max_center variable_type TOKIDENTIFIER TOKIDENTIFIER
       {
-      data_point_command(pd, "marker at data point", $3, $4, $5, $6);
+      data_point_command(c(pd), "marker at data point", $3, $4, $5, $6);
       }
       ;
 
 vector_parameter
       : TOKVECTORPARAMETER TOKEQUAL TOKIDENTIFIER TOKVALUE TOKVALUE TOKVALUE
       {
-      pd.d.clear();
-      pd.d.push_back($4);
-      pd.d.push_back($5);
-      pd.d.push_back($6);
-      float_vector_command(pd, $3, pd.d);
+      c(pd).d.clear();
+      c(pd).d.push_back($4);
+      c(pd).d.push_back($5);
+      c(pd).d.push_back($6);
+      float_vector_command(c(pd), $3, c(pd).d);
       }
       ;
 
 scalar_parameter
       : TOKSCALARPARAMETER TOKEQUAL TOKIDENTIFIER TOKVALUE
       {
-      double_command(pd, $3, $4);
+      double_command(c(pd), $3, $4);
       }
       ;
 
@@ -4901,7 +4907,7 @@ integer_parameter
         yyerror(&yylloc, scanner, pd, "Error: integer parameter must be an integer");
         YYABORT;
         }
-      integer_command(pd, $3, (int) $4);
+      integer_command(c(pd), $3, (int) $4);
       }
       ;
 
@@ -4910,7 +4916,7 @@ string_parameter
       {
       std::string s($4);
       remove_quotes(s);
-      identifier_command(pd, $3, s);
+      identifier_command(c(pd), $3, s);
       }
       ;
 
@@ -4921,7 +4927,7 @@ string_parameter
 experimental_block
       : start_experimental_block experimental_block_statements end_experimental_block
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4933,9 +4939,9 @@ end_experimental_block
 start_experimental_block
       : TOKBEGIN TOKEXPERIMENTALBLOCK TOKIDENTIFIER
       {
-      pd.cb = TOKEXPERIMENTALBLOCK;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKEXPERIMENTALBLOCK;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -4961,7 +4967,7 @@ experimental_block_statement
 on_off_criteria_block
       : start_on_off_criteria_block on_off_criteria_block_statements end_on_off_criteria_block
       {
-      pd.cb = TOKCATALYST;
+      c(pd).cb = TOKCATALYST;
       }
       ;
 
@@ -4973,9 +4979,9 @@ end_on_off_criteria_block
 start_on_off_criteria_block
       : TOKBEGIN TOKONOFFCRITERIABLOCK TOKIDENTIFIER
       {
-      pd.cb = TOKONOFFCRITERIABLOCK;
-      pd.cbn = $3;
-      if(!initialize_block(&yylloc, scanner, pd))
+      c(pd).cb = TOKONOFFCRITERIABLOCK;
+      c(pd).cbn = $3;
+      if(!initialize_block(&yylloc, scanner, c(pd)))
         YYABORT;
       }
       ;
@@ -5011,14 +5017,14 @@ on_off_type
 criteria_type
       : TOKTYPE TOKEQUAL on_off_type
       {
-      identifier_command(pd, "type", $3);
+      identifier_command(c(pd), "type", $3);
       }
       ;
 
 experimental_type
       : TOKEXPERIMENTALTYPE TOKEQUAL TOKIDENTIFIER
       {
-      identifier_command(pd, "experimental type", $3);
+      identifier_command(c(pd), "experimental type", $3);
       }
       ;
 
@@ -5033,14 +5039,14 @@ threshold_variable
 threshold_variable_function
       : TOKTHRESHOLDVARIABLEFUNCTION TOKEQUAL threshold_variable
       {
-      identifier_command(pd, "threshold variable function", $3);
+      identifier_command(c(pd), "threshold variable function", $3);
       }
       ;
 
 threshold_values
-      : TOKTHRESHOLDVALUES TOKEQUAL { pd.d.clear(); } threshold_value_list
+      : TOKTHRESHOLDVALUES TOKEQUAL { c(pd).d.clear(); } threshold_value_list
       {
-      float_vector_command(pd, "threshold values", pd.d);
+      float_vector_command(c(pd), "threshold values", c(pd).d);
       }
       ;
 
@@ -5052,7 +5058,7 @@ threshold_value_list
 threshold_value_member
       : TOKVALUE
       {
-      pd.d.push_back($1);
+      c(pd).d.push_back($1);
       }
       ;
 
@@ -5064,7 +5070,7 @@ frames_after_trigger
         yyerror(&yylloc, scanner, pd, "Error: frames after trigger <frames> must be an integer");
         YYABORT;
         }
-      integer_command(pd, "frames after trigger", (int) $3);
+      integer_command(c(pd), "frames after trigger", (int) $3);
       }
       ;
 
@@ -5076,7 +5082,7 @@ maximum_trigger_per_threshold
         yyerror(&yylloc, scanner, pd, "Error: maximum triggers per threshold <triggers> must be an integer");
         YYABORT;
         }
-      integer_command(pd, "maximum triggers per threshold", (int) $3);
+      integer_command(c(pd), "maximum triggers per threshold", (int) $3);
       }
       ;
 

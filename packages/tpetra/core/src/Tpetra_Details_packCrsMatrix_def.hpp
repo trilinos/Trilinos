@@ -1012,8 +1012,8 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   // Write-only device access
   auto numPacketsPerLID_nc = numPacketsPerLID; // const DV& -> DV
-  numPacketsPerLID_nc.modified_host() = 0;
-  numPacketsPerLID_nc.modified_device() = 1;
+  numPacketsPerLID_nc.clear_sync_state();
+  numPacketsPerLID_nc.modify_device();
   auto numPacketsPerLID_d = numPacketsPerLID.template view<buffer_memory_space> ();
 
   // Read-only device access

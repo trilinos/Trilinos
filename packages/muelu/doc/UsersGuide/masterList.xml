@@ -484,6 +484,17 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: phase3 avoid singletons</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
     <parameter>
       <name>aggregation: allow empty prolongator columns</name>
@@ -508,6 +519,15 @@
       <type>bool</type>
       <default>false</default>
       <description>Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: use interface aggregation</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Allow an application to prescribe root nodes to uncoupled aggregation</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -773,6 +793,24 @@
     </parameter>
 
     <parameter>
+      <name>gmg: interpolation order</name>
+      <type>int</type>
+      <default>1</default>
+      <description>Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.</description>
+      <visible></visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>gmg: build coarse coordinates</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>If false, skip the calculation of coarse coordinates.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>transfer: params</name>
       <type>\parameterlist</type>
       <visible>false</visible>
@@ -787,7 +825,6 @@
       <description>Element class for IntrepidPCoarsening</description>
       <visible>false</visible>
     </parameter>
-
 
     <parameter>
       <name>pcoarsen: schedule</name>
@@ -893,6 +930,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>tentative: build coarse coordinates</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>If false, skip the calculation of coarse coordinates.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
   </multigrid>
 
   <rebalancing>
@@ -986,6 +1032,15 @@
     </parameter>
 
     <parameter>
+      <name>repartition: remap accept partition</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Whether the local rank should accept a partition.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>repartition: print partition distribution</name>
       <type>bool</type>
       <default>false</default>
@@ -999,6 +1054,15 @@
       <type>bool</type>
       <default>false</default>
       <description>Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>repartition: rebalance Nullspace</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Rebalancing of Nullspace during the setup.</description>
+      <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -1025,10 +1089,38 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals threshold</name>
+      <type>double</type>
+      <default>0.</default>
+      <description>Threshold at which diagonal entry is considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
       <description>Shift to use in the RAPShiftFactory</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift diagonal M</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Shift for the RAPShiftFactory is stored as a
+      vector (representing the matrix diagonal)</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift low storage</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Use the low-storage version of the rap: shift</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>
@@ -1056,13 +1148,32 @@
   <matrixmatrix>
     <parameter>
       <name>matrixmatrix: kernel params</name>
-      <type>parameterlist</type>
+      <type>\parameterlist</type>
       <description>Controls the kernel algorithms for matrix-matrix operations</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>
-  </matrixmatrix>
+     <parameter>
+      <name>matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount </name>
+      <type>int</type>
+      <description>Core Count above which the
+optimized neighbor discovery is used for Importer construction, for some matrix
+multiplication operations.</description>
+      <default>3000 </default>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+    <parameter>
+      <name>isMatrixMatrix_TransferAndFillComplete </name>
+      <type>bool</type>
+      <description>Try to use the
+optimized neighbor discovery for Importer construction.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <default>false</default>
+      <visible>false</visible>
+    </parameter>
 
+  </matrixmatrix>
   <reuse>
 
     <parameter>
@@ -1107,5 +1218,7 @@
     </parameter>
 
   </debug>
+
+
 
 </masterlist>

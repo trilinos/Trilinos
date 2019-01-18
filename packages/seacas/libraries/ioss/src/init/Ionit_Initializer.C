@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,18 +33,23 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
 
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
 #include <exo_fac/Ioex_IOFactory.h>
 #endif
 
+#include <gen_struc/Iogs_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>
 #include <heartbeat/Iohb_DatabaseIO.h>
 
-#if !defined(NO_PAMGEN_SUPPORT)
+#if defined(SEACAS_HAVE_PAMGEN)
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
-#if !defined(NO_CGNS_SUPPORT)
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
+#include <data_warehouse/Iodw_DatabaseIO.h>
+#endif
+
+#if defined(SEACAS_HAVE_CGNS)
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
@@ -71,25 +76,29 @@ namespace Ioss {
      *
      *  Calls appropriate internal functions and methods to
      *  initialize the Ioss library. Initializes all database
-     *  types except xdmf.
+     *  types.
      */
     Initializer::Initializer()
     {
       IOSS_FUNC_ENTER(m_);
 
-#if !defined(NO_EXODUS_SUPPORT)
+#if defined(SEACAS_HAVE_EXODUS)
       Ioex::IOFactory::factory(); // Exodus
 #endif
-#if !defined(NO_PAMGEN_SUPPORT)
+#if defined(SEACAS_HAVE_PAMGEN)
       Iopg::IOFactory::factory(); // Pamgen
 #endif
-#if !defined(NO_CGNS_SUPPORT)
+#if defined(SEACAS_HAVE_DATAWAREHOUSE)
+      Iodw::IOFactory::factory(); // DataWarehouse
+#endif
+#if defined(SEACAS_HAVE_CGNS)
       Iocgns::IOFactory::factory();
 #endif
 
       Iovs::IOFactory::factory(); // Visualization
       Iohb::IOFactory::factory(); // HeartBeat
       Iogn::IOFactory::factory(); // Generated
+      Iogs::IOFactory::factory(); // Structured Mesh Generator
       Ioss::StorageInitializer();
       Ioss::Initializer();
       Iotr::Initializer();

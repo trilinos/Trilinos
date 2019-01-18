@@ -67,21 +67,21 @@ namespace FROSch {
     Type_ (type),
     NodeVector_ (0),
     SubdomainsVector_ (multiplicity),
-    Parents_ (),
+    Ancestors_ (),
     DofsPerNode_ (dofsPerNode),
     Multiplicity_ (multiplicity),
     UniqueID_ (-1),
     LocalID_ (-1),
-    ParentID_ (-1)
+    AncestorID_ (-1)
     {
         for (UN i=0; i<multiplicity; i++) {
             SubdomainsVector_[i] = subdomains[i];
         }
         sortunique(SubdomainsVector_);
         if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
-            Parents_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
+            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
         } else if (Type_==FaceType) {
-            Parents_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
         }
     }
     
@@ -116,7 +116,7 @@ namespace FROSch {
         node.DofsLocal_.deepCopy(dofsLocal());
         node.DofsGlobal_.deepCopy(dofsGlobal());
         
-        NodeVector_.push_back(node); // TODO: Hier wird kopiert. Das sollte man verbessern
+        NodeVector_.push_back(node);
         return 0;
     }
     
@@ -151,7 +151,7 @@ namespace FROSch {
             if ((0<=dofIDs[i])&&(dofIDs[i]<=DofsPerNode_)) {
                 NodeVector_[iD].DofsGlobal_[dofIDs[i]] = dofsGlobal[dofIDs[i]];
             } else {
-                FROSCH_ASSERT(0!=0,"dofIDs[i] is out of range.");
+                FROSCH_ASSERT(false,"dofIDs[i] is out of range.");
             }
         }
         
@@ -188,9 +188,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::setParentID(LO parentID)
+    int InterfaceEntity<SC,LO,GO,NO>::setAncestorID(LO AncestorID)
     {
-        ParentID_ = parentID;
+        AncestorID_ = AncestorID;
         return 0;
     }
     
@@ -206,43 +206,43 @@ namespace FROSch {
     {
         Type_ = type;
         if ((Type_==ShortEdgeType)||(Type_==StraightEdgeType)||(Type_==EdgeType)) {
-            Parents_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
+            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(VertexType));
         } else if (Type_==FaceType) {
-            Parents_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
+            Ancestors_.reset(new EntitySet<SC,LO,GO,NO>(EdgeType));
         }
         return 0;
     }
     
     template <class SC,class LO,class GO,class NO>
-    int InterfaceEntity<SC,LO,GO,NO>::findParents(EntitySetPtr entitySet)
+    int InterfaceEntity<SC,LO,GO,NO>::findAncestors(EntitySetPtr entitySet)
     {
         if (Type_ == VertexType) {
-            FROSCH_ASSERT(0!=0,"There are no parents to vertices.")
+            FROSCH_ASSERT(false,"There are no Ancestors to vertices.")
         } else if ((Type_ == ShortEdgeType) || (Type_ == StraightEdgeType) || (Type_ == EdgeType)) {
             FROSCH_ASSERT(entitySet->getEntityType()==VertexType,"entitySet has the wrong type.")
         } else if (Type_ == FaceType) {
             FROSCH_ASSERT((entitySet->getEntityType()==ShortEdgeType)||(entitySet->getEntityType()==StraightEdgeType)||(entitySet->getEntityType()==EdgeType),"entitySet has the wrong type.")
         } else if (Type_ == SurfaceType) {
-            FROSCH_ASSERT(0!=0,"SurfaceType not yet implemented...")
+            FROSCH_ASSERT(false,"SurfaceType not yet implemented...")
         } else if (Type_ == VolumeType) {
-            FROSCH_ASSERT(0!=0,"VolumeType not yet implemented...")
+            FROSCH_ASSERT(false,"VolumeType not yet implemented...")
         }
         
         //
-        EntitySetPtr parents(new EntitySet<SC,LO,GO,NO>(*entitySet));
+        EntitySetPtr Ancestors(new EntitySet<SC,LO,GO,NO>(*entitySet));
         GOVec tmpVector;
         for (UN i=0; i<Multiplicity_; i++) {
-            UN length = parents->getNumEntities();
+            UN length = Ancestors->getNumEntities();
             for (UN j=0; j<length; j++) {
-                tmpVector = parents->getEntity(length-1-j)->getSubdomainsVector();
+                tmpVector = Ancestors->getEntity(length-1-j)->getSubdomainsVector();
                 if (!std::binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
-                    parents->removeEntity(length-1-j);
+                    Ancestors->removeEntity(length-1-j);
                 }
             }
         }
         
-        for (UN i=0; i<parents->getNumEntities(); i++) {
-            Parents_->addEntity(parents->getEntity(i));
+        for (UN i=0; i<Ancestors->getNumEntities(); i++) {
+            Ancestors_->addEntity(Ancestors->getEntity(i));
         }
         return 0;
     }
@@ -313,9 +313,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    LO InterfaceEntity<SC,LO,GO,NO>::getParentID() const
+    LO InterfaceEntity<SC,LO,GO,NO>::getAncestorID() const
     {
-        return ParentID_;
+        return AncestorID_;
     }
     
     template <class SC,class LO,class GO,class NO>
@@ -373,9 +373,9 @@ namespace FROSch {
     }
     
     template <class SC,class LO,class GO,class NO>
-    const typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::getParents() const
+    const typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::getAncestors() const
     {
-        return Parents_;
+        return Ancestors_;
     }
     
     

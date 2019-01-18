@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -104,7 +104,7 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
       is_same = false;
     }
   }
-  if (file1.Num_Times() != file2.Num_Times() && !interface.quiet_flag) {
+  if (file1.Num_Times() != file2.Num_Times() && !interface.quiet_flag && !interface.ignore_steps) {
     ERROR(".. First file has " << file1.Num_Times() << " result times while the second file has "
                                << file2.Num_Times() << ".\n");
   }
@@ -118,23 +118,27 @@ void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, boo
   bool is_diff = false;
   // NOTE: Check_Global is called earlier. Don't repeat call here.
   if (!Check_Nodal(file1, file2, node_map, node_id_map, check_only)) {
+    ERROR(".. Differences found in mesh nodal coordinates.\n");
     is_diff = true;
   }
 
   if (!Check_Elmt_Block(file1, file2)) {
+    ERROR(".. Differences found in element block metadata or connectivity.\n");
     is_diff = true;
   }
 
   if (!Check_Nodeset(file1, file2, node_map, check_only)) {
+    ERROR(".. Differences found in node set metadata or node lists.\n");
     is_diff = true;
   }
 
   if (!Check_Sideset(file1, file2, elmt_map, check_only)) {
+    ERROR(".. Differences found in side set metadata or side lists.\n");
     is_diff = true;
   }
 
   if (is_diff) {
-    ERROR(".. Differences found in mesh metadata.  Aborting...\n");
+    ERROR(".. Differences found in mesh (non-transient) data.  Aborting...\n");
     exit(1);
   }
 }
@@ -226,24 +230,22 @@ namespace {
     // Verify that element blocks match in the two files...
     for (int b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
       Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
-      Exo_Block<INT> *block2 = file2.Get_Elmt_Block_by_Index(b);
+      Exo_Block<INT> *block2 = nullptr;
       if (interface.map_flag != DISTANCE && interface.map_flag != PARTIAL) {
         if (block1 != nullptr) {
-          if (block2 == nullptr || block1->Id() != block2->Id()) {
-            if (interface.by_name) {
-              block2 = file2.Get_Elmt_Block_by_Name(block1->Name());
-            }
-            else {
-              block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
-            }
-
-            if (block2 == nullptr) {
-              ERROR(".. Block id " << block1->Id() << " exists in first "
-                                   << "file but not the second.\n");
-              is_same = false;
-            }
+          if (interface.by_name) {
+            block2 = file2.Get_Elmt_Block_by_Name(block1->Name());
           }
-          if (block2 != nullptr) {
+          else {
+            block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
+          }
+          if (block2 == nullptr) {
+            ERROR(".. Block id " << block1->Id() << " with name " << block1->Name()
+                                 << " exists in first "
+                                 << "file but not the second.\n");
+            is_same = false;
+          }
+          else {
             if (!Check_Elmt_Block_Params(block1, block2)) {
               is_same = false;
             }

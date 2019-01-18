@@ -41,43 +41,26 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_TestingUtilities.hpp>
+#include "Tpetra_Map.hpp"
+#include "Tpetra_TestingUtilities.hpp"
 #include <type_traits> // std::is_same
-
-// FINISH: add testing of operator==, operator!=, operator=, copy construct
-// put these into test_same_as and test_is_compatible
 
 namespace {
 
-  using Teuchos::null;
-
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
-
   using Tpetra::createUniformContigMapWithNode;
-
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::RCP;
-  using Teuchos::arcp;
   using Teuchos::rcp;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
   using Teuchos::outArg;
-  using Teuchos::Tuple;
   using Teuchos::tuple;
-  using Tpetra::Map;
-  using Tpetra::global_size_t;
-  using Tpetra::DefaultPlatform;
-  using std::sort;
-  using std::find;
-  using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
-  using Teuchos::Comm;
   using std::endl;
+
+  using GST = Tpetra::global_size_t;
 
 #define TEST_IS_COMPATIBLE(m1,m2,is_compat)               \
 {                                                         \
@@ -117,132 +100,56 @@ namespace {
   // UNIT TESTS
   //
 
-#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_TPETRA_MPI)
-  ////
+  // This test exercises unsigned GlobalOrdinal.  We don't intend to
+  // support unsigned GlobalOrdinal going forward.  However, the test
+  // should work regardless of the GlobalOrdinal type.
   TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
   {
-    typedef Map<int,size_t> M;
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    using LO = Tpetra::Map<>::local_ordinal_type;
+#if defined(HAVE_TPETRA_INST_INT_UNSIGNED)
+    using GO = unsigned int;
+#elif defined(HAVE_TPETRA_INST_INT_UNSIGNED_LONG)    
+    using GO = unsigned long;
+#else
+    using GO = Tpetra::Map<>::global_ordinal_type;
+#endif
+    using map_type = Tpetra::Map<LO, GO>;
+    
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     if (numImages < 2) return;
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    RCP<M> m;
-    TEST_NOTHROW( m = rcp(new M(GSTI, tuple<size_t>(myImageID), 0, comm)) );
-    if (m != null) {
-      TEST_EQUALITY( m->getMinAllGlobalIndex(), (size_t)0 );
-      TEST_EQUALITY( m->getMaxAllGlobalIndex(), (size_t)numImages-1 );
+    const GST GSTI = OrdinalTraits<GST>::invalid();
+    RCP<map_type> m;
+    TEST_NOTHROW( m = rcp(new map_type(GSTI, tuple<GO>(myImageID), 0, comm)) );
+    TEST_ASSERT( m.get () != nullptr );
+    if (m.get () != nullptr) {
+      TEST_EQUALITY( m->getMinAllGlobalIndex(),
+		     static_cast<GO> (0) );
+      TEST_EQUALITY( m->getMaxAllGlobalIndex(),
+		     static_cast<GO> (numImages-1) );
     }
-  }
-#endif
 
-
-// mfh 21 Apr 2014: The Kokkos Refactor version of Map does not pass
-// these tests.  We could always add those checks back at some time.
-// They are only enabled in a debug build in any case.  Please note
-// that if you reenable these checks, you must also add instantiations
-// for them at the end of this file, only if HAVE_TPETRA_DEBUG is
-// defined.
-#if 0
-  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor1, LO, GO )
-  {
-    typedef Map<LO,GO> M;
-
-    out << "Test: Map, invalidConstructor1" << std::endl;
-    Teuchos::OSTab tab0 (out);
-
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    // bad constructor calls: (num global elements, index base)
-    TEST_THROW(M map(GSTI,0,comm), std::invalid_argument);
-    if (numImages > 1) {
-      TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
-      TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
-    }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    // Make sure that the test passed on all MPI processes.
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
   }
 
-  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor2, LO, GO )
-  {
-    typedef Map<LO,GO> M;
-
-    out << "Test: Map, invalidConstructor2" << std::endl;
-    Teuchos::OSTab tab0 (out);
-
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    // bad constructor calls: (num global elements, num local elements, index base)
-    TEST_THROW(M map(1,0,0, comm),  std::invalid_argument);
-    if (numImages > 1) {
-      TEST_THROW(M map((myImageID == 0 ? GSTI :  1),0,0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
-      TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
-    }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
-
-  // This test may only pass in a debug build (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, invalidConstructor3, LO, GO )
-  {
-    typedef Map<LO,GO> M;
-
-    out << "Test: Map, invalidConstructor3" << std::endl;
-    Teuchos::OSTab tab0 (out);
-
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    // bad constructor calls: (num global, entry list, index base)
-
-    out << "Test GID = " << -myImageID << " < indexBase = " << 1 << endl;
-    TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
-    if (numImages > 1) {
-      out << "Test number of GIDs too large" << endl;
-      TEST_THROW(M map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
-      out << "Test invalid number of GIDs on one process" << endl;
-      TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
-      out << "Test incorrect number of GIDs on all processes" << endl;
-      TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
-    }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
-#endif // 0
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, compatibilityTests, LO, GO )
   {
     using std::endl;
-    typedef Map<LO,GO> M;
+    typedef Tpetra::Map<LO,GO> M;
 
     out << "Test: Map, compatibilityTests" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const GST GSTI = OrdinalTraits<GST>::invalid();
 
     // test isCompatible()
     // m1.isCompatible(m2) should be true if m1 and m2 have the same number of global entries and the same number of local entries on
@@ -311,20 +218,18 @@ namespace {
     }
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, sameasTests, LO, GO )
   {
-    typedef Map<LO,GO> M;
+    typedef Tpetra::Map<LO,GO> M;
 
     out << "Test: Map, sameasTests" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    const GST GSTI = OrdinalTraits<GST>::invalid();
     {
       M m1(GSTI,0,0,comm),
         m2(GSTI,0,0,comm);
@@ -350,16 +255,15 @@ namespace {
     }
   }
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ContigUniformMap, LO, GO )
   {
-    typedef Map<LO,GO> M;
+    typedef Tpetra::Map<LO,GO> M;
 
     out << "Test: Map, ContigUniformMap" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a contiguous uniform distributed map with two entries per node
@@ -396,35 +300,35 @@ namespace {
     TEST_EQUALITY_CONST( map.isNodeLocalElement(2), false ); // just try a couple
     TEST_EQUALITY_CONST( map.isNodeLocalElement(3), false );
     for (GO i=0; i < as<GO>(numGlobalEntries); ++i) {
-      if (find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
+      if (std::find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
         TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), false );
       }
       else {
         TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), true );
       }
     }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+    // Make sure that the test passed on all MPI processes.
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
   }
 
-
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, nonTrivialIndexBase, LO, GO )
   {
-    typedef Map<LO,GO> Map;
+    typedef Tpetra::Map<LO,GO> Map;
 
     out << "Test: Map, nonTrivialIndexBase" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a contiguous uniform distributed map with numLocal entries per node
     const size_t        numLocal  = 5;
-    const global_size_t numGlobal = numImages*numLocal;
+    const GST numGlobal = numImages*numLocal;
     const GO indexBase = 10;
 
     Map map (numGlobal, indexBase, comm);
@@ -444,30 +348,31 @@ namespace {
     TEST_EQUALITY(map.getMaxGlobalIndex(), as<GO>(expectedGIDs[0]+numLocal-1) );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), indexBase);
     TEST_EQUALITY(map.getGlobalElement(0), expectedGIDs[0]);
-    TEST_EQUALITY_CONST((global_size_t)map.getMaxAllGlobalIndex(), indexBase+numGlobal-1);
+    TEST_EQUALITY_CONST((GST)map.getMaxAllGlobalIndex(), indexBase+numGlobal-1);
     ArrayView<const GO> glist = map.getNodeElementList();
     TEST_COMPARE_ARRAYS( map.getNodeElementList(), expectedGIDs);
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+    // Make sure that the test passed on all MPI processes.
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
   }
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, indexBaseAndAllMin, LO, GO )
   {
-    typedef Map<LO,GO> Map;
+    typedef Tpetra::Map<LO,GO> Map;
 
     out << "Test: Map, indexBaseAndAllMin" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a contiguous uniform distributed map with numLocal entries per node
     const size_t        numLocal  = 5;
-    const global_size_t numGlobal = numImages*numLocal;
+    const GST numGlobal = numImages*numLocal;
     const GO indexBase = 0;
     const GO actualBase = 1;
     //
@@ -488,36 +393,37 @@ namespace {
     TEST_EQUALITY(map.getMaxGlobalIndex(), as<GO>(GIDs[0]+numLocal-1) );
     TEST_EQUALITY(map.getMinAllGlobalIndex(), actualBase);
     TEST_EQUALITY(map.getGlobalElement(0), GIDs[0]);
-    TEST_EQUALITY_CONST((global_size_t)map.getMaxAllGlobalIndex(), actualBase+numGlobal-1);
+    TEST_EQUALITY_CONST((GST)map.getMaxAllGlobalIndex(), actualBase+numGlobal-1);
     ArrayView<const GO> glist = map.getNodeElementList();
     TEST_COMPARE_ARRAYS( map.getNodeElementList(), GIDs);
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+    // Make sure that the test passed on all MPI processes.
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
   }
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Map, NodeConversion, N2 )
   {
-    typedef Map<>::local_ordinal_type LO;
-    typedef Map<>::global_ordinal_type GO;
-    typedef Map<>::node_type N1; // default Node type
-    typedef Map<LO, GO, N1> Map1;
-    typedef Map<LO, GO, N2> Map2;
+    typedef Tpetra::Map<>::local_ordinal_type LO;
+    typedef Tpetra::Map<>::global_ordinal_type GO;
+    typedef Tpetra::Map<>::node_type N1; // default Node type
+    typedef Tpetra::Map<LO, GO, N1> Map1;
+    typedef Tpetra::Map<LO, GO, N2> Map2;
 
     out << "Test: Map, NodeConversion" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int numImages = comm->getSize();
     //const int myImageID = comm->getRank();
     const size_t        numLocal  = 10;
-    const global_size_t numGlobal = numImages*numLocal;
+    const GST numGlobal = numImages*numLocal;
 
-    RCP<N1> n1 = getNode<N1>();
-    RCP<N2> n2 = getNode<N2>();
+    RCP<N1> n1 (new N1);
+    RCP<N2> n2 (new N2);
 
     // create a contiguous uniform distributed map with numLocal entries per node
     RCP<const Map1> map1 = createUniformContigMapWithNode<LO, GO, N1> (numGlobal, comm, n1);
@@ -527,16 +433,15 @@ namespace {
     TEST_ASSERT( map1->isSameAs (*map1b) );
   }
 
-  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, ZeroLocalElements, LO, GO )
   {
-    typedef Map<LO,GO> M;
+    typedef Tpetra::Map<LO,GO> M;
 
     out << "Test: Map, ZeroLocalElements" << std::endl;
     Teuchos::OSTab tab0 (out);
 
     // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
+    auto comm = Tpetra::getDefaultComm();
     const int rank = comm->getRank();
 
     // Create maps with zero elements on all but the first processor
@@ -553,10 +458,11 @@ namespace {
     TEST_EQUALITY( contig_non_uniform.getLocalElement(0), lid_expected );
     TEST_EQUALITY( non_contig.getLocalElement(0), lid_expected );
 
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    // Make sure that the test passed on all MPI processes.
+    const int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
   }
 
 
@@ -566,7 +472,7 @@ namespace {
   {
     // If you are letting all template parameters take their default
     // values, you must follow the class name Map with <>.
-    typedef Map<> map_type;
+    typedef Tpetra::Map<> map_type;
     typedef map_type::local_ordinal_type local_ordinal_type;
     typedef map_type::global_ordinal_type global_ordinal_type;
 
@@ -576,16 +482,15 @@ namespace {
     // Verify that the default LocalOrdinal type is int.  We can't put
     // the is_same expression in the macro, since it has a comma
     // (commas separate arguments in a macro).
-    const bool defaultLocalOrdinalIsInt =
-      std::is_same<local_ordinal_type, int>::value;
-    TEST_ASSERT( defaultLocalOrdinalIsInt );
+    static_assert (std::is_same<local_ordinal_type, int>::value,
+		   "The default local_ordinal_type should be int, "
+		   "currently at least.  That may change in the future.");
 
     // Verify that the default GlobalOrdinal type has size no less
-    // than the default LocalOrdinal type.  Currently (as of 18 Jun
-    // 2014), the default GlobalOrdinal type is the same as the
-    // default LocalOrdinal type, but at some point we may want to
-    // change it to default to a 64-bit integer type.
-    TEST_ASSERT( sizeof (global_ordinal_type) >= sizeof (local_ordinal_type) );
+    // than the default LocalOrdinal type.
+    static_assert (sizeof (global_ordinal_type) >= sizeof (local_ordinal_type),
+		   "The default global_ordinal_type must have size "
+		   "no less than that of the default local_ordinal_type.");
   }
 
   //

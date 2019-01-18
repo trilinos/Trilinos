@@ -42,21 +42,12 @@
 #ifndef TPETRA_IMPORT_DECL_HPP
 #define TPETRA_IMPORT_DECL_HPP
 
-#include <Tpetra_Details_Transfer.hpp>
+#include "Tpetra_Details_Transfer.hpp"
+#include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_Export_fwd.hpp"
+#include "Tpetra_ImportExportData_fwd.hpp"
 
 namespace Tpetra {
-  //
-  // Forward declarations.  The "doxygen" bit simply tells Doxygen
-  // (our automatic documentation generation system) to skip forward
-  // declarations.
-  //
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class ImportExportData;
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Export;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /// \brief Communication plan for data redistribution from a
   ///   uniquely-owned to a (possibly) multiply-owned distribution.
@@ -118,9 +109,9 @@ namespace Tpetra {
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).
   ///
-  template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-           class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template<class LocalOrdinal,
+           class GlobalOrdinal,
+           class Node>
   class Import:
     public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>
   {
@@ -207,7 +198,8 @@ namespace Tpetra {
     /// constructor.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            Teuchos::Array<int> & remotePIDs);
+            Teuchos::Array<int> & remotePIDs,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::rcp(new Teuchos::ParameterList) );
 
     /// \brief Copy constructor.
     ///
@@ -262,18 +254,11 @@ namespace Tpetra {
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
     /// \brief Expert constructor.
-    ///
-    /// \warning THIS IS FOR EXPERT USERS ONLY.  More specifically,
-    ///   this constructor exists for MueLu (algebraic multigrid)
-    ///   setup ONLY.  If you aren't a MueLu or Tpetra developer,
-    ///   DON'T USE THIS.
     Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
-            Teuchos::Array<int> & userRemotePIDs,
-            Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+            const Teuchos::ArrayView<int> & remotePIDs,
             const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
             const Teuchos::ArrayView<const int> & userExportPIDs,
-            const bool useRemotePIDs,
             const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
             const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
 
@@ -585,7 +570,9 @@ namespace Tpetra {
     /// This routine fills in the <tt>remoteLIDs_</tt> field of
     /// <tt>ImportData_</tt>.
     void
-    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
+    setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, 
+                 bool useRemotePIDs, Teuchos::Array<int> & remotePIDs,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist= Teuchos::null);
     //@}
 
     /// \brief "Expert" constructor that includes all the Import's data.
@@ -610,16 +597,15 @@ namespace Tpetra {
 
   }; // class Import
 
-  /** \brief Nonmember constructor for Import.
-
-      Create a Import object from the given source and target Maps.
-      \pre <tt>src != null</tt>
-      \pre <tt>tgt != null</tt>
-      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
-        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
-
-      \relatesalso Import
-    */
+  /// \brief Nonmember constructor for Import.
+  ///
+  /// Create a Import object from the given source and target Maps.
+  /// \pre <tt>src != null</tt>
+  /// \pre <tt>tgt != null</tt>
+  /// \return The Import object. If <tt>src == tgt</tt>, returns \c null.
+  /// (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+  ///
+  /// \relatesalso Import
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,
@@ -639,17 +625,16 @@ namespace Tpetra {
     return Teuchos::rcp (new import_type (src, tgt));
   }
 
-  /** \brief Nonmember constructor for Import that takes a ParameterList.
-
-      Create a Import object from the given source and target Maps,
-      using the given list of parameters.
-      \pre <tt>src != null</tt>
-      \pre <tt>tgt != null</tt>
-      \return The Import object. If <tt>src == tgt</tt>, returns \c null.
-        (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
-
-      \relatesalso Import
-    */
+  /// \brief Nonmember constructor for Import that takes a ParameterList.
+  ///
+  /// Create a Import object from the given source and target Maps,
+  /// using the given list of parameters.
+  /// \pre <tt>src != null</tt>
+  /// \pre <tt>tgt != null</tt>
+  /// \return The Import object. If <tt>src == tgt</tt>, returns \c null.
+  /// (Debug mode: throws std::runtime_error if one of \c src or \c tgt is \c null.)
+  ///
+  /// \relatesalso Import
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
   createImport (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& src,

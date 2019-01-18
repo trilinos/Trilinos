@@ -1,15 +1,12 @@
-/* $Id$ */
-/* $Source$ */
-/*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -38,10 +35,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
-*/
 
 #ifndef STOKHOS_CONFIGDEFS_H
 #define STOKHOS_CONFIGDEFS_H
@@ -51,8 +47,8 @@
 #endif
 
 /*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and 
- * need to be undef'd here to avoid warnings when this file is included from 
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and
+ * need to be undef'd here to avoid warnings when this file is included from
  * another package.
  * KL 11/25/02
  */
@@ -87,5 +83,9 @@
 #ifndef TRILINOS_NO_CONFIG_H
 #include <Stokhos_config.h>
 #endif
+
+// Whether to use the Static-Fixed-Storage specialization of Sacado::MP::Vector,
+// which does not use expression templates (default is to not)
+#define STOKHOS_USE_MP_VECTOR_SFS_SPEC 0
 
 #endif /* STOKHOS_CONFIGDEFS_H */

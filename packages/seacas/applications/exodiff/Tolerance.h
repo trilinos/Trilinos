@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -81,7 +81,7 @@ public:
   double              value;
   double              floor;
 
-  // If true, use the older defintion of the floor tolerance which was
+  // If true, use the older definition of the floor tolerance which was
   // |a-b| < floor.  The new definition is |a| < floor && |b| < floor
   static bool use_old_floor;
 

@@ -96,13 +96,16 @@ int main(int argc, char *argv[]) {
   try {
     bool proc_verbose = false;
     bool debug = false;
-    bool strict_conv = false;
+    bool userandomrhs = true;
     int frequency = -1;        // frequency of status test output.
     int blocksize = 1;         // blocksize
     int numrhs = 1;            // number of right-hand sides to solve for
     int maxiters = -1;         // maximum number of iterations allowed per linear system
+    int maxdegree = 25;        // maximum degree of polynomial
     int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
     int maxrestarts = 15;      // number of restarts allowed
+    std::string outersolver("Block Gmres");
+    std::string polytype("Arnoldi");
     std::string filename("orsirr1.hb");
     std::string precond("right");
     MT tol = 1.0e-5;           // relative residual tolerance
@@ -111,15 +114,18 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nondebug",&debug,"Print debugging information from solver.");
-    cmdp.setOption("strict-conv","not-strict-conv",&strict_conv,"Require solver to strictly adhere to convergence tolerance.");
+    cmdp.setOption("use-random-rhs","use-rhs",&userandomrhs,"Use linear system RHS or random RHS to generate polynomial.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
+    cmdp.setOption("outersolver",&outersolver,"Name of outer solver to be used with GMRES poly");
+    cmdp.setOption("poly-type",&polytype,"Name of the polynomial to be generated.");
     cmdp.setOption("precond",&precond,"Preconditioning type (none, left, right).");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
     cmdp.setOption("poly-tol",&polytol,"Relative residual tolerance used to construct the GMRES polynomial.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+    cmdp.setOption("max-degree",&maxdegree,"Maximum degree of the GMRES polynomial.");
     cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
     cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -207,11 +213,9 @@ int main(int argc, char *argv[]) {
     belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
     belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    belosList.set( "Polynomial Tolerance", polytol );      // Polynomial convergence tolerance requested
-    belosList.set( "Strict Convergence", strict_conv );    // Whether solver must strictly reach requested tolerance
     int verbosity = Belos::Errors + Belos::Warnings;
     if (verbose) {
-      verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
+      verbosity += Belos::FinalSummary + Belos::TimingDetails + Belos::StatusTestDetails;
       if (frequency > 0)
         belosList.set( "Output Frequency", frequency );
     }
@@ -219,14 +223,26 @@ int main(int argc, char *argv[]) {
       verbosity += Belos::Debug;
     }
     belosList.set( "Verbosity", verbosity );
+
+    ParameterList polyList;
+    polyList.set( "Polynomial Type", polytype );          // Type of polynomial to be generated
+    polyList.set( "Maximum Degree", maxdegree );          // Maximum degree of the GMRES polynomial
+    polyList.set( "Polynomial Tolerance", polytol );      // Polynomial convergence tolerance requested
+    polyList.set( "Verbosity", verbosity );               // Verbosity for polynomial construction
+    polyList.set( "Random RHS", userandomrhs );           // Use RHS from linear system or random vector
+    if ( outersolver != "" ) {
+      polyList.set( "Outer Solver", outersolver );
+      polyList.set( "Outer Solver Params", belosList );
+    }
     //
     // Construct an unpreconditioned linear problem instance.
     //
     Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+    problem.setInitResVec( B );
     if (precond == "left") {
       problem.setLeftPrec( belosPrec );
     }
-    else if (precond == "right") {
+    if (precond == "right") {
       problem.setRightPrec( belosPrec );
     }
     bool set = problem.setProblem();
@@ -242,8 +258,7 @@ int main(int argc, char *argv[]) {
     //
     // Create an iterative solver manager.
     RCP< Belos::SolverManager<double,MV,OP> > newSolver
-      //= rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
-      = rcp( new Belos::GmresPolySolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
+      = rcp( new Belos::GmresPolySolMgr<double,MV,OP>(rcp(&problem,false), rcp(&polyList,false)));
 
     //
     // **********Print out information about problem*******************

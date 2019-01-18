@@ -124,59 +124,75 @@ struct topology
   //***************************************************************************
 
   /// is this topology valid
+  STK_INLINE_FUNCTION
   bool is_valid() const { return m_value != INVALID_TOPOLOGY; }
 
   /// get the name of this topology
   std::string name() const;
 
   /// does this topology have homogeneous faces
+  STK_INLINE_FUNCTION
   bool has_homogeneous_faces() const;
 
   /// is this topology a shell topology (i.e. an element with only two sides)
+  STK_INLINE_FUNCTION
   bool is_shell() const;
 
   /// what is the rank of this topology
+  STK_INLINE_FUNCTION
   rank_t rank() const;
 
   /// what is the side rank of this topology
+  STK_INLINE_FUNCTION
   rank_t side_rank() const;
 
   /// what is the topological dimension of this topology
+  STK_INLINE_FUNCTION
   unsigned dimension() const;
 
   /// how many nodes define this topology
-  STK_FUNCTION
+  STK_INLINE_FUNCTION
   unsigned num_nodes() const;
 
   /// how many nodes are vertices
+  STK_INLINE_FUNCTION
   unsigned num_vertices() const;
 
   /// how many edges does this topology have
+  STK_INLINE_FUNCTION
   unsigned num_edges() const;
 
   /// how many faces does this topology have
+  STK_INLINE_FUNCTION
   unsigned num_faces() const;
 
   /// how many different node permutations does this topology have
+  STK_INLINE_FUNCTION
   unsigned num_permutations() const;
 
   /// how many different positive node permutations does this topology have
+  STK_INLINE_FUNCTION
   unsigned num_positive_permutations() const;
 
+  STK_INLINE_FUNCTION
   bool is_positive_polarity(unsigned permutation_ordinal) const {
       return (permutation_ordinal < num_positive_permutations());
   }
 
   /// is this topology defined on the given spatial dimension
+  STK_INLINE_FUNCTION
   bool defined_on_spatial_dimension(unsigned spatial_dimension) const;
 
   /// what is the base topology (i.e. topology where num_nodes == num_vertices)
+  STK_INLINE_FUNCTION
   topology base() const;
 
   /// what is the topology of the given edge
+  STK_INLINE_FUNCTION
   topology edge_topology() const;
 
   /// what is the topology of the given face
+  STK_INLINE_FUNCTION
   topology face_topology(unsigned face_ordinal) const;
 
   /// fill the output ordinals with the ordinals that make up the given edge
@@ -198,7 +214,7 @@ struct topology
 
   /// fill the output nodes with the nodes that make up the given face
   /// input 'nodes' is expected to be of length num_nodes.
- template <typename NodeArray, typename NodeOutputIterator>
+  template <typename NodeArray, typename NodeOutputIterator>
   void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes) const;
 
   /// fill the output nodes with the nodes that make up the given permutation
@@ -222,9 +238,6 @@ struct topology
   unsigned lexicographical_smallest_permutation_preserve_polarity(const NodeArray &nodes, const NodeArray &element_nodes) const;
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename OrdinalOutputIterator>
   void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals) const
   {
@@ -239,9 +252,6 @@ struct topology
 
   /// fill the output nodes with the nodes that make up the given sub topology
   /// input 'nodes' is expected to be of length num_nodes.
-#ifdef __CUDACC__
-#pragma hd_warning_disable
-#endif
   template <typename NodeArray, typename NodeOutputIterator>
   void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes) const
   {
@@ -255,6 +265,7 @@ struct topology
   }
 
   /// how many 'sub topologies' does this topology have
+  STK_INLINE_FUNCTION
   unsigned num_sub_topology(unsigned sub_rank) const
   {
     switch(sub_rank)
@@ -269,6 +280,7 @@ struct topology
   }
 
   /// what is the topology of the given sub topology
+  STK_INLINE_FUNCTION
   topology sub_topology(unsigned sub_rank, unsigned sub_ordinal = 0) const
   {
     switch(sub_rank)
@@ -299,6 +311,7 @@ struct topology
   }
 
   /// how many 'side topologies' does this topology have
+  STK_INLINE_FUNCTION
   unsigned num_sides() const
   {
     unsigned num_sides_out = 0u;
@@ -310,28 +323,31 @@ struct topology
 
 
   /// what is the topology of the given side topology
+  STK_INLINE_FUNCTION
   topology side_topology(unsigned side_ordinal = 0) const
   {
     return sub_topology(side_rank(), side_ordinal);
   }
 
+  STK_INLINE_FUNCTION
   bool is_superelement() const
   {
     return m_value > SUPERELEMENT_START;
   }
 
-  STK_FUNCTION
+  STK_INLINE_FUNCTION
   bool is_superface() const
   {
     return m_value > SUPERFACE_START && m_value < SUPERFACE_END;
   }
 
-  STK_FUNCTION
+  STK_INLINE_FUNCTION
   bool is_superedge() const
   {
     return m_value > SUPEREDGE_START && m_value < SUPEREDGE_END;
   }
 
+  STK_INLINE_FUNCTION
   bool is_super_topology() const
   {
     return is_superelement() || is_superface() || is_superedge();
@@ -342,14 +358,17 @@ struct topology
   //***************************************************************************
 
   /// implicit cast to topology_t enum type
+  STK_INLINE_FUNCTION
   operator topology_t() const
   { return m_value; }
 
   /// return topology_t enum type
+  STK_INLINE_FUNCTION
   topology_t operator()() const
   { return m_value; }
 
   /// return topology_t enum type
+  STK_INLINE_FUNCTION
   topology_t value() const
   { return m_value; }
 
@@ -357,16 +376,37 @@ struct topology
   //constructors
   //***************************************************************************
   /// default construct to invalid
-  STK_FUNCTION
+  STK_INLINE_FUNCTION
   topology()
     : m_value(INVALID_TOPOLOGY)
   {}
 
   /// implicit construct from a topology_t
-  STK_FUNCTION
+  STK_INLINE_FUNCTION
   topology(topology_t topo)
     : m_value(topo)
   {}
+
+  //copy constructor needs to be defined for GPU
+  STK_INLINE_FUNCTION
+  topology(const topology& topo)
+    : m_value(topo.m_value)
+  {}
+
+  //***************************************************************************
+  // comparison operator
+  //***************************************************************************
+  STK_INLINE_FUNCTION
+  bool operator==(const topology& rhs) const
+  {
+    return m_value == rhs.m_value;
+  }
+
+  STK_INLINE_FUNCTION
+  bool operator==(const topology_t& rhs) const
+  {
+    return m_value == rhs;
+  }
 
   //***************************************************************************
   // compile time for topology
@@ -389,12 +429,15 @@ struct topology
   //  };
   //***************************************************************************
   template <typename Functor>
+  struct apply_host_functor;
+  template <typename Functor>
   struct apply_functor;
 
   //***************************************************************************
   // topology_type conversion constructors
   //***************************************************************************
   template <topology_t Topology>
+  STK_INLINE_FUNCTION
   topology(topology_type<Topology> /* t */ )
     : m_value(Topology)
   {}
@@ -560,14 +603,14 @@ bool isTriangle (topology topo);
 bool isQuadrilateral (topology topo);
 bool isTetrahedron (topology topo);
 bool isHexahedron (topology topo);
-
+bool is_solid_element(stk::topology t);
 
 } //namespace stk
 
-#include <stk_topology/topology_type.tcc>
-#include <stk_topology/types.tcc>
+#include <stk_topology/topology_type.hpp>
+#include <stk_topology/types.hpp>
 
-#include <stk_topology/apply_functor.tcc>
-#include <stk_topology/topology.tcc>
+#include <stk_topology/apply_functor.hpp>
+#include <stk_topology/topology_utils.hpp>
 
 #endif //STKTOPOLOGY_TOPOLOGY_HPP

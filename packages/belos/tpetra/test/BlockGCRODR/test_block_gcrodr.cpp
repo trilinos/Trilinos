@@ -50,7 +50,7 @@
 #include <BelosTpetraTestFramework.hpp>
 #include <BelosBlockGCRODRSolMgr.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -90,12 +90,11 @@ main (int argc, char *argv[])
   typedef MV::node_type node_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<node_type> node = Belos::Tpetra::getNode<node_type> ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
   RCP<oblackholestream> blackHole (new oblackholestream);
   const int myRank = comm->getRank ();
 
-  // Output stream that prints only on Rank 0.
+  // Output stream that prints only on Process 0.
   RCP<FancyOStream> out;
   if (myRank == 0) {
     out = Teuchos::getFancyOStream (rcpFromRef (cout));
@@ -149,6 +148,7 @@ main (int argc, char *argv[])
   RCP<sparse_matrix_type> A;
   RCP<MV> X_guess, X_exact, B;
   {
+    Teuchos::RCP<node_type> node; // can be null; only for type deduction
     typedef Belos::Tpetra::ProblemMaker<sparse_matrix_type> factory_type;
     factory_type factory (comm, node, out, tolerant, debug);
 

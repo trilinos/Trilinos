@@ -1,5 +1,11 @@
+#include <stk_balance/internal/SubdomainFileWriter.hpp>
 #include <test_utils/MeshFixtureMxNRebalance.hpp>
 #include <stk_balance/internal/MtoNRebalancer.hpp>
+
+#include "stk_unit_test_utils/getOption.h"
+#include "stk_mesh/base/Comm.hpp"
+#include "stk_util/parallel/ParallelVectorConcat.hpp"
+#include "stk_mesh/base/DestroyElements.hpp"
 
 namespace
 {
@@ -31,18 +37,6 @@ TEST_F(TestBalanceBalanceSmallToLarge, MxN_decompositionWithoutAura)
 
 class Mesh1x1x4 : public MeshFixtureMxNRebalance
 {
-protected:
-
-    void verify_node_sharing_info(const stk::mesh::EntityIdVector &goldSharedNodes, const stk::mesh::EntityVector &sharedNodes)
-    {
-        ASSERT_EQ(goldSharedNodes.size(), sharedNodes.size());
-        for(size_t nodeIndex = 0; nodeIndex < sharedNodes.size(); nodeIndex++)
-        {
-            stk::mesh::EntityId nodeId = get_bulk().identifier(sharedNodes[nodeIndex]);
-            EXPECT_EQ(goldSharedNodes[nodeIndex], nodeId);
-        }
-    }
-
 protected:
     virtual unsigned get_num_procs_initial_decomp() const { return 2; }
     virtual unsigned get_num_procs_target_decomp()  const { return 4; }
@@ -83,6 +77,71 @@ TEST_F(Mesh1x1x4, read2procsWrite4procsFilesUsingGeneratedMesh)
                 EXPECT_TRUE(goldSharedNodesPerSubdomain[subdomain] == nodeSharingInfo);
                 rebalancer.create_subdomain_and_write("testing.g", subdomain, global_num_nodes, global_num_elems, nodeSharingInfo);
             }
+        }
+    }
+}
+
+void expect_and_unlink_file(const std::string& baseName, int numProc, int procId)
+{
+    std::string file0Name = baseName + "." + std::to_string(numProc) + "." + std::to_string(procId);
+    std::ifstream file0(file0Name);
+    EXPECT_TRUE(!file0.fail());
+    unlink(file0Name.c_str());
+}
+
+TEST(SomeProcessorsWithNoElements, writeSubdomains_onlyProcsWithElementsWrite)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+    const std::string inputMesh = "generated:1x1x4";
+    const std::string outputMesh = "reduced.g";
+
+    if(stk::parallel_machine_size(comm) == 4)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::Field<double> &targetDecompField = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "junk", 1);
+        stk::mesh::put_field_on_mesh(targetDecompField, meta.universal_part(), nullptr);
+        stk::mesh::BulkData bulk(meta, comm);
+        stk::io::fill_mesh(inputMesh, bulk);
+
+        stk::mesh::EntityVector elementsToDestroy;
+        if(stk::parallel_machine_rank(comm)==0 || stk::parallel_machine_rank(comm)==3)
+        {
+            stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elementsToDestroy);
+        }
+        stk::mesh::destroy_elements(bulk, elementsToDestroy);
+
+        int includeMe = 0;
+        int numTarget = 0;
+        std::tie(includeMe, numTarget) = stk::balance::internal::get_included_and_num_target_procs(bulk, comm);
+
+        EXPECT_EQ(2, numTarget);
+
+        int mySubdomain = stk::balance::internal::get_subdomain_index(includeMe, comm);
+
+        if(stk::parallel_machine_rank(comm)==2)
+        {
+            EXPECT_EQ(1, includeMe);
+            EXPECT_EQ(1, mySubdomain);
+        }
+        else if(stk::parallel_machine_rank(comm)==1)
+        {
+            EXPECT_EQ(1, includeMe);
+            EXPECT_EQ(0, mySubdomain);
+        }
+        else
+        {
+            EXPECT_EQ(0, includeMe);
+            EXPECT_EQ(-1, mySubdomain);
+        }
+
+        stk::balance::internal::write_subdomain_files(bulk, numTarget, mySubdomain, outputMesh);
+
+        stk::parallel_machine_barrier(comm);
+        if(stk::parallel_machine_rank(comm)==0)
+        {
+            expect_and_unlink_file(outputMesh, numTarget, 0);
+            expect_and_unlink_file(outputMesh, numTarget, 1);
         }
     }
 }

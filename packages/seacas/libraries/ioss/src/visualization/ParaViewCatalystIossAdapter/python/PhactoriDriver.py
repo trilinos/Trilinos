@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2010 National Technology & Engineering Solutions
+# Copyright(C) 1999-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -111,6 +111,10 @@ def CreateCoProcessor():
 
     def LocalWriteImages3(self, datadescription, rescale_lookuptable=False):
       phactori.WriteImagesForCurrentPipeAndViewsState(datadescription)
+
+    def LocalExportOperationsData3(self, datadescription, rescale_lookuptable=False):
+      phactori.ExportOperationsDataForCurrentPipeAndViewsState(datadescription)
+
       
 
   coprocessor = CoProcessor()
@@ -430,8 +434,10 @@ def DoCoProcessingSub(datadescription):
     #   DoLiveInsitu(timestep, pv_host, pv_port)
 
     # Write output data, if appropriate.
-    coprocessor.WriteData(datadescription);
+    coprocessor.WriteData(datadescription)
 
+    coprocessor.LocalExportOperationsData3(datadescription)
+   
     # Write image capture (Last arg: rescale lookup table), if appropriate.
     coprocessor.LocalWriteImages3(datadescription,
         rescale_lookuptable=False)
@@ -458,6 +464,7 @@ def DoCoProcessingSub(datadescription):
         imagesNeedWriting = True
         if imagesNeedWriting:
           phactori.UpdateAllImagesetViewsWhichMayChangeWithData()
+          coprocessor.LocalExportOperationsData3(datadescription)
           coprocessor.LocalWriteImages3(datadescription,
           rescale_lookuptable=False)
 

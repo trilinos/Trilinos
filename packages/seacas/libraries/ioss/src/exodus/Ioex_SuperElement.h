@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -70,13 +70,13 @@ namespace Ioex {
                                     size_t data_size) const override;
 
   private:
-    std::string fileName;
-    size_t      numDOF;
-    size_t      num_nodes;
-    size_t      numEIG;
-    size_t      numRBM;
-    size_t      num_dim;
-    int         filePtr;
+    std::string fileName{};
+    size_t      numDOF{0};
+    size_t      num_nodes{0};
+    size_t      numEIG{0};
+    size_t      numRBM{0};
+    size_t      num_dim{0};
+    int         filePtr{-1};
   };
 } // namespace Ioex
 #endif

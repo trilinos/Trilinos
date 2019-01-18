@@ -103,7 +103,7 @@ void XMLParameterListWriter::buildInitialValidatorMap(
 
 
 XMLObject XMLParameterListWriter::convertValidators(
-  const ParameterList& p, ValidatortoIDMap& validatorIDsMap) const
+  const ParameterList& /* p */, ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject validators(getValidatorsTagName());
   for(

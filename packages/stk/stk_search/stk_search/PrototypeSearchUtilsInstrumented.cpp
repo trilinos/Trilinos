@@ -1,13 +1,13 @@
 
-#include <stk_util/parallel/Parallel.hpp>    // for parallel_machine_size, etc
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommSparse.hpp>  // for comm_recv_sizes
-#include <stk_util/parallel/MPI.hpp>
-
-#include <iomanip>
-
-#include <stk_search/CommonSearchUtilsInstrumented.hpp>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include <stk_search/PrototypeSearchUtilsInstrumented.hpp>
+#include <stk_util/parallel/CommSparse.hpp>    // for CommSparse
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+
+
 
 
 namespace stk {
@@ -133,7 +133,7 @@ void witnessAndComputeNeighborRanks(MPI_Comm comm, int mpiSize,
       for (int domainRank : domainResidents) {
         for (int rangeRank : rangeResidents) {
           if (domainRank != rangeRank) {
-            neighborPairs.push_back(std::pair<int,int>(domainRank, rangeRank));
+            neighborPairs.emplace_back(domainRank, rangeRank);
           }
         }
       }

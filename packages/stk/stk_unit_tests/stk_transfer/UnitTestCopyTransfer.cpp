@@ -31,23 +31,25 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <string>
-#include <limits>
-#include "gtest/gtest.h"
-#include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, etc
 #include "stk_mesh/base/BulkData.hpp"          // for BulkData, etc
-#include "stk_mesh/base/MetaData.hpp"          // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/FEMHelpers.hpp"        // for declare_element
-#include "stk_topology/topology.hpp"           // for topology, etc
 #include "stk_mesh/base/CoordinateSystems.hpp" // for Cartesian2d, etc.
+#include "stk_mesh/base/FEMHelpers.hpp"        // for declare_element
+#include "stk_mesh/base/GetEntities.hpp"       // for get_selected_entities, etc.
+#include "stk_mesh/base/MetaData.hpp"          // for MetaData, entity_rank_names, etc
 #include "stk_mesh/base/Part.hpp"              // for Part
 #include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/base/GetEntities.hpp"       // for get_selected_entities, etc.
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
+#include "stk_topology/topology.hpp"           // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, etc
+#include "gtest/gtest.h"
+#include <limits>
+#include <memory>
+#include <string>
 
 #include "stk_transfer/copy_by_id/SearchByIdCommAll.hpp"
 #include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
+#include "stk_transfer/copy_by_id/TransferCopyByIdMpmdMeshAdapter.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
 
 
@@ -63,10 +65,10 @@ void build_mesh(stk::mesh::MetaData & meta,
                 const size_t num_elements,
                 const size_t num_nodes,
                 const stk::mesh::EntityIdVector & element_ids,
-                int element_owner[],
+                std::vector<int> element_owner,
                 const stk::mesh::EntityIdVector * elem_node_ids,
-                int node_sharing[],
-                double coordinates[][3],
+                std::vector<int> node_sharing,
+                std::vector<std::vector<double>> coordinates,
                 bool createFaces = false )
 {
   const int p_rank = mesh.parallel_rank();
@@ -81,21 +83,21 @@ void build_mesh(stk::mesh::MetaData & meta,
   VectorField & vectorFieldNode = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "Node Vector Field");
   VectorField & coordsFieldNode = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
   meta.set_coordinate_field(&coordsFieldNode);
-  stk::mesh::put_field(scalarFieldNode, meta.universal_part(), init_vals);
-  stk::mesh::put_field(vectorFieldNode, meta.universal_part(), init_vals);
-  stk::mesh::put_field(coordsFieldNode, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldNode, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldNode, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(coordsFieldNode, meta.universal_part(), init_vals);
   ScalarField & scalarFieldElement = meta.declare_field<ScalarField>(stk::topology::ELEM_RANK, "Element Scalar Field");
   VectorField & vectorFieldElement = meta.declare_field<VectorField>(stk::topology::ELEM_RANK, "Element Vector Field");
-  stk::mesh::put_field(scalarFieldElement, meta.universal_part(), init_vals);
-  stk::mesh::put_field(vectorFieldElement, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldElement, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldElement, meta.universal_part(), init_vals);
   ScalarField & scalarFieldFace = meta.declare_field<ScalarField>(stk::topology::FACE_RANK, "Face Scalar Field");
   VectorField & vectorFieldFace = meta.declare_field<VectorField>(stk::topology::FACE_RANK, "Face Vector Field");
-  stk::mesh::put_field(scalarFieldFace, meta.universal_part(), init_vals);
-  stk::mesh::put_field(vectorFieldFace, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldFace, meta.universal_part(), init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldFace, meta.universal_part(), init_vals);
   ScalarField & scalarFieldShell = meta.declare_field<ScalarField>(stk::topology::ELEM_RANK, "Shell Scalar Field");
   VectorField & vectorFieldShell = meta.declare_field<VectorField>(stk::topology::ELEM_RANK, "Shell Vector Field");
-  stk::mesh::put_field(scalarFieldShell, *shell_part, init_vals);
-  stk::mesh::put_field(vectorFieldShell, *shell_part, init_vals);
+  stk::mesh::put_field_on_mesh(scalarFieldShell, *shell_part, init_vals);
+  stk::mesh::put_field_on_mesh(vectorFieldShell, *shell_part, init_vals);
   meta.commit();
 
   mesh.initialize_face_adjacent_element_graph();
@@ -130,18 +132,18 @@ void build_mesh(stk::mesh::MetaData & meta,
 
   const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(stk::topology::NODE_RANK, meta.locally_owned_part());
   for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-          stk::mesh::Entity entity = entityBucket[entityIndex];
-          double * coordsSource = stk::mesh::field_data(coordsFieldNode, entity);
+    stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+    for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
+      stk::mesh::Entity entity = entityBucket[entityIndex];
+      double * coordsSource = stk::mesh::field_data(coordsFieldNode, entity);
 
-          // Assume compact entity numbering from 1 so that index into provided coordinates
-          // array are a fixed offset from the ID.
-          int nodeOffset = mesh.identifier(entity) - 1;
-          for (size_t i = 0; i < meta.spatial_dimension(); ++i) {
-              coordsSource[i] = coordinates[nodeOffset][i];
-          }
+      // Assume compact entity numbering from 1 so that index into provided coordinates
+      // array are a fixed offset from the ID.
+      int nodeOffset = mesh.identifier(entity) - 1;
+      for (size_t i = 0; i < meta.spatial_dimension(); ++i) {
+          coordsSource[i] = coordinates[nodeOffset][i];
       }
+    }
   }
   std::vector<const stk::mesh::FieldBase *> fields_to_communicate;
   fields_to_communicate.push_back(&coordsFieldNode);
@@ -191,25 +193,25 @@ void fill_mesh_values_for_rank(stk::mesh::BulkData & mesh,
                                VectorField & vF,
                                const stk::mesh::Selector & sel)
 {
-    const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
-    const unsigned spatial_dimension = meta.spatial_dimension();
-    ScalarField & scalarField = sF;
-    VectorField & vectorField = vF;
+  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const unsigned spatial_dimension = meta.spatial_dimension();
+  ScalarField & scalarField = sF;
+  VectorField & vectorField = vF;
 
-    const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(rank,sel);
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-        stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-        for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-            stk::mesh::Entity entity = entityBucket[entityIndex];
-            double * scalar = stk::mesh::field_data(scalarField, entity);
-            double * vector = stk::mesh::field_data(vectorField, entity);
+  const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(rank,sel);
+  for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
+    stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+    for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
+      stk::mesh::Entity entity = entityBucket[entityIndex];
+      double * scalar = stk::mesh::field_data(scalarField, entity);
+      double * vector = stk::mesh::field_data(vectorField, entity);
 
-            *scalar = static_cast<double>(mesh.identifier(entity));
-            for (unsigned i = 0; i < spatial_dimension; ++i) {
-                vector[i] = static_cast<double>((mesh.identifier(entity)-1)*spatial_dimension+i);
-            }
-        }
+      *scalar = static_cast<double>(mesh.identifier(entity));
+      for (unsigned i = 0; i < spatial_dimension; ++i) {
+        vector[i] = static_cast<double>((mesh.identifier(entity)-1)*spatial_dimension+i);
+      }
     }
+  }
 }
 
 void fill_mesh_values(stk::mesh::BulkData & mesh)
@@ -248,8 +250,234 @@ void fill_mesh_values(stk::mesh::BulkData & mesh)
                               meta.locally_owned_part() & shell_part);
 }
 
+struct TwoElemMeshInfo
+{
+    const size_t num_elements = 1;
+    const size_t num_nodes = 8;
+    stk::mesh::EntityIdVector element_ids {1};
+    std::vector<stk::mesh::EntityIdVector> elem_node_ids { {1, 2, 3, 4, 5, 6, 7, 8} };
+    std::vector<int> node_sharingA = { -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1 };
+    std::vector<int> node_sharingB = { -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1 };
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
+        {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0} };
+};
 
-TEST(Transfer, copy0T0)
+struct FourElemMeshInfo
+{
+    const size_t spatial_dimension = 3;
+    const size_t num_elements = 2;
+    const size_t num_nodes = 12;
+    stk::mesh::EntityIdVector element_ids {1, 2};
+    std::vector<stk::mesh::EntityIdVector> elem_node_ids {
+        {1, 2, 5, 4, 7, 8, 11, 10},
+        {2, 3, 6, 5, 8, 9, 12, 11}
+    };
+    std::vector<int> node_sharingA = { -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1,
+      -1, 0, -1, -1, 0, -1, -1, 0, -1, -1, 0, -1 };
+    std::vector<int> node_sharingB = { -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1,
+      -1, 0, -1, -1, 0, -1, -1, 0, -1, -1, 0, -1 };
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0},
+      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0},
+      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0},
+      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0} };
+};
+
+struct SixElemMeshInfo
+{
+  const size_t spatial_dimension = 3;
+  const size_t num_elements = 3;
+  const size_t num_nodes = 16;
+  stk::mesh::EntityIdVector element_ids {1, 2, 3};
+  std::vector<stk::mesh::EntityIdVector> elem_node_ids {
+      {1, 2, 6, 5, 9, 10, 14, 13},
+      {2, 3, 7, 6, 10, 11, 15, 14},
+      {3, 4, 8, 7, 11, 12, 16, 15} };
+  std::vector<int> node_sharingA = { -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1,
+      -1, -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1 };
+  std::vector<int> node_sharingB = { -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1,
+      -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1, -1 };
+  std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
+      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
+      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
+      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
+};
+
+struct TwoElemKeyToTargetTest
+{
+  explicit TwoElemKeyToTargetTest(int expected_target_processor) : m_expected_target_processor(expected_target_processor) {}
+  void operator()(const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target) const
+  {
+    for (auto && elem : key_to_target) {
+      EXPECT_EQ( m_expected_target_processor, elem.second );
+    }
+  }
+  int m_expected_target_processor;
+};
+
+namespace {
+std::string field_prefix(stk::mesh::EntityRank rank)
+{
+  switch (rank)
+  {
+  case stk::topology::NODE_RANK:
+    return "Node";
+  case stk::topology::ELEM_RANK:
+    return "Element";
+  case stk::topology::FACE_RANK:
+    return "Face";
+  default:
+    throw std::runtime_error("Unknown field prefix");
+  }
+}
+}
+
+using SearchByIdTypes = ::testing::Types<stk::transfer::SearchByIdCommAll, stk::transfer::SearchByIdGeometric>;
+TYPED_TEST_CASE(CopyTransferFixture, SearchByIdTypes);
+
+template <class SearchById>
+class CopyTransferFixture : public ::testing::Test
+{
+public:
+  typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
+  void init(stk::ParallelMachine global_pm, int color, std::vector<int> mesh_color_ownership = {0, 0})
+  {
+    pm = global_pm;
+    MPI_Comm_split(global_pm, color, stk::parallel_machine_rank(global_pm), &pmSub);
+    commOwnsMesh.resize(2);
+    commOwnsMesh[0] = color == mesh_color_ownership[0];
+    commOwnsMesh[1] = color == mesh_color_ownership[1];
+  }
+
+  template <class MeshInfo>
+  void build_fixture(std::vector<int> element_ownerA, std::vector<int> element_ownerB, MeshInfo info, bool create_faces = false)
+  {
+    // Set up the "source" mesh for the transfer
+    //
+    if (commOwnsMesh[0])
+    {
+      metaA = std::unique_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData(spatial_dimension));
+      meshA = std::unique_ptr<stk::mesh::BulkData>(new stk::mesh::BulkData(*metaA, pmSub));
+      build_mesh(*metaA, *meshA, info.num_elements, info.num_nodes, info.element_ids, element_ownerA, &info.elem_node_ids[0], info.node_sharingA, info.coordinates, create_faces);
+    }
+
+    // Set up the "target" mesh for the transfer
+    //
+    if (commOwnsMesh[1])
+    {
+      metaB = std::unique_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData(spatial_dimension));
+      meshB = std::unique_ptr<stk::mesh::BulkData>(new stk::mesh::BulkData(*metaB, pmSub));
+      build_mesh(*metaB, *meshB, info.num_elements, info.num_nodes, info.element_ids, element_ownerB, &info.elem_node_ids[0], info.node_sharingB, info.coordinates, create_faces);
+    }
+  }
+
+  template <class KeyToTargetCheck, class RemoteKeyCheck>
+  void run_test(KeyToTargetCheck keyToTargetCheck, RemoteKeyCheck keyCheck, stk::mesh::EntityRank field_rank = stk::topology::NODE_RANK)
+  {
+
+    std::unique_ptr<stk::transfer::TransferCopyByIdMeshAdapter> transferSourcePtr;
+    std::unique_ptr<stk::transfer::TransferCopyByIdMeshAdapter> transferTargetPtr;
+    auto prefix = field_prefix(field_rank);
+    if(commOwnsMesh[0])
+    {
+      fill_mesh_values(*meshA);
+
+      ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA->get_field(field_rank, prefix + " Scalar Field"));
+      VectorField & vectorSourceField = static_cast<VectorField&>(*metaA->get_field(field_rank, prefix + " Vector Field"));
+      std::vector<stk::mesh::Entity> sourceNodes;
+      stk::mesh::get_selected_entities(metaA->locally_owned_part(), meshA->buckets(field_rank), sourceNodes);
+      std::vector<stk::mesh::FieldBase*> sourceFields;
+      sourceFields.push_back(&scalarSourceField);
+      sourceFields.push_back(&vectorSourceField);
+      transferSourcePtr.reset(new stk::transfer::TransferCopyByIdStkMeshAdapter(*meshA, sourceNodes, sourceFields, pm));
+    }
+    else
+    {
+      transferSourcePtr.reset(new stk::transfer::TransferCopyByIdMpmdMeshAdapter(pm, 2));
+    }
+
+    if(commOwnsMesh[1])
+    {
+      scalarTargetField = static_cast<ScalarField*>(metaB->get_field(field_rank, prefix + " Scalar Field"));
+      vectorTargetField = static_cast<VectorField*>(metaB->get_field(field_rank, prefix + " Vector Field"));
+
+      std::vector<stk::mesh::Entity> targetNodes;
+      stk::mesh::get_selected_entities(metaB->locally_owned_part(), meshB->buckets(field_rank), targetNodes);
+      std::vector<stk::mesh::FieldBase*> targetFields;
+      targetFields.push_back(scalarTargetField);
+      targetFields.push_back(vectorTargetField);
+      transferTargetPtr.reset(new stk::transfer::TransferCopyByIdStkMeshAdapter(*meshB, targetNodes, targetFields, pm));
+    }
+
+    else
+    {
+      transferTargetPtr.reset(new stk::transfer::TransferCopyByIdMpmdMeshAdapter(pm, 2));
+    }
+
+
+    {
+      KeyToTargetProcessor key_to_target_processor;
+      copySearch.do_search(*transferSourcePtr, *transferTargetPtr,key_to_target_processor);
+
+      keyToTargetCheck(key_to_target_processor);
+
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
+      const MeshIDSet & remote_keys = copySearch.get_remote_keys();
+      keyCheck(remote_keys);
+    }
+
+    stk::transfer::TransferCopyById transfer(copySearch, *transferSourcePtr, *transferTargetPtr);
+
+    // Do the transfer
+    //
+    transfer.initialize();
+    transfer.apply();
+  }
+
+  void check_target_fields(stk::mesh::EntityRank field_rank = stk::topology::NODE_RANK)
+  {
+    // Check "target" fields to make sure they hold the expected values
+    //
+    const double tolerance = 1.e-8;
+    if (meshB) { //mesh B might not exist in MPMD case
+      const stk::mesh::BucketVector & entityBuckets = meshB->get_buckets(field_rank, metaB->locally_owned_part() );
+      for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
+        stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+        for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
+          stk::mesh::Entity entity = entityBucket[entityIndex];
+          double * scalarTarget = stk::mesh::field_data(*scalarTargetField, entity);
+          double * vectorTarget = stk::mesh::field_data(*vectorTargetField, entity);
+
+          EXPECT_NEAR(static_cast<double>(meshB->identifier(entity)), *scalarTarget, tolerance);
+          for (size_t i = 0; i < spatial_dimension; ++i) {
+            EXPECT_NEAR(static_cast<double>((meshB->identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
+          }
+        }
+      }
+    }
+    else
+    {
+      EXPECT_TRUE (meshA); //if mehsB didn't exist on processor, mehsA should exist
+    }
+  }
+  virtual ~CopyTransferFixture() = default;
+protected:
+  stk::ParallelMachine pm;
+  stk::ParallelMachine pmSub;
+//  Does this communicator own the mesh
+  std::vector<bool> commOwnsMesh;
+  SearchById copySearch;
+  const size_t spatial_dimension = 3;
+  std::unique_ptr<stk::mesh::MetaData> metaA;
+  std::unique_ptr<stk::mesh::BulkData> meshA;
+  std::unique_ptr<stk::mesh::MetaData> metaB;
+  std::unique_ptr<stk::mesh::BulkData> meshB;
+  ScalarField * scalarTargetField = nullptr;
+  VectorField * vectorTargetField = nullptr;
+};
+
+TYPED_TEST(CopyTransferFixture, copy0T0)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -265,119 +493,27 @@ TEST(Transfer, copy0T0)
 //           5.0--------6.0          5.0--------6.0
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 1) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
-
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 1;
-    const size_t num_nodes = 8;
-    stk::mesh::EntityIdVector element_ids {1};
-    int element_owner[] = {0};
-    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
-    int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_owner, elem_node_ids, node_sharing, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_owner, elem_node_ids, node_sharing, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    {
-      // Unit test for CopySearchCommAll,
-      // also verifies do_search can be called twice
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor::const_iterator map_iter=key_to_target_processor.begin();
-      for ( ; map_iter != key_to_target_processor.end()  ; ++map_iter) {
-        const int expected_target_processor = 0;
-        EXPECT_EQ( expected_target_processor, map_iter->second );
-      }
-
-      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
-      const MeshIDSet & remote_keys = copySearch.get_remote_keys();
+  std::vector<int> element_ownerA = {0};
+  std::vector<int> element_ownerB = {0};
+  const int expected_target_processor = 0;
+  this->build_fixture(element_ownerA, element_ownerB, TwoElemMeshInfo());
+  this->run_test(TwoElemKeyToTargetTest(expected_target_processor),
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       EXPECT_TRUE( remote_keys.empty() );
-    }
+  });
 
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
-
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part() );
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields();
 }
 
-TEST(Transfer, copy0T1)
+TYPED_TEST(CopyTransferFixture, copy0T1)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -393,123 +529,75 @@ TEST(Transfer, copy0T1)
 //           5.0--------6.0          5.1--------6.1
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 2) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
-
-
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 1;
-    const size_t num_nodes = 8;
-    stk::mesh::EntityIdVector element_ids {1};
-    int element_ownerA[] = {0};
-    int element_ownerB[] = {1};
-    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
-    int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharing, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharing, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor::const_iterator map_iter=key_to_target_processor.begin();
-      for ( ; map_iter != key_to_target_processor.end()  ; ++map_iter) {
-        const int expected_target_processor = 1;
-        EXPECT_EQ( expected_target_processor, map_iter->second );
-      }
-
-      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
-      const MeshIDSet & remote_keys = copySearch.get_remote_keys();
-      const int p_rank = stk::parallel_machine_rank( pm );
+  std::vector<int> element_ownerA = {0};
+  std::vector<int> element_ownerB = {1};
+  const int expected_target_processor = 1;
+  this->build_fixture(element_ownerA, element_ownerB, TwoElemMeshInfo());
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test(TwoElemKeyToTargetTest(expected_target_processor),
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       if (p_rank == 0) {
         EXPECT_TRUE( remote_keys.empty() );
       } else {
         EXPECT_EQ( 8u, remote_keys.size() );
       }
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
+  });
 
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part() );
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields();
 }
 
-TEST(Transfer, copy1T0)
+TYPED_TEST(CopyTransferFixture, copy0T1_MPMD)
+{
+//    ^ Y       ID.owning_proc
+//    |
+//    |    X         meshA                   meshB
+//    .---->    4.0--------3.0          4.1--------3.1
+//   /          /|         /|           /|         /|
+//  /          / |        / |          / |        / |
+// v Z       8.0--------7.0 |        8.1--------7.1 |
+//            |  |  1.0  |  |   -->   |  |  1.1  |  |
+//            | 1.0------|-2.0        | 1.1------|-2.1
+//            | /        | /          | /        | /
+//            |/         |/           |/         |/
+//           5.0--------6.0          5.1--------6.1
+//
+// color            0                       1
+// split comm rank  0                       0
+
+  const int color = stk::parallel_machine_rank(MPI_COMM_WORLD); //subcommunicator based on global rank
+  this->init(MPI_COMM_WORLD, color, {0,1});
+  const int p_size = stk::parallel_machine_size( this->pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  std::vector<int> element_ownerA_subcomm_rank = {0};
+  std::vector<int> element_ownerB_subcomm_rank = {0};
+  const int expected_target_processor = 1;
+  this->build_fixture(element_ownerA_subcomm_rank, element_ownerB_subcomm_rank, TwoElemMeshInfo());
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test(TwoElemKeyToTargetTest(expected_target_processor),
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+      if (p_rank == 0) {
+        EXPECT_TRUE( remote_keys.empty() );
+      } else {
+        EXPECT_EQ( 8u, remote_keys.size() );
+      }
+  });
+
+  this->check_target_fields();
+}
+
+TYPED_TEST(CopyTransferFixture, copy1T0)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -525,123 +613,117 @@ TEST(Transfer, copy1T0)
 //           5.1--------6.1          5.0--------6.0
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
+  const int p_size = stk::parallel_machine_size( this->pm );
 
   if (p_size != 2) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
-
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 1;
-    const size_t num_nodes = 8;
-    stk::mesh::EntityIdVector element_ids {1};
-    int element_ownerA[] = {1};
-    int element_ownerB[] = {0};
-    stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
-    int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharing, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharing, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor::const_iterator map_iter=key_to_target_processor.begin();
-      for ( ; map_iter != key_to_target_processor.end()  ; ++map_iter) {
-        const int expected_target_processor = 0;
-        EXPECT_EQ( expected_target_processor, map_iter->second );
-      }
-
-      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
-      const MeshIDSet & remote_keys = copySearch.get_remote_keys();
-      const int p_rank = stk::parallel_machine_rank( pm );
+  std::vector<int> element_ownerA = {1};
+  std::vector<int> element_ownerB = {0};
+  const int expected_target_processor = 0;
+  this->build_fixture(element_ownerA, element_ownerB, TwoElemMeshInfo());
+  this->run_test(TwoElemKeyToTargetTest(expected_target_processor), [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+      const int p_rank = stk::parallel_machine_rank( this->pm );
       if (p_rank == 0) {
         EXPECT_EQ( 8u, remote_keys.size() );
       } else {
         EXPECT_TRUE( remote_keys.empty() );
       }
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
+  });
 
-
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part() );
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields();
 }
 
-TEST(Transfer, copy01T10)
+TYPED_TEST(CopyTransferFixture, copy1T0_MPMD)
+{
+//    ^ Y       ID.owning_proc
+//    |
+//    |    X         meshA                   meshB
+//    .---->    4.1--------3.1          4.0--------3.0
+//   /          /|         /|           /|         /|
+//  /          / |        / |          / |        / |
+// v Z       8.1--------7.1 |        8.0--------7.0 |
+//            |  |  1.1  |  |   -->   |  |  1.0  |  |
+//            | 1.1------|-2.1        | 1.0------|-2.0
+//            | /        | /          | /        | /
+//            |/         |/           |/         |/
+//           5.1--------6.1          5.0--------6.0
+//
+// color            1                       0
+// split comm rank  0                       0
+
+  int color = stk::parallel_machine_rank(MPI_COMM_WORLD); //subcommunicator based on global rank
+  this->init(MPI_COMM_WORLD, color, {1,0});
+  const int p_size = stk::parallel_machine_size( this->pm );
+
+  if (p_size != 2) {
+    return;
+  }
+
+  std::vector<int> element_ownerA_subcomm_rank = {0};
+  std::vector<int> element_ownerB_subcomm_rank = {0};
+  const int expected_target_processor = 0;
+  this->build_fixture(element_ownerA_subcomm_rank, element_ownerB_subcomm_rank, TwoElemMeshInfo());
+  this->run_test(TwoElemKeyToTargetTest(expected_target_processor),
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+      const int p_rank = stk::parallel_machine_rank( this->pm );
+      if (p_rank == 0) {
+        EXPECT_EQ( 8u, remote_keys.size() );
+      } else {
+        EXPECT_TRUE( remote_keys.empty() );
+      }
+  });
+
+  this->check_target_fields();
+}
+namespace {
+stk::transfer::SearchById::KeyToTargetProcessor get_01T10_key_to_target_processor_gold(stk::ParallelMachine pm)
+{
+  const int p_rank = stk::parallel_machine_rank( pm );
+  stk::transfer::SearchById::KeyToTargetProcessor gold_map;
+  if (0 == p_rank) {
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 1;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 1;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 1;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 1;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 0;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 0;
+  } else {
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 0;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 0;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
+    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 0;
+  }
+  return gold_map;
+}
+
+
+stk::transfer::SearchById::MeshIDSet get_01T10_remote_key_gold(stk::ParallelMachine pm)
+{
+  const int p_rank = stk::parallel_machine_rank( pm );
+  stk::transfer::SearchById::MeshIDSet gold_remote_keys;
+  if (0 == p_rank) {
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,6).m_value);
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,9).m_value);
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
+  } else {
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,1).m_value);
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,4).m_value);
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,7).m_value);
+    gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,10).m_value);
+  }
+  return gold_remote_keys;
+}
+
+}
+
+TYPED_TEST(CopyTransferFixture, copy01T10)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -657,156 +739,96 @@ TEST(Transfer, copy01T10)
 //           7.0--------8.0--------9.1         7.1--------8.0--------9.0
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 2) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
+  std::vector<int> element_ownerA = {0, 1};
+  std::vector<int> element_ownerB = {1, 0};
+  this->build_fixture(element_ownerA, element_ownerB, FourElemMeshInfo());
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+      {
+    auto gold_map = get_01T10_key_to_target_processor_gold(this->pm);
+    EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+        auto gold_remote_keys = get_01T10_remote_key_gold(this->pm);
+        EXPECT_TRUE( remote_keys == gold_remote_keys);
+      });
 
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 2;
-    const size_t num_nodes = 12;
-    stk::mesh::EntityIdVector element_ids {1, 2};
-    int element_ownerA[] = {0, 1};
-    int element_ownerB[] = {1, 0};
-    stk::mesh::EntityIdVector elem_node_ids[] {
-        {1, 2, 5, 4, 7, 8, 11, 10},
-        {2, 3, 6, 5, 8, 9, 12, 11}
-    };
-    int node_sharingA[] = { -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1,
-      -1, 0, -1, -1, 0, -1, -1, 0, -1, -1, 0, -1 };
-    int node_sharingB[] = { -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1,
-      -1, 0, -1, -1, 0, -1, -1, 0, -1, -1, 0, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0},
-      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0},
-      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    //  GeometricTransfer
-    //  stk::transfer::GeometricTransfer<
-    //    class stk::transfer::LinearInterpolate<
-    //      class stk::transfer::STKNode,
-    //      class stk::transfer::STKNode
-    //    >
-    //  > transfer(transferSource, transferTarget, "copy01T10 unit test");
-
-    {
-      const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor gold_map;
-      if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 0;
-      } else {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 0;
-      }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
-
-      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
-      MeshIDSet gold_remote_keys;
-      if (0 == p_rank) {
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,6).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,9).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
-      } else {
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,1).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,4).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,7).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,10).m_value);
-      }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
-
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part());
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields();
 }
 
-TEST(Transfer, copy001T011)
+TYPED_TEST(CopyTransferFixture, copy01T32_MPMD)
+{
+//    ^ Y       ID.owning_proc
+//    |
+//    |    X              meshA                             meshB
+//    .---->    4.0--------5.0--------6.1         4.3--------5.2--------6.2
+//   /          /|         /|         /|          /|         /|         /|
+//  /          / |        / |        / |         / |        / |        / |
+// v Z      10.0-------11.0-------12.1 |      10.3-------11.2-------12.2 |
+//            |  |  1.0  |  |  2.1  |  |  -->   |  |  1.3  |  |  2.2  |  |
+//            | 1.0------|-2.0------|-3.1       | 1.3------|-2.2------|-3.2
+//            | /        | /        | /         | /        | /        | /
+//            |/         |/         |/          |/         |/         |/
+//           7.0--------8.0--------9.1         7.3--------8.2--------9.2
+//
+  //   color       0         0                        1         1
+
+  //global ranks 0, 1 are color 0, global ranks 2, 3 are color 1
+  //subcommunicator ranks are the same as in the non mpmd 01T10 case above
+
+  int color = stk::parallel_machine_rank(MPI_COMM_WORLD) / 2;
+  this->init(MPI_COMM_WORLD, color, {0,1});
+  const int p_size = stk::parallel_machine_size( this->pm );
+
+  if (p_size != 4) {
+    return;
+  }
+
+  std::vector<int> element_ownerA_subcomm_rank = {0, 1};
+  std::vector<int> element_ownerB_subcomm_rank = {1, 0};
+
+  this->build_fixture(element_ownerA_subcomm_rank , element_ownerB_subcomm_rank, FourElemMeshInfo());
+
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+      {
+        if (color == 1) return;
+
+        //Map wrt subcommunicators is same as non mpmd 01T10 case above
+        auto gold_map = get_01T10_key_to_target_processor_gold(this->pmSub);
+
+        //adjust from subcommunicator to global
+        for (auto && elem : gold_map)
+        {
+          elem.second+=2;
+        }
+        EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+        if (color == 0) return;
+        auto gold_remote_keys = get_01T10_remote_key_gold(this->pmSub);
+        //Add nodes that were on the same proc in the non mpmd case
+        if (stk::parallel_machine_rank(this->pm) == 2)
+        {
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,2).m_value);
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,5).m_value);
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,8).m_value);
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
+        }
+
+        EXPECT_TRUE( remote_keys == gold_remote_keys);
+      });
+
+  this->check_target_fields();
+}
+
+TYPED_TEST(CopyTransferFixture, copy001T011)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -822,96 +844,21 @@ TEST(Transfer, copy001T011)
 //           9.0-------10.0-------11.0-------12.1          9.0-------10.0-------11.1-------12.1
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 2) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
-
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 3;
-    const size_t num_nodes = 16;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 0, 1};
-    int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityIdVector elem_node_ids[] {
-      {1, 2, 6, 5, 9, 10, 14, 13},
-      {2, 3, 7, 6, 10, 11, 15, 14},
-      {3, 4, 8, 7, 11, 12, 16, 15} };
-    int node_sharingA[] = { -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1,
-      -1, -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1 };
-    int node_sharingB[] = { -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1,
-      -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1, -1, -1, 0, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
-      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
-      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    //  GeometricTransfer
-    //  stk::transfer::GeometricTransfer<
-    //    class stk::transfer::LinearInterpolate<
-    //      class stk::transfer::STKNode,
-    //      class stk::transfer::STKNode
-    //    >
-    //  > transfer(transferSource, transferTarget, "copy001T011 unit test");
-
-    {
-      const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor gold_map;
+  std::vector<int> element_ownerA = {0, 0, 1};
+  std::vector<int> element_ownerB = {0, 1, 1};
+  this->build_fixture(element_ownerA, element_ownerB, SixElemMeshInfo());
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+      {
+      stk::transfer::SearchById::KeyToTargetProcessor gold_map;
       if (0 == p_rank) {
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 0;
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
@@ -932,46 +879,76 @@ TEST(Transfer, copy001T011)
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 1;
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
 
-      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
-      MeshIDSet gold_remote_keys;
-      if (0 == p_rank) {
-      } else {
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,7).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,15).m_value);
-      }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
-
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part());
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+        typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
+        MeshIDSet gold_remote_keys;
+        if (0 == p_rank) {
+        } else {
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,7).m_value);
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,15).m_value);
         }
-      }
-    }
-  }
+        EXPECT_TRUE( remote_keys == gold_remote_keys );
+      });
+
+  this->check_target_fields();
 }
 
-TEST(Transfer, copy001T011Element)
+TYPED_TEST(CopyTransferFixture, copy001T011Element)
+{
+//    ^ Y       ID.owning_proc
+//    |
+//    |    X                   meshA                                         meshB
+//    .---->    5.0--------6.0--------7.0--------8.1          5.0--------6.0--------7.1--------8.1
+//   /          /|         /|         /|         /|           /|         /|         /|         /|
+//  /          / |        / |        / |        / |          / |        / |        / |        / |
+// v Z      13.0-------14.0-------15.0-------16.1 |       13.0-------14.0-------15.1-------16.1 |
+//            |  |  1.0  |  |  2.0  |  |  3.1  |  |   -->   |  |  1.0  |  |  2.1  |  |  3.1  |  |
+//            | 1.0------|-2.0------|-3.0------|-4.1        | 1.0------|-2.0------|-3.1------|-4.1
+//            | /        | /        | /        | /          | /        | /        | /        | /
+//            |/         |/         |/         |/           |/         |/         |/         |/
+//           9.0-------10.0-------11.0-------12.1          9.0-------10.0-------11.1-------12.1
+//
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
+
+  const int p_size = stk::parallel_machine_size( this->pm );
+  if (p_size != 2) {
+    return;
+  }
+
+  std::vector<int> element_ownerA = {0, 0, 1};
+  std::vector<int> element_ownerB = {0, 1, 1};
+  this->build_fixture(element_ownerA, element_ownerB, SixElemMeshInfo());
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+      {
+        stk::transfer::SearchById::KeyToTargetProcessor gold_map;
+        if (0 == p_rank) {
+          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,1)] = 0;
+          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,2)] = 1;
+        } else {
+          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,3)] = 1;
+        }
+        EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
+
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+        typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
+        MeshIDSet gold_remote_keys;
+        if (1 == p_rank) {
+          gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::ELEM_RANK,2).m_value);
+        }
+        EXPECT_TRUE( remote_keys == gold_remote_keys );
+      }, stk::topology::ELEM_RANK);
+
+  this->check_target_fields(stk::topology::ELEMENT_RANK);
+}
+
+TYPED_TEST(CopyTransferFixture, copy001T011Face)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -987,312 +964,84 @@ TEST(Transfer, copy001T011Element)
 //           9.0-------10.0-------11.0-------12.1          9.0-------10.0-------11.1-------12.1
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 2) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
+  std::vector<int> element_ownerA = {0, 0, 1};
+  std::vector<int> element_ownerB = {0, 1, 1};
 
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 3;
-    const size_t num_nodes = 16;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 0, 1};
-    int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityIdVector elem_node_ids[] {
-        {1, 2, 6, 5,  9, 10, 14, 13},
-        {2, 3, 7, 6, 10, 11, 15, 14},
-        {3, 4, 8, 7, 11, 12, 16, 15} };
-    int node_sharingA[] = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
-                            -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
-    int node_sharingB[] = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
-                            -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
-                                {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
-                                {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
-                                {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::ELEM_RANK, "Element Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::ELEM_RANK, "Element Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::ELEM_RANK, "Element Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::ELEM_RANK, "Element Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceElements;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::ELEM_RANK), sourceElements);
-    std::vector<stk::mesh::Entity> targetElements;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::ELEM_RANK), targetElements);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceElements, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetElements, targetFields);
-
-    {
-      const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor gold_map;
-      if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,1)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,2)] = 1;
-      } else {
-        gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,3)] = 1;
-      }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
-
-      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
-      MeshIDSet gold_remote_keys;
-      if (1 == p_rank) {
-        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::ELEM_RANK,2).m_value);
-      }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
-
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::ELEM_RANK, metaB.locally_owned_part());
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
-}
-
-TEST(Transfer, copy001T011Face)
-{
-//    ^ Y       ID.owning_proc
-//    |
-//    |    X                   meshA                                         meshB
-//    .---->    5.0--------6.0--------7.0--------8.1          5.0--------6.0--------7.1--------8.1
-//   /          /|         /|         /|         /|           /|         /|         /|         /|
-//  /          / |        / |        / |        / |          / |        / |        / |        / |
-// v Z      13.0-------14.0-------15.0-------16.1 |       13.0-------14.0-------15.1-------16.1 |
-//            |  |  1.0  |  |  2.0  |  |  3.1  |  |   -->   |  |  1.0  |  |  2.1  |  |  3.1  |  |
-//            | 1.0------|-2.0------|-3.0------|-4.1        | 1.0------|-2.0------|-3.1------|-4.1
-//            | /        | /        | /        | /          | /        | /        | /        | /
-//            |/         |/         |/         |/           |/         |/         |/         |/
-//           9.0-------10.0-------11.0-------12.1          9.0-------10.0-------11.1-------12.1
-//
-
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
-
-  if (p_size != 2) {
-    return;
-  }
-
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
-
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 3;
-    const size_t num_nodes = 16;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 0, 1};
-    int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityIdVector elem_node_ids[] {
+  auto meshInfo = SixElemMeshInfo();
+  meshInfo.elem_node_ids = {
         { 9,10,2,1,13,14,6,5},
         {10,11,3,2,14,15,7,6},
         {11,12,4,3,15,16,8,7} };
-    int node_sharingA[] = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
+  meshInfo.node_sharingA = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
                             -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
-    int node_sharingB[] = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
+  meshInfo.node_sharingB = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
                             -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
+  meshInfo.coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
                                 {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
                                 {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
                                 {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
 
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    const bool createFaces = true;
-    build_mesh(metaA,
-               meshA,
-               num_elements,
-               num_nodes,
-               element_ids,
-               element_ownerA,
-               elem_node_ids,
-               node_sharingA,
-               coordinates,
-               createFaces);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB,
-               meshB,
-               num_elements,
-               num_nodes,
-               element_ids,
-               element_ownerB,
-               elem_node_ids,
-               node_sharingB,
-               coordinates,
-               createFaces);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::FACE_RANK, "Face Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::FACE_RANK, "Face Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::FACE_RANK, "Face Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::FACE_RANK, "Face Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceFaces;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::FACE_RANK), sourceFaces);
-    std::vector<stk::mesh::Entity> targetFaces;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::FACE_RANK), targetFaces);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceFaces, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetFaces, targetFields);
-
-    {
-      const int p_rank = stk::parallel_machine_rank( pm );
+  const bool create_faces = true;
+  this->build_fixture(element_ownerA, element_ownerB, meshInfo, create_faces);
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  auto & mesh_a = *this->meshA;
+  auto & mesh_b = *this->meshB;
+  this->run_test([&](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+      {
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
       KeyToTargetProcessor gold_map;
       if (0 == p_rank) {
-        stk::mesh::Entity elem1 = meshA.get_entity(stk::topology::ELEM_RANK, 1);
-        stk::mesh::Entity elem2 = meshA.get_entity(stk::topology::ELEM_RANK, 2);
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 0))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 1))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 2))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 3))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 4))] = 0;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem1, 5))] = 0;
+        stk::mesh::Entity elem1 = mesh_a.get_entity(stk::topology::ELEM_RANK, 1);
+        stk::mesh::Entity elem2 = mesh_a.get_entity(stk::topology::ELEM_RANK, 2);
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 0))] = 0;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 1))] = 0;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 2))] = 0;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 3))] = 0;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 4))] = 0;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 5))] = 0;
 
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 0))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 1))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 2))] = 1;
-        //gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 3))] = 0;  // Already in map from elem1
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 4))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 5))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 0))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 1))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 2))] = 1;
+        //gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 3))] = 0;  // Already in map from elem1
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 4))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 5))] = 1;
       } else {
-        stk::mesh::Entity elem3 = meshA.get_entity(stk::topology::ELEM_RANK, 3);
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 0))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 1))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 2))] = 1;
-        //gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 3))] = 0;  // Not owned by this proc
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 4))] = 1;
-        gold_map[meshA.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 5))] = 1;
+        stk::mesh::Entity elem3 = mesh_a.get_entity(stk::topology::ELEM_RANK, 3);
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 0))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 1))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 2))] = 1;
+        //gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 3))] = 0;  // Not owned by this proc
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 4))] = 1;
+        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 5))] = 1;
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
 
+      [&](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
-        stk::mesh::Entity elem2 = meshB.get_entity(stk::topology::ELEM_RANK, 2);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 0)).m_value);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 1)).m_value);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 2)).m_value);
+        stk::mesh::Entity elem2 = mesh_b.get_entity(stk::topology::ELEM_RANK, 2);
+        gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 0)).m_value);
+        gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 1)).m_value);
+        gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 2)).m_value);
         //gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 3)).m_value);  // Not received because not owned
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 4)).m_value);
-        gold_remote_keys.insert(meshB.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshB, elem2, 5)).m_value);
+        gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 4)).m_value);
+        gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 5)).m_value);
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
+      EXPECT_TRUE( remote_keys == gold_remote_keys );
+      }, stk::topology::FACE_RANK);
 
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::FACE_RANK, metaB.locally_owned_part());
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields(stk::topology::FACE_RANK);
 }
 
 TEST(Transfer, copy001T011Shell)
@@ -1333,17 +1082,17 @@ TEST(Transfer, copy001T011Shell)
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
     stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 0, 1};
-    int element_ownerB[] = {0, 1, 1};
-    stk::mesh::EntityIdVector elem_node_ids[] {
+    std::vector<int> element_ownerA = {0, 0, 1};
+    std::vector<int> element_ownerB = {0, 1, 1};
+    std::vector<stk::mesh::EntityIdVector> elem_node_ids {
         { 9,10,2,1,13,14,6,5},
         {10,11,3,2,14,15,7,6},
         {11,12,4,3,15,16,8,7} };
-    int node_sharingA[] = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
+    std::vector<int> node_sharingA = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
                             -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
-    int node_sharingB[] = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
+    std::vector<int> node_sharingB = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
                             -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
                                 {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
                                 {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
                                 {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
@@ -1359,7 +1108,7 @@ TEST(Transfer, copy001T011Shell)
                num_nodes,
                element_ids,
                element_ownerA,
-               elem_node_ids,
+               &elem_node_ids[0],
                node_sharingA,
                coordinates);
 
@@ -1373,7 +1122,7 @@ TEST(Transfer, copy001T011Shell)
                num_nodes,
                element_ids,
                element_ownerB,
-               elem_node_ids,
+               &elem_node_ids[0],
                node_sharingB,
                coordinates);
 
@@ -1514,7 +1263,40 @@ TEST(Transfer, copy001T011Shell)
   }
 }
 
-TEST(Transfer, copy012T000)
+namespace {
+
+std::vector<int> get_node_sharing_000()
+{
+    return { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+}
+
+std::vector<int> get_node_sharing_012()
+{
+  return { -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1,
+      -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1,
+      -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1 };
+}
+
+SixElemMeshInfo create_SixElemMeshInfo_012T000()
+{
+  auto meshInfo = SixElemMeshInfo();
+  meshInfo.node_sharingA = get_node_sharing_012();
+  meshInfo.node_sharingB = get_node_sharing_000();
+  return meshInfo;
+}
+
+SixElemMeshInfo create_SixElemMeshInfo_000T012()
+{
+  auto meshInfo = SixElemMeshInfo();
+  meshInfo.node_sharingA = get_node_sharing_000();
+  meshInfo.node_sharingB = get_node_sharing_012();
+  return meshInfo;
+}
+}
+
+TYPED_TEST(CopyTransferFixture, copy012T000)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -1530,98 +1312,24 @@ TEST(Transfer, copy012T000)
 //           9.0-------10.0-------11.1-------12.2          9.0-------10.0-------11.0-------12.0
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 3) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
+  std::vector<int> element_ownerA = {0, 1, 2};
+  std::vector<int> element_ownerB = {0, 0, 0};
 
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 3;
-    const size_t num_nodes = 16;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 1, 2};
-    int element_ownerB[] = {0, 0, 0};
-    stk::mesh::EntityIdVector elem_node_ids[] {
-        {1, 2, 6, 5, 9, 10, 14, 13},
-        {2, 3, 7, 6, 10, 11, 15, 14},
-        {3, 4, 8, 7, 11, 12, 16, 15} };
-    int node_sharingA[] = { -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1,
-      -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1,
-      -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1 };
-    int node_sharingB[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
-      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
-      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
+  auto meshInfo = create_SixElemMeshInfo_012T000();
 
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    //  GeometricTransfer
-    //  stk::transfer::GeometricTransfer<
-    //    class stk::transfer::LinearInterpolate<
-    //      class stk::transfer::STKNode,
-    //      class stk::transfer::STKNode
-    //    >
-    //  > transfer(transferSource, transferTarget, "copy012T000 unit test");
-
+  this->build_fixture(element_ownerA, element_ownerB, meshInfo);
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
-      KeyToTargetProcessor gold_map;
+      stk::transfer::SearchById::KeyToTargetProcessor gold_map;
       if (0 == p_rank) {
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 0;
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
@@ -1643,7 +1351,9 @@ TEST(Transfer, copy012T000)
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 0;
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
 
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (0 == p_rank) {
@@ -1656,36 +1366,14 @@ TEST(Transfer, copy012T000)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
+      EXPECT_TRUE( remote_keys == gold_remote_keys );
+    });
 
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
+  this->check_target_fields();
 
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part() );
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
 }
 
-TEST(Transfer, copy000T012)
+TYPED_TEST(CopyTransferFixture, copy000T012)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -1701,97 +1389,23 @@ TEST(Transfer, copy000T012)
 //           9.0-------10.0-------11.0-------12.0         9.0-------10.0-------11.1-------12.2
 //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 3) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
-  {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
 
-    const size_t spatial_dimension = 3;
-    const size_t num_elements = 3;
-    const size_t num_nodes = 16;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 0, 0};
-    int element_ownerB[] = {0, 1, 2};
-    stk::mesh::EntityIdVector elem_node_ids[] {
-        {1, 2, 6, 5, 9, 10, 14, 13},
-        {2, 3, 7, 6, 10, 11, 15, 14},
-        {3, 4, 8, 7, 11, 12, 16, 15} };
-    int node_sharingA[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    int node_sharingB[] = { -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1,
-      -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1, -1, 0, 2, -1,
-      -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
-      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
-      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
-
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    //  GeometricTransfer
-    //  stk::transfer::GeometricTransfer<
-    //    class stk::transfer::LinearInterpolate<
-    //      class stk::transfer::STKNode,
-    //      class stk::transfer::STKNode
-    //    >
-    //  > transfer(transferSource, transferTarget, "copy000T012 unit test");
-
+  auto meshInfo = create_SixElemMeshInfo_000T012();
+  std::vector<int> element_ownerA = {0, 0, 0};
+  std::vector<int> element_ownerB = {0, 1, 2};
+  this->build_fixture(element_ownerA, element_ownerB, meshInfo);
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      const int p_rank = stk::parallel_machine_rank( pm );
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
       KeyToTargetProcessor gold_map;
       if (0 == p_rank) {
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 0;
@@ -1815,7 +1429,9 @@ TEST(Transfer, copy000T012)
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 2;
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
 
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (1 == p_rank) {
@@ -1829,37 +1445,13 @@ TEST(Transfer, copy000T012)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
+      EXPECT_TRUE( remote_keys == gold_remote_keys );
+    });
 
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
-
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part() );
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields();
 }
 
-TEST(Transfer, copy0011T1010)
+TYPED_TEST(CopyTransferFixture, copy0011T1010)
 {
 //    ^ Y       ID.owning_proc
 //    |
@@ -1874,97 +1466,42 @@ TEST(Transfer, copy0011T1010)
 //            |/         |/         |/         |/         |/            |/         |/         |/         |/         |/
 //          11.0-------12.0-------13.0-------14.1-------15.1          11.1-------12.0-------13.0-------14.0-------15.0
 //
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  const int p_size = stk::parallel_machine_size( pm );
-
+  const int p_size = stk::parallel_machine_size( this->pm );
   if (p_size != 2) {
     return;
   }
 
-  stk::transfer::SearchByIdGeometric geometricSearch;
-  stk::transfer::SearchByIdCommAll commAllSearch;
-  stk::transfer::SearchById * copySearchPtr = &commAllSearch;
-  for (int search_index=0 ; search_index<2 ; ++search_index)
+  struct EightElemMeshInfo
   {
-    if (1 == search_index) {
-      copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
-    }
-    stk::transfer::SearchById & copySearch = *copySearchPtr;
-
     const size_t spatial_dimension = 3;
     const size_t num_elements = 4;
     const size_t num_nodes = 20;
-    stk::mesh::EntityIdVector element_ids {1, 2, 3, 4};
-    int element_ownerA[] = {0, 0, 1, 1};
-    int element_ownerB[] = {1, 0, 1, 0};
-    stk::mesh::EntityIdVector elem_node_ids[] {
+    stk::mesh::EntityIdVector element_ids = {1, 2, 3, 4};
+    std::vector<stk::mesh::EntityIdVector> elem_node_ids = {
         {1, 2, 7, 6, 11, 12, 17, 16},
         {2, 3, 8, 7, 12, 13, 18, 17},
         {3, 4, 9, 8, 13, 14, 19, 18},
         {4, 5, 10, 9, 14, 15, 20, 19} };
-    int node_sharingA[] = { -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1,
+    std::vector<int> node_sharingA = { -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1,
       -1, -1, 0, -1, -1, -1, -1, 0, -1, -1, -1, -1, 0, -1, -1, -1, -1, 0, -1, -1 };
-    int node_sharingB[] = { -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1,
+    std::vector<int> node_sharingB = { -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1,
       -1, 0, 0, 0, -1, -1, 0, 0, 0, -1, -1, 0, 0, 0, -1, -1, 0, 0, 0, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {4.0, 0.0, 0.0},
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {4.0, 0.0, 0.0},
       {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0}, {4.0, 1.0, 0.0},
       {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0}, {4.0, 0.0, 1.0},
       {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0}, {4.0, 1.0, 1.0} };
+  };
 
-    // Set up the "source" mesh for the transfer
-    //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
-    build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
-
-    // Set up the "target" mesh for the transfer
-    //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
-    build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
-
-    // Fill "source" fields with valid data
-    //
-    fill_mesh_values(meshA);
-
-    ScalarField & scalarSourceField = static_cast<ScalarField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorSourceField = static_cast<VectorField&>(*metaA.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-    ScalarField & scalarTargetField = static_cast<ScalarField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Field"));
-    VectorField & vectorTargetField = static_cast<VectorField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Vector Field"));
-
-    // Set up the transfer
-    //
-    std::vector<stk::mesh::Entity> sourceNodes;
-    stk::mesh::get_selected_entities(metaA.locally_owned_part(), meshA.buckets(stk::topology::NODE_RANK), sourceNodes);
-    std::vector<stk::mesh::Entity> targetNodes;
-    stk::mesh::get_selected_entities(metaB.locally_owned_part(), meshB.buckets(stk::topology::NODE_RANK), targetNodes);
-
-    std::vector<stk::mesh::FieldBase*> sourceFields;
-    sourceFields.push_back(&scalarSourceField);
-    sourceFields.push_back(&vectorSourceField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceNodes, sourceFields);
-
-    std::vector<stk::mesh::FieldBase*> targetFields;
-    targetFields.push_back(&scalarTargetField);
-    targetFields.push_back(&vectorTargetField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
-
-    //  GeometricTransfer
-    //  stk::transfer::GeometricTransfer<
-    //    class stk::transfer::LinearInterpolate<
-    //      class stk::transfer::STKNode,
-    //      class stk::transfer::STKNode
-    //    >
-    //  > transfer(transferSource, transferTarget, "copy0011T1010 unit test");
-
+  std::vector<int> element_ownerA = {0, 0, 1, 1};
+  std::vector<int> element_ownerB = {1, 0, 1, 0};
+  this->build_fixture(element_ownerA, element_ownerB, EightElemMeshInfo());
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      const int p_rank = stk::parallel_machine_rank( pm );
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor key_to_target_processor;
-      copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
-
       KeyToTargetProcessor gold_map;
       if (0 == p_rank) {
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 1;
@@ -1993,7 +1530,9 @@ TEST(Transfer, copy0011T1010)
         gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,20)] = 0;
       }
       EXPECT_TRUE( gold_map == key_to_target_processor );
+      },
 
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
       if (0 == p_rank) {
@@ -2012,33 +1551,10 @@ TEST(Transfer, copy0011T1010)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
-    }
-    stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
+      EXPECT_TRUE( remote_keys == gold_remote_keys );
+    });
 
-    // Do the transfer
-    //
-    transfer.initialize();
-    transfer.apply();
-
-    // Check "target" fields to make sure they hold the expected values.
-    //
-    const double tolerance = 1.e-8;
-    const stk::mesh::BucketVector & entityBuckets = meshB.get_buckets(stk::topology::NODE_RANK, metaB.locally_owned_part() );
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-        stk::mesh::Entity entity = entityBucket[entityIndex];
-        double * scalarTarget = stk::mesh::field_data(scalarTargetField, entity);
-        double * vectorTarget = stk::mesh::field_data(vectorTargetField, entity);
-
-        EXPECT_NEAR(static_cast<double>(meshB.identifier(entity)), *scalarTarget, tolerance);
-        for (size_t i = 0; i < spatial_dimension; ++i) {
-          EXPECT_NEAR(static_cast<double>((meshB.identifier(entity)-1)*spatial_dimension+i), vectorTarget[i], tolerance);
-        }
-      }
-    }
-  }
+  this->check_target_fields();
 }
 
 TEST(Transfer, copy0T_)
@@ -2079,11 +1595,11 @@ TEST(Transfer, copy0T_)
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
     stk::mesh::EntityIdVector element_ids {1};
-    int element_owner[] = {0};
+    std::vector<int> element_owner = {0};
     stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
-    int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
+    std::vector<int> node_sharing = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
       {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0} };
 
     // Set up the "source" mesh for the transfer
@@ -2103,9 +1619,9 @@ TEST(Transfer, copy0T_)
     ScalarField & scalarTargetField = metaB.declare_field<ScalarField>(stk::topology::NODE_RANK, "Node Scalar Field");
     VectorField & vectorTargetField = metaB.declare_field<VectorField>(stk::topology::NODE_RANK, "Node Vector Field");
     VectorField & coordsTargetField = metaB.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(scalarTargetField, metaB.universal_part(), init_vals);
-    stk::mesh::put_field(vectorTargetField, metaB.universal_part(), init_vals);
-    stk::mesh::put_field(coordsTargetField, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(scalarTargetField, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(vectorTargetField, metaB.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(coordsTargetField, metaB.universal_part(), init_vals);
     metaB.commit();
 
     // Fill "source" fields with valid data
@@ -2199,11 +1715,11 @@ TEST(Transfer, copy_T0)
     const size_t num_elements = 1;
     const size_t num_nodes = 8;
     stk::mesh::EntityIdVector element_ids {1};
-    int element_owner[] = {0};
+    std::vector<int> element_owner = {0};
     stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4, 5, 6, 7, 8} };
-    int node_sharing[] = { -1, -1, -1, -1, -1, -1, -1, -1,
+    std::vector<int> node_sharing = { -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 1.0, 0.0},
       {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {0.0, 1.0, 1.0} };
 
     // Set up the "source" mesh for the transfer
@@ -2217,9 +1733,9 @@ TEST(Transfer, copy_T0)
     ScalarField & scalarSourceField = metaA.declare_field<ScalarField>(stk::topology::NODE_RANK, "Node Scalar Field");
     VectorField & vectorSourceField = metaA.declare_field<VectorField>(stk::topology::NODE_RANK, "Node Vector Field");
     VectorField & coordsSourceField = metaA.declare_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(scalarSourceField, metaA.universal_part(), init_vals);
-    stk::mesh::put_field(vectorSourceField, metaA.universal_part(), init_vals);
-    stk::mesh::put_field(coordsSourceField, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(scalarSourceField, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(vectorSourceField, metaA.universal_part(), init_vals);
+    stk::mesh::put_field_on_mesh(coordsSourceField, metaA.universal_part(), init_vals);
     metaA.commit();
 
     // Set up the "target" mesh for the transfer without creating any elements
@@ -2307,17 +1823,17 @@ TEST(Transfer, copy00_T_11)
     const size_t num_elements = 3;
     const size_t num_nodes = 16;
     stk::mesh::EntityIdVector element_ids {1, 2, 3};
-    int element_ownerA[] = {0, 0, -1};
-    int element_ownerB[] = {-1, 1, 1};
+    std::vector<int> element_ownerA = {0, 0, -1};
+    std::vector<int> element_ownerB = {-1, 1, 1};
     stk::mesh::EntityIdVector elem_node_ids[] {
         {1, 2, 6, 5, 9, 10, 14, 13},
         {2, 3, 7, 6, 10, 11, 15, 14},
         {3, 4, 8, 7, 11, 12, 16, 15} };
-    int node_sharingA[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    std::vector<int> node_sharingA = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    int node_sharingB[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    std::vector<int> node_sharingB = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
       {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
       {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
       {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
@@ -2457,19 +1973,19 @@ TEST(Transfer, copy00___T___11)
     const size_t num_elements = 5;
     const size_t num_nodes = 24;
     stk::mesh::EntityIdVector element_ids {1, 2, 3, 4, 5};
-    int element_ownerA[] = {0, 0, -1, -1, -1};
-    int element_ownerB[] = {-1, -1, -1, 1, 1};
+    std::vector<int> element_ownerA = {0, 0, -1, -1, -1};
+    std::vector<int> element_ownerB = {-1, -1, -1, 1, 1};
     stk::mesh::EntityIdVector elem_node_ids[] {
         {1, 2, 8, 7, 13, 14, 20, 19},
         {2, 3, 9, 8, 14, 15, 21, 20},
         {3, 4, 10, 9, 15, 16, 22, 21},
         {4, 5, 11, 10, 16, 17, 23, 22},
         {5, 6, 12, 11, 17, 18, 24, 23} };
-    int node_sharingA[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    std::vector<int> node_sharingA = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    int node_sharingB[] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    std::vector<int> node_sharingB = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-    double coordinates[][3] = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {4.0, 0.0, 0.0}, {5.0, 0.0, 0.0},
+    std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0}, {4.0, 0.0, 0.0}, {5.0, 0.0, 0.0},
       {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0}, {4.0, 1.0, 0.0}, {5.0, 1.0, 0.0},
       {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0}, {4.0, 0.0, 1.0}, {5.0, 0.0, 1.0},
       {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0}, {4.0, 1.0, 1.0}, {5.0, 1.0, 1.0} };

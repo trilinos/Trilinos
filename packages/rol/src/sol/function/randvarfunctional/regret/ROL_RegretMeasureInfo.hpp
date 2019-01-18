@@ -58,13 +58,13 @@ inline void RegretMeasureInfo(ROL::ParameterList &parlist, std::string &name,
   name = parlist.sublist("SOL").sublist("Regret Measure").get<std::string>("Name");
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
-  if ( name == "Mean Absolute Loss" ||
-       name == "Moreau-Yosida Mean Absolute Loss" ||
+  if ( name == "Mean Absolute Loss"                           ||
+       name == "Moreau-Yosida Mean Absolute Loss"             ||
        name == "Generalized Moreau-Yosida Mean Absolute Loss" ||
-       name == "Exponential" ||
-       name == "Mean L2" ||
-       name == "Truncated Mean" ||
-       name == "Log Quantile" ||
+       name == "Exponential"                                  ||
+       name == "Mean L2"                                      ||
+       name == "Truncated Mean"                               ||
+       name == "Log Quantile"                                 ||
        name == "Smoothed Worst Case" ) {
     nStatistic = 0;
   }

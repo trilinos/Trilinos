@@ -106,6 +106,12 @@ public:
   ///        "CrsGraph::insertLocalIndices".
   static bool verbose (const char name[]);
 
+  /// \brief Disable verbose mode, programatically
+  static void disable_verbose_behavior ();
+
+  /// \brief Enable verbose mode, programatically
+  static void enable_verbose_behavior ();
+
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
   /// An MPI implementation is "CUDA aware" if it can accept CUDA
@@ -115,6 +121,14 @@ public:
   ///
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
   static bool assumeMpiIsCudaAware ();
+
+  /// \brief The core count above which Tpetra::CrsMatrix::transferAndFillComplere
+  /// will attempt to do advanced neighbor discovery. This is platform 
+  /// dependent, and the user/developer should test each new platform 
+  /// for the correct value. The 3000 value was found on Serrano summer 2018 
+
+  static int TAFC_OptimizationCoreCount ();
+
 };
 
 } // namespace Details

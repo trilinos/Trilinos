@@ -35,7 +35,7 @@
 #include <vector>
 #include "mpi.h"
 #include <algorithm>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>

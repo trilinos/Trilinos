@@ -38,7 +38,7 @@
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Types.hpp>      // for RelationType, EntityRank, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowAssertMsg
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }

@@ -19,6 +19,10 @@
       <Parameter name="block col"                 type="int"     value="0"/>
     </ParameterList>
 
+    <ParameterList name="myDropFact1">
+      <Parameter name="factory" type="string" value="CoalesceDropFactory"/>
+    </ParameterList>
+
     <ParameterList name="myAggFact1">
       <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
       <Parameter name="aggregation: min agg size" type="int" value="5"/>
@@ -79,6 +83,7 @@
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
       <Parameter name="Nullspace" type="string" value="myNspFact1"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+      <Parameter name="Graph" type="string" value="myDropFact1"/>
     </ParameterList>
 
     <ParameterList name="mySecondGroup">

@@ -143,7 +143,7 @@ namespace ROL {
 
   template<class Real>
   inline Ptr<RandVarFunctional<Real> > DeviationMeasureFactory(ROL::ParameterList &parlist) {
-    std::string risk = parlist.sublist("SOL").sublist("Deviation Measure").get("Name","Least Squares");
+    std::string risk = parlist.sublist("SOL").sublist("Deviation Measure").get("Name","Variance");
     EDeviationMeasure ed = StringToEDeviationMeasure(risk);
     switch(ed) {
       case DEVIATIONMEASURE_MEANVARIANCEQUADRANGLE:

@@ -352,8 +352,8 @@ namespace Ifpack2 {
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::apply (HostView& X, HostView& Y, int blockIndex, int stride, Teuchos::ETransp mode,
-           scalar_type alpha, scalar_type beta) const
+  ::apply (HostView& /* X */, HostView& /* Y */, int /* blockIndex */, int /* stride */, Teuchos::ETransp /* mode */,
+           scalar_type /* alpha */, scalar_type /* beta */) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::apply is not implemented. You may have reached this message "
                                 << "because you want to use this container's performance-portable Jacobi iteration. In "
@@ -363,8 +363,8 @@ namespace Ifpack2 {
   template <typename MatrixType>
   void 
   BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
-  ::weightedApply (HostView& X, HostView& Y, HostView& D, int blockIndex, int stride,
-                   Teuchos::ETransp mode, scalar_type alpha, scalar_type beta) const
+  ::weightedApply (HostView& /* X */, HostView& /* Y */, HostView& /* D */, int /* blockIndex */, int /* stride */,
+                   Teuchos::ETransp /* mode */, scalar_type /* alpha */, scalar_type /* beta */) const
   {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "BlockTriDiContainer::weightedApply is not implemented.");
   }

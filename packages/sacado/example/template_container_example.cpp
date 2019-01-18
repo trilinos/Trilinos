@@ -41,6 +41,7 @@
 template <class T>
 struct MyClass {
   T x;
+  MyClass() : x() {}  // to avoid uninitialized value warning below
 };
 
 // A functor to initialize a container of objects of type MyClass<T>

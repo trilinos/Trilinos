@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,22 @@
  *
  */
 /*****************************************************************************
-*
-* exgatt - ex_get_attr
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     obj_type                object type (edge/face/element block)
-*       int     obj_id                  object id (edge id, face id, elem id)
-*
-* exit conditions -
-*       float*  attrib                  array of attributes
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgatt - ex_get_attr
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     obj_type                object type (edge/face/element block)
+ *       int     obj_id                  object id (edge id, face id, elem id)
+ *
+ * exit conditions -
+ *       float*  attrib                  array of attributes
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
@@ -69,7 +69,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
   const char *vattrbname;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* Determine index of obj_id in vobjids array */
   if (obj_type == EX_NODAL) {
@@ -85,25 +85,25 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "Warning: no attributes found for NULL %s %" PRId64 " in file id %d",
                    ex_name_of_object(obj_type), obj_id, exoid);
-          ex_err("ex_get_attr", errmsg, EX_NULLENTITY);
+          ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
           EX_FUNC_LEAVE(EX_WARN); /* no attributes for this object */
         }
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Warning: failed to locate %s id %" PRId64 " in id array in file id %d",
                  ex_name_of_object(obj_type), obj_id, exoid);
-        ex_err("ex_get_attr", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_WARN);
       }
     }
   }
 
   switch (obj_type) {
-  case EX_SIDE_SET: vattrbname   = VAR_SSATTRIB(obj_id_ndx); break;
-  case EX_NODE_SET: vattrbname   = VAR_NSATTRIB(obj_id_ndx); break;
-  case EX_EDGE_SET: vattrbname   = VAR_ESATTRIB(obj_id_ndx); break;
-  case EX_FACE_SET: vattrbname   = VAR_FSATTRIB(obj_id_ndx); break;
-  case EX_ELEM_SET: vattrbname   = VAR_ELSATTRIB(obj_id_ndx); break;
-  case EX_NODAL: vattrbname      = VAR_NATTRIB; break;
+  case EX_SIDE_SET: vattrbname = VAR_SSATTRIB(obj_id_ndx); break;
+  case EX_NODE_SET: vattrbname = VAR_NSATTRIB(obj_id_ndx); break;
+  case EX_EDGE_SET: vattrbname = VAR_ESATTRIB(obj_id_ndx); break;
+  case EX_FACE_SET: vattrbname = VAR_FSATTRIB(obj_id_ndx); break;
+  case EX_ELEM_SET: vattrbname = VAR_ELSATTRIB(obj_id_ndx); break;
+  case EX_NODAL: vattrbname = VAR_NATTRIB; break;
   case EX_EDGE_BLOCK: vattrbname = VAR_EATTRIB(obj_id_ndx); break;
   case EX_FACE_BLOCK: vattrbname = VAR_FATTRIB(obj_id_ndx); break;
   case EX_ELEM_BLOCK: vattrbname = VAR_ATTRIB(obj_id_ndx); break;
@@ -111,7 +111,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", obj_type,
              exoid);
-    ex_err("ex_get_attr", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
@@ -120,7 +120,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
-    ex_err("ex_get_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -136,7 +136,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
-    ex_err("ex_get_attr", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

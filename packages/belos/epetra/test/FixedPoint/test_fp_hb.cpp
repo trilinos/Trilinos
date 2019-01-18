@@ -82,6 +82,9 @@ int main(int argc, char *argv[]) {
     int maxiters = -1;  // maximum number of iterations for solver to use
     std::string filename("bcsstk14.hb");
     double tol = 1.0e-5;  // relative residual tolerance
+    bool precond = false; // use diagonal preconditioner
+    bool leftPrecond = false; // if preconditioner is used, left or right?
+
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -90,6 +93,8 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem).");
+    cmdp.setOption("use-precond","no-precond",&precond,"Use a diagonal preconditioner.");
+    cmdp.setOption("left","right",&leftPrecond,"Use a left/right preconditioner.");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -158,9 +163,32 @@ int main(int argc, char *argv[]) {
     else
       belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
     //
-    // Construct an unpreconditioned linear problem instance.
+    // Construct an linear problem instance.
     //
     Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+    // diagonal preconditioner
+    if (precond) {
+      Epetra_Vector diagonal(A->RowMap());
+      A->ExtractDiagonalCopy(diagonal);
+
+      int NumMyElements    = diagonal.Map().NumMyElements();
+      Teuchos::ArrayView<const int> MyGlobalElements = Teuchos::ArrayView< const int >(diagonal.Map().MyGlobalElements(), NumMyElements);
+      RCP<Epetra_CrsMatrix> invDiagMatrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A->RowMap(), 1, true));
+
+      for (Teuchos_Ordinal i=0; i<NumMyElements; ++i) {
+        diagonal[i] = 1.0 / diagonal[i];
+        invDiagMatrix->InsertGlobalValues(MyGlobalElements[i],
+                                          1,
+                                          &diagonal[i],
+                                          &MyGlobalElements[i] );
+      }
+      invDiagMatrix->FillComplete();
+
+      if (leftPrecond)
+        problem.setLeftPrec(invDiagMatrix);
+      else
+        problem.setRightPrec(invDiagMatrix);
+    }
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)

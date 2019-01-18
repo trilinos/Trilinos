@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -74,7 +74,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);
   if (blk_id_ndx <= 0) {
@@ -85,12 +85,12 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Warning: no attributes allowed for NULL %s %" PRId64 " in file id %d",
                  ex_name_of_object(blk_type), blk_id, exoid);
-        ex_err("ex_put_attr_names", errmsg, EX_NULLENTITY);
+        ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
         EX_FUNC_LEAVE(EX_WARN); /* no attributes for this block */
       }
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s id %" PRId64 " in %s array in file id %d",
                ex_name_of_object(blk_type), blk_id, VAR_ID_EL_BLK, exoid);
-      ex_err("ex_put_attr_names", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -118,7 +118,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", blk_type,
              exoid);
-    ex_err("ex_put_attr_names", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
@@ -126,7 +126,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: number of attributes not defined for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_attr_names", errmsg, EX_MSG);
+    ex_err_fn(exoid, __func__, errmsg, EX_MSG);
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
@@ -134,17 +134,17 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_attr_names", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   switch (blk_type) {
-  case EX_SIDE_SET: status   = nc_inq_varid(exoid, VAR_NAME_SSATTRIB(blk_id_ndx), &varid); break;
-  case EX_NODE_SET: status   = nc_inq_varid(exoid, VAR_NAME_NSATTRIB(blk_id_ndx), &varid); break;
-  case EX_EDGE_SET: status   = nc_inq_varid(exoid, VAR_NAME_ESATTRIB(blk_id_ndx), &varid); break;
-  case EX_FACE_SET: status   = nc_inq_varid(exoid, VAR_NAME_FSATTRIB(blk_id_ndx), &varid); break;
-  case EX_ELEM_SET: status   = nc_inq_varid(exoid, VAR_NAME_ELSATTRIB(blk_id_ndx), &varid); break;
-  case EX_NODAL: status      = nc_inq_varid(exoid, VAR_NAME_NATTRIB, &varid); break;
+  case EX_SIDE_SET: status = nc_inq_varid(exoid, VAR_NAME_SSATTRIB(blk_id_ndx), &varid); break;
+  case EX_NODE_SET: status = nc_inq_varid(exoid, VAR_NAME_NSATTRIB(blk_id_ndx), &varid); break;
+  case EX_EDGE_SET: status = nc_inq_varid(exoid, VAR_NAME_ESATTRIB(blk_id_ndx), &varid); break;
+  case EX_FACE_SET: status = nc_inq_varid(exoid, VAR_NAME_FSATTRIB(blk_id_ndx), &varid); break;
+  case EX_ELEM_SET: status = nc_inq_varid(exoid, VAR_NAME_ELSATTRIB(blk_id_ndx), &varid); break;
+  case EX_NODAL: status = nc_inq_varid(exoid, VAR_NAME_NATTRIB, &varid); break;
   case EX_EDGE_BLOCK: status = nc_inq_varid(exoid, VAR_NAME_EATTRIB(blk_id_ndx), &varid); break;
   case EX_FACE_BLOCK: status = nc_inq_varid(exoid, VAR_NAME_FATTRIB(blk_id_ndx), &varid); break;
   case EX_ELEM_BLOCK: status = nc_inq_varid(exoid, VAR_NAME_ATTRIB(blk_id_ndx), &varid); break;
@@ -152,7 +152,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", blk_type,
              exoid);
-    ex_err("ex_put_attr_names", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
@@ -160,13 +160,12 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate %s attribute names for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_attr_names", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write out the attributes  */
-  status = ex_put_names_internal(exoid, varid, num_attr, names, blk_type, "attribute",
-                                 "ex_put_attr_names");
+  status = ex_put_names_internal(exoid, varid, num_attr, names, blk_type, "attribute", __func__);
 
   EX_FUNC_LEAVE(status);
 }

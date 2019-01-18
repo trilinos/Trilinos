@@ -68,6 +68,7 @@
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Thyra_MultiVector.H"
 #include "NOX_Assert.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::Thyra::Group::
 Group(const NOX::Thyra::Vector& initial_guess,
@@ -77,7 +78,10 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const bool rightScalingFirst):
   model_(model),
   rightScalingFirst_(rightScalingFirst),
-  updatePreconditioner_(true)
+  updatePreconditioner_(true),
+  last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
+  last_linear_solve_num_iters_(0),
+  last_linear_solve_achieved_tol_(0.0)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
 
@@ -150,7 +154,10 @@ Group(const NOX::Thyra::Vector& initial_guess,
   prec_(prec_op),
   prec_factory_(prec_factory),
   rightScalingFirst_(rightScalingFirst),
-  updatePreconditioner_(updatePreconditioner)
+  updatePreconditioner_(updatePreconditioner),
+  last_linear_solve_status_(NOX::Abstract::Group::NotConverged),
+  last_linear_solve_num_iters_(0),
+  last_linear_solve_achieved_tol_(0.0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(jacobianIsEvaluated && Teuchos::is_null(linear_op),std::runtime_error,
                              "ERROR - NOX::Thyra::Group(...) - linear_op is null but JacobianIsEvaluated is true. Impossible combination!");
@@ -211,7 +218,10 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   prec_factory_(source.prec_factory_),
   right_weight_vec_(source.right_weight_vec_),
   inv_right_weight_vec_(source.inv_right_weight_vec_),
-  rightScalingFirst_(source.rightScalingFirst_)
+  rightScalingFirst_(source.rightScalingFirst_),
+  last_linear_solve_status_(source.last_linear_solve_status_),
+  last_linear_solve_num_iters_(source.last_linear_solve_num_iters_),
+  last_linear_solve_achieved_tol_(source.last_linear_solve_achieved_tol_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -317,6 +327,10 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
   if (nonnull(shared_jacobian_))
     if (this->isJacobian())
       shared_jacobian_->getObject(this);
+
+  last_linear_solve_status_ = source.last_linear_solve_status_;
+  last_linear_solve_num_iters_ = source.last_linear_solve_num_iters_;
+  last_linear_solve_achieved_tol_ = source.last_linear_solve_achieved_tol_;
 
   return *this;
 }
@@ -737,6 +751,14 @@ Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() 
   return gradient_vec_;
 }
 
+void NOX::Thyra::Group::logLastLinearSolveStats(NOX::SolverStats& stats) const
+{
+  stats.linearSolve.logLinearSolve(last_linear_solve_status_ == NOX::Abstract::Group::Ok,
+                                   last_linear_solve_num_iters_,
+                                   last_linear_solve_achieved_tol_,
+                                   0.0,
+                                   0.0);
+}
 
 void NOX::Thyra::Group::print() const
 {
@@ -785,6 +807,7 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
     p.sublist("Output").set("Last Iteration Count",current_iters);
     p.sublist("Output").set("Cumulative Iteration Count",cumulative_iters + current_iters);
+    last_linear_solve_num_iters_ = current_iters;
   }
 
   this->unscaleResidualAndJacobian();
@@ -797,20 +820,20 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 
   }
 
-  // ToDo: Get the output statistics and achieved tolerance to pass
-  // back ...
+  last_linear_solve_achieved_tol_ = solve_status.achievedTol;
 
+  last_linear_solve_status_ = NOX::Abstract::Group::Failed;
   if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
-    return NOX::Abstract::Group::Ok;
+    last_linear_solve_status_ = NOX::Abstract::Group::Ok;
   else if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED)
-    return NOX::Abstract::Group::NotConverged;
+    last_linear_solve_status_ = NOX::Abstract::Group::NotConverged;
 
-  return NOX::Abstract::Group::Failed;
+  return last_linear_solve_status_;
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Thyra::Group::applyRightPreconditioning(bool useTranspose,
-                         Teuchos::ParameterList& params,
+NOX::Thyra::Group::applyRightPreconditioning(bool /* useTranspose */,
+                         Teuchos::ParameterList& /* params */,
                          const NOX::Abstract::Vector& input,
                          NOX::Abstract::Vector& result) const
 {

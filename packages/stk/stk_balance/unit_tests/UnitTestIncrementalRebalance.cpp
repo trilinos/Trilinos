@@ -41,6 +41,8 @@ public:
         m_incrementalRebalance(incrementalRebalance) { }
     virtual ~FieldVertexWeightSettingsWithSearchForParticles() = default;
 
+    using stk::balance::GraphCreationSettings::getToleranceForFaceSearch;
+
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
@@ -157,10 +159,10 @@ protected:
     {
         double init_value = 1.0;
         weight_field = & get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEM_RANK, "Weights", 1);
-        stk::mesh::put_field(*weight_field, get_meta().universal_part(), &init_value);
+        stk::mesh::put_field_on_mesh(*weight_field, get_meta().universal_part(), &init_value);
         double init_proc = 0.0;
         procOwner = & get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEM_RANK, "ProcOwner", 1);
-        stk::mesh::put_field(*procOwner, get_meta().universal_part(), &init_proc);
+        stk::mesh::put_field_on_mesh(*procOwner, get_meta().universal_part(), &init_proc);
     }
 
     size_t get_global_element_count()
@@ -352,7 +354,7 @@ protected:
         check_migration();
 
         size_t num_elements_migrated_to_me = calculate_migrated_elements();
-        EXPECT_TRUE(0 <= num_elements_migrated_to_me);
+        EXPECT_TRUE(0 < num_elements_migrated_to_me);
     }
 
     size_t count_global_non_particle_elements()
@@ -478,8 +480,8 @@ protected:
             destroy_element_and_lower(elements[i]);
             for (int particleIndex=0 ; particleIndex < numParticlesPerElement ; ++particleIndex)
             {
-                stk::mesh::Entity node = get_bulk().declare_node(++entityId, {&nodeTopologyPart});
-                stk::mesh::Entity particle = get_bulk().declare_element(entityId, {&particleTopologyPart,block2Part});
+                stk::mesh::Entity node = get_bulk().declare_node(++entityId, stk::mesh::ConstPartVector{&nodeTopologyPart});
+                stk::mesh::Entity particle = get_bulk().declare_element(entityId, stk::mesh::ConstPartVector{&particleTopologyPart,block2Part});
                 get_bulk().declare_relation(particle, node, 0);
 
                 set_coords(node, centroid);

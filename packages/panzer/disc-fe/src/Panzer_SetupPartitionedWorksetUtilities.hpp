@@ -54,7 +54,7 @@ namespace panzer
 class WorksetDescriptor;
 struct WorksetNeeds;
 template<typename LO, typename GO>
-class LocalMeshInfo;
+struct LocalMeshInfo;
 }
 
 namespace panzer
@@ -69,7 +69,7 @@ namespace panzer
   * \returns vector of worksets for the corresponding element block.
   */
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildPartitionedWorksets(const panzer::LocalMeshInfo<int,int> & mesh_info,
+buildPartitionedWorksets(const panzer::LocalMeshInfo<int,panzer::Ordinal64> & mesh_info,
                          const panzer::WorksetDescriptor & description,
                          const panzer::WorksetNeeds & needs);
 

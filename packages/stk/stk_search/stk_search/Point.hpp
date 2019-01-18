@@ -34,8 +34,9 @@
 #ifndef STK_SEARCH_POINT_HPP
 #define STK_SEARCH_POINT_HPP
 
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <iosfwd>
+#include <Kokkos_Core.hpp>
 
 namespace stk { namespace search {
 
@@ -46,49 +47,59 @@ public:
   static const unsigned Dim = 3;
   typedef T value_type;
 
-  Point(value_type x = value_type(), value_type y = value_type(), value_type z = value_type())
+  KOKKOS_FUNCTION Point(value_type x = value_type(), value_type y = value_type(), value_type z = value_type())
     : m_value{x, y, z}
   {
   }
 
-  value_type const& operator[](size_t index) const
+  KOKKOS_FUNCTION value_type const& operator[](size_t index) const
   {
-    ThrowAssert(index < Dim);
+    NGP_ThrowAssert(index < Dim);
     return m_value[index];
   }
 
-  value_type & operator[](size_t index)
+  KOKKOS_FUNCTION value_type & operator[](size_t index)
   {
-    ThrowAssert(index < Dim);
+    NGP_ThrowAssert(index < Dim);
     return m_value[index];
   }
 
-  bool operator==(Point<value_type> const& p) const
+  KOKKOS_FORCEINLINE_FUNCTION void operator=(const Point<value_type> &pt) {
+    for (unsigned i =0; i < Dim; ++i) {
+      m_value[i] = pt.m_value[i];
+    }
+  }
+
+  KOKKOS_FUNCTION bool operator==(Point<value_type> const& p) const
   {
     return  m_value[0] == p.m_value[0]
          && m_value[1] == p.m_value[1]
          && m_value[2] == p.m_value[2];
   }
 
-  bool operator!=(Point<value_type> const& p) const
+  KOKKOS_FUNCTION bool operator!=(Point<value_type> const& p) const
   { return !(*this == p); }
 
-  value_type get_x_min() const { return m_value[0]; }
-  value_type get_y_min() const { return m_value[1]; }
-  value_type get_z_min() const { return m_value[2]; }
-  value_type get_x_max() const { return m_value[0]; }
-  value_type get_y_max() const { return m_value[1]; }
-  value_type get_z_max() const { return m_value[2]; }
+  KOKKOS_FUNCTION value_type get_x_min() const { return m_value[0]; }
+  KOKKOS_FUNCTION value_type get_y_min() const { return m_value[1]; }
+  KOKKOS_FUNCTION value_type get_z_min() const { return m_value[2]; }
+  KOKKOS_FUNCTION value_type get_x_max() const { return m_value[0]; }
+  KOKKOS_FUNCTION value_type get_y_max() const { return m_value[1]; }
+  KOKKOS_FUNCTION value_type get_z_max() const { return m_value[2]; }
 
-  friend std::ostream& operator<<(std::ostream & out, Point<value_type> const& p)
-  {
-    out << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
-    return out;
-  }
+
+  KOKKOS_FUNCTION ~Point() = default;
 
 private:
   value_type m_value[Dim];
 };
+
+template <class T>
+std::ostream& operator<<(std::ostream & out, Point<T> const& p)
+{
+  out << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
+  return out;
+}
 
 }} // stk::search
 

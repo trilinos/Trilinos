@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -102,7 +102,7 @@ C *****************************************************************
       ELSE
          NUMSP = 0
 
-C           Check for existance of a field.
+C           Check for existence of a field.
   100    CONTINUE
          IF (FFEXST (IFLD, INTYP)) THEN
 
@@ -122,7 +122,7 @@ C              field.
                   GO TO 120
                ELSE
 C
-C                 Check for existance of another field
+C                 Check for existence of another field
                   IF (FFEXST (IFLD, INTYP)) THEN
                      IF (INTYP(IFLD) .GE. 1) THEN
 C                       Real value specified for line thickness

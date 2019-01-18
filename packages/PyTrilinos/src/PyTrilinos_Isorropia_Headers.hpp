@@ -57,7 +57,7 @@
 #include "Isorropia_CostDescriber.hpp"
 #include "Isorropia_Orderer.hpp"
 #include "Isorropia_LevelScheduler.hpp"
-#ifdef HAVE_EPETRA
+#ifdef HAVE_PYTRILINOS_EPETRA
 #include "Isorropia_EpetraOperator.hpp"
 #include "Isorropia_EpetraColorer.hpp"
 #include "Isorropia_EpetraPartitioner.hpp"

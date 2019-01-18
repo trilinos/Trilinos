@@ -7,6 +7,7 @@
 #include <set>
 #include <tuple>
 
+#include "Zoltan2_Standards.hpp"
 #include "Zoltan2_AlgMultiJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"
@@ -42,7 +43,7 @@ private:
 public:
   /*! \brief Default Constructor
    */
-  Zoltan2_ReduceBestMapping ():_EPSILON (std::numeric_limits<T>::epsilon()){}
+  Zoltan2_ReduceBestMapping():_EPSILON(std::numeric_limits<T>::epsilon()){}
 
   /*! \brief Implement Teuchos::ValueTypeReductionOp interface
    */
@@ -109,7 +110,7 @@ void ithPermutation(const IT n, IT i, IT *perm)
 }
 
 template <typename part_t>
-void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, std::vector <int> grid_dims){
+void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, std::vector<int> grid_dims){
   int dim = grid_dims.size();
   int neighborCount = 2 * dim;
   task_comm_xadj = allocMemory<part_t>(taskCount+1);
@@ -175,7 +176,7 @@ void getSolutionCenterCoordinates(
     ArrayRCP<const scalar_t> ar;
     xyz[dim].getInputArray(ar);
     //multiJagged coordinate values assignment
-    multiJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
+    multiJagged_coordinates[dim] = (scalar_t *)ar.getRawPtr();
     memset(partCenters[dim], 0, sizeof(scalar_t) * ntasks);
   }
 
@@ -224,10 +225,10 @@ void getSolutionCenterCoordinates(
   }
   envConst->timerStop(MACRO_TIMERS, "Mapping - Center Calculation");
 
-  freeArray<gno_t> (point_counts);
-  freeArray<gno_t> (global_point_counts);
+  freeArray<gno_t>(point_counts);
+  freeArray<gno_t>(global_point_counts);
 
-  freeArray<scalar_t> (tmpCoords);
+  freeArray<scalar_t>(tmpCoords);
   freeArray<scalar_t *>(multiJagged_coordinates);
 }
 
@@ -259,7 +260,7 @@ void getCoarsenedPartGraph(
   const part_t *parts = soln_->getPartListView();
 
   part_t np = soln_->getActualGlobalNumberOfParts();
-  if (part_t (soln_->getTargetGlobalNumberOfParts()) > np){
+  if (part_t(soln_->getTargetGlobalNumberOfParts()) > np){
     np = soln_->getTargetGlobalNumberOfParts();
   }
   */
@@ -279,11 +280,11 @@ void getCoarsenedPartGraph(
   ArrayView<t_input_t> e_wgts;
   graph->getEdgeList(edgeIds, offsets, e_wgts);
 
-  std::vector <t_scalar_t> edge_weights;
+  std::vector<t_scalar_t> edge_weights;
   int numWeightPerEdge = graph->getNumWeightsPerEdge();
 
   if (numWeightPerEdge > 0){
-    edge_weights =  std::vector <t_scalar_t> (localNumEdges);
+    edge_weights =  std::vector<t_scalar_t>(localNumEdges);
     for (t_lno_t i = 0; i < localNumEdges; ++i){
       edge_weights[i] = e_wgts[0][i];
     }
@@ -291,7 +292,7 @@ void getCoarsenedPartGraph(
 
   //create a zoltan dictionary to get the parts of the vertices
   //at the other end of edges
-  std::vector <part_t> e_parts (localNumEdges);
+  std::vector<part_t> e_parts(localNumEdges);
 #ifdef HAVE_ZOLTAN2_MPI
   if (comm->getSize() > 1)
   {
@@ -322,8 +323,8 @@ void getCoarsenedPartGraph(
     }
 
     //get the vertices in each part in my part.
-    std::vector <t_lno_t> part_begins(np, -1);
-    std::vector <t_lno_t> part_nexts(localNumVertices, -1);
+    std::vector<t_lno_t> part_begins(np, -1);
+    std::vector<t_lno_t> part_nexts(localNumVertices, -1);
 
     //cluster vertices according to their parts.
     //create local part graph.
@@ -334,14 +335,14 @@ void getCoarsenedPartGraph(
     }
 
 
-    g_part_xadj = ArrayRCP<part_t> (np + 1);
-    g_part_adj = ArrayRCP<part_t> (localNumEdges);
-    g_part_ew = ArrayRCP<t_scalar_t> (localNumEdges);
+    g_part_xadj = ArrayRCP<part_t>(np + 1);
+    g_part_adj = ArrayRCP<part_t>(localNumEdges);
+    g_part_ew = ArrayRCP<t_scalar_t>(localNumEdges);
     part_t nindex = 0;
     g_part_xadj[0] = 0;
-    std::vector <part_t> part_neighbors (np);
-    std::vector <t_scalar_t> part_neighbor_weights(np, 0);
-    std::vector <t_scalar_t> part_neighbor_weights_ordered(np);
+    std::vector<part_t> part_neighbors(np);
+    std::vector<t_scalar_t> part_neighbor_weights(np, 0);
+    std::vector<t_scalar_t> part_neighbor_weights_ordered(np);
 
     //coarsen for all vertices in my part in order with parts.
     for (t_lno_t i = 0; i < np; ++i){
@@ -413,8 +414,8 @@ void getCoarsenedPartGraph(
   envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE Coarsen");
   {
     //get the vertices in each part in my part.
-    std::vector <t_lno_t> part_begins(np, -1);
-    std::vector <t_lno_t> part_nexts(localNumVertices, -1);
+    std::vector<t_lno_t> part_begins(np, -1);
+    std::vector<t_lno_t> part_nexts(localNumVertices, -1);
 
     //cluster vertices according to their parts.
     //create local part graph.
@@ -424,9 +425,9 @@ void getCoarsenedPartGraph(
       part_begins[ap] = i;
     }
 
-    std::vector <part_t> part_neighbors (np);
-    std::vector <t_scalar_t> part_neighbor_weights(np, 0);
-    std::vector <t_scalar_t> part_neighbor_weights_ordered(np);
+    std::vector<use_this_gno_t> part_neighbors(np);
+    std::vector<t_scalar_t> part_neighbor_weights(np, 0);
+    std::vector<t_scalar_t> part_neighbor_weights_ordered(np);
 
     //coarsen for all vertices in my part in order with parts.
     for (t_lno_t i = 0; i < np; ++i){
@@ -454,7 +455,7 @@ void getCoarsenedPartGraph(
 
       //now get the part list.
       for (t_lno_t j = 0; j < num_neighbor_parts; ++j){
-        part_t neighbor_part = part_neighbors[j];
+        use_this_gno_t neighbor_part = part_neighbors[j];
         part_neighbor_weights_ordered[j] = part_neighbor_weights[neighbor_part];
         part_neighbor_weights[neighbor_part] = 0;
       }
@@ -474,9 +475,9 @@ void getCoarsenedPartGraph(
   }
   envConst->timerStop(MACRO_TIMERS, "GRAPHCREATE Coarsen");
 
-  std::vector <part_t> part_indices(np);
+  std::vector<use_this_gno_t> part_indices(np);
 
-  for (part_t i = 0; i < np; ++i) part_indices[i] = i;
+  for (use_this_gno_t i = 0; i < np; ++i) part_indices[i] = i;
 
   envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE directory update");
   directory.update(part_data.size(), &part_data[0], NULL, &user_data[0],
@@ -545,6 +546,7 @@ void getCoarsenedPartGraph(
     }
   }
   */
+
 }
 
 
@@ -724,12 +726,12 @@ class KMeansAlgorithm{
   WT **elementCoords;
   IT numClusters;
   IT required_elements;
-  KMeansCluster <IT,WT> *clusters;
+  KMeansCluster<IT,WT> *clusters;
   WT *maxCoordinates;
   WT *minCoordinates;
 public:
   ~KMeansAlgorithm(){
-    freeArray<KMeansCluster <IT,WT> >(clusters);
+    freeArray<KMeansCluster<IT,WT> >(clusters);
     freeArray<WT>(maxCoordinates);
     freeArray<WT>(minCoordinates);
   }
@@ -744,17 +746,17 @@ public:
         dim(dim_),
         numElements(numElements_),
         elementCoords(elementCoords_),
-        numClusters ((1 << dim_) + 1),
+        numClusters((1 << dim_) + 1),
         required_elements(required_elements_)
   {
-    this->clusters  = allocMemory<KMeansCluster <IT,WT> >(this->numClusters);
+    this->clusters  = allocMemory<KMeansCluster<IT,WT> >(this->numClusters);
     //set dimension and the number of required elements for all clusters.
     for (int i = 0; i < numClusters; ++i){
       this->clusters[i].setParams(this->dim, this->required_elements);
     }
 
-    this->maxCoordinates = allocMemory <WT> (this->dim);
-    this->minCoordinates = allocMemory <WT> (this->dim);
+    this->maxCoordinates = allocMemory <WT>(this->dim);
+    this->minCoordinates = allocMemory <WT>(this->dim);
 
     //obtain the min and max coordiantes for each dimension.
     for (int j = 0; j < dim; ++j){
@@ -1184,9 +1186,9 @@ public:
       ,const Teuchos::RCP <const Teuchos::Comm<int> > comm_
   ) const{
 
-    rcp_proc_to_task_xadj = ArrayRCP <part_t> (this->no_procs+1);
-    rcp_proc_to_task_adj = ArrayRCP <part_t> (this->no_tasks);
-    rcp_task_to_proc = ArrayRCP <part_t> (this->no_tasks);
+    rcp_proc_to_task_xadj = ArrayRCP <part_t>(this->no_procs+1);
+    rcp_proc_to_task_adj = ArrayRCP <part_t>(this->no_tasks);
+    rcp_task_to_proc = ArrayRCP <part_t>(this->no_tasks);
 
     part_t *proc_to_task_xadj = rcp_proc_to_task_xadj.getRawPtr(); //holds the pointer to the task array
     part_t *proc_to_task_adj = rcp_proc_to_task_adj.getRawPtr(); //holds the indices of tasks wrt to proc_to_task_xadj array.
@@ -1194,7 +1196,7 @@ public:
 
 
     part_t invalid = 0;
-    fillContinousArray<part_t> (proc_to_task_xadj, this->no_procs+1, &invalid);
+    fillContinousArray<part_t>(proc_to_task_xadj, this->no_procs+1, &invalid);
 
     //obtain the number of parts that should be divided.
     part_t num_parts = MINOF(this->no_procs, this->no_tasks);
@@ -1235,7 +1237,7 @@ public:
     //add one also that partitions based the longest dimension.
 
     //holds the pointers to proc_adjList
-    part_t *proc_xadj = allocMemory<part_t> (num_parts+1);
+    part_t *proc_xadj = allocMemory<part_t>(num_parts+1);
     //holds the processors in parts according to the result of partitioning algorithm.
     //the processors assigned to part x is at proc_adjList[ proc_xadj[x] : proc_xadj[x+1] ]
     part_t *proc_adjList = allocMemory<part_t>(this->no_procs);
@@ -1303,7 +1305,7 @@ public:
 
 
 
-    int *permutation = allocMemory<int> ((this->proc_coord_dim > this->task_coord_dim)
+    int *permutation = allocMemory<int>((this->proc_coord_dim > this->task_coord_dim)
         ? this->proc_coord_dim : this->task_coord_dim);
 
     //get the permutation order from the proc permutation index.
@@ -1311,7 +1313,7 @@ public:
 
     /*
     //reorder the coordinate dimensions.
-    pcoord_t **pcoords = allocMemory<pcoord_t *> (this->proc_coord_dim);
+    pcoord_t **pcoords = allocMemory<pcoord_t *>(this->proc_coord_dim);
     for(int i = 0; i < this->proc_coord_dim; ++i){
       pcoords[i] = this->proc_coords[permutation[i]];
       //cout << permutation[i] << " ";
@@ -1323,7 +1325,7 @@ public:
     int procdim  = this->proc_coord_dim;
     procdim  = 6;
     //reorder the coordinate dimensions.
-    pcoord_t **pcoords = allocMemory<pcoord_t *> (procdim);
+    pcoord_t **pcoords = allocMemory<pcoord_t *>(procdim);
     for(int i = 0; i < procdim; ++i){
       pcoords[i] = new pcoord_t[used_num_procs] ;//this->proc_coords[permutation[i]];
     }
@@ -1384,10 +1386,10 @@ public:
     //std::cout << "mj_partitioner.for procs over" << std::endl;
 
 
-    //freeArray<pcoord_t *> (pcoords);
+    //freeArray<pcoord_t *>(pcoords);
 
 
-    part_t *task_xadj = allocMemory<part_t> (num_parts+1);
+    part_t *task_xadj = allocMemory<part_t>(num_parts+1);
     part_t *task_adjList = allocMemory<part_t>(this->no_tasks);
     //fill task_adjList st: task_adjList[i] <- i.
     fillContinousArray<part_t>(task_adjList,this->no_tasks, NULL);
@@ -1396,7 +1398,7 @@ public:
     ithPermutation<int>(this->task_coord_dim, myTaskPerm, permutation);
 
     //reorder task coordinate dimensions.
-    tcoord_t **tcoords = allocMemory<tcoord_t *> (this->task_coord_dim);
+    tcoord_t **tcoords = allocMemory<tcoord_t *>(this->task_coord_dim);
     for(int i = 0; i < this->task_coord_dim; ++i){
       tcoords[i] = this->task_coords[permutation[i]];
     }
@@ -1428,8 +1430,8 @@ public:
     //comm_->barrier();
     //std::cout << "mj_partitioner.sequential_task_partitioning over" << std::endl;
 
-    freeArray<pcoord_t *> (tcoords);
-    freeArray<int> (permutation);
+    freeArray<pcoord_t *>(tcoords);
+    freeArray<int>(permutation);
 
 
     //filling proc_to_task_xadj, proc_to_task_adj, task_to_proc arrays.
@@ -1453,7 +1455,7 @@ public:
 
     //holds the pointer to the task array
     //convert proc_to_task_xadj to CSR index array
-    part_t *proc_to_task_xadj_work = allocMemory<part_t> (this->no_procs);
+    part_t *proc_to_task_xadj_work = allocMemory<part_t>(this->no_procs);
     part_t sum = 0;
     for(part_t i = 0; i < this->no_procs; ++i){
       part_t tmp = proc_to_task_xadj[i];
@@ -1665,16 +1667,16 @@ protected:
     */
     //cout << "me:" << localCost[1] << " localcost:" << localCost[0]<< " bestcost:" << globalCost[0] << endl;
     //cout << "me:" << localCost[1] << " proc:" << globalCost[1] << endl;
-    broadcast (*subComm, sender, this->ntasks, this->task_to_proc.getRawPtr());
-    broadcast (*subComm, sender, this->nprocs, this->proc_to_task_xadj.getRawPtr());
-    broadcast (*subComm, sender, this->ntasks, this->proc_to_task_adj.getRawPtr());
+    broadcast(*subComm, sender, this->ntasks, this->task_to_proc.getRawPtr());
+    broadcast(*subComm, sender, this->nprocs, this->proc_to_task_xadj.getRawPtr());
+    broadcast(*subComm, sender, this->ntasks, this->proc_to_task_adj.getRawPtr());
   }
 
 
 
   //write mapping to gnuPlot code to visualize.
   void writeMapping(){
-    std::ofstream gnuPlotCode ("gnuPlot.plot", std::ofstream::out);
+    std::ofstream gnuPlotCode("gnuPlot.plot", std::ofstream::out);
 
     int mindim = MINOF(proc_task_comm->proc_coord_dim, proc_task_comm->task_coord_dim);
     std::string ss = "";
@@ -1688,7 +1690,7 @@ protected:
         gnuPlotCode << "replot \"" << procFile << "\"\n";
       }
 
-      std::ofstream inpFile (procFile.c_str(), std::ofstream::out);
+      std::ofstream inpFile(procFile.c_str(), std::ofstream::out);
 
       std::string gnuPlotArrow = "set arrow from ";
       for(int j = 0; j <  mindim; ++j){
@@ -1740,7 +1742,7 @@ protected:
     std::string rankStr = Teuchos::toString<int>(myRank);
     std::string gnuPlots = "gnuPlot", extentionS = ".plot";
     std::string outF = gnuPlots + rankStr+ extentionS;
-    std::ofstream gnuPlotCode ( outF.c_str(), std::ofstream::out);
+    std::ofstream gnuPlotCode(outF.c_str(), std::ofstream::out);
 
     CoordinateCommunicationModel<pcoord_t, tcoord_t, part_t> *tmpproc_task_comm =
         static_cast <CoordinateCommunicationModel<pcoord_t, tcoord_t, part_t> * > (proc_task_comm);
@@ -1788,17 +1790,17 @@ protected:
           int neighbor_rank = this->getAssignedProcForTask(neighbor_task);
 
           for(int j = 0; j <  mindim; ++j){
-            if (int (tmpproc_task_comm->proc_coords[j][origin_rank]) != int (tmpproc_task_comm->proc_coords[j][neighbor_rank])){
+            if (int(tmpproc_task_comm->proc_coords[j][origin_rank]) != int(tmpproc_task_comm->proc_coords[j][neighbor_rank])){
               differentnode = true; break;
             }
           }
-          std::tuple<int,int,int, int, int, int> foo (
-              int (tmpproc_task_comm->proc_coords[0][origin_rank]),
-              int (tmpproc_task_comm->proc_coords[1][origin_rank]),
-              int (tmpproc_task_comm->proc_coords[2][origin_rank]),
-              int (tmpproc_task_comm->proc_coords[0][neighbor_rank]),
-              int (tmpproc_task_comm->proc_coords[1][neighbor_rank]),
-              int (tmpproc_task_comm->proc_coords[2][neighbor_rank]));
+          std::tuple<int,int,int, int, int, int> foo(
+              int(tmpproc_task_comm->proc_coords[0][origin_rank]),
+              int(tmpproc_task_comm->proc_coords[1][origin_rank]),
+              int(tmpproc_task_comm->proc_coords[2][origin_rank]),
+              int(tmpproc_task_comm->proc_coords[0][neighbor_rank]),
+              int(tmpproc_task_comm->proc_coords[1][neighbor_rank]),
+              int(tmpproc_task_comm->proc_coords[2][neighbor_rank]));
 
 
           if (differentnode && my_arrows.find(foo) == my_arrows.end()){
@@ -1821,7 +1823,7 @@ protected:
     }
 
 
-    std::ofstream procFile ("procPlot.plot", std::ofstream::out);
+    std::ofstream procFile("procPlot.plot", std::ofstream::out);
     procFile << procs << "\n";
     procFile.close();
 
@@ -1850,8 +1852,8 @@ protected:
     std::ofstream mm("2d.txt");
     file += Teuchos::toString<int>(comm_->getRank()) + exten;
     std::ofstream ff(file.c_str());
-    //ff.seekg (0, ff.end);
-    std::vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
+    //ff.seekg(0, ff.end);
+    std::vector<Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
 
     for (part_t i = 0; i < this->ntasks;++i){
       outPartBoxes[i].writeGnuPlot(ff, mm);
@@ -1918,9 +1920,9 @@ public:
 
 
   virtual ~CoordinateTaskMapper(){
-    //freeArray<part_t> (proc_to_task_xadj);
-    //freeArray<part_t> (proc_to_task_adj);
-    //freeArray<part_t> (task_to_proc);
+    //freeArray<part_t>(proc_to_task_xadj);
+    //freeArray<part_t>(proc_to_task_adj);
+    //freeArray<part_t>(task_to_proc);
     if(this->isOwnerofModel){
       delete this->proc_task_comm;
     }
@@ -1930,7 +1932,7 @@ public:
       const lno_t num_local_coords,
       const part_t *local_coord_parts,
       const ArrayRCP<part_t> task_to_proc_){
-    local_task_to_rank = ArrayRCP <part_t> (num_local_coords);
+    local_task_to_rank = ArrayRCP <part_t>(num_local_coords);
 
     for (lno_t i = 0; i < num_local_coords; ++i){
       part_t local_coord_part = local_coord_parts[i];
@@ -1960,7 +1962,7 @@ public:
       bool is_input_adapter_distributed = true,
       int num_ranks_per_node = 1,
       bool divide_to_prime_first = false, bool reduce_best_mapping = true):
-        PartitionMapping<Adapter> (comm_, machine_, input_adapter_, soln_, envConst),
+        PartitionMapping<Adapter>(comm_, machine_, input_adapter_, soln_, envConst),
         proc_to_task_xadj(0),
         proc_to_task_adj(0),
         task_to_proc(0),
@@ -1983,7 +1985,7 @@ public:
 
     RCP<const Environment> envConst_ = envConst;
 
-    RCP<const ctm_base_adapter_t> baseInputAdapter_ (
+    RCP<const ctm_base_adapter_t> baseInputAdapter_(
         rcp(dynamic_cast<const ctm_base_adapter_t *>(input_adapter_.getRawPtr()), false));
 
     modelFlag_t coordFlags_, graphFlags_;
@@ -2026,8 +2028,8 @@ public:
     //if we have machine extent,
     //if the machine has wrap-around links, we would like to shift the coordinates,
     //so that the largest hap would be the wrap-around.
-    std::vector <int> machine_extent_vec (procDim);
-    //std::vector <bool> machine_extent_wrap_around_vec(procDim, 0);
+    std::vector<int> machine_extent_vec(procDim);
+    //std::vector<bool> machine_extent_wrap_around_vec(procDim, 0);
     int *machine_extent = &(machine_extent_vec[0]);
     bool *machine_extent_wrap_around = new bool[procDim];
     for (int i = 0; i < procDim; ++i)machine_extent_wrap_around[i] = false;
@@ -2041,7 +2043,7 @@ public:
     // MD: Yes, I ADDED BELOW:
     if (machine_->getMachineExtent(machine_extent)) {
       procCoordinates =
-          this->shiftMachineCoordinates (
+          this->shiftMachineCoordinates(
               procDim,
               machine_extent,
               machine_extent_wrap_around,
@@ -2056,7 +2058,7 @@ public:
 
 
     this->ntasks = soln_->getActualGlobalNumberOfParts();
-    if (part_t (soln_->getTargetGlobalNumberOfParts()) > this->ntasks){
+    if (part_t(soln_->getTargetGlobalNumberOfParts()) > this->ntasks){
       this->ntasks = soln_->getTargetGlobalNumberOfParts();
     }
     this->solution_parts = soln_->getPartListView();
@@ -2090,7 +2092,7 @@ public:
 
     //create the part graph
     if (graph_model_.getRawPtr() != NULL){
-      getCoarsenedPartGraph<Adapter, t_scalar_t, part_t> (
+      getCoarsenedPartGraph<Adapter, t_scalar_t, part_t>(
           envConst.getRawPtr(),
           ia_comm.getRawPtr(),
           graph_model_.getRawPtr(),
@@ -2227,7 +2229,7 @@ public:
       bool is_input_adapter_distributed = true,
       int num_ranks_per_node = 1,
       bool divide_to_prime_first = false, bool reduce_best_mapping = true):
-        PartitionMapping<Adapter> (comm_, machine_, input_adapter_, num_parts_, result_parts, envConst),
+        PartitionMapping<Adapter>(comm_, machine_, input_adapter_, num_parts_, result_parts, envConst),
         proc_to_task_xadj(0),
         proc_to_task_adj(0),
         task_to_proc(0),
@@ -2249,7 +2251,7 @@ public:
     }
     RCP<const Environment> envConst_ = envConst;
 
-    RCP<const ctm_base_adapter_t> baseInputAdapter_ (
+    RCP<const ctm_base_adapter_t> baseInputAdapter_(
         rcp(dynamic_cast<const ctm_base_adapter_t *>(input_adapter_.getRawPtr()), false));
 
     modelFlag_t coordFlags_, graphFlags_;
@@ -2292,8 +2294,8 @@ public:
     //if we have machine extent,
     //if the machine has wrap-around links, we would like to shift the coordinates,
     //so that the largest hap would be the wrap-around.
-    std::vector <int> machine_extent_vec (procDim);
-    //std::vector <bool> machine_extent_wrap_around_vec(procDim, 0);
+    std::vector<int> machine_extent_vec(procDim);
+    //std::vector<bool> machine_extent_wrap_around_vec(procDim, 0);
     int *machine_extent = &(machine_extent_vec[0]);
     bool *machine_extent_wrap_around = new bool[procDim];
     machine_->getMachineExtentWrapArounds(machine_extent_wrap_around);
@@ -2306,7 +2308,7 @@ public:
     // MD: Yes, I ADDED BELOW:
     if (machine_->getMachineExtent(machine_extent)) {
       procCoordinates =
-          this->shiftMachineCoordinates (
+          this->shiftMachineCoordinates(
               procDim,
               machine_extent,
               machine_extent_wrap_around,
@@ -2352,7 +2354,7 @@ public:
     envConst->timerStart(MACRO_TIMERS, "GRAPHCREATE");
     //create the part graph
     if (graph_model_.getRawPtr() != NULL){
-      getCoarsenedPartGraph<Adapter, t_scalar_t, part_t> (
+      getCoarsenedPartGraph<Adapter, t_scalar_t, part_t>(
           envConst.getRawPtr(),
           ia_comm.getRawPtr(),
           graph_model_.getRawPtr(),
@@ -2544,7 +2546,7 @@ public:
       bool divide_to_prime_first = false, bool reduce_best_mapping = true
   ):  PartitionMapping<Adapter>(
       Teuchos::rcpFromRef<const Teuchos::Comm<int> >(*problemComm),
-      Teuchos::rcpFromRef<const Environment> (*env_const_)),
+      Teuchos::rcpFromRef<const Environment>(*env_const_)),
       proc_to_task_xadj(0),
       proc_to_task_adj(0),
       task_to_proc(0),
@@ -2560,7 +2562,7 @@ public:
 
     if (machine_dimensions){
       virtual_machine_coordinates =
-          this->shiftMachineCoordinates (
+          this->shiftMachineCoordinates(
               proc_dim,
               machine_dimensions,
               wrap_arounds,
@@ -2900,17 +2902,17 @@ void coordinateTaskMapperInterface(
   // default Node.
   typedef Tpetra::MultiVector<tcoord_t, part_t, part_t> tMVector_t;
 
-  Teuchos::ArrayRCP<part_t> task_communication_xadj (task_comm_xadj, 0, num_tasks+1, false);
+  Teuchos::ArrayRCP<part_t> task_communication_xadj(task_comm_xadj, 0, num_tasks+1, false);
 
   Teuchos::ArrayRCP<part_t> task_communication_adj;
   if (task_comm_xadj){
-    Teuchos::ArrayRCP<part_t> tmp_task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks], false);
+    Teuchos::ArrayRCP<part_t> tmp_task_communication_adj(task_comm_adj, 0, task_comm_xadj[num_tasks], false);
     task_communication_adj = tmp_task_communication_adj;
   }
 
 
-  CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t> *ctm =
-      new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, part_t>(
+  CoordinateTaskMapper<XpetraMultiVectorAdapter<tMVector_t>, part_t> *ctm =
+      new CoordinateTaskMapper<XpetraMultiVectorAdapter<tMVector_t>, part_t>(
       envConst_,
       problemComm.getRawPtr(),
       proc_dim,
@@ -2956,7 +2958,7 @@ inline void visualize_mapping(int myRank,
   std::string rankStr = Teuchos::toString<int>(myRank);
   std::string gnuPlots = "gnuPlot", extentionS = ".plot";
   std::string outF = gnuPlots + rankStr+ extentionS;
-  std::ofstream gnuPlotCode ( outF.c_str(), std::ofstream::out);
+  std::ofstream gnuPlotCode( outF.c_str(), std::ofstream::out);
 
   if (machine_coord_dim != 3) {
     std::cerr << "Mapping Write is only good for 3 dim" << std::endl;
@@ -2993,17 +2995,17 @@ inline void visualize_mapping(int myRank,
       int neighbor_rank = task_to_rank[neighbor_task];
 
       for(int j = 0; j <  machine_coord_dim; ++j){
-        if (int (machine_coords[j][origin_rank]) != int (machine_coords[j][neighbor_rank])){
+        if (int(machine_coords[j][origin_rank]) != int(machine_coords[j][neighbor_rank])){
           differentnode = true; break;
         }
       }
-      std::tuple<int,int,int, int, int, int> foo (
-          (int) (machine_coords[0][origin_rank]),
-          (int)  (machine_coords[1][origin_rank]),
-          (int) (machine_coords[2][origin_rank]),
-          (int) (machine_coords[0][neighbor_rank]),
-          (int) (machine_coords[1][neighbor_rank]),
-          (int) (machine_coords[2][neighbor_rank]));
+      std::tuple<int,int,int, int, int, int> foo(
+          (int)(machine_coords[0][origin_rank]),
+          (int)(machine_coords[1][origin_rank]),
+          (int)(machine_coords[2][origin_rank]),
+          (int)(machine_coords[0][neighbor_rank]),
+          (int)(machine_coords[1][neighbor_rank]),
+          (int)(machine_coords[2][neighbor_rank]));
 
 
       if (differentnode && my_arrows.find(foo) == my_arrows.end()){
@@ -3023,7 +3025,7 @@ inline void visualize_mapping(int myRank,
     }
   }
 
-  std::ofstream procFile ("procPlot.plot", std::ofstream::out);
+  std::ofstream procFile("procPlot.plot", std::ofstream::out);
   procFile << procs << "\n";
   procFile.close();
 

@@ -36,24 +36,17 @@
 
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
+#include <stk_search/BoostRTreeInterface.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/timer.hpp>
-#include <boost/math/special_functions/fpclassify.hpp> //for isnan
-#include <boost/utility/enable_if.hpp>
-
-#include <stk_search/CoarseSearchGeometryToolkit.hpp>
-
-#include <vector>
+#include <assert.h> // for static_assert
+#include <cmath>    // for isnan
+#include <vector>   // for vector
 #include <utility>
 
 namespace boost {
@@ -67,20 +60,16 @@ template <typename T> struct point_type< stk::search::Box<T> > { typedef stk::se
 template <typename T, size_t Index>
 struct indexed_access< stk::search::Box<T>, min_corner, Index >
 {
-  BOOST_STATIC_ASSERT((Index < 3));
+  static_assert((Index < 3)," Index is required to be less than 3");
   static inline T const& get( stk::search::Box<T> const& s) { return s.min_corner()[Index]; }
 };
-
-
-
 
 template <typename T, size_t Index>
 struct indexed_access< stk::search::Box<T>, max_corner, Index >
 {
-  BOOST_STATIC_ASSERT((Index < 3));
+  static_assert((Index < 3)," Index is required to be less than 3");
   static inline T const& get( stk::search::Box<T> const& s) { return s.max_corner()[Index]; }
 };
-
 
 }}} // namespace boost::geometry::traits
 
@@ -96,7 +85,7 @@ template <typename T> struct dimension< stk::search::Point<T> > : public boost::
 template <typename T, size_t Index>
 struct access< stk::search::Point<T>, Index >
 {
-  BOOST_STATIC_ASSERT((Index < 3));
+  static_assert((Index < 3)," Index is required to be less than 3");
   static inline T const& get( stk::search::Point<T> const& p) { return p[Index]; }
   static inline void set( stk::search::Point<T> const& p, T const& v) { p[Index] = v; }
 };
@@ -112,19 +101,18 @@ template <typename T> struct point_type< stk::search::Sphere<T> > { typedef stk:
 template <typename T, size_t Index>
 struct indexed_access< stk::search::Sphere<T>, min_corner, Index >
 {
-  BOOST_STATIC_ASSERT((Index < 3));
+  static_assert((Index < 3)," Index is required to be less than 3");
   static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] - s.radius(); }
 };
 
 template <typename T, size_t Index>
 struct indexed_access< stk::search::Sphere<T>, max_corner, Index >
 {
-  BOOST_STATIC_ASSERT((Index < 3));
+  static_assert((Index < 3)," Index is required to be less than 3");
   static inline T const get( stk::search::Sphere<T> const& s) { return s.center()[Index] + s.radius(); }
 };
 
 }}} // namespace boost::geometry::traits
-
 
 
 namespace stk { namespace search {
@@ -139,7 +127,7 @@ struct fill_point_array
   {
     namespace bg = boost::geometry;
 
-    BOOST_STATIC_ASSERT(Index < Dimension);
+    static_assert(Index < Dimension, "Index is required to be less than Dimension");
 
     *itr = bg::get<Index>(p);
     ++itr;
@@ -164,7 +152,7 @@ struct set_point_impl
   {
     namespace bg = boost::geometry;
 
-    BOOST_STATIC_ASSERT(Index < Dimension);
+    static_assert(Index < Dimension, "Index is required to be less than Dimension");
 
     bg::set<Index>(p, *itr);
     ++itr;
@@ -182,14 +170,14 @@ struct set_point_impl<Point, Dimension, Dimension>
 };
 
 template <typename Point, typename InputIterator>
-typename boost::enable_if< boost::is_same< typename boost::geometry::traits::tag<Point>::type, boost::geometry::point_tag>, void>::type
+typename boost::enable_if< std::is_same< typename boost::geometry::traits::tag<Point>::type, boost::geometry::point_tag>, void>::type
 fill_array(Point const& point, InputIterator itr)
 {
   fill_point_array<Point>()(point, itr);
 }
 
 template <typename Box, typename InputIterator>
-typename boost::enable_if< boost::is_same< typename boost::geometry::traits::tag<Box>::type, boost::geometry::box_tag>, void>::type
+typename boost::enable_if< std::is_same< typename boost::geometry::traits::tag<Box>::type, boost::geometry::box_tag>, void>::type
 fill_array(Box const& box, InputIterator itr)
 {
   namespace bg = boost::geometry;
@@ -199,14 +187,14 @@ fill_array(Box const& box, InputIterator itr)
 }
 
 template <typename Point, typename Iterator>
-typename boost::enable_if< boost::is_same< typename boost::geometry::traits::tag<Point>::type, boost::geometry::point_tag>, void>::type
+typename boost::enable_if< std::is_same< typename boost::geometry::traits::tag<Point>::type, boost::geometry::point_tag>, void>::type
 set_point(Point & point, Iterator itr)
 {
   set_point_impl<Point>()(point, itr);
 }
 
 template <typename Box, typename Iterator>
-typename boost::enable_if< boost::is_same< typename boost::geometry::traits::tag<Box>::type, boost::geometry::box_tag>, void>::type
+typename boost::enable_if< std::is_same< typename boost::geometry::traits::tag<Box>::type, boost::geometry::box_tag>, void>::type
 set_box(Box & box, Iterator itr)
 {
   namespace bg = boost::geometry;
@@ -249,16 +237,14 @@ struct IntersectPredicate
 
 } // namespace impl
 
-using boost::math::isnan;
-
 template <typename CoordType, int Dimension>
 inline
 bool invalid_box(CoordType *raw_box)
 {
   bool retval = false;
   for (int i = 0; i < Dimension; ++i)  {
-    retval |= isnan(raw_box[i]);
-    retval |= isnan(raw_box[i + Dimension]);
+    retval |= std::isnan(raw_box[i]);
+    retval |= std::isnan(raw_box[i + Dimension]);
     retval |= ((raw_box[i + Dimension] - raw_box[i]) < 0);
   }
   return retval;

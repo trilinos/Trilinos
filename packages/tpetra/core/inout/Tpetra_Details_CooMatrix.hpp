@@ -287,7 +287,7 @@ public:
 
     int numPacketsForCount = 0; // output argument of countPackTriplesCount
     {
-      const int errCode =
+      errCode =
         countPackTriplesCount (comm, numPacketsForCount, errStrm);
       if (errCode != 0) {
         if (errStrm != NULL) {
@@ -307,7 +307,7 @@ public:
 
     int numPacketsForTriples = 0; // output argument of countPackTriples
     {
-      const int errCode = countPackTriples<SC, GO> (numEnt, comm, numPacketsForTriples);
+      errCode = countPackTriples<SC, GO> (numEnt, comm, numPacketsForTriples);
       TEUCHOS_TEST_FOR_EXCEPTION
         (errCode != 0, std::runtime_error, prefix << "countPackTriples "
          "returned errCode = " << errCode << " != 0.");

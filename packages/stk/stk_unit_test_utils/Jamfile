@@ -47,22 +47,59 @@ project votd
   : build-dir $(stk_unit_test_utils-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+    ;
+
 #
 # SECTION 2: Development install
 #
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
-alias install-targets ;
-
+alias install-targets
+  : $(installed-end-user-files)
+    $(installed-developer-files)
+  ;
 
 #
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                          install-user-src install-user-include install-user-lib ;
+                         install-user-src
+                         install-user-include
+                         install-user-lib
+                         install-user-bin  ;
+
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
+explicit install-user-bin ;
+install install-user-bin
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Executables listed here will only installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittest to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -102,11 +139,8 @@ lib stk_unit_test_utils
   :
     [ ifdevbuild
       [ glob $(stk_unit_test_utils-root)/*.cpp ]
-      /sierra/stk_util//stk_util_util
       /sierra/stk_io//stk_io
       /tpl/gtest//gtest
-      /tpl/trilinos-kokkoscore//kokkoscore
-      /mpi//mpi
     ]
   : 
     [ ifuserbuild
@@ -122,9 +156,6 @@ lib stk_unit_main
     [ ifdevbuild
       [ glob $(stk_unit_test_utils-root)/unit_main_lib/*.cpp ]
       stk_unit_test_utils
-      /sierra/stk_util//stk_util_util
-      /tpl/gtest//gtest
-      /mpi//mpi
     ]
   : 
     [ ifuserbuild

@@ -96,11 +96,6 @@ class DummyFieldEvaluator
       const Teuchos::ParameterList& p);
 
     void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
     evaluateFields(
       typename Traits::EvalData d);
 
@@ -131,13 +126,6 @@ DummyFieldEvaluator(
 template<typename EvalT, typename Traits>
 void
 DummyFieldEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{ this->utils.setFieldData(fieldValue,fm); }
-template<typename EvalT, typename Traits>
-void
-DummyFieldEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
 { 
@@ -160,11 +148,6 @@ class RefCoordEvaluator
 
     RefCoordEvaluator(
       const Teuchos::ParameterList& p);
-
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
 
     void
     evaluateFields(
@@ -198,13 +181,6 @@ RefCoordEvaluator(
   std::string n = "RefCoordEvaluator: " + name;
   this->setName(n);
 }
-template<typename EvalT, typename Traits>
-void
-RefCoordEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
-{ this->utils.setFieldData(fieldValue,fm); }
 template<typename EvalT, typename Traits>
 void
 RefCoordEvaluator<EvalT, Traits>::
@@ -273,20 +249,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      = Teuchos::rcp(new panzer::BasisValues2<double>("",true,true));
   basisValues->setupArrays(basisLayout);
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
-
-  {
-    Kokkos::DynRankView<double,PHX::Device> coords("coords",numCells,numVerts,dim);
-
-    coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-    coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-    coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-    coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
-  
-    coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-    coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-    coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-    coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
-  }
 
   // construct workset
   workset->cell_local_ids.push_back(0); workset->cell_local_ids.push_back(1);

@@ -50,6 +50,8 @@
 
 // Kokkos includes
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_BufferMacros.hpp"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
@@ -309,11 +311,6 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 } // namespace Details
 } // namespace Tpetra
 
-namespace Tpetra {
-  template <class S, class L, class G, class N> class MultiVector;
-  template <class S, class L, class G, class N> class Vector;
-}
-
 namespace Kokkos {
   template <class S, class L, class G, class N>
   size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N>& mv) {
@@ -322,8 +319,13 @@ namespace Kokkos {
     typedef typename dual_view_type::t_dev device_type;
     typedef typename dual_view_type::t_host host_type;
     dual_view_type dual_view = mv.getDualView();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (dual_view.modified_host() > dual_view.modified_device())
       return dimension_scalar(dual_view.template view<device_type>());
+#else
+    if ( dual_view.need_sync_device() )
+    { return dimension_scalar(dual_view.template view<device_type>()); }
+#endif
     return dimension_scalar(dual_view.template view<host_type>());
   }
 
@@ -334,8 +336,13 @@ namespace Kokkos {
     typedef typename dual_view_type::t_dev device_type;
     typedef typename dual_view_type::t_host host_type;
     dual_view_type dual_view = v.getDualView();
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     if (dual_view.modified_host() > dual_view.modified_device())
       return dimension_scalar(dual_view.template view<device_type>());
+#else
+    if ( dual_view.need_sync_device() )
+    { return dimension_scalar(dual_view.template view<device_type>()); }
+#endif
     return dimension_scalar(dual_view.template view<host_type>());
   }
 }

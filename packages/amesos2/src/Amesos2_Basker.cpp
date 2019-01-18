@@ -43,11 +43,6 @@
 
 #include "Amesos2_Basker_decl.hpp"
 
-
-#ifdef SHYLU_NODEBASKER
-#pragma message("SHYLU_NODEBASKER FLAG EXISTS")
-#endif
-
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #include "Amesos2_Basker_def.hpp"

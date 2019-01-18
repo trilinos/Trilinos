@@ -95,16 +95,16 @@ namespace Thyra {
     typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
     typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
     typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
-    typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>    XpCrsMatWrap;
     typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpBlockedCrsMat;
     typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>      XpMultVec;
-    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node>      XpMultVecDouble;
     typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
     typedef Thyra::DiagonalLinearOpBase<Scalar>                              ThyDiagLinOpBase;
 #ifdef HAVE_MUELU_TPETRA
     typedef Thyra::TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThyTpLinOp;
 #endif
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec")));
 
     // Check precondition
     TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
@@ -189,15 +189,21 @@ namespace Thyra {
     if (startingOver == true) {
       // extract coordinates from parameter list
       Teuchos::RCP<XpMultVecDouble> coordinates = Teuchos::null;
-      coordinates = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ExtractCoordinatesFromParameterList(paramList);
-      paramList.set<RCP<XpMultVecDouble> >("Coordinates", coordinates);
+      {
+        Teuchos::TimeMonitor tM_coords(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec get coords")));
+        coordinates = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ExtractCoordinatesFromParameterList(paramList);
+        paramList.set<RCP<XpMultVecDouble> >("Coordinates", coordinates);
+      }
 
       // TODO check for Xpetra or Thyra vectors?
 #ifdef HAVE_MUELU_TPETRA
       if (bIsTpetra) {
+        typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>      tV;
         typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tMV;
         typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>      TpCrsMat;
+        Teuchos::TimeMonitor tMwrap(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap objects")));
         if (paramList.isType<Teuchos::RCP<tMV> >("Nullspace")) {
+          Teuchos::TimeMonitor tM_nullspace(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap nullspace")));
           RCP<tMV> tpetra_nullspace = paramList.get<RCP<tMV> >("Nullspace");
           paramList.remove("Nullspace");
           RCP<XpMultVec> nullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tpetra_nullspace);
@@ -207,11 +213,13 @@ namespace Thyra {
 
         if (paramList.isParameter("M1")) {
           if (paramList.isType<Teuchos::RCP<TpCrsMat> >("M1")) {
+            Teuchos::TimeMonitor tM_M1(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap M1")));
             RCP<TpCrsMat> tM1 = paramList.get<RCP<TpCrsMat> >("M1");
             paramList.remove("M1");
             RCP<XpCrsMat> xM1 = rcp_dynamic_cast<XpCrsMat>(tM1, true);
             paramList.set<RCP<XpCrsMat> >("M1", xM1);
           } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("M1")) {
+            Teuchos::TimeMonitor tM_M1(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap M1")));
             RCP<const ThyLinOpBase> thyM1 = paramList.get<RCP<const ThyLinOpBase> >("M1");
             paramList.remove("M1");
             RCP<const XpCrsMat> crsM1 = XpThyUtils::toXpetra(thyM1);
@@ -222,17 +230,22 @@ namespace Thyra {
             // wrap as an Xpetra::Matrix that MueLu can work with
             RCP<XpMat> M1 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsM1NonConst));
             paramList.set<RCP<XpMat> >("M1", M1);
-          }
+          } else if (paramList.isType<Teuchos::RCP<XpMat> >("M1")) {
+            // do nothing
+          } else
+            TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M1 has wrong type.");
         }  else
           TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M1.");
 
         if (paramList.isParameter("D0")) {
           if (paramList.isType<Teuchos::RCP<TpCrsMat> >("D0")) {
+            Teuchos::TimeMonitor tM_D0(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap D0")));
             RCP<TpCrsMat> tD0 = paramList.get<RCP<TpCrsMat> >("D0");
             paramList.remove("D0");
             RCP<XpCrsMat> xD0 = rcp_dynamic_cast<XpCrsMat>(tD0, true);
             paramList.set<RCP<XpCrsMat> >("D0", xD0);
           } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("D0")) {
+            Teuchos::TimeMonitor tM_D0(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap D0")));
             RCP<const ThyLinOpBase> thyD0 = paramList.get<RCP<const ThyLinOpBase> >("D0");
             paramList.remove("D0");
             RCP<const XpCrsMat> crsD0 = XpThyUtils::toXpetra(thyD0);
@@ -243,44 +256,30 @@ namespace Thyra {
             // wrap as an Xpetra::Matrix that MueLu can work with
             RCP<XpMat> D0 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsD0NonConst));
             paramList.set<RCP<XpMat> >("D0", D0);
-          }
+          } else if (paramList.isType<Teuchos::RCP<XpMat> >("D0")) {
+            // do nothing
+          } else
+            TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter D0 has wrong type.");
         } else
           TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix D0.");
 
         if (paramList.isParameter("M0inv")) {
           if (paramList.isType<Teuchos::RCP<TpCrsMat> >("M0inv")) {
+            Teuchos::TimeMonitor tM_M0inv(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap M0inv")));
             RCP<TpCrsMat> tM0inv = paramList.get<RCP<TpCrsMat> >("M0inv");
             paramList.remove("M0inv");
             RCP<XpCrsMat> xM0inv = rcp_dynamic_cast<XpCrsMat>(tM0inv, true);
             paramList.set<RCP<XpCrsMat> >("M0inv", xM0inv);
           } else if (paramList.isType<Teuchos::RCP<const ThyDiagLinOpBase> >("M0inv")) {
+            Teuchos::TimeMonitor tM_M0inv(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap M0inv")));
             RCP<const ThyDiagLinOpBase> thyM0inv = paramList.get<RCP<const ThyDiagLinOpBase> >("M0inv");
             paramList.remove("M0inv");
-
-            RCP<const Teuchos::Comm<int> > comm = A->getDomainMap()->getComm();
-            RCP<XpMap> map = XpThyUtils::toXpetra(thyM0inv->range(), comm);
             RCP<const Thyra::VectorBase<Scalar> > diag = thyM0inv->getDiag();
-            RCP<XpCrsMatWrap> matrixWrap = Teuchos::rcp(new XpCrsMatWrap(map, map, 0, Xpetra::StaticProfile));
-            RCP<XpCrsMat> crsMatrix = matrixWrap->getCrsMatrix();
-            Teuchos::ArrayRCP<size_t> rowPtr;
-            Teuchos::ArrayRCP<LocalOrdinal> colInd;
-            Teuchos::ArrayRCP<Scalar> values;
-
-            RTOpPack::SubVectorView<Scalar> view;
-            size_t nodeNumElements = map->getNodeNumElements();
-            diag->acquireDetachedView(Thyra::Range1D(),&view);
-            crsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
-            for (size_t i = 0; i < nodeNumElements; i++) {
-              rowPtr[i] = i;  colInd[i] = i; values[i] = view[i];
-            }
-            diag->releaseDetachedView(&view);
-
-            rowPtr[nodeNumElements] = nodeNumElements;
-            crsMatrix->setAllValues(rowPtr, colInd, values);
-            crsMatrix->expertStaticFillComplete(map, map);
-            RCP<XpMat> M0inv = Teuchos::rcp_dynamic_cast<XpMat>(matrixWrap);
+            RCP<const tV> tDiag = Thyra::TpetraOperatorVectorExtraction<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstTpetraVector(diag);
+            RCP<XpMat> M0inv = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Xpetra::toXpetra(tDiag));
             paramList.set<RCP<XpMat> >("M0inv", M0inv);
           } else if (paramList.isType<Teuchos::RCP<const ThyLinOpBase> >("M0inv")) {
+            Teuchos::TimeMonitor tM_M0inv(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec wrap M0inv")));
             RCP<const ThyLinOpBase> thyM0inv = paramList.get<RCP<const ThyLinOpBase> >("M0inv");
             paramList.remove("M0inv");
             RCP<const XpCrsMat> crsM0inv = XpThyUtils::toXpetra(thyM0inv);
@@ -291,15 +290,22 @@ namespace Thyra {
             // wrap as an Xpetra::Matrix that MueLu can work with
             RCP<XpMat> M0inv = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsM0invNonConst));
             paramList.set<RCP<XpMat> >("M0inv", M0inv);
-          }
+          } else if (paramList.isType<Teuchos::RCP<XpMat> >("M0inv")) {
+            // do nothing
+          } else
+            TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M0inv has wrong type.");
         } else
           TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Need to specify matrix M0inv.");
         
       }
 #endif
 
-      // build a new MueLu RefMaxwell preconditioner
-      preconditioner = rcp(new MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, paramList, true));
+      {
+        // build a new MueLu RefMaxwell preconditioner
+        Teuchos::TimeMonitor tMbuild(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLuRefMaxwell::initializePrec build prec")));
+        paramList.set<bool>("refmaxwell: use as preconditioner", true);
+        preconditioner = rcp(new MueLu::RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A, paramList, true));
+      }
 
     } else {
       // reuse old MueLu preconditioner stored in MueLu Xpetra operator and put in new matrix

@@ -178,8 +178,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::absImpl(
     tpetraVector_.getNonconstObj()->abs(*tx);
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+    tpetraVector_.getNonconstObj()->modify_host ();
+#endif
     VectorDefaultBase<Scalar>::absImpl(x);
   }
 }
@@ -198,8 +203,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reciprocalImpl(
     tpetraVector_.getNonconstObj()->reciprocal(*tx);
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+    tpetraVector_.getNonconstObj()->modify_host ();
+#endif
     VectorDefaultBase<Scalar>::reciprocalImpl(x);
   }
 }
@@ -220,8 +230,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::eleWiseScaleImpl(
       ST::one(), *tx, *tpetraVector_.getConstObj(), ST::zero());
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+    tpetraVector_.getNonconstObj()->modify_host ();
+#endif
     VectorDefaultBase<Scalar>::eleWiseScaleImpl(x);
   }
 }
@@ -247,7 +262,11 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2WeightedImpl(
     return ST::magnitude(ST::squareroot(tpetraVector_.getConstObj()->dot(*temp)));
   } else {
     // This version will require the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+#endif
     return VectorDefaultBase<Scalar>::norm2WeightedImpl(x);
   }
 }
@@ -267,7 +286,11 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyOpImpl(
     auto tv = this->getConstTpetraVector(Teuchos::rcpFromPtr(*itr));
     if (nonnull(tv)) {
       typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       Teuchos::rcp_const_cast<TV>(tv)->template sync<Kokkos::HostSpace>();
+#else
+      Teuchos::rcp_const_cast<TV>(tv)->sync_host ();
+#endif
     }
   }
 
@@ -275,8 +298,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyOpImpl(
   for (auto itr = targ_vecs.begin(); itr != targ_vecs.end(); ++itr) {
     auto tv = this->getTpetraVector(Teuchos::rcpFromPtr(*itr));
     if (nonnull(tv)) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
       tv->template sync<Kokkos::HostSpace>();
       tv->template modify<Kokkos::HostSpace>();
+#else
+      tv->sync_host ();
+      tv->modify_host ();
+#endif
     }
   }
 
@@ -293,8 +321,13 @@ acquireDetachedVectorViewImpl(
 {
   // Only viewing data, so just sync dual view to host space
   typedef typename Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   Teuchos::rcp_const_cast<TV>(
     tpetraVector_.getConstObj())->template sync<Kokkos::HostSpace>();
+#else
+  Teuchos::rcp_const_cast<TV>(
+    tpetraVector_.getConstObj())->sync_host ();
+#endif
 
   SpmdVectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng, sub_vec);
 }
@@ -308,8 +341,13 @@ acquireNonconstDetachedVectorViewImpl(
   )
 {
   // Sync to host and mark as modified
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
   tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+  tpetraVector_.getNonconstObj()->sync_host ();
+  tpetraVector_.getNonconstObj()->modify_host ();
+#endif
 
   SpmdVectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(rng, sub_vec);
 }
@@ -352,8 +390,13 @@ assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
     tpetraVector_.getNonconstObj()->assign(*tmv);
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+    tpetraVector_.getNonconstObj()->modify_host ();
+#endif
     MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(mv);
   }
 }
@@ -381,8 +424,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImpl(
     tpetraVector_.getNonconstObj()->update(alpha, *tmv, ST::one());
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host();
+    tpetraVector_.getNonconstObj()->modify_host();
+#endif
     MultiVectorDefaultBase<Scalar>::updateImpl(alpha, mv);
   }
 }
@@ -460,8 +508,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationImpl
     }
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+    tpetraVector_.getNonconstObj()->modify_host ();
+#endif
     MultiVectorDefaultBase<Scalar>::linearCombinationImpl(alpha, mv, beta);
   }
 }
@@ -481,8 +534,13 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dotsImpl(
     tpetraVector_.getConstObj()->dot(*tmv, prods);
   } else {
     // This version will require/modify the host view of this vector.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     tpetraVector_.getNonconstObj()->template sync<Kokkos::HostSpace>();
     tpetraVector_.getNonconstObj()->template modify<Kokkos::HostSpace>();
+#else
+    tpetraVector_.getNonconstObj()->sync_host ();
+    tpetraVector_.getNonconstObj()->modify_host ();
+#endif
     MultiVectorDefaultBase<Scalar>::dotsImpl(mv, prods);
   }
 }
@@ -563,7 +621,11 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
     Y_tpetra->template modify<execution_space>();
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraVector_.getConstObj(), *X_tpetra, beta);
   } else {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->template sync<Kokkos::HostSpace>();
+#else
+    Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->sync_host ();
+#endif
     VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
   }
 

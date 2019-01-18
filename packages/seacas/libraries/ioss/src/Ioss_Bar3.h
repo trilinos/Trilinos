@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,10 +43,11 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "bar3";
+    static constexpr const char *name = "bar3";
 
     static void factory();
     ~Bar3() override;
+    Bar3(const Bar3 &) = delete;
 
     ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
@@ -75,8 +76,6 @@ namespace Ioss {
 
   private:
     static Bar3 instance_;
-
-    Bar3(const Bar3 &); // Do not implement
   };
 } // namespace Ioss
 

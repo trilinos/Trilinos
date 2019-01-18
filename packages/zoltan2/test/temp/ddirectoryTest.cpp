@@ -394,10 +394,40 @@ bool IDs<id_t>::ZoltanDDTest()
 //////////////////////////////////////////////////////////////////////////////
 int main(int narg, char **arg)
 {
-  Teuchos::GlobalMPISession mpiSession(&narg,&arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = 
-                     Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
+  // Test with contiguous IDs of default Tpetra GO type
+  {
+    size_t nIds = 5;        // Number of IDs per processor
+    float fracShared = 0.2; // Fraction of IDs that should be shared
+    size_t idBase = 0;      // Smallest possible ID
+    int idStride = 1;       // Offset between IDs; 1 gives contiguous numbering
+
+    typedef Tpetra::Map<>::global_ordinal_type gno_t;
+    IDs<gno_t> myIds(nIds, fracShared, idBase, idStride, comm);
+
+    myIds.TpetraDDTest();
+
+    myIds.ZoltanDDTest();
+  }
+
+  // Test with non-contiguous IDs of default Tpetra GO starting at 20
+  {
+    size_t nIds = 5;        // Number of IDs per processor
+    float fracShared = 0.2; // Fraction of IDs that should be shared
+    size_t idBase = 20;      // Smallest possible ID
+    int idStride = 3;       // Offset between IDs; 1 gives contiguous numbering
+
+    typedef Tpetra::Map<>::global_ordinal_type gno_t;
+    IDs<gno_t> myIds(nIds, fracShared, idBase, idStride, comm);
+
+    myIds.TpetraDDTest();
+
+    myIds.ZoltanDDTest();
+  }
+
+#ifdef HAVE_TPETRA_INT_INT
   // Test with contiguous integer IDs
   {
     size_t nIds = 5;        // Number of IDs per processor
@@ -425,6 +455,7 @@ int main(int narg, char **arg)
 
     myIds.ZoltanDDTest();
   }
+#endif
 
 #ifdef HAVE_TPETRA_INT_LONG_LONG
   // Test with non-contiguous long long IDs starting at 200

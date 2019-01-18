@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -118,8 +118,7 @@ namespace Ioex {
 
   void update_last_time_attribute(int exodusFilePtr, double value)
   {
-    char        errmsg[MAX_ERR_LENGTH];
-    const char *routine = "Ioex::Utils::update_last_time_attribute()";
+    char errmsg[MAX_ERR_LENGTH];
 
     double tmp    = 0.0;
     int    rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
@@ -131,7 +130,7 @@ namespace Ioex {
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
                 exodusFilePtr);
-        ex_err(routine, errmsg, status);
+        ex_err_fn(exodusFilePtr, __func__, errmsg, status);
       }
     }
   }
@@ -156,12 +155,11 @@ namespace Ioex {
         found  = true;
       }
       else {
-        char        errmsg[MAX_ERR_LENGTH];
-        const char *routine = "Ioex::Utils::read_last_time_attribute()";
+        char errmsg[MAX_ERR_LENGTH];
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to read last_written_time attribute from file id %d",
                 exodusFilePtr);
-        ex_err(routine, errmsg, status);
+        ex_err_fn(exodusFilePtr, __func__, errmsg, status);
         found = false;
       }
     }
@@ -204,12 +202,11 @@ namespace Ioex {
         }
       }
       else {
-        char        errmsg[MAX_ERR_LENGTH];
-        const char *routine = "Internals::check_processor_info()";
+        char errmsg[MAX_ERR_LENGTH];
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to read processor info attribute from file id %d",
                 exodusFilePtr);
-        ex_err(routine, errmsg, status);
+        ex_err_fn(exodusFilePtr, __func__, errmsg, status);
         return (EX_FATAL) != 0;
       }
     }
@@ -313,7 +310,7 @@ namespace Ioex {
     std::size_t found  = str_id.find_first_not_of("0123456789");
     if (found == std::string::npos) {
       // All digits...
-      return std::atoi(str_id.c_str());
+      return std::stoi(str_id);
     }
 
     return 0;
@@ -378,6 +375,7 @@ namespace Ioex {
     idset->insert(std::make_pair(static_cast<int>(type), id));
     Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
     new_entity->property_add(Ioss::Property(id_prop, id));
+    new_entity->property_update("guid", entity->get_database()->util().generate_guid(id));
     return id;
   }
 
@@ -468,7 +466,8 @@ namespace Ioex {
     return Ioss::Utils::encode_entity_name(basename, id);
   }
 
-  void exodus_error(int exoid, int lineno, const char *function, const char *filename)
+  void exodus_error(int exoid, int lineno, const char *function, const char *filename,
+                    const std::string &extra)
   {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
@@ -476,25 +475,15 @@ namespace Ioex {
     int status;
     ex_get_err(nullptr, nullptr, &status);
     errmsg << "Exodus error (" << status << ") " << ex_strerror(status) << " at line " << lineno
-           << " of file '" << filename << "' in function '" << function
-           << "' Please report to gdsjaar@sandia.gov if you need help.";
+           << " of file '" << filename << "' in function '" << function << "'.";
 
-    ex_err(nullptr, nullptr, EX_PRTLASTMSG);
-    if (exoid > 0) {
-      ex_close(exoid);
+    if (!extra.empty()) {
+      errmsg << " " << extra;
     }
+    errmsg << " Please report to gdsjaar@sandia.gov if you need help.";
+
+    ex_err_fn(exoid, nullptr, nullptr, EX_PRTLASTMSG);
     IOSS_ERROR(errmsg);
-  }
-
-  // common
-  void check_non_null(void *ptr, const char *type, const std::string &name)
-  {
-    if (ptr == nullptr) {
-      std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Could not find " << type << " '" << name << "'."
-             << " Something is wrong in the Ioex::DatabaseIO class. Please report.\n";
-      IOSS_ERROR(errmsg);
-    }
   }
 
   int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
@@ -592,13 +581,13 @@ namespace Ioex {
     // array consistent.
 
     // Get all element blocks in region...
-    bool                        omitted        = false;
-    Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
+    bool                               omitted        = false;
+    const Ioss::ElementBlockContainer &element_blocks = region->get_element_blocks();
     for (const auto &block : element_blocks) {
 
       if (Ioss::Utils::block_is_omitted(block)) {
         ssize_t min_id = block->get_offset() + 1;
-        ssize_t max_id = min_id + block->get_property("entity_count").get_int() - 1;
+        ssize_t max_id = min_id + block->entity_count() - 1;
         for (size_t i = 0; i < elements.size(); i++) {
           if (min_id <= elements[i] && elements[i] <= max_id) {
             omitted     = true;

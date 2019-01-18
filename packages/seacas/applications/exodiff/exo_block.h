@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -62,8 +62,8 @@ public:
   const INT *Connectivity() const { return conn; }  // 1-offset connectivity
   const INT *Connectivity(size_t elmt_index) const; // 1-offset connectivity
 
-  std::string Give_Connectivity(size_t &num_e,      // Moves connectivity matrix
-                                size_t &npe,        // to conn pointer and sets
+  std::string Give_Connectivity(size_t &num_e,    // Moves connectivity matrix
+                                size_t &npe,      // to conn pointer and sets
                                 INT *&  recv_conn); // its own to null.
 
   // Misc:

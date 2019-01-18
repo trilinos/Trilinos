@@ -42,14 +42,15 @@
 #ifndef TPETRA_EXPORT_DEF_HPP
 #define TPETRA_EXPORT_DEF_HPP
 
-#include <Tpetra_Export_decl.hpp>
-
-#include <Tpetra_Distributor.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_ImportExportData.hpp>
-#include <Tpetra_Util.hpp>
-#include <Tpetra_Import.hpp>
-#include <Teuchos_as.hpp>
+#include "Tpetra_Distributor.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_ImportExportData.hpp"
+#include "Tpetra_Util.hpp"
+#include "Tpetra_Import.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace {
   // Default value of Export's "Debug" parameter.
@@ -57,6 +58,7 @@ namespace {
 } // namespace (anonymous)
 
 namespace Tpetra {
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Export<LocalOrdinal,GlobalOrdinal,Node>::
@@ -543,7 +545,9 @@ namespace Tpetra {
         const size_type numInvalidExports =
           std::count_if (ExportData_->exportPIDs_().begin(),
                          ExportData_->exportPIDs_().end(),
-                         std::bind1st (std::equal_to<int>(), -1));
+                         [] (const int processor_id) {
+                           return processor_id == -1;
+                         });
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (numInvalidExports == 0, std::logic_error, "Calling getRemoteIndexList "
            "on the target Map returned IDNotPresent, but none of the returned "
@@ -670,7 +674,6 @@ namespace Tpetra {
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_EXPORT_INSTANT(LO, GO, NODE) \
-  \
   template class Export< LO , GO , NODE >;
 
 #endif // TPETRA_EXPORT_DEF_HPP

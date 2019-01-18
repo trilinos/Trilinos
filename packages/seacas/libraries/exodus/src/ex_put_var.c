@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,29 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*****************************************************************************
-*
-* expvar - ex_put_var
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     time_step               time step number
-*       int     var_type                type (edge block, face block, edge set,
-*... )
-*       int     var_index               element variable index
-*       int     obj_id                  element block id
-*       int     num_entries_this_obj    number of entries in this block/set
-*
-* exit conditions -
-*
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
@@ -90,14 +67,14 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Warning: no variables allowed for NULL block %" PRId64 " in file id %d", obj_id,
                  exoid);
-        ex_err("ex_put_var", errmsg, EX_NULLENTITY);
+        ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
         return (EX_WARN);
       }
 
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s id %" PRId64 " in %s array in file id %d",
                ex_name_of_object(var_type), obj_id, VOBJID, exoid);
-      ex_err("ex_put_var", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
   }
@@ -105,26 +82,27 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
   if ((status = nc_inq_varid(exoid, ex_name_var_of_object(var_type, var_index, obj_id_ndx),
                              varid)) != NC_NOERR) {
     if (status == NC_ENOTVAR) { /* variable doesn't exist, create it! */
-      /* check for the existance of an TNAME variable truth table */
+      /* check for the existence of an TNAME variable truth table */
       if (nc_inq_varid(exoid, VOBJTAB, varid) == NC_NOERR) {
         /* find out number of TNAMEs and TNAME variables */
         status = ex_get_dimension(exoid, DNUMOBJ, ex_name_of_object(var_type), &num_obj, &dimid,
-                                  "ex_put_var");
+                                  __func__);
         if (status != NC_NOERR) {
           return (status);
         }
 
         status = ex_get_dimension(exoid, DNUMOBJVAR, ex_name_of_object(var_type), &num_obj_var,
-                                  &dimid, "ex_put_var");
+                                  &dimid, __func__);
         if (status != NC_NOERR) {
           return (status);
         }
 
         if (!(obj_var_truth_tab = malloc(num_obj * num_obj_var * sizeof(int)))) {
-          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate memory for %s variable "
-                                           "truth table in file id %d",
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "ERROR: failed to allocate memory for %s variable "
+                   "truth table in file id %d",
                    ex_name_of_object(var_type), exoid);
-          ex_err("ex_put_var", errmsg, EX_MEMFAIL);
+          ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
           return (EX_FATAL);
         }
 
@@ -132,7 +110,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
         if ((status = nc_get_var_int(exoid, *varid, obj_var_truth_tab)) != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get truth table from file id %d",
                    exoid);
-          ex_err("ex_put_var", errmsg, status);
+          ex_err_fn(exoid, __func__, errmsg, status);
           return (EX_FATAL);
         }
 
@@ -141,7 +119,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
           snprintf(
               errmsg, MAX_ERR_LENGTH, "ERROR: Invalid %s variable %d, %s %" PRId64 " in file id %d",
               ex_name_of_object(var_type), var_index, ex_name_of_object(var_type), obj_id, exoid);
-          ex_err("ex_put_var", errmsg, EX_BADPARAM);
+          ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
           return (EX_FATAL);
         }
         free(obj_var_truth_tab);
@@ -150,17 +128,17 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
       if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d",
                  exoid);
-        ex_err("ex_put_var", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
 
       ex_get_dimension(exoid, ex_dim_num_entries_in_object(var_type, obj_id_ndx),
-                       ex_name_of_object(var_type), &num_entity, &numobjdim, "ex_put_var");
+                       ex_name_of_object(var_type), &num_entity, &numobjdim, __func__);
 
       /*    variable doesn't exist so put file into define mode  */
       if ((status = nc_redef(exoid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
-        ex_err("ex_put_var", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         return (EX_FATAL);
       }
 
@@ -171,7 +149,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
                                nc_flt_code(exoid), 2, dims, varid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s variable %d in file id %d",
                  ex_name_of_object(var_type), var_index, exoid);
-        ex_err("ex_put_var", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         goto error_ret;
       }
       ex_compress_variable(exoid, *varid, 2);
@@ -182,7 +160,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
                  "ERROR: failed to complete %s variable %s definition to file id %d",
                  ex_name_of_object(var_type),
                  ex_name_var_of_object(var_type, var_index, obj_id_ndx), exoid);
-        ex_err("ex_put_var", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         return (EX_FATAL);
       }
     }
@@ -190,7 +168,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable %s in file id %d",
                ex_name_of_object(var_type), ex_name_var_of_object(var_type, var_index, obj_id_ndx),
                exoid);
-      ex_err("ex_put_var", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
   }
@@ -200,7 +178,7 @@ static int ex_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex_
 error_ret:
   if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err("ex_put_var", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
   }
   return (EX_FATAL);
 }
@@ -212,10 +190,10 @@ error_ret:
  * step to the database; assume the first time step and variable index
  * are 1
  * \param      exoid                   exodus file id
- * \param      time_step               time step number
+ * \param      time_step               time step number (1-based)
  * \param      var_type                type (edge block, face block, edge set,
  * ... )
- * \param      var_index               variable index
+ * \param      var_index               variable index (1-based)
  * \param      obj_id                  entity block id
  * \param      num_entries_this_obj    number of entries in this block/set
  * \param      var_vals                the values to be written
@@ -231,14 +209,14 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
 
   EX_FUNC_ENTER();
 
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   switch (var_type) {
   case EX_GLOBAL:
     if (num_entries_this_obj <= 0) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no global variables specified for file id %d",
                exoid);
-      ex_err("ex_put_var", errmsg, EX_BADPARAM);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
 
       EX_FUNC_LEAVE(EX_WARN);
     }
@@ -247,12 +225,12 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
     if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
       if (status == NC_ENOTVAR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no global variables defined in file id %d", exoid);
-        ex_err("ex_put_var", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
       }
       else {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get global variables parameters in file id %d", exoid);
-        ex_err("ex_put_var", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
       }
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -296,7 +274,7 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid variable type (%d) specified for file id %d",
              var_type, exoid);
-    ex_err("ex_put_var", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -333,7 +311,7 @@ int ex_put_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store %s %" PRId64 " variable %d in file id %d",
              ex_name_of_object(var_type), obj_id, var_index, exoid);
-    ex_err("ex_put_var", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

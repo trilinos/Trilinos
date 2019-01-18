@@ -98,6 +98,10 @@ public:
 
   virtual void setSamples(bool inConstructor = false) {}
 
+  virtual int numGlobalSamples(void) const {
+    return weights_.size();
+  }
+
   virtual int numMySamples(void) const {
     return weights_.size();
   }

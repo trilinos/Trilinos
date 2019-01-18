@@ -68,11 +68,10 @@
 // data structures; one should properly compare Epetra to Tpetra.
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -491,314 +490,320 @@ main (int argc, char* argv[])
   using Teuchos::TimeMonitor;
   using std::endl;
 
-  // RAII protection for MPI_Initialize / MPI_Finalize.  This first
-  // calls MPI_Initialize (if building with MPI).  At the end of this
-  // scope / when main() returns or throws an exception, it calls
-  // MPI_Finalize (if building with MPI).
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
-  // Think of this as a wrapped version of MPI_COMM_WORLD.
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-
-  // The output stream 'out' will ignore any output not from Process 0.
-  RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
-  Teuchos::FancyOStream& out = *pOut;
-
-  // Read command-line options into the 'opts' struct.
-  CmdLineOpts opts;
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   {
-    Teuchos::CommandLineProcessor clp;
-    setCmdLineOpts (opts, clp);
-    int result = parseCmdLineOpts (clp, argc, argv);
-    if (result == 1) { // help printed
-      return EXIT_SUCCESS;
+    auto comm = Tpetra::getDefaultComm ();
+
+    // Output stream 'out' will ignore output not from Process 0.
+    RCP<Teuchos::FancyOStream> pOut = getOutputStream (*comm);
+    Teuchos::FancyOStream& out = *pOut;
+
+    // Read command-line options into the 'opts' struct.
+    CmdLineOpts opts;
+    {
+      Teuchos::CommandLineProcessor clp;
+      setCmdLineOpts (opts, clp);
+      int result = parseCmdLineOpts (clp, argc, argv);
+      if (result == 1) { // help printed
+	return EXIT_SUCCESS;
+      }
+      else if (result == -1) { // parse error
+	return EXIT_FAILURE;
+      }
+      result = checkCmdLineOpts (out, opts);
+      if (result != 0) {
+	return EXIT_FAILURE;
+      }
     }
-    else if (result == -1) { // parse error
-      return EXIT_FAILURE;
+
+    out << "Command-line options:" << endl;
+    {
+      Teuchos::OSTab tab1 (out); // push one tab in this scope
+      out << "numTrials: " << opts.numTrials << endl
+	  << "lclNumRows: " << opts.lclNumRows << endl
+	  << "numEntPerRow: " << opts.numEntPerRow << endl
+	  << "testEpetra: " << opts.testEpetra << endl
+	  << "testEpetraLen: " << opts.testEpetraLen << endl
+	  << "testTpetra: " << opts.testTpetra << endl
+	  << "testTpetraLen: " << opts.testTpetraLen << endl
+	  << "testKokkos: " << opts.testKokkos << endl
+	  << endl;
     }
-    result = checkCmdLineOpts (out, opts);
-    if (result != 0) {
-      return EXIT_FAILURE;
-    }
-  }
 
-  out << "Command-line options:" << endl;
-  {
-    Teuchos::OSTab tab1 (out); // push one tab in this scope
-    out << "numTrials: " << opts.numTrials << endl
-        << "lclNumRows: " << opts.lclNumRows << endl
-        << "numEntPerRow: " << opts.numEntPerRow << endl
-        << "testEpetra: " << opts.testEpetra << endl
-        << "testEpetraLen: " << opts.testEpetraLen << endl
-        << "testTpetra: " << opts.testTpetra << endl
-        << "testTpetraLen: " << opts.testTpetraLen << endl
-        << "testKokkos: " << opts.testKokkos << endl
-        << endl;
-  }
+    // The benchmark is supposed to be self-checking.
+    const size_t expectedTotalLclNumEnt =
+      static_cast<size_t> (opts.numTrials) *
+      static_cast<size_t> (opts.lclNumRows) *
+      static_cast<size_t> (opts.numEntPerRow);
 
-  // The benchmark is supposed to be self-checking.
-  const size_t expectedTotalLclNumEnt =
-    static_cast<size_t> (opts.numTrials) *
-    static_cast<size_t> (opts.lclNumRows) *
-    static_cast<size_t> (opts.numEntPerRow);
+    size_t totalLclNumEnt = 0;
+    int lclSuccess = 1;
+    int gblSuccess = 0; // not proven successful yet
 
-  size_t totalLclNumEnt = 0;
-  int lclSuccess = 1;
-  int gblSuccess = 0; // not proven successful yet
-
-  totalLclNumEnt = 0;
-  if (opts.testEpetra) {
+    totalLclNumEnt = 0;
+    if (opts.testEpetra) {
 #ifdef HAVE_TPETRACORE_EPETRA
-    typedef int LO;
+      typedef int LO;
 
-    auto timer = TimeMonitor::getNewCounter ("Epetra ExtractMyRowView");
-    RCP<const Epetra_CrsMatrix> A = getEpetraMatrix (comm, opts);
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
+      auto timer = TimeMonitor::getNewCounter ("Epetra ExtractMyRowView");
+      RCP<const Epetra_CrsMatrix> A = getEpetraMatrix (comm, opts);
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-      const LO lclNumRows = opts.lclNumRows;
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          int numEnt;
-          double* val;
-          int* ind;
-          A->ExtractMyRowView (lclRow, numEnt, val, ind);
-          totalLclNumEnt += numEnt;
-        }
+	const LO lclNumRows = opts.lclNumRows;
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+	    int numEnt;
+	    double* val;
+	    int* ind;
+	    A->ExtractMyRowView (lclRow, numEnt, val, ind);
+	    totalLclNumEnt += numEnt;
+	  }
+	}
       }
-    }
 #else
-    // We've already checked this case when checking the command-line arguments.
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::logic_error, "Epetra not enabled; should never get here!");
+      // We've already checked this case when checking the command-line arguments.
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(true, std::logic_error, "Epetra not enabled; should never get here!");
 #endif // HAVE_TPETRACORE_EPETRA
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Epetra ExtractMyRowView validation FAILED.  On my process, "
-      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
-        << expectedTotalLclNumEnt << "." << endl;
-  }
+    }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Epetra ExtractMyRowView validation FAILED.  On my process, "
+	"totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+	  << expectedTotalLclNumEnt << "." << endl;
+    }
 
-  totalLclNumEnt = 0;
-  if (opts.testEpetraLen) {
+    totalLclNumEnt = 0;
+    if (opts.testEpetraLen) {
 #ifdef HAVE_TPETRACORE_EPETRA
-    typedef int LO;
+      typedef int LO;
 
-    auto timer = TimeMonitor::getNewCounter ("Epetra NumMyEntries");
-    RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
-       "This should never happen.");
-    const Epetra_CrsMatrix& A = *A_ptr;
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
+      auto timer = TimeMonitor::getNewCounter ("Epetra NumMyEntries");
+      RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
+	 "This should never happen.");
+      const Epetra_CrsMatrix& A = *A_ptr;
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-      const LO lclNumRows = opts.lclNumRows;
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const size_t len = static_cast<size_t> (A.NumMyEntries (lclRow));
-          totalLclNumEnt += len;
-        }
+	const LO lclNumRows = opts.lclNumRows;
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+	    const size_t len = static_cast<size_t> (A.NumMyEntries (lclRow));
+	    totalLclNumEnt += len;
+	  }
+	}
       }
-    }
 #else
-    // We've already checked this case when checking the command-line arguments.
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::logic_error, "Epetra not enabled; should never get here!");
+      // We've already checked this case when checking the command-line arguments.
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(true, std::logic_error, "Epetra not enabled; should never get here!");
 #endif // HAVE_TPETRACORE_EPETRA
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Epetra NumMyEntries validation FAILED.  On my process, "
-      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
-        << expectedTotalLclNumEnt << "." << endl;
-  }
+    }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Epetra NumMyEntries validation FAILED.  On my process, "
+	"totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+	  << expectedTotalLclNumEnt << "." << endl;
+    }
 
-  totalLclNumEnt = 0;
-  if (opts.testEpetraLen) {
+    totalLclNumEnt = 0;
+    if (opts.testEpetraLen) {
 #ifdef HAVE_TPETRACORE_EPETRA
-    typedef int LO;
+      typedef int LO;
 
-    auto timer = TimeMonitor::getNewCounter ("Epetra NumMyRowEntries");
-    RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
-       "This should never happen.");
-    const Epetra_CrsMatrix& A = *A_ptr;
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
+      auto timer = TimeMonitor::getNewCounter ("Epetra NumMyRowEntries");
+      RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
+	 "This should never happen.");
+      const Epetra_CrsMatrix& A = *A_ptr;
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-      const LO lclNumRows = opts.lclNumRows;
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          int numEnt;
-          (void) A.NumMyRowEntries (lclRow, numEnt); // ignore error code
-          totalLclNumEnt += static_cast<size_t> (numEnt);
-        }
+	const LO lclNumRows = opts.lclNumRows;
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+	    int numEnt;
+	    (void) A.NumMyRowEntries (lclRow, numEnt); // ignore error code
+	    totalLclNumEnt += static_cast<size_t> (numEnt);
+	  }
+	}
       }
-    }
 #else
-    // We've already checked this case when checking the command-line arguments.
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::logic_error, "Epetra not enabled; should never get here!");
+      // We've already checked this case when checking the command-line arguments.
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(true, std::logic_error, "Epetra not enabled; should never get here!");
 #endif // HAVE_TPETRACORE_EPETRA
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Epetra NumMyRowEntries validation FAILED.  On my process, "
-      "totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
-        << expectedTotalLclNumEnt << "." << endl;
-  }
+    }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Epetra NumMyRowEntries validation FAILED.  On my process, "
+	"totalLclNumEnt = " << totalLclNumEnt << " != expectedTotalLclNumEnt = "
+	  << expectedTotalLclNumEnt << "." << endl;
+    }
 
-  totalLclNumEnt = 0;
-  if (opts.testTpetra) {
-    typedef Tpetra::CrsMatrix<>::scalar_type SC;
-    typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
+    totalLclNumEnt = 0;
+    if (opts.testTpetra) {
+      typedef Tpetra::CrsMatrix<>::scalar_type SC;
+      typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
-    auto timer = TimeMonitor::getNewCounter ("Tpetra getLocalRowView");
-    RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
-       "This should never happen.");
-    const Tpetra::CrsMatrix<>& A = *A_ptr;
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
+      auto timer = TimeMonitor::getNewCounter ("Tpetra getLocalRowView");
+      RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
+	 "This should never happen.");
+      const Tpetra::CrsMatrix<>& A = *A_ptr;
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        const LO lclNumRows = opts.lclNumRows;
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          Teuchos::ArrayView<const LO> ind;
-          Teuchos::ArrayView<const SC> val;
-          A.getLocalRowView (lclRow, ind, val);
-          const size_t len = static_cast<size_t> (ind.size ());
-          totalLclNumEnt += len;
-        }
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  const LO lclNumRows = opts.lclNumRows;
+	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+	    Teuchos::ArrayView<const LO> ind;
+	    Teuchos::ArrayView<const SC> val;
+	    A.getLocalRowView (lclRow, ind, val);
+	    const size_t len = static_cast<size_t> (ind.size ());
+	    totalLclNumEnt += len;
+	  }
+	}
       }
     }
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Tpetra::CrsMatrix::getLocalRowView validation FAILED.  On my "
-      "process, totalLclNumEnt = " << totalLclNumEnt << " != "
-      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
-  }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Tpetra::CrsMatrix::getLocalRowView validation FAILED.  "
+	"On my process, totalLclNumEnt = "
+	<< totalLclNumEnt << " != expectedTotalLclNumEnt = "
+	<< expectedTotalLclNumEnt << "." << endl;
+    }
 
-  totalLclNumEnt = 0;
-  if (opts.testTpetraLen) {
-    typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
+    totalLclNumEnt = 0;
+    if (opts.testTpetraLen) {
+      using LO = Tpetra::CrsMatrix<>::local_ordinal_type;
+      auto timer =
+	TimeMonitor::getNewCounter ("Tpetra getNumEntriesInLocalRow");
+      auto A_ptr = getTpetraMatrix (comm, opts);
+      TEUCHOS_TEST_FOR_EXCEPTION
+	(A_ptr.is_null (), std::logic_error, "getTpetraMatrix "
+	 "returned null!  "
+	 "This should never happen.");
+      const Tpetra::CrsMatrix<>& A = *A_ptr;
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-    auto timer = TimeMonitor::getNewCounter ("Tpetra getNumEntriesInLocalRow");
-    RCP<const Tpetra::CrsMatrix<> > A_ptr = getTpetraMatrix (comm, opts);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (A_ptr.is_null (), std::logic_error, "getTpetraMatrix returned null!  "
-       "This should never happen.");
-    const Tpetra::CrsMatrix<>& A = *A_ptr;
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
-
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        const LO lclNumRows = opts.lclNumRows;
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          const size_t len = A.getNumEntriesInLocalRow (lclRow);
-          totalLclNumEnt += len;
-        }
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  const LO lclNumRows = opts.lclNumRows;
+	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+	    const size_t len = A.getNumEntriesInLocalRow (lclRow);
+	    totalLclNumEnt += len;
+	  }
+	}
       }
     }
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Tpetra::CrsMatrix::getNumEntriesInLocalRow validation FAILED.  On "
-      "my process, totalLclNumEnt = " << totalLclNumEnt << " != "
-      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
-  }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+			 outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Tpetra::CrsMatrix::getNumEntriesInLocalRow validation "
+	"FAILED.  On my process, totalLclNumEnt = "
+	<< totalLclNumEnt << " != expectedTotalLclNumEnt = "
+	<< expectedTotalLclNumEnt << "." << endl;
+    }
 
-  totalLclNumEnt = 0;
-  if (opts.testKokkos) {
-    typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
+    totalLclNumEnt = 0;
+    if (opts.testKokkos) {
+      using LO = Tpetra::CrsMatrix<>::local_ordinal_type;
 
-    auto timer = TimeMonitor::getNewCounter ("Kokkos sequential");
-    auto A = getTpetraMatrix (comm, opts);
-    auto A_lcl = A->getLocalMatrix ();
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
+      auto timer = TimeMonitor::getNewCounter ("Kokkos sequential");
+      auto A = getTpetraMatrix (comm, opts);
+      auto A_lcl = A->getLocalMatrix ();
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        const LO lclNumRows = opts.lclNumRows;
-        for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          auto rowView = A_lcl.row (lclRow);
-          auto len = rowView.length;
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  const LO lclNumRows = opts.lclNumRows;
+	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+	    auto rowView = A_lcl.row (lclRow);
+	    auto len = rowView.length;
 
-          (void) rowView;
-          totalLclNumEnt += static_cast<size_t> (len);
-        }
+	    (void) rowView;
+	    totalLclNumEnt += static_cast<size_t> (len);
+	  }
+	}
       }
     }
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Kokkos sequential loop validation FAILED.  On my process, "
-      "totalLclNumEnt = " << totalLclNumEnt << " != "
-      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
-  }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+			 outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Kokkos sequential loop validation FAILED.  "
+	"On my process, totalLclNumEnt = " << totalLclNumEnt << " != "
+	"expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "."
+	<< endl;
+    }
 
-  totalLclNumEnt = 0;
-  if (opts.testKokkos) {
-    using Kokkos::parallel_reduce;
-    typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
-    typedef Tpetra::CrsMatrix<>::device_type DT;
-    typedef Kokkos::View<LO*, DT>::HostMirror::execution_space host_execution_space;
-    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
+    totalLclNumEnt = 0;
+    if (opts.testKokkos) {
+      using Kokkos::parallel_reduce;
+      using LO = Tpetra::CrsMatrix<>::local_ordinal_type;
+      using DT = Tpetra::CrsMatrix<>::device_type;
+      using host_execution_space =
+	Kokkos::View<LO*, DT>::HostMirror::execution_space;
+      using policy_type = Kokkos::RangePolicy<host_execution_space, LO>;
 
-    auto timer = TimeMonitor::getNewCounter ("Kokkos parallel");
-    auto A = getTpetraMatrix (comm, opts);
-    auto A_lcl = A->getLocalMatrix ();
-    { // Start timing after matrix creation
-      TimeMonitor timeMon (*timer);
+      auto timer = TimeMonitor::getNewCounter ("Kokkos parallel");
+      auto A = getTpetraMatrix (comm, opts);
+      auto A_lcl = A->getLocalMatrix ();
+      { // Start timing after matrix creation
+	TimeMonitor timeMon (*timer);
 
-      for (int trial = 0; trial < opts.numTrials; ++trial) {
-        policy_type range (0, static_cast<LO> (opts.lclNumRows));
+	for (int trial = 0; trial < opts.numTrials; ++trial) {
+	  policy_type range (0, static_cast<LO> (opts.lclNumRows));
 
-        size_t curTotalLclNumEnt = 0;
+	  size_t curTotalLclNumEnt = 0;
 #if ! defined(CUDA_VERSION) || (CUDA_VERSION >= 8000)
-        parallel_reduce ("loop", range,
-                         KOKKOS_LAMBDA (const LO& lclRow, size_t& count) {
-            auto rowView = A_lcl.row (lclRow);
-            auto length  = rowView.length;
-            count += static_cast<size_t> (length);
-          }, curTotalLclNumEnt);
+	  parallel_reduce ("loop", range,
+			   KOKKOS_LAMBDA (const LO& lclRow, size_t& count) {
+			     auto rowView = A_lcl.row (lclRow);
+			     auto length  = rowView.length;
+			     count += static_cast<size_t> (length);
+			   }, curTotalLclNumEnt);
 #else
-        using TpetraExample::ParallelReduceLoopBody;
-        typedef ParallelReduceLoopBody<decltype (A_lcl), LO> functor_type;
-        parallel_reduce ("loop", range,
-                         functor_type (A_lcl),
-                         curTotalLclNumEnt);
+	  using TpetraExample::ParallelReduceLoopBody;
+	  typedef ParallelReduceLoopBody<decltype (A_lcl), LO> functor_type;
+	  parallel_reduce ("loop", range,
+			   functor_type (A_lcl),
+			   curTotalLclNumEnt);
 #endif // ! defined(CUDA_VERSION) || (CUDA_VERSION >= 8000)
-        totalLclNumEnt += curTotalLclNumEnt;
+	  totalLclNumEnt += curTotalLclNumEnt;
+	}
       }
     }
-  }
-  lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
-  gblSuccess = 0;
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  if (gblSuccess != 1) {
-    out << "Kokkos host parallel loop validation FAILED.  On my process, "
-      "totalLclNumEnt = " << totalLclNumEnt << " != "
-      "expectedTotalLclNumEnt = " << expectedTotalLclNumEnt << "." << endl;
-  }
+    lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
+    gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+			 outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Kokkos host parallel loop validation FAILED.  "
+	"On my process, totalLclNumEnt = "
+	<< totalLclNumEnt << " != expectedTotalLclNumEnt = "
+	<< expectedTotalLclNumEnt << "." << endl;
+    }
 
-  TimeMonitor::report (comm.ptr (), out);
+    TimeMonitor::report (comm.ptr (), out);
+  }
   return EXIT_SUCCESS;
 }
 

@@ -146,6 +146,14 @@ namespace PHX {
      */
     const std::vector<Teuchos::RCP<PHX::FieldTag>>& getFieldTags();
 
+    /** \brief Print to user specified ostream when each evalautor
+        starts and stops. Useful for debugging. Enabled only in debug
+        builds.
+
+        @param [in] ostr RCP to output stream. If set to null, this disables printing.
+    */
+    void printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr);
+
   protected:
 
     bool post_registration_setup_called_;

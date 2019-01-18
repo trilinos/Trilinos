@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,12 +39,7 @@
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for char_traits, string
 
-Skinner::Interface::Interface()
-    : compose_output("none"), compression_level(0), shuffle(false), debug(false), statistics(false),
-      ints64Bit_(false), netcdf4(false), ignoreFaceIds_(false), noOutput_(false)
-{
-  enroll_options();
-}
+Skinner::Interface::Interface() { enroll_options(); }
 
 Skinner::Interface::~Interface() = default;
 
@@ -70,9 +65,10 @@ void Skinner::Interface::enroll_options()
   options_.enroll("ignore_face_ids", Ioss::GetLongOption::NoValue,
                   "Ignore internal face ids and just use 1..num_face", nullptr);
 
-  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue, "Output database will be a netcdf4 "
-                                                           "hdf5-based file instead of the "
-                                                           "classical netcdf file format",
+  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
+                  "Output database will be a netcdf4 "
+                  "hdf5-based file instead of the "
+                  "classical netcdf file format",
                   nullptr);
 
   options_.enroll("shuffle", Ioss::GetLongOption::NoValue,
@@ -164,7 +160,7 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("help") != nullptr) {
-    options_.usage();
+    options_.usage(std::cerr);
     std::cerr << "\n\tCan also set options via IO_SKINNER_OPTIONS environment variable.\n\n";
     std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
@@ -180,7 +176,7 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("netcdf4") != nullptr) {
-    netcdf4 = true;
+    netcdf4_ = true;
   }
 
   if (options_.retrieve("shuffle") != nullptr) {
@@ -273,28 +269,23 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2015 NTESS.  Under the terms of Contract\n"
-              << "DE-AC04-94AL85000 with NTESS, the U.S. Government retains\n"
-              << "certain rights in this software\n"
-              << "\n"
+              << "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
+              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+              << "NTESS, the U.S. Government retains certain rights in this software.\n\n"
               << "Redistribution and use in source and binary forms, with or without\n"
               << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
+              << "met:\n\n "
               << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
+              << "      notice, this list of conditions and the following disclaimer.\n\n"
               << "    * Redistributions in binary form must reproduce the above\n"
               << "      copyright notice, this list of conditions and the following\n"
               << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "\n"
+              << "      with the distribution.\n\n"
               << "    * Neither the name of NTESS nor the names of its\n"
               << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
+              << "      from this software without specific prior written permission.\n\n"
               << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
               << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
               << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
               << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"

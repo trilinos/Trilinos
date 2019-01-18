@@ -45,6 +45,21 @@ project votd
     <include>$(stk_performance_tests-root)
   : build-dir $(stk_performance_tests-builddir)
   ;
+#
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_mesh_performance_tests
+  general_performance_tests
+  ;
 
 #
 # SECTION 2: Development install
@@ -52,18 +67,36 @@ project votd
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_mesh_performance_tests
-    general_performance_tests
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
-
 #
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
-alias install-user-env : install-user-jamfile ;
-                         
+alias install-user-env : install-user-jamfile
+                          install-user-bin ;
+
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
+explicit install-user-bin ;
+install install-user-bin
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Targets listed here will only be installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittests to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -90,17 +123,10 @@ exe stk_mesh_performance_tests
     [ glob $(stk_performance_tests-root)/stk_mesh/entity_sorting/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_balance//stk_balance_lib
-    /sierra/stk_io//stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_util//stk_util_util
-    /sierra/stk_util//stk_util_environment
     /sierra/stk_mesh//stk_mesh_utest
-    /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_mesh//stk_mesh_fixtures
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
 
@@ -108,10 +134,6 @@ exe general_performance_tests
   :
     [ glob $(stk_performance_tests-root)/general/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_mesh//stk_mesh_base
-    /tpl/gtest//gtest
-    /mpi//mpi
   : <tag>@sierra-exec-tag
   ;
 

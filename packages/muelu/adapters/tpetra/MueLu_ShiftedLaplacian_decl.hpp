@@ -60,6 +60,7 @@
 
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_CoalesceDropFactory_fwd.hpp>
+#include <MueLu_CoarseMapFactory_fwd.hpp>
 #include <MueLu_CoupledAggregationFactory_fwd.hpp>
 #include <MueLu_CoupledRBMFactory_fwd.hpp>
 #include <MueLu_DirectSolver_fwd.hpp>
@@ -285,6 +286,7 @@ namespace MueLu {
     RCP<CoalesceDropFactory>          Dropfact_;
     RCP<CoupledAggregationFactory>    Aggfact_;
     RCP<UncoupledAggregationFactory>  UCaggfact_;
+    RCP<CoarseMapFactory>             CoarseMapfact_;
     RCP<SmootherPrototype>            smooProto_, coarsestSmooProto_;
     RCP<SmootherFactory>              smooFact_,  coarsestSmooFact_;
     Teuchos::ParameterList            coarsestSmooList_;

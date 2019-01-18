@@ -49,6 +49,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
   std::vector<std::string> RKMethods;
   RKMethods.push_back("RK Backward Euler");
   RKMethods.push_back("IRK 1 Stage Theta Method");
+  RKMethods.push_back("Implicit Midpoint");
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
@@ -76,6 +77,7 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
     tempusPL->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
 
     if (RKMethods[m] == "IRK 1 Stage Theta Method" ||
+        RKMethods[m] == "Implicit Midpoint" ||
         RKMethods[m] == "EDIRK 2 Stage Theta Method") {
       // Construct in the same order as default.
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
@@ -123,6 +125,10 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
         integrator->getStepper()->getDefaultParameters();
       defaultPL->remove("Description");
 
+      // Adjust default parameters for pseudonyms.
+      if ( RKMethods[m] == "Implicit Midpoint" ) {
+        defaultPL->set("Stepper Type", "Implicit Midpoint");
+      }
       TEST_ASSERT(haveSameValues(*stepperPL, *defaultPL, true))
     }
 
@@ -136,6 +142,10 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
         integrator->getStepper()->getDefaultParameters();
       defaultPL->remove("Description");
 
+      // Adjust default parameters for pseudonyms.
+      if ( RKMethods[m] == "Implicit Midpoint" ) {
+        defaultPL->set("Stepper Type", "Implicit Midpoint");
+      }
     //std::cout << std::endl;
     //std::cout << "stepperPL ----------------- \n" << *stepperPL << std::endl;
     //std::cout << "defaultPL ----------------- \n" << *defaultPL << std::endl;
@@ -255,6 +265,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   std::vector<std::string> RKMethods;
   RKMethods.push_back("RK Backward Euler");
   RKMethods.push_back("IRK 1 Stage Theta Method");
+  RKMethods.push_back("Implicit Midpoint");
   RKMethods.push_back("SDIRK 1 Stage 1st order");
   RKMethods.push_back("SDIRK 2 Stage 2nd order");
   RKMethods.push_back("SDIRK 2 Stage 3rd order");
@@ -267,6 +278,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
 
   std::vector<double> RKMethodErrors;
   RKMethodErrors.push_back(0.0124201);
+  RKMethodErrors.push_back(5.20785e-05);
   RKMethodErrors.push_back(5.20785e-05);
   RKMethodErrors.push_back(0.0124201);
   RKMethodErrors.push_back(2.52738e-05);
@@ -309,6 +321,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
       pl->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
       if (RKMethods[m] == "IRK 1 Stage Theta Method" ||
+          RKMethods[m] == "Implicit Midpoint" ||
           RKMethods[m] == "EDIRK 2 Stage Theta Method") {
         pl->sublist("Default Stepper").set<double>("theta", 0.5);
       } else if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
@@ -578,8 +591,8 @@ TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
          //getCurrentState()->getMetaData()->getNFailures();
          const int iStep = integrator->getSolutionHistory()->
             getCurrentState()->getIndex();
-         const int nFail = integrator->getSolutionHistory()->
-            getCurrentState()->getMetaData()->getNRunningFailures();
+         //const int nFail = integrator->getSolutionHistory()->
+         //   getCurrentState()->getMetaData()->getNRunningFailures();
 
          // Should be close to the prescribed tolerance
          TEST_FLOATING_EQUALITY(std::log10(L2norm),std::log10(absTol), 0.3 );

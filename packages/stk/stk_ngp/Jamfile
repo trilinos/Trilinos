@@ -1,0 +1,177 @@
+#---------------------------------------------------------------
+#    Copyright 2006 - 2010 Sandia Corporation.
+#    Under the terms of Contract DE-AC04-94AL85000, there is a
+#    non-exclusive license for use of this work by or on behalf
+#    of the U.S. Government.  Export of this program may require
+#    a license from the United States Government.
+#---------------------------------------------------------------
+
+#
+# The signature for Boost.build rules is described here:
+#
+# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
+#
+#function-name main-target-name
+#    : sources
+#    : requirements
+#    : default-build
+#    : usage-requirements
+#    ;
+#
+#    * "main-target-name" is the name used to request the target
+#            on command line and to use it from other main targets.
+#            Main target name may contain alphanumeric characters and symbols '-' and '_';
+#    * "sources" is the list of source files and other main targets that must be combined.
+#    * "requirements" is the list of properties that must always be present
+#            when this main target is built.
+#    * "default-build" is the list of properties that will be used unless
+#            some other value of the same feature is already specified.
+#    * "usage-requirements" is the list of properties that will be propagated
+#            to all main targets that use this one, i.e. to all dependedents.
+#
+#
+# SECTION 1: Project definition
+#
+
+import set ;
+import path ;
+
+local stk_ngp-root-inc ;
+if $(RTenv-arg) = "user" {
+  stk_ngp-root-inc = $(stk_ngp-root)/include ;
+} else {
+  stk_ngp-root-inc = $(stk_ngp-root) ;
+}
+
+project votd
+  : requirements
+    $(sierra-warnings)
+    <define>STK_BUILT_IN_SIERRA
+    <define>STK_SHOW_DEPRECATED_WARNINGS
+    <define>STK_HIDE_DEPRECATED_CODE
+    <define>SIERRA_MIGRATION
+    <include>$(stk_ngp-root-inc)
+  : usage-requirements
+    <define>SIERRA_MIGRATION
+    <include>$(stk_ngp-root-inc)
+  : build-dir $(stk_ngp-builddir)
+  ;
+
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_ngp_utest
+  ;
+
+#
+# SECTION 2: Development install
+#
+
+local xml-files =
+  ;
+
+explicit install-serial-targets ;
+alias install-serial-targets ;
+
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
+explicit install-targets ;
+alias install-targets
+  : $(installed-end-user-files)
+    $(installed-developer-files)
+  ;
+
+#
+# SECTION 3: End-user install
+#
+explicit install-user-env ;
+alias install-user-env : install-user-jamfile
+                         install-user-include
+                         install-user-lib
+                         install-user-bin ;
+
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
+explicit install-user-bin ;
+install install-user-bin
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Targets listed here will only be installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittests to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
+
+# This rule copies build-system related files for this product to the install-root.
+explicit install-user-jamfile ;
+install install-user-jamfile
+  : [ glob $(stk_ngp-root)/Jamfile ]
+  : <location>$(install-root)/stk/stk_ngp
+    <install-source-root>$(stk_ngp-root)
+  ;
+
+
+explicit install-user-include ;
+install install-user-include
+  : [ path.glob-tree $(stk_ngp-root) : *.h *.hpp *.tcc ]
+  : <location>$(install-root)/stk/stk_ngp/include <install-source-root>$(stk_ngp-root)
+  ;
+
+explicit install-user-lib ;
+install install-user-lib
+  : stk_ngp
+  : <location>$(install-root)/stk/stk_ngp/lib
+  ;
+
+explicit install-exe-targets ;
+alias install-exe-targets : ;
+
+#
+# SECTION 4: Build configuration
+#
+exe stk_ngp_utest
+  :
+    [ glob $(stk_ngp-root)/../stk_unit_tests/stk_ngp/*.cpp 
+    ]
+    /sierra/stk_unit_test_utils//stk_unit_main
+    stk_ngp
+    /sierra/stk_mesh//stk_mesh_fixtures
+    /sierra/stk_util//stk_util_use_case
+  : <tag>@sierra-exec-tag
+    <include>$(stk_ngp-root)/../stk_unit_tests/stk_ngp
+  ;
+
+lib stk_ngp
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(stk_ngp-root)/stk_ngp/*.cpp ]
+    ]
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_topology//stk_topology
+    /mpi//mpi
+  :
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(stk_ngp-root)/lib/libstk_ngp.a
+    ]
+  ;
+

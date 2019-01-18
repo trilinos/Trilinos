@@ -155,6 +155,11 @@ public:
     vec2_->setScalar(C);
   }
 
+  void randomize( const Real l=0.0, const Real u=1.0 ) {
+    vec1_->randomize(l,u);
+    vec2_->randomize(l,u);
+  }
+
 
   int dimension() const {
     return (vec1_)->dimension() + (vec2_)->dimension();

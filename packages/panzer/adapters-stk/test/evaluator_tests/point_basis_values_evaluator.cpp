@@ -328,7 +328,7 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
-    PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS,panzer::IP> 
+    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS,panzer::IP> 
        basis(basis_q1->name()+"_"+point_rule->getName()+"_"+"basis",layout->basis);
     fm.getFieldData<panzer::Traits::Jacobian>(basis);
     out << basis << std::endl;
@@ -341,7 +341,7 @@ namespace panzer {
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
         for(unsigned int k=0;k<bases->basis_scalar.extent(2);k++) {
-          TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis(i,j,k).val(),1e-10);
+          TEST_FLOATING_EQUALITY(bases->basis_scalar(i,j,k),basis(i,j,k),1e-10);
         }
       }
     }
@@ -472,16 +472,17 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
 
-    PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP,Dim> 
+    // NOTE: basis values are always double, not Fad.
+    PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,BASIS,IP,Dim> 
        basis(basis_edge->name()+"_"+point_rule->getName()+"_basis",layout->basis_grad);
-    PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP> 
+    PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,BASIS,IP> 
        curl_basis(basis_edge->name()+"_"+point_rule->getName()+"_curl_basis",layout->basis);
-    PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,IP,Dim,Dim> 
+    PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim> 
        jac_inv("CubaturePoints (Degree=4,volume)_jac_inv",point_rule->dl_tensor);
 
-    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP,Dim>(basis);
-    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP>(curl_basis);
-    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Jacobian::ScalarT,Cell,IP,Dim,Dim>(jac_inv);
+    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Residual::ScalarT,Cell,BASIS,IP,Dim>(basis);
+    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Residual::ScalarT,Cell,BASIS,IP>(curl_basis);
+    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim>(jac_inv);
 
     WorksetDetailsAccessor wda;
     std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset, wda);
@@ -494,7 +495,7 @@ namespace panzer {
       for(int j=0;j<4;j++) {
         for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
           for(unsigned int d=0;d<bases->basis_vector.extent(3);d++) {
-            TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis(i,j,k,d).val(),1e-10);
+            TEST_FLOATING_EQUALITY(bases->basis_vector(i,j,k,d),basis(i,j,k,d),1e-10);
           }
         }
       }
@@ -503,7 +504,7 @@ namespace panzer {
     for(int i=0;i<4;i++) {
       for(int j=0;j<4;j++) {
         for(unsigned int k=0;k<bases->curl_basis_scalar.extent(2);k++) {
-          TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis(i,j,k).val(),1e-10);
+          TEST_FLOATING_EQUALITY(bases->curl_basis_scalar(i,j,k),curl_basis(i,j,k),1e-10);
         }
       }
     }

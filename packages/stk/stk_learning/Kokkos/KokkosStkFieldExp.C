@@ -42,7 +42,7 @@
 */
 
 #include "mtk_kokkos.h"
-#include <ngp/Ngp.hpp>
+#include <stk_ngp/Ngp.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>

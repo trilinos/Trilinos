@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,25 +33,25 @@
  *
  */
 /*!
-*
-* \undoc exgcss - ex_get_concat_sets
-*
-* reads the set ID's, set entry count array, set entry pointers
-* array, set entry list, set extra list, and set distribution factors
-* for all sets of the specified type.
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       ex_entity_type set_type                type of set
-*
-* exit conditions -
-*       struct ex_set_specs* set_specs  set specs structure
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * \undoc exgcss - ex_get_concat_sets
+ *
+ * reads the set ID's, set entry count array, set entry pointers
+ * array, set entry list, set extra list, and set distribution factors
+ * for all sets of the specified type.
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       ex_entity_type set_type                type of set
+ *
+ * exit conditions -
+ *       struct ex_set_specs* set_specs  set specs structure
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_set_specs, ex_err, etc
 #include "exodusII_int.h" // for ex_check_valid_file_id, etc
@@ -77,7 +77,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   ex_inquiry ex_inq_val;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* setup pointers based on set_type
      NOTE: there is another block that sets more stuff later ... */
@@ -99,7 +99,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   }
   else {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid set type (%d)", set_type);
-    ex_err("ex_get_concat_sets", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -109,12 +109,12 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
-      ex_err("ex_get_concat_sets", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN);
     }
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %ss defined in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_get_concat_sets", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -125,7 +125,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss defined for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
-    ex_err("ex_get_concat_sets", errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -133,7 +133,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
-    ex_err("ex_get_concat_sets", errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

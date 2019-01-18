@@ -61,7 +61,9 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class Elasticity3DProblem : public Problem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       Elasticity3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : Problem<Map,Matrix,MultiVector>(list, map) {
+
         E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
         nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
 
@@ -83,9 +85,9 @@ namespace Galeri {
         TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0 || nz_ <= 0, std::logic_error, "nx, ny and nz must be positive");
       }
 
-      Teuchos::RCP<Matrix>      BuildMatrix();
-      Teuchos::RCP<MultiVector> BuildNullspace();
-      Teuchos::RCP<MultiVector> BuildCoords();
+      Teuchos::RCP<Matrix>                BuildMatrix();
+      Teuchos::RCP<MultiVector>           BuildNullspace();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
 
     private:
       typedef Scalar        SC;
@@ -186,7 +188,7 @@ namespace Galeri {
 
       this->A_ = MatrixTraits<Map,Matrix>::Build(this->Map_, 27*numDofPerNode);
 
-      SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
+      SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero(), two = one+one;
       SerialDenseMatrix<LO,SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim_);        // cache
       for (size_t i = 0; i < elements_.size(); i++) {
         // Select nodes subvector
@@ -309,7 +311,7 @@ namespace Galeri {
                   if ((j == k) || (std::abs(j-k) <  4 && ((j+k) & 0x1)) || (std::abs(j-k) == 4)) {
                     // Nodes j and k are connected by an edge, or j == k
                     LO k0 = numDofPerNode*k, k1 = k0+1, k2 = k0+2;
-                    SC f = pow(2.0*Teuchos::ScalarTraits<SC>::one(), Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
+                    SC f = TST::pow(two, Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]])));
 
                     KE(j0,k0) *= f; KE(j0,k1) *= f; KE(j0,k2) *= f;
                     KE(j1,k0) *= f; KE(j1,k1) *= f; KE(j1,k2) *= f;
@@ -331,16 +333,19 @@ namespace Galeri {
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-    RCP<MultiVector> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+    RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector>
+    Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       // FIXME: map here is an extended map, with multiple DOF per node
       // as we cannot construct a single DOF map in Problem, we repeat the coords
-      this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim_);
+      this->Coords_ = MultiVectorTraits<Map,RealValuedMultiVector>::Build(this->Map_, nDim_);
 
+      typedef typename RealValuedMultiVector::scalar_type real_type;
       typedef Teuchos::ScalarTraits<Scalar> TST;
 
-      Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
-      Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
-      Teuchos::ArrayRCP<SC> z = this->Coords_->getDataNonConst(2);
+      Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
+      Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
+      Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);
 
       Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
@@ -365,7 +370,9 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     RCP<MultiVector> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildNullspace() {
 
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
       typedef Teuchos::ScalarTraits<Scalar> TST;
+      typedef typename RealValuedMultiVector::scalar_type real_type;
 
       const int numVectors = 6;
       this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, numVectors);
@@ -376,9 +383,9 @@ namespace Galeri {
       Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
       size_t          numDofs = this->Map_->getNodeNumElements();
-      Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
-      Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
-      Teuchos::ArrayRCP<SC> z = this->Coords_->getDataNonConst(2);
+      Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
+      Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
+      Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);
 
       SC one = TST::one();
 
@@ -394,9 +401,9 @@ namespace Galeri {
       }
 
       // Calculate center
-      SC cx = this->Coords_->getVector(0)->meanValue();
-      SC cy = this->Coords_->getVector(1)->meanValue();
-      SC cz = this->Coords_->getVector(2)->meanValue();
+      real_type cx = this->Coords_->getVector(0)->meanValue();
+      real_type cy = this->Coords_->getVector(1)->meanValue();
+      real_type cz = this->Coords_->getVector(2)->meanValue();
 
       // Rotations
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
@@ -539,20 +546,29 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDxi(const std::vector<Point>& refPoints, Point& gaussPoint, SC * dxi) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar eight = one+one+one+one+one+one+one+one;
+      const Scalar eighth = one / eight;
       for (size_t j = 0; j < refPoints.size(); j++)
-        dxi[j] = refPoints[j].x * (1.0 + refPoints[j].y*gaussPoint.y) * (1.0 + refPoints[j].z*gaussPoint.z) / 8.;
+        dxi[j] = refPoints[j].x * (one + refPoints[j].y*gaussPoint.y) * (one + refPoints[j].z*gaussPoint.z) * eighth;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC * deta) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar eight = one+one+one+one+one+one+one+one;
+      const Scalar eighth = one / eight;
       for (size_t j = 0; j < refPoints.size(); j++)
-        deta[j] = (1.0 + refPoints[j].x*gaussPoint.x) * refPoints[j].y * (1.0 + refPoints[j].z*gaussPoint.z) / 8.;
+        deta[j] = (one + refPoints[j].x*gaussPoint.x) * refPoints[j].y * (one + refPoints[j].z*gaussPoint.z) * eighth;
     }
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::EvalDzeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC * dzeta) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar eight = one+one+one+one+one+one+one+one;
+      const Scalar eighth = one / eight;
       for (size_t j = 0; j < refPoints.size(); j++)
-        dzeta[j] = (1.0 + refPoints[j].x*gaussPoint.x) * (1.0 + refPoints[j].y*gaussPoint.y) * refPoints[j].z / 8.;
+        dzeta[j] = (one + refPoints[j].x*gaussPoint.x) * (one + refPoints[j].y*gaussPoint.y) * refPoints[j].z * eighth;
     }
 
   } // namespace Xpetra

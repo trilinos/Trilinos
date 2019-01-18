@@ -57,7 +57,7 @@ inline int does_entity_exist_in_list(const std::vector<stk::mesh::shared_entity_
         size_t num_nodes1 = shared_entities_this_proc[i].nodes.size();
         if (topo1 == topo2 && num_nodes1 == num_nodes2)
         {
-            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes, shared_entity_from_other_proc.nodes).first;
+            bool sameType = topo1.equivalent(shared_entities_this_proc[i].nodes.data(), shared_entity_from_other_proc.nodes.data()).first;
             if (sameType)
             {
                 matching_index = i;
@@ -111,11 +111,6 @@ public:
         return m_closure_count[entity.local_offset()];
     }
 
-    void reset_closure_count(stk::mesh::Entity entity)
-    {
-        m_closure_count[entity.local_offset()] = 0;
-    }
-
     uint16_t my_orphaned_node_marking()
     {
         return orphaned_node_marking;
@@ -131,9 +126,19 @@ public:
         return !internal_entity_comm_map(key, aura_ghosting()).empty();
     }
 
+    void my_set_entity_key(stk::mesh::Entity entity, stk::mesh::EntityKey key)
+    {
+        this->set_entity_key(entity, key);
+    }
+
     void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, stk::mesh::impl::MeshModification::modification_optimization mod_optimization = stk::mesh::impl::MeshModification::MOD_END_SORT )
     {
         this->internal_change_entity_owner(arg_change,mod_optimization);
+    }
+
+    stk::mesh::Entity my_generate_new_entity(unsigned preferred_offset = 0)
+    {
+        return this->generate_new_entity(preferred_offset);
     }
 
     void my_resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new)
@@ -186,17 +191,7 @@ public:
         this->update_sharing_after_change_entity_owner();
     }
 
-    stk::mesh::impl::EntityRepository &my_get_entity_repository()
-    {
-        return get_entity_repository();
-    }
-
     inline bool my_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
-    {
-        return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
-    }
-
-    bool my_internal_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
     {
         return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
     }

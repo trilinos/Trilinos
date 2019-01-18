@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ void make_bndy_list(struct vtx_data **graph,     /* data structure for graph */
                     int *             bspace,    /* list of active vertices for bucketsort */
                     int **            tops,      /* top of each set of buckets */
                     int **            bndy_list  /* list of boundary vertices returned */
-                    )
+)
 {
   struct bilist *bptr;        /* loops through bspace */
   int            vtx;         /* vertex that was moved */

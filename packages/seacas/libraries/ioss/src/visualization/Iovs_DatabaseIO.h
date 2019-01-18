@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -85,32 +85,14 @@ namespace Iovs {
 
     static int parseCatalystFile(const std::string &filepath, std::string &json_result);
 
+    int int_byte_size_db() const override { return int_byte_size_api(); }
+
   private:
-    // Eliminate as much memory as possible, but still retain meta data information
-    // Typically, eliminate the maps...
-    void release_memory__() override;
-
-    /*!
-     * Determine the local position of the node with the global id
-     * 'global'.  If 'must_exist' is false, then the global id possibly
-     * does not exist in the map; otherwise, it must exist and will
-     * throw an exception if not found.
-     */
-    int64_t node_global_to_local__(int64_t global, bool must_exist) const override
-    {
-      return nodeMap.global_to_local(global, must_exist);
-    }
-
-    int64_t element_global_to_local__(int64_t global) const override
-    {
-      return elemMap.global_to_local(global);
-    }
-
     bool begin__(Ioss::State state) override;
     bool end__(Ioss::State state) override;
 
-    bool begin_state__(Ioss::Region *region, int state, double time) override;
-    bool end_state__(Ioss::Region *region, int state, double time) override;
+    bool begin_state__(int state, double time) override;
+    bool end_state__(int state, double time) override;
 
     void read_meta_data__() override;
 
@@ -271,9 +253,6 @@ namespace Iovs {
     static int         useCount;
     static int         uniqueID;
 
-    int64_t nodeCount;
-    int64_t elementCount;
-
     int nodeBlockCount;
     int elementBlockCount;
 
@@ -283,17 +262,6 @@ namespace Iovs {
     mutable bool                     globalNodeAndElementIDsCreated;
     void                             create_global_node_and_element_ids() const;
     mutable EntityIdSet              ids_;
-
-    // Bulk Data
-
-    // MAPS -- Used to convert from local exodusII ids/names to Ioss
-    // database global ids/names
-    // Maps internal (1..num_entity) ids to global ids used on the
-    //               sierra side.   global = XXXMap.map[local]
-    // XXXMap.map[0] contains: -1 if sequential, 0 if ordering unknown, 1
-    // if nonsequential
-    mutable Ioss::Map nodeMap;
-    mutable Ioss::Map elemMap;
   };
 } // namespace Iovs
 

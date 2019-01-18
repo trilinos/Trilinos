@@ -316,20 +316,20 @@ class General_RKButcherTableau :
       A.shape(as<int>(numStages),as<int>(numStages));
 
       // fill the rows
-      for(std::size_t r=0;r<numStages;r++) {
+      for(std::size_t row=0;row<numStages;row++) {
         // parse the row (tokenize on space)
         std::vector<std::string> tokens;
-        Tempus::StringTokenizer(tokens,A_row_tokens[r]," ",true);
+        Tempus::StringTokenizer(tokens,A_row_tokens[row]," ",true);
 
         std::vector<double> values;
         Tempus::TokensToDoubles(values,tokens);
 
         TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=numStages,std::runtime_error,
-          "Error parsing A matrix, wrong number of stages in row " << r << "\n"
-           + this->description());
+          "Error parsing A matrix, wrong number of stages in row "
+          << row << "\n" + this->description());
 
-        for(std::size_t c=0;c<numStages;c++)
-          A(r,c) = values[c];
+        for(std::size_t col=0;col<numStages;col++)
+          A(row,col) = values[col];
       }
     }
 
@@ -808,7 +808,7 @@ class ExplicitBogackiShampine32_RKBT :
  *      & \hat{b}^T
  *  \end{array}
  *  \;\;\;\;\mbox{ where }\;\;\;\;
- *  \begin{array}{c|cccc}  0  & 0    &     &      &     & \\
+ *  \begin{array}{c|ccccc}  0 & 0    &     &      &     & \\
  *                        1/3 & 1/3  & 0   &      &     & \\
  *                        1/3 & 1/6  & 1/6 & 0    &     & \\
  *                        1/2 & 1/8  & 0   & 3/8  &     & \\
@@ -1655,8 +1655,9 @@ class GeneralDIRK_RKBT :
 
     // Tableau ParameterList
     typedef Teuchos::ScalarTraits<Scalar> ST;
-    std::string gamma = std::to_string((2.0 - ST::squareroot(2.0))/(2.0));
-    std::string one_gamma = std::to_string(1.0-(2.0-ST::squareroot(2.0))/(2.0));
+    const Scalar one = ST::one();
+    std::string gamma = std::to_string(Teuchos::as<Scalar>((2*one-ST::squareroot(2*one))/(2*one)));
+    std::string one_gamma = std::to_string(Teuchos::as<Scalar>(one-(2*one-ST::squareroot(2*one))/(2*one)));
     Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
     tableauPL->set<std::string>("A", gamma + " 0.0; " + one_gamma + " "+gamma);
     tableauPL->set<std::string>("b", one_gamma + " " + gamma);
@@ -2333,7 +2334,8 @@ class IRK1StageTheta_RKBT :
     // Can not validate because optional parameters (e.g., Solver Name).
     //pl->validateParametersAndSetDefaults(*this->getValidParameters());
     TEUCHOS_TEST_FOR_EXCEPTION(
-      pl->get<std::string>("Stepper Type") != this->description()
+      pl->get<std::string>("Stepper Type") != this->description() and
+      pl->get<std::string>("Stepper Type") != "Implicit Midpoint"
       ,std::runtime_error,
       "  Stepper Type != \""+this->description()+"\"\n"
       "  Stepper Type = " + pl->get<std::string>("Stepper Type"));
@@ -3221,16 +3223,16 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
     const Scalar zero = ST::zero();
     const Scalar one = ST::one();
     A(0,0) = as<Scalar>( one/(12*one) );
-    A(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
-    A(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
+    A(0,1) = as<Scalar>( (-one-ST::squareroot(5*one))/(24*one) );
+    A(0,2) = as<Scalar>( (-one+ST::squareroot(5*one))/(24*one) );
     A(0,3) = zero;
     A(1,0) = as<Scalar>( one/(12*one) );
-    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5))/(120*one) );
-    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5))/(120*one) );
+    A(1,1) = as<Scalar>( (25*one+ST::squareroot(5*one))/(120*one) );
+    A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5*one))/(120*one) );
     A(1,3) = zero;
     A(2,0) = as<Scalar>( one/(12*one) );
-    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5))/(120*one) );
-    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5))/(120*one) );
+    A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5*one))/(120*one) );
+    A(2,2) = as<Scalar>( (25*one-ST::squareroot(5*one))/(120*one) );
     A(2,3) = zero;
     A(3,0) = as<Scalar>( one/(12*one) );
     A(3,1) = as<Scalar>( (11*one-ST::squareroot(5*one))/(24*one) );
@@ -3850,7 +3852,7 @@ class SDIRK21_RKBT :
     A(0,0) = one;
     A(0,1) = zero;
 
-    //A(1,0) = 
+    //A(1,0) =
     A(1,0) = -one;
     A(1,1) =  one;
 

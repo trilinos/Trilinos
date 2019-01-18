@@ -48,12 +48,12 @@ project votd
     <architecture>nehalem:<define>USE_STK_SIMD_SSE
     <architecture>sandybridge:<define>USE_STK_SIMD_AVX
     <architecture>haswell:<define>USE_STK_SIMD_AVX
-    <architecture>knc:<define>USE_STK_SIMD_NONE
+    <architecture>skylake:<define>USE_STK_SIMD_AVX512
     <architecture>knl:<define>USE_STK_SIMD_AVX512
     <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
     <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE
     <architecture>cray,<toolset>cray:<define>USE_STK_SIMD_NONE
-    <cuda>on:<define>KOKKOS_CUDA_USE_LAMBDA=1
+    <cuda>on:<define>KOKKOS_ENABLE_CUDA_LAMBDA=1
   : usage-requirements
     <include>$(stk_simd-root)
     <define>USE_STK_SIMD_AUTO
@@ -62,12 +62,27 @@ project votd
     <architecture>nehalem:<define>USE_STK_SIMD_SSE
     <architecture>sandybridge:<define>USE_STK_SIMD_AVX
     <architecture>haswell:<define>USE_STK_SIMD_AVX
-    <architecture>knc:<define>USE_STK_SIMD_NONE
+    <architecture>skylake:<define>USE_STK_SIMD_AVX512
     <architecture>knl:<define>USE_STK_SIMD_AVX512
     <architecture>cray,<toolset>intel:<define>USE_STK_SIMD_AUTO
     <architecture>cray,<toolset>gcc:<define>USE_STK_SIMD_NONE
     <architecture>cray,<toolset>cray:<define>USE_STK_SIMD_NONE
   : build-dir $(stk_simd-builddir)
+  ;
+
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_simd_unit 
+  stk_simd_docs_tests
   ;
 
 #
@@ -76,18 +91,37 @@ project votd
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_simd_unit 
-    stk_simd_docs_tests
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
-
 #
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                         install-user-include ;
+                         install-user-include
+                         install-user-bin ;
+
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
+explicit install-user-bin ;
+install install-user-bin
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Targets listed here will only be installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittests to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -123,6 +157,7 @@ alias stk_simd_headers
 obj stk_simd_test_main 
   :
     $(stk_simd-root)/unit_test_main/SimdUnitTestMain.cpp
+    /sierra/stk_math//stk_math_headers
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   :
@@ -132,6 +167,7 @@ exe stk_simd_unit
   :
     [ glob $(stk_simd-root)/unit_tests/*.cpp ]
     stk_simd_test_main
+    /sierra/stk_math//stk_math_headers
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
@@ -156,6 +192,7 @@ exe stk_simd_docs_tests
   :
     [ glob $(stk_simd-root)/../stk_doc_tests/stk_simd/*.cpp ]
     stk_simd_test_main
+    /sierra/stk_math//stk_math_headers
     /tpl/trilinos-kokkoscore//kokkoscore
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag

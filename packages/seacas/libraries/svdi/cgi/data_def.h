@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -183,8 +183,8 @@ typedef struct
   cenum  dynamic_mod_map;  /* dynamic mod accept for mapping */
   dpoint dc1;              /* device bottom left corner */
   dpoint dc2;              /* device upper right corner */
-  float  draw_surf_width;  /* measured in millimetres */
-  float  draw_surf_height; /* measured in millimetres */
+  float  draw_surf_width;  /* measured in millimeters */
+  float  draw_surf_height; /* measured in millimeters */
   cenum  pix_loc;          /* pixel location */
 
   /* ----------output and attributes---------- */

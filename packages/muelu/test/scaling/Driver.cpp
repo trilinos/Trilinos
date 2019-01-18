@@ -90,6 +90,9 @@
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
 #endif
+#ifdef HAVE_MUELU_EPETRA
+#include <BelosEpetraAdapter.hpp>    // => This header defines Belos::EpetraPrecOp
+#endif
 #endif
 
 
@@ -143,6 +146,11 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
     Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
     Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
+#if defined(HAVE_MUELU_BELOS)
+    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
+    mlop = Teuchos::rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
+#endif
+
     mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
   }
 };
@@ -170,9 +178,9 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
   bool equilibrate_no    = (equilibrate == "no");
   bool assumeSymmetric = false;
   typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type,typename Node::device_type> equil_type;
-  
+
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A = Utilities::Op2NonConstTpetraCrs(Axpetra);
-  
+
   if(Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
      equil_type equibResult_ = computeRowAndColumnOneNorms (*A, assumeSymmetric);
      if (equilibrate_1norm) {
@@ -180,13 +188,13 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrd
         using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
         using mag_view_type = Kokkos::View<mag_type*, device_type>;
         using scalar_view_type = Kokkos::View<typename equil_type::val_type*, device_type>;
-        
-        mag_view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));                                  
+
+        mag_view_type rowDiagAbsVals ("rowDiagAbsVals",equibResult_.rowDiagonalEntries.extent (0));
         //        KokkosBlas::abs (rowDiagAbsVals, equibResult_.rowDiagonalEntries);
         Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(rowDiagAbsVals, equibResult_.rowDiagonalEntries);
 
         mag_view_type colDiagAbsVals ("colDiagAbsVals",equibResult_.colDiagonalEntries.extent (0));
-                                  
+
         //        KokkosBlas::abs (colDiagAbsVals, equibResult_.colDiagonalEntries);
         Temporary_Replacement_For_Kokkos_abs<mag_view_type,scalar_view_type,LocalOrdinal>(colDiagAbsVals, equibResult_.colDiagonalEntries);
 
@@ -232,6 +240,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
 
   // =========================================================================
   // Parameters initialization
@@ -263,14 +273,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
   bool        solvePreconditioned = true;            clp.setOption("solve-preconditioned","no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
 #ifdef HAVE_MUELU_TPETRA
-  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)"); 
+  std::string equilibrate = "no" ;                   clp.setOption("equilibrate",           &equilibrate,       "equilibrate the system (no | diag | 1-norm)");
 #endif
 #ifdef HAVE_MUELU_CUDA
   bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-
-
+  int  cacheSize = 0;                                clp.setOption("cachesize",               &cacheSize,       "cache size (in KB)");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -283,13 +292,27 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
                              "Cannot provide both xml and yaml input files");
 
+  // Instead of checking each time for rank, create a rank 0 stream
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& out = *fancy;
+  out.setOutputToRootOnly(0);
+ 
   ParameterList paramList;
+  auto inst = xpetraParameters.GetInstantiation();
+  
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
-
   } else {
-    xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
+    if (inst == Xpetra::COMPLEX_INT_INT)
+      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-complex.xml");
+    else
+      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  }
+
+  if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "cg") { 
+    dsolveType = "gmres";
+    out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES"<<std::endl;
   }
 
   bool isDriver = paramList.isSublist("Run1");
@@ -320,8 +343,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 
   comm->barrier();
+  Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
+
 
   RCP<Matrix>      A;
   RCP<const Map>   map;
@@ -334,7 +359,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,map,A,coordinates,nullspace,X,B,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
-
+  
   // Do equilibration if requested
 #ifdef HAVE_MUELU_TPETRA
   if(lib == Xpetra::UseTpetra) {
@@ -386,7 +411,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         }
       }
     }
-  
+
     int runCount = 1;
     do {
       solveType = dsolveType;
@@ -411,11 +436,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         if (runList.isParameter("solver")) solveType = runList.get<std::string>("solver");
         if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
       }
-
-      // Instead of checking each time for rank, create a rank 0 stream
-      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      Teuchos::FancyOStream& out = *fancy;
-      out.setOutputToRootOnly(0);
 
       out << galeriStream.str();
 
@@ -448,6 +468,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 	} else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
+          if(!coordinates.is_null()) {
+            RCP<const Epetra_MultiVector> epetraCoord =  MueLu::Utilities<SC,LO,GO,NO>::MV2EpetraMV(coordinates);
+            if(epetraCoord->NumVectors() > 0)  mueluList.set("x-coordinates",(*epetraCoord)[0]);
+            if(epetraCoord->NumVectors() > 1)  mueluList.set("y-coordinates",(*epetraCoord)[1]);
+            if(epetraCoord->NumVectors() > 2)  mueluList.set("z-coordinates",(*epetraCoord)[2]);            
+          }
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,Prec);
 #endif
         }
@@ -469,7 +495,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         Btpetra = Teuchos::rcp(& Xpetra::toTpetra(*B),false);
       }
 #endif
-#if defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
       Teuchos::RCP<const Epetra_CrsMatrix> Aepetra;
       Teuchos::RCP<Epetra_MultiVector> Xepetra,Bepetra;
       if(lib==Xpetra::UseEpetra) {
@@ -493,8 +519,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         tm = Teuchos::null;
       }
 
+      std::vector<int> tempVector;
+      int min = 0, max = 10;
+      int numInts = 0;
+      if (cacheSize > 0) {
+        cacheSize *= 1024; //convert to bytes
+        numInts = cacheSize/sizeof(int) + 1;
+        tempVector.resize(numInts);
+      }
 
-      for(int solveno = 1; solveno<=numResolves; solveno++) {
+      for(int solveno = 0; solveno<=numResolves; solveno++) {
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
         X->putScalar(zero);
         tm = Teuchos::null;
@@ -507,9 +541,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined(HAVE_MUELU_TPETRA)
           if(lib==Xpetra::UseTpetra) Atpetra->apply(*Btpetra,*Xtpetra);
 #endif
-#if defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_EPETRA) && !defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
           if(lib==Xpetra::UseEpetra) Aepetra->Apply(*Bepetra,*Xepetra);
-#endif        
+#endif
+          //clear the cache (and don't time it)
+          tm = Teuchos::null;
+          int ttt = rand();
+          for (int i=0; i<numInts; ++i)
+            tempVector[i] += (min + (ttt % static_cast<int>(max - min + 1)));
         } else if (solveType == "standalone") {
           tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
 #ifdef HAVE_MUELU_CUDA
@@ -529,7 +568,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           // Operator and Multivector type that will be used with Belos
           typedef MultiVector          MV;
           typedef Belos::OperatorT<MV> OP;
-          
+
           // Define Operator and Preconditioner
           Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operato
           Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
@@ -547,11 +586,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             H->IsPreconditioner(true);
             belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
           }
-          
+
           // Construct a Belos LinearProblem object
           RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
           if(solvePreconditioned) belosProblem->setRightPrec(belosPrec);
-          
+
           bool set = belosProblem->setProblem();
           if (set == false) {
             out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
@@ -562,7 +601,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
             }
             return EXIT_FAILURE;
           }
-          
+
           // Belos parameter list
           Teuchos::ParameterList belosList;
           belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
@@ -572,7 +611,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           belosList.set("Output Style",          Belos::Brief);
           if (!scaleResidualHist)
             belosList.set("Implicit Residual Scaling", "None");
-          
+
           // Create an iterative solver manager
           RCP< Belos::SolverManager<SC, MV, OP> > solver;
           if (solveType == "cg") {
@@ -582,11 +621,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           } else if (solveType == "bicgstab") {
             solver = rcp(new Belos::BiCGStabSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
           }
-          
+
           // Perform solve
           Belos::ReturnType ret = Belos::Unconverged;
           ret = solver->solve();
-          
+
           // Get the number of iterations for this solve.
           out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
           // Check convergence
@@ -602,7 +641,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
         }
       }// end resolves
-
 
       comm->barrier();
       tm = Teuchos::null;

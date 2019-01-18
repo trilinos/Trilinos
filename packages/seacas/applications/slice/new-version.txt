@@ -1,0 +1,58 @@
+
+Assign elements to processors evenly  #elem/#proc -- 
+
+
+
+std::vector<std::vector<int>> node_to_proc(#node)
+blk = 1
+st_blk = 0
+en_blk = st_blk + #blk-elem
+
+for each (proc) {
+    node_on_proc(#node) = false
+    ste = start element
+    ene = end element
+
+    end = min(ene, en_blk)
+    for each element(ste..ene) {
+       foreach node in element {
+          if (!node_on_proc(node)) {
+	     node_to_proc(node).push_back(proc);
+	     node_on_proc(node) = true;
+          }
+       }
+    }
+    if (end < ene) get next block
+    else, continue with same block
+}
+
+... All interior nodes will have node_to_proc(node).size() == 1
+... All unconnected nodes will have node_to_proc(node).size() == 0
+
+... Add the granularity of element blocks
+    Each block has beg, end range, and connectivity size.
+
+
+... Better to iterate by block:
+
+foreach (element block) 
+   -- get connectivity
+   find st_proc 
+   find end_proc
+
+
+proc for an element (0-based):
+
+
+proc = elem / elem-per-proc + 
+
+
+elem-per-proc = #elem / #proc
+extra = #elem % #proc
+
+    elementCount = elem_per_proc + (proc < extra ? 1 : 0);
+    if (proc < extra) {
+      startElement = (el_per_proc+1) * (proc);
+    } else {
+      startElement = (el_per_proc) * (proc) + remain;
+    }

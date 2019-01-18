@@ -66,38 +66,38 @@ NOX::Abstract::Group::computeGradient()
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Abstract::Group::computeNewton(Teuchos::ParameterList& params)
+NOX::Abstract::Group::computeNewton(Teuchos::ParameterList& /* params */)
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Abstract::Group::applyJacobian(const NOX::Abstract::Vector& input,
-                    NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::applyJacobian(const NOX::Abstract::Vector& /* input */,
+                    NOX::Abstract::Vector& /* result */) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Abstract::Group::applyJacobianTranspose(const NOX::Abstract::Vector& input,
-                         NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::applyJacobianTranspose(const NOX::Abstract::Vector& /* input */,
+                         NOX::Abstract::Vector& /* result */) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Abstract::Group::applyJacobianInverse(Teuchos::ParameterList& params,
-                       const NOX::Abstract::Vector& input,
-                       NOX::Abstract::Vector& result) const
+NOX::Abstract::Group::applyJacobianInverse(Teuchos::ParameterList& /* params */,
+                       const NOX::Abstract::Vector& /* input */,
+                       NOX::Abstract::Vector& /* result */) const
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
-                        Teuchos::ParameterList& params,
-                        const NOX::Abstract::Vector& input,
-                        NOX::Abstract::Vector& result
+NOX::Abstract::Group::applyRightPreconditioning(bool /* useTranspose */,
+                        Teuchos::ParameterList& /* params */,
+                        const NOX::Abstract::Vector& /* input */,
+                        NOX::Abstract::Vector& /* result */
                         ) const
 {
   return NOX::Abstract::Group::NotDefined;
@@ -210,8 +210,10 @@ bool NOX::Abstract::Group::isNewton() const
   return false;
 }
 
+void NOX::Abstract::Group::logLastLinearSolveStats(NOX::SolverStats& ) const {}
+
 NOX::Abstract::Group::ReturnType
-NOX::Abstract::Group::getNormLastLinearSolveResidual(double& residual) const
+NOX::Abstract::Group::getNormLastLinearSolveResidual(double& /* residual */) const
 {
   return NOX::Abstract::Group::NotDefined;
 }

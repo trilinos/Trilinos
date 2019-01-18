@@ -86,11 +86,18 @@
       non-Dirichlet nodes that have no on-rank neighbors.  This only
       works for Uncoupled Aggregation.}
         
+\cbb{aggregation: phase3 avoid singletons}{bool}{false}{Causes phase 3 aggregation to try and group any
+      vertices that remain unaggregated with any other on-rank vertex
+      (even if it is not a neighbor) to define an aggregate.  This only
+      works for Uncoupled Aggregation.}
+        
 \cbb{aggregation: allow empty prolongator columns}{bool}{false}{Fix diagonal of coarse level operator A resulting from empty columns (rows) in the prolongation (restriction) operators caused by singleton aggregates and number of null space vectors larger than number of DOFs per node. This option might be helpful for elasticity problems with singleton aggregates.}
         
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
         
 \cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
+        
+\cbb{aggregation: use interface aggregation}{bool}{false}{Allow an application to prescribe root nodes to uncoupled aggregation}
         
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
         
@@ -152,6 +159,10 @@
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         
+\cbb{gmg: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
+        
+\cbb{gmg: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
+        
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
         
 \cbb{pcoarsen: element}{string}{""}{Element class for IntrepidPCoarsening}
@@ -182,6 +193,8 @@
         
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
+\cbb{tentative: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
+        
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
         
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
@@ -200,21 +213,39 @@
         
 \cbb{repartition: remap num values}{int}{4}{Number of maximum components from each processor used to construct partial bipartite graph.}
         
+\cbb{repartition: remap accept partition}{bool}{true}{Whether the local rank should accept a partition.}
+        
 \cbb{repartition: print partition distribution}{bool}{false}{Partition distribution printout.}
         
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
+        
+\cbb{repartition: rebalance Nullspace}{bool}{true}{Rebalancing of Nullspace during the setup.}
         
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
         
+\cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
+        
 \cbb{rap: shift}{double}{0.0}{Shift to use in the RAPShiftFactory}
+        
+\cbb{rap: shift diagonal M}{bool}{false}{Shift for the RAPShiftFactory is stored as a
+      vector (representing the matrix diagonal)}
+        
+\cbb{rap: shift low storage}{bool}{false}{Use the low-storage version of the rap: shift}
         
 \cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         
 \cbb{rap: triple product}{bool}{false}{Use all-at-once triple matrix product kernel}
         
-\cba{matrixmatrix: kernel params}{parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
+\cba{matrixmatrix: kernel params}{\parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
+        
+\cbb{matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount }{int}{3000 }{Core Count above which the
+optimized neighbor discovery is used for Importer construction, for some matrix
+multiplication operations.}
+        
+\cbb{isMatrixMatrix_TransferAndFillComplete }{bool}{false}{Try to use the
+optimized neighbor discovery for Importer construction.}
         
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
         

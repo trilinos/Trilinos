@@ -83,19 +83,6 @@ Product(
 template<typename EvalT, typename Traits>
 void
 Product<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  this->utils.setFieldData(product,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
-    this->utils.setFieldData(values[i],fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-Product<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
 { 

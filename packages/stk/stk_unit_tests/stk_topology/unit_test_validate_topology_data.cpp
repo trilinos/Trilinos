@@ -43,6 +43,9 @@
 
 using namespace stk;
 using namespace stk::topology_detail;
+
+#ifndef KOKKOS_HAVE_CUDA
+
 using namespace boost;
 
 namespace {
@@ -237,4 +240,23 @@ TEST( stk_topology, validate_topology)
   }
 }
 
+#endif
 
+TEST( stk_topology, verify_3D_topology)
+{
+    std::vector<stk::topology::topology_t> goldValues = {stk::topology::TET_4, stk::topology::TET_8, stk::topology::TET_10,
+                                                         stk::topology::TET_11, stk::topology::PYRAMID_5,
+                                                         stk::topology::PYRAMID_13, stk::topology::PYRAMID_14,
+                                                         stk::topology::WEDGE_6, stk::topology::WEDGE_15, stk::topology::WEDGE_18,
+                                                         stk::topology::HEX_8, stk::topology::HEX_20, stk::topology::HEX_27};
+
+    std::vector<stk::topology::topology_t> results;
+    for(stk::topology::topology_t i = stk::topology::BEGIN_TOPOLOGY; i < stk::topology::END_TOPOLOGY; ++i)
+    {
+        stk::topology t(i);
+        if(stk::is_solid_element(t))
+            results.push_back(t());
+    }
+
+    EXPECT_TRUE(goldValues==results);
+}

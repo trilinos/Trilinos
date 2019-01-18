@@ -48,6 +48,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "ROL_Vector.hpp"
 
 #include <exception>
@@ -296,6 +297,12 @@ public:
     */
   void setScalar(const Real C) {
       ::Thyra::put_scalar(C, thyra_vec_.ptr());
+    }
+
+  /**  \brief Set entries of the vector to uniform random between l and u.
+    */
+  void randomize(const Real l=0.0, const Real u=1.0) {
+      ::Thyra::randomize(l, u, thyra_vec_.ptr());
     }
 
   /**  \brief Set all entries of the vector to alpha.

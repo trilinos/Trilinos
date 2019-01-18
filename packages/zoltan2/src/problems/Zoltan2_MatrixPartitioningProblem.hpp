@@ -152,7 +152,7 @@ public:
 
   //! \brief Constructor where communicator is the Teuchos default.
   MatrixPartitioningProblem(Adapter *A, ParameterList *p):
-    MatrixPartitioningProblem(A, p, Teuchos::DefaultComm<int>::getComm())
+    MatrixPartitioningProblem(A, p, Tpetra::getDefaultComm())
   {
 
   }

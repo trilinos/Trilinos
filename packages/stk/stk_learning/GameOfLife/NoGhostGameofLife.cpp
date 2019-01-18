@@ -18,7 +18,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/GetEntities.hpp"  // for get_entities
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 #include "stk_util/parallel/CommSparse.hpp"  // for CommSparse
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer, unpack
 

@@ -15,7 +15,6 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 

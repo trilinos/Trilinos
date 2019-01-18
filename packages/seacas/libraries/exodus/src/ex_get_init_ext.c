@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -73,7 +73,7 @@ static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimensi
     if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", name,
                exoid);
-      ex_err("ex_get_init_ext", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       return (EX_FATAL);
     }
     *value = tmp;
@@ -99,7 +99,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
   int rootid = exoid & EX_FILE_ID_MASK;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   info->num_dim       = 0;
   info->num_nodes     = 0;
@@ -120,7 +120,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
   info->num_elem_maps = 0;
 
   dimid = 0;
-  if (ex_get_dim_value(exoid, "dimensions", DIM_NUM_DIM, dimid, &info->num_dim) != EX_NOERR) {
+  if (ex_get_dim_value(exoid, "dimension count", DIM_NUM_DIM, dimid, &info->num_dim) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
   if (ex_get_dim_value(exoid, "nodes", DIM_NUM_NODES, dimid, &info->num_nodes) != EX_NOERR) {
@@ -143,7 +143,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
   if (info->num_elem_blk == 0 && info->num_elem > 0) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate number of element blocks in file id %d", exoid);
-    ex_err("ex_get_init_ext", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -176,7 +176,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  /* Edge and face blocks are also optional (for backwards compatability) */
+  /* Edge and face blocks are also optional (for backwards compatibility) */
   if (ex_get_dim_value(exoid, "edge blocks", DIM_NUM_ED_BLK, dimid, &info->num_edge_blk) !=
       EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
@@ -188,7 +188,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
 
   if ((status = nc_inq_att(rootid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no title in file id %d", rootid);
-    ex_err("ex_get_init_ext", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
   }
 
   /* Check title length to avoid overrunning clients memory space; include
@@ -208,7 +208,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
     }
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get title in file id %d", rootid);
-      ex_err("ex_get_init_ext", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }

@@ -46,7 +46,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/SortAndUnique.hpp"
 namespace stk { namespace mesh { namespace impl { template <EntityRank TargetRank, stk::mesh::ConnectivityType> class BucketConnectivity; } } }
 
 
@@ -267,9 +268,7 @@ Bucket::Bucket( BulkData & arg_mesh ,
   , m_key(arg_key)
   , m_capacity(arg_capacity)
   , m_size(0)
-  , m_bucket(nullptr)
   , m_bucket_id(bucket_id)
-  , m_nodes_per_entity(0)
 // TODO: Move owner ranks to BulkData
   , m_entities(arg_capacity)
   , m_owner_ranks(arg_capacity)
@@ -294,10 +293,6 @@ Bucket::Bucket( BulkData & arg_mesh ,
   ThrowAssertMsg(arg_capacity != 0, "Buckets should never have zero capacity");
 
   m_topology = get_topology(m_mesh.mesh_meta_data(), arg_entity_rank, superset_part_ordinals());
-
-  if (m_topology != stk::topology::END_TOPOLOGY) {
-    m_nodes_per_entity = m_topology.num_nodes();
-  }
 
   setup_connectivity(m_topology, arg_entity_rank, stk::topology::NODE_RANK, m_node_kind, m_fixed_node_connectivity, connectivity_map);
   setup_connectivity(m_topology, arg_entity_rank, stk::topology::EDGE_RANK, m_edge_kind, m_fixed_edge_connectivity, connectivity_map);
@@ -328,7 +323,7 @@ void Bucket::change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::En
         nodes = m_dynamic_node_connectivity.begin(bucket_ordinal);
     }
 
-    for(unsigned i=0;i<num_nodes;++i)
+    for (unsigned i=0;i<num_nodes;++i)
     {
         nodes[i] = new_nodes[i];
     }
@@ -511,10 +506,6 @@ void Bucket::supersets( OrdinalVector & ps ) const
 
 bool Bucket::assert_correct() const {
   // test equivalent() method
-  const Bucket* bucket = this;
-  const Bucket * first = first_bucket_in_partition();
-  if (!first || ! bucket->in_same_partition(*first) || ! first->in_same_partition(*bucket) )
-    return false;
 
   // other tests...
 
@@ -537,8 +528,8 @@ std::ostream & operator << ( std::ostream & s , const Bucket & k )
   const PartVector& parts = k.supersets();
 
   s << "Bucket( " << entity_rank_name << " : " ;
-  for ( PartVector::const_iterator i = parts.begin() ; i != parts.end() ; ++i ) {
-    s << (*i)->name() << " " ;
+  for (auto p : parts) {
+    s << p->name() << " " ;
   }
   s << ")" ;
 
@@ -625,58 +616,6 @@ size_t Bucket::get_others_index_count(size_type bucket_ordinal, EntityRank rank)
   probe = std::upper_bound(probe, ents_end, rank, cmp);
 
   return probe - saved_lower;
-}
-
-//----------------------------------------------------------------------
-// Every bucket in the partition points to the first bucket,
-// except the first bucket which points to the last bucket.
-
-Bucket * Bucket::last_bucket_in_partition() const
-{
-  Bucket * last = last_bucket_in_partition_impl();
-
-  ThrowRequireMsg( nullptr != last, "Last is NULL");
-  ThrowRequireMsg( last->size() != 0, "Last bucket is empty");
-
-  return last;
-}
-
-Bucket * Bucket::last_bucket_in_partition_impl() const
-{
-  bool this_is_first_bucket_in_partition = (bucket_counter() == 0);
-
-  Bucket * last = nullptr;
-
-  if (this_is_first_bucket_in_partition) {
-    last = m_bucket;
-  } else {
-    last = m_bucket->m_bucket;
-  }
-
-  return last;
-}
-
-//----------------------------------------------------------------------
-
-Bucket * Bucket::first_bucket_in_partition() const
-{
-  return last_bucket_in_partition_impl()->m_bucket;
-}
-
-//----------------------------------------------------------------------
-
-void Bucket::set_last_bucket_in_partition( Bucket * last_bucket )
-{
-  Bucket * last = last_bucket_in_partition_impl();
-  Bucket * first = last->m_bucket;
-  first->m_bucket = last_bucket;
-}
-
-//----------------------------------------------------------------------
-
-void Bucket::set_first_bucket_in_partition( Bucket * first_bucket )
-{
-  m_bucket = first_bucket;
 }
 
 //----------------------------------------------------------------------
@@ -855,18 +794,14 @@ void Bucket::parent_topology( EntityRank parent_rank, std::vector<stk::topology>
 
   parent_topologies.clear();
 
-  for (size_t i=0, e=parts.size(); i<e; ++i)
-  {
-    Part const & p = *parts[i];
+  for (auto& part : parts ) {
+    Part const & p = *part;
     if ( (p.primary_entity_rank() == parent_rank) && p.topology().is_valid()) {
       parent_topologies.push_back(p.topology());
     }
   }
 
-  std::sort(parent_topologies.begin(),parent_topologies.end());
-  std::vector<stk::topology>::iterator end = std::unique(parent_topologies.begin(), parent_topologies.end());
-
-  parent_topologies.erase(end,parent_topologies.end());
+  stk::util::sort_and_unique(parent_topologies);
 }
 
 void Bucket::check_size_invariant() const
@@ -892,32 +827,32 @@ void Bucket::debug_dump(std::ostream& out, unsigned ordinal) const
   const_cast<Bucket*>(this)->modify_all_connectivity(functor);
 }
 
-#ifndef NDEBUG
-void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type) const
+void Bucket::debug_check_for_invalid_connectivity_request(ConnectivityType const* type) const
 {
-  EntityRank rank = stk::topology::END_RANK;
-  if (type == &m_node_kind) {
-    rank = stk::topology::NODE_RANK;
-  }
-  else if (type == &m_edge_kind) {
-    rank = stk::topology::EDGE_RANK;
-  }
-  else if (type == &m_face_kind) {
-    rank = stk::topology::FACE_RANK;
-  }
-  else if (type == &m_element_kind) {
-    rank = stk::topology::ELEMENT_RANK;
-  }
-  else {
-    ThrowAssert(false);
-  }
-  // Asking for connectivity between entities of equal rank is always invalid and ok to ask for
-  // Asking for connectivity between for FACE_RANK in 2d is always invalid and ok to ask for
-  bool isThisEntityAskingForConnectivityToItsOwnRank = entity_rank() == rank;
-  bool isThisEntityAskingForFaceConnectivityOnTwoDimensionalMesh = rank == stk::topology::FACE_RANK && mesh().mesh_meta_data().spatial_dimension() == 2;
-  ThrowAssert( isThisEntityAskingForConnectivityToItsOwnRank || isThisEntityAskingForFaceConnectivityOnTwoDimensionalMesh);
-}
+#ifndef NDEBUG
+    EntityRank rank = stk::topology::END_RANK;
+    if (type == &m_node_kind) {
+      rank = stk::topology::NODE_RANK;
+    }
+    else if (type == &m_edge_kind) {
+      rank = stk::topology::EDGE_RANK;
+    }
+    else if (type == &m_face_kind) {
+      rank = stk::topology::FACE_RANK;
+    }
+    else if (type == &m_element_kind) {
+      rank = stk::topology::ELEMENT_RANK;
+    }
+    else {
+      ThrowAssert(false);
+    }
+    // Asking for connectivity between entities of equal rank is always invalid and ok to ask for
+    // Asking for connectivity between for FACE_RANK in 2d is always invalid and ok to ask for
+    bool isThisEntityAskingForConnectivityToItsOwnRank = entity_rank() == rank;
+    bool isThisEntityAskingForFaceConnectivityOnTwoDimensionalMesh = rank == stk::topology::FACE_RANK && mesh().mesh_meta_data().spatial_dimension() == 2;
+    ThrowAssert( isThisEntityAskingForConnectivityToItsOwnRank || isThisEntityAskingForFaceConnectivityOnTwoDimensionalMesh);
 #endif
+}
 
 namespace impl {
 

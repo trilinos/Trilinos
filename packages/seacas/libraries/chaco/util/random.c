@@ -6,7 +6,7 @@
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43
- *  Copyright (c) 2005 National Technology & Engineering Solutions
+ *  Copyright (c) 2005-2017 National Technology & Engineering Solutions
  *  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  *  NTESS, the U.S. Government retains certain rights in this software.
  *

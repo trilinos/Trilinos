@@ -185,3 +185,63 @@ in the future.
 To see more documentation for each of these options, run a configure with
 ``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the ``CMakeCache.txt`` file
 (as raw text or using the CMake QT GUI or ``ccmake``).
+
+
+Addressing problems with large builds of Trilinos
+-------------------------------------------------
+
+Trilinos is a large collection of complex software.  Depending on what gets
+enbaled when building Trlinos, one can experience build and installation
+problems due to this large size.
+
+When running into problems like these, the first thing that should be tried is
+to **upgrade to and use the newest supported version of CMake!** In some
+cases, newer versions of CMake may automatically fix problems with building
+and installing Trilinos.  Typically, Trilinos is kept current with new CMake
+releases as they come out.
+
+Otherwise, some problems that can arise when and solutions to those problems
+are mentioned below.
+
+**Command-line too long errors:**
+
+When turning on some options and enabling some set of package's one may
+encounter command-lines that are too long for the OS shell or the tool being
+called.  For example, on some systems, enabling CUDA and COMPLEX variable
+types (e.g. ``-D TPL_ENABLE_CUDA=ON -D Trilinos_ENABLE_COMPLEX=ON``) can
+result in "File 127" errors when trying to create libraries due to large
+numbers of ``*.o`` object files getting passed to create some libraries.
+
+Also, on some systems, the list of include directories may become so long that
+one gets "Command-line too long" errors during compilation.
+
+These and other cases can be addressed by explicitly enabling built-in CMake
+support for ``*.rsp`` resource files as described in the section `Enabling the
+usage of resource files to reduce length of build lines`_.
+
+**Large Object file errors:**
+
+Depending on settings and which packages are enabled, some of the ``*.o``
+files can become very large, so large that it overwhelms the system tools to
+create libraries.  One known case is older versions of the ``ar`` tool used to
+create static libraries (i.e. ``-D BUILD_SHARED_LIBS=OFF``) on some systems.
+Versions of ``ar`` that come with the BinUtils package **before** version 2.27
+may generate "File Truncated" failures when trying to create static libraries
+involving these large object files.
+
+The solution to that problem is to use a newer version of BinUtils 2.27+ for
+which ``ar`` can handle these large object files to create static libraries.
+Just put that newer version of ``ar`` in the default path and CMake will use
+it or configure with::
+
+  -D CMAKE_AR=<path-to-updated-binutils>/bin/ar
+
+**Long make logic times:**
+
+On some systems with slower disk operations (e.g. NFS mounted disks), the time
+that the ``make`` program with the ``Unix Makefiles`` generator to do
+dependency analysis can be excessively long (e.g. cases of more than 2 minutes
+to do dependency analysis have been reported to determine if a single target
+needs to be rebuilt).  The solution is to switch from the default ``Unix
+Makefiles`` generator to the ``Ninja`` generator (see `Enabling support for
+Ninja`_).

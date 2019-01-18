@@ -308,7 +308,7 @@ namespace panzer_stk {
     }
     m_is_transient = is_transient;
 
-    bool useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
+    useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
 
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -588,8 +588,8 @@ namespace panzer_stk {
 
     // find max number of worksets
     std::size_t max_wksets = 0;
-    for(std::size_t p=0;p<physicsBlocks.size();p++) {
-      const panzer::WorksetDescriptor wd = panzer::blockDescriptor(physicsBlocks[p]->elementBlockID());
+    for(std::size_t pb=0;pb<physicsBlocks.size();pb++) {
+      const panzer::WorksetDescriptor wd = panzer::blockDescriptor(physicsBlocks[pb]->elementBlockID());
       Teuchos::RCP< std::vector<panzer::Workset> >works = wkstContainer->getWorksets(wd);
       max_wksets = std::max(max_wksets,works->size());
     }
@@ -602,8 +602,8 @@ namespace panzer_stk {
     // see if field coordinates are required, if so reset the workset container
     // and set the coordinates to be associated with a field in the mesh
     useDynamicCoordinates_ = false;
-    for(std::size_t p=0;p<physicsBlocks.size();p++) {
-      if(physicsBlocks[p]->getCoordinateDOFs().size()>0) {
+    for(std::size_t pb=0;pb<physicsBlocks.size();pb++) {
+      if(physicsBlocks[pb]->getCoordinateDOFs().size()>0) {
          mesh->setUseFieldCoordinates(true);
          useDynamicCoordinates_ = true;
          wkstContainer->clear(); // this serves to refresh the worksets

@@ -257,7 +257,8 @@ class Reader : public Teuchos::Reader {
         }
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_FIRST: {
+      case Teuchos::YAML::PROD_BMAP_FIRST:
+      case Teuchos::YAML::PROD_FMAP_FIRST: {
         TEUCHOS_ASSERT(rhs.at(0).type() == typeid(PLPair));
         map_first_item(result_any, rhs.at(0));
         TEUCHOS_ASSERT(result_any.type() == typeid(ParameterList));
@@ -267,7 +268,14 @@ class Reader : public Teuchos::Reader {
         map_next_item(result_any, rhs.at(0), rhs.at(1));
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_SCALAR: {
+      case Teuchos::YAML::PROD_FMAP_NEXT: {
+        map_next_item(result_any, rhs.at(0), rhs.at(3));
+        break;
+      }
+      case Teuchos::YAML::PROD_BMAP_SCALAR:
+      case Teuchos::YAML::PROD_FMAP_SCALAR:
+      case Teuchos::YAML::PROD_FMAP_FMAP:
+      case Teuchos::YAML::PROD_FMAP_FSEQ: {
         int scalar_type = interpret_tag(rhs.at(3));
         map_item(result_any, rhs.at(0), rhs.at(4), scalar_type);
         break;
@@ -958,11 +966,11 @@ void updateParametersFromYamlFile(const std::string& yamlFileName,
 {
   //load the YAML file in as a new param list
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlFile(yamlFileName);
-  //now update the original list (overwriting values with same key)
-  paramList->setParameters(*updated);
   if (paramList->name() == "ANONYMOUS") {
     paramList->setName(updated->name());
   }
+  //now update the original list (overwriting values with same key)
+  paramList->setParameters(*updated);
 }
 
 void updateParametersFromYamlCString(const char* const data,
@@ -972,10 +980,10 @@ void updateParametersFromYamlCString(const char* const data,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(data, "CString");
   if(overwrite)
   {
-    paramList->setParameters(*updated);
     if (paramList->name() == "ANONYMOUS") {
       paramList->setName(updated->name());
     }
+    paramList->setParameters(*updated);
   }
   else
   {
@@ -991,10 +999,10 @@ void updateParametersFromYamlString(const std::string& yamlData,
   Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(yamlData, name);
   if(overwrite)
   {
-    paramList->setParameters(*updated);
     if (paramList->name() == "ANONYMOUS") {
       paramList->setName(updated->name());
     }
+    paramList->setParameters(*updated);
   }
   else
   {

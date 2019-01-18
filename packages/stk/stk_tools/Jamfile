@@ -57,6 +57,23 @@ project votd
   : build-dir $(stk_tools-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_block_extractor
+  stk_tools_utest
+  stk_tools_integration_tester
+  stk_tools_pmesh_unit_tester
+  ;
+
 #
 # SECTION 2: Development install
 #
@@ -67,10 +84,12 @@ local xml-files =
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_block_extractor
-    stk_tools_utest
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
 
 #
@@ -78,7 +97,26 @@ alias install-targets
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                          install-user-include install-user-lib ;
+                         install-user-include
+                         install-user-lib
+                         install-user-bin ;
+
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
+explicit install-user-bin ;
+install install-user-bin
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Executables listed here will only installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittest to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -122,9 +160,14 @@ exe stk_tools_utest
     [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/mesh_clone/*.cpp ]
     stk_tools_lib
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
+exe stk_tools_integration_tester
+  :
+    [ glob $(stk_tools-root)/../stk_unit_tests/stk_tools/*.cpp ]
+    stk_tools_lib
+    /sierra/stk_unit_test_utils//stk_unit_main
   : <tag>@sierra-exec-tag
   ;
 
@@ -145,3 +188,35 @@ lib stk_tools_lib
         <file>$(stk_tools-root)/lib/libstk_tools_lib.a
     ]
   ;
+
+lib stk_pmesh_lib
+  : 
+    [ ifdevbuild
+        $(stk_tools-root)/stk_tools/pmesh_lib/makeparfiles.C
+    ]
+    /sierra/stk_io//stk_io
+    /sierra/stk_io//stk_io_util
+    /sierra/seacas//nemesis
+  :
+    [ ifuserbuild
+        <file>$(stk_tools-root)/lib/libpmesh_lib.a
+    ]
+    [ ifdevbuild
+        <include>$(stk_tools-root-inc)/stk_tools/pmesh_lib
+    ]
+  :
+  :
+    <include>$(stk_tools-root-inc)/stk_tools/pmesh_lib
+  ;
+
+exe stk_tools_pmesh_unit_tester
+  :
+    [ glob
+      $(stk_tools-root)/stk_tools/pmesh_lib/UnitTest/*.C
+    ]
+    stk_pmesh_lib
+    /tpl/gtest//gtest
+  :
+    <tag>@sierra-exec-tag
+  ;
+

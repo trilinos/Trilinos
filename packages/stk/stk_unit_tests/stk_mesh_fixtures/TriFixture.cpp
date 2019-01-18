@@ -31,12 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_unit_tests/stk_mesh_fixtures/TriFixture.hpp>
-#include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
-#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
-#include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
@@ -44,105 +38,126 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_unit_tests/stk_mesh_fixtures/CoordinateMapping.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+#include <array>
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityIdVector
+#include <stk_unit_tests/stk_mesh_fixtures/FixtureNodeSharing.hpp>
+#include <stk_unit_tests/stk_mesh_fixtures/TriFixture.hpp>
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 namespace stk { namespace mesh { struct ConnectivityMap; } }
-
-
-
-
 
 namespace stk {
 namespace mesh {
 namespace fixtures {
 
-TriFixture::TriFixture(   stk::ParallelMachine pm
+namespace impl {
+template <int DIM>
+TriFixtureImpl<DIM>::TriFixtureImpl( MetaData& meta,
+    BulkData& bulk,
+    size_t nx,
+    size_t ny,
+    size_t ,
+    size_t nid_start,
+    size_t eid_start)
+  : m_spatial_dimension(DIM),
+    m_nx( nx ),
+    m_ny( ny ),
+    m_meta(meta),
+    m_bulk_data(bulk),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("tri_part",
+        DIM == 2 ? stk::topology::TRI_3_2D : stk::topology::SHELL_TRI_3) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
+    m_node_id_start(nid_start),
+    m_elem_id_start(eid_start),
+    m_elem_topology( DIM == 2 ? stk::topology::TRI_3_2D : stk::topology::SHELL_TRI_3),
+    m_face_topology( DIM == 2 ? stk::topology::LINE_2 : stk::topology::TRI_3)
+{
+  //put coord-field on all nodes:
+  put_field_on_mesh(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+}
+
+template <int DIM>
+TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
               , ConnectivityMap const* connectivity_map
             )
-  : m_spatial_dimension(2),
-    m_nx(nx),
-    m_ny(ny),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
-                , pm
-                , autoAuraOption
-#ifdef SIERRA_MIGRATION
-                , false
-#endif
-                , connectivity_map
-               ),
-    m_elem_parts( 1, &m_meta.declare_part_with_topology("tri_part", stk::topology::TRI_3) ),
-    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") )
+  : TriFixtureImpl(pm, nx, ny, "coordinates", autoAuraOption, connectivity_map)
 {
-
-  //put coord-field on all nodes:
-  put_field(
-    m_coord_field,
-    m_meta.universal_part(),
-    m_spatial_dimension);
-
 }
 
-TriFixture::TriFixture(   stk::ParallelMachine pm
+template <int DIM>
+TriFixtureImpl<DIM>::TriFixtureImpl(   stk::ParallelMachine pm
               , size_t nx
               , size_t ny
               , const std::string& coordsName
               , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
               , ConnectivityMap const* connectivity_map
             )
-  : m_spatial_dimension(2),
+  : m_spatial_dimension(DIM),
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p( new BulkData(*m_meta_p,
+        pm,
+        autoAuraOption,
+#ifdef SIERRA_MIGRATION
+        false,
+#endif
+        connectivity_map) ),
     m_nx(nx),
     m_ny(ny),
-    m_meta( m_spatial_dimension ),
-    m_bulk_data(  m_meta
-                , pm
-                , autoAuraOption
-#ifdef SIERRA_MIGRATION
-                , false
-#endif
-                , connectivity_map
-               ),
-    m_elem_parts( 1, &m_meta.declare_part_with_topology("tri_part", stk::topology::TRI_3) ),
+    m_meta( *m_meta_p ),
+    m_bulk_data(*m_bulk_p),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("tri_part",
+        DIM == 2 ? stk::topology::TRI_3_2D : stk::topology::SHELL_TRI_3) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
-    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordsName) )
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordsName) ),
+    m_elem_topology( DIM == 2 ? stk::topology::TRI_3_2D : stk::topology::SHELL_TRI_3),
+    m_face_topology( DIM == 2 ? stk::topology::LINE_2 : stk::topology::TRI_3)
 {
-
   //put coord-field on all nodes:
-  put_field(
+  put_field_on_mesh(
     m_coord_field,
     m_meta.universal_part(),
-    m_spatial_dimension);
+    m_spatial_dimension,
+    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
 
 }
 
-void TriFixture::generate_mesh()
+template <int DIM>
+void TriFixtureImpl<DIM>::generate_mesh(const CoordinateMapping & coordMap)
 {
   std::vector<size_t> quad_range_on_this_processor;
 
   const size_t p_size = m_bulk_data.parallel_size();
   const size_t p_rank = m_bulk_data.parallel_rank();
-  const size_t num_elems = m_nx * m_ny ;
+  const size_t num_quads = m_nx * m_ny ;
 
   m_nodes_to_procs.clear();
   for (unsigned proc_rank = 0; proc_rank < p_size; ++proc_rank) {
     fill_node_map(proc_rank);
   }
 
-  const size_t beg_elem = ( num_elems * p_rank ) / p_size ;
-  const size_t end_elem = ( num_elems * ( p_rank + 1 ) ) / p_size ;
+  const size_t beg_elem = ( num_quads * p_rank ) / p_size ;
+  const size_t end_elem = ( num_quads * ( p_rank + 1 ) ) / p_size ;
 
   for ( size_t i = beg_elem; i != end_elem; ++i) {
     quad_range_on_this_processor.push_back(i);
   }
 
-  generate_mesh(quad_range_on_this_processor);
+  generate_mesh(quad_range_on_this_processor, coordMap);
 }
 
-void TriFixture::node_x_y( EntityId entity_id, size_t &x , size_t &y ) const
+template <int DIM>
+void TriFixtureImpl<DIM>::node_x_y( EntityId entity_id, size_t &x , size_t &y ) const
 {
-  entity_id -= 1;
+  entity_id -= m_node_id_start;
 
   x = entity_id % (m_nx+1);
   entity_id /= (m_nx+1);
@@ -150,7 +165,8 @@ void TriFixture::node_x_y( EntityId entity_id, size_t &x , size_t &y ) const
   y = entity_id;
 }
 
-void TriFixture::quad_x_y( EntityId entity_id, size_t &x , size_t &y ) const
+template <int DIM>
+void TriFixtureImpl<DIM>::quad_x_y( EntityId entity_id, size_t &x , size_t &y ) const
 {
   x = entity_id % m_nx;
   entity_id /= m_nx;
@@ -158,7 +174,9 @@ void TriFixture::quad_x_y( EntityId entity_id, size_t &x , size_t &y ) const
   y = entity_id;
 }
 
-void TriFixture::generate_mesh(std::vector<size_t> & quad_range_on_this_processor)
+template <int DIM>
+void TriFixtureImpl<DIM>::generate_mesh(std::vector<size_t> & quad_range_on_this_processor,
+    const CoordinateMapping & coordMap)
 {
   {
     //sort and unique the input elements
@@ -196,7 +214,7 @@ void TriFixture::generate_mesh(std::vector<size_t> & quad_range_on_this_processo
         tri_nodes[1] = elem_nodes[tri_vert[tri][1]];
         tri_nodes[2] = elem_nodes[tri_vert[tri][2]];
 
-        EntityId tri_id = 2*quad_id + tri + 1;
+        EntityId tri_id = 2*quad_id + tri + m_elem_id_start;
         stk::mesh::declare_element( m_bulk_data, m_elem_parts, tri_id, tri_nodes);
 
         for (size_t i = 0; i<3; ++i) {
@@ -214,8 +232,13 @@ void TriFixture::generate_mesh(std::vector<size_t> & quad_range_on_this_processo
 
           Scalar * data = stk::mesh::field_data( m_coord_field , node );
 
-          data[0] = (Scalar)nx ;
-          data[1] = (Scalar)ny ;
+          // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
+          std::array<double, 3> temp;
+          coordMap.getNodeCoordinates(temp.data(), nx, ny, 0);
+
+          data[0] = temp[0];
+          data[1] = temp[1] ;
+          if(DIM == 3) data[2] = 0.;
         }
       }
     }
@@ -223,7 +246,8 @@ void TriFixture::generate_mesh(std::vector<size_t> & quad_range_on_this_processo
   m_bulk_data.modification_end();
 }
 
-void TriFixture::fill_node_map(int p_rank)
+template <int DIM>
+void TriFixtureImpl<DIM>::fill_node_map(int p_rank)
 {
 
   std::vector<EntityId> element_ids_on_this_processor;
@@ -269,6 +293,10 @@ void TriFixture::fill_node_map(int p_rank)
     }
   }
 }
+
+template class TriFixtureImpl<2>;
+template class TriFixtureImpl<3>;
+} // impl
 
 } // fixtures
 } // mesh

@@ -82,7 +82,7 @@ LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint(
 
 LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint(
           const LOCA::MultiContinuation::CompositeConstraint& source,
-          NOX::CopyType type) :
+          NOX::CopyType /* type */) :
   globalData(source.globalData),
   numConstraintObjects(source.numConstraintObjects),
   constraintPtrs(source.constraintPtrs),

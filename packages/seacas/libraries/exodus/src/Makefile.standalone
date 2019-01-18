@@ -1,0 +1,328 @@
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+# 
+#     * Redistributions in binary form must reproduce the above
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
+#       with the distribution.  
+# 
+#     * Neither the name of Sandia Corporation nor the names of its
+#       contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+
+PARSRCS = ex_create_par.c \
+	  ex_open_par.c
+
+SRCS =	\
+     ex_add_attr.c \
+     ex_close.c \
+     ex_conv.c \
+     ex_copy.c \
+     ex_create.c \
+     ex_create_group.c \
+     ex_cvt_nodes_to_sides.c \
+     ex_err.c \
+     ex_get_all_times.c \
+     ex_get_attr.c \
+     ex_get_attr_names.c \
+     ex_get_attr_param.c \
+     ex_get_block.c \
+     ex_get_block_param.c \
+     ex_get_block_params.c \
+     ex_get_cmap_params.c \
+     ex_get_concat_sets.c \
+     ex_get_concat_side_set_node_count.c \
+     ex_get_conn.c \
+     ex_get_coord.c \
+     ex_get_coord_names.c \
+     ex_get_coordinate_frames.c \
+     ex_get_eb_info_global.c \
+     ex_get_elem_cmap.c \
+     ex_get_elem_type.c \
+     ex_get_entity_count_per_polyhedra.c \
+     ex_get_glob_var_time_int.c \
+     ex_get_glob_vars_int.c \
+     ex_get_group_id.c \
+     ex_get_group_ids.c \
+     ex_get_id_map.c \
+     ex_get_ids.c \
+     ex_get_info.c \
+     ex_get_init.c \
+     ex_get_init_ext.c \
+     ex_get_init_global.c \
+     ex_get_init_info.c \
+     ex_get_loadbal_param.c \
+     ex_get_map.c \
+     ex_get_map_param.c \
+     ex_get_name.c \
+     ex_get_names.c \
+     ex_get_nodal_var_int.c \
+     ex_get_nodal_var_time_int.c \
+     ex_get_node_cmap.c \
+     ex_get_ns_param_global.c \
+     ex_get_num_map.c \
+     ex_get_object_truth_vector.c \
+     ex_get_one_attr.c \
+     ex_get_partial_attr.c \
+     ex_get_partial_conn.c \
+     ex_get_partial_coord.c \
+     ex_get_partial_coord_component.c \
+     ex_get_partial_id_map.c \
+     ex_get_partial_nodal_var_int.c \
+     ex_get_partial_num_map.c \
+     ex_get_partial_one_attr.c \
+     ex_get_partial_set.c \
+     ex_get_partial_set_dist_fact.c \
+     ex_get_partial_var.c \
+     ex_get_processor_elem_maps.c \
+     ex_get_processor_node_maps.c \
+     ex_get_prop.c \
+     ex_get_prop_array.c \
+     ex_get_prop_names.c \
+     ex_get_qa.c \
+     ex_get_set.c \
+     ex_get_set_dist_fact.c \
+     ex_get_set_param.c \
+     ex_get_sets.c \
+     ex_get_side_set_node_count.c \
+     ex_get_side_set_node_list.c \
+     ex_get_side_set_node_list_len.c \
+     ex_get_ss_param_global.c \
+     ex_get_time.c \
+     ex_get_truth_table.c \
+     ex_get_var.c \
+     ex_get_var_time.c \
+     ex_get_variable_name.c \
+     ex_get_variable_names.c \
+     ex_get_variable_param.c \
+     ex_inquire.c \
+     ex_int_get_block_param.c \
+     ex_ne_util.c \
+     ex_open.c \
+     ex_opts.c \
+     ex_put_all_var_param.c \
+     ex_put_all_var_param_ext.c \
+     ex_put_attr.c \
+     ex_put_attr_names.c \
+     ex_put_attr_param.c \
+     ex_put_block.c \
+     ex_put_block_param.c \
+     ex_put_block_params.c \
+     ex_put_cmap_params.c \
+     ex_put_cmap_params_cc.c \
+     ex_put_concat_all_blocks.c \
+     ex_put_concat_elem_block.c \
+     ex_put_concat_sets.c \
+     ex_put_conn.c \
+     ex_put_coord.c \
+     ex_put_coord_names.c \
+     ex_put_coordinate_frames.c \
+     ex_put_eb_info_global.c \
+     ex_put_elem_cmap.c \
+     ex_put_entity_count_per_polyhedra.c \
+     ex_put_id_map.c \
+     ex_put_info.c \
+     ex_put_init.c \
+     ex_put_init_ext.c \
+     ex_put_init_global.c \
+     ex_put_init_info.c \
+     ex_put_loadbal_param.c \
+     ex_put_loadbal_param_cc.c \
+     ex_put_map.c \
+     ex_put_map_param.c \
+     ex_put_name.c \
+     ex_put_names.c \
+     ex_put_nodal_var.c \
+     ex_put_nodal_var_int.c \
+     ex_put_node_cmap.c \
+     ex_put_ns_param_global.c \
+     ex_put_num_map.c \
+     ex_put_one_attr.c \
+     ex_put_partial_attr.c \
+     ex_put_partial_conn.c \
+     ex_put_partial_coord.c \
+     ex_put_partial_coord_component.c \
+     ex_put_partial_id_map.c \
+     ex_put_partial_nodal_var_int.c \
+     ex_put_partial_num_map.c \
+     ex_put_partial_one_attr.c \
+     ex_put_partial_set.c \
+     ex_put_partial_set_dist_fact.c \
+     ex_put_partial_var.c \
+     ex_put_processor_elem_maps.c \
+     ex_put_processor_node_maps.c \
+     ex_put_prop.c \
+     ex_put_prop_array.c \
+     ex_put_prop_names.c \
+     ex_put_qa.c \
+     ex_put_set.c \
+     ex_put_set_dist_fact.c \
+     ex_put_set_param.c \
+     ex_put_sets.c \
+     ex_put_ss_param_global.c \
+     ex_put_time.c \
+     ex_put_truth_table.c \
+     ex_put_var.c \
+     ex_put_variable_name.c \
+     ex_put_variable_names.c \
+     ex_put_variable_param.c \
+     ex_threadsafe.c \
+     ex_update.c \
+     ex_utils.c
+
+OBJS = ${SRCS:.c=.o}
+
+DEP_SRCS = \
+	 deprecated/ex_get_concat_node_sets.c \
+	 deprecated/ex_get_concat_side_sets.c \
+	 deprecated/ex_get_elem_attr.c \
+	 deprecated/ex_get_elem_attr_names.c \
+	 deprecated/ex_get_elem_blk_ids.c \
+	 deprecated/ex_get_elem_block.c \
+	 deprecated/ex_get_elem_conn.c \
+	 deprecated/ex_get_elem_map.c \
+	 deprecated/ex_get_elem_num_map.c \
+	 deprecated/ex_get_elem_var.c \
+	 deprecated/ex_get_elem_var_tab.c \
+	 deprecated/ex_get_elem_var_time.c \
+	 deprecated/ex_get_glob_var_time.c \
+	 deprecated/ex_get_glob_vars.c \
+	 deprecated/ex_get_n_attr.c \
+	 deprecated/ex_get_n_conn.c \
+	 deprecated/ex_get_n_coord.c \
+	 deprecated/ex_get_n_elem_attr.c \
+	 deprecated/ex_get_n_elem_conn.c \
+	 deprecated/ex_get_n_elem_num_map.c \
+	 deprecated/ex_get_n_elem_var.c \
+	 deprecated/ex_get_n_nodal_var.c \
+	 deprecated/ex_get_n_node_num_map.c \
+	 deprecated/ex_get_n_node_set.c \
+	 deprecated/ex_get_n_node_set_df.c \
+	 deprecated/ex_get_n_one_attr.c \
+	 deprecated/ex_get_n_side_set.c \
+	 deprecated/ex_get_n_side_set_df.c \
+	 deprecated/ex_get_n_var.c \
+	 deprecated/ex_get_nodal_var.c \
+	 deprecated/ex_get_nodal_var_time.c \
+	 deprecated/ex_get_node_map.c \
+	 deprecated/ex_get_node_num_map.c \
+	 deprecated/ex_get_node_set.c \
+	 deprecated/ex_get_node_set_dist_fact.c \
+	 deprecated/ex_get_node_set_ids.c \
+	 deprecated/ex_get_node_set_param.c \
+	 deprecated/ex_get_nset_var.c \
+	 deprecated/ex_get_nset_var_tab.c \
+	 deprecated/ex_get_one_elem_attr.c \
+	 deprecated/ex_get_partial_elem_attr.c \
+	 deprecated/ex_get_partial_elem_conn.c \
+	 deprecated/ex_get_partial_elem_map.c \
+	 deprecated/ex_get_partial_elem_num_map.c \
+	 deprecated/ex_get_partial_elem_var.c \
+	 deprecated/ex_get_partial_nodal_var.c \
+	 deprecated/ex_get_partial_node_num_map.c \
+	 deprecated/ex_get_partial_node_set.c \
+	 deprecated/ex_get_partial_node_set_df.c \
+	 deprecated/ex_get_partial_side_set.c \
+	 deprecated/ex_get_partial_side_set_df.c \
+	 deprecated/ex_get_side_set.c \
+	 deprecated/ex_get_side_set_dist_fact.c \
+	 deprecated/ex_get_side_set_ids.c \
+	 deprecated/ex_get_side_set_param.c \
+	 deprecated/ex_get_sset_var.c \
+	 deprecated/ex_get_sset_var_tab.c \
+	 deprecated/ex_get_var_name.c \
+	 deprecated/ex_get_var_names.c \
+	 deprecated/ex_get_var_param.c \
+	 deprecated/ex_get_var_tab.c \
+	 deprecated/ex_put_concat_node_sets.c \
+	 deprecated/ex_put_concat_side_sets.c \
+	 deprecated/ex_put_concat_var_param.c \
+	 deprecated/ex_put_elem_attr.c \
+	 deprecated/ex_put_elem_attr_names.c \
+	 deprecated/ex_put_elem_block.c \
+	 deprecated/ex_put_elem_conn.c \
+	 deprecated/ex_put_elem_map.c \
+	 deprecated/ex_put_elem_num_map.c \
+	 deprecated/ex_put_elem_var.c \
+	 deprecated/ex_put_elem_var_slab.c \
+	 deprecated/ex_put_elem_var_tab.c \
+	 deprecated/ex_put_glob_vars.c \
+	 deprecated/ex_put_n_attr.c \
+	 deprecated/ex_put_n_coord.c \
+	 deprecated/ex_put_n_elem_attr.c \
+	 deprecated/ex_put_n_elem_conn.c \
+	 deprecated/ex_put_n_elem_num_map.c \
+	 deprecated/ex_put_n_nodal_var.c \
+	 deprecated/ex_put_n_node_num_map.c \
+	 deprecated/ex_put_n_node_set.c \
+	 deprecated/ex_put_n_node_set_df.c \
+	 deprecated/ex_put_n_one_attr.c \
+	 deprecated/ex_put_n_side_set.c \
+	 deprecated/ex_put_n_side_set_df.c \
+	 deprecated/ex_put_n_var.c \
+	 deprecated/ex_put_nodal_var_slab.c \
+	 deprecated/ex_put_node_map.c \
+	 deprecated/ex_put_node_num_map.c \
+	 deprecated/ex_put_node_set.c \
+	 deprecated/ex_put_node_set_dist_fact.c \
+	 deprecated/ex_put_node_set_param.c \
+	 deprecated/ex_put_nset_var.c \
+	 deprecated/ex_put_nset_var_tab.c \
+	 deprecated/ex_put_one_elem_attr.c \
+	 deprecated/ex_put_partial_elem_attr.c \
+	 deprecated/ex_put_partial_elem_conn.c \
+	 deprecated/ex_put_partial_elem_map.c \
+	 deprecated/ex_put_partial_elem_num_map.c \
+	 deprecated/ex_put_partial_nodal_var.c \
+	 deprecated/ex_put_partial_node_num_map.c \
+	 deprecated/ex_put_partial_node_set.c \
+	 deprecated/ex_put_partial_node_set_df.c \
+	 deprecated/ex_put_partial_side_set.c \
+	 deprecated/ex_put_partial_side_set_df.c \
+	 deprecated/ex_put_side_set.c \
+	 deprecated/ex_put_side_set_dist_fact.c \
+	 deprecated/ex_put_side_set_param.c \
+	 deprecated/ex_put_sset_var.c \
+	 deprecated/ex_put_sset_var_tab.c \
+	 deprecated/ex_put_var_name.c \
+	 deprecated/ex_put_var_names.c \
+	 deprecated/ex_put_var_param.c \
+	 deprecated/ex_put_var_tab.c
+
+DEP_OBJS = ${DEP_SRCS:.c=.o}
+
+all:: libexodus.a
+libexodus.a: $(OBJS) $(DEP_OBJS)
+	echo "Deprecated API Not built $(DEP_OBJS)"
+	$(AR) $@ $?
+	$(RANLIB) $@
+	cp libexodus.a ..
+
+clean::
+	rm -f *.CKP *.ln *.BAK *.bak *.o deprecated/*.o core errs ,* *~ *.a .emacs_* tags TAGS make.log MakeOut   "#"*
+
+.SUFFIXES: .c
+.c.o:
+	$(CC) -c $(CFLAGS) -o $*.o $*.c
+

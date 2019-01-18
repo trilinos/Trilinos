@@ -121,7 +121,7 @@ using std::string;
 %pythoncode
 %{
 __all__ = ["RCP"]
-import RCP
+from . import RCP
 %}
 
 // Standard exception handling
@@ -187,8 +187,8 @@ import RCP
 // Teuchos::RCP support.  If a class is ever passed to or from a
 // function or method wrapped by a Teuchos::RCP<>, then it should be
 // stored internally as a Teuchos::RCP<> as well.  This is
-// accomplished by %include-ing Teuchos_RCP.i and calling the provided
-// macro %teuchos_rcp() on the class.
+// accomplished by %include-ing Teuchos_RCP_typemaps.i and calling the
+// provided macro %teuchos_rcp() on the class.
 %include "Teuchos_RCP_typemaps.i"
 %include "Teuchos_RCP_DAP.i"
 %teuchos_rcp(std::basic_ostream)

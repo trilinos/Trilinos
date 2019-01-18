@@ -80,12 +80,12 @@ namespace ROL {
 template <class Real>
 class ScalarLinearConstraint : public Constraint<Real> {
 private:
-  const ROL::Ptr<Vector<Real> > a_; ///< Dual vector defining hyperplane
-  const Real b_;                        ///< Affine shift
+  const Ptr<Vector<Real>> a_; ///< Dual vector defining hyperplane
+  const Real b_;              ///< Affine shift
 
 public:
-  ScalarLinearConstraint(const ROL::Ptr<Vector<Real> > &a,
-                                     const Real b)
+  ScalarLinearConstraint(const Ptr<Vector<Real>> &a,
+                         const Real b)
     : a_(a), b_(b) {}
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {

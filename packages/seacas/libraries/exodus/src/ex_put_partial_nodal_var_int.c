@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,24 +33,24 @@
  *
  */
 /*****************************************************************************
-*
-* expnv - ex_put_partial_nodal_var
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     time_step               whole time step number
-*       int     nodel_var_index         index of desired nodal variable
-*       int     start_node              index (1-based) of first node to put
-*       int     num_nodes               number of nodal points
-*       float*  nodal_var_vals          array of nodal variable values
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expnv - ex_put_partial_nodal_var
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     time_step               whole time step number
+ *       int     nodel_var_index         index of desired nodal variable
+ *       int     start_node              index (1-based) of first node to put
+ *       int     num_nodes               number of nodal points
+ *       float*  nodal_var_vals          array of nodal variable values
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_WARN, ex_comp_ws, etc
@@ -83,42 +83,22 @@ int ex_put_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
-  if (ex_large_model(exoid) == 0) {
-    /* write values of the nodal variable */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variables in file id %d",
-               exoid);
-      ex_err("ex_put_partial_nodal_var", errmsg, status);
-      EX_FUNC_LEAVE(EX_WARN);
-    }
-    start[0] = --time_step;
-    start[1] = --nodal_var_index;
-    start[2] = --start_node;
-
-    count[0] = 1;
-    count[1] = 1;
-    count[2] = num_nodes;
+  if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
+             nodal_var_index, exoid);
+    ex_err_fn(exoid, __func__, errmsg, status);
+    EX_FUNC_LEAVE(EX_WARN);
   }
-  else {
-    /* nodal variables stored separately, find variable for this variable
-       index */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
-               nodal_var_index, exoid);
-      ex_err("ex_put_partial_nodal_var", errmsg, status);
-      EX_FUNC_LEAVE(EX_WARN);
-    }
 
-    start[0] = --time_step;
-    start[1] = --start_node;
+  start[0] = --time_step;
+  start[1] = --start_node;
 
-    count[0] = 1;
-    count[1] = num_nodes;
-    if (num_nodes == 0) {
-      start[1] = 0;
-    }
+  count[0] = 1;
+  count[1] = num_nodes;
+  if (num_nodes == 0) {
+    start[1] = 0;
   }
 
   if (ex_comp_ws(exoid) == 4) {
@@ -130,7 +110,7 @@ int ex_put_partial_nodal_var_int(int exoid, int time_step, int nodal_var_index, 
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store nodal variables in file id %d", exoid);
-    ex_err("ex_put_partial_nodal_var", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

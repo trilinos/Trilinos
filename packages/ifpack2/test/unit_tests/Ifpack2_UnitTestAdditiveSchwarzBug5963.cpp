@@ -53,7 +53,7 @@
 #include <Ifpack2_AdditiveSchwarz.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_RowMatrix.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 
 
 namespace {
@@ -76,7 +76,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
   typedef ScalarType scalar_type;
   typedef LocalOrdinalType local_ordinal_type;
   typedef GlobalOrdinalType global_ordinal_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+  typedef Tpetra::Map<>::node_type node_type;
 
   typedef Tpetra::global_size_t GST;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -98,8 +98,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
                       node_type> map_type;
   typedef Ifpack2::AdditiveSchwarz<row_matrix_type> global_solver_type;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 
@@ -241,7 +240,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
   typedef ScalarType scalar_type;
   typedef LocalOrdinalType local_ordinal_type;
   typedef GlobalOrdinalType global_ordinal_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType node_type;
+  typedef Tpetra::Map<>::node_type node_type;
 
   typedef Tpetra::global_size_t GST;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -263,8 +262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
                       node_type> map_type;
   typedef Ifpack2::AdditiveSchwarz<row_matrix_type> global_solver_type;
 
-  RCP<const Teuchos::Comm<int> > comm =
-    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
 

@@ -42,7 +42,12 @@
 #ifndef STOKHOS_MULTIPLY_HPP
 #define STOKHOS_MULTIPLY_HPP
 
+//#include "Kokkos_Macros.hpp"
+//#include "Kokkos_Pair.hpp"
+//#include "impl/Kokkos_Traits.hpp"
+
 #include "Kokkos_Core.hpp"
+
 #include <vector> // for std::vector (needed below)
 
 namespace Stokhos {
@@ -131,7 +136,7 @@ compute_work_range( const execution_space device,
 {
 #if defined( KOKKOS_ENABLE_CUDA )
   enum { cache_line =
-         Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value ? 128 : 64 };
+         std::is_same<execution_space,Kokkos::Cuda>::value ? 128 : 64 };
 #else
   enum { cache_line = 64 };
 #endif

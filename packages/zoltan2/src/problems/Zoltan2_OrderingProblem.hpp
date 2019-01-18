@@ -131,7 +131,7 @@ public:
   /*! \brief Constructor that uses a default communicator
    */
   OrderingProblem(Adapter *A, ParameterList *p) : 
-  OrderingProblem(A, p, Teuchos::DefaultComm<int>::getComm())
+  OrderingProblem(A, p, Tpetra::getDefaultComm())
   {}
 
   /*! \brief Set up validators specific to this Problem

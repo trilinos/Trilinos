@@ -42,6 +42,8 @@
 */
 
 #include "Tpetra_ConfigDefs.hpp"
+
+#ifndef TPETRA_HIDE_DEPRECATED_CODE
 #include "Tpetra_DefaultPlatform.hpp"
 
 Teuchos::RCP<Tpetra::DefaultPlatform::DefaultPlatformType> Tpetra::DefaultPlatform::platform_ = Teuchos::null;
@@ -61,3 +63,4 @@ namespace Tpetra {
   }
 
 }
+#endif // TPETRA_HIDE_DEPRECATED_CODE

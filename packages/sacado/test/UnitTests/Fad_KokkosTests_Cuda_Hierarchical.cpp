@@ -51,6 +51,11 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
   VIEW_FAD_TESTS_SFLD( F, RightContiguous32, D )
 
 // Instantiate tests for Cuda device
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
+#define SACADO_TEST_DFAD 1
+#else
+#define SACADO_TEST_DFAD 0
+#endif
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_D( Cuda )
 

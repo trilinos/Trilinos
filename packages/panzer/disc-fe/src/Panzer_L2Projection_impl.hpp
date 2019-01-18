@@ -67,9 +67,15 @@ namespace panzer {
   }
 
   template<typename LO, typename GO>
-  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
-  panzer::L2Projection<LO,GO>::buildMassMatrix()
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<LO,GO>>
+  panzer::L2Projection<LO,GO>::getTargetGlobalIndexer() const
+  {return targetGlobalIndexer_;}
+
+  template<typename LO, typename GO>
+  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>>
+  panzer::L2Projection<LO,GO>::buildMassMatrix(bool use_lumping)
   {
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection::Build Mass Matrix",TopBuildMassMatrix);
     TEUCHOS_ASSERT(setupCalled_);
 
     // Allocate the owned matrix
@@ -89,91 +95,206 @@ namespace panzer {
     auto M = ghostedMatrix->getLocalMatrix();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
+    const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const" || targetBasisDescriptor_.getType()=="HVol";
+
     // Loop over element blocks and fill mass matrix
-    for (const auto& block : elementBlockNames_) {
+    if(is_scalar){
+      for (const auto& block : elementBlockNames_) {
 
-      // Based on descriptor, currently assumes there should only be one workset
-      panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
-      const auto& worksets = worksetContainer_->getWorksets(wd);
+        // Based on descriptor, currently assumes there should only be one workset
+        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+        const auto& worksets = worksetContainer_->getWorksets(wd);
 
-      for (const auto& workset : *worksets) {
+        for (const auto& workset : *worksets) {
 
-        const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
-        
-        const auto& unweightedBasis = basisValues.basis_scalar;
-        const auto& weightedBasis = basisValues.weighted_basis_scalar;
-        
-        // Offsets (this assumes UVM, need to fix)
-        const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
-        PHX::View<LO*> kOffsets("MassMatrix: Offsets",offsets.size());
-        for(const auto& i : offsets)
-          kOffsets(i) = offsets[i];
-        
-        PHX::Device::fence();
-        
-        // Local Ids
-        Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
-                                                targetGlobalIndexer_->getElementBlockGIDCount(block));
-        
-        // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-        const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
-        
-        targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
-        
-        const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
-        Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
-            
-          LO cLIDs[256];
-          const int numIds = static_cast<int>(localIds.extent(1));
-          for(int i=0;i<numIds;++i)
-            cLIDs[i] = localIds(cell,i);
-          
-          double vals[256];
-          const int numQP = static_cast<int>(unweightedBasis.extent(2));
-          
-          for (int qp=0; qp < numQP; ++qp) {
-            for (int row=0; row < numBasisPoints; ++row) {
-              int offset = kOffsets(row);
-              LO lid = localIds(cell,offset);
-              
-              for (int col=0; col < numIds; ++col)
-                vals[col] = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
-              
-              M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
-            }
+          const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+
+          const auto& unweightedBasis = basisValues.basis_scalar;
+          const auto& weightedBasis = basisValues.weighted_basis_scalar;
+
+          // Offsets (this assumes UVM, need to fix)
+          const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          PHX::View<LO*> kOffsets("MassMatrix: Offsets",offsets.size());
+          for(const auto& i : offsets)
+            kOffsets(i) = offsets[i];
+
+          PHX::Device::fence();
+
+          // Local Ids
+          Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                  targetGlobalIndexer_->getElementBlockGIDCount(block));
+
+          // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+
+          targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
+
+          const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
+          if ( use_lumping ) {
+            Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+              double total_mass = 0.0, trace = 0.0;
+
+              LO cLIDs[256];
+              const int numIds = static_cast<int>(localIds.extent(1));
+              for(int i=0;i<numIds;++i)
+                cLIDs[i] = localIds(cell,i);
+
+              double vals[256]={0.0};
+              const int numQP = static_cast<int>(unweightedBasis.extent(2));
+
+              for (int row=0; row < numBasisPoints; ++row) {
+                for (int col=0; col < numIds; ++col) {
+                  for (int qp=0; qp < numQP; ++qp) {
+                    auto tmp = unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                    total_mass += tmp;
+                    if (col == row )
+                      trace += tmp;
+                  }
+                }
+              }
+
+              for (int row=0; row < numBasisPoints; ++row) {
+                for (int col=0; col < numBasisPoints; ++col)
+                  vals[col] = 0;
+
+                int offset = kOffsets(row);
+                LO lid = localIds(cell,offset);
+                int col = row;
+                vals[col] = 0.0;
+                for (int qp=0; qp < numQP; ++qp)
+                  vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp)*total_mass/trace;
+
+                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+              }
+            });
+
+          } else {
+            Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+
+              LO cLIDs[256];
+              const int numIds = static_cast<int>(localIds.extent(1));
+              for(int i=0;i<numIds;++i)
+                cLIDs[i] = localIds(cell,i);
+
+              double vals[256];
+              const int numQP = static_cast<int>(unweightedBasis.extent(2));
+
+              for (int row=0; row < numBasisPoints; ++row) {
+                int offset = kOffsets(row);
+                LO lid = localIds(cell,offset);
+
+                for (int col=0; col < numIds; ++col) {
+                  vals[col] = 0.0;
+                  for (int qp=0; qp < numQP; ++qp)
+                    vals[col] += unweightedBasis(cell,row,qp) * weightedBasis(cell,col,qp);
+                }
+                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+
+              }
+
+            });
           }
-   
-        });
+        }
+      }
+    } else {
+      for (const auto& block : elementBlockNames_) {
+
+        // Based on descriptor, currently assumes there should only be one workset
+        panzer::WorksetDescriptor wd(block,panzer::WorksetSizeType::ALL_ELEMENTS,true,true);
+        const auto& worksets = worksetContainer_->getWorksets(wd);
+
+        for (const auto& workset : *worksets) {
+
+          const auto& basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
+
+          const auto& unweightedBasis = basisValues.basis_vector;
+          const auto& weightedBasis = basisValues.weighted_basis_vector;
+
+          // Offsets (this assumes UVM, need to fix)
+          const std::vector<LO>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
+          PHX::View<LO*> kOffsets("MassMatrix: Offsets",offsets.size());
+          for(const auto& i : offsets)
+            kOffsets(i) = offsets[i];
+
+          PHX::Device::fence();
+
+          // Local Ids
+          Kokkos::View<LO**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+                                                  targetGlobalIndexer_->getElementBlockGIDCount(block));
+
+          // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+
+          targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
+
+          const int numBasisPoints = static_cast<int>(weightedBasis.extent(1));
+          Kokkos::parallel_for(workset.numOwnedCells(),KOKKOS_LAMBDA (const int& cell) {
+
+            LO cLIDs[256];
+            const int numIds = static_cast<int>(localIds.extent(1));
+            for(int i=0;i<numIds;++i)
+              cLIDs[i] = localIds(cell,i);
+
+            double vals[256];
+            const int numQP = static_cast<int>(unweightedBasis.extent(2));
+
+            for (int qp=0; qp < numQP; ++qp) {
+              for (int row=0; row < numBasisPoints; ++row) {
+                int offset = kOffsets(row);
+                LO lid = localIds(cell,offset);
+
+                for (int col=0; col < numIds; ++col){
+                  vals[col] = 0.0;
+                  for(int dim=0; dim < static_cast<int>(weightedBasis.extent(3)); ++dim)
+                    vals[col] += unweightedBasis(cell,row,qp,dim) * weightedBasis(cell,col,qp,dim);
+                }
+
+                M.sumIntoValues(lid,cLIDs,numIds,vals,true,true);
+              }
+            }
+
+          });
+        }
       }
     }
     PHX::exec_space::fence();
 
-    ghostedMatrix->fillComplete();
-    const auto exporter = factory.getGhostedExport(0);
-    ownedMatrix->doExport(*ghostedMatrix, *exporter, Tpetra::ADD);
-    ownedMatrix->fillComplete();
-
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("Exporting of mass matrix",ExportMM);
+      auto map = factory.getMap(0);
+      ghostedMatrix->fillComplete(map,map);
+      const auto exporter = factory.getGhostedExport(0);
+      ownedMatrix->doExport(*ghostedMatrix, *exporter, Tpetra::ADD);
+      ownedMatrix->fillComplete();
+    }
     return ownedMatrix;
   }
 
   template<typename LO, typename GO>
-  Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+  Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildInverseLumpedMassMatrix()
   {
+    PANZER_FUNC_TIME_MONITOR_DIFF("L2Projection<LO,GO>::buildInverseLumpedMassMatrix",buildInvLMM);
     using Teuchos::rcp;
-    const auto massMatrix = this->buildMassMatrix();
-    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getDomainMap(),1,true));
-    const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>(massMatrix->getRangeMap(),1,false));
+    const auto massMatrix = this->buildMassMatrix(true);
+    const auto lumpedMassMatrix = rcp(new Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>(massMatrix->getDomainMap(),1,true));
+    const auto tmp = rcp(new Tpetra::MultiVector<double,LO,GO,panzer::TpetraNodeType>(massMatrix->getRangeMap(),1,false));
     tmp->putScalar(1.0);
-    massMatrix->apply(*tmp,*lumpedMassMatrix);
-    lumpedMassMatrix->reciprocal(*lumpedMassMatrix);
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("Apply",Apply);
+      massMatrix->apply(*tmp,*lumpedMassMatrix);
+    }
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("Reciprocal",Reciprocal);
+      lumpedMassMatrix->reciprocal(*lumpedMassMatrix);
+    }
     return lumpedMassMatrix;
   }
 
   template<typename LO, typename GO>
-  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>
+  Teuchos::RCP<Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>>
   panzer::L2Projection<LO,GO>::buildRHSMatrix(const panzer::UniqueGlobalIndexer<LO,GO>& sourceGlobalIndexer,
-                                              const Teuchos::RCP<const Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>>& inputOwnedSourceMap,
+                                              const Teuchos::RCP<const Tpetra::Map<LO,GO,panzer::TpetraNodeType>>& inputOwnedSourceMap,
                                               const std::string& sourceFieldName,
                                               const panzer::BasisDescriptor& sourceBasisDescriptor,
                                               const int directionIndex)
@@ -183,10 +304,10 @@ namespace panzer {
     // *******************
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using MapType = Tpetra::Map<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
-    using GraphType = Tpetra::CrsGraph<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
-    using ExportType = Tpetra::Export<LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
-    using MatrixType = Tpetra::CrsMatrix<double,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<PHX::Device>>;
+    using MapType = Tpetra::Map<LO,GO,panzer::TpetraNodeType>;
+    using GraphType = Tpetra::CrsGraph<LO,GO,panzer::TpetraNodeType>;
+    using ExportType = Tpetra::Export<LO,GO,panzer::TpetraNodeType>;
+    using MatrixType = Tpetra::CrsMatrix<double,LO,GO,panzer::TpetraNodeType>;
 
     // *******************
     // Build ghosted graph
@@ -227,12 +348,6 @@ namespace panzer {
       }
     }
 
-    // Fill complete with range and domain map
-    ghostedGraph->fillComplete(ghostedSourceMap,ghostedTargetMap);
-
-    // *****************
-    // Build owned graph
-    // *****************
     RCP<MapType> ownedTargetMap;
     {
       std::vector<GO> indices;
@@ -246,6 +361,13 @@ namespace panzer {
       sourceGlobalIndexer.getOwnedIndices(indices);
       ownedSourceMap = rcp(new MapType(Teuchos::OrdinalTraits<GO>::invalid(),indices,0,comm_));
     }
+
+    // Fill complete with owned range and domain map
+    ghostedGraph->fillComplete(ownedSourceMap,ownedTargetMap);
+
+    // *****************
+    // Build owned graph
+    // *****************
 
     RCP<GraphType> ownedGraph = rcp(new GraphType(ownedTargetMap,0));
     RCP<const ExportType> exporter = rcp(new ExportType(ghostedTargetMap,ownedTargetMap));
@@ -279,7 +401,7 @@ namespace panzer {
         Kokkos::View<const double***,PHX::Device> sourceUnweightedScalarBasis;
         Kokkos::View<const double****,PHX::Device> sourceUnweightedVectorBasis;
         bool useRankThreeBasis = false; // default to gradient or vector basis
-        if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") ) {
+        if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") || (sourceBasisDescriptor.getType() == "HVol") ) {
           if (directionIndex == -1) { // Project dof value
             sourceUnweightedScalarBasis = sourceBasisValues.basis_scalar.get_static_view();
             useRankThreeBasis = true;
@@ -321,6 +443,10 @@ namespace panzer {
         {
           const auto fieldIndex = sourceGlobalIndexer.getFieldNum(sourceFieldName);
           const std::vector<LO>& offsets = sourceGlobalIndexer.getGIDFieldOffsets(block,fieldIndex);
+          TEUCHOS_TEST_FOR_EXCEPTION(offsets.size() == 0, std::runtime_error,
+                                     "ERROR: panzer::L2Projection::buildRHSMatrix() - The source field, \""
+                                     << sourceFieldName << "\", does not exist in element block \""
+                                     << block << "\"!");
           sourceFieldOffsets = Kokkos::View<LO*,PHX::Device>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(sourceFieldOffsets);
           for(size_t i=0; i <offsets.size(); ++i)
@@ -370,7 +496,7 @@ namespace panzer {
       }
 
     }
-    ghostedMatrix->fillComplete(ghostedSourceMap,ghostedTargetMap);
+    ghostedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);
     ownedMatrix->resumeFill();
     ownedMatrix->doExport(*ghostedMatrix,*exporter,Tpetra::ADD);
     ownedMatrix->fillComplete(ownedSourceMap,ownedTargetMap);

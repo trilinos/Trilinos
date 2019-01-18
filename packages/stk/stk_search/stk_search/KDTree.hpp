@@ -112,7 +112,7 @@ class ProximitySearchTree_T {
   //
   // Get the a box that bounds the whole search tree
   //
-  KOKKOS_FORCEINLINE_FUNCTION const RangeBoxType BoundingBox() const {
+  inline const RangeBoxType BoundingBox() const {
     return ( empty() ?  RangeBoxType() : m_tree[0].GetBox() );
   }
 
@@ -120,23 +120,27 @@ class ProximitySearchTree_T {
   // Find all overlaps with a given search object
   //
   template<typename DomainBox>
-  KOKKOS_FORCEINLINE_FUNCTION void SearchForOverlap(const DomainBox& searchObject, 
+  inline void SearchForOverlap(const DomainBox& searchObject,
                                                     std::vector<int>& returnList) const;  
 
   template<typename DomainBox>
-  KOKKOS_FORCEINLINE_FUNCTION void SearchForOverlap(const DomainBox& searchObject, 
+  inline void SearchForOverlap(const DomainBox& searchObject,
                                                     std::vector<int>& returnIndexList,
                                                     std::vector<RangeBoxType>& returnBoxList);
 
   // Find if there is any overlap of the with the given box and the search tree
   template<typename DomainBox>
-  KOKKOS_FORCEINLINE_FUNCTION bool AnyOverlap(const DomainBox& searchObject);
+  inline bool AnyOverlap(const DomainBox& searchObject);
 
   // Check if a tree is empty, thus any search would return no boxes
   bool empty() const {return m_tree.empty();}
 
   // Empty out everything in the tree
   void clear() {m_tree.clear();}
+
+
+  std::vector<ObjectBoundingBoxHierarchy_T<RangeBoxType> > &data()             { return m_tree; }
+  const std::vector<ObjectBoundingBoxHierarchy_T<RangeBoxType> > &data() const { return m_tree; }
 
  protected:
   std::vector<ObjectBoundingBoxHierarchy_T<RangeBoxType> > m_tree;

@@ -50,6 +50,7 @@
 #include <Teuchos_RCP.hpp>
 
 #include "Galeri_ConfigDefs.h"
+#include "Galeri_MultiVectorTraits.hpp"
 
 namespace Galeri {
 
@@ -69,6 +70,8 @@ namespace Galeri {
     template<typename Map, typename Matrix, typename MultiVector>
     class Problem : public Teuchos::Describable {
     public:
+      using RealValuedMultiVector = typename MultiVectorTraits<Map,MultiVector>::type_real;
+
       Problem(Teuchos::ParameterList& list) : list_(list) {
         SetBoundary();
       };
@@ -78,29 +81,29 @@ namespace Galeri {
       };
       virtual ~Problem() { }
 
-      virtual Teuchos::RCP<Matrix>      BuildMatrix() = 0;
-      virtual Teuchos::RCP<MultiVector> BuildCoords() {
+      virtual Teuchos::RCP<Matrix>                BuildMatrix() = 0;
+      virtual Teuchos::RCP<RealValuedMultiVector> BuildCoords() {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Coordinates construction is not implemented for this problem");
       }
-      virtual Teuchos::RCP<MultiVector> BuildNullspace() {
+      virtual Teuchos::RCP<MultiVector>           BuildNullspace() {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Nullspace construction is not implemented for this problem");
       }
 
       // Get methods
-      Teuchos::RCP<const Map>           getMap()                                   const { return Map_; }
-      Teuchos::RCP<const Matrix>        getMatrix()                                const { return A_; }
-      Teuchos::RCP<const MultiVector>   getNullspace()                             const { return Nullspace_; }
-      Teuchos::RCP<const MultiVector>   getCoords()                                const { return Coords_; }
+      Teuchos::RCP<const Map>                     getMap()                                   const { return Map_; }
+      Teuchos::RCP<const Matrix>                  getMatrix()                                const { return A_; }
+      Teuchos::RCP<const MultiVector>             getNullspace()                             const { return Nullspace_; }
+      Teuchos::RCP<const RealValuedMultiVector>   getCoords()                                const { return Coords_; }
 
       // Set methods
       void                              setMap(const Teuchos::RCP<const Map>& map)       { Map_ = map; }
 
     protected:
-      Teuchos::ParameterList&           list_;
-      Teuchos::RCP<const Map>           Map_;
-      Teuchos::RCP<Matrix>              A_;
-      Teuchos::RCP<MultiVector>         Nullspace_;
-      Teuchos::RCP<MultiVector>         Coords_;
+      Teuchos::ParameterList&             list_;
+      Teuchos::RCP<const Map>             Map_;
+      Teuchos::RCP<Matrix>                A_;
+      Teuchos::RCP<MultiVector>           Nullspace_;
+      Teuchos::RCP<RealValuedMultiVector> Coords_;
 
       DirBC                             DirichletBC_;
 

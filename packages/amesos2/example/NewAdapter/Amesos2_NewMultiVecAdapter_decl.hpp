@@ -76,7 +76,7 @@ public:
   typedef int                                            local_ordinal_type;
   typedef int                                           global_ordinal_type;
   typedef size_t                                           global_size_type;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  node_type;
+  typedef Tpetra::Map<>::node_type node_type;
   typedef NewMultiVector                                      multivec_type;
 
   static const char* name;

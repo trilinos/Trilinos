@@ -1,11 +1,12 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-  Classic         stk_classic          EX  OPTIONAL
   Util            stk_util             PT  OPTIONAL
   Simd            stk_simd             PT  OPTIONAL
   Topology        stk_topology         PT  OPTIONAL
   Mesh            stk_mesh             PT  OPTIONAL
+  NGP             stk_ngp              PT  OPTIONAL
   IO              stk_io               PT  OPTIONAL
   Unit_test_utils stk_unit_test_utils  PT  OPTIONAL
+  Math            stk_math             PT  OPTIONAL
   Search          stk_search           PT  OPTIONAL
   SearchUtil      stk_search_util      PT  OPTIONAL
   Transfer        stk_transfer         PT  OPTIONAL

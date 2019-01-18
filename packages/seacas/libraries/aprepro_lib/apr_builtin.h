@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 National Technology & Engineering Solutions
+ * Copyright (c) 2014-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -61,6 +61,7 @@ namespace SEAMS {
   double do_dim(double x, double y);
   double do_dist(double x1, double y1, double x2, double y2);
   double do_exp(double x);
+  double do_expm1(double x);
   double do_fabs(double x);
   double do_floor(double x);
   double do_nint(double x);
@@ -90,12 +91,14 @@ namespace SEAMS {
   double do_strtod(char *string);
   double do_option(char *option, double value);
   double do_word_count(char *string, char *delm);
+  double do_find_word(char *word, char *string, char *delm);
   double do_lgamma(double val);
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se);
   double do_julday(double mon, double day, double year);
   double do_log1p(double x);
   double do_rows(const array *arr);
   double do_cols(const array *arr);
+  double do_time();
 
   const char *do_dumpsym();
   const char *do_dumpfunc();
@@ -105,6 +108,9 @@ namespace SEAMS {
   const char *do_get_time();
   const char *do_get_temp_filename();
 
+  const char *do_dumpsym1(char *pre);
+  const char *do_dumpfunc1(char *pre);
+  const char *do_dumpvar1(char *pre);
   const char *do_tolower(char *string);
   const char *do_toupper(char *string);
   const char *do_Units(char *type);
@@ -151,12 +157,19 @@ namespace SEAMS {
   const char *do_str_elseif(char *string);
   const char *do_delete(char *string);
 
+#if defined(EXODUS_SUPPORT)
+  const char *do_exodus_info_range(char *filename, char *beg, char *end);
+  const char *do_exodus_info(char *filename, char *prefix);
+  const char *do_exodus_meta(char *filename);
+#endif
+
   array *do_csv_array(const char *filename, double skip);
   array *do_csv_array1(const char *filename);
   array *do_csv_array2(const char *filename, const char *comment);
   array *do_make_array(double rows, double cols);
   array *do_identity(double size);
   array *do_transpose(const array *a);
-} // namespace SEAMS  // namespace SEAMS
+  array *do_array_from_string(const char *string, const char *delm);
+} // namespace SEAMS
 
 #endif

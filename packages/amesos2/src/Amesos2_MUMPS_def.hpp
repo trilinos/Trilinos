@@ -275,7 +275,7 @@ namespace Amesos2
     
     
     #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+    Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
     #endif
 
     if ( is_contiguous_ == true ) {
@@ -299,7 +299,7 @@ namespace Amesos2
   bool
   MUMPS<Matrix,Vector>::matrixShapeOK_impl() const
   {
-    // The Basker can only handle square for right now
+    // The MUMPS can only handle square for right now
     return( this->globalNumRows_ == this->globalNumCols_ );
   }
   

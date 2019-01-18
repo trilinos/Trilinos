@@ -41,7 +41,8 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-void test_vdp_fsa(const bool use_combined_method,
+void test_vdp_fsa(const std::string& method_name,
+                  const bool use_combined_method,
                   const bool use_dfdp_as_tangent,
                   Teuchos::FancyOStream &out, bool &success)
 {
@@ -50,6 +51,13 @@ void test_vdp_fsa(const bool use_combined_method,
   stepperTypes.push_back("Partitioned IMEX RK SSP2"     );
   stepperTypes.push_back("Partitioned IMEX RK ARS 233"  );
   stepperTypes.push_back("General Partitioned IMEX RK"  );
+
+  // Check that method_name is valid
+  if (method_name != "") {
+    auto it = std::find(stepperTypes.begin(), stepperTypes.end(), method_name);
+    TEUCHOS_TEST_FOR_EXCEPTION(it == stepperTypes.end(), std::logic_error,
+                               "Invalid stepper type " << method_name);
+  }
 
   std::vector<double> stepperOrders;
   std::vector<double> stepperErrors;
@@ -117,6 +125,10 @@ void test_vdp_fsa(const bool use_combined_method,
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
+
+    // If we were given a method to run, skip this method if it doesn't match
+    if (method_name != "" && stepperTypes[m] != method_name)
+      continue;
 
     std::string stepperType = stepperTypes[m];
     std::string stepperName = stepperTypes[m];

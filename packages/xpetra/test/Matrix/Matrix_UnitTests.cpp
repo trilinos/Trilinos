@@ -51,6 +51,7 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
@@ -113,13 +114,12 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
     Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
-    Teuchos::RCP<Node> node = getNode<Node>();
 
     const size_t numLocal = 10;
     const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
-    //Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
+    //Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map = Xpetra::useTpetra::createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm,node);
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
        Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 
@@ -170,9 +170,8 @@ namespace {
 
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
-    Teuchos::RCP<Node> node = getNode<Node>();
     Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
-        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm,node);
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
      {
        Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> t =  Xpetra::TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 
@@ -222,6 +221,36 @@ namespace {
 #endif
   }
 
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( Matrix, BuildCopy_StridedMaps_Tpetra, M, MA, Scalar, LO, GO, Node )
+  {
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+    const size_t numLocal = 10;
+    const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid(); // TODO: global_size_t instead of size_t
+
+
+#ifdef HAVE_XPETRA_TPETRA
+    typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
+    Teuchos::RCP<const Xpetra::Map<LO,GO,Node> > map =
+        Xpetra::MapFactory<LO,GO,Node>::createContigMapWithNode (Xpetra::UseTpetra,INVALID,numLocal,comm);
+     {
+       Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > s0(new Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node>(map, numLocal));
+       s0->fillComplete();
+
+       Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > s(new CrsMatrixWrap(s0));
+       s->SetFixedBlockSize(2);
+
+       Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node> > t = Xpetra::MatrixFactory2<Scalar,LO,GO,Node>::BuildCopy(s);
+       
+       int blkSize = t->GetFixedBlockSize();
+       TEST_EQUALITY_CONST(blkSize, 2);
+     }
+#endif
+  }
+
+
+
 //
 // INSTANTIATIONS
 //
@@ -244,6 +273,7 @@ namespace {
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, BuildCopy_StridedMaps_Tpetra,  M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( Matrix, ViewSwitching, M##LO##GO##N , MA##S##LO##GO##N , S, LO, GO, N )
 
 // List of tests which run only with Epetra

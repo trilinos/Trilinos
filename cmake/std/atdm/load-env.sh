@@ -24,13 +24,16 @@ function get_abs_dir_path() {
 ATDM_SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "ATDM_SCRIPT_DIR = '$ATDM_SCRIPT_DIR'"
 
+# Absolute path to this scripts dir
+export ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${ATDM_SCRIPT_DIR}`
+
 #
 # A) Parse the command-line arguments
 #
 
 # Make sure job-name is passed in as first (and only ) arguemnt
 if [ "$1" == "" ] ; then
-  echo "Error, the first argument must be the job name with keyword names!"
+  echo "Error, the first argument must be the build name with keyword names!"
   return
 fi
 
@@ -40,11 +43,18 @@ if [ "$2" != "" ] ; then
   return
 fi
 
+export ATDM_CONFIG_BUILD_NAME=$1
+
+# Set old name for backward compatiblity
+export ATDM_CONFIG_JOB_NAME=$ATDM_CONFIG_BUILD_NAME
+
 #
 # B) Get the system name from the hostname
 #
 
-source $ATDM_SCRIPT_DIR/utils/get_known_system_name.sh
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_system_name.sh
+
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_known_system_name.sh
 
 if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
   echo "Error, could not determine known system, aborting env loading"
@@ -52,51 +62,45 @@ if [[ $ATDM_CONFIG_KNOWN_SYSTEM_NAME == "" ]] ; then
 fi
 
 #
-# C) Set JOB_NAME and Trilinos base directory
+# C) Set ATDM_CONFIG_BUILD_NAME and Trilinos base directory
 #
-
-export JOB_NAME=$1
 
 # Get the Trilins base dir
-export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path $ATDM_SCRIPT_DIR/../../..`
-echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
+export ATDM_CONFIG_TRILNOS_DIR=`get_abs_dir_path ${ATDM_CONFIG_SCRIPT_DIR}/../../..`
+if [[ $ATDM_CONFIG_VERBOSE == "1" ]] ; then
+  echo "ATDM_CONFIG_TRILNOS_DIR = $ATDM_CONFIG_TRILNOS_DIR"
+fi
 
 #
-# D) Parse $JOB_NAME for consumption by the system-specific environoment.sh
+# D) Parse $ATDM_CONFIG_BUILD_NAME for consumption by the system-specific environoment.sh
 # script
 #
 
-source $ATDM_SCRIPT_DIR/utils/set_build_options.sh
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_build_options.sh
+
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
 
 #
 # E) Load the matching env
 #
 
 # Set other vaues to empty by default
-unset OMP_NUM_THREADS
-unset OMP_PROC_BIND
-unset OMP_PLACES
-unset OMPI_CC
-unset OMPI_CXX
-unset OMPI_FC
-unset ATDM_CONFIG_USE_NINJA
-unset ATDM_CONFIG_BUILD_COUNT
-unset ATDM_CONFIG_CMAKE_JOB_POOL_LINK
-unset ATDM_CONFIG_CTEST_PARALLEL_LEVEL
-unset ATDM_CONFIG_KOKKOS_ARCH
-unset ATDM_CONFIG_BLAS_LIB
-unset ATDM_CONFIG_LAPACK_LIB
-unset ATDM_CONFIG_USE_HWLOC
-unset ATDM_CONFIG_HWLOC_LIBS
-unset ATDM_CONFIG_USE_CUDA
-unset ATDM_CONFIG_HDF5_LIBS
-unset ATDM_CONFIG_NETCDF_LIBS
-unset ATDM_CONFIG_MPI_EXEC
-unset ATDM_CONFIG_MPI_PRE_FLAGS
-unset ATDM_CONFIG_MPI_POST_FLAG
-unset ATDM_CONFIG_COMPLETED_ENV_SETUP
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/unset_atdm_config_vars_environment.sh
 
-source $ATDM_SCRIPT_DIR/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
+# Set the location for NVCC wrapper for source dir unless this is from an
+# install of Trilinos!
+if [[ "${ATDM_SCRIPT_DIR}" == *"atdm-trilinos" ]] ; then
+  # This is being invoked from an install so use the installed nvcc_wrapper we
+  # installed in this installation directory
+  export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_SCRIPT_DIR}/nvcc_wrapper"
+else
+  # This is from the Trilinos source tree so grab nvcc_wrapper from there!
+  export ATDM_CONFIG_NVCC_WRAPPER="${ATDM_CONFIG_TRILNOS_DIR}/packages/kokkos/bin/nvcc_wrapper"
+fi
+
+source ${ATDM_CONFIG_SCRIPT_DIR}/utils/atdm_config_helper_funcs.sh
+
+source ${ATDM_CONFIG_SCRIPT_DIR}/$ATDM_CONFIG_KNOWN_SYSTEM_NAME/environment.sh
 
 if [ "${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}" != "" ] ; then
   export ATDM_CONFIG_BUILD_COUNT=${ATDM_CONFIG_BUILD_COUNT_OVERRIDE}

@@ -121,7 +121,7 @@ convertToMDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP< const Domi::MDMap<> >
+Teuchos::RCP< const Domi::MDMap >
 convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                const DistArrayProtocol & distarray)
 {
@@ -182,11 +182,11 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   // Return the result
   try
   {
-    return Teuchos::rcp(new Domi::MDMap<>(mdComm,
-                                          myGlobalBounds,
-                                          padding,
-                                          repBndry,
-                                          layout));
+    return Teuchos::rcp(new Domi::MDMap(mdComm,
+                                        myGlobalBounds,
+                                        padding,
+                                        repBndry,
+                                        layout));
   }
   catch (Domi::InvalidArgument & e)
   {
@@ -202,7 +202,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > & mdMap)
+PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap > & mdMap)
 {
   Py_ssize_t numDims = mdMap->numDims();
   PyObject * dimData = PyTuple_New(numDims);

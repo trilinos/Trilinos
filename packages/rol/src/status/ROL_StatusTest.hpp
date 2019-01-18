@@ -88,6 +88,7 @@ public:
        state.statusFlag = (state.gnorm <= gtol_ ? EXITSTATUS_CONVERGED
                            : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
                            : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
+                           : std::isnan(state.gnorm)||std::isnan(state.snorm) ? EXITSTATUS_NAN
                            : EXITSTATUS_LAST);
        return false;
      }

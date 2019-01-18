@@ -128,7 +128,7 @@ void PointValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
   }
 
   // setup all fields to be evaluated and constructed
-  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues = PointValues2<double>(pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
@@ -180,11 +180,13 @@ evaluateFields(
 
     // evaluate the point values (construct jacobians etc...)
     pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,
-                               basisValues.basis_coordinates_ref);
+                               basisValues.basis_coordinates_ref,
+                               workset.num_cells);
   }
   else {
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray);
+    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray,
+                               workset.num_cells);
   }
 }
 

@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -81,22 +81,7 @@ C   --   o A listing of the input database information and any errors
 C   --     found on the standard output device.
 C   --   o The plots on the specified graphics device.
 C   --   o A GRAFAID neutral file on unit 20.
-C   --   o A GROPE listing file on unit 21.
-
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                    ISSUED BY SANDIA LABORATORIES,                   *
-*                      A PRIME CONTRACTOR TO THE                      *
-*                  UNITED STATES DEPARTMENT OF ENERGY                 *
-* * * * * * * * * * * * * *   N O T I C E   * * * * * * * * * * * * * *
-* This program was prepared as an account of work sponsored by the    *
-* United States Government.  Neither the United States nor the United *
-* States Department of Energy nor any of their employees, nor any of  *
-* their contractors, subcontractors, or their employees, makes any    *
-* warranty, express or implied, or assumes any legal liability or     *
-* responsibility for the accuracy, completeness or usefulness of any  *
-* information, apparatus, product or process disclosed, or represents *
-* that its use would not infringe privately owned rights.             *
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+C   --   o A EXPLORE listing file on unit 21.
 
 C   --Developed at Sandia National Laboratories.
 C   --
@@ -105,7 +90,7 @@ C   --
 C   --Revision History:
 C   --   05/88  Added PATHLINE (Amy Gilkey)
 C   --   03/88  Added Master/Slave logic (Amy Gilkey)
-C   --   10/87  Added GROPE (Amy Gilkey)
+C   --   10/87  Added EXPLORE (Amy Gilkey)
 C   --   10/87  Converted from SEACO to EXODUS database (Amy Gilkey)
 C   --   07/87  Combined DETOUR, TPLOT, and SPLOT (Amy Gilkey)
 C   --DETOUR:
@@ -676,9 +661,9 @@ C      --Handle error reading variable names
       NVARSS = MAX (0, NVARSS)
 
       IF (EXODUS) THEN
-        CALL PRNAME ('*', -1, namlen, 
-     *    NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
-     &    C(KNAMES+NAMLEN*(KNAMHV-1)), C(KNAMES+NAMLEN*(KNAMGV-1)),
+        CALL PRNAME (-1, namlen, 
+     *    NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
+     &    C(KNAMES+NAMLEN*(KNAMGV-1)),
      &    C(KNAMES+NAMLEN*(KNAMNV-1)), C(KNAMES+NAMLEN*(KNAMEV-1)),
      &    C(KNAMES+NAMLEN*(KNAMNS-1)), C(KNAMES+NAMLEN*(KNAMSS-1)))
       END IF

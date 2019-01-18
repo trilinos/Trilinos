@@ -218,7 +218,7 @@ namespace MueLu {
       }
 
       Aout->insertGlobalValues(grid, indout.view(0, indout.size()), valout.view(0, valout.size()));
-      if (diagVal[row] == 0.0 && repairZeroDiagonals) {
+      if (diagVal[row] == Teuchos::ScalarTraits<SC>::zero() && repairZeroDiagonals) {
         // always overwrite diagonal entry
         Aout->insertGlobalValues(grid, Teuchos::tuple<GO>(grid), Teuchos::tuple<SC>(1.0));
       }

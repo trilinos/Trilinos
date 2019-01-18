@@ -532,7 +532,7 @@ getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_t
 template<class MatrixType>
 void
 OverlappingRowMatrix<MatrixType>::
-leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /* x */)
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix does not support leftScale.");
 }
@@ -541,7 +541,7 @@ leftScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_
 template<class MatrixType>
 void
 OverlappingRowMatrix<MatrixType>::
-rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& x)
+rightScale (const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& /* x */)
 {
   throw std::runtime_error("Ifpack2::OverlappingRowMatrix does not support leftScale.");
 }

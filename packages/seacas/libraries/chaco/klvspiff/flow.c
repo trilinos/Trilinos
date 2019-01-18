@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -86,7 +86,7 @@ void wbpcover(int   n_left,      /* number of vertices on left side */
               int * psep_size,   /* returned size of separator */
               int * psep_weight, /* returned weight of separator */
               int **psep_nodes   /* list of separator nodes */
-              )
+)
 {
   extern int DEBUG_COVER; /* debug flag for this routine */
   int *      touched;     /* flags for each vertex */
@@ -191,7 +191,7 @@ static void bpflow(int  n_left,   /* number of vertices on left side */
                    int *resid,    /* residual weight at each vertex */
                    int *flow,     /* flow on right->left edges */
                    int *touched   /* flags for each vertex */
-                   )
+)
 {
   int *seen;     /* space for list of encountered vertices */
   int  neighbor; /* neighboring vertex */
@@ -245,7 +245,7 @@ static int augment(int  node,     /* start node in augmenting path */
                    int *flow,     /* flow on right->left edges */
                    int *touched,  /* flags for each vertex */
                    int *seen      /* keeps list of vertices encountered */
-                   )
+)
 {
   int nseen; /* number of vertices encountered */
   int flow1; /* flow redirected via augmenting path */
@@ -280,7 +280,7 @@ static void touch(int node, int *pointers, /* start/stop of adjacency lists */
                   int *flow1,              /* max flow we are looking for */
                   int *seen,               /* list of vertices encountered */
                   int *nseen               /* number of vertices encountered */
-                  )
+)
 {
   int flow2;    /* flow passed down recursion tree */
   int neighbor; /* neighbor of a vertex */
@@ -339,7 +339,7 @@ static void reachability(int  n_left,   /* number of vertices on left side */
                          int *resid,    /* residual weight at each vertex */
                          int *flow,     /* flow on right->left edges */
                          int *touched   /* flags for each vertex */
-                         )
+)
 {
   int i; /* loop counter */
 
@@ -361,7 +361,7 @@ static int touch2(int node, int *pointers, /* start/stop of adjacency lists */
                   int *indices,            /* adjacency list for each vertex */
                   int *flow,               /* flow on right->left edges */
                   int *touched             /* flags for each vertex */
-                  )
+)
 {
   int neighbor; /* neighbor of a vertex */
   int result;   /* return value */

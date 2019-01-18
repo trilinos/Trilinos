@@ -184,7 +184,7 @@ TEST_F(MeshWithNodeset, createAndWriteNodesetWithField)
             get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(
                     stk::topology::NODE_RANK, fieldName, numStates);
 
-        stk::mesh::put_field(newField, nodesetPart, fieldLength, initialValue);
+        stk::mesh::put_field_on_mesh(newField, nodesetPart, fieldLength, initialValue);
 
         setup_mesh("generated:1x1x1", stk::mesh::BulkData::AUTO_AURA);
 
@@ -233,7 +233,7 @@ TEST_F(MeshWithSideset, createAndWriteSidesetWithField)
             get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(
                     get_meta().side_rank(), fieldName, numStates);
 
-        stk::mesh::put_field(newField, sidesetPart, fieldLength, initialValue);
+        stk::mesh::put_field_on_mesh(newField, sidesetPart, fieldLength, initialValue);
 
         setup_mesh("generated:1x1x1", stk::mesh::BulkData::AUTO_AURA);
 

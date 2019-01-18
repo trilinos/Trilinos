@@ -53,33 +53,59 @@ project votd
   : build-dir $(stk_search-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files =
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files =
+    stk_search_utest
+    [ if-not-defined-val $(releasable-arg) :
+        stk_search_integration_tester ]
+  ;
 #
 # SECTION 2: Development install
 #
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
-# We do not want to build stk_search_integration_tester in release
-if ! $(releasable-arg) {
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_search_utest
-    stk_search_integration_tester
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
-}
-else {
-explicit install-targets ;
-alias install-targets
-  : stk_search_utest
-  ;
-}
-
 #
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                          install-user-include install-user-lib ;
+                         install-user-include
+                         install-user-lib
+                         install-user-bin ;
+
+# Dependencies listed in this target are always installed for end users.
+# This should include only those executables and any other files needed by end-users.
+explicit install-user-bin ;
+install install-user-bin
+  : $(installed-end-user-files)
+    [ if-defined-val $(install-developer-files-arg) :
+        # Executables listed here will only installed if the --install-developer-files option
+        # is passed to bjam. This is intended for testing that requires things like 
+        # unittest to be installed when they normally would not be.
+        $(installed-developer-files)
+    ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -88,7 +114,6 @@ install install-user-jamfile
   : <location>$(install-root)/stk/stk_search
     <install-source-root>$(stk_search-root)
   ;
-
 
 explicit install-user-include ;
 install install-user-include
@@ -123,6 +148,8 @@ lib stk_search
     /sierra/stk_util//stk_util_diag
     /sierra/stk_util//stk_util_parallel
     /tpl/boost//boost_header_only_libs
+    /sierra/stk_math//stk_math_headers
+    /sierra/stk_ngp//stk_ngp
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -137,16 +164,10 @@ exe stk_search_integration_tester
   :
     [ glob $(stk_search-root)/integrationtest/*.cpp
       glob $(stk_search-root)/integrationtest/*.[cC] ]
+    /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_search
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_diag
-    /sierra/mesh//mesh
-    /sierra/acme//acme
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
+    /sierra/stk_math//stk_math_headers
   : <tag>@sierra-exec-tag
   ;
 }
@@ -155,15 +176,10 @@ exe stk_search_utest
   :
     [ glob $(stk_search-root)/unit_tests/*.cpp ]
     [ glob $(stk_search-root)/testsForDocumentation/*.cpp ]
+    /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_search
     /sierra/stk_util//stk_util_use_case
-    /sierra/stk_util//stk_util_diag
-    /sierra/acme//acme
-    /sierra/mesh//mesh
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /tpl/gtest//gtest
-    /mpi//mpi
+    /sierra/stk_math//stk_math_headers
 
   : <tag>@sierra-exec-tag
   ;

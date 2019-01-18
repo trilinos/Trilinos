@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* exgvp - ex_get_variable_param
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     obj_type                variable type
-*
-* exit conditions -
-*       int*    num_vars                number of variables in database
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgvp - ex_get_variable_param
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     obj_type                variable type
+ *
+ * exit conditions -
+ *       int*    num_vars                number of variables in database
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
@@ -109,25 +109,25 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
   int         status;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   *num_vars = 0;
 
   switch (obj_type) {
-  case EX_GLOBAL: dnumvar     = DIM_NUM_GLO_VAR; break;
-  case EX_NODAL: dnumvar      = DIM_NUM_NOD_VAR; break;
+  case EX_GLOBAL: dnumvar = DIM_NUM_GLO_VAR; break;
+  case EX_NODAL: dnumvar = DIM_NUM_NOD_VAR; break;
   case EX_EDGE_BLOCK: dnumvar = DIM_NUM_EDG_VAR; break;
   case EX_FACE_BLOCK: dnumvar = DIM_NUM_FAC_VAR; break;
   case EX_ELEM_BLOCK: dnumvar = DIM_NUM_ELE_VAR; break;
-  case EX_NODE_SET: dnumvar   = DIM_NUM_NSET_VAR; break;
-  case EX_EDGE_SET: dnumvar   = DIM_NUM_ESET_VAR; break;
-  case EX_FACE_SET: dnumvar   = DIM_NUM_FSET_VAR; break;
-  case EX_SIDE_SET: dnumvar   = DIM_NUM_SSET_VAR; break;
-  case EX_ELEM_SET: dnumvar   = DIM_NUM_ELSET_VAR; break;
+  case EX_NODE_SET: dnumvar = DIM_NUM_NSET_VAR; break;
+  case EX_EDGE_SET: dnumvar = DIM_NUM_ESET_VAR; break;
+  case EX_FACE_SET: dnumvar = DIM_NUM_FSET_VAR; break;
+  case EX_SIDE_SET: dnumvar = DIM_NUM_SSET_VAR; break;
+  case EX_ELEM_SET: dnumvar = DIM_NUM_ELSET_VAR; break;
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid variable type %d requested from file id %d",
              obj_type, exoid);
-    ex_err("ex_get_variable_param", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -139,14 +139,14 @@ int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars)
 
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s variable names in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_param", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s variables in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_param", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   *num_vars = dimlen;

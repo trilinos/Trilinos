@@ -103,11 +103,11 @@
 //    stk::mesh::MetaData &meta_data = io.meta_data();
 //
 //    field1 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field1",3);
-//    stk::mesh::put_field(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
+//    stk::mesh::put_field_on_mesh(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
 //    fieldBase1 = dynamic_cast<stk::mesh::FieldBase*>(field1);
 //
 //    field2 = &meta_data.declare_field<stk::mesh::Field<A> >(stk::topology::NODE_RANK, "field2",3);
-//    stk::mesh::put_field(*field2,field2->mesh_meta_data().universal_part(),&initial_value2);
+//    stk::mesh::put_field_on_mesh(*field2,field2->mesh_meta_data().universal_part(),&initial_value2);
 //    fieldBase2 = dynamic_cast<stk::mesh::FieldBase*>(field2);
 //
 //    io.populate_bulk_data(); // THIS IS THE SLOW LINE

@@ -81,7 +81,7 @@ in addition to the following factory function:
 #include "PyTrilinos_Teuchos_Headers.hpp"
 
 // Epetra include files
-#ifdef HAVE_NOX_EPETRA
+#ifdef HAVE_PYTRILINOS_NOX_EPETRA
 #include "PyTrilinos_Epetra_Headers.hpp"
 #endif
 

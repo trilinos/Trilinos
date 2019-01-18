@@ -51,11 +51,26 @@
 ///   details of Tpetra.  Users must not rely on this file existing,
 ///   or on any contents of this file.
 
-#include <Teuchos_UnitTestHarness.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_Core.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#include "Teuchos_DefaultSerialComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <TpetraCore_ETIHelperMacros.h>
-#include <Tpetra_DefaultPlatform.hpp>
+#define TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)  \
+  { \
+    int lclSuccess = success ? 1 : 0; \
+    int gblSuccess = 1; \
+    Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MIN, lclSuccess, Teuchos::outArg (gblSuccess)); \
+    if (gblSuccess == 1) { \
+      out << "Succeeded on all processes!" << endl; \
+    } else { \
+      out << "FAILED on at least one process!" << endl; \
+    } \
+    TEST_EQUALITY_CONST(gblSuccess, 1);  \
+    success = (bool) gblSuccess; \
+  }
+
 
 namespace Tpetra {
   namespace TestingUtilities {
@@ -79,7 +94,7 @@ namespace Tpetra {
     /// If testMpi (see above in this header file) false, this
     /// function will return a Teuchos::SerialComm.  Otherwise, this
     /// fucntion will return the default communicator from
-    /// Tpetra::DefaultPlatform.  If Trilinos was built with MPI
+    /// Tpetra::getDefaultComm.  If Trilinos was built with MPI
     /// support, the resulting communicator will be a Teuchos::MpiComm
     /// that wraps <tt>MPI_COMM_WORLD</tt>.  Otherwise, it will be
     /// either a Teuchos::SerialComm, or a Teuchos::MpiComm that wraps
@@ -88,8 +103,9 @@ namespace Tpetra {
     getDefaultComm ()
     {
       if (testMpi) {
-        return DefaultPlatform::getDefaultPlatform ().getComm ();
-      } else {
+        return Tpetra::getDefaultComm ();
+      }
+      else {
         // Always return the same Comm instance.  Create it if it
         // hasn't already been created.  A function-static RCP has an
         // initial value of Teuchos::null.
@@ -106,14 +122,9 @@ namespace Tpetra {
     ///
     /// \warning This function is an implementation detail of Tpetra.
     ///   Users must not call this function or rely on its behavior.
-    ///
-    /// This function defers to KokkosClassic::Details::getNode.  The
-    /// latter function creates at most one Node instance (per Node
-    /// type); it returns the created instance if it has already been
-    /// created via a previous call to getNode.
     template <class Node>
     Teuchos::RCP<Node> getNode () {
-      return KokkosClassic::Details::getNode<Node> ();
+      return Teuchos::rcp (new Node);
     }
 
   } // namespace TestingUtilities

@@ -189,6 +189,12 @@ public:
       else if (Amesos2::query ("basker")) {
         solverName_ = "basker";
       }
+      else if (Amesos2::query ("shylubasker")) {
+        solverName_ = "shylubasker";
+      }
+      else if (Amesos2::query ("ShyLUBasker")) {
+        solverName_ = "shylubasker";
+      }
       else if (Amesos2::query ("superlumt")) {
         solverName_ = "superlumt";
       }

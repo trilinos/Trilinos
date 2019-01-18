@@ -32,7 +32,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
     INSTALL(TARGETS exodus_for_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
   endif()
 
-  # For backwards compatability, the Fortran exodus library was called libexoIIv2for.a
+  # For backwards compatibility, the Fortran exodus library was called libexoIIv2for.a
   # Create a symbolic link from libexodus_for.a to libexoIIv2for.a -- do only for static lib
   InstallSymLink(libexodus_for.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2for.a)
 endif()

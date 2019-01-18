@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C         
@@ -63,7 +63,7 @@ C                 Is returned as: "This is the title"
 C
       CHARACTER*(*) TITLE(*)
       CHARACTER*(*) XLAB,YLAB
-      DIMENSION XX(1), YY(1)
+      DIMENSION XX(*), YY(*)
 C
       LOGICAL MONO, TPLOT
       CHARACTER*(*) CURVE

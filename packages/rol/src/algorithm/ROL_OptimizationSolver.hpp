@@ -204,11 +204,15 @@ public:
 
   /** \brief Solve optimization problem with no iteration output.
 
+      @param[in] status          is a user-defined StatusTest
+      @param[in] combineStatus   if true, the user-defined StatusTest will be combined with the default StatusTest
+
       ---
   */
-  int solve(void) {
+  int solve(const ROL::Ptr<StatusTest<Real> > &status = ROL::nullPtr,
+            const bool combineStatus = true) {
     ROL::nullstream bhs;
-    return solve(bhs);
+    return solve(bhs,status,combineStatus);
   }
 
   /** \brief Solve optimization problem.
@@ -305,6 +309,18 @@ public:
     else if( stepType_ == STEP_INTERIORPOINT ) {
       ROL::dynamicPtrCast<InteriorPoint::PenalizedObjective<Real> >(obj_)->updatePenalty(pen_);
     }
+  }
+
+  /** \brief Grab step name (after check for consistency).
+
+      @param[out] stepname   Name of step
+
+      This function returns the algorithmic step name.
+
+      ---
+  */
+  std::string getStepName(void) const {
+    return stepname_;
   }
 
 }; // class OptimizationSolver

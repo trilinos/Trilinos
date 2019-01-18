@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -107,7 +107,7 @@ C      --Identify elements to be retained...
 C        Loop 1 to number of element blocks
          DO IELB = 1, NELBLK
 C           Loop over cumulative element count in element block IELB
-           if (isevok(ielb)) then
+           if (isevok(ielb) .and. viselb(ielb)) then
              if (cmpflt .eq. 1) then
                call dolt(ixlast+1, ixelbo(ielb), ixelem, values,
      *           valflt, numelo)

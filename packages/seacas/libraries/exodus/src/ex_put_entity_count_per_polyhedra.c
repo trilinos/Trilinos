@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,10 +33,10 @@
  *
  */
 /*****************************************************************************
-*
-* expecpp - ex_put_entity_count_per_polyhedra
-*
-*****************************************************************************/
+ *
+ * expecpp - ex_put_entity_count_per_polyhedra
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_id_lkup, etc
@@ -49,7 +49,7 @@
  * (nsided/nfaced) in this element block to the database.
  * \param  exoid                exodus file id
  * \param  blk_type             type of block (face, or element)
- * \param  blk_id               block identifer
+ * \param  blk_id               block identifier
  * \param  entity_counts        entity_per_polyhedra count array
  */
 
@@ -60,7 +60,7 @@ int ex_put_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_ent
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   blk_id_ndx = ex_id_lkup(exoid, blk_type, blk_id);
   if (blk_id_ndx <= 0) {
@@ -72,14 +72,14 @@ int ex_put_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_ent
                  "Warning: entity_counts array not allowed for NULL %s block %" PRId64
                  " in file id %d",
                  ex_name_of_object(blk_type), blk_id, exoid);
-        ex_err("ex_put_entity_count_per_polyhedra", errmsg, EX_NULLENTITY);
+        ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
         EX_FUNC_LEAVE(EX_WARN);
       }
 
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s block id %" PRId64 " in id array in file id %d",
                ex_name_of_object(blk_type), blk_id, exoid);
-      ex_err("ex_put_entity_count_per_polyhedra", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -92,14 +92,14 @@ int ex_put_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_ent
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized block type in switch: %d in file id %d", blk_type,
              exoid);
-    ex_err("ex_put_entity_count_per_polyhedra", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entity_counts array for %s block %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_entity_count_per_polyhedra", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -108,7 +108,7 @@ int ex_put_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_ent
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to write node counts array for %s block %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
-    ex_err("ex_put_entity_count_per_polyhedra", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

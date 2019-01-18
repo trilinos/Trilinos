@@ -97,20 +97,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="ThreadPool" dir="packages/ThreadPool" type="PT">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="Pthread,MPI"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="threadpool-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
   <Package name="RTOp" dir="packages/rtop" type="PT">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -169,7 +155,6 @@
   </Package>
   <Package name="KokkosCompat" dir="packages/kokkos/compat" type="EX">
     <LIB_REQUIRED_DEP_PACKAGES value="KokkosCore,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -183,7 +168,7 @@
   </Package>
   <Package name="KokkosClassic" dir="packages/kokkos/classic" type="PT">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="ThreadPool,KokkosCore,KokkosCompat"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="KokkosCore,KokkosCompat"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -965,7 +950,7 @@
     </EmailAddresses>
     <ParentPackage value="SEACAS"/>
   </Package>
-  <Package name="SEACASGrope" dir="packages/seacas/applications/grope" type="ST">
+  <Package name="SEACASExplore" dir="packages/seacas/applications/explore" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASSupes,SEACASSuplib,SEACASExodus_for"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -1092,7 +1077,7 @@
     <ParentPackage value="SEACAS"/>
   </Package>
   <Package name="SEACAS" dir="packages/seacas" type="ST">
-    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASGrope,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASNumbers,SEACASTxtexo"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="SEACASExodus,SEACASExodus_for,SEACASNemesis,SEACASIoss,SEACASChaco,SEACASAprepro_lib,SEACASSupes,SEACASSuplib,SEACASAlgebra,SEACASAprepro,SEACASConjoin,SEACASEjoin,SEACASEpu,SEACASExodiff,SEACASExomatlab,SEACASExotxt,SEACASGjoin,SEACASGen3D,SEACASGenshell,SEACASGrepos,SEACASExplore,SEACASMapvarlib,SEACASMapvar,SEACASMapvar-kd,SEACASNemslice,SEACASNemspread,SEACASNumbers,SEACASTxtexo"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="SEACASSVDI,SEACASPLT,SEACASBlot,SEACASExo2mat,SEACASFastq,SEACASMat2exo"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1427,20 +1412,6 @@
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>
-  <Package name="STKClassic" dir="packages/stk/stk_classic" type="ST">
-    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="SEACASIoss,FEI,AztecOO,ThreadPool,Zoltan,Intrepid,Sacado"/>
-    <TEST_REQUIRED_DEP_PACKAGES value="SEACASExodus"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
-    <LIB_OPTIONAL_DEP_TPLS value="BoostLib,OpenNURBS"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="gtest"/>
-    <EmailAddresses>
-      <Regression address="stk-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value="STK"/>
-  </Package>
   <Package name="STKUtil" dir="packages/stk/stk_util" type="ST">
     <LIB_REQUIRED_DEP_PACKAGES value="SEACASAprepro_lib"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -1498,7 +1469,7 @@
     <ParentPackage value="STK"/>
   </Package>
   <Package name="STKSearch" dir="packages/stk/stk_search" type="ST">
-    <LIB_REQUIRED_DEP_PACKAGES value="ThreadPool,STKUtil"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="STKUtil"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="Gtest"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -1872,20 +1843,6 @@
     <TEST_OPTIONAL_DEP_TPLS value="CppUnit"/>
     <EmailAddresses>
       <Regression address="mesquite-regression@software.sandia.gov"/>
-    </EmailAddresses>
-    <ParentPackage value=""/>
-  </Package>
-  <Package name="MeshingGenie" dir="packages/meshinggenie" type="EX">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Regression address="meshinggenie-regression@software.sandia.gov"/>
     </EmailAddresses>
     <ParentPackage value=""/>
   </Package>

@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,18 +57,18 @@ template <typename T, typename INT> void index_qsort(const T v[], INT iv[], size
 // The following are not part of the public interface...
 
 namespace {
-/* The following 'indexed qsort' routine is modified from Sedgewicks
- * algorithm It selects the pivot based on the median of the left,
- * right, and center values to try to avoid degenerate cases ocurring
- * when a single value is chosen.  It performs a quicksort on
- * intervals down to the QSORT_CUTOFF size and then performs a final
- * insertion sort on the almost sorted final array.  Based on data in
- * Sedgewick, the QSORT_CUTOFF value should be between 5 and 20.
- *
- * See Sedgewick for further details Define DEBUG_QSORT at the top of
- * this file and recompile to compile in code that verifies that the
- * array is sorted.
- */
+  /* The following 'indexed qsort' routine is modified from Sedgewicks
+   * algorithm It selects the pivot based on the median of the left,
+   * right, and center values to try to avoid degenerate cases ocurring
+   * when a single value is chosen.  It performs a quicksort on
+   * intervals down to the QSORT_CUTOFF size and then performs a final
+   * insertion sort on the almost sorted final array.  Based on data in
+   * Sedgewick, the QSORT_CUTOFF value should be between 5 and 20.
+   *
+   * See Sedgewick for further details Define DEBUG_QSORT at the top of
+   * this file and recompile to compile in code that verifies that the
+   * array is sorted.
+   */
 
 #define QSORT_CUTOFF 12
 

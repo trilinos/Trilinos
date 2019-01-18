@@ -12,7 +12,7 @@
 #include <cmath>
 #include <Kokkos_Core.hpp>
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
 #include <Kokkos_OpenMP.hpp>
 #endif
 

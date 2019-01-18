@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -62,10 +62,11 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
     /* Local child */
     int status = nc_inq_grp_ncid(parent_id, group_name, group_id);
     if (status != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to locate group with name %s as child "
-                                       "group in file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: Failed to locate group with name %s as child "
+               "group in file id %d",
                group_name, parent_id);
-      ex_err("ex_get_group_id", errmsg, status);
+      ex_err_fn(parent_id, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -76,16 +77,17 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: Failed to locate group with full path name %s in file id %d", group_name,
                parent_id);
-      ex_err("ex_get_group_id", errmsg, status);
+      ex_err_fn(parent_id, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
   EX_FUNC_LEAVE(EX_NOERR);
 #else
   EX_FUNC_ENTER();
-  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Group capabilities are not available in this netcdf "
-                                   "version--not netcdf4");
-  ex_err("ex_get_group_id", errmsg, NC_ENOTNC4);
+  snprintf(errmsg, MAX_ERR_LENGTH,
+           "ERROR: Group capabilities are not available in this netcdf "
+           "version--not netcdf4");
+  ex_err_fn(parent_id, __func__, errmsg, NC_ENOTNC4);
   EX_FUNC_LEAVE(EX_FATAL);
 #endif
 }

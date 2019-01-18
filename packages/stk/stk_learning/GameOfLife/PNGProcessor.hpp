@@ -73,8 +73,6 @@ public:
 
     virtual void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
 
-    //void get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
-
 protected:
     unsigned m_imageWidth;
 
@@ -135,46 +133,6 @@ struct Pixel
     unsigned x;
     unsigned y;
 };
-
-//class ColoredPNGProcessor : public PNGProcessor
-//{
-//public:
-//    ColoredPNGProcessor(std::string fileName);
-//
-//    virtual ~ColoredPNGProcessor();
-//
-//    virtual void commit_image_vector_to_pixel_vector();
-//
-//    void commit_image_vector_to_pixel_vector_with_exclusion();
-//
-//    void commit_image_vector_to_pixel_vector_with_greyscale();
-//
-//    //io
-//    void print_grey_bits();
-//
-//private:
-//    // members
-//    unsigned char m_medianValue;
-//    unsigned char m_lowerBound;
-//    unsigned char m_upperBound;
-//    std::vector<unsigned char> m_greyBits;
-//    std::vector<Pixel> mRedPixels;
-//    std::vector<Pixel> mGreenPixels;
-//    std::vector<Pixel> mBluePixels;
-//
-//    // constructor
-//    void convert_to_grey_bits();
-//    void process_unsigned_int_to_grey_bit(unsigned row, unsigned col);
-//
-//    void find_median_grey_bit_value();
-//
-//    // commit image
-//    void update_image_value_according_to_relation_with_median_value(unsigned row, unsigned col);
-//    void update_image_value_according_to_proximity_with_median_value(unsigned row, unsigned col);
-//    void update_image_value_according_to_grayscale(unsigned row, unsigned col);
-//
-//    void find_upper_and_lower_bounds();
-//};
 
 class SimpleColoredPng : public PNGProcessor
 {

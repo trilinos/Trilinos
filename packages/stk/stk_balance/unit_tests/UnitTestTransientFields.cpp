@@ -5,6 +5,7 @@
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
 #include "stk_balance/internal/TransientFieldTransferById.hpp"
+#include <stk_balance/internal/balanceDefaults.hpp>
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -18,6 +19,7 @@
 #include "stk_mesh/base/FieldParallel.hpp"
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <iostream>
+#include <limits>
 
 namespace
 {
@@ -64,12 +66,13 @@ void verify_expected_global_variable_in_parallel_file(const std::string &paralle
     std::vector<double> inputTimeSteps = broker.get_time_steps();
     EXPECT_EQ(expectedTimeSteps, inputTimeSteps);
     double testTimeValue = 0;
+    const double epsilon = std::numeric_limits<double>::epsilon();
     for(size_t i=0; i<expectedTimeSteps.size(); ++i) {
         int timestep = i+1;
         broker.read_defined_input_fields(timestep);
         bool success = broker.get_global(globalVariableName+"_double", testTimeValue);
         EXPECT_TRUE(success);
-        EXPECT_NEAR(expectedTimeSteps[i], testTimeValue, 1.e-9);
+        EXPECT_NEAR(expectedTimeSteps[i], testTimeValue, epsilon);
 
         int goldIntValue = timestep;
         int testIntValue = 0;
@@ -226,7 +229,7 @@ TEST(TestTransientFieldBalance, verifyNumberOfSteps)
         stk::io::fill_mesh_with_auto_decomp(outputMeshName, bulk, broker);
         verify_input_transient_fields(broker, expectedTimeSteps);
 
-        stk::balance::run_stk_rebalance(".", outputMeshName, MPI_COMM_WORLD);
+        stk::balance::run_stk_rebalance(".", outputMeshName, stk::balance::SD_DEFAULTS, MPI_COMM_WORLD);
 
         verify_expected_time_steps_in_parallel_file(outputMeshName, expectedTimeSteps);
 
@@ -297,7 +300,7 @@ TEST(TestTransientFieldBalance, verifyGlobalVariable)
         stk::io::fill_mesh_with_auto_decomp(outputMeshName, bulk, broker);
         verify_input_transient_fields(broker, expectedTimeSteps);
 
-        stk::balance::run_stk_rebalance(".", outputMeshName, MPI_COMM_WORLD);
+        stk::balance::run_stk_rebalance(".", outputMeshName, stk::balance::SD_DEFAULTS, MPI_COMM_WORLD);
 
         verify_expected_global_variable_in_parallel_file(outputMeshName, expectedTimeSteps, globalVariableName);
 
@@ -306,5 +309,34 @@ TEST(TestTransientFieldBalance, verifyGlobalVariable)
     }
 }
 
+TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsOutputFile)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    std::string serialMeshName = "sixteen_hex_transient.e";
+    std::string parallelOutputMeshName = "sixteen_hex_transient.e";
+
+    stk::unit_test_util::generated_mesh_to_file_in_serial("1x4x4", serialMeshName);
+
+    stk::balance::BasicZoltan2Settings rcbOptions;
+    EXPECT_THROW(stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialMeshName, MPI_COMM_WORLD, rcbOptions), std::logic_error);
+    unlink_serial_file(serialMeshName);
+  }
+}
+
+TEST(TestTransientFieldBalance, verifyThrowIfInputFileEqualsDotSlashOutputFile)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    std::string serialMeshName = "sixteen_hex_transient.e";
+    std::string parallelOutputMeshName = "./sixteen_hex_transient.e";
+
+    stk::unit_test_util::generated_mesh_to_file_in_serial("1x4x4", serialMeshName);
+
+    stk::balance::BasicZoltan2Settings rcbOptions;
+    EXPECT_THROW(stk::balance::run_stk_balance_with_settings(parallelOutputMeshName, serialMeshName, MPI_COMM_WORLD, rcbOptions), std::logic_error);
+    unlink_serial_file(serialMeshName);
+  }
+}
 
 }

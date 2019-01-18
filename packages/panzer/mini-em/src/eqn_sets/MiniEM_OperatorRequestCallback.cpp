@@ -7,6 +7,8 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "Panzer_NodeType.hpp"
+
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
 
@@ -33,6 +35,12 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
      if (matrix_output)
        writeOut("MassMatrix.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
    }
+   else if(name.substr(0,9)=="Curl Curl") {
+     loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Curl Curl " + name.substr(10,name.length()-10)+" Scatter Container"),true)->getGlobalLOC();
+
+     if (matrix_output)
+       writeOut("CurlCurl.mm", *Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<double> >(loc,true)->get_A_th());
+   }
    else if(name=="Weak Gradient") {
      loc = Teuchos::rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(gedc_->getDataObject("Weak Gradient Scatter Container"),true)->getGlobalLOC();
 
@@ -50,8 +58,7 @@ Teko::LinearOp OperatorRequestCallback::request(const Teko::RequestMesg & rm)
 void OperatorRequestCallback::writeOut(const std::string & s,const Thyra::LinearOpBase<double> & op) const
 {
   using Teuchos::RCP;
-
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType NT;
+  using NT = panzer::TpetraNodeType;
   const RCP<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<double,int,panzer::Ordinal64,NT> >(Teuchos::rcpFromRef(op));
   if(tOp != Teuchos::null) {
     const RCP<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<double,int,panzer::Ordinal64,NT> >(tOp->getConstTpetraOperator(),true);
@@ -65,6 +72,10 @@ bool OperatorRequestCallback::handlesRequest(const Teko::RequestMesg & rm)
 
    if(name.substr(0,11)=="Mass Matrix") {
      if(gedc_->containsDataObject("Mass Matrix " + name.substr(12,name.length()-12)+" Scatter Container"))
+       return true;
+   }
+   else if(name.substr(0,9)=="Curl Curl") {
+     if(gedc_->containsDataObject("Curl Curl " + name.substr(10,name.length()-10)+" Scatter Container"))
        return true;
    }
    else if(name=="Weak Gradient") {

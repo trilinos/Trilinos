@@ -63,6 +63,7 @@ void func_deriv(double a, double b, double c, double& drda, double& drdb)
 int main(int argc, char **argv)
 {
   Kokkos::initialize();
+  int ret = 0;
   {
 
   double pi = std::atan(1.0)*4.0;
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 
   // View to store derivative data
   const int num_deriv = 2;
-  Kokkos::View<double**,Kokkos::LayoutLeft> v( "v", 2, num_deriv );
+  Kokkos::View<double**,Kokkos::LayoutLeft,Kokkos::HostSpace> v( "v", 2, num_deriv );
 
   // Initialize derivative data
   Kokkos::deep_copy( v, 0.0 );
@@ -130,13 +131,14 @@ int main(int argc, char **argv)
       std::fabs(drda - drda_ad) < tol &&
       std::fabs(drdb - drdb_ad) < tol) {
     std::cout << "\nExample passed!" << std::endl;
-    return 0;
+    ret = 0;
   }
   else {
     std::cout <<"\nSomething is wrong, example failed!" << std::endl;
-    return 1;
+    ret = 1;
   }
 
   }
   Kokkos::finalize();
+  return ret;
 }

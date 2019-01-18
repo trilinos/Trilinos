@@ -497,5 +497,14 @@ PHX::FieldManager<Traits>::getFieldTagsForSizing()
 }
 
 // **************************************************************
+template<typename Traits>
+template<typename EvalT>
+void PHX::FieldManager<Traits>::
+printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr)
+{
+  m_eval_containers.template getAsObject<EvalT>()->printEvaluatorStartStopMessage(ostr);  
+}
+
+// **************************************************************
 
 #endif

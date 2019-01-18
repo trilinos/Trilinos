@@ -12,7 +12,7 @@ LIST(REMOVE_ITEM xmlFiles MLrepartitioning2.xml)
 LIST(REMOVE_ITEM xmlFiles MLrepartitioning3.xml)
 LIST(REMOVE_ITEM xmlFiles MLcoarse4.xml)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_MLParameterListInterpreterData_cp
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_complex_MLParameterListInterpreterData_cp
   SOURCE_FILES ${xmlFiles}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/../../MLParameterListInterpreter/
+  
   )

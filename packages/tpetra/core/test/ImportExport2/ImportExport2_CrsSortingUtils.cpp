@@ -316,7 +316,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO, GO, NT)
 {
-
   using Tpetra::Import_Util::sortCrsEntries;
 
   typedef typename Tpetra::CrsMatrix<Scalar,LO,GO,NT>::local_matrix_type local_matrix_type;
@@ -335,7 +334,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
   typedef typename colind_type::size_type size_type;
 
   // Map is not actually used, but is needed to instantiate Kokkos
-  auto comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  auto comm = Tpetra::getDefaultComm();
   const Tpetra::global_size_t INVALID =
     Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   auto dummy_map = Tpetra::Map<LO,GO,NT>(INVALID, 1, 0, comm);

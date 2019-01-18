@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -66,8 +66,6 @@
 int ex_get_elem_cmap(int exoid, ex_entity_id map_id, void_int *elem_ids, void_int *side_ids,
                      void_int *proc_ids, int processor)
 {
-  const char *func_name = "ex_get_elem_cmap";
-
   int     map_idx, dimid, varid[3], status;
   size_t  start[1], count[1];
   int64_t varidx[2];
@@ -76,13 +74,13 @@ int ex_get_elem_cmap(int exoid, ex_entity_id map_id, void_int *elem_ids, void_in
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* get the cmap information variables index */
   if (ex_get_idx(exoid, VAR_E_COMM_INFO_IDX, varidx, processor) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_E_COMM_INFO_IDX, exoid);
-    ex_err(func_name, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -98,7 +96,7 @@ int ex_get_elem_cmap(int exoid, ex_entity_id map_id, void_int *elem_ids, void_in
              "ERROR: failed to find elemental comm map with ID %" PRId64 " in file \
 ID %d",
              map_id, exoid);
-    ex_err(func_name, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -106,7 +104,7 @@ ID %d",
   if (ex_get_idx(exoid, VAR_E_COMM_DATA_IDX, varidx, map_idx) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_E_COMM_DATA_IDX, exoid);
-    ex_err(func_name, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -116,7 +114,7 @@ ID %d",
     if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_ECNT_CMAP, exoid);
-      ex_err(func_name, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -124,7 +122,7 @@ ID %d",
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_ECNT_CMAP,
                exoid);
-      ex_err(func_name, errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -135,7 +133,7 @@ ID %d",
   if ((status = nc_inq_varid(exoid, VAR_E_COMM_EIDS, &varid[0])) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_E_COMM_EIDS, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -143,7 +141,7 @@ ID %d",
   if ((status = nc_inq_varid(exoid, VAR_E_COMM_SIDS, &varid[1])) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_E_COMM_SIDS, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -151,7 +149,7 @@ ID %d",
   if ((status = nc_inq_varid(exoid, VAR_E_COMM_PROC, &varid[2])) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_E_COMM_PROC, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -167,7 +165,7 @@ ID %d",
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_E_COMM_EIDS, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -181,7 +179,7 @@ ID %d",
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_E_COMM_SIDS, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -195,7 +193,7 @@ ID %d",
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_E_COMM_PROC, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

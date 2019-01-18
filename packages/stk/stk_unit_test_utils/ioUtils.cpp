@@ -1,8 +1,26 @@
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "ioUtils.hpp"
-#include "GeneratedMeshToFile.hpp"
-#include "stk_mesh/base/GetEntities.hpp"
-#include <stk_mesh/base/Field.hpp>
+#include <stddef.h>                                  // for size_t
+#include <unistd.h>                                  // for unlink
 #include <stk_io/StkIoUtils.hpp>
+#include <string>                                    // for allocator, etc
+#include <vector>                                    // for vector
+#include "GeneratedMeshToFile.hpp"
+#include "Ioss_Property.h"                           // for Property
+#include "mpi.h"                                     // for MPI_COMM_SELF, etc
+#include "stk_io/DatabasePurpose.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"                // for StkMeshIoBroker
+#include "stk_mesh/base/BulkData.hpp"                // for BulkData, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"                  // for Entity
+#include "stk_mesh/base/FieldBase.hpp"               // for FieldBase, etc
+#include "stk_mesh/base/GetEntities.hpp"             // for get_entities
+#include "stk_mesh/base/Types.hpp"                   // for EntityRank, etc
+#include "stk_topology/topology.hpp"                 // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {

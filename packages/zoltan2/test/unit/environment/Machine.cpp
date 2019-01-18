@@ -137,10 +137,10 @@ int checkErrorCode(const Teuchos::Comm<int> &comm, int code)
 
 /////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int me = comm->getRank();
   int np = comm->getSize();

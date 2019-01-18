@@ -41,16 +41,10 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
-
-#include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace {
-  using Tpetra::TestingUtilities::getNode;
-  using Tpetra::TestingUtilities::getDefaultComm;
 
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -60,12 +54,10 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::outArg;
-  using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
   using Teuchos::tuple;
-  using Teuchos::null;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
 
@@ -79,7 +71,6 @@ namespace {
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -108,12 +99,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
   using std::cerr;
   using std::endl;
 
-  RCP<Node> node = getNode<Node>();
   // test that an exception is thrown when we exceed statically allocated memory
   typedef ScalarTraits<Scalar> ST;
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
   // get a comm
-  RCP<const Comm<int> > comm = getDefaultComm();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
   const size_t numImages = size(*comm);
   const size_t myImageID = rank(*comm);
 
@@ -132,7 +122,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
        << " rows per process" << endl;
     cerr << os.str ();
   }
-  RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
+  RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
 
   {
     std::ostringstream os;
@@ -156,7 +146,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
         cols.push_back(c);
       }
     }
-    cmap = createNonContigMapWithNode<LO,GO,Node>(cols(), comm, node);
+    cmap = createNonContigMapWithNode<LO,GO,Node>(cols(), comm);
   }
 
   comm->barrier ();
@@ -285,7 +275,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     }
     comm->barrier ();
   }
-  // All procs fail if any node fails
+  // All procs fail if any process fails
   int globalSuccess_int = -1;
   Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );

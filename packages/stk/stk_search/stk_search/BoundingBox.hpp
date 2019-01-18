@@ -35,9 +35,11 @@
 #ifndef STK_SEARCH_BOUNDINGBOX_HPP
 #define STK_SEARCH_BOUNDINGBOX_HPP
 
+#include <stk_math/StkVector.hpp>
+#include <stk_search/Box.hpp>
 #include <stk_search/Point.hpp>
 #include <stk_search/Sphere.hpp>
-#include <stk_search/Box.hpp>
+#include <stk_math/StkMath.hpp>          // for stk::math::max, stk::math::min
 
 namespace stk { namespace search {
 
@@ -260,34 +262,89 @@ inline void scale_by(Box<T> &b, U const& c)
 }
 
 template <typename T1, typename T2>
-inline void add_to_box(Box<T1> &box, const Box<T2>& addBox) {
-  box.set_box(std::min(box.get_x_min(), static_cast<T1>(addBox.get_x_min())),
-              std::min(box.get_y_min(), static_cast<T1>(addBox.get_y_min())),
-              std::min(box.get_z_min(), static_cast<T1>(addBox.get_z_min())),
-              std::max(box.get_x_max(), static_cast<T1>(addBox.get_x_max())),
-              std::max(box.get_y_max(), static_cast<T1>(addBox.get_y_max())),
-              std::max(box.get_z_max(), static_cast<T1>(addBox.get_z_max())));
+KOKKOS_INLINE_FUNCTION void add_to_box(Box<T1> &box, const Box<T2>& addBox) {
+  box.set_box(stk::math::min(box.get_x_min(), static_cast<T1>(addBox.get_x_min())),
+              stk::math::min(box.get_y_min(), static_cast<T1>(addBox.get_y_min())),
+              stk::math::min(box.get_z_min(), static_cast<T1>(addBox.get_z_min())),
+              stk::math::max(box.get_x_max(), static_cast<T1>(addBox.get_x_max())),
+              stk::math::max(box.get_y_max(), static_cast<T1>(addBox.get_y_max())),
+              stk::math::max(box.get_z_max(), static_cast<T1>(addBox.get_z_max())));
 }
 
 template <typename T1, typename T2>
-inline void add_to_box(Box<T1> &box, const Sphere<T2>& addBox) {
-  box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
-              std::min(box.get_y_min(), addBox.get_y_min()), 
-              std::min(box.get_z_min(), addBox.get_z_min()), 
-              std::max(box.get_x_max(), addBox.get_x_max()),
-              std::max(box.get_y_max(), addBox.get_y_max()), 
-              std::max(box.get_z_max(), addBox.get_z_max())); 
+KOKKOS_INLINE_FUNCTION void add_to_box(Box<T1> &box, const Sphere<T2>& addBox) {
+  box.set_box(stk::math::min(box.get_x_min(), addBox.get_x_min()), 
+              stk::math::min(box.get_y_min(), addBox.get_y_min()), 
+              stk::math::min(box.get_z_min(), addBox.get_z_min()), 
+              stk::math::max(box.get_x_max(), addBox.get_x_max()),
+              stk::math::max(box.get_y_max(), addBox.get_y_max()), 
+              stk::math::max(box.get_z_max(), addBox.get_z_max())); 
 }
 
 template <typename T1, typename T2>
-inline void add_to_box(Box<T1> &box, const Point<T2>& addBox) {
-  box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
-              std::min(box.get_y_min(), addBox.get_y_min()), 
-              std::min(box.get_z_min(), addBox.get_z_min()), 
-              std::max(box.get_x_max(), addBox.get_x_max()),
-              std::max(box.get_y_max(), addBox.get_y_max()), 
-              std::max(box.get_z_max(), addBox.get_z_max())); 
+KOKKOS_INLINE_FUNCTION void add_to_box(Box<T1> &box, const Point<T2>& addBox) {
+  box.set_box(stk::math::min(box.get_x_min(), addBox.get_x_min()), 
+              stk::math::min(box.get_y_min(), addBox.get_y_min()), 
+              stk::math::min(box.get_z_min(), addBox.get_z_min()), 
+              stk::math::max(box.get_x_max(), addBox.get_x_max()),
+              stk::math::max(box.get_y_max(), addBox.get_y_max()), 
+              stk::math::max(box.get_z_max(), addBox.get_z_max())); 
 }
+
+// This algorithm is based off the minimum circle for a triangle blog post
+// by Christer Ericson at http://realtimecollisiondetection.net/blog/?p=20
+template <typename NumT>
+Sphere<NumT> minimumBoundingSphere(const Point<NumT>& ptA, const Point<NumT>& ptB, const Point<NumT>& ptC)
+{
+    typedef stk::math::Vector3d Vec;
+
+    Vec a = Vec(ptA[0], ptA[1], ptA[2]);
+    Vec b = Vec(ptB[0], ptB[1], ptB[2]);
+    Vec c = Vec(ptC[0], ptC[1], ptC[2]);
+
+    Vec AB = b - a;
+    Vec AC = c - a;
+
+    NumT dotABAB = Dot(AB, AB);
+    NumT dotABAC = Dot(AB, AC);
+    NumT dotACAC = Dot(AC, AC);
+
+    NumT d = 2.0*(dotABAB*dotACAC - dotABAC*dotABAC);
+    Vec referencePt = a;
+
+    Vec center;
+    if (std::abs(d) <= 100 * std::numeric_limits<NumT>::epsilon()) {
+        // a, b, and c lie on a line. Circle center is center of AABB of the
+        // points, and radius is distance from circle center to AABB corner
+        Box<NumT> aabb = Box<NumT>(Point<NumT>(a[0],a[1],a[2]), Point<NumT>(b[0],b[1],b[2]));
+        add_to_box(aabb, Point<NumT>(c[0],c[1],c[2]));
+
+        Point<NumT> minCornerPt = aabb.min_corner();
+        Point<NumT> maxCornerPt = aabb.max_corner();
+        Vec minCorner = Vec(minCornerPt[0], minCornerPt[1], minCornerPt[2]);
+        Vec maxCorner = Vec(maxCornerPt[0], maxCornerPt[1], maxCornerPt[2]);
+        center = 0.5 * (minCorner + maxCorner);
+        referencePt = minCorner;
+    } else {
+        NumT s = (dotABAB*dotACAC - dotACAC*dotABAC) / d;
+        NumT t = (dotACAC*dotABAB - dotABAB*dotABAC) / d;
+        // s controls height over AC, t over AB, (1-s-t) over BC
+        if (s <= 0.0f) {
+            center = 0.5 * (a + c);
+        } else if (t <= 0.0f) {
+            center = 0.5 * (a + b);
+        } else if (s + t >= 1.0) {
+            center = 0.5 * (b + c);
+            referencePt = b;
+        } else {
+            center = a + s*(b - a) + t*(c - a);
+        }
+    }
+    NumT radius = std::sqrt(Dot(center - referencePt, center - referencePt));
+
+    return Sphere<NumT>(Point<NumT> (center[0],center[1],center[2]), radius);
+}
+
 
 }} //namespace stk::search
 

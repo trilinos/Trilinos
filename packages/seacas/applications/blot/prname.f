@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -31,9 +31,9 @@ C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 c
 C=======================================================================
-      SUBROUTINE PRNAME (OPTION, NOUT, NAMLEN, 
-     *                   NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
-     &                   NAMEHV, NAMEGV, NAMENV, NAMEEV, NAMNSV, NAMSSV)
+      SUBROUTINE PRNAME (NOUT, NAMLEN, 
+     *                   NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
+     &                   NAMEGV, NAMENV, NAMEEV, NAMNSV, NAMSSV)
 C=======================================================================
 
 C   --*** PRNAME *** (BLOT) Display database variable names
@@ -42,30 +42,20 @@ C   --
 C   --PRNAME displays the database variable names.
 C   --
 C   --Parameters:
-C   --   OPTION - IN - '*' to print all, else print options:
-C   --                 'H' to print history variable names
-C   --                 'G' to print global variable names
-C   --                 'N' to print nodal variable names
-C   --                 'E' to print element variable names
-C   --                 'M' to print nodeset variable names
-C   --                 'S' to print sideset variable names
 C   --   NOUT - IN - the output file, <=0 for standard
-C   --   NVARHI - IN - the number of history variables
 C   --   NVARGL - IN - the number of global variables
 C   --   NVARNP - IN - the number of nodal variables
 C   --   NVAREL - IN - the number of element variables
-C   --   NAMEHV - IN - the history variable names
 C   --   NAMEGV - IN - the global variable names
 C   --   NAMENV - IN - the nodal variable names
 C   --   NAMEEV - IN - the element variable names
 
-      CHARACTER*(*) OPTION
-      CHARACTER*(NAMLEN) NAMEHV(*)
       CHARACTER*(NAMLEN) NAMEGV(*)
       CHARACTER*(NAMLEN) NAMENV(*)
       CHARACTER*(NAMLEN) NAMEEV(*)
       CHARACTER*(NAMLEN) NAMNSV(*)
       CHARACTER*(NAMLEN) NAMSSV(*)
+      CHARACTER*128 FMT1, FMT
 
       IF (NOUT .GT. 0) WRITE (NOUT, 10000)
 
@@ -75,55 +65,36 @@ C   --   NAMEEV - IN - the element variable names
          WRITE (*, 10010)
       END IF
 
+      WRITE(FMT1,20) NAMLEN
+      CALL SQZSTR(FMT1, LFMT)
+      if (namlen .le. 20) then
+         WRITE(FMT, 30) FMT1(:LFMT), FMT1(:LFMT)
+      else
+         WRITE(FMT, 40) FMT1(:LFMT), FMT1(:LFMT)
+      endif
+
 C ... Print them out.
-      IF (INDEX (OPTION, 'H') .GT. 0) THEN
-         IF (NOUT .GT. 0) THEN
-            WRITE (NOUT, 10020) 'History:', (NAMEHV(I), I=1,NVARHI)
-         ELSE
-            WRITE (*, 10020) 'History:', (NAMEHV(I), I=1,NVARHI)
-         END IF
-      END IF
-      IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'G') .GT. 0)) THEN
-         IF (NOUT .GT. 0) THEN
-            WRITE (NOUT, 10020) 'Global: ', (NAMEGV(I), I=1,NVARGL)
-         ELSE
-            WRITE (*, 10020) 'Global: ', (NAMEGV(I), I=1,NVARGL)
-         END IF
-      END IF
-      IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'N') .GT. 0)) THEN
-         IF (NOUT .GT. 0) THEN
-            WRITE (NOUT, 10020) 'Nodal:  ', (NAMENV(I), I=1,NVARNP)
-         ELSE
-            WRITE (*, 10020) 'Nodal:  ', (NAMENV(I), I=1,NVARNP)
-         END IF
-      END IF
-      IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'E') .GT. 0)) THEN
-         IF (NOUT .GT. 0) THEN
-            WRITE (NOUT, 10020) 'Element:', (NAMEEV(I), I=1,NVAREL)
-         ELSE
-            WRITE (*, 10020) 'Element:', (NAMEEV(I), I=1,NVAREL)
-         END IF
-      END IF
-      IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'M') .GT. 0)) THEN
-         IF (NOUT .GT. 0) THEN
-            WRITE (NOUT, 10020) 'Nodeset:', (NAMNSV(I), I=1,NVARNS)
-         ELSE
-            WRITE (*, 10020) 'Nodeset:', (NAMNSV(I), I=1,NVARNS)
-         END IF
-      END IF
-      IF ((OPTION .EQ. '*') .OR. (INDEX (OPTION, 'S') .GT. 0)) THEN
-         IF (NOUT .GT. 0) THEN
-            WRITE (NOUT, 10020) 'Sideset:', (NAMSSV(I), I=1,NVARSS)
-         ELSE
-            WRITE (*, 10020) 'Sideset:', (NAMSSV(I), I=1,NVARSS)
-         END IF
-      END IF
+      if (nout .le. 0) then
+            WRITE (*, FMT) 'Global: ', (NAMEGV(I), I=1,NVARGL)
+            WRITE (*, FMT) 'Nodal:  ', (NAMENV(I), I=1,NVARNP)
+            WRITE (*, FMT) 'Element:', (NAMEEV(I), I=1,NVAREL)
+            WRITE (*, FMT) 'Nodeset:', (NAMNSV(I), I=1,NVARNS)
+            WRITE (*, FMT) 'Sideset:', (NAMSSV(I), I=1,NVARSS)
+      else
+            WRITE (NOUT, FMT) 'Global: ', (NAMEGV(I), I=1,NVARGL)
+            WRITE (NOUT, FMT) 'Nodal:  ', (NAMENV(I), I=1,NVARNP)
+            WRITE (NOUT, FMT) 'Element:', (NAMEEV(I), I=1,NVAREL)
+            WRITE (NOUT, FMT) 'Nodeset:', (NAMNSV(I), I=1,NVARNS)
+            WRITE (NOUT, FMT) 'Sideset:', (NAMSSV(I), I=1,NVARSS)
+      end if
 
       RETURN
 
+ 20   FORMAT('A',I4)
+ 30   FORMAT ('(4X, A, :, 3 (2X, ',A,'), :, /,(12X, 3 (2X, ',A,')))')
+ 40   FORMAT ('(4X, A, :, 2 (2X, ',A,'), :, /,(12X, 2 (2X, ',A,')))')
+
 10000  FORMAT (/, 1X, 'VARIABLES NAMES')
 10010  FORMAT (/, 1X, 'Variables Names:')
-10020  FORMAT (4X, A, :, 2 (2X, A), :, /,
-     &   (12X, 2 (2X, A)))
 
       END

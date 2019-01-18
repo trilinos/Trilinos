@@ -69,7 +69,8 @@ namespace {
 
       stk::mesh::Field<int> &integer_field = stkIo.meta_data().
 	declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "int_field", 1);
-      stk::mesh::put_field(integer_field, stkIo.meta_data().universal_part());
+      stk::mesh::put_field_on_mesh(integer_field, stkIo.meta_data().universal_part(),
+                                   (stk::mesh::FieldTraits<stk::mesh::Field<int> >::data_type*) nullptr);
       stkIo.populate_bulk_data();
 
       EXPECT_ANY_THROW(stkIo.add_input_field(stk::io::MeshField(integer_field,

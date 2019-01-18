@@ -77,6 +77,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "35" )
   SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
+  SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
@@ -100,6 +101,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTPL_ENABLE_CUDA:BOOL=ON"
       "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
       "-DTPL_ENABLE_HWLOC:BOOL=OFF"
+
+      # Host Blas is required (https://github.com/kokkos/kokkos-kernels/issues/347) for Kokkos-Kernels to build correctly
+      "-DTPL_ENABLE_BLAS:BOOL=ON"
+      "-DTPL_ENABLE_LAPACK:BOOL=ON"
+      "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
+      "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
 
       ### PACKAGE CONFIGURATION ###
           "-DKokkos_ENABLE_Cuda:BOOL=ON"

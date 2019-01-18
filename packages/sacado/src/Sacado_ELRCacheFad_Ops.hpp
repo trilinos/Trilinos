@@ -3716,5 +3716,4 @@ namespace Sacado {
 
 } // namespace Sacado
 
-
 #endif // SACADO_CACHEFAD_OPS_HPP

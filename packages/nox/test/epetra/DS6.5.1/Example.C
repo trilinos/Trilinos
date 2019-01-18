@@ -56,6 +56,7 @@
 // NOX Library
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_SolverStats.hpp"
 
 // Trilinos Objects
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -71,6 +72,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "Teuchos_TestingHelpers.hpp"
 
 // User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
@@ -301,14 +303,23 @@ int main(int argc, char *argv[])
       testStatus = 6;
     }
 
-    if (testStatus == 0)
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numNonlinearSolves,1,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numNonlinearIterations,7,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->numTotalNonlinearIterations,7,std::cout,success);
+
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->lineSearch.getNumLineSearches(),7,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->lineSearch.getNumNonTrivialLineSearches(),2,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->lineSearch.getNumIterations(),4,std::cout,success);
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->lineSearch.getNumFailedLineSearches(),0,std::cout,success);
+
+    TEUCHOS_TEST_EQUALITY(solver->getSolverStatistics()->linearSolve.lastNonlinearSolve_NumLinearIterations,14,std::cout,success);
+
+    if ( (testStatus == 0) && success)
     {
-      success = true;
       std::cout << "Test passed!" << std::endl;
     }
     else
     {
-      success = false;
       std::cout << "Test failed!" << std::endl;
     }
   }

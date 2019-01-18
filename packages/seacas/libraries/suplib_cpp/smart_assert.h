@@ -1,4 +1,4 @@
-// Copyright(C) 2009 National Technology & Engineering Solutions
+// Copyright(C) 2009-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -94,8 +94,8 @@ public:
   int           get_context_line() const { return line_; }
 
   // get/ set expression
-  void set_expr(const string &str) { expr_ = str; }
-  const string &              get_expr() const { return expr_; }
+  void          set_expr(const string &str) { expr_ = str; }
+  const string &get_expr() const { return expr_; }
 
   typedef std::pair<string, string> val_and_str;
   using vals_array = std::vector<val_and_str>;
@@ -107,7 +107,7 @@ public:
 
   // get/set level of assertion
   void set_level(int nLevel) { level_ = nLevel; }
-  int                get_level() const { return level_; }
+  int  get_level() const { return level_; }
 
   // get/set (user-friendly) message
   void set_level_msg(const char *strMsg)
@@ -141,8 +141,8 @@ namespace smart_assert {
 
   // helpers
   std::string get_typeof_level(int nLevel);
-  void dump_context_summary(const assert_context &context, std::ostream &out);
-  void dump_context_detail(const assert_context &context, std::ostream &out);
+  void        dump_context_summary(const assert_context &context, std::ostream &out);
+  void        dump_context_detail(const assert_context &context, std::ostream &out);
 
   // defaults
   void default_warn_handler(const assert_context &context);
@@ -302,7 +302,7 @@ private:
 
   // the handler
   typedef std::map<int, assert_func> handlers_collection;
-  static handlers_collection &handlers()
+  static handlers_collection &       handlers()
   {
     static handlers_collection inst;
     return inst;

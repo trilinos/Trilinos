@@ -275,7 +275,7 @@ TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   // Coverage of element_side_polarity in TopologyHelpers.cpp
   fix.bulk.modification_begin();
 
-  PartVector part_intersection;
+  stk::mesh::ConstPartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
   Entity element = fix.bulk.declare_element(fix.nextEntityId(), part_intersection);
   ASSERT_TRUE( fix.bulk.bucket(element).topology() == stk::topology::INVALID_TOPOLOGY );
@@ -310,7 +310,7 @@ TEST(stk_topology_permutations, lexicographical_smallest_permutation_preserve_po
         {
             unsigned triangle_node_ids[3] = {12, 10, 8};
 
-            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)triangle_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 2;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -318,7 +318,7 @@ TEST(stk_topology_permutations, lexicographical_smallest_permutation_preserve_po
         {
             unsigned triangle_node_ids[3] = {10, 8, 12};
 
-            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)triangle_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 2;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -326,7 +326,7 @@ TEST(stk_topology_permutations, lexicographical_smallest_permutation_preserve_po
         {
             unsigned triangle_node_ids[3] = {8, 12, 10};
 
-            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)triangle_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 2;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -334,7 +334,7 @@ TEST(stk_topology_permutations, lexicographical_smallest_permutation_preserve_po
         {
             unsigned triangle_node_ids[3] = {12, 8, 10};
 
-            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)triangle_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 5;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -342,7 +342,7 @@ TEST(stk_topology_permutations, lexicographical_smallest_permutation_preserve_po
         {
             unsigned triangle_node_ids[3] = {10, 12, 8};
 
-            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)triangle_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 5;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -350,7 +350,7 @@ TEST(stk_topology_permutations, lexicographical_smallest_permutation_preserve_po
         {
             unsigned triangle_node_ids[3] = {8, 10, 12};
 
-            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity(triangle_node_ids, shell_node_ids);
+            unsigned permutation_index = triangular_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)triangle_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 5;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -366,7 +366,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {1, 2, 3, 4};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 0;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -374,7 +374,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {4, 1, 2, 3};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 0;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -382,7 +382,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {3, 4, 1, 2};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 0;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -390,7 +390,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {2, 3, 4, 1};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 0;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -398,7 +398,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {1, 4, 3, 2};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 4;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -406,7 +406,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {2, 1, 4, 3};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 4;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -414,7 +414,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {3, 2, 1, 4};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 4;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -422,7 +422,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {4, 3, 2, 1};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 4;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -430,7 +430,7 @@ TEST(stk_topology_permutations, quad_lexicographical_smallest_permutation_preser
         {
             unsigned quad_node_ids[4] = {4, 2, 3, 1};
 
-            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity(quad_node_ids, shell_node_ids);
+            unsigned permutation_index = quad_shell.lexicographical_smallest_permutation_preserve_polarity((unsigned*)quad_node_ids, (unsigned*)shell_node_ids);
             unsigned gold_lexicographical_smallest_permutation_index = 8;
             // driven by vertices, NOT mid-edge nodes
             EXPECT_EQ(gold_lexicographical_smallest_permutation_index, permutation_index);
@@ -822,7 +822,7 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
 
         mesh.modification_begin();
-        stk::mesh::Entity Quad9 = mesh.declare_element(1, {&meta.get_topology_root_part(stk::topology::QUAD_9_2D)});
+        stk::mesh::Entity Quad9 = mesh.declare_element(1, stk::mesh::ConstPartVector{&meta.get_topology_root_part(stk::topology::QUAD_9_2D)});
         unsigned node_ids[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
         stk::mesh::EntityVector nodes(9);

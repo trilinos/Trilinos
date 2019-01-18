@@ -93,6 +93,7 @@
 #include "MueLu_FineLevelInputDataFactory.hpp"
 #include "MueLu_GeneralGeometricPFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
+#include "MueLu_GeometricInterpolationPFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
@@ -133,6 +134,7 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_UnsmooshFactory.hpp"
 #include "MueLu_UserAggregationFactory.hpp"
 #include "MueLu_UserPFactory.hpp"
@@ -232,6 +234,7 @@ namespace MueLu {
       if (factoryName == "FineLevelInputDataFactory")          return Build2<FineLevelInputDataFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GeneralGeometricPFactory")           return Build2<GeneralGeometricPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                    return Build2<GenericRFactory>                    (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "GeometricInterpolationPFactory")     return Build2<GeometricInterpolationPFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "LineDetectionFactory")               return Build2<LineDetectionFactory>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")                 return Build2<MapTransferFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MatrixAnalysisFactory")              return Build2<MatrixAnalysisFactory>              (paramList, factoryMapIn, factoryManagersIn);
@@ -260,6 +263,7 @@ namespace MueLu {
       if (factoryName == "TransPFactory")                      return Build2<TransPFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                   return BuildTrilinosSmoother                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory")        return Build2<UncoupledAggregationFactory>        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "HybridAggregationFactory")           return Build2<HybridAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UnsmooshFactory")                    return Build2<UnsmooshFactory>                    (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserAggregationFactory")             return Build2<UserAggregationFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UserPFactory")                       return Build2<UserPFactory>                       (paramList, factoryMapIn, factoryManagersIn);

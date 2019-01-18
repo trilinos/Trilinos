@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,17 +33,17 @@
  *
  */
 /*****************************************************************************
-*
-* exutils - exodus utilities
-*
-* entry conditions -
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exutils - exodus utilities
+ *
+ * entry conditions -
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex_file_item, EX_FATAL, etc
@@ -64,7 +64,6 @@
  */
 
 #define NC_FLOAT_WORDSIZE 4
-#define NC_DOUBLE_WORDSIZE 8
 
 static struct ex_file_item *file_list = NULL;
 
@@ -82,23 +81,37 @@ struct ex_file_item *ex_find_file_item(int exoid)
   return (ptr);
 }
 
-void ex_check_valid_file_id(int exoid)
+void ex_check_valid_file_id(int exoid, const char *func)
 {
-#if 0
-  struct ex_file_item *file = ex_find_file_item(exoid);
+  int error = 0;
+  if (exoid <= 0) {
+    error = 1;
+  }
+#if !defined EXODUS_IN_SIERRA
+  else {
+    struct ex_file_item *file = ex_find_file_item(exoid);
 
-  if (!file) {
+    if (!file) {
+      error = 1;
+    }
+  }
+#endif
+
+  if (error) {
     ex_opts(EX_ABORT | EX_VERBOSE);
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: invalid file id %d. Does not refer to an open exodus file.", exoid);
-    ex_err("ex_check_valid_file_id", errmsg, EX_BADFILEID);
+             "ERROR: In \"%s\", the file id %d was not obtained via a call "
+             "to \"ex_open\" or \"ex_create\".\n\t\tIt does not refer to a "
+             "valid open exodus file.\n\t\tAborting to avoid file "
+             "corruption or data loss or other potential problems.",
+             func, exoid);
+    ex_err(__func__, errmsg, EX_BADFILEID);
   }
-#endif
 }
 
 int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
-                int int64_status, int is_parallel, int is_mpiio, int is_pnetcdf)
+                int int64_status, int is_parallel, int is_hdf5, int is_pnetcdf)
 {
   char                 errmsg[MAX_ERR_LENGTH];
   struct ex_file_item *new_file;
@@ -133,17 +146,22 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
    * \param int64_status  the flags specifying how integer values should be
    *                      stored on the database and how they should be
    *                      passes through the api functions.
-   *                      See #FileVars for more information.
+   *
+   * \param is_parallel   1 if parallel file; 0 if serial
+   *
+   * \param is_hdf5      1 if parallel netcdf-4 mode; 0 if not.
+   *
+   * \param is_pnetcdf    1 if parallel PNetCDF file; 0 if not.
    *
    * word size parameters are specified in bytes. valid values are 0, 4, and 8:
    */
 
   EX_FUNC_ENTER();
 
-  /* check to make sure machine word sizes aren't weird */
+  /* check to make sure machine word sizes are sane */
   if ((sizeof(float) != 4 && sizeof(float) != 8) || (sizeof(double) != 4 && sizeof(double) != 8)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported compute word size for file id: %d", exoid);
-    ex_err("ex_conv_ini", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -159,23 +177,24 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
 
   else if (*io_wordsize != 4 && *io_wordsize != 8) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported I/O word size for file id: %d", exoid);
-    ex_err("ex_conv_ini", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   else if (file_wordsize && *io_wordsize != file_wordsize) {
     *io_wordsize = file_wordsize;
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid I/O word size specified for existing file id: "
-                                     "%d, Requested I/O word size overridden.",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: invalid I/O word size specified for existing file id: "
+             "%d, Requested I/O word size overridden.",
              exoid);
-    ex_err("ex_conv_ini", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
   }
 
   if (!*comp_wordsize) {
     *comp_wordsize = sizeof(float);
   }
   else if (*comp_wordsize != 4 && *comp_wordsize != 8) {
-    ex_err("ex_conv_ini", "ERROR: invalid compute wordsize specified", EX_BADPARAM);
+    ex_err_fn(exoid, __func__, "ERROR: invalid compute wordsize specified", EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -183,10 +202,11 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
   {
     int valid_int64 = EX_ALL_INT64_API | EX_ALL_INT64_DB;
     if ((int64_status & valid_int64) != int64_status) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid int64_status flag (%d) specified for "
-                                       "existing file id: %d. Ignoring invalids",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "Warning: invalid int64_status flag (%d) specified for "
+               "existing file id: %d. Ignoring invalids",
                int64_status, exoid);
-      ex_err("ex_conv_ini", errmsg, EX_BADPARAM);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     }
     int64_status &= valid_int64;
   }
@@ -201,10 +221,11 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
   nc_inq_format(exoid, &filetype);
 
   if (!(new_file = malloc(sizeof(struct ex_file_item)))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate memory for internal file "
-                                     "structure storage file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate memory for internal file "
+             "structure storage file id %d",
              exoid);
-    ex_err("ex_inquire", errmsg, EX_MEMFAIL);
+    ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -212,11 +233,12 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
   new_file->user_compute_wordsize = *comp_wordsize == 4 ? 0 : 1;
   new_file->int64_status          = int64_status;
   new_file->maximum_name_length   = ex_default_max_name_length;
+  new_file->time_varid            = -1;
   new_file->compression_level     = 0;
   new_file->shuffle               = 0;
   new_file->file_type             = filetype - 1;
   new_file->is_parallel           = is_parallel;
-  new_file->is_mpiio              = is_mpiio;
+  new_file->is_hdf5               = is_hdf5;
   new_file->is_pnetcdf            = is_pnetcdf;
   new_file->has_nodes             = 1; /* default to yes in case not set */
   new_file->has_edges             = 1;
@@ -239,18 +261,18 @@ int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsi
 /*............................................................................*/
 /*............................................................................*/
 
+/*! ex_conv_exit() takes the structure identified by "exoid" out of the linked
+ * list which describes the files that ex_conv_array() knows how to convert.
+ *
+ * \note it is absolutely necessary for ex_conv_exit() to be called after
+ *       ncclose(), if the parameter used as "exoid" is the id returned from
+ *       an ncopen() or nccreate() call, as netCDF reuses file ids!
+ *       the best place to do this is ex_close(), which is where I did it.
+ *
+ * \param exoid  integer which uniquely identifies the file of interest.
+ */
 void ex_conv_exit(int exoid)
 {
-  /*! ex_conv_exit() takes the structure identified by "exoid" out of the linked
-   * list which describes the files that ex_conv_array() knows how to convert.
-   *
-   * \note it is absolutely necessary for ex_conv_exit() to be called after
-   *       ncclose(), if the parameter used as "exoid" is the id returned from
-   *       an ncopen() or nccreate() call, as netCDF reuses file ids!
-   *       the best place to do this is ex_close(), which is where I did it.
-   *
-   * \param exoid  integer which uniquely identifies the file of interest.
-   */
 
   char                 errmsg[MAX_ERR_LENGTH];
   struct ex_file_item *file = file_list;
@@ -268,7 +290,7 @@ void ex_conv_exit(int exoid)
 
   if (!file) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failure to clear file id %d - not in list.", exoid);
-    ex_err("ex_conv_exit", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_VOID();
   }
 
@@ -300,7 +322,7 @@ nc_type nc_flt_code(int exoid)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for nc_flt_code().", exoid);
-    ex_err("nc_flt_code", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     return ((nc_type)-1);
   }
   EX_FUNC_LEAVE(file->netcdf_type_code);
@@ -331,7 +353,7 @@ int ex_int64_status(int exoid)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_int64_status().", exoid);
-    ex_err("ex_int64_status", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(0);
   }
   EX_FUNC_LEAVE(file->int64_status);
@@ -361,7 +383,7 @@ int ex_set_int64_status(int exoid, int mode)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_int64_status().", exoid);
-    ex_err("ex_int64_status", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(0);
   }
 
@@ -380,7 +402,7 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for ex_set_option().", exoid);
-    ex_err("ex_set_option", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -413,47 +435,48 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
   default: {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: invalid option %d for ex_set_option().", (int)option);
-    ex_err("ex_set_option", errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   }
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
+/*!
+ * ex_comp_ws() returns 4 (i.e. sizeof(float)) or 8 (i.e. sizeof(double)),
+ * depending on the value of floating point word size used to initialize
+ * the conversion facility for this file id (exoid).
+ * \param exoid  integer which uniquely identifies the file of interest.
+ */
 int ex_comp_ws(int exoid)
 {
-  /*!
-   * ex_comp_ws() returns 4 (i.e. sizeof(float)) or 8 (i.e. sizeof(double)),
-   * depending on the value of floating point word size used to initialize
-   * the conversion facility for this file id (exoid).
-   * \param exoid  integer which uniquely identifies the file of interest.
-   */
   struct ex_file_item *file = ex_find_file_item(exoid);
 
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d", exoid);
-    ex_err("ex_comp_ws", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     return (EX_FATAL);
   }
   /* Stored as 0 for 4-byte; 1 for 8-byte */
   return ((file->user_compute_wordsize + 1) * 4);
 }
 
+/*! ex_is_parallel() returns 1 (true) or 0 (false) depending on whether
+ * the file was opened in parallel or serial/file-per-processor mode.
+ * Note that in this case parallel assumes the output of a single file,
+ * not a parallel run using file-per-processor.
+ * \param exoid  integer which uniquely identifies the file of interest.
+ */
 int ex_is_parallel(int exoid)
 {
-  /*! ex_is_parallel() returns 1 (true) or 0 (false) depending on whether
-   * the file was opened in parallel or serial/file-per-processor mode.
-   * Note that in this case parallel assumes the output of a single file,
-   * not a parallel run using file-per-processor.
-   */
   EX_FUNC_ENTER();
   struct ex_file_item *file = ex_find_file_item(exoid);
 
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d", exoid);
-    ex_err("ex_is_parallel", errmsg, EX_BADFILEID);
+    ex_err(__func__, errmsg, EX_BADFILEID);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   /* Stored as 1 for parallel, 0 for serial or file-per-processor */

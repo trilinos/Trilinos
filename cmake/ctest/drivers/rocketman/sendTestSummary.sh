@@ -32,7 +32,7 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT="/space/nightlyTesting/Trilinos/packages/muelu/utils/misc/drakify-email.pl"
+HTMLPERLSCRIPT="/home/nightlyTesting/trilinos/packages/muelu/utils/misc/drakify-email.pl"
 #root of cdash testing directory
 TESTLOCATION="/home/nightlyTesting"
 LOGBACKUPDIRECTORY="/home/nightlyTesting/logs"

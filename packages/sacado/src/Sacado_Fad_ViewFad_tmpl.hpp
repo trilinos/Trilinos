@@ -31,9 +31,18 @@
 #include "Sacado_mpl_if.hpp"
 #include "Sacado_mpl_type_wrap.hpp"
 
+#if defined(HAVE_SACADO_KOKKOSCORE)
+#include "Kokkos_Atomic.hpp"
+#include "impl/Kokkos_Error.hpp"
+#endif
+
 namespace Sacado {
 
   namespace FAD_NS {
+
+    // Class representing a pointer to ViewFad so that &ViewFad is supported
+    template <typename T, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr;
 
     /*!
      * \brief Forward-mode AD class using dynamic memory allocation and
@@ -231,9 +240,68 @@ namespace Sacado {
         return *this;
       }
 
+      // Overload of addressof operator
+      KOKKOS_INLINE_FUNCTION
+      ViewFadPtr<ValueT,length,stride,BaseFadT> operator&() const {
+        return ViewFadPtr<ValueT,length,stride,BaseFadT>(
+          this->dx_, this->val_, this->sz_.value, this->stride_.value);
+      }
+
       //@}
 
     }; // class ViewFad<ValueT>
+
+    // Class representing a pointer to ViewFad so that &ViewFad is supported
+    template <typename T, unsigned sl, unsigned ss, typename U>
+    class ViewFadPtr : public ViewFad<T,sl,ss,U> {
+    public:
+
+      // Storage type base class
+      typedef ViewFad<T,sl,ss,U> view_fad_type;
+
+      // Bring in constructors
+      using view_fad_type::view_fad_type;
+
+      // Add overload of dereference operator
+      KOKKOS_INLINE_FUNCTION
+      view_fad_type* operator->() { return this; }
+
+      // Add overload of dereference operator
+      KOKKOS_INLINE_FUNCTION
+      view_fad_type& operator*() { *this; }
+    };
+
+#if defined(HAVE_SACADO_KOKKOSCORE)
+    // Overload of Kokkos::atomic_add for ViewFad types.
+    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
+    KOKKOS_INLINE_FUNCTION
+    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x) {
+      using Kokkos::atomic_add;
+
+      x.cache();
+
+      const int xsz = x.size();
+      const int sz = dst->size();
+
+      // We currently cannot handle resizing since that would need to be
+      // done atomically.
+      if (xsz > sz)
+        Kokkos::abort(
+          "Sacado error: Fad resize within atomic_add() not supported!");
+
+      if (xsz != sz && sz > 0 && xsz > 0)
+        Kokkos::abort(
+          "Sacado error: Fad assignment of incompatiable sizes!");
+
+
+      if (sz > 0 && xsz > 0) {
+        SACADO_FAD_DERIV_LOOP(i,sz)
+          atomic_add(&(dst->fastAccessDx(i)), x.fastAccessDx(i));
+      }
+      SACADO_FAD_THREAD_SINGLE
+        atomic_add(&(dst->val()), x.val());
+    }
+#endif
 
     template <typename T, unsigned l, unsigned s, typename U>
     struct BaseExpr< GeneralFad<T,Fad::ViewStorage<T,l,s,U> > > {

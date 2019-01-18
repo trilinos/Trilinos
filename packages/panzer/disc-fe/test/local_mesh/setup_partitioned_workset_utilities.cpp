@@ -66,7 +66,7 @@
 namespace panzer {
 
 using LO=int;
-using GO=int;
+using GO=panzer::Ordinal64;
 
 TEUCHOS_UNIT_TEST(setupPartitionedWorksetUtilities, basic)
 {

@@ -147,7 +147,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, EpetraVsTpetra)
   {
 #   include "MueLu_UseShortNames.hpp"
-    MueLu::VerboseObject::SetDefaultOStream(Teuchos::rcpFromRef(out));
+    MueLu::VerboseObject::SetMueLuOStream(Teuchos::rcpFromRef(out));
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Compare results of Epetra and Tpetra" << std::endl;

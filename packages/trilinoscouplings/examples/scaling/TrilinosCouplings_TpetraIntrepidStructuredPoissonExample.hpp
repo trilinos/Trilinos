@@ -31,7 +31,6 @@
 #ifndef __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp
 #define __TrilinosCouplings_TpetraIntrepidStructuredPoissonExample_hpp
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -83,7 +82,9 @@ namespace TpetraIntrepidPoissonExample {
 typedef double ST;
 typedef int    LO;
 typedef int    GO;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
+typedef Tpetra::Map<>::node_type  Node;
+typedef Teuchos::ScalarTraits<ST> STS;
+typedef STS::magnitudeType MT;
 
 //
 // mfh 19 Apr 2012: If you want to change the template parameters of
@@ -92,6 +93,7 @@ typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
 typedef Tpetra::CrsMatrix<ST, LO, GO, Node>    sparse_matrix_type;
 typedef Tpetra::Operator<ST, LO, GO, Node>     operator_type;
 typedef Tpetra::MultiVector<ST, LO, GO, Node>  multivector_type;
+typedef Tpetra::MultiVector<MT, LO, GO, Node>  realmultivector_type;
 typedef Tpetra::Vector<ST, LO, GO, Node>       vector_type;
 
 /// \brief Create the mesh and build the linear system to solve.
@@ -160,7 +162,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<vector_type>& B,
                             Teuchos::RCP<vector_type>& X_exact,
                             Teuchos::RCP<vector_type>& X,
-                            Teuchos::Array<Teuchos::Array<ST> >& coordArray,
+                            Teuchos::Array<Teuchos::Array<MT> >& coordArray,
                             Teuchos::Array<LO>& lNodesPerDim,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,
@@ -176,7 +178,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
                             Teuchos::RCP<multivector_type>& B,
                             Teuchos::RCP<multivector_type>& X_exact,
                             Teuchos::RCP<multivector_type>& X,
-                            Teuchos::Array<Teuchos::Array<ST> >& coordArray,
+                            Teuchos::Array<Teuchos::Array<MT> >& coordArray,
                             Teuchos::Array<LO>& lNodesPerDim,
                             const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                             const Teuchos::RCP<Node>& node,

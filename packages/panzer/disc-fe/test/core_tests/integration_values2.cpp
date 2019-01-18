@@ -245,4 +245,234 @@ namespace panzer {
                            realspace_y_coord_1, 1.0e-8);
 
   }
+
+  TEUCHOS_UNIT_TEST(integration_values, coord_ordering_1d)  
+  {
+    typedef IntegrationValues2<double> IV;
+    MDFieldArrayFactory af("",true);
+
+    int num_faces = 2;
+    int num_points_per_face = 4;
+    std::vector<int> order(num_points_per_face,-1);
+  
+    IV::Array_CellIPDim coords = af.template buildStaticArray<double,Cell,IP,Dim>("coord",2,num_faces*num_points_per_face,1); 
+    coords(0,0,0) = -1.0; coords(0,1,0) =  0.0; coords(0,2,0) =  1.0; coords(0,3,0) = 2.0;
+    coords(0,4,0) =  1.0; coords(0,5,0) =  2.0; coords(0,6,0) = -1.0; coords(0,7,0) = 0.0;
+    coords(1,0,0) = -1.0; coords(1,1,0) =  0.0; coords(1,2,0) =  1.0; coords(1,3,0) = 2.0;
+    coords(1,4,0) =  1.0; coords(1,5,0) =  2.0; coords(1,6,0) = -1.0; coords(1,7,0) = 0.0;
+
+    int cell = 0, offset = 0;
+
+    cell = 0; offset = 0;
+    IV::uniqueCoordOrdering(coords,cell,offset,order);
+    TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
+
+    cell = 0; offset = 4;
+    IV::uniqueCoordOrdering(coords,cell,offset,order);
+    TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
+
+    cell = 1; offset = 0;
+    IV::uniqueCoordOrdering(coords,cell,offset,order);
+    TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
+
+    cell = 1; offset = 4;
+    IV::uniqueCoordOrdering(coords,cell,offset,order);
+    TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
+  }
+
+  TEUCHOS_UNIT_TEST(integration_values, coord_ordering_2d)  
+  {
+    typedef IntegrationValues2<double> IV;
+    MDFieldArrayFactory af("",true);
+
+    {
+      int num_faces = 2;
+      int num_points_per_face = 4;
+      std::vector<int> order(num_points_per_face,-1);
+  
+      IV::Array_CellIPDim coords = af.template buildStaticArray<double,Cell,IP,Dim>("coord",2,num_faces*num_points_per_face,2); 
+
+      // cell 0
+      coords(0,0,0) = -1.0; coords(0,1,0) =  0.0; coords(0,2,0) =  1.0; coords(0,3,0) = 2.0;
+      coords(0,0,1) =  0.0; coords(0,1,1) =  0.0; coords(0,2,1) =  0.0; coords(0,3,1) = 0.0;
+
+      coords(0,4,0) =  1.0; coords(0,5,0) =  2.0; coords(0,6,0) = -1.0; coords(0,7,0) = 0.0;
+      coords(0,4,1) =  0.0; coords(0,5,1) =  0.0; coords(0,6,1) =  0.0; coords(0,7,1) = 0.0;
+
+      // cell 1
+      coords(1,0,0) =  2.0; coords(1,1,0) =  2.0; coords(1,2,0) =  2.0; coords(1,3,0) = 2.0;
+      coords(1,0,0) = -1.1; coords(1,1,1) =  0.0; coords(1,2,1) =  1.0; coords(1,3,1) = 2.0;
+
+      coords(1,4,0) =  2.0; coords(1,5,0) =  2.0; coords(1,6,0) =  2.0; coords(1,7,0) = 2.0;
+      coords(1,4,1) =  1.0; coords(1,5,1) =  2.0; coords(1,6,1) = -1.0; coords(1,7,1) = 0.0;
+
+      int cell = 0, offset = 0;
+
+      cell = 0; offset = 0;
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
+
+      cell = 0; offset = 4;
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
+
+      cell = 1; offset = 0;
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({0,1,2,3}));
+
+      cell = 1; offset = 4;
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({2,3,0,1}));
+    }
+
+    // this was the original failing case
+    {
+      std::vector<int> order(2,-1);
+  
+      IV::Array_CellIPDim coords = af.template buildStaticArray<double,Cell,IP,Dim>("coord",4,2,2); 
+
+      coords(0,0,0) = 0.0; coords(0,0,1) = 4.4088517374119224e-01;
+      coords(0,1,0) = 0.0; coords(0,1,1) = 1.1813482625880771e-01; 
+
+      coords(1,0,0) = 2.5; coords(1,0,1) = 4.4088517374119224e-01;
+      coords(1,1,0) = 2.5; coords(1,1,1) = 1.1813482625880771e-01; 
+
+      coords(2,0,0) = 0.0; coords(2,0,1) = 1.1813482625880771e-01; 
+      coords(2,1,0) = 0.0; coords(2,1,1) = 4.4088517374119224e-01;
+
+      coords(3,0,0) = 2.5; coords(3,0,1) = 1.1813482625880771e-01; 
+      coords(3,1,0) = 2.5; coords(3,1,1) = 4.4088517374119224e-01;
+
+      int cell = 0, offset = 0;
+
+      cell = 0; 
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({1,0}));
+
+      cell = 1; 
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({1,0}));
+
+      cell = 2;
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({0,1}));
+
+      cell = 3;
+      IV::uniqueCoordOrdering(coords,cell,offset,order);
+      TEST_ASSERT(order==std::vector<int>({0,1}));
+    }
+  }
+
+  TEUCHOS_UNIT_TEST(integration_values, quadpt_swap)
+  {    
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int in_num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(in_num_cells,topo);
+
+    const int cubature_degree = 2;    
+    RCP<IntegrationRule> int_rule = 
+      rcp(new IntegrationRule(cubature_degree, cell_data));
+    
+    panzer::IntegrationValues2<double> int_values("prefix_",true);
+    panzer::MDFieldArrayFactory af("prefix_",true);
+
+    int_values.setupArrays(int_rule);
+
+    const int num_vertices = int_rule->topology->getNodeCount();
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",in_num_cells, num_vertices, base_cell_dimension);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+
+    // 3(0,1)---2(1.5,1.5)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
+    const size_type x = 0;
+    const size_type y = 1;
+    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
+      node_coordinates(cell,0,x) = 0.0;
+      node_coordinates(cell,0,y) = 0.0;
+      node_coordinates(cell,1,x) = 1.0;
+      node_coordinates(cell,1,y) = 0.0;
+      node_coordinates(cell,2,x) = 1.5;
+      node_coordinates(cell,2,y) = 1.5;
+      node_coordinates(cell,3,x) = 0.0;
+      node_coordinates(cell,3,y) = 1.0;
+    }
+
+    int_values.evaluateValues(node_coordinates);
+
+    // pull out arrays to look at
+    
+    auto weighted_measure   = int_values.weighted_measure;
+    auto jac_det            = int_values.jac_det;
+    auto ref_ip_coordinates = int_values.ref_ip_coordinates;
+    auto ip_coordinates     = int_values.ip_coordinates;
+    auto jac                = int_values.jac;
+    auto jac_inv            = int_values.jac_inv;
+
+    int num_cells  = ip_coordinates.extent(0); 
+    int num_points = ip_coordinates.extent(1); 
+    int num_dim    = ip_coordinates.extent(2); 
+
+    TEST_EQUALITY(num_cells,in_num_cells);
+    TEST_EQUALITY(num_points,4);
+    TEST_EQUALITY(num_dim,2);
+
+    int ref_cell = 0;
+
+    {
+      int tst_cell = 1;
+      int org_pt = 0;
+      int new_pt = 1;
+
+      int_values.swapQuadraturePoints(tst_cell,org_pt,new_pt);
+   
+      TEST_EQUALITY(    weighted_measure(ref_cell,org_pt),     weighted_measure(tst_cell,new_pt));
+      TEST_EQUALITY(             jac_det(ref_cell,org_pt),              jac_det(tst_cell,new_pt));
+      TEST_EQUALITY(ref_ip_coordinates(ref_cell,org_pt,0), ref_ip_coordinates(tst_cell,new_pt,0));
+      TEST_EQUALITY(ref_ip_coordinates(ref_cell,org_pt,1), ref_ip_coordinates(tst_cell,new_pt,1));
+      TEST_EQUALITY(    ip_coordinates(ref_cell,org_pt,0),     ip_coordinates(tst_cell,new_pt,0));
+      TEST_EQUALITY(    ip_coordinates(ref_cell,org_pt,1),     ip_coordinates(tst_cell,new_pt,1));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,0,0),     jac(tst_cell,new_pt,0,0));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,0,1),     jac(tst_cell,new_pt,0,1));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,1,0),     jac(tst_cell,new_pt,1,0));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,1,1),     jac(tst_cell,new_pt,1,1));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,0,0),     jac_inv(tst_cell,new_pt,0,0));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,0,1),     jac_inv(tst_cell,new_pt,0,1));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,1,0),     jac_inv(tst_cell,new_pt,1,0));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,1,1),     jac_inv(tst_cell,new_pt,1,1));
+    }
+
+    {
+      int tst_cell = 7;
+      int org_pt = 1;
+      int new_pt = 3;
+
+      int_values.swapQuadraturePoints(tst_cell,org_pt,new_pt);
+   
+      TEST_EQUALITY(    weighted_measure(ref_cell,org_pt),     weighted_measure(tst_cell,new_pt));
+      TEST_EQUALITY(             jac_det(ref_cell,org_pt),              jac_det(tst_cell,new_pt));
+      TEST_EQUALITY(ref_ip_coordinates(ref_cell,org_pt,0), ref_ip_coordinates(tst_cell,new_pt,0));
+      TEST_EQUALITY(ref_ip_coordinates(ref_cell,org_pt,1), ref_ip_coordinates(tst_cell,new_pt,1));
+      TEST_EQUALITY(    ip_coordinates(ref_cell,org_pt,0),     ip_coordinates(tst_cell,new_pt,0));
+      TEST_EQUALITY(    ip_coordinates(ref_cell,org_pt,1),     ip_coordinates(tst_cell,new_pt,1));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,0,0),     jac(tst_cell,new_pt,0,0));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,0,1),     jac(tst_cell,new_pt,0,1));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,1,0),     jac(tst_cell,new_pt,1,0));
+      TEST_EQUALITY(    jac(ref_cell,org_pt,1,1),     jac(tst_cell,new_pt,1,1));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,0,0),     jac_inv(tst_cell,new_pt,0,0));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,0,1),     jac_inv(tst_cell,new_pt,0,1));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,1,0),     jac_inv(tst_cell,new_pt,1,0));
+      TEST_EQUALITY(    jac_inv(ref_cell,org_pt,1,1),     jac_inv(tst_cell,new_pt,1,1));
+    }
+  }
 }

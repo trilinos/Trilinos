@@ -53,7 +53,7 @@ public:
   //! SuperLU_DIST's grid information.
   gridinfo_t grid_;
   //! Vector of options.
-#if SUPERLU_DIST_MAJOR_VERSION == 5
+#if SUPERLU_DIST_MAJOR_VERSION > 4
   //Note we may add the need for minor or patch version as need
   superlu_dist_options_t options_;
 #else
@@ -135,7 +135,11 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob) :
   Equil_ = true;
   ColPerm_ = "MMD_AT_PLUS_A";
   perm_c_ = 0;
+#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION > 3)
+  RowPerm_ = "LargeDiag_MC64";
+#else
   RowPerm_ = "LargeDiag";
+#endif
   perm_r_ = 0;
   IterRefine_ = "DOUBLE";
   ReplaceTinyPivot_ = true;
@@ -472,7 +476,11 @@ int Amesos_Superludist::Factor()
     }
 
     if( RowPerm_ == "NATURAL" ) PrivateSuperluData_->options_.RowPerm = (rowperm_t)NATURAL;
+#if (SUPERLU_DIST_MAJOR_VERSION > 5) || ( SUPERLU_DIST_MAJOR_VERSION == 5 && SUPERLU_DIST_MINOR_VERSION > 3)
+    if( RowPerm_ == "LargeDiag_MC64" ) PrivateSuperluData_->options_.RowPerm = LargeDiag_MC64;
+#else
     if( RowPerm_ == "LargeDiag" ) PrivateSuperluData_->options_.RowPerm = LargeDiag;
+#endif
     else if( ColPerm_ == "MY_PERMR" ) {
       PrivateSuperluData_->options_.RowPerm = MY_PERMR;
       PrivateSuperluData_->ScalePermstruct_.perm_r = perm_r_;

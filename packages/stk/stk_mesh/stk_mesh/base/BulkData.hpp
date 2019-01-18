@@ -50,7 +50,6 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
-#include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
@@ -62,7 +61,7 @@
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
@@ -72,6 +71,7 @@
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
 #include "stk_mesh/baseImpl/SoloSideIdGenerator.hpp"
+#include "stk_mesh/baseImpl/SideSetImpl.hpp"
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -130,7 +130,7 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
                                           stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 }
 
-typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
+typedef std::unordered_map<EntityKey, Entity::entity_value_type, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
 struct sharing_info
 {
@@ -296,6 +296,7 @@ public:
    *  </PRE>
    */
   void update_field_data_states();
+  void update_field_data_states(FieldBase *field);
 
   /** \brief  Copy field data from src entity to Dest entity
    *           - Fields that exist on the src that don't exist on the dest will
@@ -312,16 +313,16 @@ public:
   const BucketVector & buckets( EntityRank rank ) const { return m_bucket_repository.buckets(rank); }
 
   //iterator that traverses entities of the specified rank, in order of ascending global identifier
-  const_entity_iterator begin_entities(EntityRank ent_rank) const { return m_entity_repo.begin_rank(ent_rank);}
+  const_entity_iterator begin_entities(EntityRank ent_rank) const;
 
   //end-iterator for entities of the specified rank
-  const_entity_iterator end_entities(EntityRank ent_rank) const { return m_entity_repo.end_rank(ent_rank); }
+  const_entity_iterator end_entities(EntityRank ent_rank) const;
 
   /** \brief  Get entity with a given rank and id */
-  inline Entity get_entity( EntityRank ent_rank , EntityId entity_id ) const;
+  Entity get_entity( EntityRank ent_rank , EntityId entity_id ) const;
 
   /** \brief  Get entity with a given key */
-  Entity get_entity( const EntityKey key ) const  { return m_entity_repo.get_entity(key); }
+  Entity get_entity( const EntityKey key ) const;
 
   //------------------------------------
   /** \brief  Create or retrieve a locally owned entity of a
@@ -337,11 +338,16 @@ public:
    *  and identifier then the sharing and ownership of these entities
    *  will be resolved by the call to 'modification_end'.
    */
-  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , const PartVector& parts); // Mod Mark
-  Entity declare_node(EntityId id, const PartVector& parts);
-  Entity declare_edge(EntityId id, const PartVector& parts);
-  Entity declare_element(EntityId id, const PartVector& parts);
-  Entity declare_constraint(EntityId id, const PartVector& parts);
+  template<typename PARTVECTOR>
+  Entity declare_entity( EntityRank ent_rank , EntityId ent_id , const PARTVECTOR& parts); // Mod Mark
+  template<typename PARTVECTOR>
+  Entity declare_node(EntityId id, const PARTVECTOR& parts);
+  template<typename PARTVECTOR>
+  Entity declare_edge(EntityId id, const PARTVECTOR& parts);
+  template<typename PARTVECTOR>
+  Entity declare_element(EntityId id, const PARTVECTOR& parts);
+  template<typename PARTVECTOR>
+  Entity declare_constraint(EntityId id, const PARTVECTOR& parts);
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part); // Mod Mark
 
   /** This overloading of declare_entity that doesn't take a part
@@ -406,6 +412,10 @@ public:
   void batch_change_entity_parts( const stk::mesh::EntityVector& entities, // Mod Mark
                             const std::vector<PartVector>& add_parts,
                             const std::vector<PartVector>& remove_parts);
+
+  void batch_change_entity_parts( const stk::mesh::EntityVector& entities, // Mod Mark
+                            const PartVector& add_parts,
+                            const PartVector& remove_parts);
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -618,11 +628,11 @@ public:
   inline void set_local_id(Entity entity, unsigned id);
 
 #ifdef SIERRA_MIGRATION
-  typedef int FmwkId; //must be a signed type -- fmwk uses negative values sometimes
+  typedef int64_t FmwkId; //must be a signed type -- fmwk uses negative values sometimes
   inline FmwkId global_id(stk::mesh::Entity entity) const;
   inline const RelationVector& aux_relations(Entity entity) const;
   inline RelationVector& aux_relations(Entity entity); // Mod Mark
-  inline void set_global_id(stk::mesh::Entity entity, int id);
+  inline void set_global_id(stk::mesh::Entity entity, FmwkId id);
   void reserve_relation(stk::mesh::Entity entity, const unsigned num); // Mod Mark
   void erase_and_clear_if_empty(stk::mesh::Entity entity, RelationIterator rel_itr); // Mod Mark
   void internal_verify_initialization_invariant(stk::mesh::Entity entity);
@@ -738,6 +748,7 @@ public:
   // out.close();
   void dump_all_mesh_info(std::ostream& out) const;
   void dump_mesh_per_proc(const std::string& fileNamePrefix) const;
+  void dump_mesh_bucket_info(std::ostream& out, Bucket* bucket) const;
 
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
@@ -773,8 +784,12 @@ public:
 
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
-  void register_observer(stk::mesh::ModificationObserver *observer);
-  void unregister_observer(ModificationObserver *observer);
+  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer);
+  void unregister_observer(std::shared_ptr<ModificationObserver> observer);
+  template<typename ObserverType>
+  bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }
+  template<typename ObserverType>
+  std::vector<ObserverType*> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
 
   void initialize_face_adjacent_element_graph();
   void delete_face_adjacent_element_graph();
@@ -790,58 +805,22 @@ public:
 
   void destroy_elements_of_topology(stk::topology topologyToDelete);
 
-  bool does_sideset_exist(int sideset_id) const
-  {
-      return (m_sideSetData.find(sideset_id) != m_sideSetData.end());
-  }
-
-  SideSet& create_sideset(int sideset_id)
-  {
-      ThrowRequire(m_sideSetData.find(sideset_id) == m_sideSetData.end());
-      auto retValue = m_sideSetData.insert(std::make_pair(sideset_id, stk::mesh::SideSet()));
-      auto iter =  retValue.first;
-      return iter->second;
-  }
-
-  const SideSet& get_sideset(int sideset_id) const
-  {
-      auto iter = m_sideSetData.find(sideset_id);
-      ThrowRequire(iter != m_sideSetData.end());
-
-      return iter->second;
-  }
-
-  SideSet& get_sideset(int sideset_id)
-  {
-      auto iter = m_sideSetData.find(sideset_id);
-      ThrowRequire(iter != m_sideSetData.end());
-
-      return iter->second;
-  }
-
-  std::vector<int> get_sideset_ids() const
-  {
-      std::vector<int> ids;
-      ids.reserve(m_sideSetData.size());
-      for(auto idAndSideSet : m_sideSetData)
-          ids.push_back(idAndSideSet.first);
-
-      return ids;
-  }
-
-
-  void clear_sideset(int sideset_id)
-  {
-      m_sideSetData.erase(sideset_id);
-  }
-
-  void clear_sidesets()
-  {
-      m_sideSetData.clear();
-  }
+  bool does_sideset_exist(const stk::mesh::Part &part) const;
+  SideSet& create_sideset(const stk::mesh::Part &part, bool fromInput = false);
+  const SideSet& get_sideset(const stk::mesh::Part &part) const;
+  SideSet& get_sideset(const stk::mesh::Part &part);
+  size_t get_number_of_sidesets() const;
+  bool was_mesh_modified_since_sideset_creation();
+  void clear_sidesets();
+  void clear_sideset(const stk::mesh::Part &part);
+  std::vector<SideSet *> get_sidesets();
 
   void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
   void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
+
+  bool supports_large_ids() const {return m_supportsLargeIds; }
+  void set_large_ids_flag(bool largeIds) { m_supportsLargeIds = largeIds; }
+
 protected: //functions
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
 
@@ -914,9 +893,8 @@ protected: //functions
   void gather_shared_nodes(std::vector<Entity> & shared_nodes);
   inline bool internal_set_parallel_owner_rank_but_not_comm_lists(Entity entity, int in_owner_rank);
 
-  impl::EntityRepository &get_entity_repository() { return m_entity_repo; }
-
   inline void set_state(Entity entity, EntityState entity_state);
+  inline void set_entity_key(Entity entity, EntityKey key);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0); // Mod Mark
   std::pair<Entity, bool> internal_get_or_create_entity_with_notification(EntityKey key, size_t preferred_offset = 0);
@@ -1096,7 +1074,7 @@ protected: //functions
   void resolve_entity_ownership_and_part_membership_and_comm_list(std::vector<stk::mesh::Entity>& modifiedEntities); // Mod Mark
 
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
-  virtual size_t generate_next_local_offset(size_t preferred_offset = 0);
+  virtual Entity generate_new_entity(unsigned preferred_offset = 0);
 
   void entity_setter_debug_check(Entity entity) const
   {
@@ -1263,7 +1241,6 @@ private:
       }
   }
 
-  inline void set_entity_key(Entity entity, EntityKey key);
   void delete_sides_on_all_procs(const stk::mesh::EntityVector & deletedSides);
   void set_shared_owned_parts_and_ownership_on_comm_data(const std::vector<sharing_info>& shared_modified);
   void sync_parts_on_downward_related_entities_for_created_sides(const stk::mesh::EntityVector& locally_created_sides);
@@ -1372,7 +1349,6 @@ private:
                                const Entity e_to );
 
   friend class ::stk::mesh::MetaData;
-  friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
@@ -1384,7 +1360,7 @@ private:
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
-  friend void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  template <Operation Op> friend void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
@@ -1433,13 +1409,6 @@ private:
                                                   bool&                  bad_comm);
 
 
-  struct MarkAsModified
-  {
-      MarkAsModified(BulkData & mesh_in) : mesh(mesh_in) {}
-      void operator()(Entity entity);
-      BulkData & mesh;
-  };
-
   void fillEntityCommInfoForEntity(stk::mesh::Ghosting &ghost_id,
                                    stk::mesh::BulkData &mesh,
                                    std::vector<stk::mesh::EntityKey> nodes,
@@ -1482,10 +1451,10 @@ protected: //data
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
-  impl::EntityRepository m_entity_repo;
+  impl::EntityRepository* m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
   CommListUpdater m_comm_list_updater;
-  std::list<size_t> m_deleted_entities_current_modification_cycle;
+  std::list<Entity::entity_value_type> m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
   std::vector<EntityKey> m_entity_keys; //indexed by Entity
 
@@ -1516,7 +1485,7 @@ private: // data
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
   std::vector<std::vector<int> > m_all_sharing_procs;
   PartVector m_ghost_parts;
-  std::list<size_t> m_deleted_entities;
+  std::list<Entity::entity_value_type> m_deleted_entities;
   int m_num_fields;
   bool m_keep_fields_updated;
   std::vector<unsigned> m_local_ids; //indexed by Entity
@@ -1531,13 +1500,14 @@ private: // data
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   //stk::ModificationSummary m_modSummary;
-  stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
+  std::shared_ptr<stk::mesh::MeshDiagnosticObserver> m_meshDiagnosticObserver;
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
-  stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
-  std::map<int,SideSet> m_sideSetData;
-  bool m_hasSideSetData = false;
+  std::shared_ptr<stk::mesh::ElemElemGraphUpdater> m_elemElemGraphUpdater;
+  stk::mesh::impl::SideSetImpl<std::string> m_sideSetData;
+
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;
+  bool m_supportsLargeIds = false;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);

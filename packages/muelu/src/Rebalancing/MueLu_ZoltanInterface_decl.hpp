@@ -187,7 +187,7 @@ namespace MueLu {
 
   private:
 
-    static ArrayRCP<double> coalesceCoordinates(ArrayRCP<double> coord, LocalOrdinal blksize);
+    static ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coalesceCoordinates(ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> coord, LocalOrdinal blksize);
 
   };  //class ZoltanInterface
 

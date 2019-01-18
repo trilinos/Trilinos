@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,7 +58,7 @@ extern void reflect_input(int    nvtxs,         /* number of vertices in graph *
                           int    ndims,         /* partitioning level */
                           double eigtol,        /* tolerance on eigenvectors */
                           long   seed,          /* random number seed */
-                          FILE * outfile);      /* file to write output to */
+                          FILE * outfile);       /* file to write output to */
 
 double *SQRTS; /* precomputed square roots for efficiency */
 
@@ -94,7 +94,7 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
             int               ndims,         /* number of eigenvectors (2^d sets) */
             double            eigtol,        /* tolerance on eigenvectors */
             long              seed           /* for random graph mutations */
-            )
+)
 {
   extern int        ECHO;                      /* controls output to file or screen */
   extern int        CHECK_INPUT;               /* should I check input for correctness? */
@@ -137,16 +137,16 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
   int               nsets_tot;                 /* total number of sets */
   int               bits;                      /* used in computing hops */
   int               flag;                      /* return code from check_input */
-  int               old_perturb = 0;           /* saves original pertubation flag */
+  int               old_perturb = 0;           /* saves original perturbation flag */
   int               i, j, k;                   /* loop counters */
   double            seconds();
-  void setrandom(long int seed);
-  int  check_input(), refine_part();
-  void connect_enforce();
-  void setrandom(), makevwsqrt(), balance(), countup();
-  void force_internal(), sequence(), reflect_input();
-  void machine_params(), assign_out(), refine_map();
-  void time_out(), time_kernels(), strout();
+  void              setrandom(long int seed);
+  int               check_input(), refine_part();
+  void              connect_enforce();
+  void              setrandom(), makevwsqrt(), balance(), countup();
+  void              force_internal(), sequence(), reflect_input();
+  void              machine_params(), assign_out(), refine_map();
+  void              time_out(), time_kernels(), strout();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering submain>\n");
@@ -423,15 +423,15 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
     count_time += seconds() - time1;
   }
 
-/* Invoke communication simulator? */
-/*
-if (graph != NULL) {
-    if (SIMULATOR > 0) {
-        simulate(graph, nvtxs, ndims, architecture, ndims_tot,
-             mesh_dims, assignment, using_ewgts, outfile);
-    }
-}
-*/
+  /* Invoke communication simulator? */
+  /*
+  if (graph != NULL) {
+      if (SIMULATOR > 0) {
+          simulate(graph, nvtxs, ndims, architecture, ndims_tot,
+               mesh_dims, assignment, using_ewgts, outfile);
+      }
+  }
+  */
 
 End_Label:
 

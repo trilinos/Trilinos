@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,12 +44,12 @@
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
 
 /* Generic error message for element type/node count mapping...*/
-static int el_node_count_error(struct elem_blk_parm elem_blk_parms)
+static int el_node_count_error(int exoid, struct elem_blk_parm elem_blk_parms)
 {
   char errmsg[MAX_ERR_LENGTH];
   snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: An element of type '%s' with %d nodes is not valid.",
            elem_blk_parms.elem_type, elem_blk_parms.num_nodes_per_elem);
-  ex_err("ex_int_get_block_param", errmsg, EX_MSG);
+  ex_err_fn(exoid, __func__, errmsg, EX_MSG);
   return (EX_FATAL);
 }
 
@@ -65,14 +65,14 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
   block.id   = id;
   block.type = EX_ELEM_BLOCK;
 
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* read in an element block parameter */
   if ((ex_get_block_param(exoid, &block)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get element block %" PRId64 " parameters in file id %d", block.id,
              exoid);
-    ex_err("ex_int_get_block_param", errmsg, EX_MSG);
+    ex_err_fn(exoid, __func__, errmsg, EX_MSG);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -118,7 +118,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[3] = 3;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if (strncmp(elem_blk_parm->elem_type, "TRIANGLE", 3) == 0) {
@@ -155,7 +155,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
         elem_blk_parm->num_nodes_per_side[4] = 3;
       }
       else {
-        EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+        EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
       }
     }
   }
@@ -186,7 +186,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[5] = 3;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if (strncmp(elem_blk_parm->elem_type, "HEX", 3) == 0) {
@@ -217,6 +217,14 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[4] = 4;
       elem_blk_parm->num_nodes_per_side[5] = 4;
     }
+    else if (elem_blk_parm->num_nodes_per_elem == 16) { /* Localization Element */
+      elem_blk_parm->num_nodes_per_side[0] = 6;
+      elem_blk_parm->num_nodes_per_side[1] = 6;
+      elem_blk_parm->num_nodes_per_side[2] = 6;
+      elem_blk_parm->num_nodes_per_side[3] = 6;
+      elem_blk_parm->num_nodes_per_side[4] = 8;
+      elem_blk_parm->num_nodes_per_side[5] = 8;
+    }
     else if (elem_blk_parm->num_nodes_per_elem == 20) { /* 20-node bricks */
       elem_blk_parm->num_nodes_per_side[0] = 8;
       elem_blk_parm->num_nodes_per_side[1] = 8;
@@ -234,7 +242,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[5] = 9;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if (strncmp(elem_blk_parm->elem_type, "TETRA", 3) == 0) {
@@ -266,7 +274,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[3] = 7;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if (strncmp(elem_blk_parm->elem_type, "WEDGE", 3) == 0) {
@@ -278,6 +286,13 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[2] = 4;
       elem_blk_parm->num_nodes_per_side[3] = 3;
       elem_blk_parm->num_nodes_per_side[4] = 3;
+    }
+    else if (elem_blk_parm->num_nodes_per_elem == 12) {
+      elem_blk_parm->num_nodes_per_side[0] = 6; /* 6-node quad faces */
+      elem_blk_parm->num_nodes_per_side[1] = 6;
+      elem_blk_parm->num_nodes_per_side[2] = 6;
+      elem_blk_parm->num_nodes_per_side[3] = 6; /* 6-node tri faces */
+      elem_blk_parm->num_nodes_per_side[4] = 6;
     }
     else if (elem_blk_parm->num_nodes_per_elem == 15) {
       elem_blk_parm->num_nodes_per_side[0] = 8;
@@ -301,7 +316,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[4] = 7;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if (strncmp(elem_blk_parm->elem_type, "PYRAMID", 3) == 0) {
@@ -314,15 +329,29 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[3] = 3;
       elem_blk_parm->num_nodes_per_side[4] = 4;
     }
-    else if (elem_blk_parm->num_nodes_per_elem == 13 || elem_blk_parm->num_nodes_per_elem == 14) {
+    else if (elem_blk_parm->num_nodes_per_elem == 13) {
       elem_blk_parm->num_nodes_per_side[0] = 6;
       elem_blk_parm->num_nodes_per_side[1] = 6;
       elem_blk_parm->num_nodes_per_side[2] = 6;
       elem_blk_parm->num_nodes_per_side[3] = 6;
       elem_blk_parm->num_nodes_per_side[4] = 8;
     }
+    else if (elem_blk_parm->num_nodes_per_elem == 14) {
+      elem_blk_parm->num_nodes_per_side[0] = 6;
+      elem_blk_parm->num_nodes_per_side[1] = 6;
+      elem_blk_parm->num_nodes_per_side[2] = 6;
+      elem_blk_parm->num_nodes_per_side[3] = 6;
+      elem_blk_parm->num_nodes_per_side[4] = 9;
+    }
+    else if (elem_blk_parm->num_nodes_per_elem == 18 || elem_blk_parm->num_nodes_per_elem == 19) {
+      elem_blk_parm->num_nodes_per_side[0] = 7;
+      elem_blk_parm->num_nodes_per_side[1] = 7;
+      elem_blk_parm->num_nodes_per_side[2] = 7;
+      elem_blk_parm->num_nodes_per_side[3] = 7;
+      elem_blk_parm->num_nodes_per_side[4] = 9;
+    }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if (strncmp(elem_blk_parm->elem_type, "BEAM", 3) == 0) {
@@ -338,7 +367,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[1] = 3;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   else if ((strncmp(elem_blk_parm->elem_type, "TRUSS", 3) == 0) ||
@@ -356,7 +385,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[1] = 3;
     }
     else {
-      EX_FUNC_LEAVE(el_node_count_error(*elem_blk_parm));
+      EX_FUNC_LEAVE(el_node_count_error(exoid, *elem_blk_parm));
     }
   }
   /* Used for an empty block in a parallel decomposition */

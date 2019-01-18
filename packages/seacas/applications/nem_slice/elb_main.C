@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     status = internal_main(argc, argv, int(0));
   }
 
-  /* Report any non-fatal errors that may have occured */
+  /* Report any non-fatal errors that may have occurred */
   error_report();
 
   /* Get ending time */
@@ -330,6 +330,19 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
   else {
     problem.alloc_graph = ELB_FALSE;
+  }
+
+  /* if fix_columns is on, we need the face adjacency graph. So if
+   * nothing else has asked for the full adjacency graph, ask for the
+   * face adjacency graph. If something else did ask for the adjacency
+   * graph, we don't know if its full or face adjacency only, so leave
+   * the option as is */
+
+  if (problem.fix_columns) {
+    if (problem.alloc_graph == ELB_FALSE) {
+      problem.alloc_graph = ELB_TRUE;
+      problem.face_adj    = ELB_TRUE;
+    }
   }
 
   /* Allocate necessary memory */

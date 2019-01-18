@@ -47,7 +47,7 @@
 #include "AnasaziTypes.hpp"
 
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
 // These tell the compiler which namespace contains RCP, cout, etc
@@ -250,21 +250,15 @@ main (int argc, char* argv[])
   typedef Anasazi::BasicEigenproblem<Scalar,TMV,TOP> Problem;
   typedef Anasazi::MultiVecTraits<Scalar, TMV> TMVT;
   typedef Anasazi::OperatorTraits<Scalar, TMV, TOP> TOPT;
-  typedef Tpetra::Map<>::node_type Node;
   typedef Tpetra::CrsMatrix<> CrsMatrix;
   typedef Tpetra::MatrixMarket::Reader<CrsMatrix>  Reader;
 
-  //
-  // Initialize the MPI session
-  //
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackhole);
+  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
 
   //
   // Get the default communicator
   //
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-  RCP<Node> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
   const int myRank = comm->getRank();
 
   // Read the command line arguments
@@ -276,6 +270,7 @@ main (int argc, char* argv[])
   }
 
   // Get the matrix
+  Teuchos::RCP<Tpetra::Map<>::node_type> node; // for type deduction
   RCP<const CrsMatrix> A = Reader::readSparseFile (fileA, comm, node);
 
   // Create the folded operator, K = A^2

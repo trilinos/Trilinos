@@ -167,7 +167,7 @@ LOCA::Abstract::Iterator::iterate()
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::Abstract::Iterator::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Abstract::Iterator::stop(LOCA::Abstract::Iterator::StepStatus /* stepStatus */)
 {
   if (numTotalSteps >= maxSteps)
     return LOCA::Abstract::Iterator::Finished;

@@ -72,11 +72,9 @@
 #include <Teuchos_ArrayView.hpp>
 
 const int SMALL_NUMBER_OF_ROWS = 5;
-using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
-using Teuchos::DefaultComm;
 using Teuchos::ArrayView;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> simpleUser_t;
@@ -624,23 +622,23 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
   int rank = comm->getRank();
 
   if (rank==0){
-    cout << endl << "=======================" << endl;
+    std::cout << std::endl << "=======================" << std::endl;
     if (fname.size() > 0)
-      cout << endl << "Test parameters: file name " << fname << endl;
+      std::cout << std::endl << "Test parameters: file name " << fname << std::endl;
     else{
-      cout << endl << "Test parameters: dimension ";
-      cout  << xdim << "x" << ydim << "x" << zdim << endl;
+      std::cout << std::endl << "Test parameters: dimension ";
+      std::cout  << xdim << "x" << ydim << "x" << zdim << std::endl;
     }
 
-    cout << "Num Vertex Weights: " << nVtxWeights << endl;
+    std::cout << "Num Vertex Weights: " << nVtxWeights << std::endl;
     if (nnzWgtIdx >= 0)
-     cout << "  Dimension " << nnzWgtIdx << " is number of neighbors" << endl;
+     std::cout << "  Dimension " << nnzWgtIdx << " is number of neighbors" << std::endl;
 
-    cout << "Coordinate dim: " << coordDim << endl;
-    cout << "Request consecutive vertex gids: ";
-    cout << (consecutiveIdsRequested ? "yes" : "no") << endl;
-    cout << "Request to remove self edges: ";
-    cout << (removeSelfEdges ? "yes" : "no") << endl;
+    std::cout << "Coordinate dim: " << coordDim << std::endl;
+    std::cout << "Request consecutive vertex gids: ";
+    std::cout << (consecutiveIdsRequested ? "yes" : "no") << std::endl;
+    std::cout << "Request to remove self edges: ";
+    std::cout << (removeSelfEdges ? "yes" : "no") << std::endl;
   }
 
   // Input generator
@@ -659,7 +657,7 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 
   RCP<const Tpetra::CrsGraph<zlno_t, zgno_t> > graph = Mconsec->getCrsGraph();
 
-//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
+//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, std::cout, 100, 
 //    "Graph having consecutive IDs");
 
   if (rank == 0) 
@@ -699,7 +697,7 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 
   graph = Mnonconsec->getCrsGraph();
 
-//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
+//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, std::cout, 100, 
 //    "Graph having non-consecutive (Round-Robin) IDs");
 
   if (rank == 0)
@@ -730,11 +728,10 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[])
+int main(int narg, char *arg[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
-    Teuchos::DefaultComm<int>::getComm();
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int rank = comm->getRank();
 
@@ -852,7 +849,7 @@ int main(int argc, char *argv[])
     nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
   if (rank==0)
-    cout << "PASS" << endl;
+    std::cout << "PASS" << std::endl;
 
   return 0;
 }

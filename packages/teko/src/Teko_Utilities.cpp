@@ -609,9 +609,17 @@ bool isZeroOp(const LinearOp op)
    if(op==Teuchos::null) return true;
 
    // try to cast it to a zero linear operator
-   const LinearOp test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(op);
+   LinearOp test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(op);
 
    // if it works...then its zero...otherwise its null
+   if(test!=Teuchos::null) return true;
+
+   // See if the operator is a wrapped zero op
+   ST scalar = 0.0;
+   Thyra::EOpTransp transp = Thyra::NOTRANS;
+   RCP<const Thyra::LinearOpBase<ST> > wrapped_op;
+   Thyra::unwrap(op, &scalar, &transp, &wrapped_op);
+   test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(wrapped_op);
    return test!=Teuchos::null;
 }
 
@@ -991,6 +999,15 @@ const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
   */
 const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 {
+   // if this is a diagonal linear op already, just take the reciprocal
+   auto diagonal_op = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double>>(op);
+   if(diagonal_op != Teuchos::null){
+     auto diag = diagonal_op->getDiag();
+     auto inv_diag = diag->clone_v();
+     Thyra::reciprocal(*diag,inv_diag.ptr());
+     return rcp(new Thyra::DefaultDiagonalLinearOp<double>(inv_diag));
+   }
+
    // if this is a blocked operator, extract diagonals block by block
    RCP<const Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_op = rcp_dynamic_cast<const Thyra::PhysicallyBlockedLinearOpBase<double> >(op);
    if(blocked_op != Teuchos::null){
@@ -1280,14 +1297,15 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpl = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarl, &transpl);
       ST scalarm = 0.0;
       bool transpm = false;
-      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpm = Teko::TpetraHelpers::getTpetraCrsMatrix(opl, &scalarm, &transpm);
+      RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpm = Teko::TpetraHelpers::getTpetraCrsMatrix(opm, &scalarm, &transpm);
       ST scalarr = 0.0;
       bool transpr = false;
       RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOpr = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalarr, &transpr);
 
       // Build output operator
-      RCP<Thyra::LinearOpBase<ST> > explicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
-      RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(explicitOp);
+      auto tExplicitOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(destOp);
+      if(tExplicitOp.is_null())
+        tExplicitOp = rcp(new Thyra::TpetraLinearOp<ST,LO,GO,NT>());
 
       // Do explicit matrix-matrix multiply
       RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOplm = Tpetra::createCrsMatrix<ST,LO,GO,NT>(tCrsOpl->getRowMap());
@@ -1824,6 +1842,34 @@ const LinearOp explicitAdd(const LinearOp & opl_in,const LinearOp & opr_in)
    bool isTpetral = Teko::TpetraHelpers::isTpetraLinearOp(opl);
    bool isTpetrar = Teko::TpetraHelpers::isTpetraLinearOp(opr);
 
+   // if one of the operators in the sum is a thyra zero op
+   if(isZeroOp(opl)){
+     if(isZeroOp(opr))
+       return opr; // return a zero op if both are zero
+     if(isTpetrar){ // if other op is tpetra, replace this with a zero crs matrix
+       ST scalar = 0.0;
+       bool transp = false;
+       auto crs_op = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
+       auto zero_crs = Tpetra::createCrsMatrix<ST,LO,GO,NT>(crs_op->getRowMap());
+       zero_crs->fillComplete();
+       opl = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getDomainMap()),zero_crs);
+       isTpetral = true;
+     } else
+       return opr->clone();
+   }
+   if(isZeroOp(opr)){
+     if(isTpetral){ // if other op is tpetra, replace this with a zero crs matrix
+       ST scalar = 0.0;
+       bool transp = false;
+       auto crs_op = Teko::TpetraHelpers::getTpetraCrsMatrix(opr, &scalar, &transp);
+       auto zero_crs = Tpetra::createCrsMatrix<ST,LO,GO,NT>(crs_op->getRowMap());
+       zero_crs->fillComplete();
+       opr = Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(crs_op->getDomainMap()),zero_crs);
+       isTpetrar = true;
+     } else
+       return opl->clone();
+   }
+
    if(isTpetral && isTpetrar){ // Both operators are Tpetra matrices so use the explicit Tpetra matrix-matrix add
 
       // Get left and right Tpetra crs operators
@@ -1893,11 +1939,15 @@ const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
      TEUCHOS_ASSERT(blocked_opr->productRange()->numBlocks() == numRows);
      TEUCHOS_ASSERT(blocked_opr->productDomain()->numBlocks() == numCols);
 
-     RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_sum = Thyra::defaultBlockedLinearOp<double>();
+     RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blocked_sum = Teuchos::rcp_dynamic_cast<Thyra::DefaultBlockedLinearOp<double>>(destOp);
+     if(blocked_sum.is_null())
+       blocked_sum = Thyra::defaultBlockedLinearOp<double>();
      blocked_sum->beginBlockFill(numRows,numCols);
      for(int r = 0; r < numRows; ++r)
-       for(int c = 0; c < numCols; ++c)
-         blocked_sum->setBlock(r,c,explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c))));
+       for(int c = 0; c < numCols; ++c){
+         auto block = explicitAdd(Thyra::scale(scalarl,blocked_opl->getBlock(r,c)),Thyra::scale(scalarr,blocked_opr->getBlock(r,c)),Teuchos::null);
+         blocked_sum->setNonconstBlock(r,c,block);
+       }
      blocked_sum->endBlockFill();
      return blocked_sum;
    }

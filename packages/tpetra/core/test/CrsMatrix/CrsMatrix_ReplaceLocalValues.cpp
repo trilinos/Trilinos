@@ -39,16 +39,10 @@
 // ************************************************************************
 // @HEADER
 
-// Ensure that if CUDA and KokkosCompat are enabled, then only the .cu
-// version of this file will actually be compiled.
-#include <Tpetra_ConfigDefs.hpp>
-
-
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_ConfigDefs.hpp>
 #include <TpetraCore_ETIHelperMacros.h>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
@@ -91,8 +85,7 @@ namespace { // (anonymous)
     int lclSuccess = 0;
     int gblSuccess = 0;
 
-    RCP<const Comm<int> > comm =
-      Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
     const int myRank = comm->getRank ();
 
     if (myRank == 0) {

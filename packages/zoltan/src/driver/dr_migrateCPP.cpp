@@ -47,6 +47,7 @@
 #include <mpi.h>   // must appear before stdio or iostream
 
 #include "dr_const.h"
+#include "dr_externs.h"
 #include "dr_err_const.h"
 #include "dr_loadbal_const.h"
 #include "dr_par_util_const.h"

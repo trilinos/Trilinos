@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,22 @@
  *
  */
 /*****************************************************************************
-*
-* expcor - ex_put_coord
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       float*  x_coord                 X coord array
-*       float*  y_coord                 y coord array
-*       float*  z_coord                 z coord array
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expcor - ex_put_coord
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       float*  x_coord                 X coord array
+ *       float*  y_coord                 y coord array
+ *       float*  z_coord                 z coord array
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
@@ -121,11 +121,11 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
   int coordidx, coordidy, coordidz;
 
   int    numnoddim, ndimdim;
-  size_t num_nod, num_dim, start[2], count[2], i;
+  size_t num_nod, num_dim, i;
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* inquire id's of previously defined dimensions  */
 
@@ -138,143 +138,89 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
   if ((status = nc_inq_dimlen(exoid, numnoddim, &num_nod)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: inquire failed to return number of nodes in file id %d", exoid);
-    ex_err("ex_put_coord", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
-    ex_err("ex_put_coord", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of dimensions in file id %d",
              exoid);
-    ex_err("ex_put_coord", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* write out the coordinates  */
-  if (ex_large_model(exoid) == 0) {
-    if ((status = nc_inq_varid(exoid, VAR_COORD, &coordid)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate nodal coordinates in file id %d",
+  if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != NC_NOERR) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate x nodal coordinates in file id %d",
+             exoid);
+    ex_err_fn(exoid, __func__, errmsg, status);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+
+  if (num_dim > 1) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate y nodal coordinates in file id %d",
                exoid);
-      ex_err("ex_put_coord", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
+  }
+  else {
+    coordidy = 0;
+  }
+  if (num_dim > 2) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate z nodal coordinates in file id %d",
+               exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+  }
+  else {
+    coordidz = 0;
+  }
 
-    for (i = 0; i < num_dim; i++) {
-      char *which = 0;
-      start[0]    = i;
-      start[1]    = 0;
+  /* write out the coordinates  */
+  for (i = 0; i < num_dim; i++) {
+    const void *coor  = NULL;
+    char *      which = NULL;
 
-      count[0] = 1;
-      count[1] = num_nod;
+    if (i == 0) {
+      coor    = x_coor;
+      which   = "X";
+      coordid = coordidx;
+    }
+    else if (i == 1) {
+      coor    = y_coor;
+      which   = "Y";
+      coordid = coordidy;
+    }
+    else if (i == 2) {
+      coor    = z_coor;
+      which   = "Z";
+      coordid = coordidz;
+    }
 
-      if (i == 0 && x_coor != NULL) {
-        which = "X";
-        if (ex_comp_ws(exoid) == 4) {
-          status = nc_put_vara_float(exoid, coordid, start, count, x_coor);
-        }
-        else {
-          status = nc_put_vara_double(exoid, coordid, start, count, x_coor);
-        }
+    if (coor != NULL && coordid != 0) {
+      if (ex_comp_ws(exoid) == 4) {
+        status = nc_put_var_float(exoid, coordid, coor);
       }
-      else if (i == 1 && y_coor != NULL) {
-        which = "Y";
-        if (ex_comp_ws(exoid) == 4) {
-          status = nc_put_vara_float(exoid, coordid, start, count, y_coor);
-        }
-        else {
-          status = nc_put_vara_double(exoid, coordid, start, count, y_coor);
-        }
-      }
-      else if (i == 2 && z_coor != NULL) {
-        which = "Z";
-        if (ex_comp_ws(exoid) == 4) {
-          status = nc_put_vara_float(exoid, coordid, start, count, z_coor);
-        }
-        else {
-          status = nc_put_vara_double(exoid, coordid, start, count, z_coor);
-        }
+      else {
+        status = nc_put_var_double(exoid, coordid, coor);
       }
 
       if (status != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d", which,
                  exoid);
-        ex_err("ex_put_coord", errmsg, status);
+        ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
-      }
-    }
-  }
-  else {
-    if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != NC_NOERR) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate x nodal coordinates in file id %d",
-               exoid);
-      ex_err("ex_put_coord", errmsg, status);
-      EX_FUNC_LEAVE(EX_FATAL);
-    }
-
-    if (num_dim > 1) {
-      if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to locate y nodal coordinates in file id %d", exoid);
-        ex_err("ex_put_coord", errmsg, status);
-        EX_FUNC_LEAVE(EX_FATAL);
-      }
-    }
-    else {
-      coordidy = 0;
-    }
-    if (num_dim > 2) {
-      if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != NC_NOERR) {
-        snprintf(errmsg, MAX_ERR_LENGTH,
-                 "ERROR: failed to locate z nodal coordinates in file id %d", exoid);
-        ex_err("ex_put_coord", errmsg, status);
-        EX_FUNC_LEAVE(EX_FATAL);
-      }
-    }
-    else {
-      coordidz = 0;
-    }
-
-    /* write out the coordinates  */
-    for (i = 0; i < num_dim; i++) {
-      const void *coor  = NULL;
-      char *      which = NULL;
-
-      if (i == 0) {
-        coor    = x_coor;
-        which   = "X";
-        coordid = coordidx;
-      }
-      else if (i == 1) {
-        coor    = y_coor;
-        which   = "Y";
-        coordid = coordidy;
-      }
-      else if (i == 2) {
-        coor    = z_coor;
-        which   = "Z";
-        coordid = coordidz;
-      }
-
-      if (coor != NULL && coordid != 0) {
-        if (ex_comp_ws(exoid) == 4) {
-          status = nc_put_var_float(exoid, coordid, coor);
-        }
-        else {
-          status = nc_put_var_double(exoid, coordid, coor);
-        }
-
-        if (status != NC_NOERR) {
-          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d",
-                   which, exoid);
-          ex_err("ex_put_coord", errmsg, status);
-          EX_FUNC_LEAVE(EX_FATAL);
-        }
       }
     }
   }

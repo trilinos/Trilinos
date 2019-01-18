@@ -33,8 +33,11 @@
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 
-#include "Kokkos_Core.hpp"
-#include "Kokkos_Macros.hpp"
+// Only include forward declarations so any overloads appear before they
+// might be used inside Kokkos
+#include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_Layout.hpp"
+#include "Kokkos_View.hpp"
 
 // Some definition that should exist whether the specializations exist or not
 
@@ -69,11 +72,6 @@ dimension_scalar_aligned(const view_type& view) {
 
 // Make sure the user really wants these View specializations
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#include "Sacado_Traits.hpp"
-#include "impl/Kokkos_ViewMapping.hpp"
-#include "Kokkos_LayoutContiguous.hpp"
-#include "Kokkos_LayoutNatural.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -119,12 +117,111 @@ struct is_view_fad_contiguous< View<T,P...> > {
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
+}
+
+namespace Kokkos {
+namespace Impl {
+
+// Overload view_copy for Fad View's:
+//   1.  Should be faster than using Fad directly
+//   2.  Fixes issues with hierarchical parallelism since the default
+//       implementation uses MDRangePolicy which doesn't work with hierarchical
+//       parallelism.
+// Needs to go before include of Kokkos_Core.hpp so it is in scope when
+// Kokkos_CopyViews.hpp is included by Kokkos_Core.hpp, which internally
+// calls view_copy().
+template<class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
+
+template<class Space, class T, class ... P>
+struct MirrorType;
+
+} // namespace Impl
+
+// Declare overloads of create_mirror() so they are in scope
+// Kokkos_Core.hpp is included below
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+        Kokkos::LayoutStride >::value >::type * = 0);
+
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror(
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+      std::is_same< typename ViewTraits<T,P...>::specialize ,
+        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
+      Kokkos::LayoutStride >::value >::type * = 0);
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorType<Space,T,P ...>::view_type
+create_mirror(
+  const Space&,
+  const Kokkos::View<T,P...> & src,
+  typename std::enable_if<
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+    std::is_same< typename ViewTraits<T,P...>::specialize ,
+      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
+
+} // namespace Kokkos
+
+#include "Sacado_Traits.hpp"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_LayoutContiguous.hpp"
+#include "Kokkos_LayoutNatural.hpp"
+
+namespace Kokkos {
+namespace Impl {
+
+// Define our overload of view_copy above.  Needs to happen after including
+// Kokkos_Core.hpp since it calls the default implementation
+template<class DT, class ... DP,
+         class ST, class ... SP>
+typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
+                         is_view_fad< Kokkos::View<ST,SP...> >::value
+                       >::type
+view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src)
+{
+  typedef typename Kokkos::View<DT,DP...>::array_type dst_array_type;
+  typedef typename Kokkos::View<ST,SP...>::array_type src_array_type;
+  view_copy( dst_array_type(dst) , src_array_type(src) );
+}
+
+} // namespace Impl
+} // namespace Kokkos
+
+namespace Kokkos {
+
 template <typename T, typename ... P>
 KOKKOS_INLINE_FUNCTION
 constexpr typename
 std::enable_if< is_view_fad< View<T,P...> >::value, unsigned >::type
 dimension_scalar(const View<T,P...>& view) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   return view.implementation_map().dimension_scalar();
+#else
+  return view.impl_map().dimension_scalar();
+#endif
 }
 
 template <typename Layout>
@@ -358,6 +455,88 @@ void deep_copy( const View<DT,DP...> & dst ,
   typename PODViewDeepCopyType< View<ST,SP...> >::type src_array( src );
 #endif
   Kokkos::deep_copy( dst_array , src_array );
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror( const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+               &&
+                 ! std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(std::string(src.label()).append("_mirror"), layout);
+}
+
+template< class T , class ... P >
+inline
+typename Kokkos::View<T,P...>::HostMirror
+create_mirror( const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                   Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+                &&
+                   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout
+                               , Kokkos::LayoutStride >::value
+               >::type *
+             )
+{
+  typedef View<T,P...>                   src_type ;
+  typedef typename src_type::HostMirror  dst_type ;
+
+  Kokkos::LayoutStride layout ;
+
+  layout.dimension[0] = src.extent(0);
+  layout.dimension[1] = src.extent(1);
+  layout.dimension[2] = src.extent(2);
+  layout.dimension[3] = src.extent(3);
+  layout.dimension[4] = src.extent(4);
+  layout.dimension[5] = src.extent(5);
+  layout.dimension[6] = src.extent(6);
+  layout.dimension[7] = src.extent(7);
+
+  layout.stride[0] = src.stride_0();
+  layout.stride[1] = src.stride_1();
+  layout.stride[2] = src.stride_2();
+  layout.stride[3] = src.stride_3();
+  layout.stride[4] = src.stride_4();
+  layout.stride[5] = src.stride_5();
+  layout.stride[6] = src.stride_6();
+  layout.stride[7] = src.stride_7();
+
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+
+  return dst_type(std::string(src.label()).append("_mirror"), layout);
+}
+
+template<class Space, class T, class ... P>
+typename Impl::MirrorType<Space,T,P ...>::view_type
+create_mirror(const Space& , const Kokkos::View<T,P...> & src
+             , typename std::enable_if<
+                 ( std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
+                   std::is_same< typename ViewTraits<T,P...>::specialize ,
+                     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+               >::type *) {
+  typedef View<T,P...> src_type ;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),layout);
 }
 
 } // namespace Kokkos
@@ -709,7 +888,7 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, Val
 };
 
 // Detect if a ViewCtorProp contains a CommonViewAllocProp
-template < typename ... >
+template < typename ... P >
 struct has_common_view_alloc_prop : public std::false_type {};
 
 template < class Specialize, class ValueType >
@@ -738,22 +917,79 @@ struct check_has_common_view_alloc_prop<P0, P...>
   enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : check_has_common_view_alloc_prop<P...>::value ) };
 };
 
-template <typename Traits, typename CtorProp >
-struct appendFadToLayoutViewAllocHelper 
+template < typename ... >
+struct compute_fad_dim_from_alloc_prop;
+
+template < >
+struct compute_fad_dim_from_alloc_prop<> {
+  template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
+  static unsigned eval(const CtorProp&) { return 0; }
+};
+
+template < typename P >
+struct compute_fad_dim_from_alloc_prop<P> {
+  template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
+  static unsigned eval(const CtorProp&) { return 0; }
+};
+
+template < typename P0, typename ... P >
+struct compute_fad_dim_from_alloc_prop<P0,P...> {
+  template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
+  static unsigned eval(const CtorProp& prop) {
+    unsigned d1 = compute_fad_dim_from_alloc_prop<P0>::eval(prop);
+    unsigned d2 = compute_fad_dim_from_alloc_prop<P...>::eval(prop);
+    return d1 > d2 ? d1 : d2;
+  }
+};
+
+template < class ValueType >
+struct compute_fad_dim_from_alloc_prop<
+  CommonViewAllocProp<ViewSpecializeSacadoFad, ValueType>
+  > {
+  template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
+  static unsigned eval(const CtorProp& prop) {
+    using specialize = ViewSpecializeSacadoFad;
+    using CVAP = CommonViewAllocProp< specialize, ValueType >;
+    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP> const &)prop).value;
+    return cast_prop.fad_dim;
+  }
+};
+
+template < class ValueType >
+struct compute_fad_dim_from_alloc_prop<
+  CommonViewAllocProp<ViewSpecializeSacadoFadContiguous, ValueType>
+  > {
+  template <typename CtorProp>
+  KOKKOS_INLINE_FUNCTION
+  static unsigned eval(const CtorProp& prop) {
+    using specialize = ViewSpecializeSacadoFadContiguous;
+    using CVAP = CommonViewAllocProp< specialize, ValueType >;
+    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP> const &)prop).value;
+    return cast_prop.fad_dim;
+  }
+};
+
+template <typename Traits, typename ... P >
+struct appendFadToLayoutViewAllocHelper
 {
   using layout_type = typename Traits::array_layout;
   using specialize = typename Traits::specialize;
-  
+  using CtorProp = ViewCtorProp< P... >;
+
+  KOKKOS_INLINE_FUNCTION
   static layout_type returnNewLayoutPlusFad( const CtorProp & arg_prop, const layout_type & arg_layout ) {
-
-    using CVAP_type = CommonViewAllocProp< specialize, typename Traits::value_type >;
-
-    auto cast_prop = ((Kokkos::Impl::ViewCtorProp<void, CVAP_type> const &)arg_prop).value;
 
     layout_type appended_layout( arg_layout );
 
     // Static View case - DynRankView layout handled within createLayout calls
-    appended_layout.dimension[ Traits::rank ] = (cast_prop.fad_dim > 0) ? cast_prop.fad_dim : 1;
+
+    const unsigned fad_dim =
+      compute_fad_dim_from_alloc_prop<P...>::eval(arg_prop);
+    appended_layout.dimension[ Traits::rank ] = (fad_dim > 0) ? fad_dim : 1;
 
     return appended_layout;
   }
@@ -763,7 +999,7 @@ template <typename Layout>
 struct prependFadToLayout
 {
   using layout_type = Layout;
-  
+
   template < typename FadSizeType >
   KOKKOS_INLINE_FUNCTION
   static layout_type returnNewLayoutPlusFad( const layout_type & arg_layout, const FadSizeType fad_dim ) {
@@ -830,16 +1066,23 @@ private:
 
   typedef ViewArrayAnalysis< typename Traits::data_type > array_analysis ;
 
+  // Offset without Fad dimension
+  typedef ViewOffset< typename Traits::dimension
+                    , typename Traits::array_layout
+                    , void
+                    >  offset_type ;
+
   // Append the fad dimension for the internal offset mapping.
   typedef ViewOffset
     < typename array_analysis::dimension::
         template append<( unsigned(FadStaticDimension) > 0 ? unsigned(FadStaticDimension) + 1 : 0 )>::type
     , typename Traits::array_layout
     , void
-    >  offset_type ;
+    >  array_offset_type ;
 
-  handle_type  m_handle ;
-  offset_type  m_offset ;
+  handle_type  m_impl_handle ;
+  offset_type  m_impl_offset ;
+  array_offset_type  m_array_offset ;
   sacado_size_type m_fad_size ;
   sacado_stride_type m_fad_stride ;
 
@@ -853,62 +1096,61 @@ public:
   // Using the internal offset mapping so limit to public rank:
   template< typename iType >
   KOKKOS_INLINE_FUNCTION constexpr size_t extent( const iType & r ) const
-    { return unsigned(r) < unsigned(Rank) ? m_offset.m_dim.extent(r) : 1 ; }
+    { return m_impl_offset.m_dim.extent(r) ; }
 
   KOKKOS_INLINE_FUNCTION constexpr
   typename Traits::array_layout layout() const
-    { return typename Traits::array_layout(
-        0 < unsigned(Rank) ? m_offset.dimension_0() : 0,
-        1 < unsigned(Rank) ? m_offset.dimension_1() : 0,
-        2 < unsigned(Rank) ? m_offset.dimension_2() : 0,
-        3 < unsigned(Rank) ? m_offset.dimension_3() : 0,
-        4 < unsigned(Rank) ? m_offset.dimension_4() : 0,
-        5 < unsigned(Rank) ? m_offset.dimension_5() : 0,
-        6 < unsigned(Rank) ? m_offset.dimension_6() : 0,
-        7 < unsigned(Rank) ? m_offset.dimension_7() : 0
-        );
-    }
+    { return m_impl_offset.layout(); }
 
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_0() const
-    { return 0 < unsigned(Rank) ? m_offset.dimension_0() : 1 ; }
-
+    { return m_impl_offset.dimension_0(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_1() const
-    { return 1 < unsigned(Rank) ? m_offset.dimension_1() : 1 ; }
-
+    { return m_impl_offset.dimension_1(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_2() const
-    { return 2 < unsigned(Rank) ? m_offset.dimension_2() : 1 ; }
-
+    { return m_impl_offset.dimension_2(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_3() const
-    { return 3 < unsigned(Rank) ? m_offset.dimension_3() : 1 ; }
-
+    { return m_impl_offset.dimension_3(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_4() const
-    { return 4 < unsigned(Rank) ? m_offset.dimension_4() : 1 ; }
-
+    { return m_impl_offset.dimension_4(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_5() const
-    { return 5 < unsigned(Rank) ? m_offset.dimension_5() : 1 ; }
-
+    { return m_impl_offset.dimension_5(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_6() const
-    { return 6 < unsigned(Rank) ? m_offset.dimension_6() : 1 ; }
-
+    { return m_impl_offset.dimension_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t dimension_7() const
-    { return 7 < unsigned(Rank) ? m_offset.dimension_7() : 1 ; }
+    { return m_impl_offset.dimension_7(); }
 
   // Can only be regular layout with uniform striding
   // when LayoutRight with contiguous values so not guaranteed true.
   using is_regular = std::false_type ;
 
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_0() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_1() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_2() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_3() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_4() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_5() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const { return 0 ; }
-  KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const { return 0 ; }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_0() const
+    { return m_impl_offset.stride_0(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_1() const
+    { return m_impl_offset.stride_1(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_2() const
+    { return m_impl_offset.stride_2(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_3() const
+    { return m_impl_offset.stride_3(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_4() const
+    { return m_impl_offset.stride_4(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_5() const
+    { return m_impl_offset.stride_5(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_6() const
+    { return m_impl_offset.stride_6(); }
+  KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const
+    { return m_impl_offset.stride_7(); }
+
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
+    { m_impl_offset.stride(s) ; }
 
   // Size of sacado scalar dimension
   KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned dimension_scalar() const
     { return m_fad_size.value+1; }
+
+  // trode of sacado scalar dimension
+  KOKKOS_FORCEINLINE_FUNCTION constexpr unsigned stride_scalar() const
+    { return m_fad_stride.value; }
 
   //----------------------------------------
   // Range of mapping
@@ -922,21 +1164,21 @@ public:
 
   /** \brief  Span of the mapped range : [ data() .. data() + span() ) */
   KOKKOS_INLINE_FUNCTION constexpr size_t span() const
-    { return m_offset.span(); }
+    { return m_array_offset.span(); }
 
-  /** \brief  The mapped range span cannot be guaranteed contiguous */
+  /** \brief  Is the mapped range span contiguous */
   KOKKOS_INLINE_FUNCTION constexpr bool span_is_contiguous() const
-    { return false ; }
+    { return m_array_offset.span_is_contiguous() ; }
 
   /** \brief Raw data access */
   KOKKOS_INLINE_FUNCTION constexpr pointer_type data() const
-    { return m_handle ; }
+    { return m_impl_handle ; }
 
   //----------------------------------------
 
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference() const
-    { return reference_type( m_handle
+    { return reference_type( m_impl_handle
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -944,14 +1186,14 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type
   reference( const I0 & i0 ) const
-    { return reference_type( m_handle + m_offset(i0,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -959,14 +1201,14 @@ public:
   template< typename I0 , typename I1 , typename I2 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,i2,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
   template< typename I0 , typename I1 , typename I2 , typename I3 >
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,i2,i3,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -975,7 +1217,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -984,7 +1226,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,i5,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -994,7 +1236,7 @@ public:
   KOKKOS_FORCEINLINE_FUNCTION
   reference_type reference( const I0 & i0 , const I1 & i1 , const I2 & i2 , const I3 & i3
                           , const I4 & i4 , const I5 & i5 , const I6 & i6 ) const
-    { return reference_type( m_handle + m_offset(i0,i1,i2,i3,i4,i5,i6,0)
+    { return reference_type( m_impl_handle + m_array_offset(i0,i1,i2,i3,i4,i5,i6,0)
                            , m_fad_size.value
                            , m_fad_stride.value ); }
 
@@ -1002,17 +1244,27 @@ public:
 
   /** \brief  Span, in bytes, of the required memory */
   KOKKOS_INLINE_FUNCTION
-  static constexpr size_t memory_span( typename Traits::array_layout const & layout )
+  static size_t memory_span( typename Traits::array_layout const & layout )
     {
+      size_t dims[8];
+      for (int i=0; i<8; ++i)
+        dims[i] = layout.dimension[i];
+      if (unsigned(FadStaticDimension) > 0)
+        dims[unsigned(Rank)] = FadStaticDimension+1;
+
+      typename Traits::array_layout alayout(
+        dims[0], dims[1], dims[2], dims[3],
+        dims[4], dims[5], dims[6], dims[7] );
+
       // Do not introduce padding...
       typedef std::integral_constant< unsigned , 0 >  padding ;
-      return offset_type( padding() , layout ).span() * sizeof(fad_value_type);
+      return array_offset_type( padding() , alayout ).span() * sizeof(fad_value_type);
     }
 
   //----------------------------------------
 
-  KOKKOS_INLINE_FUNCTION ~ViewMapping() = default ;
-  KOKKOS_INLINE_FUNCTION ViewMapping() : m_handle(0) , m_offset() , m_fad_size(0) , m_fad_stride(0) {}
+  KOKKOS_INLINE_FUNCTION ~ViewMapping() {}
+  KOKKOS_INLINE_FUNCTION ViewMapping() : m_impl_handle(0) , m_impl_offset() , m_array_offset() , m_fad_size(0) , m_fad_stride(0) {}
 
   KOKKOS_INLINE_FUNCTION ViewMapping( const ViewMapping & ) = default ;
   KOKKOS_INLINE_FUNCTION ViewMapping & operator = ( const ViewMapping & ) = default ;
@@ -1026,39 +1278,41 @@ public:
     ( ViewCtorProp< P ... > const & prop
     , typename Traits::array_layout const & local_layout
     )
-    : m_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
-    , m_offset( std::integral_constant< unsigned , 0 >()
+    : m_impl_handle( ( (ViewCtorProp<void,pointer_type> const &) prop ).value )
+    , m_impl_offset( std::integral_constant< unsigned , 0 >()
               , local_layout )
-    // Query m_offset, not input, in case of static dimension
+    , m_array_offset( std::integral_constant< unsigned , 0 >()
+                    , local_layout )
+    // Query m_array_offset, not input, in case of static dimension
     , m_fad_size(
-       ( Rank == 0 ? m_offset.dimension_0() :
-       ( Rank == 1 ? m_offset.dimension_1() :
-       ( Rank == 2 ? m_offset.dimension_2() :
-       ( Rank == 3 ? m_offset.dimension_3() :
-       ( Rank == 4 ? m_offset.dimension_4() :
-       ( Rank == 5 ? m_offset.dimension_5() :
-       ( Rank == 6 ? m_offset.dimension_6() :
-                     m_offset.dimension_7() ))))))) - 1 )
+       ( Rank == 0 ? m_array_offset.dimension_0() :
+       ( Rank == 1 ? m_array_offset.dimension_1() :
+       ( Rank == 2 ? m_array_offset.dimension_2() :
+       ( Rank == 3 ? m_array_offset.dimension_3() :
+       ( Rank == 4 ? m_array_offset.dimension_4() :
+       ( Rank == 5 ? m_array_offset.dimension_5() :
+       ( Rank == 6 ? m_array_offset.dimension_6() :
+                     m_array_offset.dimension_7() ))))))) - 1 )
     , m_fad_stride(
-       ( Rank == 0 ? m_offset.stride_0() :
-       ( Rank == 1 ? m_offset.stride_1() :
-       ( Rank == 2 ? m_offset.stride_2() :
-       ( Rank == 3 ? m_offset.stride_3() :
-       ( Rank == 4 ? m_offset.stride_4() :
-       ( Rank == 5 ? m_offset.stride_5() :
-       ( Rank == 6 ? m_offset.stride_6() :
-                     m_offset.stride_7() ))))))))
+       ( Rank == 0 ? m_array_offset.stride_0() :
+       ( Rank == 1 ? m_array_offset.stride_1() :
+       ( Rank == 2 ? m_array_offset.stride_2() :
+       ( Rank == 3 ? m_array_offset.stride_3() :
+       ( Rank == 4 ? m_array_offset.stride_4() :
+       ( Rank == 5 ? m_array_offset.stride_5() :
+       ( Rank == 6 ? m_array_offset.stride_6() :
+                     m_array_offset.stride_7() ))))))))
 
     {
       const unsigned fad_dim =
-       ( Rank == 0 ? m_offset.dimension_0() :
-       ( Rank == 1 ? m_offset.dimension_1() :
-       ( Rank == 2 ? m_offset.dimension_2() :
-       ( Rank == 3 ? m_offset.dimension_3() :
-       ( Rank == 4 ? m_offset.dimension_4() :
-       ( Rank == 5 ? m_offset.dimension_5() :
-       ( Rank == 6 ? m_offset.dimension_6() :
-         m_offset.dimension_7() )))))));
+       ( Rank == 0 ? m_array_offset.dimension_0() :
+       ( Rank == 1 ? m_array_offset.dimension_1() :
+       ( Rank == 2 ? m_array_offset.dimension_2() :
+       ( Rank == 3 ? m_array_offset.dimension_3() :
+       ( Rank == 4 ? m_array_offset.dimension_4() :
+       ( Rank == 5 ? m_array_offset.dimension_5() :
+       ( Rank == 6 ? m_array_offset.dimension_6() :
+         m_array_offset.dimension_7() )))))));
       if (unsigned(FadStaticDimension) == 0 && fad_dim == 0)
         Kokkos::abort("invalid fad dimension (0) supplied!");
     }
@@ -1085,38 +1339,40 @@ public:
 
     // Check if ViewCtorProp has CommonViewAllocProp - if so, retrieve the fad_size and append to layout
     enum { test_traits_check = Kokkos::Impl::check_has_common_view_alloc_prop< P... >::value };
-    using CVTR = typename Kokkos::Impl::CommonViewAllocProp< typename Kokkos::Impl::ViewSpecializeSacadoFad 
-                                                           , typename Traits::value_type >;
-    m_offset = offset_type( padding(), 
-                            ( test_traits_check == true
-                             && ((Kokkos::Impl::ViewCtorProp<void, CVTR> const &)prop).value.is_view_type) 
-                            ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, ctor_prop >::returnNewLayoutPlusFad(prop, local_layout) 
-                            : local_layout );
+
+    m_impl_offset = offset_type( padding(), local_layout );
+
+    typename Traits::array_layout internal_layout =
+      (test_traits_check == true)
+      ? Kokkos::Impl::appendFadToLayoutViewAllocHelper< Traits, P... >::returnNewLayoutPlusFad(prop, local_layout)
+      : local_layout;
+
+    m_array_offset = array_offset_type( padding(), internal_layout );
 
     const unsigned fad_dim =
-      ( Rank == 0 ? m_offset.dimension_0() :
-      ( Rank == 1 ? m_offset.dimension_1() :
-      ( Rank == 2 ? m_offset.dimension_2() :
-      ( Rank == 3 ? m_offset.dimension_3() :
-      ( Rank == 4 ? m_offset.dimension_4() :
-      ( Rank == 5 ? m_offset.dimension_5() :
-      ( Rank == 6 ? m_offset.dimension_6() :
-        m_offset.dimension_7() )))))));
+      ( Rank == 0 ? m_array_offset.dimension_0() :
+      ( Rank == 1 ? m_array_offset.dimension_1() :
+      ( Rank == 2 ? m_array_offset.dimension_2() :
+      ( Rank == 3 ? m_array_offset.dimension_3() :
+      ( Rank == 4 ? m_array_offset.dimension_4() :
+      ( Rank == 5 ? m_array_offset.dimension_5() :
+      ( Rank == 6 ? m_array_offset.dimension_6() :
+        m_array_offset.dimension_7() )))))));
     if (unsigned(FadStaticDimension) == 0 && fad_dim == 0)
       Kokkos::abort("invalid fad dimension (0) supplied!");
     m_fad_size = fad_dim - 1 ;
 
     m_fad_stride =
-       ( Rank == 0 ? m_offset.stride_0() :
-       ( Rank == 1 ? m_offset.stride_1() :
-       ( Rank == 2 ? m_offset.stride_2() :
-       ( Rank == 3 ? m_offset.stride_3() :
-       ( Rank == 4 ? m_offset.stride_4() :
-       ( Rank == 5 ? m_offset.stride_5() :
-       ( Rank == 6 ? m_offset.stride_6() :
-                     m_offset.stride_7() )))))));
+       ( Rank == 0 ? m_array_offset.stride_0() :
+       ( Rank == 1 ? m_array_offset.stride_1() :
+       ( Rank == 2 ? m_array_offset.stride_2() :
+       ( Rank == 3 ? m_array_offset.stride_3() :
+       ( Rank == 4 ? m_array_offset.stride_4() :
+       ( Rank == 5 ? m_array_offset.stride_5() :
+       ( Rank == 6 ? m_array_offset.stride_6() :
+                     m_array_offset.stride_7() )))))));
 
-    const size_t alloc_size = m_offset.span() * sizeof(fad_value_type);
+    const size_t alloc_size = m_array_offset.span() * sizeof(fad_value_type);
 
     // Create shared memory tracking record with allocate memory from the memory space
     record_type * const record =
@@ -1128,14 +1384,14 @@ public:
     //  May be zero if one of the dimensions is zero.
     if ( alloc_size ) {
 
-      m_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
+      m_impl_handle = handle_type( reinterpret_cast< pointer_type >( record->data() ) );
 
       if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
         record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
-                                        , (fad_value_type *) m_handle
-                                        , m_offset.span()
+                                        , (fad_value_type *) m_impl_handle
+                                        , m_array_offset.span()
                                         );
 
         // Construct values
@@ -1156,25 +1412,112 @@ public:
 namespace Kokkos {
 namespace Impl {
 
-// Integer argument is the actual rank => ranks 0 to Rank-1 will be assigned
 /**\brief  Assign compatible Sacado FAD view mappings.
  *
  *  View<FAD>      = View<FAD>
+ */
+template< class DstTraits , class SrcTraits >
+class ViewMapping< DstTraits , SrcTraits ,
+  typename std::enable_if<(
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
+    &&
+    // Destination view has FAD
+    std::is_same< typename DstTraits::specialize
+                , ViewSpecializeSacadoFad >::value
+    &&
+    // Source view has FAD
+    std::is_same< typename SrcTraits::specialize
+                , ViewSpecializeSacadoFad >::value
+  )>::type >
+{
+public:
+
+  enum { is_assignable = true };
+
+  typedef Kokkos::Impl::SharedAllocationTracker  TrackType ;
+  typedef ViewMapping< DstTraits , void >  DstType ;
+  typedef ViewMapping< SrcTraits , void >  SrcFadType ;
+
+  template< class DstType >
+  KOKKOS_INLINE_FUNCTION static
+  void assign( DstType & dst
+             , const SrcFadType & src
+             , const TrackType & )
+    {
+      static_assert(
+        (
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutRight >::value ||
+          std::is_same< typename DstTraits::array_layout
+                      , Kokkos::LayoutStride >::value
+        )
+        &&
+        (
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutLeft >::value ||
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutRight >::value ||
+          std::is_same< typename SrcTraits::array_layout
+                      , Kokkos::LayoutStride >::value
+        )
+        , "View of FAD requires LayoutLeft, LayoutRight, or LayoutStride" );
+
+      static_assert(
+        std::is_same< typename DstTraits::array_layout
+                    , typename SrcTraits::array_layout >::value ||
+        std::is_same< typename DstTraits::array_layout
+                    , Kokkos::LayoutStride >::value ,
+        "View assignment must have compatible layout" );
+
+      static_assert(
+        std::is_same< typename DstTraits::scalar_array_type
+                    , typename SrcTraits::scalar_array_type >::value ||
+        std::is_same< typename DstTraits::scalar_array_type
+                    , typename SrcTraits::const_scalar_array_type >::value ,
+        "View assignment must have same value type or const = non-const" );
+
+      static_assert(
+        ViewDimensionAssignable
+          < typename DstType::offset_type::dimension_type
+          , typename SrcFadType::offset_type::dimension_type >::value ,
+        "View assignment must have compatible dimensions" );
+
+       static_assert(
+        ViewDimensionAssignable
+          < typename DstType::array_offset_type::dimension_type
+          , typename SrcFadType::array_offset_type::dimension_type >::value ,
+        "View assignment must have compatible dimensions" );
+
+      typedef typename DstType::offset_type  dst_offset_type ;
+      typedef typename DstType::array_offset_type  dst_array_offset_type ;
+
+      dst.m_impl_handle  = src.m_impl_handle ;
+      dst.m_impl_offset  = dst_offset_type( src.m_impl_offset );
+      dst.m_array_offset = dst_array_offset_type( src.m_array_offset );
+      dst.m_fad_size = src.m_fad_size.value ;
+      dst.m_fad_stride = src.m_fad_stride.value ;
+    }
+};
+
+// Integer argument is the actual rank => ranks 0 to Rank-1 will be assigned
+/**\brief  Assign compatible Sacado FAD view mappings.
+ *
  *  View<ordinary> = View<FAD>
  *  (TBD)  View<FAD> = View<ordinary>
  */
 template< class DstTraits , class SrcTraits >
 class ViewMapping< DstTraits , SrcTraits ,
   typename std::enable_if<(
-    std::is_same< typename DstTraits::memory_space
-                , typename SrcTraits::memory_space >::value
+    Kokkos::Impl::MemorySpaceAccess
+     < typename DstTraits::memory_space
+     , typename SrcTraits::memory_space >::assignable
     &&
-    // Destination view has FAD or ordinary
-    ( std::is_same< typename DstTraits::specialize
-                , ViewSpecializeSacadoFad >::value
-      ||
-      std::is_same< typename DstTraits::specialize , void >::value
-    )
+    // Destination view has ordinary
+    std::is_same< typename DstTraits::specialize , void >::value
     &&
     // Source view has FAD only
     std::is_same< typename SrcTraits::specialize
@@ -1190,45 +1533,28 @@ public:
   typedef ViewMapping< DstTraits , void >  DstType ;
   typedef ViewMapping< SrcTraits , void >  SrcFadType ;
 
-  template< class S , class D >
-  KOKKOS_INLINE_FUNCTION static
-  typename std::enable_if<( 
-    std::is_same< S , ViewSpecializeSacadoFad >::value
-    )>::type
-  assign_fad_size( D & dst , const SrcFadType & src )
-    { dst.m_fad_size = src.m_fad_size.value ;
-      dst.m_fad_stride = src.m_fad_stride.value ;
-    }
-
-  template< class S , class D >
-  KOKKOS_INLINE_FUNCTION static
-  typename std::enable_if<(
-    ! std::is_same< S , ViewSpecializeSacadoFad >::value 
-    )>::type
-  assign_fad_size( D & , const SrcFadType & ) {}
-
 
   // Helpers to assign, and generate if necessary, ViewOffset to the dst map
   // These are necessary to use Kokkos' deep_copy with nested fads
-  template < class DstType, class SrcFadType, class Truth = void > 
+  template < class DstType, class SrcFadType, class Truth = void >
     struct AssignOffset;
 
-  template < class DstType, class SrcFadType > 
-    struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank != (int)SrcFadType::offset_type::dimension_type::rank) >::type >
+  template < class DstType, class SrcFadType >
+    struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank != (int)SrcFadType::array_offset_type::dimension_type::rank) >::type >
     {
       // ViewOffset's Dimensions Ranks do not match
       KOKKOS_INLINE_FUNCTION
-      static void assign( DstType & dst, const SrcFadType & src ) 
+      static void assign( DstType & dst, const SrcFadType & src )
       {
         typedef typename SrcTraits::value_type TraitsValueType;
 
-        if ( Sacado::IsFad<TraitsValueType>::value 
-            && Sacado::IsStaticallySized< typename Sacado::ValueType< TraitsValueType >::type >::value 
-           ) 
+        if ( Sacado::IsFad<TraitsValueType>::value
+            && Sacado::IsStaticallySized< typename Sacado::ValueType< TraitsValueType >::type >::value
+           )
         {
           typedef typename DstType::offset_type::array_layout DstLayoutType;
           //typedef typename ViewArrayLayoutSelector<typename DstType::offset_type::array_layout>::type DstLayoutType;
-          typedef typename SrcFadType::offset_type::dimension_type SrcViewDimension;
+          typedef typename SrcFadType::array_offset_type::dimension_type SrcViewDimension;
 
           // This is the static dimension of the inner fad, missing from ViewDimension
           const size_t InnerStaticDim = Sacado::StaticSize< typename Sacado::ValueType< TraitsValueType >::type >::value;
@@ -1236,7 +1562,7 @@ public:
           static constexpr bool is_layout_left =
             std::is_same< DstLayoutType, Kokkos::LayoutLeft>::value;
 
-          typedef typename std::conditional< is_layout_left, 
+          typedef typename std::conditional< is_layout_left,
                                              typename SrcViewDimension:: template prepend< InnerStaticDim+1 >::type,
                                              typename SrcViewDimension:: template append < InnerStaticDim+1 >::type
                     >::type SrcViewDimensionAppended;
@@ -1245,16 +1571,16 @@ public:
 
           typedef ViewOffset< SrcViewDimensionAppended, DstLayoutType > TmpOffsetType;
 
-          auto src_layout = src.m_offset.layout();
+          auto src_layout = src.m_array_offset.layout();
 
           if ( is_layout_left ) {
             auto prepend_layout = Kokkos::Impl::prependFadToLayout< DstLayoutType >::returnNewLayoutPlusFad(src_layout, InnerStaticDim+1);
             TmpOffsetType offset_tmp( padding(), prepend_layout );
-            dst.m_offset = offset_tmp;
+            dst.m_impl_offset = offset_tmp;
           }
           else {
             TmpOffsetType offset_tmp( padding(), src_layout );
-            dst.m_offset = offset_tmp;
+            dst.m_impl_offset = offset_tmp;
           }
 
         } else {
@@ -1263,17 +1589,15 @@ public:
       }
     };
 
-  template < class DstType, class SrcFadType > 
-    struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank == (int)SrcFadType::offset_type::dimension_type::rank) >::type >
+  template < class DstType, class SrcFadType >
+    struct AssignOffset< DstType, SrcFadType, typename std::enable_if< ((int)DstType::offset_type::dimension_type::rank == (int)SrcFadType::array_offset_type::dimension_type::rank) >::type >
     {
       KOKKOS_INLINE_FUNCTION
-      static void assign( DstType & dst, const SrcFadType & src ) 
+      static void assign( DstType & dst, const SrcFadType & src )
       {
 
-        //typedef typename DstType::offset_type  dst_offset_type ;
-        //dst.m_offset  = dst_offset_type( src.m_offset );
-        dst.m_offset = src.m_offset;
-        ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst , src );
+        typedef typename DstType::offset_type  dst_offset_type ;
+        dst.m_impl_offset  = dst_offset_type( src.m_array_offset );
       }
     };
 
@@ -1281,8 +1605,8 @@ public:
 // If the dst and src mappings are not equal in Rank, the src should come from a View of nested fads
 // In the case of two nested fads, the innermost must be an SFad (static Fad)
 // The offset_type's are not compatible in the case of nested fads because the ViewDimension's ranks will not agree
-// In this case, rather than trying to construct an offset_type from src (which will fail at compile time) 
-// and assign to dst.m_offset, manually assign the ViewDimension arguments to dst; 
+// In this case, rather than trying to construct an offset_type from src (which will fail at compile time)
+// and assign to dst.m_impl_offset, manually assign the ViewDimension arguments to dst;
 // requires appending the missing inner SFad dim + 1 to the Rank-1 ViewDimension
   // DstType and SrcFadType are MAPS...
   template < class DstType >
@@ -1290,7 +1614,7 @@ public:
   void
   assign( DstType & dst
         , const SrcFadType & src
-        , const TrackType & 
+        , const TrackType &
         )
   {
 
@@ -1331,7 +1655,7 @@ public:
 
     AssignOffset< DstType, SrcFadType >::assign( dst, src );
 
-    dst.m_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_handle) ;
+    dst.m_impl_handle  = reinterpret_cast< typename DstType::handle_type >(src.m_impl_handle) ;
   }
 };
 
@@ -1450,22 +1774,26 @@ public:
     {
       typedef ViewMapping< traits_type , void > DstType ;
       typedef typename DstType::offset_type  dst_offset_type ;
+      typedef typename DstType::array_offset_type  dst_array_offset_type ;
       typedef typename DstType::handle_type  dst_handle_type ;
 
+      const SubviewExtents< SrcTraits::rank , rank >
+        extents( src.m_impl_offset.m_dim , args... );
       const SubviewExtents< SrcTraits::rank + 1 , rank + 1 >
-        extents( src.m_offset.m_dim , args... , Kokkos::ALL() );
+        array_extents( src.m_array_offset.m_dim , args... , Kokkos::ALL() );
 
-      dst.m_offset = dst_offset_type( src.m_offset , extents );
-      dst.m_handle = dst_handle_type( src.m_handle +
-                                      src.m_offset( extents.domain_offset(0)
-                                                  , extents.domain_offset(1)
-                                                  , extents.domain_offset(2)
-                                                  , extents.domain_offset(3)
-                                                  , extents.domain_offset(4)
-                                                  , extents.domain_offset(5)
-                                                  , extents.domain_offset(6)
-                                                  , extents.domain_offset(7)
-                                                  ) );
+      dst.m_impl_offset = dst_offset_type( src.m_impl_offset , extents );
+      dst.m_array_offset = dst_array_offset_type( src.m_array_offset , array_extents );
+      dst.m_impl_handle =
+        dst_handle_type( src.m_impl_handle +
+                         src.m_array_offset( array_extents.domain_offset(0)
+                                           , array_extents.domain_offset(1)
+                                           , array_extents.domain_offset(2)
+                                           , array_extents.domain_offset(3)
+                                           , array_extents.domain_offset(4)
+                                           , array_extents.domain_offset(5)
+                                           , array_extents.domain_offset(6)
+                                           , array_extents.domain_offset(7) ) );
       dst.m_fad_size = src.m_fad_size;
       dst.m_fad_stride = src.m_fad_stride.value;
     }

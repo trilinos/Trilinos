@@ -62,6 +62,8 @@ public:
       { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setTempState(Teuchos::RCP<Tempus::SolutionState<Scalar>> state)
+      { tempState_ = state; }
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
@@ -69,6 +71,14 @@ public:
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
+    /// Pass initial guess to Newton solver (only relevant for explicit schemes)
+    virtual void setInitialGuess(
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initial_guess)
+      {initial_guess_ = initial_guess;}
+
+   virtual std::string getStepperType() const
+     { return stepperPL_->get<std::string>("Stepper Type"); }
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
@@ -80,7 +90,7 @@ public:
       {return stepperPL_->get<int>("Maximum Order");}
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) const
-      {return std::numeric_limits<Scalar>::max();}
+      {return Scalar(1.0e+99);}
     virtual void setOrder   (Scalar ord)
       {stepperPL_->set<int>("Order", ord);}
     virtual void setOrderMin(Scalar ord)
@@ -156,8 +166,9 @@ protected:
   std::vector<Teuchos::RCP<Stepper<Scalar> > >        subStepperList_;
   Teuchos::RCP<SolutionHistory<Scalar> >              OpSpSolnHistory_;
   Teuchos::RCP<SolutionState<Scalar> >                tempState_;
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
   Teuchos::RCP<StepperOperatorSplitObserver<Scalar> > stepperOSObserver_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initial_guess_;
+
 };
 
 } // namespace Tempus

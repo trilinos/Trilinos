@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,20 +33,20 @@
  *
  */
 /*****************************************************************************
-*
-* exgmp - ex_get_map_param
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*
-* exit conditions -
-*       int*    num_node_maps           number of node maps
-*       int*    num_elem_maps           number of element maps
-*
-* revision history -
-*
-*****************************************************************************/
+ *
+ * exgmp - ex_get_map_param
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *
+ * exit conditions -
+ *       int*    num_node_maps           number of node maps
+ *       int*    num_elem_maps           number of element maps
+ *
+ * revision history -
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, DIM_NUM_EM, etc
@@ -66,7 +66,7 @@ int ex_get_map_param(int exoid, int *num_node_maps, int *num_elem_maps)
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* node maps are optional */
   if (nc_inq_dimid(exoid, DIM_NUM_NM, &dimid) != NC_NOERR) {
@@ -76,7 +76,7 @@ int ex_get_map_param(int exoid, int *num_node_maps, int *num_elem_maps)
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_node_maps)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of node maps in file id %d",
                exoid);
-      ex_err("ex_get_map_param", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     *num_node_maps = lnum_node_maps;
@@ -90,7 +90,7 @@ int ex_get_map_param(int exoid, int *num_node_maps, int *num_elem_maps)
     if ((status = nc_inq_dimlen(exoid, dimid, &lnum_elem_maps)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element maps in file id %d",
                exoid);
-      ex_err("ex_get_map_param", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     *num_elem_maps = lnum_elem_maps;

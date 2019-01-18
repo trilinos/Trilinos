@@ -76,8 +76,10 @@ public:
     typedef typename ViewTypeC::value_type scalar_type;
 
     scalar_type t = 0.0;
-    for (size_t j=0; j<n; ++j)
-      t += A(i,j)*b(j);
+    for (size_t j=0; j<n; ++j) {
+      scalar_type bb = b(j); // fix for Intel 17.0.1 with optimization
+      t += A(i,j)*bb;
+    }
     c(i) = t;
   }
 };
@@ -152,7 +154,7 @@ int main(int argc, char* argv[]) {
 
     // Allocate Kokkos view's for matrix, input vector, and output vector
     // Derivative dimension must be specified as the last constructor argument
-    typedef Sacado::Fad::DFad<double> FadType;
+    typedef Sacado::Fad::SFad<double,p> FadType;
     Kokkos::View<FadType**> A("A",m,n,p+1);
     Kokkos::View<FadType*>  b("b",n,p+1);
     Kokkos::View<FadType*>  c("c",m,p+1);
@@ -167,8 +169,10 @@ int main(int argc, char* argv[]) {
 
     // Print result
     std::cout << "\nc = A*b:  Differentiated using Sacado:" << std::endl;
+    auto h_c = Kokkos::create_mirror_view(c);
+    Kokkos::deep_copy(h_c, c);
     for (size_t i=0; i<m; ++i)
-      std::cout << "\tc(" << i << ") = " << c(i) << std::endl;
+      std::cout << "\tc(" << i << ") = " << h_c(i) << std::endl;
 
     // Now compute derivative analytically.  Any Sacado view can be flattened
     // into a standard view of one higher rank, with the extra dimension equal
@@ -181,15 +185,17 @@ int main(int argc, char* argv[]) {
 
     // Print result
     std::cout << "\nc = A*b:  Differentiated analytically:" << std::endl;
+    auto h_c2 = Kokkos::create_mirror_view(c2);
+    Kokkos::deep_copy(h_c2, c2);
     for (size_t i=0; i<m; ++i)
-      std::cout << "\tc(" << i << ") = " << c2(i) << std::endl;
+      std::cout << "\tc(" << i << ") = " << h_c2(i) << std::endl;
 
     // Compute the error
     double err = 0.0;
     for (size_t i=0; i<m; ++i) {
       for (size_t k=0; k<p; ++k)
-        err += std::abs(c(i).fastAccessDx(k)-c2(i).fastAccessDx(k));
-      err += std::abs(c(i).val()-c2(i).val());
+        err += std::abs(h_c(i).fastAccessDx(k)-h_c2(i).fastAccessDx(k));
+      err += std::abs(h_c(i).val()-h_c2(i).val());
     }
 
     double tol = 1.0e-14;

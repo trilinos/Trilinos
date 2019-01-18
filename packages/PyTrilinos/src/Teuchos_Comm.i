@@ -578,23 +578,21 @@ else:
 //////////////////////////////
 // Teuchos::MpiComm support //
 //////////////////////////////
+#ifdef HAVE_MPI4PY
+// Here, we DO NOT %ignore Teuchos::MpiComm::MpiComm(MPI_Comm), and we
+// let the MPI4PY typemap for MPI_Comm handle that constructor
+#else
 %extend Teuchos::MpiComm
 {
-#ifdef HAVE_MPI4PY
-  MpiComm(MPI_Comm mpiComm = MPI_COMM_WORLD)
-  {
-    return new Teuchos::MpiComm< Ordinal >
-      (Teuchos::opaqueWrapper(mpiComm));
-  }
-#else
   MpiComm(PyObject * dummy = NULL)
   {
     return new Teuchos::MpiComm< Ordinal >
       (Teuchos::opaqueWrapper(MPI_COMM_WORLD));
   }
-#endif
 }
 %ignore Teuchos::MpiComm::MpiComm(MPI_Comm rawMpiComm);
+#endif
+
 %ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm);
 %ignore Teuchos::MpiComm::MpiComm(const RCP<const OpaqueWrapper<MPI_Comm> >& rawMpiComm,
                                   const int defaultTag);
@@ -606,7 +604,7 @@ else:
 %ignore Teuchos::MpiComm::scan;
 %teuchos_rcp(Teuchos::MpiComm< int >)
 %include "Teuchos_DefaultMpiComm.hpp"
-%template(MpiComm_int) Teuchos::MpiComm<int>;
+%template(MpiComm_int) Teuchos::MpiComm< int >;
 %pythoncode
 %{
 MpiComm = MpiComm_int

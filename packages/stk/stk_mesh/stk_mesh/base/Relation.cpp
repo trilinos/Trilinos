@@ -44,7 +44,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, OrdinalVector, etc
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssertMsg, etc
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, etc
 
 
 namespace stk {

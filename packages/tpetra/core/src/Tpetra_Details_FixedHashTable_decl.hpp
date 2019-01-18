@@ -47,8 +47,9 @@
 #include "Tpetra_Details_Hash.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
-#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_Describable.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {

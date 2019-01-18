@@ -54,12 +54,6 @@
 # @HEADER
 
 #
-# This is a CI build that uses the new CMake/CTest/CDash all-at-once features
-# to submit to the Experimental track on the new testing-vm.sandia.gov/CDash/
-# site and also, at the same time, does a sumbit to the old
-# testing.sandia.gov/CDash/ site (where it is not displayed in an optional
-# way).
-#
 # NOTE: This requires an updated version of CMake/CTest to run or it will
 # crash!.
 # 
@@ -78,7 +72,6 @@ SET( CTEST_BUILD_FLAGS "-j8 -i" )
 SET( CTEST_PARALLEL_LEVEL "8" )
 
 SET(CTEST_TEST_TYPE Experimental)
-SET(Trilinos_CTEST_USE_NEW_AAO_FEATURES TRUE)
 SET(Trilinos_CTEST_DO_ALL_AT_ONCE TRUE)
 
 SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF)

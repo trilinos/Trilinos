@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -116,7 +116,7 @@ C=======================================================================
          stop 'EXBFID'
       else if (ierr .eq. EXWARN) then
          write (string, '(A,A)') 
-     $        'A non-fatal error occured in ', path(:lp)
+     $        'A non-fatal error occurred in ', path(:lp)
          call prterr ('WARNING', string)
       else
          if (ierr .le. 19) then

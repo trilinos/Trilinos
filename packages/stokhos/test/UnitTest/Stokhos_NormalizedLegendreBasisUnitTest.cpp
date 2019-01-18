@@ -61,7 +61,7 @@ namespace LegendreBasisUnitTest {
     OrdinalType p;
     Stokhos::LegendreBasis<OrdinalType,ValueType> basis;
     
-    UnitTestSetup() : rtol(1e-12), atol(1e-12), p(10), basis(p,true) {}
+    UnitTestSetup() : rtol(1e-12), atol(1e-10), p(10), basis(p,true) {}
     
   };
 

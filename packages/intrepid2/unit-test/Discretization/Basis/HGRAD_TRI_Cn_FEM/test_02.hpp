@@ -134,8 +134,8 @@ namespace Intrepid2 {
           const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
           
           double sum = 0, diff = 0;
-          for (int i=0;i<outputValuesA_Host.extent(0);++i) 
-            for (int j=0;j<outputValuesA_Host.extent(1);++j) {
+          for (size_t i=0;i<outputValuesA_Host.extent(0);++i)
+            for (size_t j=0;j<outputValuesA_Host.extent(1);++j) {
               sum += std::abs(outputValuesB_Host(i,j));
               diff += std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(i,j));
               if (verbose) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,8 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"       // for NC_NOERR, nc_inq_varid, etc
-#include <stddef.h>       // for size_t
+#include <assert.h>
+#include <stddef.h> // for size_t
 #include <stdio.h>
 
 /*!
@@ -79,20 +80,27 @@ error = ex_put_time (exoid, n, &time_value);
 
 int ex_put_time(int exoid, int time_step, const void *time_value)
 {
-  int    status;
-  int    varid;
-  size_t start[1];
-  char   errmsg[MAX_ERR_LENGTH];
+  int                  status;
+  int                  varid;
+  size_t               start[1];
+  char                 errmsg[MAX_ERR_LENGTH];
+  struct ex_file_item *file = NULL;
 
   EX_FUNC_ENTER();
 
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
-  /* inquire previously defined variable */
-  if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable in file id %d", exoid);
-    ex_err("ex_put_time", errmsg, status);
-    EX_FUNC_LEAVE(EX_FATAL);
+  file  = ex_find_file_item(exoid);
+  varid = file->time_varid;
+  if (varid < 0) {
+    /* inquire previously defined variable */
+    if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable in file id %d",
+               exoid);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      EX_FUNC_LEAVE(EX_FATAL);
+    }
+    file->time_varid = varid;
   }
 
   /* store time value */
@@ -107,7 +115,7 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
 
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store time value in file id %d", exoid);
-    ex_err("ex_put_time", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

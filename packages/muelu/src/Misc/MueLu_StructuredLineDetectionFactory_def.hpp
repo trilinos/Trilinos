@@ -87,8 +87,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void StructuredLineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
 
-    using xdMV = Xpetra::MultiVector<double, LO, GO, NO>;
-
     // The following three variables are needed by the line smoothers in Ifpack/Ifpack2
     LO                        NumZDir        = 0;
     Teuchos::ArrayRCP<LO>     VertLineId     = Teuchos::arcp<LO>(0);

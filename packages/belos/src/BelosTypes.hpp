@@ -291,19 +291,21 @@ namespace Belos {
     /// Belos already assumed that.  See discussion starting here:
     ///
     /// https://github.com/trilinos/Trilinos/pull/2677#issuecomment-395453521
-    static constexpr double convTol = 1.0e-8;
+    ///
+    /// Initialization of values moved to BelosTypes.cpp to fix ODR-used issues
+    static const double convTol;
 
     //! Relative residual tolerance for matrix polynomial construction
-    static constexpr double polyTol = 1.0e-12;
+    static const double polyTol;
 
     //! DGKS orthogonalization constant
-    static constexpr double orthoKappa = -1.0;
+    static const double orthoKappa;
 
     //! User-defined residual scaling factor
-    static constexpr double resScaleFactor = 1.0;
+    static const double resScaleFactor;
 
     //! "Implicit Tolerance Scale Factor"
-    static constexpr double impTolScale = 10.0;
+    static const double impTolScale;
   };
 
 

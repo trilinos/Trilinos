@@ -81,7 +81,7 @@ namespace MueLuTests {
 
     GlobalOrdinal nx = 6, ny = 6;
 
-    typedef Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
+    typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> mv_type_double;
     typedef Xpetra::MultiVectorFactory<double,LocalOrdinal,GlobalOrdinal,Node> MVFactory_double;
 
     // Describes the initial layout of matrix rows across processors.
@@ -143,6 +143,7 @@ namespace MueLuTests {
     TentativePFactory Pfact;
     UnsmooshFactory unsmooFact;
     FactoryManager innerFactManager;
+    innerFactManager.SetKokkosRefactor(false);
     innerFactManager.SetFactory("A", Teuchos::rcpFromRef(lapFact));
     innerFactManager.SetFactory("UnAmalgamationInfo", Teuchos::rcpFromRef(amalgFact));
     innerFactManager.SetFactory("Graph", Teuchos::rcpFromRef(coalFact));

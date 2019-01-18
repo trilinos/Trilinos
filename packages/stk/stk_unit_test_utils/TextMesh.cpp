@@ -1,15 +1,34 @@
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "TextMesh.hpp"
-#include "mpi.h"
-#include <string>
-#include <sstream>
-#include <vector>
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_io/IossBridge.hpp>
-#include "stk_util/environment/ReportHandler.hpp"
+#include <ctype.h>                                   // for toupper
+#include <stddef.h>                                  // for size_t
+#include <algorithm>                                 // for remove, etc
+#include <iterator>                                  // for insert_iterator
+#include <map>
+#include <set>                                       // for set
+#include <sstream>                                   // for operator<<, etc
+#include <stk_io/IossBridge.hpp>                     // for is_part_io_part, etc
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_mesh/base/FEMHelpers.hpp>              // for declare_element
+#include <stk_mesh/base/Field.hpp>                   // for Field
+#include <stk_mesh/base/GetEntities.hpp>             // for get_entities
+#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
+#include <string>                                    // for basic_string, etc
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
+#include "stk_mesh/base/Entity.hpp"                  // for Entity
+#include "stk_mesh/base/FieldBase.hpp"               // for field_data
+#include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
+#include "stk_topology/topology.hpp"                 // for topology, etc
+#include "stk_topology/topology.hpp"
+#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg
+
+namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {
@@ -219,7 +238,7 @@ MeshData parse_input(const std::string& meshDescription)
         ThrowRequireMsg(tokens.size()>=4, "Error!  Each line must contain the following fields (with at least one node):  Processor, GlobalId, Element Topology, NodeIds.  Error on line " << userLineNumber << ".");
         ElementData elementData;
         elementData.proc = std::stoi(tokens[0]);
-        elementData.identifier = static_cast<stk::mesh::EntityId>(std::stoi(tokens[1]));
+        elementData.identifier = static_cast<stk::mesh::EntityId>(std::stoul(tokens[1]));
         elementData.topology = get_topology_by_name(tokens[2]);
 
         ThrowRequireMsg(elementData.topology != stk::topology::INVALID_TOPOLOGY, "Error!  Topology = >>" << tokens[2] << "<< is invalid from line " << userLineNumber << ".");
@@ -229,7 +248,11 @@ MeshData parse_input(const std::string& meshDescription)
             spatialDimLine = userLineNumber;
         }
         else
-            ThrowRequireMsg(elementData.topology.defined_on_spatial_dimension(spatialDim), "Error!  Topology = " << elementData.topology << " is not defined on spatial dimension = " << spatialDim << " that was set on line " << spatialDimLine << ".  Error on line " << userLineNumber << ".");
+        {
+            ThrowRequireMsg(elementData.topology.defined_on_spatial_dimension(spatialDim), "Error!  Topology = " << elementData.topology
+                            << " is not defined on spatial dimension = " << spatialDim << " that was set on line " << spatialDimLine
+                            << ".  Error on line " << userLineNumber << ".");
+        }
 
         unsigned numNodes = elementData.topology.num_nodes();
 
@@ -238,12 +261,14 @@ MeshData parse_input(const std::string& meshDescription)
         ThrowRequireMsg(tokens.size() >= numNodes+3u, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
         elementData.nodeIds.resize(numNodes);
         for (unsigned i=0 ; i < numNodes ; ++i)
-            elementData.nodeIds[i] = static_cast<stk::mesh::EntityId>(std::stoi(tokens[3+i]));
-
+        {
+            elementData.nodeIds[i] = static_cast<stk::mesh::EntityId>(std::stoul(tokens[3+i]));
+        }
         ThrowRequireMsg(tokens.size() <= numNodes+3u+1, "Error!  The input line contains " << tokens.size()-3 << " nodes, but the topology " << elementData.topology.name() << " needs " << numNodes << " nodes on line " << userLineNumber << ".");
         if(tokens.size() == numNodes+4u)
+        {
             elementData.partName = tokens[3+numNodes];
-
+        }
         data.elementDataVec.push_back(elementData);
     }
     ThrowRequireMsg(spatialDim>1, "Error!  Spatial dimension not defined to be 2 or 3!");
@@ -264,13 +289,14 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
             stk::io::put_io_part_attribute(part);
     }
     CoordinatesField & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
-    stk::mesh::put_field(coordsField, meta.universal_part(), meshData.spatialDim);
+    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), meshData.spatialDim,
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr);
 }
 
 void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)
 {
     stk::mesh::EntityVector nodes;
-    bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+    stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
     CoordinatesField & coordsField = static_cast<CoordinatesField&>(*bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates"));
     for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
     {

@@ -118,6 +118,7 @@ namespace ROL {
     EXITSTATUS_CONVERGED = 0,
     EXITSTATUS_MAXITER,
     EXITSTATUS_STEPTOL,
+    EXITSTATUS_NAN,
     EXITSTATUS_USERDEFINED,
     EXITSTATUS_LAST
   };
@@ -125,11 +126,12 @@ namespace ROL {
   inline std::string EExitStatusToString(EExitStatus tr) {
     std::string retString;
     switch(tr) {
-      case EXITSTATUS_CONVERGED:   retString = "Converged";                break;
-      case EXITSTATUS_MAXITER:     retString = "Iteration Limit Exceeded"; break;
-      case EXITSTATUS_STEPTOL:     retString = "Step Tolerance Met";       break;
-      case EXITSTATUS_USERDEFINED: retString = "User Defined";             break;
-      case EXITSTATUS_LAST:        retString = "Last Type (Dummy)";        break;
+      case EXITSTATUS_CONVERGED:   retString = "Converged";                          break;
+      case EXITSTATUS_MAXITER:     retString = "Iteration Limit Exceeded";           break;
+      case EXITSTATUS_STEPTOL:     retString = "Step Tolerance Met";                 break;
+      case EXITSTATUS_NAN:         retString = "Step and/or Gradient Returned NaN";  break;
+      case EXITSTATUS_USERDEFINED: retString = "User Defined";                       break;
+      case EXITSTATUS_LAST:        retString = "Last Type (Dummy)";                  break;
       default:                     retString = "INVALID EExitStatus";
     }
     return retString;

@@ -56,6 +56,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "AztecOO_ConditionNumber.h"
+#include "NOX_SolverStats.hpp"
 
 using namespace NOX;
 using namespace NOX::Epetra;
@@ -77,7 +78,10 @@ Group::Group(Teuchos::ParameterList& printParams,
   conditionNumber(0.0),
   sharedLinearSystem(*sharedLinearSystemPtr),
   linearResidCompDisabled(false),
-  userInterfacePtr(i)
+  userInterfacePtr(i),
+  linearSolveConverged(false),
+  numIterations(-1),
+  achievedTol(-1.0)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -101,7 +105,10 @@ Group::Group(Teuchos::ParameterList& printParams,
   sharedLinearSystemPtr(Teuchos::rcp(new SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>(linSys))),
   sharedLinearSystem(*sharedLinearSystemPtr),
   linearResidCompDisabled(false),
-  userInterfacePtr(i)
+  userInterfacePtr(i),
+  linearSolveConverged(false),
+  numIterations(-1),
+  achievedTol(-1.0)
 {
   // Set all isValid flags to false
   resetIsValid();
@@ -122,7 +129,10 @@ Group::Group(const Group& source, CopyType type) :
   sharedLinearSystemPtr(source.sharedLinearSystemPtr),
   sharedLinearSystem(*sharedLinearSystemPtr),
   linearResidCompDisabled(source.linearResidCompDisabled),
-  userInterfacePtr(source.userInterfacePtr)
+  userInterfacePtr(source.userInterfacePtr),
+  linearSolveConverged(source.linearSolveConverged),
+  numIterations(source.numIterations),
+  achievedTol(source.achievedTol)
 {
 
   switch (type) {
@@ -227,6 +237,10 @@ Abstract::Group& Group::operator=(const Group& source)
     conditionNumber = source.conditionNumber;
 
   linearResidCompDisabled = source.linearResidCompDisabled;
+
+  linearSolveConverged = source.linearSolveConverged;
+  numIterations = source.numIterations;
+  achievedTol = source.achievedTol;
 
   return *this;
 }
@@ -437,9 +451,12 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Teuchos::ParameterList 
     }
   }
 
-  bool status = sharedLinearSystem.getObject(this)->applyJacobianInverse(p, input, result);
+  // Save linear solve stats
+  linearSolveConverged = sharedLinearSystem.getObject(this)->applyJacobianInverse(p, input, result);
+  numIterations = p.sublist("Output").get("Number of Linear Iterations",0);
+  achievedTol = p.sublist("Output").get("Achieved Tolerance",0.0);
 
-  return status == true ? Abstract::Group::Ok : Abstract::Group::NotConverged;
+  return linearSolveConverged == true ? Abstract::Group::Ok : Abstract::Group::NotConverged;
 }
 
 Abstract::Group::ReturnType Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
@@ -611,6 +628,13 @@ getLinearSystem() const
 Teuchos::RCP<NOX::Epetra::LinearSystem> Group::getLinearSystem()
 {
   return sharedLinearSystem.getObject(this);
+}
+
+void Group::logLastLinearSolveStats(NOX::SolverStats& stats) const
+{
+  stats.linearSolve.logLinearSolve(linearSolveConverged,
+                                   numIterations,
+                                   achievedTol,0.0,0.0);
 }
 
 bool Group::computeNormNewtonSolveResidual ()

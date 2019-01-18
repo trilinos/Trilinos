@@ -45,7 +45,7 @@ private:
   // Simulation source
   PHX::MDField<ScalarT,Cell,Point,Dim> current;
   PHX::MDField<const ScalarT,Cell,Point,Dim> coords;
-  int ir_degree, ir_index;
+  int ir_degree, ir_index, ir_dim;
   double alpha, beta;
 };
 

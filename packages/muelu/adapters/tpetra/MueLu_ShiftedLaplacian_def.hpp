@@ -51,6 +51,7 @@
 #if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
 
 #include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_CoarseMapFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_CoupledRBMFactory.hpp>
 #include <MueLu_DirectSolver.hpp>
@@ -221,17 +222,18 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setLevelShifts(st
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
 
-  TentPfact_ = rcp( new TentativePFactory           );
-  Pfact_     = rcp( new SaPFactory                  );
-  PgPfact_   = rcp( new PgPFactory                  );
-  TransPfact_= rcp( new TransPFactory               );
-  Rfact_     = rcp( new GenericRFactory             );
-  Acfact_    = rcp( new RAPFactory                  );
-  Acshift_   = rcp( new RAPShiftFactory             );
-  Dropfact_  = rcp( new CoalesceDropFactory         );
-  Aggfact_   = rcp( new CoupledAggregationFactory   );
-  UCaggfact_ = rcp( new UncoupledAggregationFactory );
-  Manager_   = rcp( new FactoryManager              );
+  TentPfact_     = rcp( new TentativePFactory           );
+  Pfact_         = rcp( new SaPFactory                  );
+  PgPfact_       = rcp( new PgPFactory                  );
+  TransPfact_    = rcp( new TransPFactory               );
+  Rfact_         = rcp( new GenericRFactory             );
+  Acfact_        = rcp( new RAPFactory                  );
+  Acshift_       = rcp( new RAPShiftFactory             );
+  Dropfact_      = rcp( new CoalesceDropFactory         );
+  Aggfact_       = rcp( new CoupledAggregationFactory   );
+  UCaggfact_     = rcp( new UncoupledAggregationFactory );
+  CoarseMapfact_ = rcp( new CoarseMapFactory            );
+  Manager_       = rcp( new FactoryManager              );
   if(isSymmetric_==true) {
     Manager_   -> SetFactory("P", Pfact_);
     Manager_   -> SetFactory("R", TransPfact_);
@@ -253,6 +255,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   else {
     Manager_   -> SetFactory("Aggregates", UCaggfact_ );
   }
+  Manager_     -> SetFactory("CoarseMap", CoarseMapfact_);
 
   // choose smoother
   if(Smoother_=="jacobi") {

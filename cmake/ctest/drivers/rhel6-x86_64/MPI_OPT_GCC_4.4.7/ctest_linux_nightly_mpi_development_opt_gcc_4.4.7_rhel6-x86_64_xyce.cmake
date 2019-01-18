@@ -68,7 +68,7 @@ SET(CTEST_TEST_TYPE Nightly)
 
 #SET(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
 
-SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos Kokkos Gtest ThreadPool RTOp Shards Thyra Xpetra Galeri Pamgen ML SEACAS Anasazi Stratimikos FEI Intrepid STK MueLu)
+SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos Kokkos Gtest RTOp Shards Thyra Xpetra Galeri Pamgen ML SEACAS Anasazi Stratimikos FEI Intrepid STK MueLu)
 SET(Trilinos_PACKAGES NOX EpetraExt TrilinosCouplings Ifpack Isorropia AztecOO Belos Teuchos Amesos Sacado Zoltan Epetra Triutils)
 
 SET( EXTRA_CONFIGURE_OPTIONS

@@ -399,7 +399,7 @@ makeTest_A (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   }
 
   std::vector<int> remoteProcessRanks;
-  std::vector<GO> optimizedRemoteProcessRanks;
+  std::vector<int> optimizedRemoteProcessRanks;
   if (myRank == 0) {
     remoteProcessRanks = {1, 4, 4};
     optimizedRemoteProcessRanks = {1, 4, 4};
@@ -423,7 +423,9 @@ makeTest_A (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
   const GST globalNumSourceMapGlobalIndices = 17;
   const GO indexBase = 0;
-  return {comm, contiguous, localNumSourceMapGlobalIndices,
+  return {comm,
+      contiguous,
+      localNumSourceMapGlobalIndices,
       sourceMapGlobalIndices,
       remoteGlobalIndices,
       optimizedRemoteGlobalIndices,
@@ -610,10 +612,10 @@ runTest (Teuchos::FancyOStream& out,
 
     std::ostringstream errStrm;
     bool lclErr = false;
-    const map_type actualTgtMap =
+    Teuchos::RCP<const map_type> actualTgtMap =
       Tpetra::Details::makeOptimizedColMap (out, lclErr, *sourceMap,
                                             *expUnoptTgtMap,
-                                            expUnoptImport.getRawPtr ());;
+                                            expUnoptImport.getRawPtr ());
     const bool gblMadeItThrough = trueEverywhere (! lclErr, *comm);
     TEST_ASSERT( gblMadeItThrough );
     if (! gblMadeItThrough) {
@@ -622,9 +624,9 @@ runTest (Teuchos::FancyOStream& out,
     }
 
     out << "Actual target Map:" << endl;
-    printMapCompactly (out, actualTgtMap);
+    printMapCompactly (out, *actualTgtMap);
 
-    const import_type actualImport (sourceMap, rcp (new map_type (actualTgtMap)));
+    const import_type actualImport (sourceMap, actualTgtMap);
     const bool gblImportsSame =
       importsGloballySame (out, *expOptImport, "expOptImport",
                            actualImport, "actualImport");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -64,8 +64,6 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
  *           elem_type is assumed to have a length of MAX_STR_LENGTH+1
  */
 {
-  const char *func_name = "ex_get_elem_type";
-
   int    connid, el_blk_id_ndx, status;
   size_t len;
   char   errmsg[MAX_ERR_LENGTH];
@@ -73,27 +71,27 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
   /*****************************************************************************/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* inquire id's of previously defined dimensions */
   if ((el_blk_id_ndx = ex_id_lkup(exoid, EX_ELEM_BLOCK, elem_blk_id)) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find element block ID %" PRId64 " in file %d", elem_blk_id, exoid);
-    ex_err(func_name, errmsg, EX_LASTERR);
+    ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, VAR_CONN(el_blk_id_ndx), &connid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find connectivity variable in file ID %d",
              exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* get the element type name */
   if ((status = nc_inq_attlen(exoid, connid, ATT_NAME_ELB, &len)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find attribute in file ID %d", exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -101,7 +99,7 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
   if (len > (MAX_STR_LENGTH + 1)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Element type must be of length %d in file ID %d",
              (int)len, exoid);
-    ex_err(func_name, errmsg, EX_BADPARAM);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -112,7 +110,7 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
   if ((status = nc_get_att_text(exoid, connid, ATT_NAME_ELB, elem_type)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute \"%s\" in file ID %d",
              ATT_NAME_ELB, exoid);
-    ex_err(func_name, errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }

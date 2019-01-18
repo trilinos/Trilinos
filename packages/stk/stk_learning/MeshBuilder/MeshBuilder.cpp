@@ -21,7 +21,7 @@
 #include "stk_mesh/base/GetEntities.hpp"  // for get_entities
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequire
 
 // change for meshing big things
 const double zOffset = 1;
@@ -74,8 +74,8 @@ void MeshBuilder::create_life_and_neighbor_fields(ScalarIntField*& lifeField,
     neighborField = &m_metaData.declare_field<ScalarIntField>(
             stk::topology::ELEM_RANK, "neighborField");
     int val = 0;
-    stk::mesh::put_field(*lifeField, m_metaData.universal_part(), &val);
-    stk::mesh::put_field(*neighborField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(*lifeField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(*neighborField, m_metaData.universal_part(), &val);
 }
 
 //test
@@ -235,7 +235,7 @@ void QuadMeshBuilder::declare_coordinates()
 {
     m_coordinates = &meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_coordinates, meta_data().universal_part(), 2);
+    stk::mesh::put_field_on_mesh(*m_coordinates, meta_data().universal_part(), 2, nullptr);
 }
 void QuadMeshBuilder::label_node_coordinates(const ElemCoordPair& elemCoords)
 {
@@ -354,7 +354,7 @@ void HexMeshBuilder::declare_coordinates()
 {
    m_coordinates = &meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
            stk::topology::NODE_RANK, "coordinates");
-   stk::mesh::put_field(*m_coordinates, meta_data().universal_part(), 3);
+   stk::mesh::put_field_on_mesh(*m_coordinates, meta_data().universal_part(), 3, nullptr);
 }
 void HexMeshBuilder::label_node_coordinates(const ElemCoordTriple& elemCoords)
 {

@@ -169,12 +169,12 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
     {
       if (static_cast<int>(elems_0[ielem][3]) == p_rank)
         {
-          elem = mesh.declare_element(elems_0[ielem][0], {&elem_part});
+          elem = mesh.declare_element(elems_0[ielem][0], stk::mesh::ConstPartVector{&elem_part});
 
           EntityVector nodes;
           // Create node on all procs
-          nodes.push_back( mesh.declare_node(elems_0[ielem][2], {&node_part}) );
-          nodes.push_back( mesh.declare_node(elems_0[ielem][1], {&node_part}) );
+          nodes.push_back( mesh.declare_node(elems_0[ielem][2], stk::mesh::ConstPartVector{&node_part}) );
+          nodes.push_back( mesh.declare_node(elems_0[ielem][1], stk::mesh::ConstPartVector{&node_part}) );
 
           // Add relations to nodes
           mesh.declare_relation( elem, nodes[0], 0 );

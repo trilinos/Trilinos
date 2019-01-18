@@ -33,10 +33,9 @@
 
 #include <iostream>                     // for ostringstream, etc
 #include <stdexcept>                    // for logic_error, runtime_error, etc
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <gtest/gtest.h>
 #include <string>                       // for string
-
 
 
 namespace {
@@ -243,3 +242,214 @@ TEST(UnitTestingOfThrowMacros, testUnit)
 
   ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
 }
+
+void testNGPThrowRequireMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = false;
+    NGP_ThrowRequireMsg(test == true, "Error testing whatever");
+  });
+}
+
+#if (defined(__GNUC__) && (__GNUC__ > 4))
+#define NEW_ENOUGH_GCC
+#endif
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequireMsg();
+#else
+#ifdef NEW_ENOUGH_GCC
+//For now, only test this on gcc compilers more recent than major version 4.
+//A Trilinos pre-push test platform, 4.8.4 seems to produce an abort instead
+//of a throw for this test.
+  try {
+    testNGPThrowRequireMsg();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:250\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+#endif
+}
+
+void testNGPThrowRequire()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = false;
+    NGP_ThrowRequire(test == true);
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowRequire();
+#else
+#ifdef NEW_ENOUGH_GCC
+  try {
+    testNGPThrowRequire();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:287\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+#endif
+}
+
+// Debug testing
+#ifndef NDEBUG
+void testNGPThrowAssertMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = false;
+    NGP_ThrowAssertMsg(test == true, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowAssertMsg();
+#else
+#ifdef NEW_ENOUGH_GCC
+  try {
+    testNGPThrowAssertMsg();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:318\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+#endif
+}
+#endif
+
+// Release testing
+#ifdef NDEBUG
+void testNGPThrowAssertMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    NGP_ThrowAssertMsg(false, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_release)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowAssertMsg();
+#else
+#ifdef NEW_ENOUGH_GCC
+  EXPECT_NO_THROW(testNGPThrowAssertMsg());
+#endif
+#endif
+}
+#endif
+
+void testNGPThrowErrorMsgIf()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = true;
+    NGP_ThrowErrorMsgIf(test == true, "Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowErrorMsgIf();
+#else
+#ifdef NEW_ENOUGH_GCC
+  try {
+    testNGPThrowErrorMsgIf();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:373\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+#endif
+}
+
+void testNGPThrowErrorIf()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    bool test = true;
+    NGP_ThrowErrorIf(test == true);
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowErrorIf();
+#else
+#ifdef NEW_ENOUGH_GCC
+  try {
+    testNGPThrowErrorIf();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:403\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+#endif
+}
+
+void testNGPThrowErrorMsg()
+{
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int & i){
+    NGP_ThrowErrorMsg("Error testing whatever");
+  });
+}
+
+TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
+{
+#ifdef KOKKOS_HAVE_CUDA
+  // Unable to test a device-side abort, as this eventually results in a throw
+  // inside Kokkos::finalize_all().
+  //
+  // testNGPThrowErrorMsg();
+#else
+#ifdef NEW_ENOUGH_GCC
+  try {
+    testNGPThrowErrorMsg();
+  }
+  catch (std::exception & ex) {
+    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:431\n"
+                               "Error: Error testing whatever\n";
+    EXPECT_STREQ(ex.what(), expectedMsg);
+  }
+#endif
+#endif
+}
+

@@ -28,11 +28,8 @@ StepperDIRK<Scalar>::StepperDIRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   std::string stepperType)
 {
-  this->setTableau(Teuchos::null, stepperType);
-  this->setParameterList(Teuchos::null);
+  this->setTableau(stepperType);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -41,11 +38,9 @@ StepperDIRK<Scalar>::StepperDIRK(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   Teuchos::RCP<Teuchos::ParameterList>                      pList)
 {
-  this->setTableau(pList, "SDIRK 2 Stage 2nd order");
+  this->setTableau(pList);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
@@ -55,29 +50,45 @@ StepperDIRK<Scalar>::StepperDIRK(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pList)
 {
-  this->setTableau(pList, stepperType);
+  this->setTableau(stepperType);
   this->setParameterList(pList);
   this->setModel(appModel);
-  this->setSolver();
-  this->setObserver();
   this->initialize();
 }
 
 
 template<class Scalar>
-void StepperDIRK<Scalar>::setTableau(
-  Teuchos::RCP<Teuchos::ParameterList> pList,
-  std::string stepperType)
+void StepperDIRK<Scalar>::setTableau(std::string stepperType)
 {
   if (stepperType == "") {
-    if (pList == Teuchos::null)
-      stepperType = "SDIRK 2 Stage 2nd order";
-    else
-      stepperType = pList->get<std::string>("Stepper Type",
-                                            "SDIRK 2 Stage 2nd order");
+    this->setTableau();
+  } else {
+    DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
   }
 
-  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
+  TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
+    std::logic_error,
+       "Error - StepperDIRK did not receive a DIRK Butcher Tableau!\n"
+    << "  Stepper Type = " << stepperType <<  "\n");
+  description_ = DIRK_ButcherTableau_->description();
+}
+
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setTableau(Teuchos::RCP<Teuchos::ParameterList> pList)
+{
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (this->stepperPL_ == Teuchos::null)
+      this->stepperPL_ = this->getDefaultParameters();
+  } else {
+    this->stepperPL_ = pList;
+  }
+
+  std::string stepperType =
+    this->stepperPL_->template get<std::string>("Stepper Type",
+                                                "SDIRK 2 Stage 2nd order");
+  DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType, this->stepperPL_);
 
   TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
     std::logic_error,
@@ -111,15 +122,15 @@ void StepperDIRK<Scalar>::setObserver(
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_ == Teuchos::null,
-    std::logic_error,
-    "Error - Need to set the Butcher Tableau, setTableau(), before calling "
-    "StepperDIRK::initialize()\n");
-
   TEUCHOS_TEST_FOR_EXCEPTION( this->wrapperModel_ == Teuchos::null,
     std::logic_error,
     "Error - Need to set the model, setModel(), before calling "
     "StepperDIRK::initialize()\n");
+
+  this->setTableau(this->stepperPL_);
+  this->setParameterList(this->stepperPL_);
+  this->setSolver();
+  this->setObserver();
 
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
@@ -277,19 +288,16 @@ void StepperDIRK<Scalar>::takeStep(
        //compute: || ee / sc ||
        assign(sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
        Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *ee_, *abs_u, sc.ptr());
-       Scalar err = Thyra::norm_inf(*sc);
+       Scalar err = std::abs(Thyra::norm_inf(*sc));
        metaData->setErrorRel(err);
 
        // test if step should be rejected
-       if (err > 1.0){
-          workingState->getStepperState()->stepperStatus_ = Status::FAILED;
-       }
+       if (std::isinf(err) || std::isnan(err)) workingState->setSolutionStatus(Status::FAILED);
+       else if (err > Teuchos::as<Scalar>(1.0)) workingState->setSolutionStatus(Status::FAILED);
     }
 
-    if (pass == true)
-      workingState->getStepperState()->stepperStatus_ = Status::PASSED;
-    else
-      workingState->getStepperState()->stepperStatus_ = Status::FAILED;
+    if (pass == true) workingState->setSolutionStatus(Status::PASSED);
+    else              workingState->setSolutionStatus(Status::FAILED);
     workingState->setOrder(this->getOrder());
     stepperObserver_->observeEndTakeStep(solutionHistory, *this);
   }
@@ -360,7 +368,13 @@ Teuchos::RCP<Teuchos::ParameterList>
 StepperDIRK<Scalar>::getDefaultParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  *pl = *(DIRK_ButcherTableau_->getValidParameters());
+  if (DIRK_ButcherTableau_ == Teuchos::null) {
+    auto DIRK_ButcherTableau =
+      createRKBT<Scalar>("SDIRK 2 Stage 2nd order", Teuchos::null);
+    pl->setParameters(*(DIRK_ButcherTableau->getValidParameters()));
+  } else {
+    pl->setParameters(*(DIRK_ButcherTableau_->getValidParameters()));
+  }
   pl->set<std::string>("Solver Name", "Default Solver");
   pl->set<bool>       ("Zero Initial Guess", false);
   Teuchos::RCP<Teuchos::ParameterList> solverPL=this->defaultSolverParameters();

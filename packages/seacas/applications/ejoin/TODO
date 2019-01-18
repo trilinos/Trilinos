@@ -12,7 +12,7 @@
 
 
 DONE:
-* nodeset ids are not propogated to output database...
+* nodeset ids are not propagated to output database...
 * need progress meter on output
 
 * Timestep subsetting

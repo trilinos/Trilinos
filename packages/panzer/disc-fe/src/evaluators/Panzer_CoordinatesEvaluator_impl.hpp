@@ -65,10 +65,9 @@ template<typename EvalT, typename Traits>
 void
 CoordinatesEvaluator<EvalT, Traits>::
 postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
+  typename Traits::SetupData /* worksets */,
+  PHX::FieldManager<Traits>& fm)
 {
-  using namespace PHX;
   this->utils.setFieldData(coordinate,fm);
 }
 

@@ -96,6 +96,10 @@ namespace panzer {
 
     TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
     TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
+
+    // test basis accessor
+    panzer::Intrepid2FieldPattern fp(basisA);
+    TEST_ASSERT(basisA.get() == fp.getIntrepidBasis().get());
   }
 
   bool intrepid_equals(const RCP<Intrepid2::Basis<PHX::Device,double,double> > & basisA,

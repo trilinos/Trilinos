@@ -1,4 +1,4 @@
-// Copyright(C) 2010 National Technology & Engineering Solutions
+// Copyright(C) 2010-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,11 +36,12 @@
 #include "Ioss_NodeBlock.h"      // for NodeBlock
 #include "Ioss_Property.h"       // for Property
 #include "Ioss_Region.h"         // for Region, etc
-#include <algorithm>             // for sort, unique
-#include <cstddef>               // for size_t
-#include <iostream>              // for operator<<, basic_ostream, etc
-#include <smart_assert.h>        // for SMART_ASSERT
-#include <utility>               // for make_pair, pair
+#include "Ioss_SmartAssert.h"
+#include <algorithm> // for sort, unique
+#include <cstddef>   // for size_t
+#include <iostream>  // for operator<<, basic_ostream, etc
+#include <numeric>
+#include <utility> // for make_pair, pair
 
 namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block)
@@ -63,7 +64,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
   for (size_t p = 0; p < part_count; p++) {
     bool has_omissions        = part_mesh[p]->get_property("block_omission_count").get_int() > 0;
     Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
-    size_t           loc_size = nb->get_property("entity_count").get_int();
+    size_t           loc_size = nb->entity_count();
     if (has_omissions) {
       // If there are any omitted element blocks for this part, don't
       // map the nodes that are only connected to omitted element
@@ -117,7 +118,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
   size_t tot_size = 0;
   for (size_t p = 0; p < part_count; p++) {
     Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
-    size_t           loc_size = nb->get_property("entity_count").get_int();
+    size_t           loc_size = nb->entity_count();
     tot_size += loc_size;
     global_nodes[p].resize(loc_size);
   }
@@ -237,12 +238,12 @@ void build_local_element_map(RegionVector &part_mesh, std::vector<INT> &local_el
   size_t offset = 0;
   for (auto &p : part_mesh) {
 
-    Ioss::ElementBlockContainer                 ebs = p->get_element_blocks();
+    const Ioss::ElementBlockContainer &         ebs = p->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
 
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb       = *i++;
-      size_t              num_elem = eb->get_property("entity_count").get_int();
+      size_t              num_elem = eb->entity_count();
       if (entity_is_omitted(eb)) {
         // Fill local_element_map with -1 for the omitted elements.
         for (size_t j = 0; j < num_elem; j++) {
@@ -279,12 +280,12 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
   bool   has_map = false;
   size_t offset  = 0;
   for (auto &p : part_mesh) {
-    Ioss::ElementBlockContainer                 ebs = p->get_element_blocks();
+    const Ioss::ElementBlockContainer &         ebs = p->get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
 
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb       = *i++;
-      INT                 num_elem = eb->get_property("entity_count").get_int();
+      INT                 num_elem = eb->entity_count();
       if (!entity_is_omitted(eb)) {
         std::vector<INT> part_ids;
         eb->get_field_data("ids", part_ids);
@@ -311,30 +312,36 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
   }
   // Check for duplicates...
   // NOTE: Used to use an indexed sort here, but if there was a
-  // duplicate id, it didnt really care whether part 1 or part N's
+  // duplicate id, it didn't really care whether part 1 or part N's
   // index came first which causes really screwy element maps.
   // Instead, lets sort a vector containing pairs of <id, index> where
   // the index will always? increase for increasing part numbers...
-  std::vector<std::pair<INT, INT>> index(global_element_map.size());
-  for (size_t i = 0; i < index.size(); i++) {
-    index[i] = std::make_pair(global_element_map[i], (INT)i);
+  if (has_map) {
+    std::vector<std::pair<INT, INT>> index(global_element_map.size());
+    for (size_t i = 0; i < index.size(); i++) {
+      index[i] = std::make_pair(global_element_map[i], (INT)i);
+    }
+
+    std::sort(index.begin(), index.end());
+
+    INT max_id = index[index.size() - 1].first + 1;
+
+    size_t beg = 0;
+    for (size_t i = 1; i < index.size(); i++) {
+      if (index[beg].first == index[i].first) {
+        // Duplicate found... Assign it a new id greater than any
+        // existing id...  (What happens if we exceed INT_MAX?)
+        global_element_map[index[i].second] = max_id++;
+        // Keep 'beg' the same in case multiple duplicate of this value.
+      }
+      else {
+        beg = i;
+      }
+    }
   }
-
-  std::sort(index.begin(), index.end());
-
-  INT max_id = index[index.size() - 1].first + 1;
-
-  size_t beg = 0;
-  for (size_t i = 1; i < index.size(); i++) {
-    if (index[beg].first == index[i].first) {
-      // Duplicate found... Assign it a new id greater than any
-      // existing id...  (What happens if we exceed INT_MAX?)
-      global_element_map[index[i].second] = max_id++;
-      // Keep 'beg' the same in case multiple duplicate of this value.
-    }
-    else {
-      beg = i;
-    }
+  else {
+    INT one = 1;
+    std::iota(global_element_map.begin(), global_element_map.end(), one);
   }
 }
 

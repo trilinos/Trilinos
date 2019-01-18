@@ -52,6 +52,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
+#include "NOX_Observer.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
@@ -60,6 +61,7 @@
 #include "NOX_LineSearch_Factory.H"
 #include "NOX_Direction_Generic.H"
 #include "NOX_Direction_Factory.H"
+#include "NOX_SolverStats.hpp"
 
 NOX::Solver::LineSearchBased::
 LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
@@ -74,7 +76,7 @@ LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   NOX::Solver::validateSolverOptionsSublist(p->sublist("Solver Options"));
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils(); 
-  prePostOperator.reset(utilsPtr,p->sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(p->sublist("Solver Options"));
   this->init();
 }
 
@@ -109,14 +111,29 @@ reset(const NOX::Abstract::Vector& initialGuess,
 {
   solnPtr->setX(initialGuess);
   testPtr = t;
-  init();
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 void NOX::Solver::LineSearchBased::
 reset(const NOX::Abstract::Vector& initialGuess)
 {
   solnPtr->setX(initialGuess);
-  init();
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
+}
+
+void NOX::Solver::LineSearchBased::
+reset()
+{
+  globalDataPtr->getNonConstSolverStatistics()->reset();
+  stepSize = 0.0;
+  nIter = 0;
+  status = NOX::StatusTest::Unconverged;
 }
 
 NOX::Solver::LineSearchBased::~LineSearchBased()
@@ -125,17 +142,19 @@ NOX::Solver::LineSearchBased::~LineSearchBased()
 }
 
 
-NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus()
+NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus() const
 {
   return status;
 }
 
 NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 {
-  prePostOperator.runPreIterate(*this);
+  observer->runPreIterate(*this);
 
   // On the first step, do some initializations
   if (nIter == 0) {
+    globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearSolves();
+
     // Compute F of initital guess
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
@@ -161,7 +180,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 
   // First check status
   if (status != NOX::StatusTest::Unconverged) {
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -177,28 +196,31 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   {
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
 
   // Update iteration count.
   nIter ++;
+  globalDataPtr->getNonConstSolverStatistics()->incrementNumNonlinearIterations();
 
   // Copy current soln to the old soln.
   *oldSolnPtr = *solnPtr;
 
   // Do line search and compute new soln.
-  prePostOperator.runPreLineSearch(*this);
+  observer->runPreSolutionUpdate(*dirPtr,*this);
+  observer->runPreLineSearch(*this);
   ok = lineSearchPtr->compute(soln, stepSize, *dirPtr, *this);
-  prePostOperator.runPostLineSearch(*this);
+  observer->runPostLineSearch(*this);
+  observer->runPostSolutionUpdate(*this);
   if (!ok)
   {
     if (stepSize == 0.0)
     {
       utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - line search failed" << std::endl;
       status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
+      observer->runPostIterate(*this);
       printUpdate();
       return status;
     }
@@ -212,7 +234,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   {
     utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
+    observer->runPostIterate(*this);
     printUpdate();
     return status;
   }
@@ -220,7 +242,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   // Evaluate the current status.
   status = test.checkStatus(*this, checkType);
 
-  prePostOperator.runPostIterate(*this);
+  observer->runPostIterate(*this);
 
   printUpdate();
 
@@ -229,7 +251,9 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
 
 NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
 {
-  prePostOperator.runPreSolve(*this);
+  observer->runPreSolve(*this);
+
+  this->reset();
 
   // Iterate until converged or failed
   while (status == NOX::StatusTest::Unconverged)
@@ -239,7 +263,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
   outputParams.set("Nonlinear Iterations", nIter);
   outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
-  prePostOperator.runPostSolve(*this);
+  observer->runPostSolve(*this);
 
   return status;
 }
@@ -265,6 +289,12 @@ const Teuchos::ParameterList&
 NOX::Solver::LineSearchBased::getList() const
 {
   return *paramsPtr;
+}
+
+Teuchos::RCP<const NOX::SolverStats>
+NOX::Solver::LineSearchBased::getSolverStatistics() const
+{
+  return globalDataPtr->getSolverStatistics();
 }
 
 // protected

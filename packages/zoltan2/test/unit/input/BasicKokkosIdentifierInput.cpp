@@ -46,23 +46,20 @@
 // Basic testing of Zoltan2::BasicKokkosIdentifierAdapter 
 
 #include <Kokkos_Core.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-using Teuchos::RCP;
-using Teuchos::Comm;
-using Teuchos::DefaultComm;
+int main(int narg, char *arg[]) {
 
-int main(int argc, char *argv[]) {
+  Tpetra::ScopeGuard tscope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
   typedef typename Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t>::weight_layout_t Layout;
 
-  Teuchos::GlobalMPISession session(&argc, &argv);
-  RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   int fail = 0, gfail = 0;
@@ -71,7 +68,6 @@ int main(int argc, char *argv[]) {
   zlno_t numLocalIds = 10;
   const int nWeights = 2;
 
-  Kokkos::initialize(argc, argv);
   Kokkos::View<zgno_t *> myIds("myIds", numLocalIds);
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
   Kokkos::View<zscalar_t **, Layout> weights("weights", numLocalIds, nWeights);
@@ -122,5 +118,4 @@ int main(int argc, char *argv[]) {
   if (rank == 0) {
     std::cout << "PASS" << std::endl;
   }
-  Kokkos::finalize();
 }

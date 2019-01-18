@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -130,7 +130,7 @@ C   --   Uses NOUT, NCRT, NPRT, ANYPRT of /OUTFIL/
       CHARACTER*(NAMLEN) EBNAME(*), NSNAME(*), SSNAME(*)
       CHARACTER*(MXSTLN) QAREC(4,*)
       CHARACTER*(MXLNLN) INFREC(*)
-      CHARACTER*256 FILNAM, ERRMSG
+      CHARACTER*2048 FILNAM, ERRMSG
       
       REAL TIMES(*)
       LOGICAL WHOTIM(*)
@@ -544,9 +544,9 @@ C *** EXODUS Print Commands ***
          CALL DBVIX_BL ('E', 1, IXEV)
          CALL DBVIX_BL ('M', 1, IXNS)
          CALL DBVIX_BL ('S', 1, IXSS)
-         CALL PRNAME ('GNEMS', NOUT, NAMLEN, 
-     *     NVARHI, NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
-     &     NAMES(IXHV), NAMES(IXGV), NAMES(IXNV), NAMES(IXEV),
+         CALL PRNAME (NOUT, NAMLEN, 
+     *     NVARGL, NVARNP, NVAREL, NVARNS, NVARSS,
+     &     NAMES(IXGV), NAMES(IXNV), NAMES(IXEV),
      *     NAMES(IXNS), NAMES(IXSS))
 
       ELSE IF ((LISTYP .EQ. 'HVARS') .OR. (LISTYP .EQ. 'HISTORY')) THEN

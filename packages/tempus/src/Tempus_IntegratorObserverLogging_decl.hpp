@@ -48,8 +48,11 @@ public:
     /// Observe after Stepper takes step.
     virtual void observeAfterTakeStep(const Integrator<Scalar>& integrator) override;
 
-    /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(const Integrator<Scalar>& integrator) override;
+    /// Observe after checking time step.
+    virtual void observeAfterCheckTimeStep(const Integrator<Scalar>& integrator) override;
+
+    /// Observe the end of the time step loop.
+    virtual void observeEndTimeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(const Integrator<Scalar>& integrator) override;
@@ -70,7 +73,8 @@ public:
     const std::string nameObserveNextTimeStep_;
     const std::string nameObserveBeforeTakeStep_;
     const std::string nameObserveAfterTakeStep_;
-    const std::string nameObserveAcceptedTimeStep_;
+    const std::string nameObserveAfterCheckTimeStep_;
+    const std::string nameObserveEndTimeStep_;
     const std::string nameObserveEndIntegrator_;
   //@}
 

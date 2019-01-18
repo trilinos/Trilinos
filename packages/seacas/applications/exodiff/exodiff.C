@@ -1,4 +1,4 @@
-// Copyright(C) 2008 National Technology & Engineering Solutions
+// Copyright(C) 2008-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -70,17 +70,11 @@
 #include "side_set.h"
 #include "smart_assert.h"
 #include "stringx.h"
-#include "terminal_color.h"
+#include "util.h"
 
 #include "add_to_log.h"
 
 SystemInterface interface;
-
-#if 0
-#define DIFF_OUT(buf) std::cout << trmclr::green << buf << '\n' << trmclr::normal
-#else
-#define DIFF_OUT(buf) std::cout << buf << '\n'
-#endif
 
 struct TimeInterp
 {
@@ -392,14 +386,14 @@ int main(int argc, char *argv[])
   bool diff_flag = true;
   if (int_size == 4) {
     // Open input files.
-    ExoII_Read<int> file1(file1_name.c_str());
-    ExoII_Read<int> file2(file2_name.c_str());
+    ExoII_Read<int> file1(file1_name);
+    ExoII_Read<int> file2(file2_name);
     diff_flag = exodiff(file1, file2);
   }
   else {
     // Open input files.
-    ExoII_Read<int64_t> file1(file1_name.c_str());
-    ExoII_Read<int64_t> file2(file2_name.c_str());
+    ExoII_Read<int64_t> file1(file1_name);
+    ExoII_Read<int64_t> file2(file2_name);
     diff_flag = exodiff(file1, file2);
   }
 #if 0
@@ -517,7 +511,7 @@ namespace {
       if (!is_same) {
         file1.Close_File();
         file2.Close_File();
-        std::cout << "\nexodiff: Files are different\n";
+        DIFF_OUT("\nexodiff: Files are different\n");
         return interface.exit_status_switch;
       }
     }
@@ -745,7 +739,7 @@ namespace {
               buf,
               "  --------- Explicit Time step File 1: %d, %13.7e ~ File 2: %d, %13.7e ---------",
               ts1, file1.Time(ts1), ts2, t2.time);
-          DIFF_OUT(buf);
+          DIFF_OUT(buf, trmclr::green);
         }
       }
 
@@ -827,7 +821,7 @@ namespace {
 
       for (int time_step = interface.time_step_start; time_step <= min_num_times;
            time_step += interface.time_step_increment) {
-        if (timeStepIsExcluded(time_step)) {
+        if (timeStepIsExcluded(time_step) || interface.ignore_steps) {
           continue;
         }
 
@@ -860,26 +854,30 @@ namespace {
           if (!interface.quiet_flag) {
             if (interface.interpolating) {
               if (t2.step1 == -1) {
-                sprintf(buf, "  --------- Time step %d, %13.7e ~ Skipping - Before all times on "
-                             "file2 (INTERPOLATING)",
+                sprintf(buf,
+                        "  --------- Time step %d, %13.7e ~ Skipping - Before all times on "
+                        "file2 (INTERPOLATING)",
                         time_step1, file1.Time(time_step1));
               }
               else if (t2.step2 == -1) {
-                sprintf(buf, "  --------- Time step %d, %13.7e ~ Skipping - After all times on "
-                             "file2 (INTERPOLATING)",
+                sprintf(buf,
+                        "  --------- Time step %d, %13.7e ~ Skipping - After all times on "
+                        "file2 (INTERPOLATING)",
                         time_step1, file1.Time(time_step1));
               }
               else if (t2.step1 == t2.step2) {
-                sprintf(buf, "  --------- Time step %d, %13.7e ~ Matches step %d, %13.7e on file2 "
-                             "%s diff: %12.5e",
+                sprintf(buf,
+                        "  --------- Time step %d, %13.7e ~ Matches step %d, %13.7e on file2 "
+                        "%s diff: %12.5e",
                         time_step1, file1.Time(time_step1), t2.step1, file2.Time(t2.step1),
                         interface.time_tol.abrstr(),
                         FileDiff(file1.Time(time_step1), file2.Time(t2.step1),
                                  interface.time_tol.type));
               }
               else {
-                sprintf(buf, "  --------- Time step %d, %13.7e ~ Interpolating step %d, %13.7e and "
-                             "step %d, %13.7e, proportion %10.4e on file2",
+                sprintf(buf,
+                        "  --------- Time step %d, %13.7e ~ Interpolating step %d, %13.7e and "
+                        "step %d, %13.7e, proportion %10.4e on file2",
                         time_step1, file1.Time(time_step1), t2.step1, file2.Time(t2.step1),
                         t2.step2, file2.Time(t2.step2), t2.proportion);
               }
@@ -900,7 +898,7 @@ namespace {
               Die_TS(time_step1);
             }
             else {
-              std::cout << " (FAILED) \n";
+              DIFF_OUT(" (FAILED) \n");
             }
           }
           else if (!interface.quiet_flag) {
@@ -911,11 +909,13 @@ namespace {
             int final2 = file2.Num_Times();
             if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
               diff_flag = true;
-              DIFF_OUT("\tFinal database times differ by "
-                       << FileDiff(file1.Time(time_step1), file2.Time(final2),
-                                   interface.final_time_tol.type)
-                       << " which is not within specified " << interface.final_time_tol.typestr()
-                       << " tolerance of " << interface.final_time_tol.value << " (FAILED)");
+              std::ostringstream diff;
+              diff << "\tFinal database times differ by "
+                   << FileDiff(file1.Time(time_step1), file2.Time(final2),
+                               interface.final_time_tol.type)
+                   << " which is not within specified " << interface.final_time_tol.typestr()
+                   << " tolerance of " << interface.final_time_tol.value << " (FAILED)";
+              DIFF_OUT(diff);
             }
           }
         }
@@ -935,13 +935,15 @@ namespace {
       } // End of time step loop.
 
       // Make sure there is an operation to perform (compare times, variables, ...)
-      if ((min_num_times == 0 && interface.coord_tol.type == IGNORE) ||
-          (min_num_times > 0 && interface.time_tol.type == IGNORE &&
-           interface.glob_var_names.empty() && interface.node_var_names.empty() &&
-           interface.elmt_var_names.empty() && interface.elmt_att_names.empty() &&
-           interface.ns_var_names.empty() && interface.ss_var_names.empty())) {
-        DIFF_OUT("\nWARNING: No comparisons were performed during this execution.");
-        diff_flag = true;
+      if (!interface.ignore_steps) {
+        if ((min_num_times == 0 && interface.coord_tol.type == IGNORE) ||
+            (min_num_times > 0 && interface.time_tol.type == IGNORE &&
+             interface.glob_var_names.empty() && interface.node_var_names.empty() &&
+             interface.elmt_var_names.empty() && interface.elmt_att_names.empty() &&
+             interface.ns_var_names.empty() && interface.ss_var_names.empty())) {
+          DIFF_OUT("\nWARNING: No comparisons were performed during this execution.");
+          diff_flag = true;
+        }
       }
     }
 
@@ -953,24 +955,34 @@ namespace {
       ex_close(out_file_id);
     }
     else if (diff_flag) {
-      std::cout << "\nexodiff: Files are different\n";
+      DIFF_OUT("\nexodiff: Files are different\n");
+    }
+    else if (interface.ignore_steps && (file1.Num_Times() != 0 || file2.Num_Times() != 0)) {
+      DIFF_OUT("\nexodiff: Files are the same, but all transient data was ignored due to "
+               "-ignore_steps option",
+               trmclr::green);
     }
     else if (file1.Num_Times() != file2.Num_Times()) {
       if ((file1.Num_Times() - interface.time_step_offset == file2.Num_Times()) ||
           (interface.time_step_stop > 0) ||
           (interface.explicit_steps.first != 0 && interface.explicit_steps.second != 0) ||
           (interface.interpolating)) {
-        std::cout << "\nexodiff: Files are the same\n";
-        std::cout << "         The number of timesteps are different but "
-                  << "the timesteps that were compared are the same.\n";
+        std::ostringstream diff;
+        diff << "\nexodiff: Files are the same\n"
+             << "         The number of timesteps are different but "
+             << "the timesteps that were compared are the same.\n";
+        DIFF_OUT(diff);
       }
       else {
         DIFF_OUT("\nexodiff: Files are different (# time steps differ)");
         diff_flag = true;
       }
     }
+    else if (interface.map_flag == PARTIAL) {
+      DIFF_OUT("\nexodiff: Files are the same (partial match selected)\n", trmclr::green);
+    }
     else {
-      std::cout << "\nexodiff: Files are the same\n";
+      DIFF_OUT("\nexodiff: Files are the same\n", trmclr::green);
     }
 
     if (!interface.ignore_maps) {
@@ -1047,7 +1059,9 @@ double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
 
 void Die_TS(double ts)
 {
-  DIFF_OUT("exodiff: Files are different (time step " << ts << ")");
+  std::ostringstream diff;
+  diff << "exodiff: Files are different (time step " << ts << ")";
+  DIFF_OUT(diff);
   if (interface.exit_status_switch) {
     exit(2);
   }
@@ -1451,12 +1465,12 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Time
     if (interface.doL1Norm && norm.diff(1) > 0.0) {
       sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf);
+      DIFF_OUT(buf, trmclr::green);
     }
     if (interface.doL2Norm && norm.diff(2) > 0.0) {
       sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf);
+      DIFF_OUT(buf, trmclr::green);
     }
 
     if (max_diff.diff > interface.node_var[n_idx].value) {
@@ -1661,12 +1675,12 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
     if (interface.doL1Norm && norm.diff(1) > 0.0) {
       sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf);
+      DIFF_OUT(buf, trmclr::green);
     }
     if (interface.doL2Norm && norm.diff(2) > 0.0) {
       sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf);
+      DIFF_OUT(buf, trmclr::green);
     }
 
     if (!interface.summary_flag && max_diff.diff > interface.elmt_var[e_idx].value) {
@@ -1837,12 +1851,12 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
     if (interface.doL1Norm && norm.diff(1) > 0.0) {
       sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf);
+      DIFF_OUT(buf, trmclr::green);
     }
     if (interface.doL2Norm && norm.diff(2) > 0.0) {
       sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf);
+      DIFF_OUT(buf, trmclr::green);
     }
 
     if (!interface.summary_flag && max_diff.diff > interface.ns_var[e_idx].value) {
@@ -2013,12 +2027,12 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       if (interface.doL1Norm && norm.diff(1) > 0.0) {
         sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-        DIFF_OUT(buf);
+        DIFF_OUT(buf, trmclr::green);
       }
       if (interface.doL2Norm && norm.diff(2) > 0.0) {
         sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-        DIFF_OUT(buf);
+        DIFF_OUT(buf, trmclr::green);
       }
 
       if (!interface.quiet_flag) {
@@ -2134,8 +2148,9 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
             double d = interface.ss_df_tol.Delta(v1, v2);
             if (d > interface.ss_df_tol.value) {
               diff_flag = true;
-              sprintf(buf, "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU
-                           ".%d-%d)",
+              sprintf(buf,
+                      "   %-*s %s diff: %14.7e ~ %14.7e =%12.5e (set " ST_ZU ", side " ST_ZU
+                      ".%d-%d)",
                       name_length, name.c_str(), interface.ss_df_tol.abrstr(), v1, v2, d,
                       (size_t)sset1->Id(), (size_t)id_map[sset1->Side_Id(e).first - 1],
                       (int)sset1->Side_Id(e).second, (int)i + 1);
@@ -2292,12 +2307,12 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
       if (interface.doL1Norm && norm.diff(1) > 0.0) {
         sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-        DIFF_OUT(buf);
+        DIFF_OUT(buf, trmclr::green);
       }
       if (interface.doL2Norm && norm.diff(2) > 0.0) {
         sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-        DIFF_OUT(buf);
+        DIFF_OUT(buf, trmclr::green);
       }
 
       if (!interface.summary_flag && max_diff.diff > interface.elmt_att[tol_idx].value) {
@@ -2350,7 +2365,7 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
     std::cout << "\nTIME STEPS relative 1.e-6 floor 0.0     # min: ";
     sprintf(buf, "%15.8g @ t%d max: %15.8g @ t%d\n", mm_time.min_val, mm_time.min_step,
             mm_time.max_val, mm_time.max_step);
-    DIFF_OUT(buf);
+    DIFF_OUT(buf, trmclr::green);
   }
   else {
     std::cout << "\n# No TIME STEPS\n";
@@ -2392,8 +2407,9 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
     std::cout << "\nELEMENT VARIABLES relative 1.e-6 floor 0.0\n";
     name_length = max_string_length(interface.elmt_var_names);
     for (i = 0; i < n; ++i) {
-      sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,b" ST_ZU ",e" ST_ZU "\tmax: %15.8g @ t%d,b" ST_ZU
-                   ",e" ST_ZU "\n",
+      sprintf(buf,
+              "\t%-*s  # min: %15.8g @ t%d,b" ST_ZU ",e" ST_ZU "\tmax: %15.8g @ t%d,b" ST_ZU
+              ",e" ST_ZU "\n",
               name_length, ((interface.elmt_var_names)[i]).c_str(), mm_elmt[i].min_val,
               mm_elmt[i].min_step, mm_elmt[i].min_blk, (size_t)elem_id_map[mm_elmt[i].min_id],
               mm_elmt[i].max_val, mm_elmt[i].max_step, mm_elmt[i].max_blk,
@@ -2412,8 +2428,9 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
     for (i = 0; i < n; ++i) {
       Node_Set<INT> *nsmin = file1.Get_Node_Set_by_Id(mm_ns[i].min_blk);
       Node_Set<INT> *nsmax = file1.Get_Node_Set_by_Id(mm_ns[i].max_blk);
-      sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",n" ST_ZU "\tmax: %15.8g @ t%d,s" ST_ZU
-                   ",n" ST_ZU "\n",
+      sprintf(buf,
+              "\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",n" ST_ZU "\tmax: %15.8g @ t%d,s" ST_ZU
+              ",n" ST_ZU "\n",
               name_length, ((interface.ns_var_names)[i]).c_str(), mm_ns[i].min_val,
               mm_ns[i].min_step, mm_ns[i].min_blk,
               (size_t)node_id_map[nsmin->Node_Id(mm_ns[i].min_id) - 1], mm_ns[i].max_val,
@@ -2431,12 +2448,13 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
     std::cout << "\nSIDESET VARIABLES relative 1.e-6 floor 0.0\n";
     name_length = max_string_length(interface.ss_var_names);
     for (i = 0; i < n; ++i) {
-      Side_Set<INT> *ssmin = file1.Get_Side_Set_by_Id(mm_ss[i].min_blk);
-      Side_Set<INT> *ssmax = file1.Get_Side_Set_by_Id(mm_ss[i].max_blk);
+      Side_Set<INT> *     ssmin    = file1.Get_Side_Set_by_Id(mm_ss[i].min_blk);
+      Side_Set<INT> *     ssmax    = file1.Get_Side_Set_by_Id(mm_ss[i].max_blk);
       std::pair<int, int> min_side = ssmin->Side_Id(mm_ss[i].min_id);
       std::pair<int, int> max_side = ssmax->Side_Id(mm_ss[i].max_id);
-      sprintf(buf, "\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",f" ST_ZU ".%d\tmax: %15.8g @ t%d,s" ST_ZU
-                   ",f" ST_ZU ".%d\n",
+      sprintf(buf,
+              "\t%-*s  # min: %15.8g @ t%d,s" ST_ZU ",f" ST_ZU ".%d\tmax: %15.8g @ t%d,s" ST_ZU
+              ",f" ST_ZU ".%d\n",
               name_length, ((interface.ss_var_names)[i]).c_str(), mm_ss[i].min_val,
               mm_ss[i].min_step, mm_ss[i].min_blk, (size_t)elem_id_map[min_side.first - 1],
               min_side.second, mm_ss[i].max_val, mm_ss[i].max_step, mm_ss[i].max_blk,

@@ -3,8 +3,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_DefaultComm.hpp"
-
-#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Core.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 
@@ -18,7 +17,7 @@ buildMesh(const std::vector<int> & N,
           const std::vector<int> & B,
           const std::vector<double> & L)
 {
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   const int num_dims = N.size();
 

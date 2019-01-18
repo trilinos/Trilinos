@@ -51,6 +51,7 @@
 /// (Tpetra_Vector_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
@@ -73,15 +74,14 @@ namespace Tpetra {
 /// only one vector (column).  It may be used wherever a MultiVector
 /// may be used.  Please see the documentation of MultiVector for more
 /// details.
-template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-          class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class Vector : public MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 {
 private:
-  friend class MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+  using base_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   //! \name Typedefs to facilitate template metaprogramming
@@ -134,6 +134,9 @@ public:
   //@}
   //! \name Constructors and destructor
   //@{
+
+  //! Default constructor: makes a Vector with no rows or columns.
+  Vector ();
 
   /// \brief Basic constructor.
   ///
@@ -386,7 +389,6 @@ public:
               Teuchos::Describable::verbLevel_default) const;
   //@}
 }; // class Vector
-
 
 /// \brief Return a deep copy of the given Vector.
 /// \relatesalso Vector

@@ -1,4 +1,4 @@
-C Copyright(C) 2011 National Technology & Engineering Solutions
+C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -68,7 +68,7 @@ C   --   NVAREL - IN - the number of element variables (if OPTION)
 
       include 'exodusII.inc'
 
-      CHARACTER*(132) FILNAM
+      CHARACTER*(2048) FILNAM
       CHARACTER*(*) OPTION
       CHARACTER*(MXLNLN) TITLE
       INTEGER NDB

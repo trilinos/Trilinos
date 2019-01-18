@@ -23,6 +23,15 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    pseudo_cg_hb
+    SOURCES test_pseudo_cg_hb.cpp 
+    COMM serial mpi
+    ARGS
+      "--verbose --filename=bcsstk14.hb"
+    STANDARD_PASS_OUTPUT 
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     resolve_cg_hb
     SOURCES test_resolve_cg_hb.cpp 
     COMM serial mpi
@@ -57,8 +66,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
         "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
-        "--verbose --filename=bcsstk14.hb --tol=1e-8 --num-rhs=1 --block-size=1 --max-iters=100 --use-single-red"
-        "--verbose --filename=bcsstk14.hb --tol=1e-8 --num-rhs=1 --block-size=1 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --tol=1e-8 --num-rhs=1 --block-size=1 --max-iters=110 --use-single-red"
+        "--verbose --filename=bcsstk14.hb --tol=1e-8 --num-rhs=1 --block-size=1 --max-iters=110"
       STANDARD_PASS_OUTPUT 
       )
       
@@ -77,8 +86,10 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_pseudo_pcg_hb.cpp 
       COMM serial mpi
       ARGS
-        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
-        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --max-iters=110"
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=110"
+        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=110"
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=1 --max-iters=110"
       STANDARD_PASS_OUTPUT 
       )
 
@@ -87,8 +98,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCES test_pseudo_stochastic_pcg_hb.cpp 
       COMM serial mpi
       ARGS
-        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
-        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
+        "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=110"
+        "--verbose --filename=bcsstk14.hb --right-prec --tol=1e-8 --num-rhs=5 --max-iters=110"
       STANDARD_PASS_OUTPUT 
       )
 

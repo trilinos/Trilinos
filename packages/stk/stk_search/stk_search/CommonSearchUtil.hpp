@@ -37,16 +37,15 @@
 #include <omp.h>
 #endif
 
-#include <stk_search/OctTreeOps.hpp>
 #include "stk_util/environment/WallTime.hpp"
+#include "stk_util/parallel/CommSparse.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_search/KDTree.hpp"
 #include "mpi.h"
 
 namespace stk {
   namespace search {
-
-
 
    template <typename DomainBox>
     inline void GlobalBoxCombine(DomainBox &box_array, MPI_Comm &communicator)
@@ -118,6 +117,58 @@ namespace stk {
     }
 
 
+
+    template <typename ObjType, typename IdentifierType, typename BaseBoxType>
+    void ParallelComputeProcObjectBoxes(const std::vector<std::pair<ObjType, IdentifierType> >& local_objsWithIdents,
+                                        std::vector<stk::search::ObjectBoundingBox_T<BaseBoxType> > &objBB_proc_box_array,
+                                        MPI_Comm &comm)
+    {
+      const unsigned numBoxDomain = local_objsWithIdents.size();
+      stk::search::ObjectBoundingBox_T<BaseBoxType> objBB_proc;
+
+ #ifdef _OPENMP
+      std::vector<stk::search::ObjectBoundingBox_T<BaseBoxType> > threadBoxes( omp_get_max_threads() );
+ #endif
+
+ #ifdef _OPENMP
+ #pragma omp parallel default(shared)
+ #endif
+      {
+ #ifdef _OPENMP
+        stk::search::ObjectBoundingBox_T<BaseBoxType>& curBox = threadBoxes[omp_get_thread_num()];
+ #else
+        stk::search::ObjectBoundingBox_T<BaseBoxType>& curBox = objBB_proc;
+ #endif
+ #ifdef _OPENMP
+ #pragma omp for
+ #endif
+        for(unsigned ibox = 0; ibox < numBoxDomain; ++ibox) {
+          stk::search::add_to_box(curBox.GetBox(), local_objsWithIdents[ibox].first);
+        }
+
+      }
+
+ #ifdef _OPENMP
+      for(unsigned i=0; i<threadBoxes.size(); ++i) {
+        stk::search::add_to_box(objBB_proc.GetBox(), threadBoxes[i].GetBox());
+      }
+ #endif
+      //
+      //  Do a global communication to communicate all processor boxA bounding boxes
+      //  to all processors in the group
+      //
+      stk::search::AllGatherHelper(objBB_proc, objBB_proc_box_array, comm);
+
+      int numProcs;
+      MPI_Comm_size(comm, &numProcs);
+      for(int iproc = 0; iproc < numProcs; ++iproc) {
+        objBB_proc_box_array[iproc].set_object_number(iproc);
+      }
+    }
+
+
+    // Ghost the range boxes needed for each processor to search against its local domain boxes
+    // in distributed AABB overlap search ("coarse search")..
     template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
       void
       ComputeRangeWithGhostsForCoarseSearch(
@@ -129,11 +180,9 @@ namespace stk {
     {
 
       const unsigned numBoxRange  = local_range.size();
-      const unsigned numBoxDomain = local_domain.size();
 
       using domainValueType = typename DomainObjType::value_type;
       using DomainBox       = stk::search::Box<domainValueType>;
-
 
 
 #ifdef _OPENMP
@@ -142,6 +191,7 @@ namespace stk {
       for (size_t i = 0; i < numBoxRange; i++) {
         rangeBoxes[i] = local_range[i].first;
       }
+
       //
       //  Determine the total number of processors involved in the communication and the current processor number
       //
@@ -155,45 +205,8 @@ namespace stk {
       //  Compute the processor local bounding boxes for the box sets
       //  Store the boxes in unique entries in a global processor bounding box array.
       //
-
-      stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc;
-#ifdef _OPENMP
-      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > threadBoxes( omp_get_max_threads() );
-#endif
-
-#ifdef _OPENMP
-#pragma omp parallel default(shared)
-#endif
-      {
-#ifdef _OPENMP
-        stk::search::ObjectBoundingBox_T<DomainBox>& curBox = threadBoxes[omp_get_thread_num()];
-#else
-        stk::search::ObjectBoundingBox_T<DomainBox>& curBox = boxA_proc;
-#endif
-#ifdef _OPENMP
-#pragma omp for
-#endif
-        for(unsigned iboxA = 0; iboxA < numBoxDomain; ++iboxA) {
-          stk::search::add_to_box(curBox.GetBox(), local_domain[iboxA].first);
-        }
-
-      }
-
-#ifdef _OPENMP
-      for(unsigned i=0; i<threadBoxes.size(); ++i) {
-        stk::search::add_to_box(boxA_proc.GetBox(), threadBoxes[i].GetBox());
-      }
-#endif
-
       std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array;
-      //
-      //  Do a global communication to communicate all processor boxA bounding boxes
-      //  to all processors in the group
-      //
-      stk::search::AllGatherHelper(boxA_proc, boxA_proc_box_array, comm);
-      for(int iproc = 0; iproc < num_procs; ++iproc) {
-        boxA_proc_box_array[iproc].set_object_number(iproc);
-      }
+      ParallelComputeProcObjectBoxes(local_domain, boxA_proc_box_array, comm);
 
       //
       //  Create a hierarchy of boxA processor bounding boxes.
@@ -204,9 +217,8 @@ namespace stk {
 
       //
       //  Determine what to ghost.  If a boxB box from this processor overlaps another processor's
-      //  processor all-boxA box, then we need to ghost the boxB's data to that other processor.
-      //  (The stricter criteria used by the full BoxA_BoxB_Ghost function would make sure that
-      //  the individual boxB box overlaps some individual boxA box from the other processor.)
+      //  processor all-boxA box, then we need to ghost the boxB's data to that other processor
+      //  to include in the range boxes (local + global) to search against its local domain boxes.
       //
 
       typedef typename RangeIdentifier::ident_type GlobalIdType;
@@ -265,9 +277,72 @@ namespace stk {
 #endif
 
     }
+
+template <typename DomainKey, typename RangeKey>
+void communicateVector(
+  stk::ParallelMachine arg_comm ,
+  const std::vector< std::pair< DomainKey, RangeKey> > & send_relation ,
+        std::vector< std::pair< DomainKey, RangeKey> > & recv_relation ,
+        bool communicateRangeBoxInfo = true )
+{
+  typedef std::pair<DomainKey, RangeKey> ValueType ;
+
+  CommSparse commSparse( arg_comm );
+
+  const int p_rank = commSparse.parallel_rank();
+  const int p_size = commSparse.parallel_size();
+
+  typename std::vector< ValueType >::const_iterator i ; 
+
+  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) { 
+    const ValueType & val = *i ;
+    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
+    {   
+      recv_relation.push_back( val );
+    }   
+    if ( static_cast<int>(val.first.proc()) != p_rank ) { 
+      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
+      buf.skip<ValueType>( 1 );
+    }   
+    if ( communicateRangeBoxInfo )
+    {   
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) { 
+          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
+          buf.skip<ValueType>( 1 );
+        }
+    }   
   }
 
+  commSparse.allocate_buffers();
 
+  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) { 
+    const ValueType & val = *i ;
+    if ( static_cast<int>(val.first.proc()) != p_rank ) { 
+      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
+      buf.pack<ValueType>( val );
+    }   
+    if ( communicateRangeBoxInfo )
+    {   
+        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) { 
+          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
+          buf.pack<ValueType>( val );
+        }
+    }   
+  }
+
+  commSparse.communicate();
+
+  for ( int p = 0 ; p < p_size ; ++p ) { 
+    CommBuffer & buf = commSparse.recv_buffer( p );
+    while ( buf.remaining() ) { 
+      ValueType val ;
+      buf.unpack<ValueType>( val );
+      recv_relation.push_back( val );
+    }   
+  }
 }
 
-#endif /* GEOMETRY_TOOLKIT_INCLUDE_GEOM_COARSESEARCHMULTIALG_IMPL_H_ */
+  } // end namespace search
+} // end namespace stk
+
+#endif

@@ -84,20 +84,6 @@ TensorToStdVector(
 template<typename EvalT, typename Traits>
 void
 TensorToStdVector<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  for (std::size_t i=0; i < vector_fields.size(); ++i)
-    this->utils.setFieldData(vector_fields[i], fm);
-
-  this->utils.setFieldData(tensor_field, fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-TensorToStdVector<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  workset)
 { 

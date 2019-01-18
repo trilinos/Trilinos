@@ -227,7 +227,7 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
   {
     edge_nodes.clear();
 
-    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], {&meta.get_topology_root_part(topo.edge_topology())});
+    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], stk::mesh::ConstPartVector{&meta.get_topology_root_part(topo.edge_topology())});
 
     for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
     {
@@ -310,7 +310,7 @@ void verify_unbuildable_element(stk::mesh::BulkData &bulk,
   {
     edge_nodes.clear();
 
-    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], {&meta.get_topology_root_part(topo.edge_topology())});
+    stk::mesh::Entity edge = bulk.declare_edge(edge_ids[i], stk::mesh::ConstPartVector{&meta.get_topology_root_part(topo.edge_topology())});
 
     for (uint j = 0; j < topo.edge_topology().num_nodes(); ++j)
     {
@@ -676,6 +676,61 @@ TEST(FEMHelper, verify_connectibility_failure)
       }
     }
   }
+}
+
+TEST(FEMHelper, shell_edge_equivalent_and_positive)
+{
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if (p_size > 1) {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+
+    meta.commit();
+
+    mesh.modification_begin();
+
+    stk::mesh::EntityIdVector elem_node_ids {1, 2, 3, 4};
+    stk::mesh::Entity elem = stk::mesh::declare_element(mesh, *shellPart, 1, elem_node_ids);
+    const stk::mesh::Entity* nodes = mesh.begin_nodes(elem);
+    unsigned numNodes = mesh.num_nodes(elem);
+
+    stk::mesh::Part& quadPart = meta.get_topology_root_part(stk::topology::QUAD_4);
+    stk::mesh::EntityId quadSideId = 11;
+    stk::mesh::Entity quadSide = mesh.declare_solo_side(quadSideId, {&quadPart});
+    mesh.declare_relation(elem, quadSide, 0);
+
+    for(unsigned i=0; i<numNodes; ++i) {
+        mesh.declare_relation(quadSide, nodes[i], i);
+    }
+    stk::mesh::Part& linePart = meta.get_topology_root_part(stk::topology::LINE_2);
+    stk::mesh::EntityId lineSideId = 13;
+    stk::mesh::Entity lineSide = mesh.declare_edge(lineSideId, stk::mesh::ConstPartVector{&linePart});
+    mesh.declare_relation(elem, lineSide, 2);
+    mesh.declare_relation(lineSide, nodes[0], 0);
+    mesh.declare_relation(lineSide, nodes[1], 1);
+
+    mesh.modification_end();
+
+    nodes = mesh.begin_nodes(elem);
+    unsigned quadSideOrdinal = 0;
+    stk::mesh::EntityVector quadNodes(nodes, nodes+numNodes);
+    stk::mesh::EquivAndPositive result = stk::mesh::is_side_equivalent_and_positive(mesh, elem, quadSideOrdinal, quadNodes);
+    EXPECT_TRUE(result.is_positive);
+    EXPECT_TRUE(result.is_equiv);
+
+    unsigned lineSideOrdinal = 2;
+    stk::mesh::EntityVector lineNodes(nodes, nodes+2);
+    result = stk::mesh::is_side_equivalent_and_positive(mesh, elem, lineSideOrdinal, lineNodes);
+    EXPECT_TRUE(result.is_positive);
+    EXPECT_TRUE(result.is_equiv);
 }
 
 // Hide this entire test in release to prevent Valgrind errors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,48 +33,42 @@
  *
  */
 /* symmlq.f -- translated by f2c (version of 16 May 1991  13:06:06).
-   You must link the resulting object file with the libraries:
-        -link <S|C|M|L>f2c.lib   (in that order)
-*/
+ */
 
-#include "f2c.h"
+#include <math.h>
 
 /* Table of constant values */
 
-static integer    c__1  = 1;
-static doublereal c_b4  = 1.;
-static doublereal c_b18 = .33333;
+static long int c__1  = 1;
+static double   c_b4  = 1.;
+static double   c_b18 = 1.0 / 3.0;
 
-int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublereal *v, doublereal *w,
-            doublereal *x, doublereal *y, doublereal *work, logical *checka, logical *goodb,
-            logical *precon, doublereal *shift, integer *nout, integer *itnlim, doublereal *rtol,
-            integer *istop, integer *itn, doublereal *anorm, doublereal *acond, doublereal *rnorm,
-            doublereal *ynorm, doublereal *a, doublereal *vwsqrt, doublereal *orthlist,
-            doublereal *macheps, doublereal *normxlim, integer *itnmin)
+int symmlq(long int *n, double *b, double *r1, double *r2, double *v, double *w, double *x,
+           double *y, double *work, long int *checka, long int *goodb, long int *precon,
+           double *shift, long int *nout, long int *itnlim, double *rtol, long int *istop,
+           long int *itn, double *anorm, double *acond, double *rnorm, double *ynorm, double *a,
+           double *vwsqrt, double *orthlist, double *macheps, double *normxlim, long int *itnmin)
 {
 
   /* System generated locals */
-  integer    i__1;
-  doublereal d__1, d__2;
-
-  /* Builtin functions */
-  double pow_dd(), sqrt();
+  long int i__1;
+  double   d__1, d__2;
 
   /* Local variables */
-  static doublereal           alfa, diag, dbar, beta, gbar, oldb, epsa;
-  extern doublereal           ch_ddot_();
-  static doublereal           gmin, gmax, zbar, epsr, epsx, beta1;
-  extern doublereal           chdnrm2_();
-  static integer              i;
-  static doublereal           gamma, s, t, delta, z, denom;
-  extern /* Subroutine */ int aprod_();
-  static doublereal           bstep;
-  extern /* Subroutine */ int chdcopy_();
-  static doublereal           epsln;
-  extern /* Subroutine */ int chdaxpy_();
-  static doublereal           tnorm, cs, ynorm2, sn, cgnorm;
-  extern /* Subroutine */ int msolve_();
-  static doublereal           snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
+  static double               alfa, diag, dbar, beta, gbar, oldb, epsa;
+  extern double               ch_ddot();
+  static double               gmin, gmax, zbar, epsr, epsx, beta1;
+  extern double               chdnrm2();
+  static long int             i;
+  static double               gamma, s, t, delta, z, denom;
+  extern /* Subroutine */ int aprod();
+  static double               bstep;
+  extern /* Subroutine */ int chdcopy();
+  static double               epsln;
+  extern /* Subroutine */ int chdaxpy();
+  static double               tnorm, cs, ynorm2, sn, cgnorm;
+  extern /* Subroutine */ int msolve();
+  static double               snprod, lqnorm, qrnorm, eps, rhs1, rhs2;
 
   /*     ------------------------------------------------------------------
    */
@@ -240,7 +234,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                        terminates if norm(b - A*x) is smaller than */
   /*                              rtol * norm(A) * norm(x). */
 
-  /*     istop   output     An integer giving the reason for termination...
+  /*     istop   output     An long int giving the reason for termination...
    */
 
   /*              -1        beta2 = 0 in the Lanczos iteration; i.e. the */
@@ -439,7 +433,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                  Beware, if precon is true, rnorm estimates the */
   /*                  residual of the preconditioned system, not Ax = b. */
   /*     04 Sep 1991: Parameter list changed and reordered. */
-  /*                  integer ncheck is now logical checka. */
+  /*                  long int ncheck is now long int checka. */
   /*     22 Jul 1992: Example from Lothar Reichel and Daniela Calvetti */
   /*                  showed that beta2 = 0 (istop = -1) means that */
   /*                  b is an eigenvector when M = I. */
@@ -511,7 +505,7 @@ L10:
   eps /= 2.;
   x[1] = eps;
   y[1] = 1.;
-  chdaxpy_(&c__1, &c_b4, &x[1], &c__1, &y[1], &c__1);
+  chdaxpy(&c__1, &c_b4, &x[1], &c__1, &y[1], &c__1);
   if (y[1] > 1.) {
     goto L10;
   }
@@ -538,24 +532,24 @@ L10:
   /*     Set up y for the first Lanczos vector v1. */
   /*     y is really beta1 * P * v1  where  P = C**(-1). */
   /*     y and beta1 will be zero if b = 0. */
-  chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
-  chdcopy_(n, &b[1], &c__1, &r1[1], &c__1);
+  chdcopy(n, &b[1], &c__1, &y[1], &c__1);
+  chdcopy(n, &b[1], &c__1, &r1[1], &c__1);
   if (*precon) {
-    msolve_(n, &r1[1], &y[1]);
+    msolve(n, &r1[1], &y[1]);
   }
   /*     if ( goodb  ) then */
   /*        b1  = y(1) */
   /*     else */
   /*        b1  = zero */
   /*     end if */
-  beta1 = ch_ddot_(n, &r1[1], &c__1, &y[1], &c__1);
+  beta1 = ch_ddot(n, &r1[1], &c__1, &y[1], &c__1);
   /*     See if msolve is symmetric. */
   if (*checka && *precon) {
-    msolve_(n, &y[1], &r2[1]);
-    s = ch_ddot_(n, &y[1], &c__1, &y[1], &c__1);
-    t = ch_ddot_(n, &r1[1], &c__1, &r2[1], &c__1);
-    z = (d__1 = s - t, abs(d__1));
-    epsa = (s + eps) * pow_dd(&eps, &c_b18);
+    msolve(n, &y[1], &r2[1]);
+    s    = ch_ddot(n, &y[1], &c__1, &y[1], &c__1);
+    t    = ch_ddot(n, &r1[1], &c__1, &r2[1], &c__1);
+    z    = (d__1 = s - t, fabs(d__1));
+    epsa = (s + eps) * pow(eps, c_b18);
     if (z > epsa) {
       *istop = 7;
       goto L900;
@@ -579,13 +573,13 @@ L10:
     /* L100: */
   }
   /*     See if aprod  is symmetric. */
-  aprod_(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
+  aprod(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
   if (*checka) {
-    aprod_(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1], orthlist);
-    s = ch_ddot_(n, &y[1], &c__1, &y[1], &c__1);
-    t = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1);
-    z = (d__1 = s - t, abs(d__1));
-    epsa = (s + eps) * pow_dd(&eps, &c_b18);
+    aprod(n, &y[1], &r2[1], a, &vwsqrt[1], &work[1], orthlist);
+    s    = ch_ddot(n, &y[1], &c__1, &y[1], &c__1);
+    t    = ch_ddot(n, &v[1], &c__1, &r2[1], &c__1);
+    z    = (d__1 = s - t, fabs(d__1));
+    epsa = (s + eps) * pow(eps, c_b18);
     if (z > epsa) {
       *istop = 6;
       goto L900;
@@ -595,21 +589,21 @@ L10:
   /*     Again, y is beta * P * v2  where  P = C**(-1). */
   /*     y and beta will be zero or very small if b is an eigenvector. */
   d__1 = -(*shift);
-  chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
-  alfa = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
+  chdaxpy(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+  alfa = ch_ddot(n, &v[1], &c__1, &y[1], &c__1);
   d__1 = -alfa / beta1;
-  chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
+  chdaxpy(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
   /*     Make sure  r2  will be orthogonal to the first  v. */
-  z    = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
-  s    = ch_ddot_(n, &v[1], &c__1, &v[1], &c__1);
+  z    = ch_ddot(n, &v[1], &c__1, &y[1], &c__1);
+  s    = ch_ddot(n, &v[1], &c__1, &v[1], &c__1);
   d__1 = -z / s;
-  chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
-  chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
+  chdaxpy(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+  chdcopy(n, &y[1], &c__1, &r2[1], &c__1);
   if (*precon) {
-    msolve_(n, &r2[1], &y[1]);
+    msolve(n, &r2[1], &y[1]);
   }
   oldb = beta1;
-  beta = ch_ddot_(n, &r2[1], &c__1, &y[1], &c__1);
+  beta = ch_ddot(n, &r2[1], &c__1, &y[1], &c__1);
   if (beta < 0.) {
     *istop = 8;
     goto L900;
@@ -620,9 +614,9 @@ L10:
     *istop = -1;
   }
   /*     See if the local reorthogonalization achieved anything. */
-  denom = sqrt(s) * chdnrm2_(n, &r2[1], &c__1) + eps;
+  denom = sqrt(s) * chdnrm2(n, &r2[1], &c__1) + eps;
   s     = z / denom;
-  t     = ch_ddot_(n, &v[1], &c__1, &r2[1], &c__1) / denom;
+  t     = ch_ddot(n, &v[1], &c__1, &r2[1], &c__1) / denom;
   /*     if (nout .gt. 0  .and.  goodb) then */
   /*        write(nout, 1100) beta1, alfa, s, t */
   /*     end if */
@@ -638,7 +632,7 @@ L10:
   d__1   = alfa;
   tnorm  = d__1 * d__1;
   ynorm2 = 0.;
-  gmax   = abs(alfa);
+  gmax   = fabs(alfa);
   gmin   = gmax;
   if (*goodb) {
     i__1 = *n;
@@ -648,7 +642,7 @@ L10:
     }
   }
   else {
-    chdcopy_(n, &v[1], &c__1, &w[1], &c__1);
+    chdcopy(n, &v[1], &c__1, &w[1], &c__1);
   }
 /*     ------------------------------------------------------------------
  */
@@ -672,7 +666,7 @@ L300:
   d__2   = rhs2;
   lqnorm = sqrt(d__1 * d__1 + d__2 * d__2);
   qrnorm = snprod * beta1;
-  cgnorm = qrnorm * beta / abs(diag);
+  cgnorm = qrnorm * beta / fabs(diag);
   /*     Estimate  cond(A). */
   /*     In this version we look at the diagonals of  L  in the */
   /*     factorization of the tridiagonal matrix,  T = L*Q. */
@@ -683,8 +677,8 @@ L300:
   }
   else {
     /* Computing MIN */
-    d__1 = gmin, d__2 = abs(diag);
-    denom  = min(d__1, d__2);
+    d__1 = gmin, d__2 = fabs(diag);
+    denom  = d__1 < d__2 ? d__1 : d__2;
     *acond = gmax / denom;
   }
   /*     See if any of the stopping criteria are satisfied. */
@@ -765,26 +759,26 @@ L600:
     v[i] = s * y[i];
     /* L620: */
   }
-  aprod_(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
+  aprod(n, &v[1], &y[1], a, &vwsqrt[1], &work[1], orthlist);
   d__1 = -(*shift);
-  chdaxpy_(n, &d__1, &v[1], &c__1, &y[1], &c__1);
+  chdaxpy(n, &d__1, &v[1], &c__1, &y[1], &c__1);
   d__1 = -beta / oldb;
-  chdaxpy_(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
-  alfa = ch_ddot_(n, &v[1], &c__1, &y[1], &c__1);
+  chdaxpy(n, &d__1, &r1[1], &c__1, &y[1], &c__1);
+  alfa = ch_ddot(n, &v[1], &c__1, &y[1], &c__1);
   /* Computing 2nd power */
   d__1 = alfa;
   /* Computing 2nd power */
   d__2  = beta;
   tnorm = tnorm + d__1 * d__1 + d__2 * d__2 * 2.;
   d__1  = -alfa / beta;
-  chdaxpy_(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
-  chdcopy_(n, &r2[1], &c__1, &r1[1], &c__1);
-  chdcopy_(n, &y[1], &c__1, &r2[1], &c__1);
+  chdaxpy(n, &d__1, &r2[1], &c__1, &y[1], &c__1);
+  chdcopy(n, &r2[1], &c__1, &r1[1], &c__1);
+  chdcopy(n, &y[1], &c__1, &r2[1], &c__1);
   if (*precon) {
-    msolve_(n, &r2[1], &y[1]);
+    msolve(n, &r2[1], &y[1]);
   }
   oldb = beta;
-  beta = ch_ddot_(n, &r2[1], &c__1, &y[1], &c__1);
+  beta = ch_ddot(n, &r2[1], &c__1, &y[1], &c__1);
   if (beta < 0.) {
     *istop = 6;
     goto L800;
@@ -816,8 +810,8 @@ L600:
   /*     and go round again. */
   bstep = snprod * cs * z + bstep;
   snprod *= sn;
-  gmax = max(gmax, gamma);
-  gmin = min(gmin, gamma);
+  gmax = gmax > gamma ? gmax : gamma;
+  gmin = gmin < gamma ? gmin : gamma;
   /* Computing 2nd power */
   d__1   = z;
   ynorm2 = d__1 * d__1 + ynorm2;
@@ -842,7 +836,7 @@ L800:
     d__1   = zbar;
     *ynorm = sqrt(ynorm2 + d__1 * d__1);
     *rnorm = cgnorm;
-    chdaxpy_(n, &zbar, &w[1], &c__1, &x[1], &c__1);
+    chdaxpy(n, &zbar, &w[1], &c__1, &x[1], &c__1);
   }
   else {
     *rnorm = lqnorm;
@@ -850,11 +844,11 @@ L800:
   if (*goodb) {
     /*        Add the step along  b. */
     bstep /= beta1;
-    chdcopy_(n, &b[1], &c__1, &y[1], &c__1);
+    chdcopy(n, &b[1], &c__1, &y[1], &c__1);
     if (*precon) {
-      msolve_(n, &b[1], &y[1]);
+      msolve(n, &b[1], &y[1]);
     }
-    chdaxpy_(n, &bstep, &y[1], &c__1, &x[1], &c__1);
+    chdaxpy(n, &bstep, &y[1], &c__1, &x[1], &c__1);
   }
 /*     ==================================================================
  */

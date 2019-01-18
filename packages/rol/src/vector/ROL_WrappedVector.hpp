@@ -119,7 +119,11 @@ public:
     return vec_->reduce(r);
   }
 
-  virtual void setScalar( const Real& c ) override { vec_->setScalar(c); }
+  virtual void setScalar( const Real C ) override { vec_->setScalar(C); }
+
+  virtual void randomize( const Real l=0.0, const Real u=1.0 ) override {
+    vec_->randomize(l,u);
+  }
 
   virtual void print( std::ostream& os ) override { vec_->print(os); }
 

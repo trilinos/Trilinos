@@ -151,6 +151,10 @@ public:
 
   //@}
 
+  // For unit testing
+  void change_p_size_incorrectly(const Ordinal new_size);
+  void change_p_size_correctly(const Ordinal new_size);
+
 private: // functions
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */

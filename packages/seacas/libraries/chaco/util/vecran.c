@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,8 +38,8 @@ void vecran(double *vec, int beg, int end)
 {
   int     i;
   double *pntr;
-  double ch_normalize(double *vec, int beg, int end);
-  double drandom(void);
+  double  ch_normalize(double *vec, int beg, int end);
+  double  drandom(void);
 
   pntr = vec + beg;
   for (i = end - beg + 1; i; i--) {

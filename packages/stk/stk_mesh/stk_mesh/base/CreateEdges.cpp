@@ -50,11 +50,11 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_topology/apply_functor.tcc"  // for topology::apply_functor
+#include "stk_topology/apply_functor.hpp"  // for topology::apply_host_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology.tcc"    // for topology::num_nodes
-#include "stk_topology/topology_type.tcc"  // for topology::topology_type
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
+#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes
+#include "stk_topology/topology_type.hpp"  // for topology::topology_type
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert
 #include "stk_util/util/NamedPair.hpp"  // for EntityCommInfo::operator=, etc
 
 namespace stk {
@@ -398,7 +398,7 @@ namespace impl {
               Bucket &b = *face_buckets[i];
 
               connect_face_impl functor(edge_map, b);
-              stk::topology::apply_functor< connect_face_impl > apply(functor);
+              stk::topology::apply_host_functor< connect_face_impl > apply(functor);
               apply( b.topology() );
           }
       }
@@ -459,7 +459,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
           Bucket &b = *element_buckets[i];
 
           create_edge_impl functor( count_edges, ids_requested, edge_map, b, part_to_insert_new_edges);
-          stk::topology::apply_functor< create_edge_impl > apply(functor);
+          stk::topology::apply_host_functor< create_edge_impl > apply(functor);
           apply( b.topology() );
         }
       }
@@ -489,7 +489,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
                   unsigned localElemEdgeOrdinal = 10000;
                   stk::mesh::impl::find_element_edge_ordinal_and_equivalent_nodes(mesh, localElem, numNodesPerEdge, edgeNodes, localElemEdgeOrdinal, localElemEdgeNodes);
                   create_single_edge_impl functor( count_edges, ids_requested, edge_map, mesh, localElem, localElemEdgeOrdinal, numNodesPerEdge, localElemEdgeNodes, part_to_insert_new_edges);
-                  stk::topology::apply_functor< create_single_edge_impl > apply(functor);
+                  stk::topology::apply_host_functor< create_single_edge_impl > apply(functor);
                   apply( mesh.bucket(localElem).topology() );
                 }
                 elements.clear();

@@ -70,9 +70,6 @@ namespace panzer {
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	      panzer::ParamLib& param_lib);
     
-    void postRegistrationSetup(typename TRAITS::SetupData d,
-			       PHX::FieldManager<TRAITS>& vm);
-    
     void evaluateFields(typename TRAITS::EvalData ud);
     
   private:

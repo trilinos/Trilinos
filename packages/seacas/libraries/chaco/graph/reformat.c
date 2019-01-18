@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@ int reformat(int *              start,     /* start of edge list for each vertex
              int *              vwgts,     /* weights for all vertices */
              float *            ewgts,     /* weights for all edges */
              struct vtx_data ***pgraph     /* ptr to array of vtx data for graph */
-             )
+)
 {
   extern FILE *     Output_File;      /* output file or null */
   struct vtx_data **graph     = NULL; /* array of vtx data for graph */

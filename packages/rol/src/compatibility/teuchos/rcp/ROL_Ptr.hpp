@@ -110,13 +110,13 @@ Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
 template<class T>
 inline
 const T* getRawPtr( const Ptr<const T>& x ) {
-  return x.ptr();
+  return x.get();
 }
 
 template<class T>
 inline
 T* getRawPtr( const Ptr<T>& x ) {
-  return x.ptr();
+  return x.get();
 }
 
 template<class T>

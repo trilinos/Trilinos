@@ -85,10 +85,11 @@ struct VectorFunctionCalls {
   Ordinal applyBinary_;
   Ordinal reduce_;
   Ordinal setScalar_;
+  Ordinal randomize_;
   VectorFunctionCalls() :
     constructor_(0), destructor_(0), plus_(0), scale_(0), dot_(0), norm_(0), clone_(0),
     axpy_(0), zero_(0), basis_(0), dimension_(0), set_(0), dual_(0), applyUnary_(0),
-    applyBinary_(0), reduce_(0), setScalar_(0) {}
+    applyBinary_(0), reduce_(0), setScalar_(0), randomize_(0) {}
 
 }; // struct VectorFunctionCalls
 
@@ -123,6 +124,7 @@ void printVectorFunctionCalls( const ProfiledVector<Ordinal,Real> &x, std::ostre
   outStream << "applyBinary : " << x.functionCalls_.applyBinary_  << std::endl;
   outStream << "reduce      : " << x.functionCalls_.reduce_       << std::endl;
   outStream << "setScalar   : " << x.functionCalls_.setScalar_    << std::endl;
+  outStream << "randomize   : " << x.functionCalls_.randomize_    << std::endl;
 }
 
 
@@ -240,6 +242,11 @@ public:
   void setScalar( const Real C ) {
     functionCalls_.setScalar_++;
     v_->setScalar(C);
+  }
+
+  void randomize( const Real l=0.0, const Real u=1.0) {
+    functionCalls_.randomize_++;
+    v_->randomize(l,u);
   }
 
   void print( std::ostream &outStream ) const {

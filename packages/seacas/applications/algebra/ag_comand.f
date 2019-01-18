@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions of
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -313,7 +313,7 @@ C ... See if LOCAL or GLOBAL or nothing specified for id space...
            call ffchar(IFLD, INTYP, CFIELD, ' ', WORD)
            if (matstr(word, 'GLOBAL', 1)) then
              idsglobal = .true.
-           else if (matstr(word, 'GLOBAL', 1)) then
+           else if (matstr(word, 'LOCAL', 1)) then
              idsglobal = .false.
            end if
          else

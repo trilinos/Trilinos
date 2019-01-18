@@ -134,6 +134,11 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 				      const panzer::FieldLibrary& /* fl */,
 				      const Teuchos::ParameterList& /* user_data */) const
 {
+  using panzer::EvaluatorStyle;
+  using panzer::Integrator_DivBasisTimesScalar;
+  using panzer::Traits;
+  using PHX::Evaluator;
+  using std::string;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -154,34 +159,22 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // "diffusion" operator (-\nabla\cdot v,-\nabla\cdot w)
   {   
-    ParameterList p("Source Residual");
-    p.set("Residual Name", "RESIDUAL_GRADPHI_FIELD_DIFFUSION_OP");
-    p.set("Value Name", "DIV_GRADPHI_FIELD"); 
-    p.set("Test Field Name", "GRADPHI_FIELD"); 
-    p.set("Basis", basis_v);
-    p.set("IR", ir);
-    p.set("Multiplier", 1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+    string resName("RESIDUAL_GRADPHI_FIELD"),
+           valName("DIV_GRADPHI_FIELD");
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_DivBasisTimesScalar<EvalT, Traits>(EvaluatorStyle::EVALUATES,
+      resName, valName, *basis_v, *ir));
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // Source operator (-f,-\nabla\cdot w)
   {   
-    ParameterList p("Source Residual");
-    p.set("Residual Name", "RESIDUAL_GRADPHI_FIELD_MASS_OP");
-    p.set("Value Name", "SOURCE"); 
-    p.set("Test Field Name", "GRADPHI_FIELD"); 
-    p.set("Basis", basis_v);
-    p.set("IR", ir);
-    p.set("Multiplier", -1.0); // scale by the right hand side 
-                                            // when phi = sin(2*pi*x)*sin(2*pi*y)*sin(2*pi*z)
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));
-    
+    string resName("RESIDUAL_GRADPHI_FIELD"), valName("SOURCE");
+    double multiplier(-1);
+    RCP<Evaluator<Traits>> op = rcp(new
+      Integrator_DivBasisTimesScalar<EvalT, Traits>(
+      EvaluatorStyle::CONTRIBUTES, resName, valName, *basis_v, *ir,
+      multiplier));
     this->template registerEvaluator<EvalT>(fm, op);
   }
 
@@ -215,17 +208,6 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     this->template registerEvaluator<EvalT>(fm, op);
   }
   
-  // Use a sum operator to form the overall residual for the equation
-  {
-    std::vector<std::string> sum_names;
-    
-    // these are the names of the residual values to sum together
-    sum_names.push_back("RESIDUAL_GRADPHI_FIELD_DIFFUSION_OP");
-    sum_names.push_back("RESIDUAL_GRADPHI_FIELD_MASS_OP");
-
-    this->buildAndRegisterResidualSummationEvaluator(fm,"GRADPHI_FIELD",sum_names);
-  }
-
   // Use a sum operator to form the overall residual for the equation
   {
     std::vector<std::string> sum_names;

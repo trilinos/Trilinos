@@ -134,7 +134,7 @@ template<> MuemexType getMuemexType<RCP<FieldContainer_ordinal>>() {return FIELD
 
 template<> mxArray* createMatlabSparse<double>(int numRows, int numCols, int nnz);
 template<> mxArray* createMatlabSparse<complex_t>(int numRows, int numCols, int nnz);
-template<> mxArray* createMatlabMultiVector<double>(int numRows, int numCols);
+template<> mxArray* createMatlabMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(int numRows, int numCols);
 template<> mxArray* createMatlabMultiVector<complex_t>(int numRows, int numCols);
 template<> void fillMatlabArray<double>(double* array, const mxArray* mxa, int n);
 template<> void fillMatlabArray<complex_t>(complex_t* array, const mxArray* mxa, int n);
@@ -263,18 +263,18 @@ RCP<Xpetra_ordinal_vector> loadDataFromMatlab<RCP<Xpetra_ordinal_vector>>(const 
 template<>
 RCP<Tpetra_MultiVector_double> loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(const mxArray* mxa)
 {
-  RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
+  RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mv;
   try
   {
     int nr = mxGetM(mxa);
     int nc = mxGetN(mxa);
     double* pr = mxGetPr(mxa);
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     //numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
     RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
     //Allocate a new array of complex values to use with the multivector
     Teuchos::ArrayView<const double> arrView(pr, nr * nc);
-    mv = rcp(new Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, size_t(nr), size_t(nc)));
+    mv = rcp(new Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(map, arrView, size_t(nr), size_t(nc)));
   }
   catch(std::exception& e)
   {
@@ -294,7 +294,7 @@ RCP<Tpetra_MultiVector_complex> loadDataFromMatlab<RCP<Tpetra_MultiVector_comple
     int nc = mxGetN(mxa);
     double* pr = mxGetPr(mxa);
     double* pi = mxGetPi(mxa);
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     //numGlobalIndices for map constructor is the number of rows in matrix/vectors, right?
     RCP<const muemex_map_type> map = rcp(new muemex_map_type(nr, (mm_GlobalOrd) 0, comm));
     //Allocate a new array of complex values to use with the multivector
@@ -391,7 +391,7 @@ RCP<Tpetra_CrsMatrix_complex> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex>>(
   //Create a map in order to create the matrix (taken from muelu basic example - complex)
   try
   {
-    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
     const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
     const mm_GlobalOrd indexBase = 0;
     RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
@@ -455,10 +455,10 @@ RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadDataFro
 }
 
 template<>
-RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadDataFromMatlab<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(const mxArray* mxa)
+RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> loadDataFromMatlab<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(const mxArray* mxa)
 {
-  RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(mxa);
-  return MueLu::TpetraMultiVector_To_XpetraMultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
+  RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(mxa);
+  return MueLu::TpetraMultiVector_To_XpetraMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
 }
 
 template<>
@@ -735,7 +735,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra_map>& data)
   //Precondition: Memory has already been allocated by MATLAB for the array.
   int nc = data->getGlobalNumElements();
   int nr = 1;
-  mxArray* output = createMatlabMultiVector<double>(nr, nc);
+  mxArray* output = createMatlabMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(nr, nc);
   double* array = (double*) malloc(sizeof(double) * nr * nc);
   for(int col = 0; col < nc; col++)
   {
@@ -764,7 +764,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra_ordinal_vector>& data)
 }
 
 template<>
-mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& data)
+mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& data)
 {
   RCP<Xpetra_MultiVector_double> xmv = MueLu::TpetraMultiVector_To_XpetraMultiVector(data);
   return saveDataToMatlab(xmv);
@@ -1049,12 +1049,12 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_Global
 */
 
 template<>
-mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& data)
+mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& data)
 {
   //Precondition: Memory has already been allocated by MATLAB for the array.
   int nr = data->getGlobalLength();
   int nc = data->getNumVectors();
-  mxArray* output = createMatlabMultiVector<double>(nr, nc);
+  mxArray* output = createMatlabMultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(nr, nc);
   double* array = (double*) malloc(sizeof(double) * nr * nc);
   for(int col = 0; col < nc; col++)
   {
@@ -1311,11 +1311,11 @@ mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data)
 
   int nr = data->dimension(0);
   int nc = data->dimension(1);
-  
+
   mwSize dims[]={(mwSize)nr,(mwSize)nc};
   mxArray* mxa = mxCreateNumericArray(2,dims, mxINT32_CLASS, mxREAL);
   int *array = (int*) mxGetData(mxa);
-  
+
   for(int col = 0; col < nc; col++)
   {
     for(int row = 0; row < nr; row++)

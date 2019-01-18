@@ -369,7 +369,7 @@ std::string StrUtils::subString(const std::string& str, int begin, int end)
 }
 
 
-std::string StrUtils::readFromStream(std::istream& is)
+std::string StrUtils::readFromStream(std::istream& /* is */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "StrUtils::readFromStream isn't implemented yet");

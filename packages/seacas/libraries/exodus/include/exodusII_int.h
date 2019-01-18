@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,10 +33,10 @@
  *
  */
 /*****************************************************************************
-*
-* exodusII_int.h - ExodusII header file for internal Exodus call use only
-*
-*/
+ *
+ * exodusII_int.h - ExodusII header file for internal Exodus call use only
+ *
+ */
 
 #ifndef EXODUS_II_INT_HDR
 #define EXODUS_II_INT_HDR
@@ -75,6 +75,11 @@
 #endif
 
 #include <stdio.h>
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define __func__ __FUNCTION__
+#define snprintf _snprintf
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,9 +133,9 @@ typedef struct EX_mutex_struct
   pthread_mutexattr_t attribute;
 } EX_mutex_t;
 
-extern EX_mutex_t EX_g;
-extern int ex_mutex_lock(EX_mutex_t *mutex);
-extern int ex_mutex_unlock(EX_mutex_t *mutex);
+extern EX_mutex_t   EX_g;
+extern int          ex_mutex_lock(EX_mutex_t *mutex);
+extern int          ex_mutex_unlock(EX_mutex_t *mutex);
 extern void         ex_pthread_first_thread_init(void);
 extern EX_errval_t *exerrval_get();
 
@@ -707,6 +712,7 @@ struct ex_file_item
   nc_type netcdf_type_code;
   int     int64_status;
   int     maximum_name_length;
+  int     time_varid; /* Store to avoid lookup each timestep */
   unsigned int
                compression_level : 4; /* 0 (disabled) to 9 (maximum) compression level; netcdf-4 only */
   unsigned int user_compute_wordsize : 1; /* 0 for 4 byte or 1 for 8 byte reals */
@@ -714,7 +720,7 @@ struct ex_file_item
   unsigned int
                        file_type : 2; /* 0 - classic, 1 -- 64 bit classic, 2 --netcdf4,  3 --netcdf4 classic */
   unsigned int         is_parallel : 1; /* 1 true, 0 false */
-  unsigned int         is_mpiio : 1;    /* 1 true, 0 false */
+  unsigned int         is_hdf5 : 1;     /* 1 true, 0 false */
   unsigned int         is_pnetcdf : 1;  /* 1 true, 0 false */
   unsigned int         has_nodes : 1;   /* for input only at this time */
   unsigned int         has_edges : 1;   /* for input only at this time */
@@ -747,10 +753,11 @@ struct obj_stats
 {
   int64_t *         id_vals;
   int *             stat_vals;
-  long              num;
+  size_t            num;
   int               exoid;
-  int               valid_ids;
-  int               valid_stat;
+  char              valid_ids;
+  char              valid_stat;
+  char              sequential;
   struct obj_stats *next;
 };
 
@@ -764,19 +771,19 @@ char *ex_dim_num_objects(ex_entity_type obj_type);
 char *ex_name_var_of_object(ex_entity_type /*obj_type*/, int /*i*/, int /*j*/);
 char *ex_name_of_map(ex_entity_type /*map_type*/, int /*map_index*/);
 
-int ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
-                int int64_status, int is_parallel, int is_mpiio, int is_pnetcdf);
+int  ex_conv_ini(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
+                 int int64_status, int is_parallel, int is_hdf5, int is_pnetcdf);
 void ex_conv_exit(int exoid);
 
 nc_type nc_flt_code(int exoid);
-int ex_comp_ws(int exoid);
-int ex_get_cpu_ws(void);
-int ex_is_parallel(int exoid);
+int     ex_comp_ws(int exoid);
+int     ex_get_cpu_ws(void);
+int     ex_is_parallel(int exoid);
 
 struct list_item **ex_get_counter_list(ex_entity_type obj_type);
-int  ex_get_file_item(int /*exoid*/, struct list_item ** /*list_ptr*/);
-int  ex_inc_file_item(int /*exoid*/, struct list_item ** /*list_ptr*/);
-void ex_rm_file_item(int /*exoid*/, struct list_item ** /*list_ptr*/);
+int                ex_get_file_item(int /*exoid*/, struct list_item ** /*list_ptr*/);
+int                ex_inc_file_item(int /*exoid*/, struct list_item ** /*list_ptr*/);
+void               ex_rm_file_item(int /*exoid*/, struct list_item ** /*list_ptr*/);
 
 extern struct obj_stats *exoII_eb;
 extern struct obj_stats *exoII_ed;
@@ -793,14 +800,15 @@ extern struct obj_stats *exoII_nm;
 
 struct ex_file_item *ex_find_file_item(int exoid);
 struct ex_file_item *ex_add_file_item(int exoid);
-struct obj_stats *ex_get_stat_ptr(int exoid, struct obj_stats **obj_ptr);
+struct obj_stats *   ex_get_stat_ptr(int exoid, struct obj_stats **obj_ptr);
 
 void ex_rm_stat_ptr(int exoid, struct obj_stats **obj_ptr);
 
 void ex_compress_variable(int exoid, int varid, int type);
-int ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
-void ex_check_valid_file_id(int exoid); /** Abort if exoid does not refer to valid file */
-int ex_check_file_type(const char *path, int *type);
+int  ex_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num);
+void ex_check_valid_file_id(int         exoid,
+                            const char *func); /** Abort if exoid does not refer to valid file */
+int  ex_check_file_type(const char *path, int *type);
 int ex_get_dimension(int exoid, const char *DIMENSION, const char *label, size_t *count, int *dimid,
                      const char *routine);
 
@@ -823,37 +831,40 @@ int ex_get_glob_vars_int(int exoid, int time_step, int num_glob_vars, void *glob
 int ex_get_glob_var_time_int(int exoid, int glob_var_index, int beg_time_step, int end_time_step,
                              void *glob_var_vals);
 
-int ex_get_name_internal(int exoid, int varid, size_t index, char *name, int name_size,
-                         ex_entity_type obj_type, const char *routine);
-int ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
+int  ex_get_name_internal(int exoid, int varid, size_t index, char *name, int name_size,
                           ex_entity_type obj_type, const char *routine);
-int ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
-                         ex_entity_type obj_type, const char *subtype, const char *routine);
-int ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
+int  ex_get_names_internal(int exoid, int varid, size_t num_entity, char **names,
+                           ex_entity_type obj_type, const char *routine);
+int  ex_put_name_internal(int exoid, int varid, size_t index, const char *name,
                           ex_entity_type obj_type, const char *subtype, const char *routine);
+int  ex_put_names_internal(int exoid, int varid, size_t num_entity, char **names,
+                           ex_entity_type obj_type, const char *subtype, const char *routine);
 void ex_trim_internal(char *name);
 void ex_update_max_name_length(int exoid, int length);
-int ex_leavedef(int         exoid,    /* NemesisI file ID         */
-                const char *call_rout /* Name of calling function */
-                );
+int  ex_leavedef(int         exoid,    /* NemesisI file ID         */
+                 const char *call_rout /* Name of calling function */
+ );
+
+int ex_int_handle_mode(unsigned int my_mode, int is_parallel, int run_version);
+int ex_int_populate_header(int exoid, const char *path, int my_mode, int is_parallel, int *comp_ws, int *io_ws);
 
 int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
                            struct elem_blk_parm *elem_blk_parm);
 
 int ex_get_file_type(int   exoid, /* NetCDF/Exodus file ID */
                      char *ftype  /* Nemesis file type */
-                     );
+);
 
 int ex_put_nemesis_version(int exoid); /* NetCDF/Exodus file ID */
 
 int ne_check_file_version(int neid /* NetCDF/Exodus file ID */
-                          );
+);
 
 int ne_id_lkup(int          exoid,       /* NetCDF/Exodus file ID */
                const char * ne_var_name, /* Nemesis variable name */
                int64_t *    idx,         /* index variable for variable, length 2 */
                ex_entity_id ne_var_id    /* NetCDF variable ID */
-               );
+);
 
 /**
  * For output databases, the maximum length of any entity, variable,

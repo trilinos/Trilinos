@@ -9,11 +9,13 @@
 #ifndef Tempus_SolutionHistory_decl_hpp
 #define Tempus_SolutionHistory_decl_hpp
 
-// Teuchos
+
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-// Tempus
+
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_Interpolator.hpp"
@@ -204,13 +206,25 @@ public:
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
     {
       const int m = history_->size();
-      return (workingState_ == Teuchos::null or m == 1) ? (*history_)[m-1]
-                                                        : (*history_)[m-2];
+      Teuchos::RCP<SolutionState<Scalar> > state;
+      if (m == 0)                                        state=Teuchos::null;
+      else if (m == 1 or workingState_ == Teuchos::null) state=(*history_)[m-1];
+      else if (m > 1)                                    state=(*history_)[m-2];
+      return state;
     }
 
     /// Return the working state
-    Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const
-      { return workingState_; }
+    Teuchos::RCP<SolutionState<Scalar> > getWorkingState(bool warn=true) const
+    {
+      if (workingState_ == Teuchos::null && warn) {
+        Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"SolutionHistory::getWorkingState()");
+        *out << "Warning - WorkingState is null and likely has been promoted.  "
+             << "You might want to call getCurrentState() instead.\n"
+             << std::endl;
+      }
+      return workingState_;
+    }
 
     /// Get the number of states
     int getNumStates() const {return history_->size();}
@@ -264,15 +278,42 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
- /// \name Interpolation Methods
- //@{
-   /// Set the interpolator for this history
-   void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
-   Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
-   Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
-   /// Unset the interpolator for this history
-   Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
- //@}
+  /// \name Interpolation Methods
+  //@{
+    /// Set the interpolator for this history
+    void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
+    Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
+    Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
+    /// Unset the interpolator for this history
+    Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
+  //@}
+
+  void printHistory(std::string verb="low") const
+  {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"SolutionHistory::printHistory");
+    *out << name_ << "  (size=" << history_->size() << ")"
+         << "  (w - working; c - current; i - interpolated)" << std::endl;
+    for (int i=0; i<(int)history_->size() ; ++i) {
+      auto state = (*history_)[i];
+      *out << "  ";
+      if (state == getWorkingState()) *out << "w - ";
+      else if (state == getCurrentState()) *out << "c - ";
+      else if (state->getMetaData()->getIsInterpolated() == true) *out<<"i - ";
+      else *out << "    ";
+      *out << "[" << i << "] = " << state << std::endl;
+      if (verb == "medium" or verb == "high") {
+        if (state != Teuchos::null) {
+          auto x = state->getX();
+          *out << "      x       = " << x << std::endl
+               << "      norm(x) = " << Thyra::norm(*x) << std::endl;
+        }
+      }
+      if (verb == "high") {
+        (*history_)[i]->describe(*out,this->getVerbLevel());
+      }
+    }
+  }
 
 protected:
 

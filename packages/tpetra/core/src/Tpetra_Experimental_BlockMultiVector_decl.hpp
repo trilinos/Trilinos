@@ -42,16 +42,14 @@
 #ifndef TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_DECL_HPP
 
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_Experimental_BlockView.hpp>
+#include "Tpetra_Experimental_BlockMultiVector_fwd.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix_fwd.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Experimental_BlockView.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace Tpetra {
 namespace Experimental {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of BlockCrsMatrix, needed for debugging.
-template<class S, class LO, class GO, class N> class BlockCrsMatrix;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \class BlockMultiVector
 /// \brief MultiVector for multiple degrees of freedom per mesh point
@@ -141,10 +139,10 @@ template<class S, class LO, class GO, class N> class BlockCrsMatrix;
 /// It doesn't make sense for BlockMultiVector to implement
 /// MultiVector, because the desired fill interfaces of the two
 /// classes are different.
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template<class Scalar,
+         class LO,
+         class GO,
+         class Node>
 class BlockMultiVector :
     public Tpetra::DistObject<Scalar, LO, GO, Node>
 {
@@ -451,10 +449,30 @@ public:
     mv_.template sync<typename TargetMemorySpace::memory_space> ();
   }
 
+  /// \brief Update data to the host
+  void sync_host() {
+    mv_.sync_host();
+  }
+ 
+  /// \brief Update data to the device
+  void sync_device() {
+    mv_.sync_device();
+  }
+
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
   bool need_sync () const {
     return mv_.template need_sync<typename TargetMemorySpace::memory_space> ();
+  }
+
+  //! Whether this object needs synchronization to the host
+  bool need_sync_host() const {
+    return mv_.need_sync_host();
+  }
+ 
+  //! Whether this object needs synchronization to the device
+  bool need_sync_device() const {
+    return mv_.need_sync_device();
   }
 
   /// \brief Mark data as modified on the given memory space.
@@ -467,6 +485,15 @@ public:
     mv_.template modify<typename TargetMemorySpace::memory_space> ();
   }
 
+  /// \brief Mark data as modified on the host
+  void modify_host() {
+    mv_.modify_host();
+  }
+ 
+  /// \brief Mark data as modified on the device
+  void modify_device() {
+    mv_.modify_device();
+  }
   //@}
   //! \name Fine-grained data access
   //@{
@@ -622,10 +649,6 @@ protected:
   }
 
 private:
-  // mfh 20 May 2014: I'm only using this for debugging.
-  template<class Scalar2, class LO2, class GO2, class Node2>
-  friend class BlockCrsMatrix;
-
   /// \brief Mesh Map given to constructor.
   ///
   /// This is stored by value, not as a Teuchos::RCP, because the

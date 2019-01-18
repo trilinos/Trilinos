@@ -1,4 +1,4 @@
-C    Copyright(C) 2008 National Technology & Engineering Solutions
+C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -36,35 +36,6 @@ C     THIS SUBPROGRAM PROVIDES DATA MANAGEMENT WITH DYNAMIC MEMORY
 C     ALLOCATION CAPABILITIES.  THE ENTIRE PACKAGE IS WRITTEN IN
 C     STANDARD FORTRAN-77 WITH THE EXCEPTION OF TWO SYSTEM DEPENDENT
 C     SUBPROGRAMS:  IXLNUM AND EXMEMY.
-C
-C     AUTHOR:  W. C. MILLS-CURRAN, SANDIA NATIONAL LABORATORIES,
-C     DIV. 1523.
-C     DATE:  FEBRUARY, 1986.
-C
-C     DOCUMENTATION:  SAND86-0911
-C
-C     REVISED 28-OCT-1988
-C     Modified to allow memory for character variables.  The error
-C     handling was also improved to allow better user control.
-C
-C ****************************************************************************
-C
-C                   ISSUED BY SANDIA NATIONAL LABORATORIES,
-C                          A PRIME CONTRACTOR TO THE
-C                      UNITED STATES DEPARTMENT OF ENERGY
-C
-C ****************************************************************************
-C
-C THIS CODE WAS PREPARED IN THE COURSE OF WORK SPONSORED BY THE UNITED STATES
-C GOVERNMENT.  NEITHER THE UNITED STATES, NOR THE UNITED STATES DEPARTMENT OF
-C ENERGY, NOR THE UNITED STATES NUCLEAR REGULATORY COMMISSION, NOR ANY OF
-C THEIR EMPLOYEES, NOR ANY OF THEIR CONTRACTORS, SUBCONTRACTORS, OR THEIR
-C EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL
-C LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS OR USEFULNESS OF
-C ANY INFORMATION, APPARATUS, PRODUCT OR PROCESS DISCLOSED, OR REPRESENTS THAT
-C ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-C
-C ****************************************************************************
 C
 C     ENTRY POINTS:
 C

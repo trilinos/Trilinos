@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ namespace Ioss {
   {
 
   public:
-    static constexpr auto name = "sphere";
+    static constexpr const char *name = "sphere";
 
     static void factory();
     ~Sphere() override;
@@ -76,7 +76,7 @@ namespace Ioss {
   private:
     static Sphere instance_;
 
-    Sphere(const Sphere &); // Do not implement
+    Sphere(const Sphere &) = delete;
   };
 } // namespace Ioss
 #endif // IOSS_Ioss_Sphere_h

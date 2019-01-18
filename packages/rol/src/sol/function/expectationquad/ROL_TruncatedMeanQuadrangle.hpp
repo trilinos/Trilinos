@@ -92,7 +92,7 @@ public:
   }
 
   Real error(Real x, int deriv = 0) {
-    bool inside = ( std::abs(x) ? true : false );
+    bool inside = ( std::abs(x) < beta_ ? true : false );
     Real err(0), zero(0), half(0.5), one(1), two(2);
     if (deriv==0) {
       err = (inside ? half*std::pow(x,two)/beta_ : std::abs(x)-half*beta_);

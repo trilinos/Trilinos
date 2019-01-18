@@ -48,7 +48,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
-#include "BelosBlockCGSolMgr.hpp"
+#include "BelosFixedPointSolMgr.hpp"
 
 // I/O for Harwell-Boeing files
 #define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
@@ -58,9 +58,8 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -76,9 +75,9 @@ int main(int argc, char *argv[]) {
   typedef double                           ST;
   typedef ScalarTraits<ST>                SCT;
   typedef SCT::magnitudeType               MT;
-  typedef Tpetra::Operator<ST,int>         OP;
-  typedef Tpetra::MultiVector<ST,int>      MV;
-  typedef Tpetra::Vector<ST,int>           VV;
+  typedef Tpetra::Operator<ST>             OP;
+  typedef Tpetra::MultiVector<ST>          MV;
+  typedef Tpetra::Vector<ST>               VV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
 
@@ -91,12 +90,9 @@ int main(int argc, char *argv[]) {
 
     int MyPID = 0;
 
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Comm<int> > comm = platform.getComm();
-    RCP<Node>             node = platform.getNode();
+    typedef Tpetra::Map<>::node_type Node;
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+    RCP<Node>             node; // only for type deduction; null ok
 
     //
     // Get test parameters from command-line processor
@@ -108,15 +104,19 @@ int main(int argc, char *argv[]) {
     int maxiters = -1;   // maximum number of iterations for solver to use
     std::string filename("bcsstk14.hb");
     MT tol = 1.0e-5;     // relative residual tolerance
+    bool precond = false; // use diagonal preconditioner
+    bool leftPrecond = false; // if preconditioner is used, left or right?
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-    cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+    cmdp.setOption("tol",&tol,"Relative residual tolerance used by fixed point solver.");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
+    cmdp.setOption("use-precond","no-precond",&precond,"Use a diagonal preconditioner.");
+    cmdp.setOption("left","right",&leftPrecond,"Use a left/right preconditioner.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
@@ -137,15 +137,15 @@ int main(int argc, char *argv[]) {
     //
     // Get the data from the HB file and build the Map,Matrix
     //
-    RCP<CrsMatrix<ST,int> > A;
+    RCP<CrsMatrix<ST> > A;
     Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-    RCP<const Tpetra::Map<int> > map = A->getDomainMap();
+    RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
     // Create initial vectors
-    RCP<MultiVector<ST,int> > B, X;
-    X = rcp( new MultiVector<ST,int>(map,numrhs) );
+    RCP<MV> B, X;
+    X = rcp( new MV(map,numrhs) );
     MVT::MvRandom( *X );
-    B = rcp( new MultiVector<ST,int>(map,numrhs) );
+    B = rcp( new MV(map,numrhs) );
     OPT::Apply( *A, *X, *B );
     MVT::MvInit( *X, 0.0 );
 
@@ -157,11 +157,20 @@ int main(int argc, char *argv[]) {
       norm[i] = 1.0 / norm[i];
     MVT::MvScale(*B,norm);
 
-    // Rescale so FP can converge
+    // Drastically bump the diagonal and then rescale so FP can converge
     VV diag(A->getRowMap());
+    A->getLocalDiagCopy(diag);
     Teuchos::ArrayRCP<ST> dd=diag.getDataNonConst();
 
-    A->getLocalDiagCopy(diag);
+    Teuchos::ArrayView<const int> GlobalElements = A->getRowMap()->getNodeElementList();
+    A->resumeFill();
+    for(int i=0; i<(int)dd.size(); i++) {
+      dd[i]=dd[i]*1e4;
+      A->replaceGlobalValues(GlobalElements[i],
+                            Teuchos::tuple<int>(GlobalElements[i]),
+                            Teuchos::tuple<ST>(dd[i]) );
+    }
+    A->fillComplete();
 
     for(int i=0; i<(int)dd.size(); i++)
       dd[i] = 1.0/sqrt(dd[i]);
@@ -195,9 +204,31 @@ int main(int argc, char *argv[]) {
       }
     }
     //
-    // Construct an unpreconditioned linear problem instance.
+    // Construct an linear problem instance.
     //
     Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+    // diagonal preconditioner
+    if (precond) {
+      VV diagonal(A->getRowMap());
+      A->getLocalDiagCopy(diagonal);
+
+      int NumMyElements    = diagonal.getMap()->getNodeNumElements();
+      Teuchos::ArrayView<const int> MyGlobalElements = diagonal.getMap()->getNodeElementList();
+      Teuchos::ArrayRCP<ST> dd=diagonal.getDataNonConst();
+      RCP<CrsMatrix<ST> > invDiagMatrix = Teuchos::rcp(new CrsMatrix<ST>(A->getRowMap(), 1, Tpetra::StaticProfile));
+
+      for (Teuchos_Ordinal i=0; i<NumMyElements; ++i) {
+        invDiagMatrix->insertGlobalValues(MyGlobalElements[i],
+                                          Teuchos::tuple<int>(MyGlobalElements[i]),
+                                          Teuchos::tuple<ST>(SCT::one() / dd[i]) );
+      }
+      invDiagMatrix->fillComplete();
+
+      if (leftPrecond)
+        problem.setLeftPrec(invDiagMatrix);
+      else
+        problem.setRightPrec(invDiagMatrix);
+    }
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)
@@ -206,10 +237,10 @@ int main(int argc, char *argv[]) {
     }
     //
     // *******************************************************************
-    // *************Start the block CG iteration***********************
+    // *************Start the fixed point iteration***********************
     // *******************************************************************
     //
-    Belos::BlockCGSolMgr<ST,MV,OP> solver( rcp(&problem,false), rcp(&belosList,false) );
+    Belos::FixedPointSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
     //
     // **********Print out information about problem*******************
@@ -218,7 +249,7 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << std::endl;
       std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
       std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Max number of CG iterations: " << maxiters << std::endl;
+      std::cout << "Max number of fixed point iterations: " << maxiters << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
       std::cout << std::endl;
     }
@@ -232,7 +263,7 @@ int main(int argc, char *argv[]) {
     bool badRes = false;
     std::vector<MT> actual_resids( numrhs );
     std::vector<MT> rhs_norm( numrhs );
-    MultiVector<ST,int> resid(map, numrhs);
+    MV resid(map, numrhs);
     OPT::Apply( *A, *X, resid );
     MVT::MvAddMv( -one, resid, one, *B, resid );
     MVT::MvNorm( resid, actual_resids );
@@ -261,4 +292,4 @@ int main(int argc, char *argv[]) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
-} // end test_bl_cg_hb.cpp
+} // end test_fp_hb.cpp

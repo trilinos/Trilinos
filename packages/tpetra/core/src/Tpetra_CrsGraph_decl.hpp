@@ -50,15 +50,20 @@
 /// want the declaration of Tpetra::CrsGraph, include this file
 /// (Tpetra_CrsGraph_decl.hpp).
 
-#include "Tpetra_RowGraph.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
+#include "Tpetra_BlockCrsMatrix_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
+#include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp" // need this here for sort2
 
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
+#include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
@@ -67,24 +72,6 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  //
-  // Dear users: These are just forward declarations.  Please skip
-  // over them and go down to the CrsMatrix class declaration.  Thank
-  // you.
-  //
-  template <class LO, class GO, class N>
-  class CrsGraph;
-
-  // forward declaration (needed for "friend" inside CrsGraph)
-  template <class S, class LO, class GO, class N>
-  class CrsMatrix;
-
-  namespace Experimental {
-    // forward declaration (needed for "friend" inside CrsGraph)
-    template<class S, class LO, class GO, class N>
-    class BlockCrsMatrix;
-  } // namespace Experimental
-
   namespace Details {
     // Forward declaration of an implementation detail of CrsGraph::clone.
     template<class OutputCrsGraphType, class InputCrsGraphType>
@@ -95,6 +82,16 @@ namespace Tpetra {
              const Teuchos::RCP<typename OutputCrsGraphType::node_type> nodeOut,
              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     };
+    template<class LO, class GO, class NT>
+    void
+    unpackCrsGraphAndCombine(
+        CrsGraph<LO, GO, NT>& graph,
+        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        const Teuchos::ArrayView<const LO>& importLIDs,
+        size_t constantNumPackets,
+        Distributor & distor,
+        CombineMode combineMode);
   } // namespace Details
 
   namespace { // (anonymous)
@@ -259,9 +256,9 @@ namespace Tpetra {
   /// stored in the local graph and communicated to the appropriate
   /// node on the next call to globalAssemble() or fillComplete() (the
   /// latter calls the former).
-  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-            class Node = ::Tpetra::Details::DefaultTypes::node_type>
+  template <class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class CrsGraph :
     public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
     public DistObject<GlobalOrdinal,
@@ -269,14 +266,12 @@ namespace Tpetra {
                       GlobalOrdinal,
                       Node>,
     public Teuchos::ParameterListAcceptorDefaultBase,
-    public Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
+    public ::Tpetra::Details::HasDeprecatedMethods2630_WarningThisClassIsNotForUsers
   {
     template <class S, class LO, class GO, class N>
     friend class CrsMatrix;
     template <class LO2, class GO2, class N2>
     friend class CrsGraph;
-    template <class S, class LO, class GO, class N>
-    friend class ::Tpetra::Experimental::BlockCrsMatrix;
 
     //! The specialization of DistObject that is this class' parent class.
     typedef DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> dist_object_type;
@@ -309,11 +304,11 @@ namespace Tpetra {
     typedef typename local_graph_type::entries_type::non_const_type t_LocalOrdinal_1D TPETRA_DEPRECATED;
 
     //! The Map specialization used by this class.
-    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+    using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
     //! The Import specialization used by this class.
-    typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
+    using import_type = ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
     //! The Export specialization used by this class.
-    typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node> export_type;
+    using export_type = ::Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -337,8 +332,8 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              size_t maxNumEntriesPerRow,
-              ProfileType pftype = DynamicProfile,
+              const size_t maxNumEntriesPerRow,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a (possibly different) upper
@@ -434,7 +429,7 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
-              ProfileType pftype = DynamicProfile,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries
@@ -459,11 +454,11 @@ namespace Tpetra {
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::ArrayRCP<const size_t>& numEntPerRow,
-              ProfileType pftype = DynamicProfile,
+              const ProfileType pftype = DynamicProfile,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
-    ///
+    /// \brief Constructor specifying column Map and arrays containing
+    ///   the graph with sorted local indices.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -477,6 +472,7 @@ namespace Tpetra {
     /// \param columnIndices [in] The local indices of the columns,
     ///   as in a CSR "colind" array.  The length of this vector
     ///   should be equal to the number of unknowns in the graph.
+    ///   Entries in each row must be sorted (by local index).
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
@@ -487,8 +483,8 @@ namespace Tpetra {
               const typename local_graph_type::entries_type::non_const_type& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
-    ///
+    /// \brief Constructor specifying column Map and arrays containing
+    ///   the graph with sorted local indices.
     ///
     /// \param rowMap [in] Distribution of rows of the graph.
     ///
@@ -502,14 +498,15 @@ namespace Tpetra {
     /// \param columnIndices [in] The local indices of the columns,
     ///   as in a CSR "colind" array.  The length of this vector
     ///   should be equal to the number of unknowns in the graph.
+    ///   Entries in each row must be sorted (by local index).
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const Teuchos::ArrayRCP<size_t> & rowPointers,
-              const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
+              const Teuchos::ArrayRCP<size_t>& rowPointers,
+              const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and a local (sorted)
@@ -600,12 +597,35 @@ namespace Tpetra {
     {
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node2> output_crs_graph_type;
       typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> input_crs_graph_type;
-      typedef Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
+      typedef ::Tpetra::Details::CrsGraphCopier<output_crs_graph_type, input_crs_graph_type> copier_type;
       return copier_type::clone (*this, node2, params);
     }
 
+
     //! Destructor.
-    virtual ~CrsGraph ();
+    virtual ~CrsGraph () = default;
+
+
+    /// \brief Swaps the data from *this with the data and maps from graph
+    ///
+    /// \param graph [in/out] a crsGraph
+    void swap(CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph);
+
+
+    /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
+    ///
+    /// This performs _exact_ matches on objects with in the graphs. That is,
+    /// internal data structures such as arrays must match exactly in both
+    /// content and order. This is not performing any sort of isomorphic
+    /// search.
+    ///
+    /// \param graph [in] a crsGraph to compare against this one.
+    ///
+    /// \return True if the other CrsGraph's data structure is identical to this
+    ///         CrsGraph.
+    ///
+    bool isIdenticalTo(const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> &graph) const;
+
 
     //@}
     //! @name Implementation of Teuchos::ParameterListAcceptor
@@ -676,7 +696,7 @@ namespace Tpetra {
     */
     void
     insertLocalIndices (const LocalOrdinal localRow,
-                        const Teuchos::ArrayView<const LocalOrdinal> &indices);
+                        const Teuchos::ArrayView<const LocalOrdinal>& indices);
 
     /// \brief Epetra compatibility version of insertLocalIndices
     ///   (see above) that takes input as a raw pointer, rather than
@@ -732,7 +752,9 @@ namespace Tpetra {
     ///
     /// This method must be called collectively (that is, like any MPI
     /// collective) over all processes in the graph's communicator.
-    void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    void
+    resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params =
+                  Teuchos::null);
 
     /// \brief Tell the graph that you are done changing its structure.
     ///
@@ -772,8 +794,8 @@ namespace Tpetra {
     /// </li>
     /// </ul>
     void
-    fillComplete (const Teuchos::RCP<const map_type> &domainMap,
-                  const Teuchos::RCP<const map_type> &rangeMap,
+    fillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                  const Teuchos::RCP<const map_type>& rangeMap,
                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Tell the graph that you are done changing its
@@ -835,11 +857,14 @@ namespace Tpetra {
     /// \param params [in/out] List of parameters controlling this
     ///   method's behavior.
     void
-    expertStaticFillComplete (const Teuchos::RCP<const map_type> & domainMap,
-                              const Teuchos::RCP<const map_type> & rangeMap,
-                              const Teuchos::RCP<const import_type> &importer=Teuchos::null,
-                              const Teuchos::RCP<const export_type> &exporter=Teuchos::null,
-                              const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+    expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                              const Teuchos::RCP<const map_type>& rangeMap,
+                              const Teuchos::RCP<const import_type>& importer =
+                                Teuchos::null,
+                              const Teuchos::RCP<const export_type>& exporter =
+                                Teuchos::null,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params =
+                                Teuchos::null);
     //@}
     //! @name Methods implementing RowGraph.
     //@{
@@ -877,23 +902,23 @@ namespace Tpetra {
     /** Returns the number of entries in the domain map of the matrix.
         Undefined if isFillActive().
     */
-    global_size_t getGlobalNumCols() const override;
+    global_size_t getGlobalNumCols () const override;
 
     //! Returns the number of graph rows owned on the calling node.
-    size_t getNodeNumRows() const override;
+    size_t getNodeNumRows () const override;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    size_t getNodeNumCols() const override;
+    size_t getNodeNumCols () const override;
 
     //! Returns the index base for global indices for this graph.
-    GlobalOrdinal getIndexBase() const override;
+    GlobalOrdinal getIndexBase () const override;
 
     //! Returns the global number of entries in the graph.
-    /** Undefined if isFillActive().
+    /** Undefined if isFillActive ().
      */
-    global_size_t getGlobalNumEntries() const override;
+    global_size_t getGlobalNumEntries () const override;
 
     /// \brief The local number of entries in the graph.
     ///
@@ -1091,16 +1116,16 @@ namespace Tpetra {
     bool TPETRA_DEPRECATED isUpperTriangular () const override;
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    bool isLocallyIndexed() const override;
+    bool isLocallyIndexed () const override;
 
     //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    bool isGloballyIndexed() const override;
+    bool isGloballyIndexed () const override;
 
     //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
-    bool isFillComplete() const override;
+    bool isFillComplete () const override;
 
     //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
-    bool isFillActive() const;
+    bool isFillActive () const;
 
     /// \brief Whether graph indices in all rows are known to be sorted.
     ///
@@ -1109,7 +1134,7 @@ namespace Tpetra {
     /// resumeFill(), but any changes to the graph may result in the
     /// sorting status becoming unknown (and therefore, presumed
     /// unsorted).
-    bool isSorted() const;
+    bool isSorted () const;
 
     //! \brief Returns \c true if storage has been optimized.
     /**
@@ -1118,10 +1143,10 @@ namespace Tpetra {
        during a mat-vec, requires minimal memory traffic. One limitation of
        optimized storage is that no new indices can be added to the graph.
     */
-    bool isStorageOptimized() const;
+    bool isStorageOptimized () const;
 
     //! Returns \c true if the graph was allocated with static data structures.
-    ProfileType getProfileType() const;
+    ProfileType getProfileType () const;
 
     /// \brief Get a copy of the given row, using global indices.
     ///
@@ -1201,16 +1226,29 @@ namespace Tpetra {
     virtual void
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs) override;
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs) override;
+
+    void
+    applyCrsPadding (const Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>& padding);
+
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
+    computeCrsPadding (const RowGraph<LocalOrdinal, GlobalOrdinal, Node>& source,
+                       size_t numSameIDs,
+                       const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                       const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+
+    Kokkos::UnorderedMap<LocalOrdinal, size_t, device_type>
+    computeCrsPadding (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                       const Teuchos::ArrayView<size_t> &numPacketsPerLID);
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-                    Teuchos::Array<GlobalOrdinal> &exports,
-                    const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<GlobalOrdinal>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor &distor) override;
+                    Distributor& distor) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
@@ -1219,13 +1257,21 @@ namespace Tpetra {
           size_t& constantNumPackets,
           Distributor& distor) const override;
 
+    void
+    packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
+                    Teuchos::Array<GlobalOrdinal>& exports,
+                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor) const;
+
     virtual void
-    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                      const Teuchos::ArrayView<const GlobalOrdinal> &imports,
-                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& imports,
+                      const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                       size_t constantNumPackets,
-                      Distributor &distor,
+                      Distributor& distor,
                       CombineMode CM) override;
+
     //@}
     //! \name Advanced methods, at increased risk of deprecation.
     //@{
@@ -1350,7 +1396,7 @@ namespace Tpetra {
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
      */
-    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
+    Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices () const;
 
     /// \brief Replace the graph's current column Map with the given Map.
     ///
@@ -1527,6 +1573,17 @@ namespace Tpetra {
                                                                  typename CrsGraphType::global_ordinal_type,
                                                                  typename CrsGraphType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    template<class LO, class GO, class NT>
+    friend void
+    ::Tpetra::Details::unpackCrsGraphAndCombine(
+        CrsGraph<LO, GO, NT>& graph,
+        const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>& imports,
+        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+        const Teuchos::ArrayView<const LO>& importLIDs,
+        size_t constantNumPackets,
+        Distributor & distor,
+        CombineMode combineMode);
 
   public:
     /// \brief Import from <tt>this</tt> to the given destination
@@ -1975,13 +2032,13 @@ namespace Tpetra {
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const LocalOrdinal>
-    getLocalView (const RowInfo rowinfo) const;
+    getLocalView (const RowInfo& rowinfo) const;
 
     /// \brief Get a nonconst, nonowned, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<LocalOrdinal>
-    getLocalViewNonConst (const RowInfo rowinfo);
+    getLocalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the local column indices of a locally
     ///   owned row, using the result of getRowInfo.
@@ -2297,7 +2354,7 @@ namespace Tpetra {
     /// parameter to fillComplete was false, the graph may keep
     /// unpacked 1-D or 2-D storage around and resume it on the next
     /// resumeFill call.
-    Details::EStorageStatus storageStatus_;
+    ::Tpetra::Details::EStorageStatus storageStatus_;
 
     bool indicesAreAllocated_;
     bool indicesAreLocal_;
@@ -2318,8 +2375,10 @@ namespace Tpetra {
     //! Whether all processes have computed global constants.
     bool haveGlobalConstants_;
 
+    typedef typename std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_type;
+
     //! Nonlocal data given to insertGlobalIndices.
-    std::map<GlobalOrdinal, std::vector<GlobalOrdinal> > nonlocals_;
+    nonlocals_type nonlocals_;
 
     /// \brief Whether to require makeColMap() (and therefore
     ///   fillComplete()) to order column Map GIDs associated with
@@ -2659,11 +2718,11 @@ namespace Tpetra {
         const Teuchos::Comm<int>& comm = * (graphIn.getRowMap ()->getComm ());
         const int myRank = comm.getRank ();
 
-        TEUCHOS_TEST_FOR_EXCEPTION(
-                                   ! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
-                                   prefix << "You asked clone() to use local indices (by setting the "
-                                   "\"Locally indexed clone\" parameter to true), but the source graph "
-                                   "does not yet have a column Map, so this is impossible.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+	  (! graphIn.hasColMap () && useLocalIndices, std::runtime_error,
+	   prefix << "You asked clone() to use local indices (by setting the "
+	   "\"Locally indexed clone\" parameter to true), but the source graph "
+	   "does not yet have a column Map, so this is impossible.");
 
         if (debug) {
           std::ostringstream os;
@@ -2990,9 +3049,9 @@ namespace Tpetra {
         int lclSuccess = failed ? 0 : 1;
         int gblSuccess = 1;
         reduceAll<int, int> (comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-                                   gblSuccess != 1, std::logic_error, prefix <<
-                                   "Clone failed on at least one process.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+	  (gblSuccess != 1, std::logic_error,
+	   prefix << "Clone failed on at least one process.");
 
         if (debug) {
           std::ostringstream os;

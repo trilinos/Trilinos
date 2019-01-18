@@ -232,7 +232,6 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Basker)
 
-
   APPEND_SET(HEADERS
     Amesos2_Basker.hpp
     Amesos2_Basker_decl.hpp
@@ -249,16 +248,32 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Amesos2_Basker.cpp
       )
 
-   IF(NOT ${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
    	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
    	APPEND_SET(HEADERS				
-       basker/basker.hpp
-       basker/basker_decl.hpp
-       basker/basker_def.hpp
-       basker/basker_scalartraits.hpp
-       basker/basker_types.hpp
+      basker/basker.hpp
+      basker/basker_decl.hpp
+      basker/basker_def.hpp
+      basker/basker_scalartraits.hpp
+      basker/basker_types.hpp
    	  )
-   ENDIF()
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
+  ASSERT_DEFINED(Trilinos_ENABLE_ShyLU_NodeBasker)
+
+  APPEND_SET(HEADERS
+    Amesos2_ShyLUBasker.hpp
+    Amesos2_ShyLUBasker_decl.hpp
+    Amesos2_ShyLUBasker_def.hpp
+    Amesos2_ShyLUBasker_FunctionMap.hpp
+    Amesos2_ShyLUBasker_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    #    Amesos2_ShyLUBasker_TypeMap.cpp
+    Amesos2_ShyLUBasker.cpp
+    )
 
 ENDIF()
 

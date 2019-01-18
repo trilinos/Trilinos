@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -56,13 +56,13 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
   char * factptr = NULL;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* first check if any sets are specified */
   if ((status = nc_inq_dimid(exoid, ex_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s sets stored in file id %d",
              ex_name_of_object(set_type), exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -75,13 +75,13 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
       if (status == EX_NULLENTITY) {
         snprintf(errmsg, MAX_ERR_LENGTH, "Warning: %s set %" PRId64 " is NULL in file id %d",
                  ex_name_of_object(set_type), set_id, exoid);
-        ex_err("ex_get_partial_set_dist_fact", errmsg, EX_NULLENTITY);
+        ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
         EX_FUNC_LEAVE(EX_WARN);
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate %s set %" PRId64 " in VAR_*S_IDS array in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -111,7 +111,7 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
       snprintf(errmsg, MAX_ERR_LENGTH,
                "Warning: dist factors not stored for %s set %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
-      ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+      ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_WARN); /* complain - but not too loud */
     }
     /* is an error for other sets */
@@ -119,13 +119,16 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate dist factors list for %s set %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* read in the distribution factors array */
   start[0] = offset - 1;
   count[0] = num_to_put;
+  if (count[0] == 0) {
+    start[0] = 0;
+  }
   if (ex_comp_ws(exoid) == 4) {
     status = nc_get_vara_float(exoid, dist_id, start, count, set_dist_fact);
   }
@@ -137,7 +140,7 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get dist factors list for %s set %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
-    ex_err("ex_get_partial_set_dist_fact", errmsg, status);
+    ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

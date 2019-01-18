@@ -128,7 +128,7 @@ private:
 
 
   /**
-   * \brief Basker specific numeric factorization
+   * \brief MUMPS specific numeric factorization
    *
    * \throw std::runtime_error MUMPS is not able to factor the matrix
    */

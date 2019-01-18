@@ -65,6 +65,8 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
        name == "Generalized Moreau-Yosida CVaR" ||
        name == "Log Quantile"                   ||
        name == "Smoothed Worst Case"            ||
+       name == "Safety Margin"                  ||
+       name == "Log Exponential"                ||
        name == "Truncated Mean" ) {
     nStatistic = 1;
     lower.resize(nStatistic,ROL_NINF<Real>());
@@ -106,10 +108,12 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
   }
-  else if ( name == "Entropic Risk"                   ||
-            name == "Mean Plus Deviation From Target" ||
-            name == "Mean Plus Deviation"             ||
-            name == "Mean Plus Variance From Target"  ||
+  else if ( name == "Entropic Risk"                        ||
+            name == "Mean Plus Semi-Deviation From Target" ||
+            name == "Mean Plus Semi-Deviation"             ||
+            name == "Mean Plus Deviation From Target"      ||
+            name == "Mean Plus Deviation"                  ||
+            name == "Mean Plus Variance From Target"       ||
             name == "Mean Plus Variance" ) {
     nStatistic = 0;
   }
@@ -136,6 +140,8 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
            riskString[i] == "Generalized Moreau-Yosida CVaR" ||
            riskString[i] == "Log Quantile"                   ||
            riskString[i] == "Smoothed Worst Case"            ||
+           riskString[i] == "Safety Margin"                  ||
+           riskString[i] == "Log Exponential"                ||
            riskString[i] == "Truncated Mean" ) {
         nStatistic += 1;
         lower.push_back(ROL_NINF<Real>());
@@ -180,10 +186,12 @@ inline void RiskMeasureInfo(ROL::ParameterList &parlist, std::string &name,
           upper.push_back(ROL_INF<Real>());
         }
       }
-      else if ( riskString[i] == "Entropic Risk"                   ||
-                riskString[i] == "Mean Plus Deviation From Target" ||
-                riskString[i] == "Mean Plus Deviation"             ||
-                riskString[i] == "Mean Plus Variance From Target"  ||
+      else if ( riskString[i] == "Entropic Risk"                        ||
+                riskString[i] == "Mean Plus Semi-Deviation From Target" ||
+                riskString[i] == "Mean Plus Semi-Deviation"             ||
+                riskString[i] == "Mean Plus Deviation From Target"      ||
+                riskString[i] == "Mean Plus Deviation"                  ||
+                riskString[i] == "Mean Plus Variance From Target"       ||
                 riskString[i] == "Mean Plus Variance" ) {
         nStatistic += 0;
       }

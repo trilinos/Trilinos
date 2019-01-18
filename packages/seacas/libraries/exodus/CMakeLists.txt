@@ -1,6 +1,6 @@
 TRIBITS_SUBPACKAGE(Exodus)
 
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+if (SEACASExodus_ENABLE_STATIC)
 INCLUDE(InstallSymLink)
 endif()
 
@@ -9,6 +9,10 @@ INCLUDE_DIRECTORIES(
 )
 
 FILE(GLOB SOURCES src/ex_*.c)
+
+if (${TPL_Netcdf_PARALLEL})
+   SET(PARALLEL_AWARE_EXODUS ON)
+endif()
 
 if (${SEACAS_HIDE_DEPRECATED_CODE})
 else()
@@ -34,25 +38,33 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES} ${DEP_SOURCES}
 )
 
-if (${TPL_Netcdf_PARALLEL})
-   add_definitions(-DPARALLEL_AWARE_EXODUS)
+# Many users of the SEACAS installations still want a static exodus library...
+if (SEACASExodus_ENABLE_STATIC)
+   ADD_LIBRARY(
+           exodus_static
+           STATIC
+           ${SOURCES} ${DEP_SOURCES}
+   )
+   set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
+   INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+   # For backwards compatibility, the C exodus library was called libexoIIv2c.a
+   # Create a symbolic link from libexodus.a to libexoIIv2c.a -- do only for static lib
+   InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2c.a)
 endif()
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
-   # Many users of the SEACAS installations still want a static exodus library...
-   if (BUILD_SHARED_LIBS)
-      ADD_LIBRARY(
-              exodus_static
-              STATIC
-              ${SOURCES} ${DEP_SOURCES}
-      )
-      set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
-      INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-   endif(BUILD_SHARED_LIBS)
-
-   # For backwards compatability, the C exodus library was called libexoIIv2c.a
-   # Create a symbolic link from libexodus.a to libexoIIv2c.a -- do only for static lib
-   InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2c.a)
+   # add a target to generate API documentation with Doxygen
+   if(SEACASProj_ENABLE_DOXYGEN)
+     find_package(Doxygen)
+     if(DOXYGEN_FOUND)
+       add_custom_command(TARGET exodus POST_BUILD
+          COMMAND ${DOXYGEN_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          COMMENT "Generating Exodus API documentation with Doxygen" VERBATIM
+          )
+     endif(DOXYGEN_FOUND)
+   endif()
 endif()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

@@ -17,7 +17,11 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../test_common)
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 
+# Kyungjoo: when kokkoskernels and kokkos are symbolic link and their src directories are overrided
+#           the following relative path does not work or users should put kokkoskernels and kokkos
+#           at the same place
 SET(GTEST_SOURCE_DIR ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/../kokkos/tpls/gtest)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_PTHREAD=0")
 INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})
 
 INCLUDE_DIRECTORIES(${GTEST_SOURCE_DIR})

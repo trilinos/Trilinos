@@ -50,23 +50,56 @@ project votd
   : build-dir $(stk_transfer-builddir)
   ;
 
+# This variable should contain the applications and associated files that
+# must be installed for both developers and end users. Unless they need to
+# be visible to end users, unittests should not be placed here.
+local installed-end-user-files = 
+  ;
+#
+# This variable should contain the applications and associated files that will
+# only be installed for and visible to developers.
+# Note that if the --install-developer-files option is passed to bjam these will also
+# be installed for end-users. (This is only intended to be used for testing.)
+local installed-developer-files = 
+  stk_transfer_utest
+  ;
+
 #
 # SECTION 2: Development install
 #
 explicit install-serial-targets ;
 alias install-serial-targets ;
 
+# Dependencies listed in this target are installed in the developer's project.
+# This should include all executables and any other files needed for developer use.
 explicit install-targets ;
 alias install-targets
-  : stk_transfer_utest
+  : $(installed-end-user-files)
+    $(installed-developer-files)
   ;
+
 
 #
 # SECTION 3: End-user install
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                          install-user-include install-user-lib ;
+                         install-user-bin install-user-include install-user-lib ;
+
+explicit install-user-bin ;
+install install-user-bin
+  :
+  $(installed-end-user-files)
+  [ if-defined-val $(install-developer-files-arg) :
+    # Executables listed here are only installed if the
+    # --install-developer-files option is passed to bjam.
+    $(installed-developer-files)
+  ]
+  :
+  # Note that all Sierra executables are installed in a common bin directory,
+  # not in a product-specific bin directory.
+  <location>$(install-bin-dir)
+  ;
 
 # This rule copies build-system related files for this product to the install-root.
 explicit install-user-jamfile ;
@@ -104,8 +137,6 @@ local xml-files =
 # If sources are added to this library change this target to use the lib rule instead.
 alias stk_transfer
   : # No sources defined for header-only libraries.
-    /sierra/stk_search//stk_search
-    /mpi//mpi
   : # No build requirements
   : # No default build
   : <include>$(stk_transfer-root-inc)
@@ -133,12 +164,8 @@ exe stk_transfer_utest
       $(stk_transfer-root)/../stk_unit_tests/stk_transfer/*.cpp 
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_transfer
     stk_transfer_impl
-    /sierra/stk_io//stk_io
-    /tpl/gtest//gtest
-    /sierra/stk_mesh//stk_mesh_base
-    /mpi//mpi
   : <tag>@sierra-exec-tag
+    <include>$(stk_transfer-root-inc)
   ;
 

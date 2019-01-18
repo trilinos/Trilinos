@@ -125,12 +125,13 @@ int tLSCStabilized_tpetra::runTest(int verbosity,std::ostream & stdstrm,std::ost
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
-*/
+
    status = test_strategy(verbosity,failstrm);
    Teko_TEST_MSG(stdstrm,1,"   \"strategy\" ... PASSED","   \"strategy\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
+*/
 
    status = allTests;
    if(verbosity >= 10) {

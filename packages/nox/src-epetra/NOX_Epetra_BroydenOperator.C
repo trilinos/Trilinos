@@ -46,6 +46,7 @@
 //@HEADER
 
 #include "NOX_Common.H"
+#include "NOX_Solver_SolverUtils.H"
 #include "NOX_Epetra_BroydenOperator.H"
 
 // EpetraExt includes for dumping Epetra objects
@@ -72,7 +73,6 @@ BroydenOperator::BroydenOperator(
   crsMatrix      ( Teuchos::rcp( new Epetra_CrsMatrix(*mat)) ) ,
   nlParams       ( nlParams_                                 ) ,
   utils          ( utils_                                    ) ,
-  prePostOperator( utils, nlParams.sublist("Solver Options") ) ,
   label          ( "NOX::Epetra::BroydenOperator"            ) ,
   isValidStep    ( false                                     ) ,
   isValidYield   ( false                                     ) ,
@@ -80,6 +80,8 @@ BroydenOperator::BroydenOperator(
   entriesRemoved ( mat->NumMyRows(), false                   )
 {
   initialize( nlParams, solnVec );
+  NOX::Solver::validateSolverOptionsSublist(nlParams.sublist("Solver Options"));
+  observer = NOX::Solver::parseObserver(nlParams.sublist("Solver Options"));
 }
 
 //-----------------------------------------------------------------------------
@@ -98,13 +100,13 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   precMatrixPtr  ( bOp.precMatrixPtr  ) ,
   nlParams       ( bOp.nlParams       ) ,
   utils          ( bOp.utils          ) ,
-  prePostOperator( utils, nlParams.sublist("Solver Options") ),
   label          ( "NOX::Epetra::BroydenOperator" ),
   isValidStep    ( bOp.isValidStep    ) ,
   isValidYield   ( bOp.isValidYield   ) ,
   isValidBroyden ( bOp.isValidBroyden ) ,
   entriesRemoved ( bOp.entriesRemoved )
 {
+  observer = NOX::Solver::parseObserver(nlParams.sublist("Solver Options"));
 }
 
 //-----------------------------------------------------------------------------
@@ -124,9 +126,9 @@ BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vec
 
   // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
   // user's expectations.  For now we will have to create rcp without
-  // ownership.  What happens if a user write their own PPO?
+  // ownership.  What happens if a user write their own observer?
   Teuchos::RCP<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
+  nlParams.sublist("Solver Options").set("Observer", me);
 
   return true;
 }
@@ -142,9 +144,9 @@ const char* BroydenOperator::Label () const
   return label.c_str();
 }
 
-int BroydenOperator::SetUseTranspose(bool UseTranspose)
+int BroydenOperator::SetUseTranspose(bool use_transpose)
 {
-  return crsMatrix->SetUseTranspose(UseTranspose);
+  return crsMatrix->SetUseTranspose(use_transpose);
 }
 
 int BroydenOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -342,7 +344,7 @@ const Epetra_BlockMap& BroydenOperator::Map() const
 //-----------------------------------------------------------------------------
 
 bool
-BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac )
+BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& /* Jac */ )
 {
   bool ok = false;
 
@@ -365,8 +367,8 @@ BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac 
 
 bool
 BroydenOperator::computePreconditioner( const Epetra_Vector & x,
-                    Epetra_Operator& Prec,
-                                        Teuchos::ParameterList * pList )
+                    Epetra_Operator& /* Prec */,
+                                        Teuchos::ParameterList * /* pList */ )
 {
   bool ok = false;
 
@@ -395,7 +397,7 @@ BroydenOperator::runPreSolve( const NOX::Solver::Generic & solver)
   isValidStep  = false;
   isValidYield = false;
 
-  prePostOperator.runPreSolve( solver );
+  observer->runPreSolve( solver );
 
   return;
 }
@@ -405,7 +407,7 @@ BroydenOperator::runPreSolve( const NOX::Solver::Generic & solver)
 void
 BroydenOperator::runPreIterate( const NOX::Solver::Generic & solver)
 {
-  prePostOperator.runPreIterate( solver );
+  observer->runPreIterate( solver );
 
   return;
 }
@@ -442,7 +444,7 @@ BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
     // gets called
   }
 
-  prePostOperator.runPostIterate( solver );
+  observer->runPostIterate( solver );
 
   return;
 }
@@ -452,7 +454,7 @@ BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
 void
 BroydenOperator::runPostSolve( const NOX::Solver::Generic & solver)
 {
-  prePostOperator.runPostSolve( solver );
+  observer->runPostSolve( solver );
 
   return;
 }
@@ -691,7 +693,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
       // Create a map for quick queries
       std::map<int, bool> removeIndTable;
       for( int k = 0; k < numRemoveIndices; ++k )
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
         removeIndTable[ graph.ColMap().GID(removeIndPtr[k]) ] = true;
+#else
+        removeIndTable[ graph.ColMap().GID64(removeIndPtr[k]) ] = true;
+#endif
 
       // Get our matrix column indices for the current row
       int numOrigIndices = 0;
@@ -713,7 +719,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 
         for( int k = 0; k < numOrigIndices; ++k )
         {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
           if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID(indPtr[k]) ) )
+#else
+          if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID64(indPtr[k]) ) )
+#endif
             inds.push_back(k);
         }
 
@@ -746,20 +756,31 @@ void
 BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 {
   double * values    ;
-  int    * indices   ;
   int     numEntries ;
   int     ierr       ;
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  int    * indices   ;
+#else
+  long long * indices    ;
+  long long   globalRow  ;
+#endif
 
   for( int row = 0; row < mat.NumMyRows(); ++row)
   {
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     ierr = mat.ExtractMyRowView(row, numEntries, values, indices);
     ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
+#else
+    globalRow = mat.Map().GID64(row);
+    ierr = mat.ExtractGlobalRowView(globalRow, numEntries, values, indices);
+    ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
+#endif
     if( ierr )
     {
       std::cout << "ERROR (" << ierr << ") : "
-           << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
-           << " - Extract or Replace values error for row --> "
-           << row << std::endl;
+        << "NOX::Epetra::BroydenOperator::replaceBroydenMatrixValues(...)"
+        << " - Extract or Replace values error for row --> "
+        << row << std::endl;
       throw "NOX Broyden Operator Error";
     }
   }
@@ -768,6 +789,7 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 //-----------------------------------------------------------------------------
 
 #ifdef HAVE_NOX_DEBUG
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
 void
 BroydenOperator::outputActiveEntries()
@@ -811,4 +833,5 @@ BroydenOperator::outputActiveEntries()
 
 //-----------------------------------------------------------------------------
 
+#endif
 #endif

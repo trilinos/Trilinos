@@ -115,6 +115,12 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
       else if ( 0 == strcasecmp( argv[i] , "COLORING_EB" ) ) {
         params.algorithm = 6;
       }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBD" ) ) {
+        params.algorithm = 7;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "COLORING_VBDBIT" ) ) {
+        params.algorithm = 8;
+      }
       else {
         std::cerr << "2-Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
         print_options();
@@ -181,6 +187,8 @@ void run_experiment(
     kh.set_verbose(true);
   }
 
+  std::cout << "algorithm: " << algorithm << std::endl;
+
   for (int i = 0; i < repeat; ++i){
 
     switch (algorithm){
@@ -206,13 +214,23 @@ void run_experiment(
     case 6:
       kh.create_graph_coloring_handle(COLORING_EB);
       break;
+
+    case 7:
+      kh.create_graph_coloring_handle(COLORING_VBD);
+      break;
+
+    case 8:
+      kh.create_graph_coloring_handle(COLORING_VBDBIT);
+      break;
+
     default:
       kh.create_graph_coloring_handle(COLORING_DEFAULT);
 
     }
+
     graph_color_symbolic(&kh,crsGraph.numRows(), crsGraph.numCols(), crsGraph.row_map, crsGraph.entries);
 
-    std::cout <<
+    std::cout << std::endl <<
         "Time:" << kh.get_graph_coloring_handle()->get_overall_coloring_time() << " "
         "Num colors:" << kh.get_graph_coloring_handle()->get_num_colors() << " "
         "Num Phases:" << kh.get_graph_coloring_handle()->get_num_phases() << std::endl;

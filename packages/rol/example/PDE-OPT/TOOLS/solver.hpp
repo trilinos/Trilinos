@@ -52,7 +52,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -98,15 +97,15 @@ class Solver {
 private:
 
   // Linear solvers and preconditioners for Jacobian and adjoint Jacobian
-  ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
-  ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_;
-  ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_trans_;
-  ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_;
-  ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_trans_;
-  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_;
-  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_trans_;
-  ROL::Ptr<Belos::LinearProblem<Real,MV,OP> > problemBelos_;
-  ROL::Ptr<Belos::LinearProblem<Real,MV,OP> > problemBelos_trans_;
+  ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<>>> solver_;
+  ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO>> mueLuPreconditioner_;
+  ROL::Ptr<MueLu::TpetraOperator<Real,LO,GO,NO>> mueLuPreconditioner_trans_;
+  ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO>> ifpack2Preconditioner_;
+  ROL::Ptr<Ifpack2::Preconditioner<Real,LO,GO,NO>> ifpack2Preconditioner_trans_;
+  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP>> solverBelos_;
+  ROL::Ptr<Belos::BlockGmresSolMgr<Real,MV,OP>> solverBelos_trans_;
+  ROL::Ptr<Belos::LinearProblem<Real,MV,OP>> problemBelos_;
+  ROL::Ptr<Belos::LinearProblem<Real,MV,OP>> problemBelos_trans_;
 
   // Linear solver options.
   bool useDirectSolver_;
@@ -114,7 +113,7 @@ private:
   std::string preconditioner_;
 
   // Matrix transpose.
-  ROL::Ptr<Tpetra::CrsMatrix<> > A_trans_;
+  ROL::Ptr<Tpetra::CrsMatrix<>> A_trans_;
 
   // Parameter list.
   Teuchos::ParameterList parlist_;
@@ -134,10 +133,10 @@ public:
     preconditioner_ = parlist.get("Preconditioner", "Ifpack2");
   }
 
-  void setA(ROL::Ptr<Tpetra::CrsMatrix<> > &A);
+  void setA(ROL::Ptr<Tpetra::CrsMatrix<>> &A);
 
-  void solve(const ROL::Ptr<Tpetra::MultiVector<> > &x,
-             const ROL::Ptr<const Tpetra::MultiVector<> > &b,
+  void solve(const ROL::Ptr<Tpetra::MultiVector<>> &x,
+             const ROL::Ptr<const Tpetra::MultiVector<>> &b,
              const bool transpose = false);
 
 };

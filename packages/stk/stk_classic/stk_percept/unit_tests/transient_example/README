@@ -1,9 +1,0 @@
-# run cmd:
-
-code_verify.py -nf P output1.gold.e output2.gold.e output3.gold.e
-
-# output (truncated):  columns 3-4 are error norms, which are not going to zero.
-
-7 16.0  25216.3550929 38646.957713
-8 64.0  25212.0319533 37295.9369793
-8 256.0 25212.6756225 37388.725627

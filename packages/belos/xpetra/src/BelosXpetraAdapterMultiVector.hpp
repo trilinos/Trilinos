@@ -72,6 +72,118 @@
 #include <TpetraCore_config.h>
 #endif
 
+#ifdef HAVE_BELOS_TSQR
+namespace BelosXpetraTsqrImpl {
+
+  template<class Scalar, class LO, class GO, class Node>
+  class XpetraStubTsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
+  public:
+    typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef Scalar scalar_type;
+    typedef LO ordinal_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+    XpetraStubTsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& /* plist */)
+    {}
+
+    XpetraStubTsqrAdaptor () {}
+
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const
+    {
+      return Teuchos::rcp (new Teuchos::ParameterList);
+    }
+
+    void
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& /* plist */)
+    {}
+
+    void
+    factorExplicit (MV& /* A */,
+                    MV& /* Q */,
+                    dense_matrix_type& /* R */,
+                    const bool /* forceNonnegativeDiagonal */ = false)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Xpetra TSQR adaptor is only implemented "
+         "for the Tpetra case");
+    }
+
+    int
+    revealRank (MV& /* Q */,
+                dense_matrix_type& /* R */,
+                const magnitude_type& /* tol */)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Xpetra TSQR adaptor is only implemented "
+         "for the Tpetra case");
+    }
+  };
+
+#ifdef HAVE_XPETRA_TPETRA
+  template<class Scalar, class LO, class GO, class Node>
+  class XpetraTpetraTsqrAdaptor : public Teuchos::ParameterListAcceptorDefaultBase {
+  public:
+    typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef Scalar scalar_type;
+    typedef LO ordinal_type;
+    typedef Teuchos::SerialDenseMatrix<ordinal_type, scalar_type> dense_matrix_type;
+    typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+    XpetraTpetraTsqrAdaptor (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+      : tpetraImpl_ (plist)
+    {}
+
+    XpetraTpetraTsqrAdaptor () {}
+
+    Teuchos::RCP<const Teuchos::ParameterList>
+    getValidParameters () const
+    {
+      return tpetraImpl_.getValidParameters ();
+    }
+
+    void
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
+    {
+      tpetraImpl_.setParameterList (plist);
+    }
+
+    void
+    factorExplicit (MV& A,
+                    MV& Q,
+                    dense_matrix_type& R,
+                    const bool forceNonnegativeDiagonal = false)
+    {
+      if (A.getMap()->lib() == Xpetra::UseTpetra) {
+        tpetraImpl_.factorExplicit (toTpetra (A), toTpetra (Q), R, forceNonnegativeDiagonal);
+        return;
+      }
+      XPETRA_FACTORY_ERROR_IF_EPETRA(A.getMap()->lib());
+      XPETRA_FACTORY_END;
+    }
+
+    int
+    revealRank (MV& Q,
+                dense_matrix_type& R,
+                const magnitude_type& tol)
+    {
+      if (Q.getMap()->lib() == Xpetra::UseTpetra) {
+        return tpetraImpl_.revealRank (toTpetra (Q), R, tol);
+      }
+      XPETRA_FACTORY_ERROR_IF_EPETRA(Q.getMap()->lib());
+      XPETRA_FACTORY_END;
+    }
+
+  private:
+    typedef ::Tpetra::TsqrAdaptor< ::Tpetra::MultiVector<Scalar,LO,GO,Node> > tpetra_tsqr_adaptor_type;
+    tpetra_tsqr_adaptor_type tpetraImpl_;
+  };
+#endif // HAVE_XPETRA_TPETRA
+
+} // namespace BelosXpetraTsqrImpl
+#endif // HAVE_BELOS_TSQR
+
 namespace Belos {
 
   using Teuchos::RCP;
@@ -444,6 +556,13 @@ namespace Belos {
       XPETRA_FACTORY_END;
     }
 
+#ifdef HAVE_BELOS_TSQR
+#  ifdef HAVE_XPETRA_TPETRA
+    typedef BelosXpetraTsqrImpl::XpetraTpetraTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
+#  else
+    typedef BelosXpetraTsqrImpl::XpetraStubTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
+#  endif // HAVE_XPETRA_TPETRA
+#endif // HAVE_BELOS_TSQR
   };
 
 #ifdef HAVE_XPETRA_EPETRA
@@ -1024,6 +1143,16 @@ namespace Belos {
 
       XPETRA_FACTORY_END;
     }
+
+#ifdef HAVE_BELOS_TSQR
+#  if defined(HAVE_XPETRA_TPETRA) && \
+  ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT))) || \
+   (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))))
+    typedef BelosXpetraTsqrImpl::XpetraTpetraTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
+#  else
+    typedef BelosXpetraTsqrImpl::XpetraStubTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
+#  endif
+#endif // HAVE_BELOS_TSQR
   };
 #endif // #ifndef  EPETRA_NO_32BIT_GLOBAL_INDICES
 #endif // HAVE_XPETRA_EPETRA
@@ -1607,6 +1736,17 @@ namespace Belos {
 
       XPETRA_FACTORY_END;
     }
+
+#ifdef HAVE_BELOS_TSQR
+#  if defined(HAVE_XPETRA_TPETRA) && \
+  ((defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+   (!defined(EPETRA_HAVE_OMP) && (defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+    typedef BelosXpetraTsqrImpl::XpetraTpetraTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
+#  else
+    typedef BelosXpetraTsqrImpl::XpetraStubTsqrAdaptor<Scalar, LO, GO, Node> tsqr_adaptor_type;
+#  endif
+#endif // HAVE_BELOS_TSQR
+
   };
 #endif // #ifndef  EPETRA_NO_64BIT_GLOBAL_INDICES
 #endif // HAVE_XPETRA_EPETRA

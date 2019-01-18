@@ -440,11 +440,11 @@ namespace MueLuTests {
       bool bCheck = true;
       for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
-        if (i>=5 && i< 10) { if(xdata[i] != (SC) 1.0/2.0) bCheck = false; }
-        if (i>=10 && i< 20) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
-        if (i>=20 && i< 40) { if(xdata[i] != (SC) 1.0/4.0) bCheck = false; }
-        if (i>=40 && i< 80) { if(xdata[i] != (SC) 1.0/5.0) bCheck = false; }
-        if (i>=80 && i< 160) { if(xdata[i] != (SC) 1.0/6.0) bCheck = false; }
+        if (i>=5 && i< 10) { if(xdata[i] != (SC) (1.0/2.0)) bCheck = false; }
+        if (i>=10 && i< 20) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
+        if (i>=20 && i< 40) { if(xdata[i] != (SC) (1.0/4.0)) bCheck = false; }
+        if (i>=40 && i< 80) { if(xdata[i] != (SC) (1.0/5.0)) bCheck = false; }
+        if (i>=80 && i< 160) { if(xdata[i] != (SC) (1.0/6.0)) bCheck = false; }
       }
       TEST_EQUALITY(bCheck, true);
 
@@ -552,11 +552,11 @@ namespace MueLuTests {
       bool bCheck = true;
       for(size_t i=0; i<XX->getLocalLength(); i++) {
         if (i>=0  && i< 5) { if(xdata[i] != (SC) 1.0) bCheck = false; }
-        if (i>=5 && i< 10) { if(xdata[i] != (SC) 1.0/2.0) bCheck = false; }
-        if (i>=10 && i< 20) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
-        if (i>=20 && i< 40) { if(xdata[i] != (SC) 1.0/4.0) bCheck = false; }
-        if (i>=40 && i< 80) { if(xdata[i] != (SC) 1.0/5.0) bCheck = false; }
-        if (i>=80 && i< 160) { if(xdata[i] != (SC) 1.0/6.0) bCheck = false; }
+        if (i>=5 && i< 10) { if(xdata[i] != (SC) (1.0/2.0)) bCheck = false; }
+        if (i>=10 && i< 20) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
+        if (i>=20 && i< 40) { if(xdata[i] != (SC) (1.0/4.0)) bCheck = false; }
+        if (i>=40 && i< 80) { if(xdata[i] != (SC) (1.0/5.0)) bCheck = false; }
+        if (i>=80 && i< 160) { if(xdata[i] != (SC) (1.0/6.0)) bCheck = false; }
       }
       TEST_EQUALITY(bCheck, true);
 
@@ -596,7 +596,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedII20I1I_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -721,7 +721,7 @@ namespace MueLuTests {
       Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<XX->getLocalLength(); i++) {
-        if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
+        if (i>=0  && i< 10) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
       }
@@ -765,7 +765,7 @@ namespace MueLuTests {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedDirectSolver, NestedII20I1I_Thyra_BlockedDirectSolver_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
-#ifdef HAVE_MUELU_TPETRA
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -890,7 +890,7 @@ namespace MueLuTests {
       Teuchos::ArrayRCP<const Scalar> xdata = XX->getData(0);
       bool bCheck = true;
       for(size_t i=0; i<XX->getLocalLength(); i++) {
-        if (i>=0  && i< 10) { if(xdata[i] != (SC) 1.0/3.0) bCheck = false; }
+        if (i>=0  && i< 10) { if(xdata[i] != (SC) (1.0/3.0)) bCheck = false; }
         if (i>=10 && i< 15) { if(xdata[i] != (SC) 1.0) bCheck = false; }
         if (i>=15 && i< 20) { if(xdata[i] != (SC) 0.5) bCheck = false; }
       }

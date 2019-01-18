@@ -91,7 +91,7 @@ getValues(       outputViewType output,
   switch (opType) {
   case OPERATOR_VALUE: {
     const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
-    workViewType dummyView;
+    viewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
     Serial<opType>::getValues(phis, input, dummyView, order);
@@ -132,7 +132,7 @@ getValues(       outputViewType output,
   case OPERATOR_D10: {
     const ordinal_type dkcard = getDkCardinality<opType,spaceDim>(); //(orDn + 1);
     const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
-    workViewType dummyView;
+    viewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
     Serial<opType>::getValues(phis, input, dummyView, order);

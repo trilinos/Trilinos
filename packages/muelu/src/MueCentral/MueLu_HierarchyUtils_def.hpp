@@ -46,6 +46,8 @@
 #ifndef MUELU_HIERARCHYUTILS_DEF_HPP
 #define MUELU_HIERARCHYUTILS_DEF_HPP
 
+#include "Teuchos_ScalarTraits.hpp"
+
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Operator.hpp>
 
@@ -67,6 +69,8 @@ namespace MueLu {
   // calling AddNewLevel as appropriate.
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& paramList) {
+    typedef typename Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,
+                                         LocalOrdinal, GlobalOrdinal, Node> realvaluedmultivector_type;
 
     for (ParameterList::ConstIterator it = paramList.begin(); it != paramList.end(); it++) {
       const std::string& levelName = it->first;
@@ -88,7 +92,7 @@ namespace MueLu {
         const ParameterList& levelList = paramList.sublist(levelName);
         for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
           const std::string& name = it2->first;
-          TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" &&
+          TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
@@ -103,6 +107,11 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), NoFactory::get());
           }
+          else if (name == "Mdiag")
+          {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<Vector > >     (it2->second), NoFactory::get());
+          }
           else if (name == "Nullspace")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
@@ -113,7 +122,7 @@ namespace MueLu {
           else if(name == "Coordinates") //Scalar of Coordinates MV is always double
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+            level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type> >(it2->second), NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
 #ifdef HAVE_MUELU_INTREPID2
@@ -169,13 +178,16 @@ namespace MueLu {
         const ParameterList& userList = paramList.sublist(levelName);
         for (ParameterList::ConstIterator it2 = userList.begin(); it2 != userList.end(); it2++) {
           const std::string& name = it2->first;
-          TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R" &&
+          TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
                                      name != "Nullspace" && name != "Coordinates" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      "MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type!");
-          if( name == "P" || name == "R") {
+          if( name == "P" || name == "R" || name == "K" || name == "M") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), NoFactory::get());
+          } else if (name == "Mdiag") {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<Vector > >(it2->second), NoFactory::get());
           } else if (name == "Nullspace") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second), NoFactory::get());
@@ -183,7 +195,8 @@ namespace MueLu {
                                                         // One should do this only in very special cases
           } else if(name == "Coordinates") {//Scalar of Coordinates MV is always double
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+            level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type> >(it2->second), NoFactory::get());
+            level->print(std::cout, MueLu::VERB_EXTREME);
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           } else {
             //Custom variable

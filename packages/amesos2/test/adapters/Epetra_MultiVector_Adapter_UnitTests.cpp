@@ -47,7 +47,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 
 #include <Epetra_MultiVector.h>
@@ -96,7 +96,7 @@ namespace {
   using Amesos2::Util::get_1d_copy_helper;
   using Amesos2::Util::put_1d_data_helper;
 
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::node_type Node;
 
   TEUCHOS_STATIC_SETUP()
   {

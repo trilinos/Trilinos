@@ -284,6 +284,7 @@ Derp {          // one derivative-propagation operation
 #if RAD_REINIT > 0
         const Double a;
         inline void *operator new(size_t, Derp *x) { return x; }
+        inline void operator delete(void*, Derp *) {}
 #else
         static Derp *LastDerp;
         Derp *next;
@@ -1590,7 +1591,8 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 #ifdef RAD_AUTO_AD_Const // {
                 *ADVari::Last_ADvari = 0;
                 ADVari::Last_ADvari = &ADVari::First_ADvari;
-                if ((a = ADVari::First_ADvari)) {
+                a = ADVari::First_ADvari;
+                if (a) {
                         do {
                                 anext = a->Next;
                                 if ((v = (IndepADvar<Double> *)a->padv)) {

@@ -12,13 +12,20 @@
 % - Number of nodes per region needs to be (k*3^L + 1) with k=1...N and L being
 %   the numberOfLevels-1.
 %
-
-function [] = mk1DRegionFile(filename)
+% Input
+%   filename  filename of case file
+%   outDir    path to output directory
+%
+% Output
+%   [none]
+%
+function [] = mk1DRegionFile(filename, outDir)
 
 %% User-defined cases
 
 if (strcmp(filename, 'caseTen') == true)
-  nNodesPerRegion = [4 7 4];
+%   nNodesPerRegion = [4 7 4];
+  nNodesPerRegion = [7 7 7];
 elseif (strcmp(filename, 'caseEleven') == true)
   nNodesPerRegion = [7 4 7 4 4 7];
 elseif (strcmp(filename, 'caseTwelve') == true)
@@ -79,7 +86,10 @@ whichCase = 'MultipleRegionsPerProc';
 
 
 %% Print data to file
-fp = fopen(filename,'w');
+fp = fopen(sprintf('%s/%s', outDir, filename), 'w');
+if fp == -1
+  error('Could not open file at %s/%s.', outDir, filename);
+end
 if fp ~= -1
   fprintf(fp,'     #nodes  #regions   #procs   #which case\n');
   fprintf(fp,'%8d %8d %8d       %s\n',nNodes,nRegions,nProcs,whichCase);

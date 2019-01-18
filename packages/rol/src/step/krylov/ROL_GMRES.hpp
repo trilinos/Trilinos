@@ -169,7 +169,7 @@ public:
 
     for( iter=0; iter<maxit; ++iter ) {
 
-      //std::cout << "iter = " << iter << "  rnorm = " << (*res_)[iter] << "  xnorm = " << x.norm() << "  bnorm = " << b.norm() << std::endl;
+      // std::cout << "iter = " << iter << "  rnorm = " << (*res_)[iter] << "  xnorm = " << x.norm() << "  bnorm = " << b.norm() << std::endl;
 
       if( useInexact_ ) {
         itol = rtol/(maxit*(*res_)[iter]);

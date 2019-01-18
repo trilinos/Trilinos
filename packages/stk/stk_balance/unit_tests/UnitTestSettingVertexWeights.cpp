@@ -21,7 +21,7 @@ public:
     VertexWeightSettings() : MeshFixture(), vertexWeightField(nullptr)
     {
         vertexWeightField = &get_meta().declare_field<stk::balance::DoubleFieldType>(stk::topology::ELEMENT_RANK, "vertex_weights", 1);
-        stk::mesh::put_field(*vertexWeightField, get_meta().universal_part());
+        stk::mesh::put_field_on_mesh(*vertexWeightField, get_meta().universal_part(), nullptr);
     }
 
     virtual ~VertexWeightSettings() {}

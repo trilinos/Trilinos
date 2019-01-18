@@ -111,6 +111,52 @@ void comm_mesh_counts( const BulkData & M ,
 
 //----------------------------------------------------------------------
 
+struct ghostObj {
+  stk::topology::rank_t entityRank;
+  stk::mesh::EntityId entityId;
+  int destProc;
+};
+
+stk::mesh::EntityProcVec
+send_non_owned_entities_to_owner(stk::mesh::BulkData& stkBulk, const stk::mesh::EntityProcVec& entities)
+{
+  int numProcs = stkBulk.parallel_size();
+
+  std::vector<std::vector<ghostObj> > ghostRequestSend(numProcs);
+
+  stk::mesh::EntityProcVec owned_entities;
+
+  for(const stk::mesh::EntityProc& entityAndProc : entities) {
+    stk::mesh::Entity entity = entityAndProc.first;
+    int ownerRank = stkBulk.parallel_owner_rank(entity);
+    if(ownerRank != stkBulk.parallel_rank()) {
+      ghostObj curGhost; 
+      curGhost.entityRank = stkBulk.entity_rank(entity);
+      curGhost.entityId = stkBulk.identifier(entity);
+      curGhost.destProc = entityAndProc.second;
+      ghostRequestSend[ownerRank].push_back(curGhost);
+    }      
+    else {
+      owned_entities.push_back(entityAndProc);
+    }      
+  }
+
+  std::vector<std::vector<ghostObj> > ghostRequestRecv(numProcs);
+  MPI_Comm mpi_comm(stkBulk.parallel()); 
+  stk::parallel_data_exchange_t(ghostRequestSend, ghostRequestRecv, mpi_comm);
+
+  for(int iproc = 0; iproc < numProcs; ++iproc) {
+    for(unsigned j = 0; j < ghostRequestRecv[iproc].size(); ++j) {
+      ghostObj& curGhost = ghostRequestRecv[iproc][j];
+      stk::mesh::Entity curEntity = stkBulk.get_entity(curGhost.entityRank,curGhost.entityId);
+      ThrowAssert(stkBulk.is_valid(curEntity));
+      ThrowAssert(stkBulk.bucket(curEntity).owned());
+      owned_entities.emplace_back(curEntity, curGhost.destProc);
+    }      
+  }
+  return owned_entities;
+}
+
 } // namespace mesh
 } // namespace stk
 
