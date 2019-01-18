@@ -37,7 +37,9 @@ set (Trilinos_ENABLE_Komplex OFF CACHE BOOL "Disable for CUDA PR testing")
 # Temporary options to clean up build
 set (Trilinos_ENABLE_SEACAS OFF CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Trilinos_ENABLE_DEBUG OFF CACHE BOOL "Temporary disable for CUDA PR testing")
-set (Trilinos_ENABLE_DEBUG_SYMBOLS CACHE BOOL "Temporary disable for CUDA PR testing")
+set (Trilinos_ENABLE_DEBUG_SYMBOLS OFF CACHE BOOL "Temporary disable for CUDA PR testing")
+set (ShyLU_DDFROSch_test_interfacepartitionofunity_DIM2_EPETRA_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
