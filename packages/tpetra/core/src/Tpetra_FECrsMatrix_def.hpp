@@ -107,8 +107,16 @@ operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
+
+#ifdef USE_UNALISED_MEMORY
     inactiveCrsMatrix_->doExport(*this,*feGraph_->importer_,CM);
     inactiveCrsMatrix_->fillComplete();
+#else
+    // Do a self-export in "restricted mode"
+    this->doExport(*this,*feGraph_->importer_,CM,true);
+    inactiveCrsMatrix_->fillComplete();
+#endif
+
   }
   crs_matrix_type::fillComplete();
 }//end doOverlapToLocal
