@@ -557,9 +557,8 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     the specific set of packages to test.  If left at the default value of
 #     empty "", then `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ is set to ``ON``
 #     and that enables packages as described in `<Project>_ENABLE_ALL_PACKAGES
-#     enables all PT (and conditionally all ST) SE packages`_.  This variable
-#     can use ',' to separate package names instead of ';'.  The default value
-#     is empty "".
+#     enables all PT (cond. ST) SE packages`_.  This variable can use ',' to
+#     separate package names instead of ';'.  The default value is empty "".
 #
 #   .. _${PROJECT_NAME}_ADDITIONAL_PACKAGES:
 #
