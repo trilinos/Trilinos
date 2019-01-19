@@ -790,6 +790,7 @@ addParameter(const Teuchos::Array<std::string> & names,
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
+  this->resetDefaultBase();
 
   return parameter_index;
 }
@@ -810,6 +811,7 @@ addDistributedParameter(const std::string & key,
 
   require_in_args_refresh_ = true;
   require_out_args_refresh_ = true;
+  this->resetDefaultBase();
 
   return parameter_index;
 }

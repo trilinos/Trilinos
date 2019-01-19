@@ -2,6 +2,9 @@
 #define TPETRACORE_CONFIG_H
 /* CMake uses this file to generate TpetraCore_config.h automatically */
 
+/* Define whether Tpetra enables deprecated code at compile time. */
+#cmakedefine TPETRA_ENABLE_DEPRECATED_CODE
+
 /* define if new form of std::count is supported */
 #cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
 

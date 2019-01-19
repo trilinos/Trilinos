@@ -106,7 +106,7 @@ namespace MueLu {
 
     /*! @brief Local aggregation. */
 
-    void BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData,
+    void BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
                     RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
                     RCP<const Map>& coarseCoordinatesMap) const;
     //@}
@@ -116,12 +116,14 @@ namespace MueLu {
   private:
 
     void ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
-                                  const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
-                                  Array<size_t>& rowPtr, Array<LO>& colIndex) const;
+                                  const LO dofsPerNode, const int numInterpolationPoints,
+                                  ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
+                                  Array<LO>& colIndex) const;
 
     void ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
-                                const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
-                                Array<size_t>& rowPtr, Array<LO>& colIndex) const;
+                                const LO dofsPerNode, const int numInterpolationPoints,
+                                ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
+                                Array<LO>& colIndex) const;
 
   };
 
