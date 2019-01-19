@@ -218,6 +218,7 @@ void RCPNode::set_extra_data(
   ,bool force_unique
   )
 {
+  (void)force_unique;
   if(extra_data_map_==NULL) {
     extra_data_map_ = new extra_data_map_t;
   }

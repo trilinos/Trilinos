@@ -84,6 +84,7 @@ operator>> (std::istream& in, __float128& x)
 
 void Teuchos::throwScalarTraitsNanInfError( const std::string &errMsg )
 {
+  (void)errMsg;
 #ifdef TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
   TEUCHOS_TEST_FOR_EXCEPTION( true, std::runtime_error, errMsg );
 #endif
