@@ -828,11 +828,20 @@ variables set in this file are seen by the entire CMake project.  For example,
 .. include:: ../../examples/TribitsExampleProject/Version.cmake
    :literal:
 
-Note that the prefix ``${REPOSITORY_NAME}_`` is used instead of hard-coding
-the project name.  This is so that the same ``Version.txt`` file can be used
-as the `<repoDir>/Version.cmake`_ file and have the repository name be
-flexible.  TriBITS sets ``REPOSITORY_NAME = ${PROJECT_NAME}`` when it reads in
-this file at the project-level scope.
+When this file exists in the base project, these will be used to create
+standard SOVERSION symlinks to shared libs.  For example, on Linux, in
+addition to the real shared lib ``lib<libname>.so``, the standard SOVERSION
+symlinks are created like::
+
+  lib<libname>.so.01
+  lib<libname>.so.1.1
+
+When this file exists at the repository level, the prefix
+``${REPOSITORY_NAME}_`` is used instead of hard-coding the project name.  This
+is so that the same ``Version.txt`` file can be used as the
+`<repoDir>/Version.cmake`_ file and have the repository name be flexible.
+TriBITS sets ``REPOSITORY_NAME = ${PROJECT_NAME}`` when it reads in this file
+at the project-level scope.
 
 It is strongly recommended that every TriBITS project contain a
 ``Version.cmake`` file, even if a release has never occurred.  Otherwise, the
