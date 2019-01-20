@@ -82,6 +82,15 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::addEntitySet(EntitySetPtr &entitySet)
+    {
+        for (UN i=0; i<entitySet->getNumEntities(); i++) {
+            addEntity(entitySet->getEntity(i));
+        }
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::buildEntityMap(ConstMapPtr localToGlobalNodesMap)
     {
         if (!EntityMapIsUpToDate_) {
@@ -128,13 +137,61 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::findAncestors(EntitySetPtr entitySet)
+    int EntitySet<SC,LO,GO,NO>::findAncestorsInSet(EntitySetPtr entitySet)
+    {
+        for (UN i=0; i<getNumEntities(); i++) {            
+            getEntity(i)->findAncestorsInSet(entitySet);
+        }
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::clearAncestors()
     {
         for (UN i=0; i<getNumEntities(); i++) {
-            getEntity(i)->findAncestors(entitySet);
-            for (UN j=0; j<getEntity(i)->getAncestors()->getNumEntities(); j++) {
-                getEntity(i)->getAncestors()->getEntity(j)->addOffspring(getEntity(i));
+            EntityVector_[i]->clearAncestors();
+        }
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::clearOffspring()
+    {
+        for (UN i=0; i<getNumEntities(); i++) {
+            EntityVector_[i]->clearOffspring();
+        }
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findCoarseNodes()
+    {
+        EntitySetPtr tmpCoarseNodes(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        for (UN i=0; i<getNumEntities(); i++) {
+            EntitySetPtr tmpAncestors = EntityVector_[i]->getAncestors();
+            if (tmpAncestors->getNumEntities() == 0) {
+                tmpCoarseNodes->addEntity(EntityVector_[i]);
             }
+        }
+        return tmpCoarseNodes;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::clearCoarseNodes()
+    {
+        for (UN i=0; i<getNumEntities(); i++) {
+            EntityVector_[i]->clearCoarseNodes();
+        }
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::computeDistancesToCoarseNodes(UN dimension,
+                                                              MultiVectorPtr &nodeList,
+                                                              DistanceFunction distanceFunction)
+    {
+        for (UN i=0; i<getNumEntities(); i++) {
+            EntityVector_[i]->computeDistancesToCoarseNodes(dimension,nodeList,distanceFunction);
         }
         return 0;
     }
@@ -161,7 +218,7 @@ namespace FROSch {
     {
         for (UN i=0; i<getNumEntities(); i++) {
             if (EntityVector_[i]->getNumNodes()==1) {
-                EntityVector_[i]->resetEntityType(NodeFlag);
+                EntityVector_[i]->resetEntityFlag(NodeFlag);
             }
         }
         return 0;
@@ -219,7 +276,7 @@ namespace FROSch {
                     j++;
                 }
                 if (straight) {
-                    EntityVector_[i]->resetEntityType(StraightFlag);
+                    EntityVector_[i]->resetEntityFlag(StraightFlag);
                 }
             }
         }
@@ -227,13 +284,13 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr EntitySet<SC,LO,GO,NO>::sortOutEntities(EntityFlag flag)
+    typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::sortOutEntities(EntityFlag flag)
     {
         UN before = getNumEntities();
-        Teuchos::RCP<InterfaceEntityPtrVec> removedEntities(new InterfaceEntityPtrVec(0));
+        EntitySetPtr removedEntities(new EntitySet<SC,LO,GO,NO>(DefaultType));
         for (UN i=0; i<getNumEntities(); i++) {
             if (EntityVector_[i]->getEntityFlag()==flag) {
-                removedEntities->push_back(EntityVector_[i]);
+                removedEntities->addEntities(EntityVector_[i]);
                 EntityVector_.erase(EntityVector_.begin()+i);
                 i--;
             }
@@ -370,6 +427,15 @@ namespace FROSch {
             EntityVector_[i]->setUniqueIDToFirstGlobalID();
         }
         EntityMapIsUpToDate_ = false;
+        return 0;
+    }
+    
+    template<class SC,class LO,class GO,class NO>
+    int EntitySet<SC,LO,GO,NO>::setCoarseNodeID()
+    {
+        for (UN i=0; i<getNumEntities(); i++) {
+            EntityVector_[i]->setCoarseNodeID(i);
+        }
         return 0;
     }
     

@@ -115,17 +115,27 @@ namespace FROSch {
         
         int divideUnconnectedEntities(CrsMatrixPtr matrix);
         
-        int sortEntities();
+        int flagEntities(MultiVectorPtr nodeList = Teuchos::null);
         
-        int sortEntities(MultiVectorPtr nodeList);
+        int removeEmptyEntities();
+        
+        int sortVerticesEdgesFaces(MultiVectorPtr nodeList = Teuchos::null);
         
         int buildEntityHierarchy();
+        
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
         
         UN getDimension() const;
         
         UN getDofsPerNode() const;
         
         LO getNumMyNodes() const;
+        
+        //
+        // Remove the references below?
+        //
         
         EntitySetConstPtr & getVertices() const;
         
@@ -143,7 +153,7 @@ namespace FROSch {
         
         EntitySetConstPtr & getCoarseNodes() const;
         
-        EntitySetPtrConstVecPtr & getEntityVector() const;
+        EntitySetPtrConstVecPtr & getEntitySetVector() const;
         
         ConstMapPtr getNodesMap() const;
         
@@ -175,7 +185,7 @@ namespace FROSch {
         EntitySetPtr Interface_;
         EntitySetPtr Interior_;
         EntitySetPtr CoarseNodes_;
-        EntitySetPtrVecPtr EntityVector_;
+        EntitySetPtrVecPtr EntitySetVector_;
         
         MapPtr NodesMap_;
         MapPtr UniqueNodesMap_;

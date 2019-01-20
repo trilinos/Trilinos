@@ -60,6 +60,7 @@ namespace FROSch {
     
     enum EntityType {DefaultType,VertexType,EdgeType,FaceType,InteriorType,InterfaceType};
     enum EntityFlag {DefaultFlag,StraightFlag,ShortFlag,NodeFlag};
+    enum DistanceFunction {ConstantDistanceFunction,InverseEuclideanDistanceFunction};
     
     template <class SC = Xpetra::Operator<>::scalar_type,
     class LO = typename Xpetra::Operator<SC>::local_ordinal_type,
@@ -92,6 +93,9 @@ namespace FROSch {
         typedef Xpetra::Vector<SC,LO,GO,NO> Vector;
         typedef Teuchos::RCP<Vector> VectorPtr;
         
+        typedef Xpetra::MultiVector<SC,LO,GO,NO> MultiVector;
+        typedef Teuchos::RCP<MultiVector> MultiVectorPtr;
+        
         typedef Teuchos::RCP<EntitySet<SC,LO,GO,NO> > EntitySetPtr;
         
         typedef Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > InterfaceEntityPtr;
@@ -106,6 +110,9 @@ namespace FROSch {
         
         typedef Teuchos::Array<GO> GOVec;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
+        
+        typedef Teuchos::ArrayRCP<SC> SCVecPtr;
+        typedef Teuchos::Array<SCVecPtr> SCVecPtrVec;
         
         
         InterfaceEntity(EntityType type,
@@ -149,9 +156,21 @@ namespace FROSch {
         
         int resetEntityFlag(EntityFlag flag);
         
-        int findAncestors(EntitySetPtr entitySet);
+        int findAncestorsInSet(EntitySetPtr entitySet);
+        
+        int clearAncestors();
         
         int addOffspring(InterfaceEntityPtr interfaceEntity);
+        
+        int clearOffspring();
+        
+        EntitySetPtr findCoarseNodes();
+        
+        int clearCoarseNodes();
+        
+        int computeDistancesToCoarseNodes(UN dimension,
+                                          MultiVectorPtr &nodeList = Teuchos::null,
+                                          DistanceFunction distanceFunction = ConstantDistanceFunction);
         
         InterfaceEntityPtr divideEntity(CrsMatrixPtr matrix, int pID);
         
@@ -193,6 +212,13 @@ namespace FROSch {
         
         const EntitySetPtr getAncestors() const;
         
+        const EntitySetPtr getOffspring() const;
+        
+        const EntitySetPtr getCoarseNodes() const;
+        
+        SC getDistanceToCoarseNode(UN iDNode,
+                                   UN iDCoarseNode) const;
+        
     protected:
         
         EntityType Type_;
@@ -205,6 +231,9 @@ namespace FROSch {
         
         EntitySetPtr Ancestors_;
         EntitySetPtr Offspring_;
+        EntitySetPtr CoarseNodes_;
+        
+        SCVecPtrVec DistancesVector_;
         
         UN DofsPerNode_;
         UN Multiplicity_;
@@ -214,10 +243,12 @@ namespace FROSch {
     };
     
     template <class SC,class LO,class GO,class NO>
-    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa, Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
+    bool compareInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                  Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
     
     template <class SC,class LO,class GO,class NO>
-    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa, Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
+    bool equalInterfaceEntities(Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEa,
+                                Teuchos::RCP<InterfaceEntity<SC,LO,GO,NO> > iEb);
     
 }
 

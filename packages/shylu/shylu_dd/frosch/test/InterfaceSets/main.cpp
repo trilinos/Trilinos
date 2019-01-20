@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
         DDInterface<SC,LO,GO,NO> dDInterface(Dimension,1,RepeatedMap);
         dDInterface.divideUnconnectedEntities(K);
-        dDInterface.sortEntities();
+        dDInterface.sortVerticesEdgesFaces();
 
         ////////////////////////////////
         // Build Processor Map Coarse //
