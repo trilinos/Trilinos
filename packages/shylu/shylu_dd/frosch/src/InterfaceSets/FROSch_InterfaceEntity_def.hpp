@@ -266,22 +266,27 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename InterfaceEntity<SC,LO,GO,NO>::EntitySetPtr InterfaceEntity<SC,LO,GO,NO>::findCoarseNodes()
     {
-        if (CoarseNodes_->getNumEntities()) {            
+        if (CoarseNodes_->getNumEntities()) {
+            FROSCH_ASSERT(Ancestors_->getNumEntities()!=0,"Ancestors_->getNumEntities()==0");
             return CoarseNodes_;
         }
-        for (UN i=0; i<Ancestors_.size(); i++) {
-            EntitySetPtr tmpCoarseNodes = Ancestors_[i]->findCoarseNodes();
-            for (UN j=0; j<tmpCoarseNodes->getNumEntities(); j++) {
-                CoarseNodes_->addEntitiy(tmpCoarseNodes[j]);
+        for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
+            EntitySetPtr tmpCoarseNodes = Ancestors_->getEntity(i)->findCoarseNodes();
+            if (tmpCoarseNodes.is_null()) {
+                FROSCH_ASSERT(Ancestors_->getEntity(i)->getAncestors()->getNumEntities()==0,"EntityVector_[i]->getAncestors()->getNumEntities()!=0");
+                CoarseNodes_->addEntity(Ancestors_->getEntity(i));
+            } else {
+                FROSCH_ASSERT(Ancestors_->getEntity(i)->getAncestors()->getNumEntities()!=0,"EntityVector_[i]->getAncestors()->getNumEntities()==0");
+                FROSCH_ASSERT(tmpCoarseNodes->getNumEntities()>0,"tmpCoarseNodes->getNumEntities()<=0");
+                CoarseNodes_->addEntitySet(tmpCoarseNodes);
             }
         }
         CoarseNodes_->sortUnique();
         if (CoarseNodes_->getNumEntities()) {
+            FROSCH_ASSERT(Ancestors_->getNumEntities()!=0,"Ancestors_->getNumEntities()==0");
             return CoarseNodes_;
         } else {
-            EntitySetPtr thisEntity(new EntitySet<SC,LO,GO,NO>(DefaultType));
-            thisEntity->addEntity(rcp(this)); // These are non-owning RCPs
-            return thisEntity;
+            return Teuchos::null;
         }
     }
     
@@ -297,58 +302,60 @@ namespace FROSch {
                                                                     MultiVectorPtr &nodeList,
                                                                     DistanceFunction distanceFunction)
     {
-        DistancesVector_.resize(NodeVector_.size());
-        for (UN i=0; i<NodeVector_.size(); i++) {
-            DistancesVector_[i].resize(CoarseNodes_->getNumEntities()+1,std::numeric_limits<SC>::max());
-        }
-        
-        switch (distanceFunction) {
-            case ConstantDistanceFunction:
-                for (UN i=0; i<NodeVector_.size(); i++) {
-                    for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
-                        DistancesVector_[i][j] = 1.0;
-                    }
-                }
-                break;
-            case InverseEuclideanDistanceFunction:
-                FROSCH_ASSERT(!nodeList.is_null(),"The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
-                FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
-                for (UN i=0; i<CoarseNodes_->getNumEntities(); i++) {
-                    for (UN j=0; j<CoarseNodes_->getEntity(i)->getNumNodes(); j++) {
-                        // Coordinates of the nodes of the coarse node
-                        SCVecPtr CN(dimension);
-                        for (UN k=0; k<dimension; k++) {
-                            CN[k] = nodeList->getData(k)[CoarseNodes_->getEntity(i)->getLocalNodeID(j)];
+        if (CoarseNodes_->getNumEntities()>0) {
+            DistancesVector_.resize(getNumNodes());
+            for (UN i=0; i<getNumNodes(); i++) {
+                DistancesVector_[i].resize(CoarseNodes_->getNumEntities()+1,std::numeric_limits<SC>::max());
+            }
+            
+            switch (distanceFunction) {
+                case ConstantDistanceFunction:
+                    for (UN i=0; i<NodeVector_.size(); i++) {
+                        for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                            DistancesVector_[i][j] = 1.0;
                         }
-                        for (UN k=0; k<NodeVector_.size(); k++) {
-                            // Coordinates of the nodes of the entity
-                            SCVecPtr E(dimension);
-                            SC distance = 0.0;
-                            // Compute quadratic distance
-                            for (UN l=0; l<dimension; l++) {
-                                distance += (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]) * (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]);
+                    }
+                    break;
+                case InverseEuclideanDistanceFunction:
+                    FROSCH_ASSERT(!nodeList.is_null(),"The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
+                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"Inconsistent Dimension.");
+                    for (UN i=0; i<CoarseNodes_->getNumEntities(); i++) {
+                        for (UN j=0; j<CoarseNodes_->getEntity(i)->getNumNodes(); j++) {
+                            // Coordinates of the nodes of the coarse node
+                            SCVecPtr CN(dimension);
+                            for (UN k=0; k<dimension; k++) {
+                                CN[k] = nodeList->getData(k)[CoarseNodes_->getEntity(i)->getLocalNodeID(j)];
                             }
-                            // Compute inverse euclidean distance
-                            distance = std::sqrt(distance);
-                            DistancesVector_[k][i] = std::min(DistancesVector_[k][i],distance);
+                            for (UN k=0; k<NodeVector_.size(); k++) {
+                                // Coordinates of the nodes of the entity
+                                SCVecPtr E(dimension);
+                                SC distance = 0.0;
+                                // Compute quadratic distance
+                                for (UN l=0; l<dimension; l++) {
+                                    distance += (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]) * (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]);
+                                }
+                                // Compute inverse euclidean distance
+                                distance = std::sqrt(distance);
+                                DistancesVector_[k][i] = std::min(DistancesVector_[k][i],distance);
+                            }
                         }
                     }
-                }
-                for (UN i=0; i<NodeVector_.size(); i++) {
-                    for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
-                        DistancesVector_[i][j] = 1.0/DistancesVector_[i][j];
+                    for (UN i=0; i<NodeVector_.size(); i++) {
+                        for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                            DistancesVector_[i][j] = 1.0/DistancesVector_[i][j];
+                        }
                     }
+                    break;
+                default:
+                    break;
+            }
+            
+            // In the last "row", we store the sum of the distances for all coarse nodes
+            for (UN i=0; i<NodeVector_.size(); i++) {
+                DistancesVector_[i][CoarseNodes_->getNumEntities()] = 0.0;
+                for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
+                    DistancesVector_[i][CoarseNodes_->getNumEntities()] += DistancesVector_[i][j];
                 }
-                break;
-            default:
-                break;
-        }
-        
-        // In the last "row", we store the sum of the distances for all coarse nodes
-        for (UN i=0; i<NodeVector_.size(); i++) {
-            DistancesVector_[i][CoarseNodes_->getNumEntities()] = 0.0;
-            for (UN j=0; j<CoarseNodes_->getNumEntities(); j++) {
-                DistancesVector_[i][CoarseNodes_->getNumEntities()] += DistancesVector_[i][j];
             }
         }
         return 0;
@@ -505,8 +512,10 @@ namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
     SC InterfaceEntity<SC,LO,GO,NO>::getDistanceToCoarseNode(UN iDNode,
-                                                                                                    UN iDCoarseNode) const
+                                                             UN iDCoarseNode) const
     {
+        FROSCH_ASSERT(iDNode<getNumNodes(),"iDNode>=getNumNodes()");
+        FROSCH_ASSERT(iDCoarseNode<CoarseNodes_->getNumEntities()+1,"iDNode>=CoarseNodes_->getNumEntities()+1");
         return DistancesVector_[iDNode][iDCoarseNode];
     }
     

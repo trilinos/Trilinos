@@ -151,6 +151,8 @@ namespace FROSch {
                     }
                 }
                 
+                this->InterfaceCoarseSpaces_[blockId]->assembleCoarseSpace();
+                
                 // Count entities
                 GO numCoarseNodesGlobal;
                 numCoarseNodesGlobal = coarseNodes->getEntityMap()->getMaxAllGlobalIndex();
@@ -212,7 +214,9 @@ namespace FROSch {
                             LO index = tmpCoarseNode->getCoarseNodeID();
                             // Offspring: loop over nodes
                             for (UN l=0; l<tmpEntity->getNumNodes(); l++) {
-                                SC value = tmpCoarseNode->getDistanceToCoarseNode(l,m)/tmpCoarseNode->getDistanceToCoarseNode(l,numCoarseNodes);
+                                tmpEntity->getDistanceToCoarseNode(l,m);
+                                tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
+                                SC value = tmpEntity->getDistanceToCoarseNode(l,m)/tmpEntity->getDistanceToCoarseNode(l,numCoarseNodes);
                                 translations[k]->replaceLocalValue(tmpEntity->getGammaDofID(l,k),index,value);
                             }
                         }

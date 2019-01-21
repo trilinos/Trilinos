@@ -87,7 +87,7 @@ namespace FROSch {
         
         int addEntity(InterfaceEntityPtr entity);
         
-        int addEntitySet(EntitySetPtr &entitySet);
+        int addEntitySet(EntitySetPtr entitySet);
         
         int buildEntityMap(ConstMapPtr localToGlobalNodesMap);
         

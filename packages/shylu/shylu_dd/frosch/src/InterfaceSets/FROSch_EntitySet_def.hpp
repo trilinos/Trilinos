@@ -82,7 +82,7 @@ namespace FROSch {
     }
     
     template<class SC,class LO,class GO,class NO>
-    int EntitySet<SC,LO,GO,NO>::addEntitySet(EntitySetPtr &entitySet)
+    int EntitySet<SC,LO,GO,NO>::addEntitySet(EntitySetPtr entitySet)
     {
         for (UN i=0; i<entitySet->getNumEntities(); i++) {
             addEntity(entitySet->getEntity(i));
@@ -166,14 +166,20 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findCoarseNodes()
     {
-        EntitySetPtr tmpCoarseNodes(new EntitySet<SC,LO,GO,NO>(DefaultType));
+        EntitySetPtr coarseNodes(new EntitySet<SC,LO,GO,NO>(DefaultType));
         for (UN i=0; i<getNumEntities(); i++) {
-            EntitySetPtr tmpAncestors = EntityVector_[i]->getAncestors();
-            if (tmpAncestors->getNumEntities() == 0) {
-                tmpCoarseNodes->addEntity(EntityVector_[i]);
+            EntitySetPtr tmpCoarseNodes = EntityVector_[i]->findCoarseNodes();
+            if (tmpCoarseNodes.is_null()) {
+                FROSCH_ASSERT(EntityVector_[i]->getAncestors()->getNumEntities()==0,"EntityVector_[i]->getAncestors()->getNumEntities()!=0");
+                coarseNodes->addEntity(EntityVector_[i]);
+            } else {
+                FROSCH_ASSERT(EntityVector_[i]->getAncestors()->getNumEntities()!=0,"EntityVector_[i]->getAncestors()->getNumEntities()==0");
+                FROSCH_ASSERT(tmpCoarseNodes->getNumEntities()>0,"tmpCoarseNodes->getNumEntities()<=0");
+                coarseNodes->addEntitySet(tmpCoarseNodes);
             }
         }
-        return tmpCoarseNodes;
+        coarseNodes->sortUnique();
+        return coarseNodes;
     }
     
     template<class SC,class LO,class GO,class NO>
