@@ -7169,7 +7169,7 @@ namespace Tpetra {
                     Kokkos::DualView<char*, buffer_device_type>& exports,
                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                     size_t& constantNumPackets,
-                    Distributor& distor) const
+                    Distributor& /* distor */) const
   {
     using Kokkos::View;
     using Tpetra::Details::dualViewStatusToString;
@@ -7617,8 +7617,8 @@ namespace Tpetra {
   unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
                                     const Kokkos::DualView<const char*, buffer_device_type>& imports,
                                     const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
-                                    const size_t constantNumPackets,
-                                    Distributor& distor,
+                                    const size_t /* constantNumPackets */,
+                                    Distributor& /* distor */,
                                     const CombineMode combineMode)
   {
     using Kokkos::View;
