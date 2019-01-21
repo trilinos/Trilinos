@@ -44,9 +44,6 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 
-//#define USE_UNALIASED_MEMORY
-
-
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -84,14 +81,9 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
     values_type myvals = this->getLocalMatrix().values;
 
     // Remember: The Graph is in OWNED mode
-    // NOTE: You cannot use aliased memory for the matrix if you don't use aliased memory for the graph (because the ownedplusshared graph, if it 
     // is unaliased, will be missing off-rank entries
-#ifdef  USE_UNALIASED_MEMORY
-    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph));
-#else
     size_t numOwnedVals = graph->getLocalGraph().entries.extent(0); // OwnedVals
     inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
-#endif
   }
 }
 
@@ -107,16 +99,9 @@ operator=(const FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   if(!inactiveCrsMatrix_.is_null() && *activeCrsMatrix_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-
-#ifdef USE_UNALISED_MEMORY
-    inactiveCrsMatrix_->doExport(*this,*feGraph_->importer_,CM);
-    inactiveCrsMatrix_->fillComplete();
-#else
     // Do a self-export in "restricted mode"
     this->doExport(*this,*feGraph_->importer_,CM,true);
     inactiveCrsMatrix_->fillComplete();
-#endif
-
   }
   crs_matrix_type::fillComplete();
 }//end doOverlapToLocal
@@ -156,7 +141,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginFill()  {
   // Note: This does not throw an error since the on construction, the FECRS is in overlap mode.  Ergo, calling beginFill(),
   // like one should expect to do in a rational universe, should not cause an error.
   if(*activeCrsMatrix_ == FE_ACTIVE_OWNED) {
-        switchActiveCrsMatrix();
+    switchActiveCrsMatrix();
   }
   this->resumeFill();
 }
