@@ -252,7 +252,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -380,7 +379,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -508,7 +506,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
@@ -636,7 +633,6 @@ write start = -1   [default]
 write end = -1   [default]
 
 Computing Ac (MueLu::RebalanceAcFactory)
-Replacing maps with a subcommunicator
 repartition: use subcommunicators = 1   [default]
 
 Max coarse size (<= 100) achieved

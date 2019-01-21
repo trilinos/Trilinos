@@ -243,8 +243,9 @@ namespace MueLu {
         timerMonitorExclusive_(object, object.ShortClassName() + ": " + msg, timerLevel)
     {
       if (object.IsPrint(TimingsByLevel)) {
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
-            " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
+        if (Teuchos::TimeMonitor::getStackedTimer().is_null())
+          levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
+              " (total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
         levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, object.ShortClassName() +
             MUELU_TIMER_AS_STRING + ": " + msg + " (level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
       }
@@ -266,8 +267,9 @@ namespace MueLu {
     {
       if (object.IsPrint(TimingsByLevel)) {
         std::string label = FormattingHelper::getColonLabel(level.getObjectLabel());
-        levelTimeMonitor_ = rcp(new TimeMonitor(object, label+object.ShortClassName() + ": " +  msg +
-            " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
+        if (Teuchos::TimeMonitor::getStackedTimer().is_null())
+          levelTimeMonitor_ = rcp(new TimeMonitor(object, label+object.ShortClassName() + ": " +  msg +
+              " (total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
         levelTimeMonitorExclusive_ = rcp(new MutuallyExclusiveTimeMonitor<Level>(object, label+object.ShortClassName() +
             MUELU_TIMER_AS_STRING + ": " + msg + " (level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
       }
@@ -312,7 +314,7 @@ namespace MueLu {
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, int levelID, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : SubMonitor(object, msg, msgLevel, timerLevel)
     {
-      if (object.IsPrint(TimingsByLevel))
+      if (object.IsPrint(TimingsByLevel) && Teuchos::TimeMonitor::getStackedTimer().is_null())
         levelTimeMonitor_ = rcp(new TimeMonitor(object, object.ShortClassName() + ": " + msg +
                                                 " (sub, total, level=" + Teuchos::Utils::toString(levelID) + ")", timerLevel));
     }
@@ -328,7 +330,7 @@ namespace MueLu {
     SubFactoryMonitor(const BaseClass& object, const std::string & msg, const Level & level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1)
       : SubMonitor(object, msg, FormattingHelper::getColonLabel(level.getObjectLabel()), msgLevel, timerLevel)
     {
-      if (object.IsPrint(TimingsByLevel)) {
+      if (object.IsPrint(TimingsByLevel) && Teuchos::TimeMonitor::getStackedTimer().is_null()) {
         std::string label = FormattingHelper::getColonLabel(level.getObjectLabel());
         levelTimeMonitor_ = rcp(new TimeMonitor(object, label+object.ShortClassName() + ": " +  msg +
                                                 " (sub, total, level=" + Teuchos::Utils::toString(level.GetLevelID()) + ")", timerLevel));
