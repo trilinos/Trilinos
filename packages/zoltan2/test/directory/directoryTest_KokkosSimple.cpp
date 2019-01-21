@@ -81,13 +81,12 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int err = 0;
 
   // define a few constants/helpers
-  typedef int lid_t; // lid will be ignored in this case
-  typedef int gid_t;
-  typedef int gidA_t;
+  typedef int test_lid_t; // lid will be ignored in this case
+  typedef int test_gid_t;
   typedef long user_t;
 
   // set up the directory type - this is the single user mode (not vector user)
-  typedef Zoltan2::Zoltan2_Directory_Simple<gidA_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Simple<test_gid_t,test_lid_t,user_t> directory_t;
 
   // create the directory
   directory_t directory(comm, false, 0);
@@ -95,7 +94,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // now create some gids to write
   // to keep things interesting we'll have just proc 0 write 4 Ids and all the
   // other procs right the same gid (3).
-  std::vector<gid_t> writeGIDs;
+  std::vector<test_gid_t> writeGIDs;
 
   if(comm->getRank() == 0) {
     writeGIDs =  { 1, 5, 7, 10 };
@@ -119,7 +118,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     directory_t::Replace);
 
   // now pick some gids to find
-  std::vector<gid_t> findIds = { 3, 5 };
+  std::vector<test_gid_t> findIds = { 3, 5 };
 
   // now create a user space to accept the values
   // Setting this empty will turn off this option. The original directory uses
@@ -165,7 +164,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // we'll try a mix of preexisting values and new values
   // this adds some unit testing coverage for the case when update is called
   // twice on the same directory, not implemented in the general unit tests.
-  std::vector<gid_t> writeGIDs2;
+  std::vector<test_gid_t> writeGIDs2;
 
   if(comm->getRank() == 0) {
     writeGIDs2 =  { 5, 700, 1000 };
@@ -187,7 +186,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     directory_t::Replace);
 
   // now pick some gids to find
-  std::vector<gid_t> findIds2 = { 1, 5, 1000 };
+  std::vector<test_gid_t> findIds2 = { 1, 5, 1000 };
 
   // now create a user space to accept the values
   std::vector<user_t> findUser2(findIds2.size());
@@ -221,21 +220,22 @@ int test_aggregate(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int err = 0;
 
   // define a few constants/helpers
-  typedef int lid_t; // lid will be ignored in this case
-  typedef long gid_t;
+  typedef int test_lid_t; // lid will be ignored in this case
+  typedef long test_gid_t;
   typedef std::vector<long long> user_t; // now user is a vector of long long
 
   // set up the directory type - this is the vector user mode
   // the way things are setup right now a std::vector user_t must use this
   // class - maybe eventually this could all be handling by templating but
   // I think this might be cleaner and more performant
-  typedef Zoltan2::Zoltan2_Directory_Vector<gid_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Vector<test_gid_t,test_lid_t,user_t>
+    directory_t;
 
   // create the directory
   directory_t directory(comm, false, 0);
 
   // now create some gids to write based on the rank
-  std::vector<gid_t> writeGIDs;
+  std::vector<test_gid_t> writeGIDs;
   switch(comm->getRank()) {
     case 0:
       writeGIDs = { 3, 5 }; // rank 0 writes only 3 and 5
@@ -268,7 +268,7 @@ int test_aggregate(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     directory_t::Aggregate);
 
   // now pick some gids to find - could make this rank specific
-  std::vector<gid_t> findIds = { 3, 5 };
+  std::vector<test_gid_t> findIds = { 3, 5 };
 
   // now create a user space to accept the values
   // Setting this empty will turn off this option. The original directory uses
@@ -320,21 +320,22 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int err = 0;
 
   // define a few constants/helpers
-  typedef int lid_t; // lid will be ignored in this case
-  typedef gid_struct gid_t;
+  typedef int test_lid_t; // lid will be ignored in this case
+  typedef gid_struct test_gid_t;
   typedef int user_t;
 
   // set up the directory type - this is the single user mode (not vector user)
-  typedef Zoltan2::Zoltan2_Directory_Simple<gid_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Simple<test_gid_t,test_lid_t,user_t>
+    directory_t;
 
   // create the directory
   directory_t directory(comm, false, 0);
 
   // set up some test gids
   // in this case the entire set of values is the gid
-  std::vector<gid_t> writeGIDs;
-  gid_t gid1(1, 8, 7, 3);
-  gid_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
+  std::vector<test_gid_t> writeGIDs;
+  test_gid_t gid1(1, 8, 7, 3);
+  test_gid_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
 
   // let's have rank 0 write gid1 and gid2 while other ranks write gid2 only
   if(comm->getRank() == 0) {
@@ -362,7 +363,7 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     directory_t::Add);
 
   // now check them on all ranks - this could be different for different ranks
-  std::vector<gid_t> findIds = { gid1, gid2 };
+  std::vector<test_gid_t> findIds = { gid1, gid2 };
 
   // create a user space to accept the values
   // Setting this empty will turn off this option. The original directory uses
@@ -400,26 +401,27 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int err = 0;
 
   // define a few constants/helpers
-  typedef gid_struct gid_t;
-  typedef lid_struct lid_t;
+  typedef gid_struct test_gid_t;
+  typedef lid_struct test_lid_t;
   typedef int user_t;
 
-  typedef Zoltan2::Zoltan2_Directory_Simple<gid_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Simple<test_gid_t,test_lid_t,user_t>
+    directory_t;
 
   // create the directory
   directory_t directory(comm, true, 0);
 
   // set up some test gids
   // in this case the entire set of values is the gid
-  std::vector<gid_t> writeGIDs;
-  gid_t gid1(1, 8, 7, 3);
-  gid_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
+  std::vector<test_gid_t> writeGIDs;
+  test_gid_t gid1(1, 8, 7, 3);
+  test_gid_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
 
   // set up some test lids
   // in this case the entire set of values is the lid
-  std::vector<lid_t> writeLIDs;
-  lid_t lid1(500, 2009);
-  lid_t lid2(500, 8000); // this is a completely different lid from the prior
+  std::vector<test_lid_t> writeLIDs;
+  test_lid_t lid1(500, 2009);
+  test_lid_t lid2(500, 8000); // this is a completely different lid from the prior
 
   // let's have rank 0 write gid1 and gid2 while other ranks write gid2 only
   if(comm->getRank() == 0) {
@@ -444,10 +446,10 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     NULL, directory_t::Replace);
 
   // now check them on all ranks - this could be different for different ranks
-  std::vector<gid_t> findGIDs = { gid1, gid2 };
+  std::vector<test_gid_t> findGIDs = { gid1, gid2 };
 
   // create lid space to accept the lid values
-  std::vector<lid_t> findLIDs(findGIDs.size());
+  std::vector<test_lid_t> findLIDs(findGIDs.size());
 
   // now call find which will fill findLIDs
   directory.find(findGIDs.size(), &findGIDs[0], &findLIDs[0], NULL, NULL, NULL);
