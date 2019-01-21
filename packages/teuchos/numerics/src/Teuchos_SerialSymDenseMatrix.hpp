@@ -272,6 +272,12 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
   */
   int putScalar( const ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero(), bool fullMatrix = false );
 
+  //! Swap values between this matrix and incoming matrix.
+  /*!
+    Swaps pointers and associated state without copying the matrix data.
+  */
+  void swap (SerialSymDenseMatrix<OrdinalType, ScalarType> &B);
+
   //! Set all values in the active area (upper/lower triangle) of this matrix to be random numbers.
   /*! \note The diagonal will be the sum of the off diagonal elements, plus a bias, so the matrix is SPD.
    */
@@ -629,6 +635,29 @@ int SerialSymDenseMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType v
     }
   }
   return 0;
+}
+
+template<typename OrdinalType, typename ScalarType> void
+SerialSymDenseMatrix<OrdinalType, ScalarType>::swap(
+  SerialSymDenseMatrix<OrdinalType, ScalarType> &B)
+{
+  // cache B values
+  ScalarType* B_ptr  = B.values_;
+  OrdinalType B_rc   = B.numRowCols_,   B_str   = B.stride_;
+  bool        B_vc   = B.valuesCopied_, B_upper = B.upper_;
+  char        B_uplo = B.UPLO_;
+
+  // assign values from this to B
+  B.values_       = values_;
+  B.numRowCols_   = numRowCols_;   B.stride_ = stride_;
+  B.valuesCopied_ = valuesCopied_; B.upper_  = upper_;
+  B.UPLO_         = UPLO_;
+
+  // assign cached B values to this
+  values_       = B_ptr;
+  numRowCols_   = B_rc;  stride_ = B_str;
+  valuesCopied_ = B_vc;  upper_  = B_upper;
+  UPLO_         = B_uplo;
 }
 
 template<typename OrdinalType, typename ScalarType>

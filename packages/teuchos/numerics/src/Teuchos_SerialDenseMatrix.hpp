@@ -190,12 +190,6 @@ public:
   */
   SerialDenseMatrix<OrdinalType, ScalarType>& assign (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
 
-  //! Swap values between this matrix and incoming matrix.
-  /*!
-    Swaps pointers without copying any data.
-  */
-  void swap (SerialDenseMatrix<OrdinalType, ScalarType> &B);
-
   //! Set all values in the matrix to a constant value.
   /*!
     \param value - Value to use;
@@ -208,6 +202,12 @@ public:
     \return Integer error code, set to 0 if successful.
   */
   int putScalar( const ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero() );
+
+  //! Swap values between this matrix and incoming matrix.
+  /*!
+    Swaps pointers and associated state without copying the matrix data.
+  */
+  void swap (SerialDenseMatrix<OrdinalType, ScalarType> &B);
 
   //! Set all values in the matrix to be random numbers.
   int random();
@@ -543,40 +543,6 @@ SerialDenseMatrix<OrdinalType, ScalarType>::~SerialDenseMatrix()
 //  Shape methods
 //----------------------------------------------------------------------------------------------------
 
-template<typename OrdinalType, typename ScalarType> void
-SerialDenseMatrix<OrdinalType, ScalarType>::swap(
-  SerialDenseMatrix<OrdinalType, ScalarType> &B)
-{
-  // Notes:
-  // > DefaultBLASImpl::SWAP() uses a deep copy. This fn uses a pointer swap.
-  // > this fn covers both Vector and Matrix, such that some care must be
-  //   employed to not swap across types (creating a Vector with non-unitary
-  //   numCols_)
-  // > Inherited data that is not currently swapped (since inactive/deprecated):
-  //   >> Teuchos::CompObject:
-  //       Flops *flopCounter_ [Note: all SerialDenseMatrix ctors initialize a
-  //       NULL flop-counter using CompObject(), such that any flop increments
-  //       that are computed are not accumulated.]
-  //   >> Teuchos::Object:
-  //       static int tracebackMode (no swap for statics)
-  //       std::string label_ (has been reported as a cause of memory overhead)
-
-  // cache B values
-  ScalarType* B_ptr  = B.values_;
-  OrdinalType B_rows = B.numRows_, B_cols = B.numCols_, B_str = B.stride_;
-  bool B_vc = B.valuesCopied_;
-
-  // assign values from this to B
-  B.values_  = values_;
-  B.numRows_ = numRows_; B.numCols_ = numCols_; B.stride_ = stride_;
-  B.valuesCopied_ = valuesCopied_;
-
-  // assign cached B values to this
-  values_  = B_ptr;
-  numRows_ = B_rows;  numCols_ = B_cols;  stride_ = B_str;
-  valuesCopied_ = B_vc;
-}
-
 template<typename OrdinalType, typename ScalarType>
 int SerialDenseMatrix<OrdinalType, ScalarType>::shape(
   OrdinalType numRows_in, OrdinalType numCols_in
@@ -650,6 +616,40 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::putScalar( const ScalarType valu
           }
   }
   return 0;
+}
+
+template<typename OrdinalType, typename ScalarType> void
+SerialDenseMatrix<OrdinalType, ScalarType>::swap(
+  SerialDenseMatrix<OrdinalType, ScalarType> &B)
+{
+  // Notes:
+  // > DefaultBLASImpl::SWAP() uses a deep copy. This fn uses a pointer swap.
+  // > this fn covers both Vector and Matrix, such that some care must be
+  //   employed to not swap across types (creating a Vector with non-unitary
+  //   numCols_)
+  // > Inherited data that is not currently swapped (since inactive/deprecated):
+  //   >> Teuchos::CompObject:
+  //        Flops *flopCounter_ [Note: all SerialDenseMatrix ctors initialize a
+  //        NULL flop-counter using CompObject(), such that any flop increments
+  //        that are computed are not accumulated.]
+  //   >> Teuchos::Object: (now removed from inheritance list)
+  //        static int tracebackMode (no swap for statics)
+  //        std::string label_ (has been reported as a cause of memory overhead)
+
+  // cache B values
+  ScalarType* B_ptr  = B.values_;
+  OrdinalType B_rows = B.numRows_, B_cols = B.numCols_, B_str = B.stride_;
+  bool B_vc = B.valuesCopied_;
+
+  // assign values from this to B
+  B.values_  = values_;
+  B.numRows_ = numRows_; B.numCols_ = numCols_; B.stride_ = stride_;
+  B.valuesCopied_ = valuesCopied_;
+
+  // assign cached B values to this
+  values_  = B_ptr;
+  numRows_ = B_rows;  numCols_ = B_cols;  stride_ = B_str;
+  valuesCopied_ = B_vc;
 }
 
 template<typename OrdinalType, typename ScalarType>
