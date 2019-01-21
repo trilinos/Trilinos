@@ -89,7 +89,6 @@ namespace FROSch {
         // EntityVector
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
-                if (EntitySetVector_[l]->getEntity(i)->getNumNodes()==0) std::cout << "AAAAAAAAAAAA\n";
                 for (UN j=0; j<EntitySetVector_[l]->getEntity(i)->getNumNodes(); j++) {
                     LO localID = EntitySetVector_[l]->getEntity(i)->getLocalNodeID(j);
                     UNVecPtr dofIDs(DofsPerNode_);
@@ -696,9 +695,8 @@ namespace FROSch {
             EntitySetVector_[componentsMultiplicity[i]]->addEntity(tmpEntity);
         }
 
+        // Remove the empty entity stemming from the interior nodes
         removeEmptyEntities();
-        
-        std::cerr << "Why is there any empty entity here?\n";
         
         // We need to set the unique ID; otherwise, we cannot sort entities
         for (UN i=0; i<EntitySetVector_.size(); i++) {
