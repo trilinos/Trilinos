@@ -47,9 +47,6 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 
-//#define USE_UNALIASED_MEMORY
-
-
 
 namespace Tpetra {
 
@@ -67,7 +64,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
   domainMap_(domainMap.is_null() ? ownedRowMap : domainMap),
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 {  
-  setup(ownedRowMap,ownedPlusSharedRowMap,params,maxNumEntriesPerRow);
+  setup(ownedRowMap,ownedPlusSharedRowMap,params);
 }
 
 
@@ -86,16 +83,12 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
   rangeMap_(rangeMap.is_null() ? ownedRowMap : rangeMap)
 
 {  
-  // Only pass in numEntries for "owned rows"
-  size_t numOwnedRows = ownedRowMap->getNodeNumElements();
-  auto sv = Kokkos::subview(numEntPerRow,Kokkos::pair<size_t,size_t>(0,numOwnedRows));
-  setup(ownedRowMap,ownedPlusSharedRowMap,params,sv);
+  setup(ownedRowMap,ownedPlusSharedRowMap,params);
 }
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-template <class NumEntries_t>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params, NumEntries_t &ne) {
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<const map_type>  & ownedRowMap, const Teuchos::RCP<const map_type> & ownedPlusSharedRowMap,const Teuchos::RCP<Teuchos::ParameterList>& params) {
  const char tfecfFuncName[] = "FECrsGraph::setup(): ";
 
  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(ownedRowMap.is_null (), std::runtime_error, "ownedRowMap is null.");
@@ -125,15 +118,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowMap->getNodeNumElements() > ownedPlusSharedRowMap->getNodeNumElements(),
                                           std::runtime_error,"ownedRowMap more entries than the ownedPlusSharedRowMap.");   
 
-   // Build the inactive graph
-#ifdef USE_UNALIASED_MEMORY
-   inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,ne,StaticProfile,params));
-   inactiveCrsGraph_->allocateIndices(GlobalIndices);
+   // FIXME: Add locallyFitted debug check
 
-#else
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
-#endif
  }
 
 }
@@ -152,15 +140,6 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(const CombineMode CM) {
   const char tfecfFuncName[] = "FECrsGraph::doOwnedPlusSharedToOwned(CombineMode): ";
   if(!inactiveCrsGraph_.is_null() && *activeCrsGraph_ == FE_ACTIVE_OWNED_PLUS_SHARED) {
-#ifdef USE_UNALIASED_MEMORY
-    inactiveCrsGraph_->doExport(*this,*importer_,CM);
-    
-    // fillComplete the owned graph
-    inactiveCrsGraph_->fillComplete(domainMap_,rangeMap_);
-
-    // fillComplete the owned+shared graph in a way that generates the owned+shared grep w/o an importer or exporter
-    crs_graph_type::fillComplete(inactiveCrsGraph_->getColMap(),inactiveCrsGraph_->getRowMap());
-#else
     Teuchos::RCP<const map_type> ownedRowMap = inactiveCrsGraph_->getRowMap();
 
     // Do a self-export in "restricted mode"
@@ -209,7 +188,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
                                      Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros)));
     // This will generate an exporter if we need one.
     inactiveCrsGraph_->expertStaticFillComplete(domainMap_,rangeMap_,this->getImporter(),Teuchos::null);
-#endif
   }
 }//end doOverlapToLocal
 
@@ -252,7 +230,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
      4) The OWNED_PLUS_SHARED graph has been fillCompleted with a column map whose first chunk
         is the column map for the OWNED graph.  
         If we assume that (a) if you own an element, you also own at least one of the connecte nodes and (b) elements are cliques, then
-        the columnMap is the same for both graphs!!! Yay!!!
+        the columnMap is the same for both graphs!!! 
 
      5) The OWNED_PLUS_SHARED graph has neither an importer nor exporter.  Making these is expensive and we don't need them.       
    */
