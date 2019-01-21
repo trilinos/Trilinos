@@ -146,19 +146,26 @@ echo -e ""
 : ${TRILINOS_TARGET_BRANCH:?}
 : ${TRILINOS_SOURCE_SHA:?}
 : ${PULLREQUESTNUM:?}
+: ${NODE_NAME:?}
 : ${JOB_BASE_NAME:?}
 : ${BUILD_NUMBER:?}
 : ${WORKSPACE:?}
 
 declare -i ierror=0
 #Have to keep loading git
-regex=".*(_cuda_).*"
-if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
+cuda_regex=".*(_cuda_).*"
+ride_regex=".*(ride).*"
+if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        module load git/2.10.1
+    else
+        echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
+        exit -1
+    fi
+else
     source /projects/sems/modulefiles/utils/sems-modules-init.sh
     module load sems-git/2.10.1
-else
-    echo -e "Job is CUDA and assumed on Ride"
-    module load git/2.10.1
 fi
 
 #--------------------------------------------
@@ -274,13 +281,16 @@ module list
 # This crashes for the serial case since MPI variables are not set
 # - See Issue #3625
 # - wcm: bugfix #3673
-regex=".*(_SERIAL)$"
-regex_cuda=".*(_cuda_).*"
-if [[ ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
+serial_regex=".*(_SERIAL)$"
+if [[ ${JOB_BASE_NAME:?} =~ ${serial_regex} ]]; then
     echo -e "Job is SERIAL"
-elif [[ ${JOB_BASE_NAME:?} =~ ${regex_cuda} ]]; then
-    echo -e "Job is CUDA"
-    echo -e "MPI type = sems-${MPI_VENDOR:?}/${MPI_VERSION:?}"
+elif [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        echo -e "MPI type = sems-${MPI_VENDOR:?}/${MPI_VERSION:?}"
+    else
+        echo -e "MPI Vendor and Versions may not be set correctly for CUDA job not on Ride."
+    fi
 else
     echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
