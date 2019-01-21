@@ -80,8 +80,6 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
     // guy for the Owned matrix.
     values_type myvals = this->getLocalMatrix().values;
 
-    // Remember: The Graph is in OWNED mode
-    // is unaliased, will be missing off-rank entries
     size_t numOwnedVals = graph->getLocalGraph().entries.extent(0); // OwnedVals
     inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
   }
