@@ -690,7 +690,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   if(is_Zoltan2_Directory_Vector()) {
 
     if(sum_rmsg_sizes_resized > 0) {
-      rbuff_resized_build = Teuchos::arcp(new char[sum_rmsg_sizes_resized], 0, sum_rmsg_sizes_resized, true);
+      rbuff_resized_build = Teuchos::arcp(new char[sum_rmsg_sizes_resized],
+        0, sum_rmsg_sizes_resized, true);
     }
 
     track_ptr = rbuff.getRawPtr();
@@ -765,7 +766,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   for (size_t i = 0; i < count; i++) {
 
     if(track_offset_resized >= sbuff_resized.size()) {
-      printf( "%d has gid.size() %d track_offset_resized: %d sbuff_resized: %d\n", comm->getRank(),
+      printf(
+        "%d has gid.size() %d track_offset_resized: %d sbuff_resized: %d\n",
+        comm->getRank(),
         (int) count, (int) track_offset_resized, (int) sbuff_resized.size());
       throw std::logic_error("Bad buffer overflow! Internal error.");
     }
@@ -1085,7 +1088,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
 }
 
 template <typename gid_t,typename lid_t,typename user_t>
-unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(const gid_t & gid) const
+unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(
+  const gid_t & gid) const
 {
   uint32_t k;
   MurmurHash3_x86_32((void *)(&gid), sizeof(gid_t), 14, (void *)&k);
