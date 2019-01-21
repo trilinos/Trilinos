@@ -118,7 +118,13 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::setup(const Teuchos::RCP<con
    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowMap->getNodeNumElements() > ownedPlusSharedRowMap->getNodeNumElements(),
                                           std::runtime_error,"ownedRowMap more entries than the ownedPlusSharedRowMap.");   
 
-   // FIXME: Add locallyFitted debug check
+   // The locallyFitted check is debug mode only since it is more expensive
+   const bool debug = ::Tpetra::Details::Behavior::debug ();
+   if(debug) {
+     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( !ownedPlusSharedRowMap->isLocallyFitted(*ownedRowMap),
+                                            std::runtime_error,"ownedPlusSharedRowMap must be locally fitted to the ownedRowMap");
+     
+   }
 
    // For FECrsGraph, we do all the aliasing AFTER import.  All we need here is a constructor
    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,0,StaticProfile,params));
