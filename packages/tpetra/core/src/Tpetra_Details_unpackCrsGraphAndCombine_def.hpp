@@ -358,7 +358,6 @@ unpackAndCombine(
   // Resize row pointers and indices to accommodate incoming data
   auto padding = computeCrsPadding<NumPacketsView,ImportLidsView,Device>(
     num_packets_per_lid, import_lids, unpack_pids);
-  using padding_type = decltype(padding);
   padCrsArrays(row_ptrs_beg, row_ptrs_end, indices, padding);
 
   // Get the offsets

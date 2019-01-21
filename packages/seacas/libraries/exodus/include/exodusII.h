@@ -46,7 +46,6 @@
 
 #include "netcdf.h"
 
-#define NC_HAVE_META_H
 #if defined(NC_HAVE_META_H)
 #include "netcdf_meta.h"
 #if NC_HAS_PARALLEL

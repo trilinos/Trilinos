@@ -129,9 +129,10 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, RCP<CrsGraph>& myGraph,
-             RCP<const Map>& coarseCoordinatesFineMap, RCP<const Map>& coarseCoordinatesMap) const {
-    Monitor m(*this, "BuildAggregates");
+  BuildGraph(const GraphBase& graph, RCP<IndexManager>& geoData, const LO dofsPerNode,
+             RCP<CrsGraph>& myGraph, RCP<const Map>& coarseCoordinatesFineMap,
+             RCP<const Map>& coarseCoordinatesMap) const {
+    Monitor m(*this, "BuildGraphP");
 
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_STRUCTUREDALGORITHM_DEBUG")) {
@@ -153,20 +154,23 @@ namespace MueLu {
     }
     *out << "numInterpolationPoints=" << numInterpolationPoints << std::endl;
 
-    Array<LO> colIndex( geoData->getNumLocalCoarseNodes() + numInterpolationPoints*
-                        (geoData->getNumLocalFineNodes() - geoData->getNumLocalCoarseNodes()) );
-    Array<size_t> rowPtr(geoData->getNumLocalFineNodes()+1);
+    Array<LO> colIndex((geoData->getNumLocalCoarseNodes() + numInterpolationPoints*
+                        (geoData->getNumLocalFineNodes() - geoData->getNumLocalCoarseNodes()))*dofsPerNode);
+    Array<size_t> rowPtr(geoData->getNumLocalFineNodes()*dofsPerNode + 1);
     rowPtr[0] = 0;
-    ArrayRCP<size_t> nnzOnRow(geoData->getNumLocalFineNodes());
+    ArrayRCP<size_t> nnzOnRow(geoData->getNumLocalFineNodes()*dofsPerNode);
 
     *out << "Compute prolongatorGraph data" << std::endl;
     if(geoData->getInterpolationOrder() == 0) {
-      ComputeGraphDataConstant(graph, geoData, numInterpolationPoints, nnzOnRow, rowPtr, colIndex);
+      ComputeGraphDataConstant(graph, geoData, dofsPerNode, numInterpolationPoints,
+                               nnzOnRow, rowPtr, colIndex);
     } else if(geoData->getInterpolationOrder() == 1) {
-      ComputeGraphDataLinear(graph, geoData, numInterpolationPoints, nnzOnRow, rowPtr, colIndex);
+      ComputeGraphDataLinear(graph, geoData, dofsPerNode, numInterpolationPoints,
+                             nnzOnRow, rowPtr, colIndex);
     }
 
-    // Compute graph's colMap and domainMap
+    // Compute graph's rowMap, colMap and domainMap
+    RCP<Map> rowMap = MapFactory::Build(graph.GetDomainMap(), dofsPerNode);
     RCP<Map> colMap, domainMap;
     *out << "Compute domain and column maps of the CrsGraph" << std::endl;
     if(coupled){
@@ -215,11 +219,10 @@ namespace MueLu {
                                                    graph.GetDomainMap()->getNode());
     } else {
       // In this case the map will compute the global number of nodes on the coarse mesh
-      // since geoData->getNumGlobalCoarseNodes() == Teuchos::OrdinalTraits<GO>::invalid()
       // and it will assign GIDs to the local coarse nodes.
       colMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                                 geoData->getNumGlobalCoarseNodes(),
-                                 geoData->getNumLocalCoarseNodes(),
+                                 Teuchos::OrdinalTraits<GO>::invalid(),
+                                 geoData->getNumLocalCoarseNodes()*dofsPerNode,
                                  graph.GetDomainMap()->getIndexBase(),
                                  graph.GetDomainMap()->getComm(),
                                  graph.GetDomainMap()->getNode());
@@ -229,27 +232,37 @@ namespace MueLu {
       Array<GO> coarseNodeFineGIDs(geoData->getNumLocalCoarseNodes());
       geoData->getCoarseNodesData(graph.GetDomainMap(), coarseNodeCoarseGIDs, coarseNodeFineGIDs);
       coarseCoordinatesMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                                               geoData->getNumGlobalCoarseNodes(),
+                                               Teuchos::OrdinalTraits<GO>::invalid(),
                                                geoData->getNumLocalCoarseNodes(),
                                                graph.GetDomainMap()->getIndexBase(),
                                                graph.GetDomainMap()->getComm(),
                                                graph.GetDomainMap()->getNode());
       coarseCoordinatesFineMap = MapFactory::Build(graph.GetDomainMap()->lib(),
-                                                   geoData->getNumGlobalCoarseNodes(),
+                                                   Teuchos::OrdinalTraits<GO>::invalid(),
                                                    coarseNodeFineGIDs(),
                                                    graph.GetDomainMap()->getIndexBase(),
                                                    graph.GetDomainMap()->getComm(),
                                                    graph.GetDomainMap()->getNode());
     }
 
-    myGraph = CrsGraphFactory::Build(graph.GetDomainMap(),
+    *out << "Call constructor of CrsGraph" << std::endl;
+    myGraph = CrsGraphFactory::Build(rowMap,
                                      colMap,
                                      nnzOnRow,
                                      Xpetra::DynamicProfile);
+
+    *out << "Fill CrsGraph" << std::endl;
+    LO rowIdx = 0;
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
-      myGraph->insertLocalIndices(nodeIdx, colIndex(rowPtr[nodeIdx], nnzOnRow[nodeIdx]) );
+      for(LO dof = 0; dof < dofsPerNode; ++dof) {
+        rowIdx = nodeIdx*dofsPerNode + dof;
+        myGraph->insertLocalIndices(rowIdx, colIndex(rowPtr[rowIdx], nnzOnRow[rowIdx]) );
+      }
     }
-    myGraph->fillComplete(domainMap, graph.GetDomainMap());
+
+    *out << "Call fillComplete on CrsGraph" << std::endl;
+    myGraph->fillComplete(domainMap, rowMap);
+    *out << "Prolongator CrsGraph computed" << std::endl;
 
   } // BuildAggregates()
 
@@ -257,8 +270,9 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   ComputeGraphDataConstant(const GraphBase& graph, RCP<IndexManager>& geoData,
-                           const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
-                           Array<size_t>& rowPtr, Array<LO>& colIndex) const {
+                           const LO dofsPerNode, const int numInterpolationPoints,
+                           ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
+                           Array<LO>& colIndex) const {
 
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_STRUCTUREDALGORITHM_DEBUG")) {
@@ -277,9 +291,6 @@ namespace MueLu {
     LO ghostedCoarseNodeCoarseLID, rem, rate;
     Array<LO> ghostedIdx(3), coarseIdx(3);
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
-      // For piece-wise constant interpolation we only get one nnz per row
-      nnzOnRow[nodeIdx] = Teuchos::as<size_t>(1);
-      rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1; // These needs to change for kokkos: rowPtr[nodeIdx + 1] = nodeIdx + 1;
 
       // Compute coarse ID associated with fine LID
       geoData->getFineNodeGhostedTuple(nodeIdx, ghostedIdx[0], ghostedIdx[1], ghostedIdx[2]);
@@ -300,7 +311,13 @@ namespace MueLu {
 
       geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
                                        ghostedCoarseNodeCoarseLID);
-      colIndex[rowPtr[nodeIdx]] = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID]; // Here too, substitute nodeIdx for rowPtr[nodeIdx]
+
+      for(LO dof = 0; dof < dofsPerNode; ++dof) {
+        nnzOnRow[nodeIdx*dofsPerNode + dof]         = 1;
+        rowPtr[nodeIdx*dofsPerNode + dof + 1]       = rowPtr[nodeIdx*dofsPerNode + dof] + 1;
+        colIndex[rowPtr[nodeIdx*dofsPerNode + dof]] =
+          ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID]*dofsPerNode + dof;
+      }
     } // Loop over fine points
 
   } // ComputeGraphDataConstant()
@@ -309,8 +326,9 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationStructuredAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   ComputeGraphDataLinear(const GraphBase& graph, RCP<IndexManager>& geoData,
-                         const int numInterpolationPoints, ArrayRCP<size_t>& nnzOnRow,
-                         Array<size_t>& rowPtr, Array<LO>& colIndex) const {
+                         const LO dofsPerNode, const int numInterpolationPoints,
+                         ArrayRCP<size_t>& nnzOnRow, Array<size_t>& rowPtr,
+                         Array<LO>& colIndex) const {
 
     RCP<Teuchos::FancyOStream> out;
     if(const char* dbg = std::getenv("MUELU_STRUCTUREDALGORITHM_DEBUG")) {
@@ -326,6 +344,8 @@ namespace MueLu {
     Array<LO> coarseIdx(3,0);
     Array<LO> ijkRem(3,0);
     int rate = 0;
+    const LO coarsePointOffset[8][3] = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
+                                        {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}};
 
     for(LO nodeIdx = 0; nodeIdx < geoData->getNumLocalFineNodes(); ++nodeIdx) {
 
@@ -367,35 +387,38 @@ namespace MueLu {
           allCoarse = false;
       }
 
+      LO rowIdx = 0, colIdx = 0;
       if(allCoarse) {
-        // Fine node lies on Coarse node, easy case, we only need the LID of the coarse node.
-        geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2],
-                                         colIndex[rowPtr[nodeIdx]]);
-        nnzOnRow[nodeIdx] = Teuchos::as<size_t>(1);
-        rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + 1;
+        for(LO dof = 0; dof < dofsPerNode; ++dof) {
+          rowIdx = nodeIdx*dofsPerNode + dof;
+          nnzOnRow[rowIdx] = 1;
+          rowPtr[rowIdx + 1] = rowPtr[rowIdx] + 1;
+
+          // Fine node lies on Coarse node, easy case, we only need the LID of the coarse node.
+          geoData->getCoarseNodeGhostedLID(coarseIdx[0], coarseIdx[1], coarseIdx[2], colIdx);
+          colIndex[rowPtr[rowIdx]] = colIdx*dofsPerNode + dof;
+        }
       } else {
         // Harder case, we need the LIDs of all the coarse nodes contributing to the interpolation
-        // at the current node.
-        nnzOnRow[nodeIdx] = Teuchos::as<size_t>( numInterpolationPoints );
-        rowPtr[nodeIdx + 1] = rowPtr[nodeIdx] + Teuchos::as<LO>( numInterpolationPoints );
-
         for(int dim = 0; dim < numDimensions; ++dim) {
           if(coarseIdx[dim] == geoData->getGhostedNodesInDir(dim) - 1)
             --coarseIdx[dim];
         }
-        // Compute Coarse Node LID
-        geoData->getCoarseNodeGhostedLID(    coarseIdx[0],   coarseIdx[1],   coarseIdx[2],   colIndex[ rowPtr[nodeIdx]+0]);
-        geoData->getCoarseNodeGhostedLID(    coarseIdx[0]+1, coarseIdx[1],   coarseIdx[2],   colIndex[ rowPtr[nodeIdx]+1]);
-        if(numDimensions > 1) {
-          geoData->getCoarseNodeGhostedLID(  coarseIdx[0],   coarseIdx[1]+1, coarseIdx[2],   colIndex[ rowPtr[nodeIdx]+2]);
-          geoData->getCoarseNodeGhostedLID(  coarseIdx[0]+1, coarseIdx[1]+1, coarseIdx[2],   colIndex[ rowPtr[nodeIdx]+3]);
-          if(numDimensions > 2) {
-            geoData->getCoarseNodeGhostedLID(coarseIdx[0],   coarseIdx[1],   coarseIdx[2]+1, colIndex[ rowPtr[nodeIdx]+4]);
-            geoData->getCoarseNodeGhostedLID(coarseIdx[0]+1, coarseIdx[1],   coarseIdx[2]+1, colIndex[ rowPtr[nodeIdx]+5]);
-            geoData->getCoarseNodeGhostedLID(coarseIdx[0],   coarseIdx[1]+1, coarseIdx[2]+1, colIndex[ rowPtr[nodeIdx]+6]);
-            geoData->getCoarseNodeGhostedLID(coarseIdx[0]+1, coarseIdx[1]+1, coarseIdx[2]+1, colIndex[ rowPtr[nodeIdx]+7]);
-          }
-        }
+
+        for(LO dof = 0; dof < dofsPerNode; ++dof) {
+          // at the current node.
+          rowIdx = nodeIdx*dofsPerNode + dof;
+          nnzOnRow[rowIdx] = Teuchos::as<size_t>( numInterpolationPoints );
+          rowPtr[rowIdx + 1] = rowPtr[rowIdx] + Teuchos::as<LO>(numInterpolationPoints);
+          // Compute Coarse Node LID
+          for(LO interpIdx = 0; interpIdx < numInterpolationPoints; ++interpIdx) {
+            geoData->getCoarseNodeGhostedLID(coarseIdx[0] + coarsePointOffset[interpIdx][0],
+                                             coarseIdx[1] + coarsePointOffset[interpIdx][1],
+                                             coarseIdx[2] + coarsePointOffset[interpIdx][2],
+                                             colIdx);
+            colIndex[rowPtr[rowIdx] + interpIdx] = colIdx*dofsPerNode + dof;
+          } // Loop over numInterpolationPoints
+        } // Loop over dofsPerNode
       }
     } // Loop over fine points
   } // ComputeGraphDataLinear()

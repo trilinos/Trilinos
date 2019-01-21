@@ -171,7 +171,7 @@ namespace MueLu {
     // transfer coordinates
     if(bTransferCoordinates_) {
       //Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> xdMV;
+      typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO> xdMV;
       RCP<xdMV>    fineCoords = Teuchos::null;
       if (fineLevel.GetLevelID() == 0 &&
           fineLevel.IsAvailable("Coordinates", NoFactory::get())) {
@@ -187,13 +187,13 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(fineCoords==Teuchos::null, Exceptions::RuntimeError, "No Coordinates found provided by the user.");
 
       TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getNumVectors() != 3, Exceptions::RuntimeError, "Three coordinates arrays must be supplied if line detection orientation not given.");
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> x = fineCoords->getDataNonConst(0);
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> y = fineCoords->getDataNonConst(1);
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> z = fineCoords->getDataNonConst(2);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> x = fineCoords->getDataNonConst(0);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> y = fineCoords->getDataNonConst(1);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> z = fineCoords->getDataNonConst(2);
 
       // determine the maximum and minimum z coordinate value on the current processor.
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType zval_max = -Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::one() / Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::sfmin();
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType zval_min =  Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::one() / Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::sfmin();
+      typename Teuchos::ScalarTraits<Scalar>::coordinateType zval_max = -Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::coordinateType>::one() / Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::coordinateType>::sfmin();
+      typename Teuchos::ScalarTraits<Scalar>::coordinateType zval_min =  Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::coordinateType>::one() / Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::coordinateType>::sfmin();
       for ( auto it = z.begin(); it != z.end(); ++it) {
         if(*it > zval_max) zval_max = *it;
         if(*it < zval_min) zval_min = *it;
@@ -201,11 +201,11 @@ namespace MueLu {
 
       LO myCoarseZLayers = Teuchos::as<LO>(CoarseNumZLayers);
 
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> myZLayerCoords = Teuchos::arcp<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(myCoarseZLayers);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> myZLayerCoords = Teuchos::arcp<typename Teuchos::ScalarTraits<Scalar>::coordinateType>(myCoarseZLayers);
       if(myCoarseZLayers == 1) {
         myZLayerCoords[0] = zval_min;
       } else {
-        typename Teuchos::ScalarTraits<Scalar>::magnitudeType dz = (zval_max-zval_min)/(myCoarseZLayers-1);
+        typename Teuchos::ScalarTraits<Scalar>::coordinateType dz = (zval_max-zval_min)/(myCoarseZLayers-1);
         for(LO k = 0; k<myCoarseZLayers; ++k) {
           myZLayerCoords[k] = k*dz;
         }
@@ -230,11 +230,11 @@ namespace MueLu {
               Teuchos::as<size_t>(numLocalCoarseNodes),
               fineCoords->getMap()->getIndexBase(),
               fineCoords->getMap()->getComm());
-      RCP<xdMV> coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+      RCP<xdMV> coarseCoords   = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
       coarseCoords->putScalar(-1.0);
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cx = coarseCoords->getDataNonConst(0);
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cy = coarseCoords->getDataNonConst(1);
-      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> cz = coarseCoords->getDataNonConst(2);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> cx = coarseCoords->getDataNonConst(0);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> cy = coarseCoords->getDataNonConst(1);
+      ArrayRCP<typename Teuchos::ScalarTraits<Scalar>::coordinateType> cz = coarseCoords->getDataNonConst(2);
 
       // loop over all vert line indices (stop as soon as possible)
       LO cntCoarseNodes = 0;
@@ -287,12 +287,12 @@ namespace MueLu {
      *                  Note: fine level layers are assumed to be numbered starting
      *                        a one.
      */
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType temp, RestStride, di;
+    typename Teuchos::ScalarTraits<Scalar>::coordinateType temp, RestStride, di;
     LO    NCpts, i;
     LO    NCLayers = -1;
     LO    FirstStride;
 
-    temp =  ((typename Teuchos::ScalarTraits<Scalar>::magnitudeType) (PtsPerLine+1))/((typename Teuchos::ScalarTraits<Scalar>::magnitudeType) (CoarsenRate)) - 1.0;
+    temp =  ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (PtsPerLine+1))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (CoarsenRate)) - 1.0;
     if  (Thin == 1) NCpts = (LO) ceil(temp);
     else            NCpts = (LO) floor(temp);
 
@@ -300,14 +300,14 @@ namespace MueLu {
 
     if (NCpts < 1) NCpts = 1;
 
-    FirstStride= (LO) ceil( ((typename Teuchos::ScalarTraits<Scalar>::magnitudeType) PtsPerLine+1)/( (typename Teuchos::ScalarTraits<Scalar>::magnitudeType) (NCpts+1)));
-    RestStride = ((typename Teuchos::ScalarTraits<Scalar>::magnitudeType) (PtsPerLine-FirstStride+1))/((typename Teuchos::ScalarTraits<Scalar>::magnitudeType) NCpts);
+    FirstStride= (LO) ceil( ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) PtsPerLine+1)/( (typename Teuchos::ScalarTraits<Scalar>::coordinateType) (NCpts+1)));
+    RestStride = ((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (PtsPerLine-FirstStride+1))/((typename Teuchos::ScalarTraits<Scalar>::coordinateType) NCpts);
 
-    NCLayers   = (LO) floor((((typename Teuchos::ScalarTraits<Scalar>::magnitudeType) (PtsPerLine-FirstStride+1))/RestStride)+.00001);
+    NCLayers   = (LO) floor((((typename Teuchos::ScalarTraits<Scalar>::coordinateType) (PtsPerLine-FirstStride+1))/RestStride)+.00001);
 
     TEUCHOS_TEST_FOR_EXCEPTION(NCLayers != NCpts, Exceptions::RuntimeError, "sizes do not match.");
 
-    di  = (typename Teuchos::ScalarTraits<Scalar>::magnitudeType) FirstStride;
+    di  = (typename Teuchos::ScalarTraits<Scalar>::coordinateType) FirstStride;
     for (i = 1; i <= NCpts; i++) {
       (*LayerCpts)[i] = (LO) floor(di);
       di += RestStride;

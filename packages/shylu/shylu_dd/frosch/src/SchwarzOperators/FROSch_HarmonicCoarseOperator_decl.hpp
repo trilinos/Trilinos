@@ -56,6 +56,7 @@ namespace FROSch {
     public:
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtr MapPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstMapPtr ConstMapPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr MapPtrVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::MapPtrVecPtr2D MapPtrVecPtr2D;
 
@@ -66,9 +67,15 @@ namespace FROSch {
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr ParameterListPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr CoarseSpacePtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr CoarseSpacePtrVecPtr;
+        
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr EntitySetPtr;
+        
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr SubdomainSolverPtr;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVec UNVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr UNVecPtr;
 
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
@@ -84,33 +91,42 @@ namespace FROSch {
                                ParameterListPtr parameterList);
         
         virtual int initialize() = 0;
-                
-        int compute();
+        
+        MapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
         
     protected:
         
-        int computeHarmonicExtensions();
-        
-        MapPtr assembleRepeatedMap();
-        
         MapPtr assembleCoarseMap();
         
+        MapPtr assembleSubdomainMap();
+        
         int addZeroCoarseSpaceBlock(MapPtr dofsMap);
+        
+        int computeVolumeFunctions(UN blockId,
+                                   UN dimension,
+                                   MapPtr nodesMap,
+                                   MultiVectorPtr nodeList,
+                                   EntitySetPtr interior);
+        
+        MultiVectorPtrVecPtr computeTranslations(UN blockId,
+                                                 EntitySetPtr entitySet);
+        
+        MultiVectorPtrVecPtr computeRotations(UN blockId,
+                                              UN dimension,
+                                              MultiVectorPtr nodeList,
+                                              EntitySetPtr entitySet);
 
-        int computeAndFillPhi(CrsMatrixPtr repeatedMatrix,
-                              MapPtr repeatedMap,
-                              MapPtr coarseMap,
-                              GOVecView indicesGammaDofsAll,
-                              GOVecView indicesIDofsAll,
-                              CrsMatrixPtr kII,
-                              CrsMatrixPtr kIGamma);
+        MultiVectorPtr computeExtensions(ConstMapPtr localMap,
+                                         ConstMapPtr coarseMap,
+                                         GOVecView indicesGammaDofsAll,
+                                         GOVecView indicesIDofsAll,
+                                         CrsMatrixPtr kII,
+                                         CrsMatrixPtr kIGamma);
 
         
         SubdomainSolverPtr ExtensionSolver_;
 
-        MultiVectorPtrVecPtr MVPhiGamma_;
-
-        MapPtrVecPtr BlockCoarseMaps_;
+        CoarseSpacePtrVecPtr InterfaceCoarseSpaces_;
         
         UNVecPtr Dimensions_;
         UNVecPtr DofsPerNode_;

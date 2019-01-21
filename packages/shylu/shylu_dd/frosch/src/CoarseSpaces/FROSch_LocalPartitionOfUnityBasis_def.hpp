@@ -132,7 +132,7 @@ namespace FROSch {
         } else if (!ParameterList_->get("Number of Basisfunctions per Entity","MaxAll").compare("MaxEntityType")) {
             
         } else {
-            FROSCH_ASSERT(0!=0,"Number of Basisfunctions per Entity type is unknown.");
+            FROSCH_ASSERT(false,"Number of Basisfunctions per Entity type is unknown.");
         } // Testen!!!!!!!!!!!!!!!!!!!!!!!! AUSGABE IMPLEMENTIEREN!!!!!!
         
         // Kann man das schöner machen?

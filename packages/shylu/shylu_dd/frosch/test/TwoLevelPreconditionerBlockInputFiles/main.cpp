@@ -74,8 +74,7 @@ typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
-typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
-typedef EpetraNode NO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 using namespace std;
 using namespace Teuchos;
@@ -116,7 +115,7 @@ int main(int argc, char *argv[])
             
             
             ///////////////////
-            // Repeated Maps //
+            // Repeated Map //
             ///////////////////
             Epetra_Map *repeatedMapEpetraVelo;
             hDF5IO->Read(groupNameRepeatedMapVelo,repeatedMapEpetraVelo);
@@ -173,7 +172,7 @@ int main(int argc, char *argv[])
 
             if (Comm->MyPID()==0) cout << "INITIALIZE...";
             SchwarzOperator<SC,LO,GO,NO>::GOVecPtr blockMaxGID(2);
-            blockMaxGID[0] = repeatedMapVelo->getMaxAllGlobalIndex(); //CH: 30.08.18 fix offet, not needed anymore? Only needed for setup without repeated Maps
+            blockMaxGID[0] = repeatedMapVelo->getMaxAllGlobalIndex(); //CH: 30.08.18 fix offet, not needed anymore? Only needed for setup without Repeated Map
             blockMaxGID[1] = repeatedMapPress->getMaxAllGlobalIndex();
             
             Teuchos::ArrayRCP<unsigned> dofsPerNodeVec(2);

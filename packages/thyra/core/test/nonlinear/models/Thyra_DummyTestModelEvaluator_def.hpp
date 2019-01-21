@@ -270,6 +270,33 @@ void DummyTestModelEvaluator<Scalar>::reportFinalPoint(
   // ToDo: Capture the final point and then provide in interface.
 }
 
+template<class Scalar>
+void
+DummyTestModelEvaluator<Scalar>::
+change_p_size_incorrectly(const Ordinal new_size)
+{
+  using MEB = ModelEvaluatorBase;
+  {
+    MEB::InArgsSetup<Scalar> inArgs(prototypeInArgs_);
+    inArgs.set_Np(new_size);
+    prototypeInArgs_ = inArgs;
+  }
+  {
+    MEB::OutArgsSetup<Scalar> outArgs(prototypeOutArgs_);
+    outArgs.set_Np_Ng(new_size,g_space_.size());
+    prototypeOutArgs_ = outArgs;
+  }
+  // forgot to call initializeDefaultBase() or resetDefaultBase()
+}
+
+template<class Scalar>
+void
+DummyTestModelEvaluator<Scalar>::
+change_p_size_correctly(const Ordinal new_size)
+{
+  this->change_p_size_incorrectly(new_size);
+  this->resetDefaultBase();
+}
 
 // Private functions overridden from ModelEvaulatorDefaultBase
 

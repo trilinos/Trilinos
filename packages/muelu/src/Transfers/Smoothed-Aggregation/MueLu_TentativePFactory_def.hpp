@@ -125,9 +125,9 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
-    typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
+    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
 
     RCP<Matrix>                A             = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
@@ -189,15 +189,15 @@ namespace MueLu {
 
       // Fill in coarse coordinates
       for (int dim = 0; dim < numDimensions; ++dim) {
-        ArrayRCP<const real_type> fineCoordsData = ghostedCoords->getData(dim);
-        ArrayRCP<real_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
+        ArrayRCP<const coordinate_type> fineCoordsData = ghostedCoords->getData(dim);
+        ArrayRCP<coordinate_type>     coarseCoordsData = coarseCoords->getDataNonConst(dim);
 
         for (LO lnode = 0; lnode < Teuchos::as<LO>(numNodes); lnode++) {
           if (procWinner[lnode] == myPID &&
               lnode < vertex2AggID.size() &&
               lnode < fineCoordsData.size() &&
               vertex2AggID[lnode] < coarseCoordsData.size() &&
-              Teuchos::ScalarTraits<double>::isnaninf(fineCoordsData[lnode]) == false) {
+              Teuchos::ScalarTraits<coordinate_type>::isnaninf(fineCoordsData[lnode]) == false) {
             coarseCoordsData[vertex2AggID[lnode]] += fineCoordsData[lnode];
           }
         }

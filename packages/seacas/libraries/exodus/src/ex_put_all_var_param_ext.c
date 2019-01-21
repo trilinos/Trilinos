@@ -100,16 +100,16 @@ static int  ex_define_vars(int exoid, ex_entity_type obj_type, const char *entit
 int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
 {
   int    in_define = 0;
-  int    status;
-  int    temp;
+  int    status    = 0;
+  int    temp      = 0;
   int    time_dim = 0, num_nod_dim = 0, dimid = 0;
-  size_t num_elem_blk, num_edge_blk, num_face_blk;
-  size_t num_nset, num_eset, num_fset, num_sset, num_elset;
+  size_t num_elem_blk = 0, num_edge_blk = 0, num_face_blk = 0;
+  size_t num_nset = 0, num_eset = 0, num_fset = 0, num_sset = 0, num_elset = 0;
   int    numelblkdim = 0, numelvardim = 0, numedvardim = 0, numedblkdim = 0, numfavardim = 0,
       numfablkdim = 0, numnsetdim = 0, nsetvardim = 0, numesetdim = 0, esetvardim = 0,
       numfsetdim = 0, fsetvardim = 0, numssetdim = 0, ssetvardim = 0, numelsetdim = 0,
       elsetvardim = 0;
-  int i;
+  int i           = 0;
 
   int edblk_varid = 0, fablk_varid = 0, eblk_varid = 0, nset_varid = 0, eset_varid = 0,
       fset_varid = 0, sset_varid = 0, elset_varid = 0, varid = 0;

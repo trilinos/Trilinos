@@ -887,8 +887,12 @@ namespace Tpetra {
 
       auto x_host = x.view_host ();
       typedef typename DualViewType::t_dev::value_type value_type;
-      return Teuchos::ArrayView<value_type> (x_host.data (),
-                                             x_host.extent (0));
+      // mfh 15 Jan 2019: In debug mode, Teuchos::ArrayView's
+      // constructor throws if the pointer is nonnull but the length
+      // is nonpositive.
+      const auto len = x_host.extent (0);
+      return Teuchos::ArrayView<value_type> (len != 0 ? x_host.data () : nullptr,
+                                             len);
     }
 
     /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the

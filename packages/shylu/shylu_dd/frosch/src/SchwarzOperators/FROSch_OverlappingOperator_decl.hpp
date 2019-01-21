@@ -73,6 +73,8 @@ namespace FROSch {
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr SCVecPtr;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr ConstSCVecPtr;
         
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::UN UN;
+        
 
         OverlappingOperator(CrsMatrixPtr k,
                             ParameterListPtr parameterList);

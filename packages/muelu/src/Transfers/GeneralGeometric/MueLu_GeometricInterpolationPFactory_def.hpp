@@ -84,10 +84,8 @@ namespace MueLu {
                                                  "Fine level nullspace used to construct the coarse level nullspace.");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",           Teuchos::null,
                                                  "Number of nodes per spatial dimension on the coarse grid.");
-    validParamList->set<RCP<const FactoryBase> >("numDimensions",                Teuchos::null,
-                                                 "Number of spatial dimensions of the mesh.");
-    validParamList->set<RCP<const FactoryBase> >("interpolationOrder",           Teuchos::null,
-                                                 "Interpolation order use to construct the prolongator.");
+    validParamList->set<RCP<const FactoryBase> >("numDimensions",          Teuchos::null,
+                                                 "Number of spatial dimensions in the problem.");
 
     return validParamList;
   }
@@ -102,7 +100,6 @@ namespace MueLu {
     Input(fineLevel, "prolongatorGraph");
     Input(fineLevel, "lCoarseNodesPerDim");
     Input(fineLevel, "numDimensions");
-    Input(fineLevel, "interpolationOrder");
 
     if( pL.get<bool>("gmg: build coarse coordinates") ||
         (pL.get<int>("gmg: interpolation order") == 1) ) {
@@ -141,11 +138,11 @@ namespace MueLu {
 
     // Declared main input/outputs to be retrieved and placed on the fine resp. coarse level
     RCP<Matrix> A = Get<RCP<Matrix> >(fineLevel, "A");
-    RCP<CrsGraph> prolongatorGraph = Get<RCP<CrsGraph> >(fineLevel, "prolongatorGraph");
+    RCP<const CrsGraph> prolongatorGraph = Get<RCP<CrsGraph> >(fineLevel, "prolongatorGraph");
     RCP<realvaluedmultivector_type> fineCoordinates, coarseCoordinates;
     RCP<Matrix> P;
+    const int interpolationOrder = pL.get<int>("gmg: interpolation order");
     const int numDimensions = Get<int>(fineLevel, "numDimensions");
-    const int interpolationOrder = Get<int>(fineLevel, "interpolationOrder");
 
     // Check if we need to build coarse coordinates as they are used if we construct
     // a linear interpolation prolongator
@@ -181,7 +178,7 @@ namespace MueLu {
       BuildLinearP(A, prolongatorGraph, fineCoordinates, ghostCoordinates, numDimensions, P);
     }
 
-    *out << "The prolongator matrix has been build." << std::endl;
+    *out << "The prolongator matrix has been built." << std::endl;
 
     // Build the coarse nullspace
     RCP<MultiVector> fineNullspace   = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
@@ -194,6 +191,7 @@ namespace MueLu {
     *out << "The coarse nullspace is constructed and set on the coarse level." << std::endl;
 
     Array<LO> lNodesPerDir = Get<Array<LO> >(fineLevel, "lCoarseNodesPerDim");
+    Set(coarseLevel, "numDimensions", numDimensions);
     Set(coarseLevel, "lNodesPerDim", lNodesPerDir);
     Set(coarseLevel, "P", P);
 
@@ -203,7 +201,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildConstantP(RCP<Matrix>& P, RCP<CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const {
+  BuildConstantP(RCP<Matrix>& P, RCP<const CrsGraph>& prolongatorGraph, RCP<Matrix>& A) const {
 
     // Set debug outputs based on environment variable
     RCP<Teuchos::FancyOStream> out;
@@ -214,77 +212,21 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    // Get the number of dofs per nodes from A and use that number to manually unamalgamate
-    // the maps of the prolongator graph. Eventually this operation will no longer
-    int dofsPerNode = A->GetFixedBlockSize();
-    ArrayView<const GO> initialDomainMapLIDs =
-      prolongatorGraph->getDomainMap()->getNodeElementList();
-    Array<GO> domainMapLIDs(initialDomainMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(domainMapLIDs.size()); ++elementIdx) {
-      for(int dof = 0; dof < dofsPerNode; ++dof) {
-        domainMapLIDs[elementIdx*dofsPerNode + dof] =
-          initialDomainMapLIDs[elementIdx]*dofsPerNode + dof;
-      }
-    }
-    RCP<Map> domainMap = MapFactory::Build(prolongatorGraph->getRowMap()->lib(),
-                                           prolongatorGraph->getGlobalNumCols()*dofsPerNode,
-                                           domainMapLIDs(),
-                                           prolongatorGraph->getIndexBase(),
-                                           prolongatorGraph->getComm(),
-                                           prolongatorGraph->getRowMap()->getNode());
-
-    ArrayView<const GO> initialColMapLIDs =
-      prolongatorGraph->getColMap()->getNodeElementList();
-    Array<GO> colMapLIDs(initialColMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(colMapLIDs.size()); ++elementIdx) {
-      for(int dof = 0; dof < dofsPerNode; ++dof) {
-        colMapLIDs[elementIdx*dofsPerNode + dof] =
-          initialColMapLIDs[elementIdx]*dofsPerNode + dof;
-      }
-    }
-    RCP<Map> colMap = MapFactory::Build(prolongatorGraph->getColMap()->lib(),
-                                        prolongatorGraph->getGlobalNumCols()*dofsPerNode,
-                                        colMapLIDs(),
-                                        prolongatorGraph->getIndexBase(),
-                                        prolongatorGraph->getComm(),
-                                        prolongatorGraph->getColMap()->getNode());
+    *out << "BuildConstantP" << std::endl;
 
     std::vector<size_t> strideInfo(1);
-    strideInfo[0]    = dofsPerNode;
-    RCP<const StridedMap> stridedDomainMap = StridedMapFactory::Build(domainMap, strideInfo);
+    strideInfo[0]    = A->GetFixedBlockSize();
+    RCP<const StridedMap> stridedDomainMap =
+      StridedMapFactory::Build(prolongatorGraph->getDomainMap(), strideInfo);
+
+    *out << "Call prolongator constructor" << std::endl;
 
     // Create the prolongator matrix and its associated objects
-    P = rcp(new CrsMatrixWrap(A->getDomainMap(), colMap, 0, Xpetra::StaticProfile));
-    // P = rcp(new CrsMatrixWrap(graph));
+    RCP<ParameterList> dummyList = rcp(new ParameterList());
+    P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
-
-    ArrayRCP<size_t>  iaP;
-    ArrayRCP<LO>      jaP;
-    ArrayRCP<SC>     valP;
-
-    PCrs->allocateAllValues(A->getDomainMap()->getNodeNumElements(), iaP, jaP, valP);
-
-    ArrayView<size_t> ia  = iaP();
-    ArrayView<LO>     ja  = jaP();
-    ArrayView<SC>     val = valP();
-    ia[0] = 0;
-
-    // Actually fill up the matrix, in this case all values are one, pretty easy!
-    int dofIdx;
-    ArrayView<const LO> colIdx;
-    for(LO rowIdx = 0; rowIdx < static_cast<LO>(prolongatorGraph->getNodeNumRows()); ++rowIdx) {
-      prolongatorGraph->getLocalRowView(rowIdx, colIdx);
-      for(int dof = 0; dof < dofsPerNode; ++dof) {
-        dofIdx = rowIdx*dofsPerNode + dof;
-        ia[dofIdx + 1] = dofIdx + 1;
-        ja[dofIdx]     = colIdx[0]*dofsPerNode + dof;
-        val[dofIdx]    = 1.0;
-      }
-    }
-
-    // call fill complete on the prolongator
-    PCrs->setAllValues(iaP, jaP, valP);
-    PCrs->expertStaticFillComplete(domainMap, A->getDomainMap());
+    PCrs->setAllToScalar(1.0);
+    PCrs->fillComplete();
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true) {
@@ -297,7 +239,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeometricInterpolationPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  BuildLinearP(RCP<Matrix>& A, RCP<CrsGraph>& prolongatorGraph,
+  BuildLinearP(RCP<Matrix>& A, RCP<const CrsGraph>& prolongatorGraph,
                RCP<realvaluedmultivector_type>& fineCoordinates,
                RCP<realvaluedmultivector_type>& ghostCoordinates,
                const int numDimensions, RCP<Matrix>& P) const {
@@ -314,18 +256,20 @@ namespace MueLu {
     *out << "Entering BuildLinearP" << std::endl;
 
     // Extract coordinates for interpolation stencil calculations
-    Array<ArrayView<const real_type> > fineCoords(3);
-    Array<ArrayView<const real_type> > ghostCoords(3);
-    real_type realZero = Teuchos::as<real_type>(0.0);
-    Array<real_type> fineZero(fineCoordinates->getLocalLength(), realZero);
-    Array<real_type> ghostZero(ghostCoordinates->getLocalLength(), realZero);
+    const LO numFineNodes  = fineCoordinates->getLocalLength();
+    const LO numGhostNodes = ghostCoordinates->getLocalLength();
+    Array<ArrayRCP<const real_type> > fineCoords(3);
+    Array<ArrayRCP<const real_type> > ghostCoords(3);
+    const real_type realZero = Teuchos::as<real_type>(0.0);
+    ArrayRCP<real_type> fineZero(numFineNodes, realZero);
+    ArrayRCP<real_type> ghostZero(numGhostNodes, realZero);
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < numDimensions) {
-        fineCoords[dim]  = fineCoordinates->getData(dim)();
-        ghostCoords[dim] = ghostCoordinates->getData(dim)();
+        fineCoords[dim]  = fineCoordinates->getData(dim);
+        ghostCoords[dim] = ghostCoordinates->getData(dim);
       } else {
-        fineCoords[dim]  = fineZero();
-        ghostCoords[dim] = ghostZero();
+        fineCoords[dim]  = fineZero;
+        ghostCoords[dim] = ghostZero;
       }
     }
 
@@ -334,117 +278,66 @@ namespace MueLu {
     // Compute 2^numDimensions using bit logic to avoid round-off errors
     const int numInterpolationPoints = 1 << numDimensions;
     const int dofsPerNode = A->GetFixedBlockSize();
-    ArrayView<const GO> initialDomainMapLIDs =
-      prolongatorGraph->getDomainMap()->getNodeElementList();
-    Array<GO> domainMapLIDs(initialDomainMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(domainMapLIDs.size()); ++elementIdx) {
-      for(int dof = 0; dof < dofsPerNode; ++dof) {
-        domainMapLIDs[elementIdx*dofsPerNode + dof] =
-          initialDomainMapLIDs[elementIdx]*dofsPerNode + dof;
-      }
-    }
-    RCP<Map> domainMap = MapFactory::Build(prolongatorGraph->getRowMap()->lib(),
-                                           prolongatorGraph->getGlobalNumCols()*dofsPerNode,
-                                           domainMapLIDs(),
-                                           prolongatorGraph->getIndexBase(),
-                                           prolongatorGraph->getComm(),
-                                           prolongatorGraph->getRowMap()->getNode());
-
-    ArrayView<const GO> initialColMapLIDs =
-      prolongatorGraph->getColMap()->getNodeElementList();
-    Array<GO> colMapLIDs(initialColMapLIDs.size()*dofsPerNode);
-    for(LO elementIdx = 0; elementIdx < as<LO>(colMapLIDs.size()); ++elementIdx) {
-      for(int dof = 0; dof < dofsPerNode; ++dof) {
-        colMapLIDs[elementIdx*dofsPerNode + dof] =
-          initialColMapLIDs[elementIdx]*dofsPerNode + dof;
-      }
-    }
-    RCP<Map> colMap = MapFactory::Build(prolongatorGraph->getColMap()->lib(),
-                                        prolongatorGraph->getGlobalNumCols()*dofsPerNode,
-                                        colMapLIDs(),
-                                        prolongatorGraph->getIndexBase(),
-                                        prolongatorGraph->getComm(),
-                                        prolongatorGraph->getColMap()->getNode());
 
     std::vector<size_t> strideInfo(1);
-    strideInfo[0]    = dofsPerNode;
-    RCP<const StridedMap> stridedDomainMap = StridedMapFactory::Build(domainMap, strideInfo);
+    strideInfo[0] = dofsPerNode;
+    RCP<const StridedMap> stridedDomainMap =
+      StridedMapFactory::Build(prolongatorGraph->getDomainMap(), strideInfo);
 
     *out << "The maps of P have been computed" << std::endl;
 
-    P = rcp(new CrsMatrixWrap(A->getDomainMap(), colMap, 0, Xpetra::StaticProfile));
-    // P = rcp(new CrsMatrixWrap(graph));
+    RCP<ParameterList> dummyList = rcp(new ParameterList());
+    P = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    PCrs->resumeFill(); // The Epetra matrix is considered filled at this point.
 
-    ArrayRCP<size_t>  iaP;
-    ArrayRCP<LO>      jaP;
-    ArrayRCP<SC>     valP;
-
-    LO numNonZeroP = prolongatorGraph->getNodeNumEntries()*dofsPerNode;
-    PCrs->allocateAllValues(numNonZeroP, iaP, jaP, valP);
-
-    *out << "dofsPerNode=" << dofsPerNode << std::endl;
-    *out << "number of non-zeroes in P: " << numNonZeroP << std::endl;
-
-    ArrayView<size_t> ia  = iaP();
-    ArrayView<LO>     ja  = jaP();
-    ArrayView<SC>     val = valP();
-    ia[0] = 0;
-
-    LO rowDofIdx, colDofIdx;
+    LO interpolationNodeIdx = 0, rowIdx = 0;
     ArrayView<const LO> colIndices;
+    Array<SC> values;
     Array<Array<real_type> > coords(numInterpolationPoints + 1);
     Array<real_type> stencil(numInterpolationPoints);
-    for(LO rowIdx = 0; rowIdx < static_cast<LO>(prolongatorGraph->getNodeNumRows()); ++rowIdx) {
-      prolongatorGraph->getLocalRowView(rowIdx, colIndices);
-
-      // rowIdx and colIdx correspond to single ids of nodes on the fine resp. coarse mesh
-      // rowDofIdx and colDofIdx correspond to single ids of dofs on the fine resp. coarse mesh
-      if(colIndices.size() == 1) {
-        // If colIndices.size() == 1, we are handling a coarse node
-        // we only need to stick a one in the correct location!
-        for(int dof = 0; dof < dofsPerNode; ++dof) {
-          rowDofIdx = rowIdx*dofsPerNode + dof;
-          ia[rowDofIdx + 1]  = ia[rowDofIdx] + 1;
-
-          colDofIdx      = ia[rowDofIdx];
-          ja[colDofIdx]  = colIndices[0]*dofsPerNode + dof;
-          val[colDofIdx] = 1.0;
+    for(LO nodeIdx = 0; nodeIdx < numFineNodes; ++nodeIdx) {
+      if(PCrs->getNumEntriesInLocalRow(nodeIdx*dofsPerNode) == 1) {
+        values.resize(1);
+        values[0] = 1.0;
+        for(LO dof = 0; dof < dofsPerNode; ++dof) {
+          rowIdx = nodeIdx*dofsPerNode + dof;
+          prolongatorGraph->getLocalRowView(rowIdx, colIndices);
+          PCrs->replaceLocalValues(rowIdx, colIndices, values());
         }
       } else {
-        // If colIndices.size() > 1, we need to compute the linear interpolation coefficients
-        for(int dof = 0; dof < dofsPerNode; ++dof) {
-          rowDofIdx         = rowIdx*dofsPerNode + dof;
-          ia[rowDofIdx + 1] = ia[rowDofIdx] + colIndices.size();
-
-          // Extract the coordinates associated with the current node
-          // and the neighboring coarse nodes
-          coords[0].resize(3);
+        // Extract the coordinates associated with the current node
+        // and the neighboring coarse nodes
+        coords[0].resize(3);
+        for(int dim = 0; dim < 3; ++dim) {
+          coords[0][dim] = fineCoords[dim][nodeIdx];
+        }
+        prolongatorGraph->getLocalRowView(nodeIdx*dofsPerNode, colIndices);
+        for(int interpolationIdx=0; interpolationIdx < numInterpolationPoints; ++interpolationIdx) {
+          coords[interpolationIdx + 1].resize(3);
+          interpolationNodeIdx = colIndices[interpolationIdx] / dofsPerNode;
           for(int dim = 0; dim < 3; ++dim) {
-            coords[0][dim] = fineCoords[dim][rowIdx];
+            coords[interpolationIdx + 1][dim] = ghostCoords[dim][interpolationNodeIdx];
           }
-          for(int interpolationIdx = 0; interpolationIdx < numInterpolationPoints; ++interpolationIdx) {
-            coords[interpolationIdx + 1].resize(3);
-            for(int dim = 0; dim < 3; ++dim) {
-              coords[interpolationIdx + 1][dim] = ghostCoords[dim][colIndices[interpolationIdx]];
-            }
-          }
-          ComputeLinearInterpolationStencil(numDimensions, numInterpolationPoints, coords, stencil);
+        }
+        ComputeLinearInterpolationStencil(numDimensions, numInterpolationPoints, coords, stencil);
+        values.resize(numInterpolationPoints);
+        for(LO valueIdx = 0; valueIdx < numInterpolationPoints; ++valueIdx) {
+          values[valueIdx] = stencil[valueIdx];
+        }
 
-          for(int colIdx = 0; colIdx < colIndices.size(); ++colIdx) {
-            colDofIdx      = ia[rowDofIdx] + colIdx;
-            ja[colDofIdx]  = colIndices[colIdx]*dofsPerNode + dof;
-            val[colDofIdx] = stencil[colIdx];
-          }
+        // Set values in all the rows corresponding to nodeIdx
+        for(LO dof = 0; dof < dofsPerNode; ++dof) {
+          rowIdx = nodeIdx*dofsPerNode + dof;
+          prolongatorGraph->getLocalRowView(rowIdx, colIndices);
+          PCrs->replaceLocalValues(rowIdx, colIndices, values());
         }
       }
     }
 
     *out << "The calculation of the interpolation stencils has completed." << std::endl;
 
-    Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(ia, ja, val, A->getDomainMap()->lib());
-    PCrs->setAllValues(iaP, jaP, valP);
-    PCrs->expertStaticFillComplete(domainMap, A->getDomainMap());
+    PCrs->fillComplete();
 
     *out << "All values in P have been set and expertStaticFillComplete has been performed." << std::endl;
 
@@ -540,7 +433,7 @@ namespace MueLu {
     }
 
     // Load the interpolation values onto the stencil.
-    for(LO i = 0; i < 8; ++i) {
+    for(LO i = 0; i < numInterpolationPoints; ++i) {
       stencil[i] = functions[0][i];
     }
 

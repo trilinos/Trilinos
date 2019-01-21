@@ -96,9 +96,9 @@ namespace panzer {
     
     stk::mesh::Part * sidePart = mesh->getSideset(sideName);
     stk::mesh::Part * elmtPart = mesh->getElementBlockPart(blockName);
-    stk::mesh::Selector side = *sidePart;
+    stk::mesh::Selector s_side = *sidePart;
     stk::mesh::Selector block = *elmtPart;
-    stk::mesh::Selector ownedBlock = metaData->universal_part() & block & side;
+    stk::mesh::Selector ownedBlock = metaData->universal_part() & block & s_side;
     //stk::mesh::Selector ownedBlock = metaData->locally_owned_part() & block & side;
     
     stk::mesh::get_selected_entities(ownedBlock,bulkData->buckets(mesh->getSideRank()),sides);
