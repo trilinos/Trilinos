@@ -399,7 +399,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   if(track_offset != sum_recv_sizes) {
     throw std::logic_error("Did not sum!");
   }
-#endif
 
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Local update");
