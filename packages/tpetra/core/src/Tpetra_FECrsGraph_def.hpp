@@ -45,6 +45,7 @@
 #include <type_traits>
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_getEntryOnHost.hpp"
 
 //#define USE_UNALIASED_MEMORY
 
@@ -199,8 +200,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     // Time to build an owned localGraph via subviews
     local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
     size_t numOwnedRows = ownedRowMap->getNodeNumElements();
-    // FIXME: This uses UVM.
-    size_t numOwnedNonZeros = ownedPlusSharedGraph.row_map[numOwnedRows];
+    size_t numOwnedNonZeros = Tpetra::Details::getEntryOnHost(ownedPlusSharedGraph.row_map,numOwnedRows);
 
     // Build the inactive guy
     // NOTE: We can't use the local_graph_type constructor, because it does not allow us to provide an importer
