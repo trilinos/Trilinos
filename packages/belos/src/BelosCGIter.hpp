@@ -176,7 +176,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A std::vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return R_; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.

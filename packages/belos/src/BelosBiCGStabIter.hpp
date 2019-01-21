@@ -224,7 +224,7 @@ namespace Belos {
     //! Get the norms of the residuals native to the solver.
     //! \return A std::vector of length blockSize containing the native residuals.
     // amk TODO: are the residuals actually being set?  What is a native residual?
-    Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
+    Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> * /* norms */ ) const { return R_; }
 
     //! Get the current update to the linear system.
     /*! \note This method returns a null pointer because the linear problem is current.
@@ -307,7 +307,7 @@ namespace Belos {
   BiCGStabIter<ScalarType,MV,OP>::BiCGStabIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                                                const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                               Teuchos::ParameterList &params ):
+                                                               Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
     stest_(tester),
