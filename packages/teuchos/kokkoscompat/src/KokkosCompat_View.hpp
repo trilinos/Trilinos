@@ -60,19 +60,20 @@
 
 namespace Kokkos {
   namespace Compat {
-
     // Convert Kokkos::View to Teuchos::ArrayView
     template <typename ViewType>
     Teuchos::ArrayView<typename ViewType::value_type>
-    getArrayView(const ViewType& a) {
-      return Teuchos::ArrayView<typename ViewType::value_type>(
-        a.data(), a.size());
+    getArrayView (const ViewType& a) {
+      const auto size = a.size ();
+      return Teuchos::ArrayView<typename ViewType::value_type>
+        (size == 0 ? nullptr : a.data (), size);
     }
     template <typename ViewType>
     Teuchos::ArrayView<const typename ViewType::value_type>
-    getConstArrayView(const ViewType& a) {
-      return Teuchos::ArrayView<const typename ViewType::value_type>(
-        a.data(), a.size());
+    getConstArrayView (const ViewType& a) {
+      const auto size = a.size ();
+      return Teuchos::ArrayView<const typename ViewType::value_type>
+        (size == 0 ? nullptr : a.data (), size);
     }
 
    // Convert Teuchos::ArrayView to Kokkos::View through deep_copy
