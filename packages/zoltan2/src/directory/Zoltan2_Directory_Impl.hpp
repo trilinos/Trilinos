@@ -854,7 +854,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     if (partition)
       partition[ptr->index] = ptr->partition ;
     if (lid) {
-      lid[ptr->index] = *(reinterpret_cast<lid_t*>(ptr->adjData));
+      memcpy (&lid[ptr->index], ptr->adjData, sizeof(lid_t));
     }
 
     user_t * pRead = reinterpret_cast<user_t*>(
