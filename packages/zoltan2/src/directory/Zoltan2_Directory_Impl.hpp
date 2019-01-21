@@ -170,56 +170,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::copy(
   return 0;
 }
 
-// Not yet implemented - was in progress and will be part of future work.
-// Two unit tests are disabled in CMakeLists.txt for tests/directory
-//  directoryTest_KokkosOptimized
-//  directoryTest_PerformanceKokkosOptimized
-// Those tests turn on this flag CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
-// Eventually this would become the final version - this was in development.
-// Currently this code doesn't compile since I moved update_local back to being
-// protected. It needs to be available here as public and I didn't finish
-// figuring out how that should be setup. I had started setting up a first test
-// case where threads would optimize the application of update_local. Sort of
-// got it running but there was some issue with the data and I expect I'm making
-// bad assumptions about what is thread safe. The goal here was to get a simple
-// application of functors which would speed up the update_local calls.
-#ifdef CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
-template <typename gid_t,typename lid_t,typename user_t>
-class update_local_functor {
-public:
-  typedef Kokkos::UnorderedMap<gid_t,
-    Zoltan2_Directory_Node<gid_t,lid_t,user_t>> node_map_t;
-  typedef Zoltan2_DD_Update_Msg<gid_t,lid_t> msg_t;
-  // Initialize all members
-  update_local_functor(
-    Teuchos::ArrayRCP<msg_t*> pMessagesIn,
-    Zoltan2_Directory<gid_t,lid_t,user_t> * pDirectoryIn,
-    const std::vector<user_t> * pUserIn) :
-      pMessages(pMessagesIn),
-      pDirectory(pDirectoryIn),
-      pUser(pUserIn) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (const int i) const {
-    msg_t *ptr = pMessages[i];
-
-    user_t * puser = (ptr->user_flag) ?
-      reinterpret_cast<user_t*>(reinterpret_cast<char*>(ptr->adjData) +
-        sizeof(gid_t) + (pDirectory->is_use_lid()?sizeof(lid_t):0)) : NULL;
-
-    pDirectory->update_local(ptr->adjData,
-      (ptr->lid_flag) ? reinterpret_cast<lid_t*>(ptr->adjData + 1) : NULL,
-      puser,
-      (ptr->partition_flag) ? (ptr->partition) : -1,  // illegal partition
-      ptr->owner);
-  }
-
-  Teuchos::ArrayRCP<msg_t*> pMessages;
-  Zoltan2_Directory<gid_t,lid_t,user_t> * pDirectory;
-  const std::vector<user_t> * pUser;
-};
-#endif
-
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   size_t count, const gid_t * gid, const lid_t * lid,
@@ -416,33 +366,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   }
 
   int errcount = 0;
-
-#ifdef CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
-  // Note: This code was in progress - not live yet
-  // See note above where CONVERT_DIRECTORY_KOKKOS_OPTIMIZED is first used.
-
-  // build a map of message to buff location
-  // I wanted to pass this to a functor and then have the functor process the
-  // update_local calls in parallel using threads - this would be a first
-  // example of optimizing the directory. The parallel operations can happen
-  // any order so we need to precalculate the buffer locations since each
-  // msg can be a different size. This wasn't working yet.
-  Teuchos::ArrayRCP<msg_t*> message_locations(nrec);
-  trackptr = rbuff.getRawPtr();
-  for(int n = 0; n < nrec; ++n) {
-    msg_t *ptr = reinterpret_cast<msg_t*>(trackptr);
-
-    user_t * puser = (ptr->user_flag) ?
-      (user_t*)(reinterpret_cast<char*>(ptr->adjData) +
-        sizeof(gid_t) + (use_lid?sizeof(lid_t):0)) : NULL;
-    size_t delta_msg_size = get_update_msg_size(puser);
-    message_locations[n] = reinterpret_cast<msg_t*>(trackptr);
-    trackptr += delta_msg_size;
-  }
-
-  Kokkos::parallel_for (nrec,
-    update_local_functor<gid_t,lid_t,user_t>(message_locations, this, &user));
-#else
 
   // for each message rec'd, update local directory information
   track_offset = 0;
