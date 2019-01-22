@@ -96,11 +96,11 @@
 #include "Thyra_FROSchFactory_def.hpp"
 #include <FROSch_Tools_def.hpp>
 
-typedef unsigned                      UN;
-typedef Scalar                        SC;
-typedef LocalOrdinal                  LO;
-typedef GlobalOrdinal                 GO;
-typedef Xpetra::Map<LO,GO>::node_type NO;
+typedef unsigned                                    UN;
+typedef Scalar                                      SC;
+typedef LocalOrdinal                                LO;
+typedef GlobalOrdinal                               GO;
+typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
 
 using namespace std;
 using namespace EpetraExt;
