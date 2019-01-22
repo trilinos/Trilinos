@@ -163,9 +163,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 template <typename EvalT>
 void panzer::BCStrategy_WeakDirichlet_DefaultImpl<EvalT>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-  		                  const panzer::PhysicsBlock& pb,
+  		                  const panzer::PhysicsBlock& /* pb */,
 			          const panzer::LinearObjFactory<panzer::Traits> & lof,
-			  	  const Teuchos::ParameterList& user_data) const
+			  	  const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;

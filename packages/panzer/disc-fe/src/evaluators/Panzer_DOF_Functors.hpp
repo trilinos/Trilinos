@@ -130,7 +130,7 @@ public:
     } // if (use_shared_memory) {
   }
 
-  size_t team_shmem_size(int team_size ) const
+  size_t team_shmem_size(int /* team_size */ ) const
   {
     if (not use_shared_memory)
       return 0;

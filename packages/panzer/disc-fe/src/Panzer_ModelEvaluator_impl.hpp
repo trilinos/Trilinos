@@ -954,6 +954,10 @@ evalModel_D2gDx2(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2gDx2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -999,6 +1003,11 @@ evalModel_D2gDxDp(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2gDxDp;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1048,6 +1057,11 @@ evalModel_D2gDp2(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2gDp2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1097,6 +1111,11 @@ evalModel_D2gDpDx(int respIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)respIndex;
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2gDpDx;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1194,6 +1213,9 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2fDx2;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1294,6 +1316,10 @@ evalModel_D2fDxDp(int pIndex,
   // reset parameters back to nominal values
   resetParameters();
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2fDxDp;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1341,6 +1367,10 @@ evalModel_D2fDpDx(int pIndex,
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_x;
+  (void)D2fDpDx;
   TEUCHOS_ASSERT(false);
 #endif
 }
@@ -1388,6 +1418,10 @@ evalModel_D2fDp2(int pIndex,
   rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
   rLibrary.evaluate<Traits::Hessian>(ae_inargs);
 #else
+  (void)pIndex;
+  (void)inArgs;
+  (void)delta_p;
+  (void)D2fDp2;
   TEUCHOS_ASSERT(false);
 #endif
 }
