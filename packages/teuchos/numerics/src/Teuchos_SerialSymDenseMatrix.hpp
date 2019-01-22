@@ -119,7 +119,7 @@ the object.  Specifically:
 namespace Teuchos {
 
 template<typename OrdinalType, typename ScalarType>
-class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<OrdinalType,ScalarType>
+class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarType>
 {
  public:
 
@@ -432,13 +432,13 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix()
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), 
+  : CompObject(), BLAS<OrdinalType,ScalarType>(), 
     numRowCols_(0), stride_(0), valuesCopied_(false), values_(0), upper_(false), UPLO_('L')
 {}
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(OrdinalType numRowCols_in, bool zeroOut)
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(),
+  : CompObject(), BLAS<OrdinalType,ScalarType>(),
     numRowCols_(numRowCols_in), stride_(numRowCols_in), valuesCopied_(false), upper_(false), UPLO_('L')
 {
   values_ = new ScalarType[stride_*numRowCols_];
@@ -451,7 +451,7 @@ template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
   DataAccess CV, bool upper_in, ScalarType* values_in, OrdinalType stride_in, OrdinalType numRowCols_in
   )
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), 
+  : CompObject(), BLAS<OrdinalType,ScalarType>(), 
     numRowCols_(numRowCols_in), stride_(stride_in), valuesCopied_(false),
     values_(values_in), upper_(upper_in)
 {
@@ -471,7 +471,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
 
 template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source) 
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(), 
+  : CompObject(), BLAS<OrdinalType,ScalarType>(), 
     numRowCols_(Source.numRowCols_), stride_(0), valuesCopied_(true), 
     values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_)
 {
@@ -500,7 +500,7 @@ template<typename OrdinalType, typename ScalarType>
 SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
                                                                     DataAccess CV, const SerialSymDenseMatrix<OrdinalType,
                                                                     ScalarType> &Source, OrdinalType numRowCols_in, OrdinalType startRowCol )
-  : CompObject(), Object(), BLAS<OrdinalType,ScalarType>(),
+  : CompObject(), BLAS<OrdinalType,ScalarType>(),
     numRowCols_(numRowCols_in), stride_(Source.stride_), valuesCopied_(false), upper_(Source.upper_), UPLO_(Source.UPLO_)
 {
   if(CV == Copy)
