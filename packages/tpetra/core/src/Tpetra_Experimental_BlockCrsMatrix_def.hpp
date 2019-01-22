@@ -3075,11 +3075,12 @@ public:
     } // if totalNumEntries > 0
 
     if (debug) {
-      std::ostream& err = this->markLocalErrorAndGetStream ();
+      std::ostringstream os;
       const bool lclSuccess = ! (* (this->localError_));
-      err << prefix
-          << (lclSuccess ? "succeeded" : "FAILED")
-          << " (totalNumEntries = " << totalNumEntries << ") ***" << std::endl;
+      os << prefix
+         << (lclSuccess ? "succeeded" : "FAILED")
+         << std::endl;
+      std::cerr << os.str ();
     }
   }
 
