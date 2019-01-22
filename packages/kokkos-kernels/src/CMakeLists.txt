@@ -1,8 +1,3 @@
-INCLUDE(FortranCInterface)
-FortranCInterface_HEADER(
-  ${PACKAGE_NAME}_FortranMangling.h
-  MACRO_NAMESPACE KOKKOSKERNELS_FORTRAN_
-)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

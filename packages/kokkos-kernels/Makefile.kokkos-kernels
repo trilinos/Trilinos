@@ -315,46 +315,6 @@ ifneq ($(KOKKOSKERNELS_INTERNAL_NEW_CONFIG), 0)
   tmp := $(shell cp KokkosKernels_config.tmp KokkosKernels_config.h)
 endif
 
-#==== User-settable options for Fortran mangling macros  =================================================
-
-KOKKOSKERNELS_FORTRAN_GLOBAL ?= name\#\#_
-KOKKOSKERNELS_FORTRAN_GLOBAL_ ?= name\#\#_
-KOKKOSKERNELS_FORTRAN_MODULE ?= __\#\#mod_name\#\#_MOD_\#\#name
-KOKKOSKERNELS_FORTRAN_MODULE_ ?= __\#\#mod_name\#\#_MOD_\#\#name
-
-#==== Create header file for Fortran mangling macros  =================================================
-
-$(shell echo "#ifndef KOKKOSKERNELS_FORTRAN_HEADER_INCLUDED" > KokkosKernels_FortranMangling.tmp)
-$(shell echo "#define KOKKOSKERNELS_FORTRAN_HEADER_INCLUDED" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "/* Mangling for Fortran global symbols without underscores. */" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "#define KOKKOSKERNELS_FORTRAN_GLOBAL(name,NAME) $(KOKKOSKERNELS_FORTRAN_GLOBAL)" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "/* Mangling for Fortran global symbols with underscores. */" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "#define KOKKOSKERNELS_FORTRAN_GLOBAL_(name,NAME) $(KOKKOSKERNELS_FORTRAN_GLOBAL_)" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "/* Mangling for Fortran module symbols without underscores. */" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "#define KOKKOSKERNELS_FORTRAN_MODULE(mod_name,name, mod_NAME,NAME) $(KOKKOSKERNELS_FORTRAN_MODULE)" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "/* Mangling for Fortran module symbols with underscores. */" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "#define KOKKOSKERNELS_FORTRAN_MODULE_(mod_name,name, mod_NAME,NAME) $(KOKKOSKERNELS_FORTRAN_MODULE_)" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "" >> KokkosKernels_FortranMangling.tmp)
-$(shell echo "#endif" >> KokkosKernels_FortranMangling.tmp)
-
-#==== Update header file for Fortran mangling macros, if necessary  =================================================
-
-KOKKOSKERNELS_INTERNAL_LS_FORTRANMANGLING := $(shell ls KokkosKernels_FortranMangling.h)
-ifeq ($(KOKKOSKERNELS_INTERNAL_LS_FORTRANMANGLING), KokkosKernels_FortranMangling.h)
-  KOKKOSKERNELS_INTERNAL_NEW_FORTRANMANGLING := $(strip $(shell diff KokkosKernels_FortranMangling.h KokkosKernels_FortranMangling.tmp | grep define | wc -l))
-else
-  KOKKOSKERNELS_INTERNAL_NEW_FORTRANMANGLING := 1
-endif
-
-ifneq ($(KOKKOSKERNELS_INTERNAL_NEW_FORTRANMANGLING), 0)
-  tmp := $(shell cp KokkosKernels_FortranMangling.tmp KokkosKernels_FortranMangling.h)
-endif
-
-
 #include $(KOKKOSKERNELS_PATH)/Makefile.generate_eti_files
 
 #-------------------------------------------------------------------------
@@ -466,11 +426,9 @@ KOKKOSKERNELS_INTERNAL_SRC_SPARSE_NODIR = $(notdir $(KOKKOSKERNELS_INTERNAL_SRC_
 KOKKOSKERNELS_INTERNAL_OBJ_BLAS = $(KOKKOSKERNELS_INTERNAL_SRC_BLAS_NODIR:.cpp=.o)
 KOKKOSKERNELS_INTERNAL_OBJ_SPARSE = $(KOKKOSKERNELS_INTERNAL_SRC_SPARSE_NODIR:.cpp=.o)
 
-KOKKOSKERNELS_CPP_DEPENDS = $(KOKKOSKERNELS_INTERNAL_HEADERS) KokkosKernels_config.h KokkosKernels_FortranMangling.h
+KOKKOSKERNELS_CPP_DEPENDS = $(KOKKOSKERNELS_INTERNAL_HEADERS) KokkosKernels_config.h
 
 KokkosKernels_config.h:
-
-KokkosKernels_FortranMangling.h:
 
 kokkoskernels-build-lib: $(KOKKOSKERNELS_INTERNAL_LIBRARY)
 
