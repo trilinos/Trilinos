@@ -627,18 +627,33 @@ namespace Tpetra {
     constexpr size_t tooBigFactor = 10;
 
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
+      const int myRank = [&] () {
+        auto map = this->getMap ();
+        if (map.get () == nullptr) {
+          return -1;
+        }
+        auto comm = map->getComm ();
+        if (comm.get () == nullptr) {
+          return -2;
+        }
+        return comm->getRank ();
+      } ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid before:"
+      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid("
+         << numExportLIDs << ", " << numImportLIDs << "): ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "before:" << endl
+         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                               "numExportPacketsPerLID_")
          << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                    "numExportPacketsPerLID_")
-         << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                    "numImportPacketsPerLID_")
+         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                               "numImportPacketsPerLID_")
          << endl;
       std::cerr << os.str ();
     }
@@ -663,17 +678,13 @@ namespace Tpetra {
                                needFenceBeforeNextAlloc);
 
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": reallocArraysForNumPacketsPerLid before:"
+      os << *prefix << "after:" << endl
+         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                               "numExportPacketsPerLID_")
          << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                    "numExportPacketsPerLID_")
-         << endl
-         << "Proc " << myRank << ":   "
-         << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                    "numImportPacketsPerLID_")
+         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                               "numImportPacketsPerLID_")
          << endl;
       std::cerr << os.str ();
     }
