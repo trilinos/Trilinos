@@ -211,7 +211,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap)
+  removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& /* newMap */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
       "Tpetra::DistObject::removeEmptyProcessesInPlace: Not implemented");
