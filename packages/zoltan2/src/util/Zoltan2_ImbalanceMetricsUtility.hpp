@@ -122,9 +122,8 @@ template <typename scalar_t, typename lno_t, typename part_t>
   if (vwgtDim > 1) numMetrics += vwgtDim;   // "weight n"
 
   auto next = metrics.size(); // where we will start filling
-  typedef ImbalanceMetrics<scalar_t> im_t;
   for(int n = 0; n < numMetrics; ++n) {
-    RCP<im_t> newMetric = addNewMetric<im_t, scalar_t>(env, metrics);
+    RCP<ImbalanceMetrics> newMetric = addNewMetric<ImbalanceMetrics>(env, metrics);
     if (vwgtDim > 1) {
       newMetric->setNorm(multiCriteriaNorm(mcNorm));
     }

@@ -126,8 +126,8 @@ private:
   part_t targetGlobalParts_;        // actual
   part_t numNonEmpty_;              // of actual
 
-  typedef BaseClassMetrics<scalar_t> base_metric_type;
-  typedef ArrayRCP<RCP<base_metric_type> > base_metric_array_type;
+  typedef BaseClassMetrics::value_t metric_value_t;
+  typedef ArrayRCP<RCP<BaseClassMetrics> > base_metric_array_type;
   base_metric_array_type metricsBase_;
 
 protected:
@@ -159,19 +159,20 @@ protected:
     bool force_evaluate,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
           Teuchos::null):
-            numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_() {
+            numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_() 
+  {
     if (force_evaluate){
       sharedConstructor(ia, p, problemComm, soln, graphModel);
     }
-
   }
+
   virtual void calculate_graph_metrics(
       const RCP<const Environment> &_env,
       const RCP<const Comm<int> > &_problemComm,
       const RCP<const GraphModel<typename Adapter::base_adapter_t> > &_graph,
       const ArrayView<const typename Adapter::part_t> &_partArray,
       typename Adapter::part_t &_numGlobalParts,
-      ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &_metricsBase,
+      ArrayRCP<RCP<BaseClassMetrics> > &_metricsBase,
       ArrayRCP<typename Adapter::scalar_t> &_globalSums) {
         globalWeightedByPart <Adapter>(_env, _problemComm, _graph,
           _partArray, _numGlobalParts, _metricsBase, _globalSums);
@@ -255,7 +256,7 @@ public:
   // break up metricsBase_ into imbalanceMetrics_ and graphMetrics_.
   // So instead of mixing them just keep two arrays and eliminate this function.
   // That will clean up several places in this class.
-  ArrayView<RCP<base_metric_type>> getAllMetricsOfType(
+  ArrayView<RCP<BaseClassMetrics>> getAllMetricsOfType(
     std::string metricType) const {
     // find the beginning and the end of the contiguous block
     // the list is an ArrayRCP and must preserve any ordering
@@ -270,14 +271,14 @@ public:
       }
     }
     if (sizeOfArrayView == 0) {
-      return ArrayView<RCP<base_metric_type> >(); // empty array view
+      return ArrayView<RCP<BaseClassMetrics> >(); // empty array view
     }
     return metricsBase_.view(beginIndex, sizeOfArrayView);
   }
 
   /*! \brief Return the object count imbalance.
    */
-  scalar_t getObjectCountImbalance() const {
+  metric_value_t getObjectCountImbalance() const {
     auto metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
     if( metrics.size() <= 0 ) {
       throw std::logic_error("getObjectCountImbalance() was called " 
@@ -293,7 +294,7 @@ public:
    *  If we have weights (which start at the second element) the spec is to 
    *  have this return that element.
    */
-  scalar_t getNormedImbalance() const{
+  metric_value_t getNormedImbalance() const{
     auto metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
     if( metrics.size() <= 0 ) {
       throw std::logic_error("getNormedImbalance() was called " 
@@ -309,7 +310,7 @@ public:
 
   /*! \brief Return the imbalance for the requested weight.
    */
-  scalar_t getWeightImbalance(int weightIndex) const {
+  metric_value_t getWeightImbalance(int weightIndex) const {
     // In this case we could have
       // Option 1
         // object count
@@ -342,7 +343,7 @@ public:
 
   /*! \brief Return the max cut for the requested weight.
    */
-  scalar_t getMaxEdgeCut() const{
+  metric_value_t getMaxEdgeCut() const{
     auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if( graphMetrics.size() < 1 ) {
       throw std::logic_error("getMaxEdgeCut() was called " 
@@ -354,7 +355,7 @@ public:
 
   /*! \brief getMaxWeightEdgeCuts weighted for the specified index
    */
-  scalar_t getMaxWeightEdgeCut(int weightIndex) const{
+  metric_value_t getMaxWeightEdgeCut(int weightIndex) const{
     auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     int indexInArray = weightIndex + 1; // changed this - it used to start at 0
     if( graphMetrics.size() <= 1 ) {
@@ -379,7 +380,7 @@ public:
 
   /*! \brief getTotalEdgeCut
    */
-  scalar_t getTotalEdgeCut() const{
+  metric_value_t getTotalEdgeCut() const{
     auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if( graphMetrics.size() < 1 ) {
       throw std::logic_error("getTotalEdgeCut() was called but no metrics " 
@@ -391,7 +392,7 @@ public:
 
   /*! \brief getTotalWeightEdgeCut weighted for the specified index
    */
-  scalar_t getTotalWeightEdgeCut(int weightIndex) const{
+  metric_value_t getTotalWeightEdgeCut(int weightIndex) const{
     auto graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     int indexInArray = weightIndex + 1; // changed this; it used to start at 0
     if( graphMetrics.size() <= 1 ) { 
@@ -447,14 +448,14 @@ public:
     // this could be a critical decision - do we want a blank table with
     // headers when the list is empty - for debugging that is probably better
     // but it's very messy to have lots of empty tables in the logs
-    ArrayView<RCP<base_metric_type>> graphMetrics =
+    ArrayView<RCP<BaseClassMetrics>> graphMetrics =
       getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if (graphMetrics.size() != 0) {
         Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_,
           numGlobalParts_, graphMetrics);
     }
 
-    ArrayView<RCP<base_metric_type>> imbalanceMetrics =
+    ArrayView<RCP<BaseClassMetrics>> imbalanceMetrics =
       getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
     if (imbalanceMetrics.size() != 0) {
         Zoltan2::printImbalanceMetrics<scalar_t, part_t>(os, targetGlobalParts_,

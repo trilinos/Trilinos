@@ -58,14 +58,16 @@
 namespace Zoltan2{
 
 /*! \base class BaseClassMetrics for the metric classes. */
-template <typename scalar_t>
-  class BaseClassMetrics {
+class BaseClassMetrics {
+
+public:
+  typedef double value_t;
 
 private:
 /*! \memory allocation is forced by all constructors of this class. */
 void resetValues( int memCount ){
-  scalar_t *tmp = new scalar_t [memCount];
-  memset(tmp, 0, sizeof(scalar_t) * memCount);
+  value_t *tmp = new value_t [memCount];
+  memset(tmp, 0, sizeof(value_t) * memCount);
   values_ = arcp(tmp, 0, memCount, true);
 }
 
@@ -75,15 +77,15 @@ std::string metricName_;
 /*! \array of values which is synchronized to constructed memCount in length
  * and the getMetrics string.
  */
-ArrayRCP<scalar_t> values_;
+ArrayRCP<value_t> values_;
 
 protected:
 
 /*! \access to getting values_ */
-scalar_t getValue(int enumIndex) const { return values_[enumIndex]; }
+value_t getValue(int enumIndex) const { return values_[enumIndex]; }
 
 /*! \access to setting _values */
-void setValue(int enumIndex, scalar_t value) { values_[enumIndex] = value; }
+void setValue(int enumIndex, value_t value) { values_[enumIndex] = value; }
 
 public:
 
@@ -134,7 +136,7 @@ bool hasMetricValue(const std::string & metric_name) const {
 }
 
 /*! \ return a metric value specified by name */
-scalar_t getMetricValue(const std::string & metric_name) const
+value_t getMetricValue(const std::string & metric_name) const
 {
   size_t metricIndex = convertMetricNameToIndex(metric_name);
   if( metricIndex == getMetrics().size() )
@@ -143,7 +145,7 @@ scalar_t getMetricValue(const std::string & metric_name) const
 }
 
 /*! \ set a metric value specified by name */
-void setMetricValue(const std::string & metric_name, scalar_t value) const
+void setMetricValue(const std::string & metric_name, value_t value) const
 {
   size_t metricIndex = convertMetricNameToIndex(metric_name);
   if( metricIndex != getMetrics().size() )
@@ -180,15 +182,13 @@ static std::vector<std::string> static_allMetricNames_;
  * name should never be used and allows us to be not abstract - so that we can
  * generically support stl containers like maps.
  */
-template <typename scalar_t>
-std::string BaseClassMetrics<scalar_t>::static_unknown_metricTypeName_ =
+std::string BaseClassMetrics::static_unknown_metricTypeName_ =
   UNKNOWN_METRICS_TYPE_NAME;
 
 /*! \synchronize this with the enum list. Empty list allows us to be not
  * abstract - so that we can generically support stl containers like maps.
  */
-template <typename scalar_t>
-std::vector<std::string> BaseClassMetrics<scalar_t>::static_metricNames_ = {};
+std::vector<std::string> BaseClassMetrics::static_metricNames_ = {};
 
 } // namespace Zoltan2
 #endif

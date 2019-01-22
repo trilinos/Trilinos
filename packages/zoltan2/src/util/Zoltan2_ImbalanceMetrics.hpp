@@ -58,18 +58,17 @@
 namespace Zoltan2{
 
 /*! \ImbalanceMetrics class containing the metrics for one measurable item. */
-template <typename scalar_t>
-  class ImbalanceMetrics : public BaseClassMetrics<scalar_t> {
+class ImbalanceMetrics : public BaseClassMetrics {
 
 private:
   multiCriteriaNorm mcnorm_;   // store "actualNorm + 1"
 
 public:
 /*! \brief Constructor */
-ImbalanceMetrics(std::string mname) : BaseClassMetrics<scalar_t>(static_metricNames_.size(), mname),mcnorm_(multiCriteriaNorm(0)) {}
+ImbalanceMetrics(std::string mname) : BaseClassMetrics(static_metricNames_.size(), mname),mcnorm_(multiCriteriaNorm(0)) {}
 
 /*! \brief Constructor */
-ImbalanceMetrics() : BaseClassMetrics<scalar_t>(static_metricNames_.size()), mcnorm_(multiCriteriaNorm(0)) {}
+ImbalanceMetrics() : BaseClassMetrics(static_metricNames_.size()), mcnorm_(multiCriteriaNorm(0)) {}
 
 /*! \brief Get the class type of the metric. */
 virtual const std::string & getMetricType() const { return static_metricTypeName_; }
@@ -87,45 +86,45 @@ void setNorm(multiCriteriaNorm normVal) { mcnorm_ = multiCriteriaNorm(normVal+1)
 multiCriteriaNorm getNorm() { return multiCriteriaNorm(mcnorm_-1);}
 
 /*! \brief Set the sum on the local process. */
-void setLocalSum(scalar_t x) { this->setMetricValue("local sum", x);}
+void setLocalSum(value_t x) { this->setMetricValue("local sum", x);}
 
 /*! \brief Set the global sum.  */
-void setGlobalSum(scalar_t x) { this->setMetricValue("global sum", x );}
+void setGlobalSum(value_t x) { this->setMetricValue("global sum", x );}
 
 /*! \brief Set the global minimum across parts.  */
-void setGlobalMin(scalar_t x) { this->setMetricValue("global minimum", x );}
+void setGlobalMin(value_t x) { this->setMetricValue("global minimum", x );}
 
 /*! \brief Set the global maximum across parts.  */
-void setGlobalMax(scalar_t x) { this->setMetricValue("global maximum", x );}
+void setGlobalMax(value_t x) { this->setMetricValue("global maximum", x );}
 
 /*! \brief Set the imbalance of the worst imbalanced part. This is what we normally call the imbalance of a partition. */
-void setMaxImbalance(scalar_t x) { this->setMetricValue("maximum imbalance", x);}
+void setMaxImbalance(value_t x) { this->setMetricValue("maximum imbalance", x);}
 
 /*! \brief Set the average imbalance of all parts. */
-void setAvgImbalance(scalar_t x) { this->setMetricValue("average imbalance", x);}
+void setAvgImbalance(value_t x) { this->setMetricValue("average imbalance", x);}
 
 /*! \brief Get the sum on the local process. */
-scalar_t getLocalSum() const { return this->getMetricValue("local sum");}
+value_t getLocalSum() const { return this->getMetricValue("local sum");}
 
 /*! \brief Get the global sum for all parts. */
-scalar_t getGlobalSum() const { return this->getMetricValue("global sum");}
+value_t getGlobalSum() const { return this->getMetricValue("global sum");}
 
 /*! \brief Get the global minimum across all parts. */
-scalar_t getGlobalMin() const { return this->getMetricValue("global minimum");}
+value_t getGlobalMin() const { return this->getMetricValue("global minimum");}
 
 /*! \brief Get the global maximum across all parts. */
-scalar_t getGlobalMax() const { return this->getMetricValue("global maximum");}
+value_t getGlobalMax() const { return this->getMetricValue("global maximum");}
 
 /*! \brief Get the imbalance of the most imbalanced part.
      This is what we normally call the imbalance of a partition.
 */
-scalar_t getMaxImbalance() const { return this->getMetricValue("maximum imbalance");}
+value_t getMaxImbalance() const { return this->getMetricValue("maximum imbalance");}
 
 /*! \brief Get the average of the part imbalances. */
-scalar_t getAvgImbalance() const { return this->getMetricValue("average imbalance");}
+value_t getAvgImbalance() const { return this->getMetricValue("average imbalance");}
 
 /*! \this method is enforced by the base class. */
-virtual const std::vector<std::string> & getMetrics() const { return ImbalanceMetrics<scalar_t>::static_metricNames_; }
+virtual const std::vector<std::string> & getMetrics() const { return ImbalanceMetrics::static_metricNames_; }
 
 /*! \setup a static string name indicating my class name. */
 static std::string static_metricTypeName_;
@@ -135,11 +134,10 @@ static std::vector<std::string> static_metricNames_;
 };  // end class
 
 /*! \static class name for string - used to identify by parameter lists. */
-template <typename scalar_t> std::string ImbalanceMetrics<scalar_t>::static_metricTypeName_ = IMBALANCE_METRICS_TYPE_NAME;
+std::string ImbalanceMetrics::static_metricTypeName_ = IMBALANCE_METRICS_TYPE_NAME;
 
 /*! \lists all metrics for this class. */
-template <typename scalar_t>
-std::vector<std::string> ImbalanceMetrics<scalar_t>::static_metricNames_ = {
+std::vector<std::string> ImbalanceMetrics::static_metricNames_ = {
   "local sum",
   "global sum",
   "global minimum",
@@ -149,8 +147,7 @@ std::vector<std::string> ImbalanceMetrics<scalar_t>::static_metricNames_ = {
   "maximum imbalance",
 };
 
-template <typename scalar_t>
-  void ImbalanceMetrics<scalar_t>::printHeader(std::ostream &os)
+void ImbalanceMetrics::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
   os << std::setw(11) << "min" << std::setw(11) << "max" << std::setw(11) << "avg";
@@ -159,8 +156,7 @@ template <typename scalar_t>
   os << std::endl;
 }
 
-template <typename scalar_t>
-  void ImbalanceMetrics<scalar_t>::printLine(std::ostream &os) const
+void ImbalanceMetrics::printLine(std::ostream &os) const
 {
   std::string label( this->getName() );
   if (mcnorm_ > 0){

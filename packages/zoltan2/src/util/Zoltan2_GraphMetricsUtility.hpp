@@ -129,8 +129,6 @@ void globalWeightedByPart(
   ArrayView<t_input_t> v_wghts;
   graph->getVertexList(Ids, v_wghts);
 
-  typedef GraphMetrics<scalar_t> gm_t;
-
   // get the edge ids, and weights
   ArrayView<const gno_t> edgeIds;
   ArrayView<const offset_t> offsets;
@@ -152,7 +150,7 @@ void globalWeightedByPart(
   // add some more metrics to the array
   auto next = metrics.size(); // where we begin filling
   for (auto n = 0; n < numMetrics; ++n)  {
-    addNewMetric<gm_t, scalar_t>(env, metrics);
+    addNewMetric<GraphMetrics>(env, metrics);
   }
 
   std::vector <part_t> e_parts (localNumEdges);

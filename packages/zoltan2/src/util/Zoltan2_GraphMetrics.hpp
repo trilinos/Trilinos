@@ -58,18 +58,17 @@
 namespace Zoltan2{
 
 /*! \GraphMetrics class containing the metrics for one measurable item. */
-template <typename scalar_t>
-  class GraphMetrics : public BaseClassMetrics<scalar_t> {
+class GraphMetrics : public BaseClassMetrics {
 
 public:
 /*! \brief Constructor */
-GraphMetrics(std::string mname) : BaseClassMetrics<scalar_t>(static_metricNames_.size(), mname) {}
+GraphMetrics(std::string mname) : BaseClassMetrics(static_metricNames_.size(), mname) {}
 
 /*! \brief Constructor */
-GraphMetrics() : BaseClassMetrics<scalar_t>(static_metricNames_.size()) {}
+GraphMetrics() : BaseClassMetrics(static_metricNames_.size()) {}
 
 /*! \brief Get the class type of the metric. */
-virtual const std::string & getMetricType() const { return GraphMetrics<scalar_t>::static_metricTypeName_; }
+virtual const std::string & getMetricType() const { return GraphMetrics::static_metricTypeName_; }
 
 /*! \brief Print a standard header */
 static void printHeader(std::ostream &os);
@@ -78,19 +77,19 @@ static void printHeader(std::ostream &os);
 virtual void printLine(std::ostream &os) const;
 
 /*! \brief Set the global sum.  */
-void setGlobalSum(scalar_t x) { this->setMetricValue("global sum", x);}
+void setGlobalSum(value_t x) { this->setMetricValue("global sum", x);}
 
 /*! \brief Set the global maximum across parts.  */
-void setGlobalMax(scalar_t x) { this->setValue("global maximum", x);}
+void setGlobalMax(value_t x) { this->setValue("global maximum", x);}
 
 /*! \brief Get the global sum of edge cuts for all parts. */
-scalar_t getGlobalSum() const { return this->getMetricValue("global sum");}
+value_t getGlobalSum() const { return this->getMetricValue("global sum");}
 
 /*! \brief Get the global maximum of edge cuts per part across all parts. */
-scalar_t getGlobalMax() const { return this->getMetricValue("global maximum");}
+value_t getGlobalMax() const { return this->getMetricValue("global maximum");}
 
 /*! \this method is enforced by the base class. */
-virtual const std::vector<std::string> & getMetrics() const { return GraphMetrics<scalar_t>::static_metricNames_; }
+virtual const std::vector<std::string> & getMetrics() const { return GraphMetrics::static_metricNames_; }
 
 /*! \setup a static vector of strings. */
 static std::vector<std::string> static_metricNames_;
@@ -100,26 +99,22 @@ static std::string static_metricTypeName_;
 };  // end class
 
 /*! \static class name for string - used to identify by parameter lists. */
-template <typename scalar_t>
-std::string GraphMetrics<scalar_t>::static_metricTypeName_ = GRAPH_METRICS_TYPE_NAME;
+std::string GraphMetrics::static_metricTypeName_ = GRAPH_METRICS_TYPE_NAME;
 
 /*! \lists all metrics for this class. */
-template <typename scalar_t>
-std::vector<std::string> GraphMetrics<scalar_t>::static_metricNames_ = {
+std::vector<std::string> GraphMetrics::static_metricNames_ = {
   "global sum",
   "global maximum"
 };
 
-template <typename scalar_t>
-  void GraphMetrics<scalar_t>::printHeader(std::ostream &os)
+void GraphMetrics::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
   os << std::setw(12) << "total" << std::setw(12) << "max";
   os << std::endl;
 }
 
-template <typename scalar_t>
-  void GraphMetrics<scalar_t>::printLine(std::ostream &os) const
+void GraphMetrics::printLine(std::ostream &os) const
 {
   std::string label( this->getName() );
 

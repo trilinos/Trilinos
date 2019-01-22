@@ -61,9 +61,9 @@ namespace Zoltan2{
 //
 // Note this is currently only relevant to EvaluatePartition and the
 // GraphMetrics and ImbalanceMetrics calculations
-template <typename metric_t, typename scalar_t>
+template <typename metric_t>
 RCP<metric_t> addNewMetric(const RCP<const Environment> &env,
-  ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > &metrics)
+  ArrayRCP<RCP<BaseClassMetrics> > &metrics)
 {
   metrics.resize(metrics.size() + 1); // increase array size by 1
   metric_t * newMetric = new metric_t;  // allocate
