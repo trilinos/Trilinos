@@ -200,52 +200,31 @@ namespace FROSch {
         Teuchos::RCP<Teuchos::ParameterList> tmpList = Teuchos::sublist(parameterList,"Zoltan2 Parameter");
         
         Teuchos::RCP<inputAdapter> adaptedMatrix = Teuchos::rcp(new inputAdapter(Xgraph,0,0));
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"ParameterList done\n";
+        
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >problem =
         Teuchos::RCP<Zoltan2::PartitioningProblem<inputAdapter> >(new  Zoltan2::PartitioningProblem<inputAdapter> (adaptedMatrix.getRawPtr(), tmpList.get(),TeuchosComm));
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
        /* if(MyPID == 0)std::cout<<"--------Node ElementList------------\n";
         B->describe(*fancy,Teuchos::VERB_EXTREME);
         TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
         if(MyPID == 0)std::cout<<"-------------------------------------\n";*/
-        
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"Build Zoltan 2 Problem\n";
-        
        
         problem->solve();
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"solve done\n";
-        
+    
         Teuchos::RCP<Xpetra::CrsGraph<LO,GO,NO> > ReGraph;
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"RE \n";
         adaptedMatrix->applyPartitioningSolution(*Xgraph,ReGraph,problem->getSolution());
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"ReGraph\n";
+        
         
         //Repeated Element List
         Teuchos::RCP<const Xpetra::Map<GO,LO,NO> > EleRepMap = ReGraph->getColMap();
         
         //------------------------------Build NodeRepMap-----------------------------
-        
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"NodeElementList\n";
- 
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(Xgraph->getRowMap(),ReGraph->getColMap());
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"Importer\n";
         //Teuchos::RCP<Xpetra::CrsMatrix<GO,LO,GO,NO> > BB = Xpetra::CrsMatrixFactory<GO,LO,GO,NO>::Build(B,*scatter);
         
         Teuchos::RCP<Xpetra::TpetraCrsMatrix<GO> > BB =Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO>(ReGraph->getColMap(),10));
         BB->doImport(*B,*scatter,Xpetra::INSERT);
         BB->fillComplete();
-        
-        TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        if(MyPID == 0)std::cout<<"Importer2\n";
-        
-        
+
         //--------------------Get Repeated Nodes Map------------------------
         //All Elemnts and neighboring on Proc
         Teuchos::ArrayView<const GO>  eList =EleRepMap->getNodeElementList();
@@ -257,8 +236,6 @@ namespace FROSch {
         Teuchos::ArrayView<const GO> arr2;
         Teuchos::ArrayView<const LO> cc2;
         std::vector<GO> vec = createVector(eList);
-        //TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-       // if(MyPID == 0)std::cout<<"Start to build Repeated Nodes Map\n";
         
         for(size_t i = 0 ; i<Xgraph->getRowMap()->getNodeNumElements();i++){
             std::vector<GO> el1;
@@ -283,9 +260,7 @@ namespace FROSch {
                 for(int l = 0;l<common.size();l++) rep.insert(std::pair<GO,int>(common.at(l),MyPID));
             }
         }
-        //TeuchosComm->barrier();TeuchosComm->barrier();TeuchosComm->barrier();
-        //if(MyPID == 0)std::cout<<"Map Insert\n";
-        
+     
         Teuchos::Array<GO> repeatedIndices;
         for (auto& x: rep) {
             repeatedIndices.push_back(x.first);

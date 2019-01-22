@@ -606,7 +606,6 @@ namespace FROSch {
                 this->GraphEntriesList_ =  Teuchos::rcp(new Xpetra::TpetraCrsMatrix<GO> (GraphMap, 10));
                 this->GraphEntriesList_->insertGlobalValues(edges->getEntityMap()->getComm()->getRank(),cols,entries());
                 this->GraphEntriesList_->fillComplete();
-                //this->GraphEntriesList_->describe(*fancy,Teuchos::VERB_EXTREME);
                 
                 
                 this->BlockCoarseDimension_[blockId] = 0;
