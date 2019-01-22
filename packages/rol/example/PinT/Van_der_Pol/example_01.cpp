@@ -163,8 +163,8 @@ int main( int argc, char* argv[] ) {
   auto U0 = partition(U->clone()); 
   U0->zero();
 
-  // Control regularization parameter is unity
-  RealT alpha = 1.0;
+  // Control regularization parameter.
+  RealT alpha = VdP_params->get("Control Penalty",1.0);;
  
   auto dyn_obj    = make_DynamicTrackingObjective(U0,alpha);
 
