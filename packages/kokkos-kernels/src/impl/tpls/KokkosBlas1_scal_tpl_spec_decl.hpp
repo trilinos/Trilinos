@@ -47,15 +47,13 @@
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#include "KokkosKernels_FortranMangling.h"
-
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(dscal,DSCAL) (const int* N, const double* alpha,
+extern "C" void dscal_( const int* N, const double* alpha,
                         double* x, const int* x_inc);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(sscal,SSCAL) (const int* N, const float* alpha,
+extern "C" void sscal_( const int* N, const float* alpha,
                         float* x, const int* x_inc);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(zscal,ZSCAL) (const int* N, const std::complex<double>* alpha,
+extern "C" void zscal_( const int* N, const std::complex<double>* alpha,
                         std::complex<double>* x, const int* x_inc);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(cscal,CSCAL) (const int* N, const std::complex<float>* alpha,
+extern "C" void cscal_( const int* N, const std::complex<float>* alpha,
                         std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
@@ -95,7 +93,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(dscal,DSCAL)(&N,&alpha,R.data(),&one); \
+      dscal_(&N,&alpha,R.data(),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -126,7 +124,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(sscal,SSCAL)(&N,&alpha,R.data(),&one); \
+      sscal_(&N,&alpha,R.data(),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -157,7 +155,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(zscal,ZSCAL)(&N,reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<std::complex<double>*>(R.data()),&one); \
+      zscal_(&N,reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<std::complex<double>*>(R.data()),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -188,7 +186,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(cscal,CSCAL)(&N,reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<std::complex<float>*>(R.data()),&one); \
+      cscal_(&N,reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<std::complex<float>*>(R.data()),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \

@@ -45,31 +45,28 @@
 #define KOKKOSBLAS3_GEMM_TPL_SPEC_DECL_HPP_
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-
-#include "KokkosKernels_FortranMangling.h"
-
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(dgemm,DGEMM) (const char* transA, const char* transB,
+extern "C" void dgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const double* alpha,
                         const double* A, const int* LDA,
                         const double* B, const int* LDB,
                         const double* beta,
                         double* C, const int* LDC);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(sgemm,SGEMM) (const char* transA, const char* transB,
+extern "C" void sgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const float* alpha,
                         const float* A, const int* LDA,
                         const float* B, const int* LDB,
                         const float* beta,
                         float* C, const int* LDC);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(zgemm,ZGEMM) (const char* transA, const char* transB,
+extern "C" void zgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const std::complex<double>* alpha,
                         const std::complex<double>* A, const int* LDA,
                         const std::complex<double>* B, const int* LDB,
                         const std::complex<double>* beta,
                         std::complex<double>* C, const int* LDC);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(cgemm,CGEMM) (const char* transA, const char* transB,
+extern "C" void cgemm_( const char* transA, const char* transB,
                         const int* M, const int* N, const int* K,
                         const std::complex<float>* alpha,
                         const std::complex<float>* A, const int* LDA,
@@ -122,9 +119,9 @@ struct GEMM< \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(dgemm,DGEMM)(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
+      dgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
     if(A_is_lr && B_is_lr && C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(dgemm,DGEMM)(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
+      dgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -171,9 +168,9 @@ struct GEMM< \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(sgemm,SGEMM)(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
+      sgemm_(transA,transB,&M,&N,&K,&alpha,A.data(),&LDA,B.data(),&LDB,&beta,C.data(),&LDC); \
     if(A_is_lr && B_is_lr && C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(sgemm,SGEMM)(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
+      sgemm_(transB,transA,&N,&M,&K,&alpha,B.data(),&LDB,A.data(),&LDA,&beta,C.data(),&LDC); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -220,12 +217,12 @@ struct GEMM< \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(zgemm,ZGEMM)(transA,transB,&M,&N,&K, \
+      zgemm_(transA,transB,&M,&N,&K, \
         reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
         reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
     if(A_is_lr && B_is_lr && C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(zgemm,ZGEMM)(transB,transA,&N,&M,&K, \
+      zgemm_(transB,transA,&N,&M,&K, \
         reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(B.data()),&LDB, \
         reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(C.data()),&LDC); \
@@ -275,12 +272,12 @@ struct GEMM< \
     const int CST = C_is_lr?C.stride(0):C.stride(1), LDC = CST == 0 ? 1 : CST; \
     \
     if(!A_is_lr && !B_is_lr && !C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(cgemm,CGEMM)(transA,transB,&M,&N,&K, \
+      cgemm_(transA,transB,&M,&N,&K, \
         reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
         reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \
     if(A_is_lr && B_is_lr && C_is_lr ) \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(cgemm,CGEMM)(transB,transA,&N,&M,&K, \
+      cgemm_(transB,transA,&N,&M,&K, \
         reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(B.data()),&LDB, \
         reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(C.data()),&LDC); \

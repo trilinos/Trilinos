@@ -47,15 +47,13 @@
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#include "KokkosKernels_FortranMangling.h"
-
-extern "C" double KOKKOSKERNELS_FORTRAN_GLOBAL(ddot,DDOT) (const int* N, const double* x, const int* x_inc,
+extern "C" double ddot_ ( const int* N, const double* x, const int* x_inc,
                           const double* y, const int* y_inc);
-extern "C" float KOKKOSKERNELS_FORTRAN_GLOBAL(sdot,SDOT) (const int* N, const float* x, const int* x_inc,
+extern "C" float  sdot_ ( const int* N, const float* x, const int* x_inc,
                           const float* y, const int* y_inc);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(zdotu,ZDOTU) (std::complex<double> *res, const int* N, const std::complex<double>* x, const int* x_inc,
+extern "C" void   zdotu_( std::complex<double> *res, const int* N, const std::complex<double>* x, const int* x_inc,
                           const std::complex<double>* y, const int* y_inc);
-extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(cdotu,CDOTU) (std::complex<float> *res, const int* N, const std::complex<float>* x, const int* x_inc,
+extern "C" void   cdotu_( std::complex<float> *res, const int* N, const std::complex<float>* x, const int* x_inc,
                           const std::complex<float>* y, const int* y_inc);
 
 namespace KokkosBlas {
@@ -95,7 +93,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = KOKKOSKERNELS_FORTRAN_GLOBAL(ddot,DDOT)(&N,X.data(),&one,Y.data(),&one); \
+      R() = ddot_(&N,X.data(),&one,Y.data(),&one); \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
@@ -126,7 +124,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = KOKKOSKERNELS_FORTRAN_GLOBAL(sdot,SDOT)(&N,X.data(),&one,Y.data(),&one); \
+      R() = sdot_(&N,X.data(),&one,Y.data(),&one); \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
@@ -157,7 +155,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(zdotu,ZDOTU)(reinterpret_cast<std::complex<double>* >(R.data()), \
+      zdotu_(reinterpret_cast<std::complex<double>* >(R.data()),        \
              &N,                                                        \
              reinterpret_cast<const std::complex<double>* >(X.data()),&one, \
              reinterpret_cast<const std::complex<double>* >(Y.data()),&one); \
@@ -191,7 +189,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      KOKKOSKERNELS_FORTRAN_GLOBAL(cdotu,CDOTU)(reinterpret_cast<std::complex<float>* >(R.data()), \
+      cdotu_(reinterpret_cast<std::complex<float>* >(R.data()), \
              &N,                                                        \
              reinterpret_cast<const std::complex<float>* >(X.data()),&one, \
              reinterpret_cast<const std::complex<float>* >(Y.data()),&one); \
