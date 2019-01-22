@@ -138,6 +138,12 @@ namespace FROSch {
         /*!
         \brief Constructor
 
+        Create the subdomain solver object.
+
+        A subdomain solver might require further Trilinos packages at runtime.
+        Availability of required packages is tested and
+        an error is thrown if required packages are not part of the build configuration.
+
         @param k Matrix
         @param parameterList Parameter list
         @param blockCoarseSize
