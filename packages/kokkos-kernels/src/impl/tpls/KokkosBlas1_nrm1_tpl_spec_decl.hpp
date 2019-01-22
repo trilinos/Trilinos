@@ -47,10 +47,12 @@
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-extern "C" double dasum_ ( const int* N, const double* x, const int* x_inc);
-extern "C" float  sasum_ ( const int* N, const float* x, const int* x_inc);
-extern "C" double dzasum_( const int* N, const std::complex<double>* x, const int* x_inc);
-extern "C" float  dcasum_( const int* N, const std::complex<float>* x, const int* x_inc);
+#include "KokkosKernels_FortranMangling.h"
+
+extern "C" double KOKKOSKERNELS_FORTRAN_GLOBAL(dasum,DASUM) (const int* N, const double* x, const int* x_inc);
+extern "C" float  KOKKOSKERNELS_FORTRAN_GLOBAL(sasum,SASUM) (const int* N, const float* x, const int* x_inc);
+extern "C" double KOKKOSKERNELS_FORTRAN_GLOBAL(dzasum,DZASUM) (const int* N, const std::complex<double>* x, const int* x_inc);
+extern "C" float  KOKKOSKERNELS_FORTRAN_GLOBAL(dcasum,DCASUM) (const int* N, const std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
 namespace Impl {
@@ -87,7 +89,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dasum_(&N,X.data(),&one); \
+      R() = KOKKOSKERNELS_FORTRAN_GLOBAL(dasum,DASUM)(&N,X.data(),&one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -116,7 +118,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = sasum_(&N,X.data(),&one); \
+      R() = KOKKOSKERNELS_FORTRAN_GLOBAL(sasum,SASUM)(&N,X.data(),&one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -145,7 +147,7 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dzasum_(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one); \
+      R() = KOKKOSKERNELS_FORTRAN_GLOBAL(dzasum,DZASUM)(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \
@@ -174,7 +176,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       nrm1_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dcasum_(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one); \
+      R() = KOKKOSKERNELS_FORTRAN_GLOBAL(dcasum,DCASUM)(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one); \
     } else { \
       Nrm1<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm1(R,X); \
     } \

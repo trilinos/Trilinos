@@ -45,28 +45,31 @@
 #define KOKKOSBLAS2_GEMV_TPL_SPEC_DECL_HPP_
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
-extern "C" void dgemv_( const char* trans,
+
+#include "KokkosKernels_FortranMangling.h"
+
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(dgemv,DGEMV)( const char* trans,
                         const int* M, const int* N,
                         const double* alpha,
                         const double* A, const int* LDA,
                         const double* X, const int* INCX,
                         const double* beta,
                         double* Y, const int* INCY);
-extern "C" void sgemv_( const char* trans,
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(sgemv,SGEMV)( const char* trans,
                         const int* M, const int* N,
                         const float* alpha,
                         const float* A, const int* LDA,
                         const float* X, const int* INCX,
                         const float* beta,
                         float* Y, const int* INCY);
-extern "C" void zgemv_( const char* trans,
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(zgemv,ZGEMV)( const char* trans,
                         const int* M, const int* N,
                         const std::complex<double>* alpha,
                         const std::complex<double>* A, const int* LDA,
                         const std::complex<double>* X, const int* INCX,
                         const std::complex<double>* beta,
                         std::complex<double>* Y, const int* INCY);
-extern "C" void cgemv_( const char* trans,
+extern "C" void KOKKOSKERNELS_FORTRAN_GLOBAL(cgemv,CGEMV)( const char* trans,
                         const int* M, const int* N,
                         const std::complex<float>* alpha,
                         const std::complex<float>* A, const int* LDA,
@@ -109,7 +112,7 @@ struct GEMV< \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    dgemv_(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
+    KOKKOSKERNELS_FORTRAN_GLOBAL(dgemv,DGEMV)(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -146,7 +149,7 @@ struct GEMV< \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    sgemv_(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
+    KOKKOSKERNELS_FORTRAN_GLOBAL(sgemv,SGEMV)(trans,&M,&N,&alpha,A.data(),&LDA,X.data(),&one,&beta,Y.data(),&one); \
     Kokkos::Profiling::popRegion(); \
   } \
 };
@@ -183,7 +186,7 @@ struct GEMV< \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    zgemv_(trans,&M,&N, \
+    KOKKOSKERNELS_FORTRAN_GLOBAL(zgemv,ZGEMV)(trans,&M,&N, \
         reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<const std::complex<double>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<double>*>(X.data()),&one, \
         reinterpret_cast<const std::complex<double>*>(&beta),reinterpret_cast<std::complex<double>*>(Y.data()),&one); \
@@ -223,7 +226,7 @@ struct GEMV< \
     constexpr int one = 1; \
     bool A_is_lr = std::is_same<Kokkos::LayoutRight,LAYOUTA>::value; \
     const int AST = A_is_lr?A.stride(0):A.stride(1), LDA = AST == 0 ? 1 : AST; \
-    cgemv_(trans,&M,&N, \
+    KOKKOSKERNELS_FORTRAN_GLOBAL(cgemv,CGEMV)(trans,&M,&N, \
         reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<const std::complex<float>*>(A.data()),&LDA, \
         reinterpret_cast<const std::complex<float>*>(X.data()),&one, \
         reinterpret_cast<const std::complex<float>*>(&beta),reinterpret_cast<std::complex<float>*>(Y.data()),&one); \
