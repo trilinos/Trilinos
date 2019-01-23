@@ -8,7 +8,7 @@
 
 #
 # Functions
-# 
+#
 
 # Test the branch constraints for a Pull Request:
 # - Only pull requests from trilinos/Trilnos::develop are allowed
@@ -146,17 +146,27 @@ echo -e ""
 : ${TRILINOS_TARGET_BRANCH:?}
 : ${TRILINOS_SOURCE_SHA:?}
 : ${PULLREQUESTNUM:?}
+: ${NODE_NAME:?}
 : ${JOB_BASE_NAME:?}
 : ${BUILD_NUMBER:?}
 : ${WORKSPACE:?}
 
-source /projects/sems/modulefiles/utils/sems-modules-init.sh
-
 declare -i ierror=0
 #Have to keep loading git
-module load sems-git/2.10.1
-
-
+cuda_regex=".*(_cuda_).*"
+ride_regex=".*(ride).*"
+if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        module load git/2.10.1
+    else
+        echo -e "ERROR: Unable to find matching environment for CUDA job not on Ride."
+        exit -1
+    fi
+else
+    source /projects/sems/modulefiles/utils/sems-modules-init.sh
+    module load sems-git/2.10.1
+fi
 
 #--------------------------------------------
 # Apply Guards
@@ -222,7 +232,7 @@ elif [ "Trilinos_pullrequest_gcc_4.9.3" == "${JOB_BASE_NAME:?}" ] ; then
     fi
 elif [ "Trilinos_pullrequest_gcc_4.9.3_SERIAL" == "${JOB_BASE_NAME:?}" ] ; then
     # TODO: Update this to use a 4.9.3 SERIAL testing environment script.
-    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC4.9.3TestingEnvSERIAL.sh 
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestGCC4.9.3TestingEnvSERIAL.sh
     ierror=$?
     if [[ $ierror != 0 ]]; then
         echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
@@ -240,6 +250,13 @@ elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ] ; then
     ierror=$?
     if [[ $ierror != 0 ]]; then
         echo -e "There was an issue loading the gcc environment. The error code was: $ierror"
+        exit $ierror
+    fi
+elif [ "Trilinos_pullrequest_cuda_9.2" == "${JOB_BASE_NAME:?}" ] ; then
+    source ${TRILINOS_DRIVER_SRC_DIR}/cmake/std/sems/PullRequestCuda9.2TestingEnv.sh
+    ierror=$?
+    if [[ $ierror != 0 ]]; then
+        echo -e "There was an issue loading the cuda environment. The error code was: $ierror"
         exit $ierror
     fi
 elif [ "Trilinos_pullrequest_intel_17.0.1" == "${JOB_BASE_NAME:?}" ] ; then
@@ -264,11 +281,18 @@ module list
 # This crashes for the serial case since MPI variables are not set
 # - See Issue #3625
 # - wcm: bugfix #3673
-regex=".*(_SERIAL)$"
-if [[ ! ${JOB_BASE_NAME:?} =~ ${regex} ]]; then
-    echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
-else
+serial_regex=".*(_SERIAL)$"
+if [[ ${JOB_BASE_NAME:?} =~ ${serial_regex} ]]; then
     echo -e "Job is SERIAL"
+elif [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
+    if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        echo -e "Job is CUDA"
+        echo -e "MPI type = sems-${MPI_VENDOR:?}/${MPI_VERSION:?}"
+    else
+        echo -e "MPI Vendor and Versions may not be set correctly for CUDA job not on Ride."
+    fi
+else
+    echo -e "MPI type = sems-${SEMS_MPI_NAME:?}/${SEMS_MPI_VERSION:?}"
 fi
 
 CDASH_TRACK="Pull Request"
@@ -311,7 +335,7 @@ cmake -P packageEnables.cmake
 
 build_name="PR-$PULLREQUESTNUM-test-$JOB_BASE_NAME-$BUILD_NUMBER"
 
-#This should be runnable from anywhere, but all the tests so far have been from the 
+#This should be runnable from anywhere, but all the tests so far have been from the
 #same dir the simple_testing.cmake file was in.
 cd TFW_testing_single_configure_prototype &> /dev/null
 echo -e "Set CWD = `pwd`"
@@ -330,6 +354,8 @@ else
         CONFIG_SCRIPT=PullRequestLinuxGCC7.2.0TestingSettings.cmake
     elif [ "Trilinos_pullrequest_gcc_7.3.0" == "${JOB_BASE_NAME:?}" ]; then
         CONFIG_SCRIPT=PullRequestLinuxGCC7.3.0TestingSettings.cmake
+    elif [ "Trilinos_pullrequest_cuda_9.2" == "${JOB_BASE_NAME:?}" ]; then
+        CONFIG_SCRIPT=PullRequestLinuxCuda9.2TestingSettings.cmake
     fi
 fi
 
@@ -354,6 +380,3 @@ fi
 # Reset to known directory location.
 # - ${WORKSPACE} is set by Jenkins and points to the root workspace directory.
 cd ${WORKSPACE:?}
-
-
-
