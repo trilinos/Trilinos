@@ -285,9 +285,10 @@ int main(int argc, char *argv[])
       MyOM->stream(Warnings) << "   ||<Y1,X1> - <X1,Y1>||     : " << err << endl;
       // test s.p.d. of <Y1,X1>: try to compute a cholesky
       lapack.POTRF('U',yTx1.numCols(),yTx1.values(),yTx1.stride(),&info);
-      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
-          "New <Y1,X1> not s.p.d.: couldn't computed Cholesky: info == " << info
-          << "\nyTx1: \n" << yTx1);
+      std::ostringstream msg("New <Y1,X1> not s.p.d.: couldn't computed Cholesky: info == ");
+      msg << info << "\nyTx1: \n";
+      yTx1.print(msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error, msg);
 
       // X2 ortho to Y1
       MVT::MvRandom(*X2);
@@ -345,9 +346,10 @@ int main(int argc, char *argv[])
       MyOM->stream(Warnings) << "   ||<Y2,X2> - <X2,Y2>||     : " << err << endl;
       // test s.p.d. of <Y2,X2>: try to compute a cholesky
       lapack.POTRF('U',yTx2.numCols(),yTx2.values(),yTx2.stride(),&info);
-      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error,
-          "New <Y2,X2> not s.p.d.: couldn't computed Cholesky: info == " << info
-          << "\nyTx2: \n" << yTx2);
+      msg.str("New <Y2,X2> not s.p.d.: couldn't computed Cholesky: info == ");
+      msg << info << "\nyTx2: \n";
+      yTx2.print(msg);
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0,std::runtime_error, msg);
     }
     MyOM->stream(Warnings) << endl;
 
