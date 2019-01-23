@@ -328,7 +328,9 @@ namespace FROSch {
             DDInterface_->divideUnconnectedEntities(this->K_);
         }
         
-        DDInterface_->sortEntities(nodeList);
+
+        DDInterface_->sortVerticesEdgesFaces(nodeList);
+        
         EntitySetPtr vertices,shortEdges,straightEdges,edges,faces,interface,interior;
         
         interface = DDInterface_->getInterface();
