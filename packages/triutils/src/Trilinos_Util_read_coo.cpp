@@ -44,7 +44,7 @@
 void Trilinos_Util_read_coo(const char *data_file, int MyPID,
     int *N_global, int *n_nonzeros,
     double **val, int **bindx,
-    double **x, double **b, double **xexact)
+    double **x, double **b, double ** /* xexact */)
 #undef DEBUG
   /*  read ASCII data file:
       line 1: N_global, number of entries (%d,%d)

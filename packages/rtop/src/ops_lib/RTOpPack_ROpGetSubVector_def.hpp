@@ -166,8 +166,8 @@ template<class Scalar>
 void ROpGetSubVector<Scalar>::extract_reduct_obj_state_impl(
   const ReductTarget &reduct_obj,
   const ArrayView<primitive_value_type> &value_data,
-  const ArrayView<index_type> &index_data,
-  const ArrayView<char_type> &char_data
+  const ArrayView<index_type> &/* index_data */,
+  const ArrayView<char_type> &/* char_data */
   ) const
 {
   using Teuchos::null;
@@ -193,8 +193,8 @@ void ROpGetSubVector<Scalar>::extract_reduct_obj_state_impl(
 template<class Scalar>
 void ROpGetSubVector<Scalar>::load_reduct_obj_state_impl(
   const ArrayView<const primitive_value_type> &value_data,
-  const ArrayView<const index_type> &index_data,
-  const ArrayView<const char_type> &char_data,
+  const ArrayView<const index_type> &/* index_data */,
+  const ArrayView<const char_type> &/* char_data */,
   const Ptr<ReductTarget> &reduct_obj
   ) const
 {

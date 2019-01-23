@@ -184,7 +184,7 @@ namespace panzer
   Integrator_DivBasisTimesScalar<EvalT, Traits>::
   postRegistrationSetup(
     typename Traits::SetupData sd,
-    PHX::FieldManager<Traits>& fm)
+    PHX::FieldManager<Traits>& /* fm */)
   {
     using Kokkos::createDynRankView;
     using panzer::getBasisIndex;

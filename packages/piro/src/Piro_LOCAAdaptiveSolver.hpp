@@ -77,7 +77,7 @@ public:
   //@}
 
   //! Update the final solution to the main solver
-  void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool wasSolved)
+  void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool /* wasSolved */)
        { finalPoint_ = Teuchos::rcpFromRef(finalPoint); }
 
 
