@@ -4,7 +4,6 @@ ADD_SUBDIRECTORIES(
 
 IF(NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
 ADD_SUBDIRECTORIES(
-    Import_Tpetra
     InterfacePartitionOfUnity
     InterfaceSets
     LocalPartitionOfUnityBasis
