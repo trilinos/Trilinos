@@ -1,6 +1,9 @@
-IF(KOKKOS_ENABLE_SERIAL)
 ADD_SUBDIRECTORIES(
     Import_Tpetra
+)
+
+IF(NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+ADD_SUBDIRECTORIES(
     InterfacePartitionOfUnity
     InterfaceSets
     LocalPartitionOfUnityBasis
