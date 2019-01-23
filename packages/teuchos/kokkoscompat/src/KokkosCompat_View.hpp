@@ -185,8 +185,9 @@ namespace Kokkos {
       // allocated (e.g.,) using new or malloc, but it's not a problem
       // here, because the custom deallocator does not free anything.
       // Nevertheless, it's better not to trouble the tracking system.
-      return Teuchos::arcp(view.data(), 0, view.span(),
-                           deallocator(view), false);
+      return Teuchos::arcp (view.span () == 0 ? nullptr : view.data (),
+                            0, view.span (),
+                            deallocator(view), false);
     }
 
     // Create a "persisting view" from a Kokkos::View
@@ -195,9 +196,12 @@ namespace Kokkos {
     persistingView(
       const ViewType& view,
       typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type offset,
-      typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type size) {
-      return Teuchos::arcp(view.data()+offset, 0, size,
-                           deallocator(view), false);
+      typename Teuchos::ArrayRCP<typename ViewType::value_type>::size_type size)
+    {
+      // This check is related to #4234.
+      typename ViewType::value_type* const ptr =
+        (size == 0 && offset == 0) ? nullptr : (view.data () + offset);
+      return Teuchos::arcp (ptr, 0, size, deallocator (view), false);
     }
 
     template <class ViewType, typename Ordinal>
