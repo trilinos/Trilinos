@@ -326,7 +326,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   MinresIter<ScalarType,MV,OP>::MinresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                                    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                   const Teuchos::ParameterList &params ):
+                                                   const Teuchos::ParameterList &/* params */ ):
     lp_(problem),
     om_(printer),
     stest_(tester),

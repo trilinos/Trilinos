@@ -1254,13 +1254,13 @@ public:
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                   const MultiVector<Scalar,LO,GO,Node> &B,
-                   const MultiVector<Scalar,LO,GO,Node> &D,
-                   const Scalar& dampingFactor,
-                   const ESweepDirection direction,
-                   const int numSweeps,
-                   const bool zeroInitialGuess) const
+  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &/* X */,
+                   const MultiVector<Scalar,LO,GO,Node> &/* B */,
+                   const MultiVector<Scalar,LO,GO,Node> &/* D */,
+                   const Scalar& /* dampingFactor */,
+                   const ESweepDirection /* direction */,
+                   const int /* numSweeps */,
+                   const bool /* zeroInitialGuess */) const
   {
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
@@ -1272,14 +1272,14 @@ public:
   template <class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar,LO,GO,Node>::
-  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& X,
-                            const MultiVector<Scalar,LO,GO,Node>& B,
-                            const MultiVector<Scalar,LO,GO,Node>& D,
-                            const Teuchos::ArrayView<LO>& rowIndices,
-                            const Scalar& dampingFactor,
-                            const ESweepDirection direction,
-                            const int numSweeps,
-                            const bool zeroInitialGuess) const
+  reorderedGaussSeidelCopy (MultiVector<Scalar,LO,GO,Node>& /* X */,
+                            const MultiVector<Scalar,LO,GO,Node>& /* B */,
+                            const MultiVector<Scalar,LO,GO,Node>& /* D */,
+                            const Teuchos::ArrayView<LO>& /* rowIndices */,
+                            const Scalar& /* dampingFactor */,
+                            const ESweepDirection /* direction */,
+                            const int /* numSweeps */,
+                            const bool /* zeroInitialGuess */) const
   {
     // FIXME (mfh 12 Aug 2014) This method has entirely the wrong
     // interface for block Gauss-Seidel.
@@ -2657,7 +2657,7 @@ public:
     unpackRowCount (const typename ::Tpetra::Details::PackTraits<LO, D>::input_buffer_type& imports,
                     const size_t offset,
                     const size_t numBytes,
-                    const size_t numBytesPerValue)
+                    const size_t /* numBytesPerValue */)
     {
       using Kokkos::subview;
       using ::Tpetra::Details::PackTraits;
@@ -3775,10 +3775,10 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowCopy (GO GlobalRow,
-                    const Teuchos::ArrayView<GO> &Indices,
-                    const Teuchos::ArrayView<Scalar> &Values,
-                    size_t &NumEntries) const
+  getGlobalRowCopy (GO /* GlobalRow */,
+                    const Teuchos::ArrayView<GO> &/* Indices */,
+                    const Teuchos::ArrayView<Scalar> &/* Values */,
+                    size_t &/* NumEntries */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowCopy: "
@@ -3789,9 +3789,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getGlobalRowView (GO GlobalRow,
-                    Teuchos::ArrayView<const GO> &indices,
-                    Teuchos::ArrayView<const Scalar> &values) const
+  getGlobalRowView (GO /* GlobalRow */,
+                    Teuchos::ArrayView<const GO> &/* indices */,
+                    Teuchos::ArrayView<const Scalar> &/* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
@@ -3802,9 +3802,9 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (LO LocalRow,
-                   Teuchos::ArrayView<const LO>& indices,
-                   Teuchos::ArrayView<const Scalar>& values) const
+  getLocalRowView (LO /* LocalRow */,
+                   Teuchos::ArrayView<const LO>& /* indices */,
+                   Teuchos::ArrayView<const Scalar>& /* values */) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: "
@@ -3867,7 +3867,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::leftScale: "
@@ -3878,7 +3878,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x)
+  rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& /* x */)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::rightScale: "

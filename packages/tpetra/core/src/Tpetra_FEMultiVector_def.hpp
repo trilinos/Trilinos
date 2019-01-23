@@ -84,7 +84,7 @@ FEMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& newMap) {
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceMap (const Teuchos::RCP<const map_type>& /* newMap */) {
   throw std::runtime_error("Tpetra::FEMultiVector::replaceMap() is not implemented");
 }// end replaceMap
 

@@ -581,7 +581,7 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const typename local_graph_type::row_map_type& rowPointers,
             const typename local_graph_type::entries_type::non_const_type& columnIndices,
-            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+            const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (rowMap)
     , rowMap_(rowMap)
     , colMap_(colMap)
@@ -617,7 +617,7 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::ArrayRCP<size_t>& rowPointers,
             const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+            const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
@@ -6046,9 +6046,9 @@ namespace Tpetra {
   unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                     const Teuchos::ArrayView<const GlobalOrdinal> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
-                    Distributor& distor,
-                    CombineMode CM)
+                    size_t /* constantNumPackets */,
+                    Distributor& /* distor */,
+                    CombineMode /* CM */)
   {
     const char tfecfFuncName[] = "unpackAndCombine: ";
     typedef LocalOrdinal LO;

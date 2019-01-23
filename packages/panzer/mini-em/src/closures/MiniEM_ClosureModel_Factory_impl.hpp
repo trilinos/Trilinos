@@ -105,8 +105,10 @@ buildClosureModels(const std::string& model_id,
       }
       if(type=="RANDOM") {
         unsigned int seed = plist.get<unsigned int>("seed");
+        double min = plist.get<double>("range min");
+        double max = plist.get<double>("range max");
 	RCP< Evaluator<panzer::Traits> > e =
-	  rcp(new mini_em::RandomForcing<EvalT,panzer::Traits>(key,*ir,fl,seed));
+	  rcp(new mini_em::RandomForcing<EvalT,panzer::Traits>(key,*ir,fl,seed,min,max));
 	evaluators->push_back(e);
 
         found = true;
